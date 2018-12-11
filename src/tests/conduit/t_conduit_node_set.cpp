@@ -56,6 +56,10 @@
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
+// set bitwidth unsigned int scalar
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_bitwidth_uint_scalar)
 {
     uint8    u8v = 8;
@@ -269,6 +273,9 @@ TEST(conduit_node_set, set_external_bitwidth_uint_scalar)
 
 }
 
+//-----------------------------------------------------------------------------
+// set bitwidth signed int scalar
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_bitwidth_int_scalar)
@@ -482,6 +489,10 @@ TEST(conduit_node_set, set_external_bitwidth_int_scalar)
 }
 
 //-----------------------------------------------------------------------------
+// set bitwidth float scalar
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_bitwidth_float_scalar)
 {
     float32  f32v = -3.2f;
@@ -598,6 +609,77 @@ TEST(conduit_node_set, set_external_bitwidth_float_scalar)
 }
 
 //-----------------------------------------------------------------------------
+// set bitwidth unsigned int ptr
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_bitwidth_uint_ptr)
+{
+    uint8    u8av[6] = {2,4,8,16,32,64};
+    uint16  u16av[6] = {2,4,8,16,32,64};
+    uint32  u32av[6] = {2,4,8,16,32,64};
+    uint64  u64av[6] = {2,4,8,16,32,64};
+        
+    Node n;
+    // using uint8* interface
+    n.set(u8av,6);
+    n.schema().print();
+    EXPECT_EQ(n.total_strided_bytes(),6);
+    EXPECT_EQ(n.dtype().element_bytes(),1);
+    uint8 *u8av_ptr = n.as_uint8_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u8av_ptr[i],u8av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&u8av_ptr[i],&u8av[i]);
+    }
+    EXPECT_EQ(u8av_ptr[5],64);
+    
+    // using uint16* interface
+    n.set(u16av,6);
+    n.schema().print();
+    EXPECT_EQ(n.total_strided_bytes(),6*2);
+    EXPECT_EQ(n.dtype().element_bytes(),2);
+    uint16 *u16av_ptr = n.as_uint16_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u16av_ptr[i],u16av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&u16av_ptr[i],&u16av[i]);
+    }
+    EXPECT_EQ(u16av_ptr[5],64);
+    
+    // using uint32 * interface
+    n.set(u32av,6);
+    n.schema().print();
+    EXPECT_EQ(n.total_strided_bytes(),6*4);
+    EXPECT_EQ(n.dtype().element_bytes(),4);
+    uint32 *u32av_ptr = n.as_uint32_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u32av_ptr[i],u32av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&u32av_ptr[i],&u32av[i]);
+    }
+    EXPECT_EQ(u32av_ptr[5],64);
+    
+    // using uint64 * interface
+    n.set(u64av,6);
+    n.schema().print();
+    EXPECT_EQ(n.total_strided_bytes(),6*8);
+    EXPECT_EQ(n.dtype().element_bytes(),8);
+    uint64 *u64av_ptr = n.as_uint64_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(u64av_ptr[i],u64av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&u64av_ptr[i],&u64av[i]);
+    }
+    EXPECT_EQ(u64av_ptr[5],64);
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_bitwidth_uint_array)
 {
     uint8    u8av[6] = {2,4,8,16,32,64};
@@ -655,74 +737,6 @@ TEST(conduit_node_set, set_bitwidth_uint_array)
     
     // uint64
     n.set(u64av_a);
-    n.schema().print();
-    EXPECT_EQ(n.total_strided_bytes(),6*8);
-    EXPECT_EQ(n.dtype().element_bytes(),8);
-    uint64 *u64av_ptr = n.as_uint64_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(u64av_ptr[i],u64av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&u64av_ptr[i],&u64av[i]);
-    }
-    EXPECT_EQ(u64av_ptr[5],64);
-
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_bitwidth_uint_ptr)
-{
-    uint8    u8av[6] = {2,4,8,16,32,64};
-    uint16  u16av[6] = {2,4,8,16,32,64};
-    uint32  u32av[6] = {2,4,8,16,32,64};
-    uint64  u64av[6] = {2,4,8,16,32,64};
-        
-    Node n;
-    // using uint8* interface
-    n.set(u8av,6);
-    n.schema().print();
-    EXPECT_EQ(n.total_strided_bytes(),6);
-    EXPECT_EQ(n.dtype().element_bytes(),1);
-    uint8 *u8av_ptr = n.as_uint8_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(u8av_ptr[i],u8av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&u8av_ptr[i],&u8av[i]);
-    }
-    EXPECT_EQ(u8av_ptr[5],64);
-    
-    // using uint16* interface
-    n.set(u16av,6);
-    n.schema().print();
-    EXPECT_EQ(n.total_strided_bytes(),6*2);
-    EXPECT_EQ(n.dtype().element_bytes(),2);
-    uint16 *u16av_ptr = n.as_uint16_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(u16av_ptr[i],u16av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&u16av_ptr[i],&u16av[i]);
-    }
-    EXPECT_EQ(u16av_ptr[5],64);
-    
-    // using uint32 * interface
-    n.set(u32av,6);
-    n.schema().print();
-    EXPECT_EQ(n.total_strided_bytes(),6*4);
-    EXPECT_EQ(n.dtype().element_bytes(),4);
-    uint32 *u32av_ptr = n.as_uint32_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(u32av_ptr[i],u32av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&u32av_ptr[i],&u32av[i]);
-    }
-    EXPECT_EQ(u32av_ptr[5],64);
-    
-    // using uint64 * interface
-    n.set(u64av,6);
     n.schema().print();
     EXPECT_EQ(n.total_strided_bytes(),6*8);
     EXPECT_EQ(n.dtype().element_bytes(),8);
@@ -2205,9 +2219,863 @@ TEST(conduit_node_set, set_path_external_bitwidth_float_ptr)
 
 
 
+//-----------------------------------------------------------------------------
+// C Style Checks
+//-----------------------------------------------------------------------------
+//  -- set & set_external -- 
+//-----------------------------------------------------------------------------
+//
+//  set_cstyle_native_int_ptr
+//  set_cstyle_native_int_array
+//  set_cstyle_native_int_vec
+//
+//  set_cstyle_unsigned_int_ptr
+//  set_cstyle_unsigned_int_array
+//  set_cstyle_unsigned_int_vec
+//
+//  set_cstyle_signed_int_ptr
+//  set_cstyle_signed_int_array
+//  set_cstyle_signed_int_vec
+//
+//  set_cstyle_float_ptr
+//  set_cstyle_float_array
+//  set_cstyle_float_vec
+//
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_cstyle_uint_array)
+// set -- c style native ptr, array, and vec
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_cstyle_native_int_ptr)
+{
+    char        char_av[6]  = {2,4,8,16,32,64};
+    short       short_av[6] = {2,4,8,16,32,64};
+    int         int_av[6]   = {2,4,8,16,32,64};
+    long        long_av[6]  = {2,4,8,16,32,64};
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long   longlong_av[6]  = {2,4,8,16,32,64};
+#endif
+    
+    Node n;
+    
+    ////////////////////////////
+    // set 
+    ////////////////////////////
+    
+    // char
+    n.set_char_ptr(char_av,6);
+    n.schema().print();
+    char *char_ptr = n.as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&char_ptr[i],&char_av[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char *char_ptr_2 =  n.value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set(short_av,6);
+    n.schema().print();
+    short *short_ptr = n.as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&short_ptr[i],&short_av[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short *short_ptr_2 = n.value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set(int_av,6);
+    n.schema().print();
+    int *int_ptr = n.as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&int_ptr[i],&int_av[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int *int_ptr_2 = n.value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set(long_av,6);
+    n.schema().print();
+    long *long_ptr = n.as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&long_ptr[i],&long_av[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+   
+    // also check access via value()
+    long *long_ptr_2 = n.value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set(longlong_av,6);
+    n.schema().print();
+    long long *longlong_ptr = n.as_long_long_ptr();
+    
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set(...) semantics imply a copy -- mem addy should differ
+        EXPECT_NE(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    long long *longlong_ptr_2 = n.value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+    
+    ////////////////////////////
+    // set external 
+    ////////////////////////////
+
+    // char 
+    n.set_external_char_ptr(char_av,6);
+    n.schema().print();
+    char_ptr = n.as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&char_ptr[i],&char_av[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char_ptr_2 = n.value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set_external(short_av,6);
+    n.schema().print();
+    short_ptr = n.as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&short_ptr[i],&short_av[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short_ptr_2 = n.value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_external(int_av,6);
+    n.schema().print();
+    int_ptr = n.as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&int_ptr[i],&int_av[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int_ptr_2 = n.value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_external(long_av,6);
+    n.schema().print();
+    long_ptr = n.as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&long_ptr[i],&long_av[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+
+    // also check access via value()
+    long_ptr_2 = n.value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_external(longlong_av,6);
+    n.schema().print();
+    longlong_ptr = n.as_long_long_ptr();
+
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    longlong_ptr_2 = n.value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_cstyle_native_int_array)
+{
+    // note: char may not be signed, we check
+    // signed values in other tests
+    char        char_av[6]  = {2,4,8,16,32,64};
+    short       short_av[6] = {2,4,8,16,32,64};
+    int         int_av[6]   = {2,4,8,16,32,64};
+    long        long_av[6]  = {2,4,8,16,32,64};
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long   longlong_av[6]  = {2,4,8,16,32,64};
+#endif
+    
+    char_array  char_av_a(char_av,DataType::c_char(6));
+    short_array short_av_a(short_av,DataType::c_short(6));
+    int_array   int_av_a(int_av,DataType::c_int(6));
+    long_array  long_av_a(long_av,DataType::c_long(6));
+    
+#ifdef CONDUIT_HAS_LONG_LONG
+    long_long_array  longlong_av_a(longlong_av,DataType::c_long_long(6));
+#endif
+    
+    Node n;
+    
+    ////////////////////////////
+    // set 
+    ////////////////////////////
+    
+    // char
+    n.set(char_av_a);
+    n.schema().print();
+    char *char_ptr = n.as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&char_ptr[i],&char_av[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char *char_ptr_2 =  n.value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set(short_av_a);
+    n.schema().print();
+    short *short_ptr = n.as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&short_ptr[i],&short_av[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short *short_ptr_2 = n.value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set(int_av_a);
+    n.schema().print();
+    int *int_ptr = n.as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&int_ptr[i],&int_av[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int *int_ptr_2 = n.value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set(long_av_a);
+    n.schema().print();
+    long *long_ptr = n.as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&long_ptr[i],&long_av[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+   
+    // also check access via value()
+    long *long_ptr_2 = n.value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set(longlong_av_a);
+    n.schema().print();
+    long long *longlong_ptr = n.as_long_long_ptr();
+    
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set(...) semantics imply a copy -- mem addy should differ
+        EXPECT_NE(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    long long *longlong_ptr_2 = n.value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+    
+    ////////////////////////////
+    // set external 
+    ////////////////////////////
+
+    // char
+    n.set_external(char_av_a);
+    n.schema().print();
+    char_ptr = n.as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&char_ptr[i],&char_av[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char_ptr_2 =  n.value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set_external(short_av_a);
+    n.schema().print();
+    short_ptr = n.as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&short_ptr[i],&short_av[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short_ptr_2 = n.value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_external(int_av_a);
+    n.schema().print();
+    int_ptr = n.as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&int_ptr[i],&int_av[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int_ptr_2 = n.value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_external(long_av_a);
+    n.schema().print();
+    long_ptr = n.as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&long_ptr[i],&long_av[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+
+    // also check access via value()
+    long_ptr_2 = n.value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_external(longlong_av_a);
+    n.schema().print();
+    longlong_ptr = n.as_long_long_ptr();
+
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    longlong_ptr_2 = n.value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_cstyle_native_int_vec)
+{
+    // note: char may not be signed, we check
+    // signed values in other tests
+    char        char_av[6]  = {2,4,8,16,32,64};
+    short       short_av[6] = {2,4,8,16,32,64};
+    int         int_av[6]   = {2,4,8,16,32,64};
+    long        long_av[6]  = {2,4,8,16,32,64};
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long longlong_av[6]  = {2,4,8,16,32,64};
+#endif
+    
+    std::vector<char>        char_v(char_av,char_av+6);
+    std::vector<short>       short_v(short_av,short_av+6);
+    std::vector<int>         int_v(int_av,int_av+6);
+    std::vector<long>        long_v(long_av,long_av+6);
+    
+#ifdef CONDUIT_HAS_LONG_LONG
+    std::vector<long long>   longlong_v(longlong_av,longlong_av+6);
+#endif
+    
+    Node n;
+    
+    ////////////////////////////
+    // set 
+    ////////////////////////////
+    
+    // char
+    n.set(char_v);
+    n.schema().print();
+    char *char_ptr = n.as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_v[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&char_ptr[i],&char_v[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char *char_ptr_2 = n.value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set(short_v);
+    n.schema().print();
+    short *short_ptr = n.as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_v[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&short_ptr[i],&short_v[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short *short_ptr_2 = n.value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set(int_v);
+    n.schema().print();
+    int *int_ptr = n.as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_v[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&int_ptr[i],&int_v[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int *int_ptr_2 = n.value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set(long_v);
+    n.schema().print();
+    long *long_ptr = n.as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_v[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&long_ptr[i],&long_v[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+   
+    // also check access via value()
+    long *long_ptr_2 = n.value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set(longlong_v);
+    n.schema().print();
+    long long *longlong_ptr = n.as_long_long_ptr();
+    
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_v[i]);
+        // set(...) semantics imply a copy -- mem addy should differ
+        EXPECT_NE(&longlong_ptr[i],&longlong_v[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    long long *longlong_ptr_2 = n.value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+    
+    ////////////////////////////
+    // set external 
+    ////////////////////////////
+
+    // char
+    n.set_external(char_v);
+    n.schema().print();
+    char_ptr =  n.as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&char_ptr[i],&char_v[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char_ptr_2 =  n.value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set_external(short_v);
+    n.schema().print();
+    short_ptr = n.as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&short_ptr[i],&short_v[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short_ptr_2 = n.value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_external(int_v);
+    n.schema().print();
+    int_ptr = n.as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&int_ptr[i],&int_v[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int_ptr_2 = n.value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_external(long_v);
+    n.schema().print();
+    long_ptr = n.as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&long_ptr[i],&long_v[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+
+    // also check access via value()
+    long_ptr_2 = n.value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_external(longlong_v);
+    n.schema().print();
+    longlong_ptr = n.as_long_long_ptr();
+
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&longlong_ptr[i],&longlong_v[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    longlong_ptr_2 = n.value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+}
+
+//-----------------------------------------------------------------------------
+// set -- c style unsigned ptr, array, and vec
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_cstyle_unsigned_int_ptr)
+{
+    unsigned char   uchar_av[6]  = {2,4,8,16,32,64};
+    unsigned short  ushort_av[6] = {2,4,8,16,32,64};
+    unsigned int    uint_av[6]   = {2,4,8,16,32,64};
+    unsigned long   ulong_av[6]  = {2,4,8,16,32,64};
+
+#if defined CONDUIT_HAS_LONG_LONG
+    unsigned long long   ulonglong_av[6]  = {2,4,8,16,32,64};
+#endif
+    
+    Node n;
+    
+    ////////////////////////////
+    // set 
+    ////////////////////////////
+    
+    // unsigned char
+    n.set(uchar_av,6);
+    n.schema().print();
+    unsigned char *uchar_ptr = n.as_unsigned_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uchar_ptr[i],uchar_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&uchar_ptr[i],&uchar_av[i]);
+    }
+
+    EXPECT_EQ(uchar_ptr[5],64);
+
+    // also check access via value()
+    unsigned char *uchar_ptr_2 = n.value();
+    EXPECT_EQ(uchar_ptr,uchar_ptr_2);
+
+    // unsigned short
+    n.set(ushort_av,6);
+    n.schema().print();
+    unsigned short *ushort_ptr = n.as_unsigned_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ushort_ptr[i],ushort_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ushort_ptr[i],&ushort_av[i]);
+    }
+
+    EXPECT_EQ(ushort_ptr[5],64);
+    
+    // also check access via value()
+    unsigned short *ushort_ptr_2 = n.value();
+    EXPECT_EQ(ushort_ptr,ushort_ptr_2);
+    
+    // unsigned int
+    n.set(uint_av,6);
+    n.schema().print();
+    unsigned int *uint_ptr = n.as_unsigned_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uint_ptr[i],uint_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&uint_ptr[i],&uint_av[i]);
+    }
+
+    EXPECT_EQ(uint_ptr[5],64);
+
+    // also check access via value()
+    unsigned int *uint_ptr_2 = n.value();
+    EXPECT_EQ(uint_ptr,uint_ptr_2);
+    
+    // unsigned long
+    n.set(ulong_av,6);
+    n.schema().print();
+    unsigned long *ulong_ptr = n.as_unsigned_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulong_ptr[i],ulong_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ulong_ptr[i],&ulong_av[i]);
+    }
+
+    EXPECT_EQ(ulong_ptr[5],64);
+
+    // also check access via value()
+    unsigned long *ulong_ptr_2 = n.value();
+    EXPECT_EQ(ulong_ptr,ulong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // unsigned long long
+    n.set(ulonglong_av,6);
+    n.schema().print();
+    unsigned long long *ulonglong_ptr = n.as_unsigned_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulonglong_ptr[i],ulonglong_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ulonglong_ptr[i],&ulonglong_av[i]);
+    }
+
+    EXPECT_EQ(ulonglong_ptr[5],64);
+
+    // also check access via value()
+    unsigned long long *ulonglong_ptr_2 = n.value();
+    EXPECT_EQ(ulonglong_ptr,ulonglong_ptr_2);
+#endif
+
+    
+    ////////////////////////////
+    // set external 
+    ////////////////////////////
+
+    // unsigned char
+    n.set_external(uchar_av,6);
+    n.schema().print();
+    uchar_ptr = n.as_unsigned_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uchar_ptr[i],uchar_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&uchar_ptr[i],&uchar_av[i]);
+    }
+
+    EXPECT_EQ(uchar_ptr[5],64);
+
+    // also check access via value()
+    uchar_ptr_2 = n.value();
+    EXPECT_EQ(uchar_ptr,uchar_ptr_2);
+
+    // unsigned short
+    n.set_external(ushort_av,6);
+    n.schema().print();
+    ushort_ptr = n.as_unsigned_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ushort_ptr[i],ushort_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&ushort_ptr[i],&ushort_av[i]);
+    }
+
+    EXPECT_EQ(ushort_ptr[5],64);
+
+    // also check access via value()
+    ushort_ptr_2 = n.value();
+    EXPECT_EQ(ushort_ptr,ushort_ptr_2);
+
+    // unsigned int
+    n.set_external(uint_av,6);
+    n.schema().print();
+    uint_ptr = n.as_unsigned_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uint_ptr[i],uint_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&uint_ptr[i],&uint_av[i]);
+    }
+
+    EXPECT_EQ(uint_ptr[5],64);
+
+    // also check access via value()
+    uint_ptr_2 = n.value();
+    EXPECT_EQ(uint_ptr,uint_ptr_2);
+
+    // unsigned long
+    n.set_external(ulong_av,6);
+    n.schema().print();
+    ulong_ptr = n.as_unsigned_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulong_ptr[i],ulong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&ulong_ptr[i],&ulong_av[i]);
+    }
+
+    EXPECT_EQ(ulong_ptr[5],64);
+
+    // also check access via value()
+    ulong_ptr_2 = n.value();
+    EXPECT_EQ(ulong_ptr,ulong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // unsigned long long
+    n.set_external(ulonglong_av);
+    n.schema().print();
+    ulonglong_ptr = n.as_unsigned_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulonglong_ptr[i],ulonglong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&ulonglong_ptr[i],&ulonglong_av[i]);
+    }
+
+    EXPECT_EQ(ulonglong_ptr[5],64);
+
+    // also check access via value()
+    ulonglong_ptr_2 = n.value();
+    EXPECT_EQ(ulonglong_ptr,ulonglong_ptr_2);
+#endif
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_cstyle_unsigned_int_array)
 {
     unsigned char   uchar_av[6]  = {2,4,8,16,32,64};
     unsigned short  ushort_av[6] = {2,4,8,16,32,64};
@@ -2239,9 +3107,9 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     unsigned char *uchar_ptr = n.as_unsigned_char_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(uchar_ptr[i],uchar_av[i]);
+        EXPECT_EQ(uchar_ptr[i],uchar_av_a[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&uchar_ptr[i],&uchar_av[i]);
+        EXPECT_NE(&uchar_ptr[i],&uchar_av_a[i]);
     }
 
     EXPECT_EQ(uchar_ptr[5],64);
@@ -2256,9 +3124,9 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     unsigned short *ushort_ptr = n.as_unsigned_short_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(ushort_ptr[i],ushort_av[i]);
+        EXPECT_EQ(ushort_ptr[i],ushort_av_a[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&ushort_ptr[i],&ushort_av[i]);
+        EXPECT_NE(&ushort_ptr[i],&ushort_av_a[i]);
     }
 
     EXPECT_EQ(ushort_ptr[5],64);
@@ -2273,9 +3141,9 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     unsigned int *uint_ptr = n.as_unsigned_int_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(uint_ptr[i],uint_av[i]);
+        EXPECT_EQ(uint_ptr[i],uint_av_a[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&uint_ptr[i],&uint_av[i]);
+        EXPECT_NE(&uint_ptr[i],&uint_av_a[i]);
     }
 
     EXPECT_EQ(uint_ptr[5],64);
@@ -2332,9 +3200,9 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     uchar_ptr = n.as_unsigned_char_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(uchar_ptr[i],uchar_av[i]);
+        EXPECT_EQ(uchar_ptr[i],uchar_av_a[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&uchar_ptr[i],&uchar_av[i]);
+        EXPECT_EQ(&uchar_ptr[i],&uchar_av_a[i]);
     }
 
     EXPECT_EQ(uchar_ptr[5],64);
@@ -2349,9 +3217,9 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     ushort_ptr = n.as_unsigned_short_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(ushort_ptr[i],ushort_av[i]);
+        EXPECT_EQ(ushort_ptr[i],ushort_av_a[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&ushort_ptr[i],&ushort_av[i]);
+        EXPECT_EQ(&ushort_ptr[i],&ushort_av_a[i]);
     }
 
     EXPECT_EQ(ushort_ptr[5],64);
@@ -2366,9 +3234,9 @@ TEST(conduit_node_set, set_cstyle_uint_array)
     uint_ptr = n.as_unsigned_int_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(uint_ptr[i],uint_av[i]);
+        EXPECT_EQ(uint_ptr[i],uint_av_a[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&uint_ptr[i],&uint_av[i]);
+        EXPECT_EQ(&uint_ptr[i],&uint_av_a[i]);
     }
 
     EXPECT_EQ(uint_ptr[5],64);
@@ -2417,7 +3285,7 @@ TEST(conduit_node_set, set_cstyle_uint_array)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_cstyle_uint_vec)
+TEST(conduit_node_set, set_cstyle_unsigned_int_vec)
 {
     unsigned char   uchar_av[6]  = {2,4,8,16,32,64};
     unsigned short  ushort_av[6] = {2,4,8,16,32,64};
@@ -2627,233 +3495,439 @@ TEST(conduit_node_set, set_cstyle_uint_vec)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_cstyle_int_array)
-{
-    signed char char_av[6]  = {-2,-4,-8,-16,-32,-64};
-    short       short_av[6] = {-2,-4,-8,-16,-32,-64};
-    int         int_av[6]   = {-2,-4,-8,-16,-32,-64};
-    long        long_av[6]  = {-2,-4,-8,-16,-32,-64};
-#ifdef CONDUIT_HAS_LONG_LONG
-    long long   longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
-#endif
-    
-    char_array  char_av_a(char_av,DataType::c_char(6));
-    short_array short_av_a(short_av,DataType::c_short(6));
-    int_array   int_av_a(int_av,DataType::c_int(6));
-    long_array  long_av_a(long_av,DataType::c_long(6));
-    
-#ifdef CONDUIT_HAS_LONG_LONG
-    long_long_array  longlong_av_a(longlong_av,DataType::c_long_long(6));
-#endif
-    
-    Node n;
-    
-    ////////////////////////////
-    // set 
-    ////////////////////////////
-    
-    // char
-    n.set(char_av_a);
-    n.schema().print();
-    signed char *char_ptr = (signed char*) n.as_char_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(char_ptr[i],char_av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&char_ptr[i],&char_av[i]);
-    }
-
-    EXPECT_EQ(char_ptr[5],(signed char)(-64));
-
-    // also check access via value()
-    signed char *char_ptr_2 =  n.value();
-    EXPECT_EQ(char_ptr,char_ptr_2);
-
-    // short 
-    n.set(short_av_a);
-    n.schema().print();
-    short *short_ptr = n.as_short_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(short_ptr[i],short_av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&short_ptr[i],&short_av[i]);
-    }
-
-    EXPECT_EQ(short_ptr[5],-64);
-
-    // also check access via value()
-    short *short_ptr_2 = n.value();
-    EXPECT_EQ(short_ptr,short_ptr_2);
-
-    // int
-    n.set(int_av_a);
-    n.schema().print();
-    int *int_ptr = n.as_int_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(int_ptr[i],int_av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&int_ptr[i],&int_av[i]);
-    }
-
-    EXPECT_EQ(int_ptr[5],-64);
-
-    // also check access via value()
-    int *int_ptr_2 = n.value();
-    EXPECT_EQ(int_ptr,int_ptr_2);
-
-    // long
-    n.set(long_av_a);
-    n.schema().print();
-    long *long_ptr = n.as_long_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(long_ptr[i],long_av[i]);
-        // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&long_ptr[i],&long_av[i]);
-    }
-
-    EXPECT_EQ(long_ptr[5],-64);
-   
-    // also check access via value()
-    long *long_ptr_2 = n.value();
-    EXPECT_EQ(long_ptr,long_ptr_2);
-
-#ifdef CONDUIT_HAS_LONG_LONG
-    // long long
-    n.set(longlong_av_a);
-    n.schema().print();
-    long long *longlong_ptr = n.as_long_long_ptr();
-    
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
-        // set(...) semantics imply a copy -- mem addy should differ
-        EXPECT_NE(&longlong_ptr[i],&longlong_av[i]);
-    }
-
-    EXPECT_EQ(longlong_ptr[5],-64);
-
-    // also check access via value()
-    long long *longlong_ptr_2 = n.value();
-    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
-
-#endif
-    
-    ////////////////////////////
-    // set external 
-    ////////////////////////////
-
-    // char
-    n.set_external(char_av_a);
-    n.schema().print();
-    char_ptr = (signed char*) n.as_char_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(char_ptr[i],char_av[i]);
-        // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&char_ptr[i],&char_av[i]);
-    }
-
-    EXPECT_EQ(char_ptr[5],(signed char)(-64));
-
-    // also check access via value()
-    char_ptr_2 =  n.value();
-    EXPECT_EQ(char_ptr,char_ptr_2);
-
-    // short 
-    n.set_external(short_av_a);
-    n.schema().print();
-    short_ptr = n.as_short_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(short_ptr[i],short_av[i]);
-        // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&short_ptr[i],&short_av[i]);
-    }
-
-    EXPECT_EQ(short_ptr[5],-64);
-
-    // also check access via value()
-    short_ptr_2 = n.value();
-    EXPECT_EQ(short_ptr,short_ptr_2);
-
-    // int
-    n.set_external(int_av_a);
-    n.schema().print();
-    int_ptr = n.as_int_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(int_ptr[i],int_av[i]);
-        // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&int_ptr[i],&int_av[i]);
-    }
-
-    EXPECT_EQ(int_ptr[5],-64);
-
-    // also check access via value()
-    int_ptr_2 = n.value();
-    EXPECT_EQ(int_ptr,int_ptr_2);
-
-    // long
-    n.set_external(long_av_a);
-    n.schema().print();
-    long_ptr = n.as_long_ptr();
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(long_ptr[i],long_av[i]);
-        // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&long_ptr[i],&long_av[i]);
-    }
-
-    EXPECT_EQ(long_ptr[5],-64);
-
-    // also check access via value()
-    long_ptr_2 = n.value();
-    EXPECT_EQ(long_ptr,long_ptr_2);
-
-#ifdef CONDUIT_HAS_LONG_LONG
-    // long long
-    n.set_external(longlong_av_a);
-    n.schema().print();
-    longlong_ptr = n.as_long_long_ptr();
-
-    for(index_t i=0;i<6;i++)
-    {
-        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
-        // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&longlong_ptr[i],&longlong_av[i]);
-    }
-
-    EXPECT_EQ(longlong_ptr[5],-64);
-
-    // also check access via value()
-    longlong_ptr_2 = n.value();
-    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
-
-#endif
-}
-
+// set -- c style signed ptr, array, and vec
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_cstyle_int_vec)
+TEST(conduit_node_set, set_cstyle_signed_int_ptr)
 {
-    signed char char_av[6]  = {-2,-4,-8,-16,-32,-64};
-    short       short_av[6] = {-2,-4,-8,-16,-32,-64};
-    int         int_av[6]   = {-2,-4,-8,-16,-32,-64};
-    long        long_av[6]  = {-2,-4,-8,-16,-32,-64};
-#ifdef CONDUIT_HAS_LONG_LONG
-    long long longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed char   schar_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed short  sshort_av[6] = {-2,-4,-8,-16,-32,-64};
+    signed int    sint_av[6]   = {-2,-4,-8,-16,-32,-64};
+    signed long   slong_av[6]  = {-2,-4,-8,-16,-32,-64};
+
+#if defined CONDUIT_HAS_LONG_LONG
+    signed long long   slonglong_av[6]  = {-2,-4,-8,-16,-32,-64};
 #endif
     
-    std::vector<signed char> char_v(char_av,char_av+6);
-    std::vector<short>       short_v(short_av,short_av+6);
-    std::vector<int>         int_v(int_av,int_av+6);
-    std::vector<long>        long_v(long_av,long_av+6);
+    Node n;
+    
+    ////////////////////////////
+    // set 
+    ////////////////////////////
+    
+    // unsigned char
+    n.set(schar_av,6);
+    n.schema().print();
+    signed char *schar_ptr = n.as_signed_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(schar_ptr[i],schar_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&schar_ptr[i],&schar_av[i]);
+    }
+
+    EXPECT_EQ(schar_ptr[5],-64);
+
+    // also check access via value()
+    signed char *schar_ptr_2 = n.value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
+
+    // unsigned short
+    n.set(sshort_av,6);
+    n.schema().print();
+    signed short *sshort_ptr = n.as_signed_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sshort_ptr[i],sshort_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&sshort_ptr[i],&sshort_av[i]);
+    }
+
+    EXPECT_EQ(sshort_ptr[5],-64);
+    
+    // also check access via value()
+    signed short *sshort_ptr_2 = n.value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
+    
+    // unsigned int
+    n.set(sint_av,6);
+    n.schema().print();
+    signed int *sint_ptr = n.as_signed_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sint_ptr[i],sint_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&sint_ptr[i],&sint_av[i]);
+    }
+
+    EXPECT_EQ(sint_ptr[5],-64);
+
+    // also check access via value()
+    signed int *sint_ptr_2 = n.value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
+    
+    // unsigned long
+    n.set(slong_av,6);
+    n.schema().print();
+    signed long *slong_ptr = n.as_signed_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slong_ptr[i],slong_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&slong_ptr[i],&slong_av[i]);
+    }
+
+    EXPECT_EQ(slong_ptr[5],-64);
+
+    // also check access via value()
+    signed long *slong_ptr_2 = n.value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // unsigned long long
+    n.set(slonglong_av,6);
+    n.schema().print();
+    signed long long *slonglong_ptr = n.as_signed_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slonglong_ptr[i],slonglong_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&slonglong_ptr[i],&slonglong_av[i]);
+    }
+
+    EXPECT_EQ(slonglong_ptr[5],-64);
+
+    // also check access via value()
+    signed long long *slonglong_ptr_2 = n.value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
+#endif
+
+    
+    ////////////////////////////
+    // set external 
+    ////////////////////////////
+
+    // unsigned char
+    n.set_external(schar_av,6);
+    n.schema().print();
+    schar_ptr = n.as_signed_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(schar_ptr[i],schar_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&schar_ptr[i],&schar_av[i]);
+    }
+
+    EXPECT_EQ(schar_ptr[5],-64);
+
+    // also check access via value()
+    schar_ptr_2 = n.value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
+
+    // unsigned short
+    n.set_external(sshort_av,6);
+    n.schema().print();
+    sshort_ptr = n.as_signed_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sshort_ptr[i],sshort_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&sshort_ptr[i],&sshort_av[i]);
+    }
+
+    EXPECT_EQ(sshort_ptr[5],-64);
+
+    // also check access via value()
+    sshort_ptr_2 = n.value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
+
+    // unsigned int
+    n.set_external(sint_av,6);
+    n.schema().print();
+    sint_ptr = n.as_signed_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sint_ptr[i],sint_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&sint_ptr[i],&sint_av[i]);
+    }
+
+    EXPECT_EQ(sint_ptr[5],-64);
+
+    // also check access via value()
+    sint_ptr_2 = n.value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
+
+    // unsigned long
+    n.set_external(slong_av,6);
+    n.schema().print();
+    slong_ptr = n.as_signed_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slong_ptr[i],slong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&slong_ptr[i],&slong_av[i]);
+    }
+
+    EXPECT_EQ(slong_ptr[5],-64);
+
+    // also check access via value()
+    slong_ptr_2 = n.value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // unsigned long long
+    n.set_external(slonglong_av);
+    n.schema().print();
+    slonglong_ptr = n.as_signed_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slonglong_ptr[i],slonglong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&slonglong_ptr[i],&slonglong_av[i]);
+    }
+
+    EXPECT_EQ(slonglong_ptr[5],-64);
+
+    // also check access via value()
+    slonglong_ptr_2 = n.value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
+#endif
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_cstyle_signed_int_array)
+{
+    signed char   schar_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed short  sshort_av[6] = {-2,-4,-8,-16,-32,-64};
+    signed int    sint_av[6]   = {-2,-4,-8,-16,-32,-64};
+    signed long   slong_av[6]  = {-2,-4,-8,-16,-32,-64};
+
+#if defined CONDUIT_HAS_LONG_LONG
+    signed long long   slonglong_av[6] = {-2,-4,-8,-16,-32,-64};
+#endif
+    
+    signed_char_array  schar_av_a(schar_av,DataType::c_signed_char(6));
+    signed_short_array sshort_av_a(sshort_av,DataType::c_signed_short(6));
+    signed_int_array   sint_av_a(sint_av,DataType::c_signed_int(6));
+    signed_long_array  slong_av_a(slong_av,DataType::c_signed_long(6));
+    
+#if defined CONDUIT_HAS_LONG_LONG
+    signed_long_long_array  slonglong_av_a(slonglong_av,
+                                           DataType::c_signed_long_long(6));
+#endif 
+    
+    Node n;
+    
+    ////////////////////////////
+    // set 
+    ////////////////////////////
+    
+    // signed char
+    n.set(schar_av_a);
+    n.schema().print();
+    signed char *schar_ptr = n.as_signed_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(schar_ptr[i],schar_av_a[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&schar_ptr[i],&schar_av_a[i]);
+    }
+
+    EXPECT_EQ(schar_ptr[5],-64);
+
+    // also check access via value()
+    signed char *schar_ptr_2 = n.value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
+
+    // signed short
+    n.set(sshort_av_a);
+    n.schema().print();
+    signed short *sshort_ptr = n.as_signed_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sshort_ptr[i],sshort_av_a[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&sshort_ptr[i],&sshort_av_a[i]);
+    }
+
+    EXPECT_EQ(sshort_ptr[5],-64);
+    
+    // also check access via value()
+    signed short *sshort_ptr_2 = n.value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
+    
+    // signed int
+    n.set(sint_av_a);
+    n.schema().print();
+    signed int *sint_ptr = n.as_signed_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sint_ptr[i],sint_av_a[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&sint_ptr[i],&sint_av_a[i]);
+    }
+
+    EXPECT_EQ(sint_ptr[5],-64);
+
+    // also check access via value()
+    signed int *sint_ptr_2 = n.value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
+    
+    // signed long
+    n.set(slong_av_a);
+    n.schema().print();
+    signed long *slong_ptr = n.as_signed_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slong_ptr[i],slong_av_a[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&slong_ptr[i],&slong_av_a[i]);
+    }
+
+    EXPECT_EQ(slong_ptr[5],-64);
+
+    // also check access via value()
+    signed long *slong_ptr_2 = n.value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // signed long long
+    n.set(slonglong_av_a);
+    n.schema().print();
+    signed long long *slonglong_ptr = n.as_signed_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slonglong_ptr[i],slonglong_av_a[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&slonglong_ptr[i],&slonglong_av_a[i]);
+    }
+
+    EXPECT_EQ(slonglong_ptr[5],-64);
+
+    // also check access via value()
+    signed long long *slonglong_ptr_2 = n.value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
+#endif
+
+    
+    ////////////////////////////
+    // set external 
+    ////////////////////////////
+
+    // signed char
+    n.set_external(schar_av_a);
+    n.schema().print();
+    schar_ptr = n.as_signed_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(schar_ptr[i],schar_av_a[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&schar_ptr[i],&schar_av_a[i]);
+    }
+
+    EXPECT_EQ(schar_ptr[5],-64);
+
+    // also check access via value()
+    schar_ptr_2 = n.value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
+
+    // signed short
+    n.set_external(sshort_av_a);
+    n.schema().print();
+    sshort_ptr = n.as_signed_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sshort_ptr[i],sshort_av_a[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&sshort_ptr[i],&sshort_av_a[i]);
+    }
+
+    EXPECT_EQ(sshort_ptr[5],-64);
+
+    // also check access via value()
+    sshort_ptr_2 = n.value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
+
+    // signed int
+    n.set_external(sint_av_a);
+    n.schema().print();
+    sint_ptr = n.as_signed_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sint_ptr[i],sint_av_a[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&sint_ptr[i],&sint_av_a[i]);
+    }
+
+    EXPECT_EQ(sint_ptr[5],-64);
+
+    // also check access via value()
+    sint_ptr_2 = n.value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
+
+    // signed long
+    n.set_external(slong_av_a);
+    n.schema().print();
+    slong_ptr = n.as_signed_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slong_ptr[i],slong_av_a[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&slong_ptr[i],&slong_av_a[i]);
+    }
+
+    EXPECT_EQ(slong_ptr[5],-64);
+
+    // also check access via value()
+    slong_ptr_2 = n.value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // unsigned long long
+    n.set_external(slonglong_av_a);
+    n.schema().print();
+    slonglong_ptr = n.as_signed_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slonglong_ptr[i],slonglong_av_a[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&slonglong_ptr[i],&slonglong_av_a[i]);
+    }
+
+    EXPECT_EQ(slonglong_ptr[5],-64);
+
+    // also check access via value()
+    slonglong_ptr_2 = n.value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
+#endif
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_cstyle_signed_int_vec)
+{
+    signed char  schar_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed short sshort_av[6] = {-2,-4,-8,-16,-32,-64};
+    signed int   sint_av[6]   = {-2,-4,-8,-16,-32,-64};
+    signed long  slong_av[6]  = {-2,-4,-8,-16,-32,-64};
+#ifdef CONDUIT_HAS_LONG_LONG
+    signed long long slonglong_av[6]  = {-2,-4,-8,-16,-32,-64};
+#endif
+    
+    std::vector<signed char>  schar_v(schar_av,schar_av+6);
+    std::vector<signed short> sshort_v(sshort_av,sshort_av+6);
+    std::vector<signed int>   sint_v(sint_av,sint_av+6);
+    std::vector<signed long>  slong_v(slong_av,slong_av+6);
     
 #ifdef CONDUIT_HAS_LONG_LONG
-    std::vector<long long>   longlong_v(longlong_av,longlong_av+6);
+    std::vector<signed long long>   slonglong_v(slonglong_av,slonglong_av+6);
 #endif
     
     Node n;
@@ -2863,91 +3937,91 @@ TEST(conduit_node_set, set_cstyle_int_vec)
     ////////////////////////////
     
     // char
-    n.set(char_v);
+    n.set(schar_v);
     n.schema().print();
-    signed char *char_ptr = (signed char*) n.as_char_ptr();
+    signed char *schar_ptr = n.as_signed_char_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(char_ptr[i],char_v[i]);
+        EXPECT_EQ(schar_ptr[i],schar_v[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&char_ptr[i],&char_v[i]);
+        EXPECT_NE(&schar_ptr[i],&schar_v[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],(signed char)(-64));
+    EXPECT_EQ(schar_ptr[5],-64);
 
     // also check access via value()
-    signed char *char_ptr_2 =   (signed char*)n.value();
-    EXPECT_EQ(char_ptr,char_ptr_2);
+    signed char *schar_ptr_2 =  n.value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
 
     // short 
-    n.set(short_v);
+    n.set(sshort_v);
     n.schema().print();
-    short *short_ptr = n.as_short_ptr();
+    short *sshort_ptr = n.as_signed_short_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(short_ptr[i],short_v[i]);
+        EXPECT_EQ(sshort_ptr[i],sshort_v[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&short_ptr[i],&short_v[i]);
+        EXPECT_NE(&sshort_ptr[i],&sshort_v[i]);
     }
 
-    EXPECT_EQ(short_ptr[5],-64);
+    EXPECT_EQ(sshort_ptr[5],-64);
 
     // also check access via value()
-    short *short_ptr_2 = n.value();
-    EXPECT_EQ(short_ptr,short_ptr_2);
+    short *sshort_ptr_2 = n.value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
 
     // int
-    n.set(int_v);
+    n.set(sint_v);
     n.schema().print();
-    int *int_ptr = n.as_int_ptr();
+    int *sint_ptr = n.as_signed_int_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(int_ptr[i],int_v[i]);
+        EXPECT_EQ(sint_ptr[i],sint_v[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&int_ptr[i],&int_v[i]);
+        EXPECT_NE(&sint_ptr[i],&sint_v[i]);
     }
 
-    EXPECT_EQ(int_ptr[5],-64);
+    EXPECT_EQ(sint_ptr[5],-64);
 
     // also check access via value()
-    int *int_ptr_2 = n.value();
-    EXPECT_EQ(int_ptr,int_ptr_2);
+    int *sint_ptr_2 = n.value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
 
     // long
-    n.set(long_v);
+    n.set(slong_v);
     n.schema().print();
-    long *long_ptr = n.as_long_ptr();
+    long *slong_ptr = n.as_signed_long_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(long_ptr[i],long_v[i]);
+        EXPECT_EQ(slong_ptr[i],slong_v[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&long_ptr[i],&long_v[i]);
+        EXPECT_NE(&slong_ptr[i],&slong_v[i]);
     }
 
-    EXPECT_EQ(long_ptr[5],-64);
+    EXPECT_EQ(slong_ptr[5],-64);
    
     // also check access via value()
-    long *long_ptr_2 = n.value();
-    EXPECT_EQ(long_ptr,long_ptr_2);
+    long *slong_ptr_2 = n.value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
 
 #ifdef CONDUIT_HAS_LONG_LONG
     // long long
-    n.set(longlong_v);
+    n.set(slonglong_v);
     n.schema().print();
-    long long *longlong_ptr = n.as_long_long_ptr();
+    long long *slonglong_ptr = n.as_signed_long_long_ptr();
     
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(longlong_ptr[i],longlong_v[i]);
+        EXPECT_EQ(slonglong_ptr[i],slonglong_v[i]);
         // set(...) semantics imply a copy -- mem addy should differ
-        EXPECT_NE(&longlong_ptr[i],&longlong_v[i]);
+        EXPECT_NE(&slonglong_ptr[i],&slonglong_v[i]);
     }
 
-    EXPECT_EQ(longlong_ptr[5],-64);
+    EXPECT_EQ(slonglong_ptr[5],-64);
 
     // also check access via value()
-    long long *longlong_ptr_2 = n.value();
-    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+    long long *slonglong_ptr_2 = n.value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
 
 #endif
     
@@ -2956,99 +4030,102 @@ TEST(conduit_node_set, set_cstyle_int_vec)
     ////////////////////////////
 
     // char
-    n.set_external(char_v);
+    n.set_external(schar_v);
     n.schema().print();
-    char_ptr =  (signed char*) n.as_char_ptr();
+    schar_ptr = n.as_signed_char_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(char_ptr[i],char_v[i]);
+        EXPECT_EQ(schar_ptr[i],schar_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&char_ptr[i],&char_v[i]);
+        EXPECT_EQ(&schar_ptr[i],&schar_v[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],(signed char)(-64));
+    EXPECT_EQ(schar_ptr[5],-64);
 
     // also check access via value()
-    char_ptr_2 =  n.value();
-    EXPECT_EQ(char_ptr,char_ptr_2);
+    schar_ptr_2 =  n.value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
 
     // short 
-    n.set_external(short_v);
+    n.set_external(sshort_v);
     n.schema().print();
-    short_ptr = n.as_short_ptr();
+    sshort_ptr = n.as_signed_short_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(short_ptr[i],short_v[i]);
+        EXPECT_EQ(sshort_ptr[i],sshort_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&short_ptr[i],&short_v[i]);
+        EXPECT_EQ(&sshort_ptr[i],&sshort_v[i]);
     }
 
-    EXPECT_EQ(short_ptr[5],-64);
+    EXPECT_EQ(sshort_ptr[5],-64);
 
     // also check access via value()
-    short_ptr_2 = n.value();
-    EXPECT_EQ(short_ptr,short_ptr_2);
+    sshort_ptr_2 = n.value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
 
     // int
-    n.set_external(int_v);
+    n.set_external(sint_v);
     n.schema().print();
-    int_ptr = n.as_int_ptr();
+    sint_ptr = n.as_signed_int_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(int_ptr[i],int_v[i]);
+        EXPECT_EQ(sint_ptr[i],sint_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&int_ptr[i],&int_v[i]);
+        EXPECT_EQ(&sint_ptr[i],&sint_v[i]);
     }
 
-    EXPECT_EQ(int_ptr[5],-64);
+    EXPECT_EQ(sint_ptr[5],-64);
 
     // also check access via value()
-    int_ptr_2 = n.value();
-    EXPECT_EQ(int_ptr,int_ptr_2);
+    sint_ptr_2 = n.value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
 
     // long
-    n.set_external(long_v);
+    n.set_external(slong_v);
     n.schema().print();
-    long_ptr = n.as_long_ptr();
+    slong_ptr = n.as_signed_long_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(long_ptr[i],long_v[i]);
+        EXPECT_EQ(slong_ptr[i],slong_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&long_ptr[i],&long_v[i]);
+        EXPECT_EQ(&slong_ptr[i],&slong_v[i]);
     }
 
-    EXPECT_EQ(long_ptr[5],-64);
+    EXPECT_EQ(slong_ptr[5],-64);
 
     // also check access via value()
-    long_ptr_2 = n.value();
-    EXPECT_EQ(long_ptr,long_ptr_2);
+    slong_ptr_2 = n.value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
 
 #ifdef CONDUIT_HAS_LONG_LONG
     // long long
-    n.set_external(longlong_v);
+    n.set_external(slonglong_v);
     n.schema().print();
-    longlong_ptr = n.as_long_long_ptr();
+    slonglong_ptr = n.as_signed_long_long_ptr();
 
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(longlong_ptr[i],longlong_v[i]);
+        EXPECT_EQ(slonglong_ptr[i],slonglong_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&longlong_ptr[i],&longlong_v[i]);
+        EXPECT_EQ(&slonglong_ptr[i],&slonglong_v[i]);
     }
 
-    EXPECT_EQ(longlong_ptr[5],-64);
+    EXPECT_EQ(slonglong_ptr[5],-64);
 
     // also check access via value()
-    longlong_ptr_2 = n.value();
-    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+    slonglong_ptr_2 = n.value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
 
 #endif
 }
 
+//-----------------------------------------------------------------------------
+// set -- c style float ptr, array, and vec
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_cstyle_float_ptr)
-{   
+{
     float   fav[4] = {-0.8f, -1.6f, -3.2f, -6.4f};
     double  dav[4] = {-0.8, -1.6, -3.2, -6.4};
 
@@ -3350,9 +4427,862 @@ TEST(conduit_node_set, set_cstyle_float_vec)
 
 }
 
+//-----------------------------------------------------------------------------
+// C Style Checks
+//-----------------------------------------------------------------------------
+//  -- set_path & set_path_external -- 
+//-----------------------------------------------------------------------------
+//
+//  set_path_cstyle_native_int_ptr
+//  set_path_cstyle_native_int_array
+//  set_path_cstyle_native_int_vec
+//
+//  set_path_cstyle_unsigned_int_ptr
+//  set_path_cstyle_unsigned_int_array
+//  set_path_cstyle_unsigned_int_vec
+//
+//  set_path_cstyle_signed_int_ptr
+//  set_path_cstyle_signed_int_array
+//  set_path_cstyle_signed_int_vec
+//
+//  set_path_cstyle_float_ptr
+//  set_path_cstyle_float_array
+//  set_path_cstyle_float_vec
+//
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_path_cstyle_uint_array)
+// set_path -- c style native ptr, array, and vec
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_cstyle_native_int_ptr)
+{
+    char        char_av[6]  = {2,4,8,16,32,64};
+    short       short_av[6] = {2,4,8,16,32,64};
+    int         int_av[6]   = {2,4,8,16,32,64};
+    long        long_av[6]  = {2,4,8,16,32,64};
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long   longlong_av[6]  = {2,4,8,16,32,64};
+#endif
+    
+    Node n;
+    
+    ////////////////////////////
+    // set path 
+    ////////////////////////////
+
+    // char
+    n.set_path_char_ptr("c",char_av,6);
+    n["c"].schema().print();
+    char *char_ptr = n["c"].as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&char_ptr[i],&char_av[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char *char_ptr_2 =  n["c"].value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set_path("s",short_av,6);
+    n["s"].schema().print();
+    short *short_ptr = n["s"].as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&short_ptr[i],&short_av[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short *short_ptr_2 = n["s"].value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_path("i",int_av,6);
+    n["i"].schema().print();
+    int *int_ptr = n["i"].as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&int_ptr[i],&int_av[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int *int_ptr_2 = n["i"].value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_path("l",long_av,6);
+    n["l"].schema().print();
+    long *long_ptr = n["l"].as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&long_ptr[i],&long_av[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+   
+    // also check access via value()
+    long *long_ptr_2 = n["l"].value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_path("ll",longlong_av,6);
+    n["ll"].schema().print();
+    long long *longlong_ptr = n["ll"].as_long_long_ptr();
+    
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set(...) semantics imply a copy -- mem addy should differ
+        EXPECT_NE(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    long long *longlong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+
+    ////////////////////////////
+    // set path external
+    ////////////////////////////
+
+    // char
+    n.set_path_external_char_ptr("c",char_av,6);
+    n["c"].schema().print();
+    char_ptr = n["c"].as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&char_ptr[i],&char_av[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char_ptr_2 =  n["c"].value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set_path_external("s",short_av,6);
+    n["s"].schema().print();
+    short_ptr = n["s"].as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&short_ptr[i],&short_av[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short_ptr_2 = n["s"].value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_path_external("i",int_av,6);
+    n["i"].schema().print();
+    int_ptr = n["i"].as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&int_ptr[i],&int_av[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int_ptr_2 = n["i"].value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_path_external("l",long_av,6);
+    n["l"].schema().print();
+    long_ptr = n["l"].as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&long_ptr[i],&long_av[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+
+    // also check access via value()
+    long_ptr_2 = n["l"].value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_path_external("ll",longlong_av,6);
+    n["ll"].schema().print();
+    longlong_ptr = n["ll"].as_long_long_ptr();
+
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    longlong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_cstyle_native_int_array)
+{
+    char        char_av[6]  = {2,4,8,16,32,64};
+    short       short_av[6] = {2,4,8,16,32,64};
+    int         int_av[6]   = {2,4,8,16,32,64};
+    long        long_av[6]  = {2,4,8,16,32,64};
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long   longlong_av[6]  = {2,4,8,16,32,64};
+#endif
+    
+    char_array  char_av_a(char_av,DataType::c_char(6));
+    short_array short_av_a(short_av,DataType::c_short(6));
+    int_array   int_av_a(int_av,DataType::c_int(6));
+    long_array  long_av_a(long_av,DataType::c_long(6));
+    
+#ifdef CONDUIT_HAS_LONG_LONG
+    long_long_array  longlong_av_a(longlong_av,DataType::c_long_long(6));
+#endif
+    
+    Node n;
+    
+    ////////////////////////////
+    // set path 
+    ////////////////////////////
+    
+    // char
+    n.set_path("c",char_av_a);
+    n["c"].schema().print();
+    char *char_ptr = n["c"].as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&char_ptr[i],&char_av[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char *char_ptr_2 =  n["c"].value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set_path("s",short_av_a);
+    n["s"].schema().print();
+    short *short_ptr = n["s"].as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&short_ptr[i],&short_av[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short *short_ptr_2 = n["s"].value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_path("i",int_av_a);
+    n["i"].schema().print();
+    int *int_ptr = n["i"].as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&int_ptr[i],&int_av[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int *int_ptr_2 = n["i"].value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_path("l",long_av_a);
+    n["l"].schema().print();
+    long *long_ptr = n["l"].as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&long_ptr[i],&long_av[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+   
+    // also check access via value()
+    long *long_ptr_2 = n["l"].value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_path("ll",longlong_av_a);
+    n["ll"].schema().print();
+    long long *longlong_ptr = n["ll"].as_long_long_ptr();
+    
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set(...) semantics imply a copy -- mem addy should differ
+        EXPECT_NE(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    long long *longlong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+
+    ////////////////////////////
+    // set path external
+    ////////////////////////////
+
+    // char
+    n.set_path_external("c",char_av_a);
+    n["c"].schema().print();
+    char_ptr = n["c"].as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&char_ptr[i],&char_av[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char_ptr_2 =  n["c"].value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short 
+    n.set_path_external("s",short_av_a);
+    n["s"].schema().print();
+    short_ptr = n["s"].as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&short_ptr[i],&short_av[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short_ptr_2 = n["s"].value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_path_external("i",int_av_a);
+    n["i"].schema().print();
+    int_ptr = n["i"].as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&int_ptr[i],&int_av[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int_ptr_2 = n["i"].value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_path_external("l",long_av_a);
+    n["l"].schema().print();
+    long_ptr = n["l"].as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&long_ptr[i],&long_av[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+
+    // also check access via value()
+    long_ptr_2 = n["l"].value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_path_external("ll",longlong_av_a);
+    n["ll"].schema().print();
+    longlong_ptr = n["ll"].as_long_long_ptr();
+
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&longlong_ptr[i],&longlong_av[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    longlong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_cstyle_native_int_vec)
+{
+    char         char_av[6]  = {2,4,8,16,32,64};
+    short        short_av[6] = {2,4,8,16,32,64};
+    int          int_av[6]   = {2,4,8,16,32,64};
+    long         long_av[6]  = {2,4,8,16,32,64};
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long longlong_av[6]  = {2,4,8,16,32,64};
+#endif
+
+    std::vector<char>          char_v(char_av,char_av + 6);
+    std::vector<short>         short_v(short_av,short_av+6);
+    std::vector<int>           int_v(int_av,int_av+6);
+    std::vector<long>          long_v(long_av,long_av+6);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    std::vector<long long>     longlong_v(longlong_av,longlong_av+6);
+#endif
+
+    Node n;
+
+    ////////////////////////////
+    // set path
+    ////////////////////////////
+
+    // char
+    n.set_path("c",char_v);
+    n["c"].schema().print();
+    char *char_ptr = n["c"].as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_v[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&char_ptr[i],&char_v[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char *char_ptr_2 =  n["c"].value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short
+    n.set_path("s",short_v);
+    n["s"].schema().print();
+    short *short_ptr = n["s"].as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_v[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&short_ptr[i],&short_v[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short *short_ptr_2 = n["s"].value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_path("i",int_v);
+    n["i"].schema().print();
+    int *int_ptr = n["i"].as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_v[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&int_ptr[i],&int_v[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int *int_ptr_2 = n["i"].value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_path("l",long_v);
+    n["l"].schema().print();
+    long *long_ptr = n["l"].as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_v[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&long_ptr[i],&long_v[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+
+    // also check access via value()
+    long *long_ptr_2 = n["l"].value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_path("ll",longlong_v);
+    n["ll"].schema().print();
+    long long *longlong_ptr = n["ll"].as_long_long_ptr();
+
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_v[i]);
+        // set(...) semantics imply a copy -- mem addy should differ
+        EXPECT_NE(&longlong_ptr[i],&longlong_v[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    long long *longlong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+
+    ////////////////////////////
+    // set path external
+    ////////////////////////////
+
+    // char
+    n.set_path_external("c",char_v);
+    n["c"].schema().print();
+    char_ptr = n["c"].as_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(char_ptr[i],char_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&char_ptr[i],&char_v[i]);
+    }
+
+    EXPECT_EQ(char_ptr[5],64);
+
+    // also check access via value()
+    char_ptr_2 =  n["c"].value();
+    EXPECT_EQ(char_ptr,char_ptr_2);
+
+    // short
+    n.set_path_external("s",short_v);
+    n["s"].schema().print();
+    short_ptr = n["s"].as_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(short_ptr[i],short_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&short_ptr[i],&short_v[i]);
+    }
+
+    EXPECT_EQ(short_ptr[5],64);
+
+    // also check access via value()
+    short_ptr_2 = n["s"].value();
+    EXPECT_EQ(short_ptr,short_ptr_2);
+
+    // int
+    n.set_path_external("i",int_v);
+    n["i"].schema().print();
+    int_ptr = n["i"].as_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(int_ptr[i],int_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&int_ptr[i],&int_v[i]);
+    }
+
+    EXPECT_EQ(int_ptr[5],64);
+
+    // also check access via value()
+    int_ptr_2 = n["i"].value();
+    EXPECT_EQ(int_ptr,int_ptr_2);
+
+    // long
+    n.set_path_external("l",long_v);
+    n["l"].schema().print();
+    long_ptr = n["l"].as_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(long_ptr[i],long_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&long_ptr[i],&long_v[i]);
+    }
+
+    EXPECT_EQ(long_ptr[5],64);
+
+    // also check access via value()
+    long_ptr_2 = n["l"].value();
+    EXPECT_EQ(long_ptr,long_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_path_external("ll",longlong_v);
+    n["ll"].schema().print();
+    longlong_ptr = n["ll"].as_long_long_ptr();
+
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(longlong_ptr[i],longlong_v[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&longlong_ptr[i],&longlong_v[i]);
+    }
+
+    EXPECT_EQ(longlong_ptr[5],64);
+
+    // also check access via value()
+    longlong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+
+#endif
+
+}
+
+//-----------------------------------------------------------------------------
+// set_path -- c style unsigned ptr, array, and vec
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_cstyle_unsigned_int_ptr)
+{
+    unsigned char   uchar_av[6]  = {2,4,8,16,32,64};
+    unsigned short  ushort_av[6] = {2,4,8,16,32,64};
+    unsigned int    uint_av[6]   = {2,4,8,16,32,64};
+    unsigned long   ulong_av[6]  = {2,4,8,16,32,64};
+
+#if defined CONDUIT_HAS_LONG_LONG
+    unsigned long long   ulonglong_av[6]  = {2,4,8,16,32,64};
+#endif
+
+    Node n;
+    
+    ////////////////////////////
+    // set path 
+    ////////////////////////////
+    
+    // unsigned char
+    n.set_path("uc",uchar_av,6);
+    n["uc"].schema().print();
+    unsigned char *uchar_ptr = n["uc"].as_unsigned_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uchar_ptr[i],uchar_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&uchar_ptr[i],&uchar_av[i]);
+    }
+
+    EXPECT_EQ(uchar_ptr[5],64);
+
+    // also check access via value()
+    unsigned char *uchar_ptr_2 = n["uc"].value();
+    EXPECT_EQ(uchar_ptr,uchar_ptr_2);
+
+    // unsigned short
+    n.set_path("us",ushort_av,6);
+    n["us"].schema().print();
+    unsigned short *ushort_ptr = n["us"].as_unsigned_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ushort_ptr[i],ushort_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ushort_ptr[i],&ushort_av[i]);
+    }
+
+    EXPECT_EQ(ushort_ptr[5],64);
+    
+    // also check access via value()
+    unsigned short *ushort_ptr_2 = n["us"].value();
+    EXPECT_EQ(ushort_ptr,ushort_ptr_2);
+    
+    // unsigned int
+    n.set_path("ui",uint_av,6);
+    n["ui"].schema().print();
+    unsigned int *uint_ptr = n["ui"].as_unsigned_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uint_ptr[i],uint_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&uint_ptr[i],&uint_av[i]);
+    }
+
+    EXPECT_EQ(uint_ptr[5],64);
+
+    // also check access via value()
+    unsigned int *uint_ptr_2 = n["ui"].value();
+    EXPECT_EQ(uint_ptr,uint_ptr_2);
+    
+    // unsigned long
+    n.set_path("ul",ulong_av,6);
+    n["ul"].schema().print();
+    unsigned long *ulong_ptr = n["ul"].as_unsigned_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulong_ptr[i],ulong_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ulong_ptr[i],&ulong_av[i]);
+    }
+
+    EXPECT_EQ(ulong_ptr[5],64);
+
+    // also check access via value()
+    unsigned long *ulong_ptr_2 = n["ul"].value();
+    EXPECT_EQ(ulong_ptr,ulong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // unsigned long long
+    n.set_path("ull",ulonglong_av,6);
+    n["ull"].schema().print();
+    unsigned long long *ulonglong_ptr = n["ull"].as_unsigned_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulonglong_ptr[i],ulonglong_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&ulonglong_ptr[i],&ulonglong_av[i]);
+    }
+
+    EXPECT_EQ(ulonglong_ptr[5],64);
+
+    // also check access via value()
+    unsigned long long *ulonglong_ptr_2 = n["ull"].value();
+    EXPECT_EQ(ulonglong_ptr,ulonglong_ptr_2);
+#endif
+
+    ////////////////////////////
+    // set path external
+    ////////////////////////////
+
+    // unsigned char
+    n.set_path_external("uc",uchar_av,6);
+    n["uc"].schema().print();
+    uchar_ptr = n["uc"].as_unsigned_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uchar_ptr[i],uchar_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&uchar_ptr[i],&uchar_av[i]);
+    }
+
+    EXPECT_EQ(uchar_ptr[5],64);
+
+    // also check access via value()
+    uchar_ptr_2 = n["uc"].value();
+    EXPECT_EQ(uchar_ptr,uchar_ptr_2);
+
+    // unsigned short
+    n.set_path_external("us",ushort_av,6);
+    n["us"].schema().print();
+    ushort_ptr = n["us"].as_unsigned_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ushort_ptr[i],ushort_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&ushort_ptr[i],&ushort_av[i]);
+    }
+
+    EXPECT_EQ(ushort_ptr[5],64);
+
+    // also check access via value()
+    ushort_ptr_2 = n["us"].value();
+    EXPECT_EQ(ushort_ptr,ushort_ptr_2);
+
+    // unsigned int
+    n.set_path_external("ui",uint_av,6);
+    n["ui"].schema().print();
+    uint_ptr = n["ui"].as_unsigned_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(uint_ptr[i],uint_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&uint_ptr[i],&uint_av[i]);
+    }
+
+    EXPECT_EQ(uint_ptr[5],64);
+
+    // also check access via value()
+    uint_ptr_2 = n["ui"].value();
+    EXPECT_EQ(uint_ptr,uint_ptr_2);
+
+    // unsigned long
+    n.set_path_external("ul",ulong_av,6);
+    n["ul"].schema().print();
+    ulong_ptr = n["ul"].as_unsigned_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulong_ptr[i],ulong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&ulong_ptr[i],&ulong_av[i]);
+    }
+
+    EXPECT_EQ(ulong_ptr[5],64);
+
+    // also check access via value()
+    ulong_ptr_2 = n["ul"].value();
+    EXPECT_EQ(ulong_ptr,ulong_ptr_2);
+
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // unsigned long long
+    n.set_path_external("ull",ulonglong_av,6);
+    n["ull"].schema().print();
+    ulonglong_ptr = n["ull"].as_unsigned_long_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(ulonglong_ptr[i],ulonglong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&ulonglong_ptr[i],&ulonglong_av[i]);
+    }
+
+    EXPECT_EQ(ulonglong_ptr[5],64);
+
+    // also check access via value()
+    ulonglong_ptr_2 = n["ull"].value();
+    EXPECT_EQ(ulonglong_ptr,ulonglong_ptr_2);
+#endif
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_cstyle_unsigned_int_array)
 {
     unsigned char   uchar_av[6]  = {2,4,8,16,32,64};
     unsigned short  ushort_av[6] = {2,4,8,16,32,64};
@@ -3561,7 +5491,7 @@ TEST(conduit_node_set, set_path_cstyle_uint_array)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_path_cstyle_uint_vec)
+TEST(conduit_node_set, set_path_cstyle_unsigned_int_vec)
 {
     unsigned char   uchar_av[6]  = {2,4,8,16,32,64};
     unsigned short  ushort_av[6] = {2,4,8,16,32,64};
@@ -3771,27 +5701,230 @@ TEST(conduit_node_set, set_path_cstyle_uint_vec)
 
 }
 
-
-
+//-----------------------------------------------------------------------------
+// set_path -- c style signed ptr, array, and vec
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_path_cstyle_int_array)
+TEST(conduit_node_set, set_path_cstyle_signed_int_ptr)
 {
-    signed char char_av[6]  = {-2,-4,-8,-16,-32,-64};
-    short       short_av[6] = {-2,-4,-8,-16,-32,-64};
-    int         int_av[6]   = {-2,-4,-8,-16,-32,-64};
-    long        long_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed char  schar_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed short sshort_av[6] = {-2,-4,-8,-16,-32,-64};
+    signed int   sint_av[6]   = {-2,-4,-8,-16,-32,-64};
+    signed long  slong_av[6]  = {-2,-4,-8,-16,-32,-64};
 #ifdef CONDUIT_HAS_LONG_LONG
-    long long   longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed long long   slonglong_av[6]  = {-2,-4,-8,-16,-32,-64};
+#endif
+
+    Node n;
+    
+    ////////////////////////////
+    // set path 
+    ////////////////////////////
+    
+    // char
+    n.set_path("c",schar_av,6);
+    n["c"].schema().print();
+    signed char *schar_ptr = n["c"].as_signed_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(schar_ptr[i],schar_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&schar_ptr[i],&schar_av[i]);
+    }
+
+    EXPECT_EQ(schar_ptr[5],-64);
+
+    // also check access via value()
+    signed char *schar_ptr_2 =  n["c"].value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
+
+    // short 
+    n.set_path("s",sshort_av,6);
+    n["s"].schema().print();
+    signed short *sshort_ptr = n["s"].as_signed_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sshort_ptr[i],sshort_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&sshort_ptr[i],&sshort_av[i]);
+    }
+
+    EXPECT_EQ(sshort_ptr[5],-64);
+
+    // also check access via value()
+    short *sshort_ptr_2 = n["s"].value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
+
+    // int
+    n.set_path("i",sint_av,6);
+    n["i"].schema().print();
+    signed int *sint_ptr = n["i"].as_signed_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sint_ptr[i],sint_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&sint_ptr[i],&sint_av[i]);
+    }
+
+    EXPECT_EQ(sint_ptr[5],-64);
+
+    // also check access via value()
+    int *sint_ptr_2 = n["i"].value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
+
+    // long
+    n.set_path("l",slong_av,6);
+    n["l"].schema().print();
+    signed long *slong_ptr = n["l"].as_signed_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slong_ptr[i],slong_av[i]);
+        // set(...) semantics imply a copy -- mem addys should differ
+        EXPECT_NE(&slong_ptr[i],&slong_av[i]);
+    }
+
+    EXPECT_EQ(slong_ptr[5],-64);
+   
+    // also check access via value()
+    signed long *slong_ptr_2 = n["l"].value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_path("ll",slonglong_av,6);
+    n["ll"].schema().print();
+    signed long long *slonglong_ptr = n["ll"].as_signed_long_long_ptr();
+    
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slonglong_ptr[i],slonglong_av[i]);
+        // set(...) semantics imply a copy -- mem addy should differ
+        EXPECT_NE(&slonglong_ptr[i],&slonglong_av[i]);
+    }
+
+    EXPECT_EQ(slonglong_ptr[5],-64);
+
+    // also check access via value()
+    signed long long *slonglong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
+
+#endif
+
+    ////////////////////////////
+    // set path external
+    ////////////////////////////
+
+    // char
+    n.set_path_external("c",schar_av,6);
+    n["c"].schema().print();
+    schar_ptr = n["c"].as_signed_char_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(schar_ptr[i],schar_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&schar_ptr[i],&schar_av[i]);
+    }
+
+    EXPECT_EQ(schar_ptr[5],-64);
+
+    // also check access via value()
+    schar_ptr_2 =  n["c"].value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
+
+    // short 
+    n.set_path_external("s",sshort_av,6);
+    n["s"].schema().print();
+    sshort_ptr = n["s"].as_signed_short_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sshort_ptr[i],sshort_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&sshort_ptr[i],&sshort_av[i]);
+    }
+
+    EXPECT_EQ(sshort_ptr[5],-64);
+
+    // also check access via value()
+    sshort_ptr_2 = n["s"].value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
+
+    // int
+    n.set_path_external("i",sint_av,6);
+    n["i"].schema().print();
+    sint_ptr = n["i"].as_signed_int_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(sint_ptr[i],sint_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&sint_ptr[i],&sint_av[i]);
+    }
+
+    EXPECT_EQ(sint_ptr[5],-64);
+
+    // also check access via value()
+    sint_ptr_2 = n["i"].value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
+
+    // long
+    n.set_path_external("l",slong_av,6);
+    n["l"].schema().print();
+    slong_ptr = n["l"].as_signed_long_ptr();
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slong_ptr[i],slong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&slong_ptr[i],&slong_av[i]);
+    }
+
+    EXPECT_EQ(slong_ptr[5],-64);
+
+    // also check access via value()
+    slong_ptr_2 = n["l"].value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    // long long
+    n.set_path_external("ll",slonglong_av,6);
+    n["ll"].schema().print();
+    slonglong_ptr = n["ll"].as_signed_long_long_ptr();
+
+    for(index_t i=0;i<6;i++)
+    {
+        EXPECT_EQ(slonglong_ptr[i],slonglong_av[i]);
+        // set_external(...) semantics implies zero-copy -- mem addys should equal
+        EXPECT_EQ(&slonglong_ptr[i],&slonglong_av[i]);
+    }
+
+    EXPECT_EQ(slonglong_ptr[5],-64);
+
+    // also check access via value()
+    slonglong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
+
+#endif
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_cstyle_signed_int_array)
+{
+    signed char  schar_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed short sshort_av[6] = {-2,-4,-8,-16,-32,-64};
+    signed int   sint_av[6]   = {-2,-4,-8,-16,-32,-64};
+    signed long  slong_av[6]  = {-2,-4,-8,-16,-32,-64};
+#ifdef CONDUIT_HAS_LONG_LONG
+    signed long long   slonglong_av[6]  = {-2,-4,-8,-16,-32,-64};
 #endif
     
-    char_array  char_av_a(char_av,DataType::c_char(6));
-    short_array short_av_a(short_av,DataType::c_short(6));
-    int_array   int_av_a(int_av,DataType::c_int(6));
-    long_array  long_av_a(long_av,DataType::c_long(6));
+    signed_char_array  schar_av_a(schar_av,DataType::c_signed_char(6));
+    signed_short_array sshort_av_a(sshort_av,DataType::c_signed_short(6));
+    signed_int_array   sint_av_a(sint_av,DataType::c_signed_int(6));
+    signed_long_array  slong_av_a(slong_av,DataType::c_signed_long(6));
     
 #ifdef CONDUIT_HAS_LONG_LONG
-    long_long_array  longlong_av_a(longlong_av,DataType::c_long_long(6));
+   signed_long_long_array   slonglong_av_a(slonglong_av,
+                                          DataType::c_signed_long_long(6));
 #endif
     
     Node n;
@@ -3801,91 +5934,91 @@ TEST(conduit_node_set, set_path_cstyle_int_array)
     ////////////////////////////
     
     // char
-    n.set_path("c",char_av_a);
+    n.set_path("c",schar_av_a);
     n["c"].schema().print();
-    signed char *char_ptr = (signed char*) n["c"].as_char_ptr();
+    signed char *schar_ptr = n["c"].as_signed_char_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(char_ptr[i],char_av[i]);
+        EXPECT_EQ(schar_ptr[i],schar_av[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&char_ptr[i],&char_av[i]);
+        EXPECT_NE(&schar_ptr[i],&schar_av[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],(signed char)(-64));
+    EXPECT_EQ(schar_ptr[5],-64);
 
     // also check access via value()
-    signed char *char_ptr_2 =  n["c"].value();
-    EXPECT_EQ(char_ptr,char_ptr_2);
+    signed char *schar_ptr_2 =  n["c"].value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
 
     // short 
-    n.set_path("s",short_av_a);
+    n.set_path("s",sshort_av_a);
     n["s"].schema().print();
-    short *short_ptr = n["s"].as_short_ptr();
+    signed short *sshort_ptr = n["s"].as_signed_short_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(short_ptr[i],short_av[i]);
+        EXPECT_EQ(sshort_ptr[i],sshort_av[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&short_ptr[i],&short_av[i]);
+        EXPECT_NE(&sshort_ptr[i],&sshort_av[i]);
     }
 
-    EXPECT_EQ(short_ptr[5],-64);
+    EXPECT_EQ(sshort_ptr[5],-64);
 
     // also check access via value()
-    short *short_ptr_2 = n["s"].value();
-    EXPECT_EQ(short_ptr,short_ptr_2);
+    short *sshort_ptr_2 = n["s"].value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
 
     // int
-    n.set_path("i",int_av_a);
+    n.set_path("i",sint_av_a);
     n["i"].schema().print();
-    int *int_ptr = n["i"].as_int_ptr();
+    signed int *sint_ptr = n["i"].as_signed_int_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(int_ptr[i],int_av[i]);
+        EXPECT_EQ(sint_ptr[i],sint_av[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&int_ptr[i],&int_av[i]);
+        EXPECT_NE(&sint_ptr[i],&sint_av[i]);
     }
 
-    EXPECT_EQ(int_ptr[5],-64);
+    EXPECT_EQ(sint_ptr[5],-64);
 
     // also check access via value()
-    int *int_ptr_2 = n["i"].value();
-    EXPECT_EQ(int_ptr,int_ptr_2);
+    int *sint_ptr_2 = n["i"].value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
 
     // long
-    n.set_path("l",long_av_a);
+    n.set_path("l",slong_av_a);
     n["l"].schema().print();
-    long *long_ptr = n["l"].as_long_ptr();
+    signed long *slong_ptr = n["l"].as_signed_long_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(long_ptr[i],long_av[i]);
+        EXPECT_EQ(slong_ptr[i],slong_av[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&long_ptr[i],&long_av[i]);
+        EXPECT_NE(&slong_ptr[i],&slong_av[i]);
     }
 
-    EXPECT_EQ(long_ptr[5],-64);
+    EXPECT_EQ(slong_ptr[5],-64);
    
     // also check access via value()
-    long *long_ptr_2 = n["l"].value();
-    EXPECT_EQ(long_ptr,long_ptr_2);
+    signed long *slong_ptr_2 = n["l"].value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
 
 #ifdef CONDUIT_HAS_LONG_LONG
     // long long
-    n.set_path("ll",longlong_av_a);
+    n.set_path("ll",slonglong_av_a);
     n["ll"].schema().print();
-    long long *longlong_ptr = n["ll"].as_long_long_ptr();
+    signed long long *slonglong_ptr = n["ll"].as_signed_long_long_ptr();
     
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        EXPECT_EQ(slonglong_ptr[i],slonglong_av[i]);
         // set(...) semantics imply a copy -- mem addy should differ
-        EXPECT_NE(&longlong_ptr[i],&longlong_av[i]);
+        EXPECT_NE(&slonglong_ptr[i],&slonglong_av[i]);
     }
 
-    EXPECT_EQ(longlong_ptr[5],-64);
+    EXPECT_EQ(slonglong_ptr[5],-64);
 
     // also check access via value()
-    long long *longlong_ptr_2 = n["ll"].value();
-    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+    signed long long *slonglong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
 
 #endif
 
@@ -3894,116 +6027,116 @@ TEST(conduit_node_set, set_path_cstyle_int_array)
     ////////////////////////////
 
     // char
-    n.set_path_external("c",char_av_a);
+    n.set_path_external("c",schar_av_a);
     n["c"].schema().print();
-    char_ptr = (signed char*) n["c"].as_char_ptr();
+    schar_ptr = n["c"].as_signed_char_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(char_ptr[i],char_av[i]);
+        EXPECT_EQ(schar_ptr[i],schar_av[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&char_ptr[i],&char_av[i]);
+        EXPECT_EQ(&schar_ptr[i],&schar_av[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],(signed char)(-64));
+    EXPECT_EQ(schar_ptr[5],-64);
 
     // also check access via value()
-    char_ptr_2 =  n["c"].value();
-    EXPECT_EQ(char_ptr,char_ptr_2);
+    schar_ptr_2 =  n["c"].value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
 
     // short 
-    n.set_path_external("s",short_av_a);
+    n.set_path_external("s",sshort_av_a);
     n["s"].schema().print();
-    short_ptr = n["s"].as_short_ptr();
+    sshort_ptr = n["s"].as_signed_short_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(short_ptr[i],short_av[i]);
+        EXPECT_EQ(sshort_ptr[i],sshort_av[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&short_ptr[i],&short_av[i]);
+        EXPECT_EQ(&sshort_ptr[i],&sshort_av[i]);
     }
 
-    EXPECT_EQ(short_ptr[5],-64);
+    EXPECT_EQ(sshort_ptr[5],-64);
 
     // also check access via value()
-    short_ptr_2 = n["s"].value();
-    EXPECT_EQ(short_ptr,short_ptr_2);
+    sshort_ptr_2 = n["s"].value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
 
     // int
-    n.set_path_external("i",int_av_a);
+    n.set_path_external("i",sint_av_a);
     n["i"].schema().print();
-    int_ptr = n["i"].as_int_ptr();
+    sint_ptr = n["i"].as_signed_int_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(int_ptr[i],int_av[i]);
+        EXPECT_EQ(sint_ptr[i],sint_av[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&int_ptr[i],&int_av[i]);
+        EXPECT_EQ(&sint_ptr[i],&sint_av[i]);
     }
 
-    EXPECT_EQ(int_ptr[5],-64);
+    EXPECT_EQ(sint_ptr[5],-64);
 
     // also check access via value()
-    int_ptr_2 = n["i"].value();
-    EXPECT_EQ(int_ptr,int_ptr_2);
+    sint_ptr_2 = n["i"].value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
 
     // long
-    n.set_path_external("l",long_av_a);
+    n.set_path_external("l",slong_av_a);
     n["l"].schema().print();
-    long_ptr = n["l"].as_long_ptr();
+    slong_ptr = n["l"].as_signed_long_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(long_ptr[i],long_av[i]);
+        EXPECT_EQ(slong_ptr[i],slong_av[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&long_ptr[i],&long_av[i]);
+        EXPECT_EQ(&slong_ptr[i],&slong_av[i]);
     }
 
-    EXPECT_EQ(long_ptr[5],-64);
+    EXPECT_EQ(slong_ptr[5],-64);
 
     // also check access via value()
-    long_ptr_2 = n["l"].value();
-    EXPECT_EQ(long_ptr,long_ptr_2);
+    slong_ptr_2 = n["l"].value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
 
 #ifdef CONDUIT_HAS_LONG_LONG
     // long long
-    n.set_path_external("ll",longlong_av_a);
+    n.set_path_external("ll",slonglong_av_a);
     n["ll"].schema().print();
-    longlong_ptr = n["ll"].as_long_long_ptr();
+    slonglong_ptr = n["ll"].as_signed_long_long_ptr();
 
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(longlong_ptr[i],longlong_av[i]);
+        EXPECT_EQ(slonglong_ptr[i],slonglong_av[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&longlong_ptr[i],&longlong_av[i]);
+        EXPECT_EQ(&slonglong_ptr[i],&slonglong_av[i]);
     }
 
-    EXPECT_EQ(longlong_ptr[5],-64);
+    EXPECT_EQ(slonglong_ptr[5],-64);
 
     // also check access via value()
-    longlong_ptr_2 = n["ll"].value();
-    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+    slonglong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
 
 #endif
     
 }
 
-
 //-----------------------------------------------------------------------------
-TEST(conduit_node_set, set_path_cstyle_int_vec)
+TEST(conduit_node_set, set_path_cstyle_signed_int_vec)
 {
-    signed char  char_av[6]  = {-2,-4,-8,-16,-32,-64};
-    short        short_av[6] = {-2,-4,-8,-16,-32,-64};
-    int          int_av[6]   = {-2,-4,-8,-16,-32,-64};
-    long         long_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed char  schar_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed short sshort_av[6] = {-2,-4,-8,-16,-32,-64};
+    signed int   sint_av[6]   = {-2,-4,-8,-16,-32,-64};
+    signed long  slong_av[6]  = {-2,-4,-8,-16,-32,-64};
 
 #ifdef CONDUIT_HAS_LONG_LONG
-    long long longlong_av[6]  = {-2,-4,-8,-16,-32,-64};
+    signed long long slonglong_av[6]  = {-2,-4,-8,-16,-32,-64};
 #endif
 
-    std::vector<signed char>   char_v(char_av,char_av + 6);
-    std::vector<short>         short_v(short_av,short_av+6);
-    std::vector<int>           int_v(int_av,int_av+6);
-    std::vector<long>          long_v(long_av,long_av+6);
+    std::vector<signed char>    schar_v(schar_av,schar_av + 6);
+    std::vector<signed short>   sshort_v(sshort_av,sshort_av+6);
+    std::vector<signed int>     sint_v(sint_av,sint_av+6);
+    std::vector<signed long>    slong_v(slong_av,slong_av+6);
 
 #ifdef CONDUIT_HAS_LONG_LONG
-    std::vector<long long>     longlong_v(longlong_av,longlong_av+6);
+    std::vector<signed long long>  slonglong_v(slonglong_av,
+                                               slonglong_av+6);
 #endif
 
     Node n;
@@ -4013,91 +6146,91 @@ TEST(conduit_node_set, set_path_cstyle_int_vec)
     ////////////////////////////
 
     // char
-    n.set_path("c",char_v);
+    n.set_path("c",schar_v);
     n["c"].schema().print();
-    signed char *char_ptr = (signed char*) n["c"].as_char_ptr();
+    signed char *schar_ptr = n["c"].as_signed_char_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(char_ptr[i],char_v[i]);
+        EXPECT_EQ(schar_ptr[i],schar_v[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&char_ptr[i],&char_v[i]);
+        EXPECT_NE(&schar_ptr[i],&schar_v[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],(signed char)(-64));
+    EXPECT_EQ(schar_ptr[5],-64);
 
     // also check access via value()
-    signed char *char_ptr_2 =  n["c"].value();
-    EXPECT_EQ(char_ptr,char_ptr_2);
+    signed char *schar_ptr_2 =  n["c"].value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
 
     // short
-    n.set_path("s",short_v);
+    n.set_path("s",sshort_v);
     n["s"].schema().print();
-    short *short_ptr = n["s"].as_short_ptr();
+    signed short *sshort_ptr = n["s"].as_signed_short_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(short_ptr[i],short_v[i]);
+        EXPECT_EQ(sshort_ptr[i],sshort_v[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&short_ptr[i],&short_v[i]);
+        EXPECT_NE(&sshort_ptr[i],&sshort_v[i]);
     }
 
-    EXPECT_EQ(short_ptr[5],-64);
+    EXPECT_EQ(sshort_ptr[5],-64);
 
     // also check access via value()
-    short *short_ptr_2 = n["s"].value();
-    EXPECT_EQ(short_ptr,short_ptr_2);
+    signed short *sshort_ptr_2 = n["s"].value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
 
     // int
-    n.set_path("i",int_v);
+    n.set_path("i",sint_v);
     n["i"].schema().print();
-    int *int_ptr = n["i"].as_int_ptr();
+    signed int *sint_ptr = n["i"].as_signed_int_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(int_ptr[i],int_v[i]);
+        EXPECT_EQ(sint_ptr[i],sint_v[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&int_ptr[i],&int_v[i]);
+        EXPECT_NE(&sint_ptr[i],&sint_v[i]);
     }
 
-    EXPECT_EQ(int_ptr[5],-64);
+    EXPECT_EQ(sint_ptr[5],-64);
 
     // also check access via value()
-    int *int_ptr_2 = n["i"].value();
-    EXPECT_EQ(int_ptr,int_ptr_2);
+    signed int *sint_ptr_2 = n["i"].value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
 
     // long
-    n.set_path("l",long_v);
+    n.set_path("l",slong_v);
     n["l"].schema().print();
-    long *long_ptr = n["l"].as_long_ptr();
+    signed long *slong_ptr = n["l"].as_signed_long_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(long_ptr[i],long_v[i]);
+        EXPECT_EQ(slong_ptr[i],slong_v[i]);
         // set(...) semantics imply a copy -- mem addys should differ
-        EXPECT_NE(&long_ptr[i],&long_v[i]);
+        EXPECT_NE(&slong_ptr[i],&slong_v[i]);
     }
 
-    EXPECT_EQ(long_ptr[5],-64);
+    EXPECT_EQ(slong_ptr[5],-64);
 
     // also check access via value()
-    long *long_ptr_2 = n["l"].value();
-    EXPECT_EQ(long_ptr,long_ptr_2);
+    signed long *slong_ptr_2 = n["l"].value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
 
 #ifdef CONDUIT_HAS_LONG_LONG
     // long long
-    n.set_path("ll",longlong_v);
+    n.set_path("ll",slonglong_v);
     n["ll"].schema().print();
-    long long *longlong_ptr = n["ll"].as_long_long_ptr();
+    signed long long *slonglong_ptr = n["ll"].as_signed_long_long_ptr();
 
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(longlong_ptr[i],longlong_v[i]);
+        EXPECT_EQ(slonglong_ptr[i],slonglong_v[i]);
         // set(...) semantics imply a copy -- mem addy should differ
-        EXPECT_NE(&longlong_ptr[i],&longlong_v[i]);
+        EXPECT_NE(&slonglong_ptr[i],&slonglong_v[i]);
     }
 
-    EXPECT_EQ(longlong_ptr[5],-64);
+    EXPECT_EQ(slonglong_ptr[5],-64);
 
     // also check access via value()
-    long long *longlong_ptr_2 = n["ll"].value();
-    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+    signed long long *slonglong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
 
 #endif
 
@@ -4106,97 +6239,99 @@ TEST(conduit_node_set, set_path_cstyle_int_vec)
     ////////////////////////////
 
     // char
-    n.set_path_external("c",char_v);
+    n.set_path_external("c",schar_v);
     n["c"].schema().print();
-    char_ptr = (signed char*) n["c"].as_char_ptr();
+    schar_ptr = n["c"].as_signed_char_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(char_ptr[i],char_v[i]);
+        EXPECT_EQ(schar_ptr[i],schar_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&char_ptr[i],&char_v[i]);
+        EXPECT_EQ(&schar_ptr[i],&schar_v[i]);
     }
 
-    EXPECT_EQ(char_ptr[5],(signed char)(-64));
+    EXPECT_EQ(schar_ptr[5],-64);
 
     // also check access via value()
-    char_ptr_2 =  n["c"].value();
-    EXPECT_EQ(char_ptr,char_ptr_2);
+    schar_ptr_2 =  n["c"].value();
+    EXPECT_EQ(schar_ptr,schar_ptr_2);
 
     // short
-    n.set_path_external("s",short_v);
+    n.set_path_external("s",sshort_v);
     n["s"].schema().print();
-    short_ptr = n["s"].as_short_ptr();
+    sshort_ptr = n["s"].as_short_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(short_ptr[i],short_v[i]);
+        EXPECT_EQ(sshort_ptr[i],sshort_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&short_ptr[i],&short_v[i]);
+        EXPECT_EQ(&sshort_ptr[i],&sshort_v[i]);
     }
 
-    EXPECT_EQ(short_ptr[5],-64);
+    EXPECT_EQ(sshort_ptr[5],-64);
 
     // also check access via value()
-    short_ptr_2 = n["s"].value();
-    EXPECT_EQ(short_ptr,short_ptr_2);
+    sshort_ptr_2 = n["s"].value();
+    EXPECT_EQ(sshort_ptr,sshort_ptr_2);
 
     // int
-    n.set_path_external("i",int_v);
+    n.set_path_external("i",sint_v);
     n["i"].schema().print();
-    int_ptr = n["i"].as_int_ptr();
+    sint_ptr = n["i"].as_int_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(int_ptr[i],int_v[i]);
+        EXPECT_EQ(sint_ptr[i],sint_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&int_ptr[i],&int_v[i]);
+        EXPECT_EQ(&sint_ptr[i],&sint_v[i]);
     }
 
-    EXPECT_EQ(int_ptr[5],-64);
+    EXPECT_EQ(sint_ptr[5],-64);
 
     // also check access via value()
-    int_ptr_2 = n["i"].value();
-    EXPECT_EQ(int_ptr,int_ptr_2);
+    sint_ptr_2 = n["i"].value();
+    EXPECT_EQ(sint_ptr,sint_ptr_2);
 
     // long
-    n.set_path_external("l",long_v);
+    n.set_path_external("l",slong_v);
     n["l"].schema().print();
-    long_ptr = n["l"].as_long_ptr();
+    slong_ptr = n["l"].as_long_ptr();
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(long_ptr[i],long_v[i]);
+        EXPECT_EQ(slong_ptr[i],slong_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&long_ptr[i],&long_v[i]);
+        EXPECT_EQ(&slong_ptr[i],&slong_v[i]);
     }
 
-    EXPECT_EQ(long_ptr[5],-64);
+    EXPECT_EQ(slong_ptr[5],-64);
 
     // also check access via value()
-    long_ptr_2 = n["l"].value();
-    EXPECT_EQ(long_ptr,long_ptr_2);
+    slong_ptr_2 = n["l"].value();
+    EXPECT_EQ(slong_ptr,slong_ptr_2);
 
 #ifdef CONDUIT_HAS_LONG_LONG
     // long long
-    n.set_path_external("ll",longlong_v);
+    n.set_path_external("ll",slonglong_v);
     n["ll"].schema().print();
-    longlong_ptr = n["ll"].as_long_long_ptr();
+    slonglong_ptr = n["ll"].as_long_long_ptr();
 
     for(index_t i=0;i<6;i++)
     {
-        EXPECT_EQ(longlong_ptr[i],longlong_v[i]);
+        EXPECT_EQ(slonglong_ptr[i],slonglong_v[i]);
         // set_external(...) semantics implies zero-copy -- mem addys should equal
-        EXPECT_EQ(&longlong_ptr[i],&longlong_v[i]);
+        EXPECT_EQ(&slonglong_ptr[i],&slonglong_v[i]);
     }
 
-    EXPECT_EQ(longlong_ptr[5],-64);
+    EXPECT_EQ(slonglong_ptr[5],-64);
 
     // also check access via value()
-    longlong_ptr_2 = n["ll"].value();
-    EXPECT_EQ(longlong_ptr,longlong_ptr_2);
+    slonglong_ptr_2 = n["ll"].value();
+    EXPECT_EQ(slonglong_ptr,slonglong_ptr_2);
 
 #endif
 
 }
 
-
+//-----------------------------------------------------------------------------
+// set_path -- c style float ptr, array, and vec
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_path_cstyle_float_ptr)
@@ -4471,7 +6606,9 @@ TEST(conduit_node_set, set_path_cstyle_float_vec)
 
 }
 
-
+//-----------------------------------------------------------------------------
+// end c style set and set path checks
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_path_external_node)
@@ -4530,7 +6667,6 @@ TEST(conduit_node_set, set_path_external_node)
     n.print();
 }
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_string_multiple)
 {
@@ -4542,8 +6678,6 @@ TEST(conduit_node_set, set_string_multiple)
     n.set_string("shorter");    // was crashing ..
     EXPECT_EQ(n.as_string(),"shorter");
 }
-
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_vector)
@@ -4614,7 +6748,6 @@ TEST(conduit_node_set, set_vector)
     EXPECT_TRUE(n1.schema().equals(n2.schema()));
 
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node_set, set_vector_external)
@@ -4713,11 +6846,9 @@ TEST(conduit_node_set, set_vector_external)
     EXPECT_EQ(f64_ptr,&f64_vec[0]);
 }
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_node, node_set_existing_char8)
-{   
-    
+{
     Schema s;
     
     std::string value = "my value";
@@ -4753,7 +6884,7 @@ TEST(conduit_node, node_set_existing_char8)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, node_set_existing_obj)
-{   
+{
     Node n_init;
 
     n_init["a"] = DataType::list();
@@ -4777,11 +6908,9 @@ TEST(conduit_node, node_set_existing_obj)
 
 }
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_node, node_set_non_compact_dtype)
-{   
-
+{
     // These checks node set for a non-compact datatype
     // matches the results of node set for a schema with
     // the same data type.
