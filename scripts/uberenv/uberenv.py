@@ -139,6 +139,13 @@ def parse_args():
                       default=False,
                       help="Pull if spack repo already exists")
 
+    # option to tell spack to run tests
+    parser.add_option("--run_tests",
+                      action="store_true",
+                      dest="run_tests",
+                      default=False,
+                      help="Invoke build tests during spack install")
+
     # option to force a spack pull
     parser.add_option("--macos-sdk-env-setup",
                       action="store_true",
@@ -457,7 +464,10 @@ def main():
         install_cmd = "spack/bin/spack "
         if opts["ignore_ssl_errors"]:
             install_cmd += "-k "
-        install_cmd += "install " + uberenv_pkg_name + opts["spec"]
+        install_cmd += "install " 
+        if opts["run_tests"]:
+            install_cmd += "--test=root "
+        install_cmd += uberenv_pkg_name + opts["spec"]
         res = sexe(install_cmd, echo=True)
         if res != 0:
             return res
