@@ -1,3 +1,4 @@
+
 # -------------------------------------------------------------------------
 # This file controls default concretization preferences for Spack.
 #
@@ -37,14 +38,20 @@ packages:
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
     version: [master]
-# LLNL chaos5 CUDA 
+# LLNL blueos CUDA
   cuda:
     paths:
-      cuda@9.1: /opt/cudatoolkit-9.1/
+      cuda@9.0.176: /usr/tce/packages/cuda/cuda-9.0.176
+      cuda@8.0: /usr/tce/packages/cuda/cuda-8.0
     buildable: False
-# LLNL chaos5 mvapich2
+# LLNL blueos mpi
+# note, we need to fake this as an existing mpi package
+# so even though this is spectrum mpi, we call it mvapich2
   mvapich2:
     paths:
-      mvapich2@2.0%gcc@4.9.3: /usr/local/tools/mvapich2-gnu-2.0/
-      mvapich2@2.0%intel@16.0.109: /usr/local/tools/mvapich2-intel-2.0
+      mvapich2@2.2%gcc@4.9.3: /usr/tcetmp/packages/spectrum-mpi/spectrum-mpi-2017.04.03-gcc-4.9.3
+      mvapich2@2.2%clang@coral: /usr/tcetmp/packages/spectrum-mpi/spectrum-mpi-2017.04.03-clang-4.0.0
+      mvapich2@2.2%xl@coral : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-beta-2018.10.29/
     buildable: False
+
+
