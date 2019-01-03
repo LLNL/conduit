@@ -125,9 +125,15 @@ function(add_python_test TEST)
         set(ENV_PATH_SEP ":")
     endif()
     # make sure python can pick up the modules we built
+    # if python path is already set -- we need to append to it
+    # this is important for running in spack's build-env
+    set(py_path "")
+    if(DEFINED ENV{PYTHONPATH})
+        set(py_path "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
+    endif()
     set_property(TEST ${TEST}
                  PROPERTY
-                 ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
+                 ENVIRONMENT "PYTHONPATH=${py_path}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
     if(WIN32)
         set_property(TEST ${TEST}
                      APPEND
