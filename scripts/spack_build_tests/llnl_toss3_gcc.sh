@@ -1,3 +1,3 @@
-python uberenv/uberenv.py --install --run_tests --prefix="uberenv_libs_test_toss3_gcc"
+python uberenv/uberenv.py --install --run_tests --prefix="_uberenv_test_toss3_gcc"
 
 
