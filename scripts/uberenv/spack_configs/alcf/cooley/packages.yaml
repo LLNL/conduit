@@ -1,3 +1,4 @@
+
 # -------------------------------------------------------------------------
 # This file controls default concretization preferences for Spack.
 #
@@ -15,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    compiler: [clang, gcc, intel, pgi, xl, nag]
+    compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
       blas: [openblas]
@@ -27,7 +28,7 @@ packages:
       lapack: [openblas]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [openmpi, mpich]
+      mpi: [mvapich2]
       opencl: [pocl]
       openfoam: [openfoam-com, openfoam-org, foam-extend]
       pil: [py-pillow]
@@ -35,25 +36,15 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
-    variants: ~openmp
-# custom variants
   conduit:
     version: [master]
-  python:
-    variants: +shared~dbm
-  cmake:
-    version: [3.9.6]
-    variants: ~openssl~ncurses
-  hwloc:
-    variants: ~libxml2
-  perl:
-    paths:
-      perl: /usr/
-    buildable: False
-# CUDA standard MacOS install paths
+# Cooley Cuda
   cuda:
     paths:
-      cuda@8.0: /Developer/NVIDIA/CUDA-8.0
-      cuda@9.0: /Developer/NVIDIA/CUDA-9.0
+      cuda@9.1: /soft/visualization/cuda-9.1/
     buildable: False
-
+# Cooley mvapich2
+  mvapich2:
+    paths:
+      mvapich2@2.2: /soft/libraries/mpi/mvapich2/gcc/
+    buildable: False

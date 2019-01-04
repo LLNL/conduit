@@ -1,3 +1,4 @@
+
 # -------------------------------------------------------------------------
 # This file controls default concretization preferences for Spack.
 #
@@ -15,7 +16,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    compiler: [clang, gcc, intel, pgi, xl, nag]
+    compiler: [gcc, intel, pgi, clang, xl, nag]
     providers:
       awk: [gawk]
       blas: [openblas]
@@ -27,7 +28,7 @@ packages:
       lapack: [openblas]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [openmpi, mpich]
+      mpi: [mvapich2]
       opencl: [pocl]
       openfoam: [openfoam-com, openfoam-org, foam-extend]
       pil: [py-pillow]
@@ -35,25 +36,37 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
-    variants: ~openmp
-# custom variants
   conduit:
     version: [master]
   python:
-    variants: +shared~dbm
+    variants: ~dbm
   cmake:
     version: [3.9.6]
     variants: ~openssl~ncurses
-  hwloc:
-    variants: ~libxml2
+  py-numpy:
+    variants: ~blas~lapack
   perl:
-    paths:
-      perl: /usr/
     buildable: False
-# CUDA standard MacOS install paths
+    paths:
+      perl: /usr
+  pkg-config:
+      buildable: False
+      paths:
+          pkg-config: /usr
+# LLNL blueos CUDA
   cuda:
     paths:
-      cuda@8.0: /Developer/NVIDIA/CUDA-8.0
-      cuda@9.0: /Developer/NVIDIA/CUDA-9.0
+      cuda@9.0.176: /usr/tce/packages/cuda/cuda-9.0.176
+      cuda@8.0: /usr/tce/packages/cuda/cuda-8.0
     buildable: False
+# LLNL blueos mpi
+# note, we need to fake this as an existing mpi package
+# so even though this is spectrum mpi, we call it mvapich2
+  mvapich2:
+    paths:
+      mvapich2@2.2%gcc@4.9.3: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-4.9.3/ 
+      mvapich2@2.2%clang@coral: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-clang-upstream-2018.12.03/
+      mvapich2@2.2%xl@coral: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-2018.11.26/bin/mpicc 
+    buildable: False
+
 
