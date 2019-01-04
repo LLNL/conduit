@@ -54,6 +54,6 @@ packages:
   cuda:
     paths:
       cuda@8.0: /Developer/NVIDIA/CUDA-8.0
-      cuda@0.0: /Developer/NVIDIA/CUDA-9.0
+      cuda@9.0: /Developer/NVIDIA/CUDA-9.0
     buildable: False
 
