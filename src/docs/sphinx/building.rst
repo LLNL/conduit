@@ -48,20 +48,41 @@
 Building
 =================
 
-
 This page provides details on several ways to build Conduit.
 
-If you are building features that depend on third party libraries we recommend using :ref:`Spack <building_with_spack>`,
-or :ref:`uberenv <building_with_uberenv>`, which leverages Spack. We also provide a 
-:ref:`Docker example <building_with_docker>` that leverages Spack.
+
+If you are building features that depend on third party libraries we recommend using :ref:`uberenv <building_with_uberenv>` which leverages Spack or :ref:`Spack directly<building_with_spack>`. 
+We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>`.
+and a :ref:`Docker example <building_with_docker>` that leverages Spack.
+
+.. _uberenv_quickstart:
+
+Quick Start Install With Third Party Dependencies 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The quickest path to install conduit and its dependencies is via :ref:`uberenv <building_with_uberenv>`:
+
+.. code:: bash
+    
+    git clone --recursive https://github.com/llnl/conduit.git
+    cd conduit
+    python scripts/uberenv/uberenv.py --install --prefix="build"
 
 
-Getting Started
+After this completes, ``build/conduit-install`` will contain a Conduit install.
+
+If you would like to run tests during the build process to validate the build and install, you can use the ``--run_tests`` option:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install --run_tests --prefix="build"
+
+
+
+Detailed Getting Started
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Clone the Conduit repo:
-
-* From Github
+Clone the Conduit repo from Github:
 
 .. code:: bash
     
@@ -252,6 +273,7 @@ Uberenv Options for Building Third Party Dependencies
                                                                       osx: ``scripts/uberenv/spack_configs/darwin/``
   -k                   Ignore SSL Errors                              **False**
   --install            Fully install conduit, not just dependencies   **False**
+  --run_tests          Invoke tests during build and against install  **False** 
  ==================== ============================================== ================================================
 
 The ``-k`` option exists for sites where SSL certificate interception undermines fetching
@@ -297,6 +319,28 @@ When run, ``uberenv.py`` checkouts a specific version of Spack from github as ``
 destination directory. It then uses Spack to build and install Conduit's dependencies into 
 ``spack/opt/spack/``. Finally, it generates a host-config file ``{hostname}.cmake`` in the 
 destination directory that specifies the compiler settings and paths to all of the dependencies.
+
+
+.. _building_known_hpc:
+
+Building with Uberenv on Known HPC Platforms 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To support testing and installing on common platforms, we maintain sets of Spack compiler and package settings
+for a few known HPC platforms.  Here are the commonly tested configurations:
+
+ ================== ====================== ======================================
+  System             OS                     Tested Configurations (Spack Specs)
+ ================== ====================== ======================================
+  pascal.llnl.gov     Linux: TOSS3          %gcc
+                                            
+                                            %gcc~shared
+  lassen.llnl.gov     Linux: BlueOS         %clang\@coral~python~fortran
+  cori.nersc.gov      Linux: SUSE / CNL     %gcc
+ ================== ====================== ======================================
+
+
+See ``scripts/spack_build_tests/`` for the exact invocations used to test on these platforms.
 
 
 .. _building_with_spack:
@@ -389,6 +433,8 @@ You can avoid related linking warnings by adding the ``-dynamic`` compiler flag,
 
 `Shared Memory Maps are read only <https://pubs.cray.com/content/S-0005/CLE%206.0.UP02/xctm-series-dvs-administration-guide-cle-60up02-s-0005/dvs-caveats>`_
 on Cray systems, so updates to data using ``Node::mmap`` will not be seen between processes.
+
+
 
 
 
