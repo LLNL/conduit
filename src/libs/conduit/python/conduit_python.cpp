@@ -4103,6 +4103,144 @@ PyConduit_Node_set_path(PyConduit_Node* self,
     }
 }
 
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_compact_to(PyConduit_Node* self,
+                          PyObject *args,
+                          PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &n_dest = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    self->node->compact_to(n_dest);
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_update(PyConduit_Node* self,
+                      PyObject *args,
+                      PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    self->node->update(n_other);
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_update_compatible(PyConduit_Node* self,
+                                 PyObject *args,
+                                 PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    self->node->update_compatible(n_other);
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_update_external(PyConduit_Node* self,
+                               PyObject *args,
+                               PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    self->node->update_external(n_other);
+    Py_RETURN_NONE;
+}
+
+
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_to_json(PyConduit_Node* self,
@@ -4217,11 +4355,6 @@ PyConduit_Node_endian_swap_to_big(PyConduit_Node *self)
      Py_RETURN_NONE; 
 }
 
-
-    void endian_swap(index_t endianness);
-
-
-
 //----------------------------------------------------------------------------//
 // Node methods table
 //----------------------------------------------------------------------------//
@@ -4246,10 +4379,31 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_set,
      METH_VARARGS,
      "Sets the node"},
+    //-----------------------------------------------------------------------//
     {"set_external",
      (PyCFunction)PyConduit_Node_set_external,
      METH_VARARGS,
      "Sets the node's data to an external numpy array"},
+    //-----------------------------------------------------------------------//
+    {"compact_to",
+     (PyCFunction)PyConduit_Node_compact_to,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Compact the contents of this node into the destination node"},
+    //-----------------------------------------------------------------------//
+    {"update",
+     (PyCFunction)PyConduit_Node_update,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Update node with the contents of another node"},
+    //-----------------------------------------------------------------------//
+    {"update_compatible",
+     (PyCFunction)PyConduit_Node_update_compatible,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Update node with the compatible contents of another node"},
+    //-----------------------------------------------------------------------//
+    {"update_external",
+     (PyCFunction)PyConduit_Node_update_external,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Update node with to externally point to another node's contents"},
     //-----------------------------------------------------------------------//
     {"fetch",
      (PyCFunction)PyConduit_Node_fetch,

@@ -461,7 +461,7 @@ std::string identify_coords_coordsys(const Node &coords)
         itr.next();
         const std::string axis_name = itr.name();
 
-        if(axis_name[0] == 'd')
+        if(axis_name[0] == 'd' && axis_name.size() > 1)
         {
             axes[axis_name.substr(1, axis_name.length())];
         }
@@ -1362,9 +1362,10 @@ bool mesh::verify_multi_domain(const Node &n,
         }
 
         log::info(info, protocol, "is a multi domain mesh");
-        log::validation(info,res);
     }
-
+    
+    log::validation(info,res);
+    
     return res;
 }
 
@@ -1376,17 +1377,17 @@ mesh::verify(const Node &n,
 {
     bool res = true;
     info.reset();
-
-    if(mesh::verify_multi_domain(n, info))
+    
+    // if n has the child "coordsets", we assume it is a single domain 
+    // mesh
+    if(n.has_child("coordsets"))
     {
-        res = true;
+        res = mesh::verify_single_domain(n, info);
     }
     else
     {
-        info.reset();
-        res = mesh::verify_single_domain(n, info);
+       res = mesh::verify_multi_domain(n, info);
     }
-
     return res;
 }
 
@@ -1394,8 +1395,14 @@ mesh::verify(const Node &n,
 //-------------------------------------------------------------------------
 bool mesh::is_multi_domain(const conduit::Node &n)
 {
-    Node info;
-    return mesh::verify_multi_domain(n, info);
+    // this is a blueprint property, we can assume it will be called 
+    // only when mesh verify is true. Given that - the only check
+    // we need to make is the minimal check to distinguish between 
+    // a single domain and a multi domain tree structure.
+    // checking for a child named "coordsets" mirrors the 
+    // top level verify check
+
+    return !n.has_child("coordsets");
 }
 
 
@@ -1457,8 +1464,16 @@ mesh::generate_index(const Node &mesh,
                 {
                     spacing_itr.next();
                     std::string axis_name = spacing_itr.name();
-                    // spacing names start with "d"
-                    axis_name = axis_name.substr(1);
+
+                    // if spacing names start with "d", use substr
+                    // to determine axis name
+
+                    // otherwise use spacing name directly, to avoid empty
+                    // path fetch if just 'x', etc are passed
+                    if(axis_name[0] == 'd' && axis_name.size() > 1)
+                    {
+                        axis_name = axis_name.substr(1);
+                    }
                     idx_coordset["coord_system/axes"][axis_name];
                 }
             }

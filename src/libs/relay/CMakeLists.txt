@@ -154,7 +154,7 @@ endif()
 # Specify fortran sources
 #
 set(conduit_relay_fortran_sources
-    fortran/conduit_relay_fortran.f)
+    fortran/conduit_relay_fortran.f90)
 
 #
 # setup conduit relay lib
@@ -205,13 +205,6 @@ add_compiled_library(NAME conduit_relay
                              $<TARGET_OBJECTS:conduit_civetweb>
                      DEPENDS_ON ${conduit_relay_deps}
                      HEADERS_DEST_DIR include/conduit)
-
-if(FORTRAN_FOUND)
-    set_target_properties(conduit_relay
-                          PROPERTIES Fortran_FORMAT "FREE")
-endif()
-
-
 
 ###################################
 # add conduit_relay_node_viewer exe

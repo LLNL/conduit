@@ -150,11 +150,11 @@ if(FORTRAN_FOUND)
     # Specify fortran sources
     #
     set(conduit_fortran_sources
-        fortran/conduit_fortran.F)
+        fortran/conduit_fortran.F90)
 
     #  add oo interface if the fortran compiler supports it
     if(ENABLE_FORTRAN_OBJ_INTERFACE)
-        list(APPEND conduit_fortran_sources fortran/conduit_fortran_obj.f)
+        list(APPEND conduit_fortran_sources fortran/conduit_fortran_obj.f90)
     endif()
 
 endif()
@@ -174,8 +174,6 @@ add_compiled_library(NAME   conduit
 # Fortran related target options
 #################################
 if(FORTRAN_FOUND)
-    set_target_properties(conduit PROPERTIES Fortran_FORMAT "FREE")
-
     if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
          # disable c <-> fortran binding warnings for gfortran 
          message(STATUS "Disabling c <-> fortran binding warnings for "

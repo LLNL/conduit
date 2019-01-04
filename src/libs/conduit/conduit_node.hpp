@@ -338,6 +338,8 @@ public:
 //  selected as int32, Visual Studio needs an explicit method to disambiguate 
 //  the long case.
 //-----------------------------------------------------------------------------
+    void set(char data);
+
     #ifndef CONDUIT_USE_CHAR
         void set(signed char data);
         void set(unsigned char data);
@@ -412,8 +414,11 @@ public:
 //-----------------------------------------------------------------------------
 //  set array gap methods for c-native types
 //-----------------------------------------------------------------------------
+    // we never use char directly, so we always need this
+    void set(const char_array &data);
+    
     #ifndef CONDUIT_USE_CHAR
-        void set(const char_array &data);
+        void set(const signed_char_array &data);
         void set(const unsigned_char_array &data);
     #endif
 
@@ -507,8 +512,10 @@ public:
 //-----------------------------------------------------------------------------
 //  set vector gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set(const std::vector<char> &data);
+
     #ifndef CONDUIT_USE_CHAR
-        void set(const std::vector<char> &data);
+        void set(const std::vector<signed char> &data);
         void set(const std::vector<unsigned char> &data);
     #endif
 
@@ -705,12 +712,24 @@ public:
 //-----------------------------------------------------------------------------
 //  set via pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
+   //-------------------------------------------------------------------------
+   // Char is never used in the interface, and set(char* ) is reserved 
+   // for strings, so we provide a set_char_ptr if folks want to 
+   // 
+   //-------------------------------------------------------------------------
+   void set_char_ptr(const char *data,
+                     index_t num_elements = 1,
+                     index_t offset = 0,
+                     index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                     index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                     index_t endianness = Endianness::DEFAULT_ID);
+   
     #ifndef CONDUIT_USE_CHAR
         void set(const signed char *data,
                  index_t num_elements = 1,
                  index_t offset = 0,
-                 index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
-                 index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                 index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
+                 index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
                  index_t endianness = Endianness::DEFAULT_ID);
 
         void set(const unsigned char *data,
@@ -916,6 +935,8 @@ public:
 //-----------------------------------------------------------------------------
 //  set_path scalar gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_path(const std::string &path, char data);
+
     #ifndef CONDUIT_USE_CHAR
         void set_path(const std::string &path, signed char data);
         void set_path(const std::string &path, unsigned char data);
@@ -1021,9 +1042,13 @@ public:
 //-----------------------------------------------------------------------------
 //  set_path array gap methods for c-native types
 //-----------------------------------------------------------------------------
+
+    void set_path(const std::string &path,
+                  const char_array &data);
+
     #ifndef CONDUIT_USE_CHAR
         void set_path(const std::string &path,
-                      const char_array &data);
+                      const signed_char_array &data);
 
         void set_path(const std::string &path,
                       const unsigned_char_array &data);
@@ -1164,9 +1189,12 @@ public:
 //-----------------------------------------------------------------------------
 //  set_path vector gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_path(const std::string &path, 
+                  const std::vector<char> &data);
+                  
     #ifndef CONDUIT_USE_CHAR
         void set_path(const std::string &path, 
-                      const std::vector<char> &data);
+                      const std::vector<signed char> &data);
                  
         void set_path(const std::string &path, 
                       const std::vector<unsigned char> &data);
@@ -1398,13 +1426,21 @@ public:
 //-----------------------------------------------------------------------------
 //  set via pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_path_char_ptr(const std::string &path,
+                           const char *data,
+                           index_t num_elements = 1,
+                           index_t offset = 0,
+                           index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                           index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                           index_t endianness = Endianness::DEFAULT_ID);
+
     #ifndef CONDUIT_USE_CHAR
         void set_path(const std::string &path,
                       const signed char *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
-                      index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
-                      index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                      index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
+                      index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
                       index_t endianness = Endianness::DEFAULT_ID);
 
         void set_path(const std::string &path,
@@ -1712,12 +1748,19 @@ public:
 //-----------------------------------------------------------------------------
 //  set via pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_external_char_ptr(char *data,
+                               index_t num_elements = 1,
+                               index_t offset = 0,
+                               index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                               index_t endianness = Endianness::DEFAULT_ID);
+
     #ifndef CONDUIT_USE_CHAR
         void set_external(signed char *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
-                          index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
-                          index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                          index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
+                          index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
                           index_t endianness = Endianness::DEFAULT_ID);
 
         void set_external(unsigned char *data,
@@ -1864,8 +1907,10 @@ public:
 //-----------------------------------------------------------------------------
 //  set_external array gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_external(const char_array &data);
+        
     #ifndef CONDUIT_USE_CHAR
-        void set_external(const char_array &data);
+        void set_external(const signed_char_array &data);
         void set_external(const unsigned_char_array &data);
     #endif
 
@@ -1956,8 +2001,10 @@ public:
 //-----------------------------------------------------------------------------
 //  set_external vector gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_external(const std::vector<char> &data);
+    
     #ifndef CONDUIT_USE_CHAR
-        void set_external(const std::vector<char> &data);
+        void set_external(const std::vector<signed char> &data);
         void set_external(const std::vector<unsigned char> &data);
     #endif
 
@@ -2223,13 +2270,21 @@ public:
 //-----------------------------------------------------------------------------
 //  set via pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_path_external_char_ptr(const std::string &path,
+                                    char *data,
+                                    index_t num_elements = 1,
+                                    index_t offset = 0,
+                                    index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                                    index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                                    index_t endianness = Endianness::DEFAULT_ID);
+
     #ifndef CONDUIT_USE_CHAR
         void set_path_external(const std::string &path,
                                signed char *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
-                               index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
-                               index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                               index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
+                               index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
                                index_t endianness = Endianness::DEFAULT_ID);
 
         void set_path_external(const std::string &path,
@@ -2417,9 +2472,12 @@ public:
 //-----------------------------------------------------------------------------
 //  set_path_external array gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_path_external(const std::string &path,
+                           const char_array &data);
+
     #ifndef CONDUIT_USE_CHAR
         void set_path_external(const std::string &path,
-                               const char_array &data);
+                               const signed_char_array &data);
 
         void set_path_external(const std::string &path,
                               const unsigned_char_array &data);
@@ -2557,9 +2615,12 @@ public:
 //-----------------------------------------------------------------------------
 //  set_path_external vector gap methods for c-native types
 //-----------------------------------------------------------------------------
+    void set_path_external(const std::string &path, 
+                           const std::vector<char> &data);
+
     #ifndef CONDUIT_USE_CHAR
         void set_path_external(const std::string &path, 
-                               const std::vector<char> &data);
+                               const std::vector<signed char> &data);
                  
         void set_path_external(const std::string &path, 
                                const std::vector<unsigned char> &data);
@@ -2660,6 +2721,8 @@ public:
 // --  assignment c-native gap operators for scalar types ---
 //-----------------------------------------------------------------------------
 
+    Node &operator=(char data);
+    
     #ifndef CONDUIT_USE_CHAR
         Node &operator=(signed char data);
         Node &operator=(unsigned char data);
@@ -2714,9 +2777,10 @@ public:
 //-----------------------------------------------------------------------------
 // --  assignment c-native gap operators for data array  types ---
 //-----------------------------------------------------------------------------
+    Node &operator=(const char_array &data);
 
 #ifndef CONDUIT_USE_CHAR
-    Node &operator=(const char_array &data);
+    Node &operator=(const signed_char_array &data);
     Node &operator=(const unsigned_char_array &data);
 #endif
 
@@ -2772,9 +2836,10 @@ public:
 //-----------------------------------------------------------------------------
 // --  assignment c-native gap operators for vector types ---
 //-----------------------------------------------------------------------------
+    Node &operator=(const std::vector<char> &data);
 
 #ifndef CONDUIT_USE_CHAR
-    Node &operator=(const std::vector<char> &data);
+    Node &operator=(const std::vector<signed char> &data);
     Node &operator=(const std::vector<unsigned char> &data);
 #endif
 
@@ -2911,14 +2976,24 @@ public:
     /// convert to the index type 
     index_t          to_index_t() const;
 
-    /// convert to c signed integer types
-    char             to_char()  const;
+    /// convert to c integer types
+    char             to_char() const;
     short            to_short() const;
     int              to_int()   const;
     long             to_long()  const;
 
 #ifdef CONDUIT_HAS_LONG_LONG
     long long        to_long_long()  const;
+#endif
+
+    /// convert to c signed integer types
+    signed char      to_signed_char() const;
+    signed short     to_signed_short() const;
+    signed int       to_signed_int()   const;
+    signed long      to_signed_long()  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    long long        to_signed_long_long()  const;
 #endif
 
     /// convert to c unsigned integer types
@@ -2962,13 +3037,19 @@ public:
     /// convert to a floating point type
     void    to_float32_array(Node &res) const;
     void    to_float64_array(Node &res) const;
-    
-    /// convert to c signed integer types
+
+    /// convert to c types 
     void    to_char_array(Node &res)  const;
     void    to_short_array(Node &res) const;
     void    to_int_array(Node &res)   const;
     void    to_long_array(Node &res)  const;
     
+    /// convert to c signed integer types
+    void    to_signed_char_array(Node &res) const;
+    void    to_signed_short_array(Node &res) const;
+    void    to_signed_int_array(Node &res)   const;
+    void    to_signed_long_array(Node &res)  const;
+
     /// convert to c unsigned integer types
     void    to_unsigned_char_array(Node &res)  const;
     void    to_unsigned_short_array(Node &res) const;
@@ -3001,15 +3082,16 @@ public:
         public:
             ~Value();
             Value(const Value &rhs);
+
+            operator char()  const;
+
             // cast operators for signed integers
-            
-            // we need an explicit case for signed char
-            operator signed char() const;
-            operator short()       const;
-            operator int()         const;
-            operator long()        const;
+            operator signed char()  const;
+            operator signed short() const;
+            operator signed int()   const;
+            operator signed long()  const;
             #ifdef CONDUIT_HAS_LONG_LONG
-                operator long long() const;
+                operator signed long long() const;
             #endif
 
 
@@ -3028,20 +3110,19 @@ public:
             #ifdef CONDUIT_USE_LONG_DOUBLE
                 operator long double() const;
             #endif
-            
-        
+
             // -- as pointer -- //
+            // char is special
+            // we need a char operator to support char8_str case
+            operator char*()  const;
 
             // as signed int ptr
-            operator char*()        const;
-            // we need an explicit case for signed char, due to how int8 
-            // is implemented
-            operator signed char*() const;
-            operator short*()       const;
-            operator int*()         const;
-            operator long*()        const;
+            operator signed char*()  const;
+            operator signed short*() const;
+            operator signed int*()   const;
+            operator signed long*()  const;
             #ifdef CONDUIT_HAS_LONG_LONG
-                operator long long *() const;
+                operator signed long long *() const;
             #endif
 
             // as unsigned int ptr
@@ -3063,16 +3144,18 @@ public:
 
 
             // -- as array -- //
-
             operator char_array()  const;
-            operator short_array() const;
-            operator int_array()   const;
-            operator long_array()  const;
-            #ifdef CONDUIT_HAS_LONG_LONG
-                operator long_long_array() const;
-            #endif
             
+            // as signed array
+            operator signed_char_array()  const;
+            operator signed_short_array() const;
+            operator signed_int_array()   const;
+            operator signed_long_array()  const;
+            #ifdef CONDUIT_HAS_LONG_LONG
+                operator signed_long_long_array() const;
+            #endif
 
+            // as unsigned array
             operator unsigned_char_array()  const;
             operator unsigned_short_array() const;
             operator unsigned_int_array()   const;
@@ -3081,7 +3164,7 @@ public:
                 operator unsigned_long_long_array() const;
             #endif
 
-
+            // as floating point array
             operator float_array()  const;
             operator double_array() const;
             #ifdef CONDUIT_USE_LONG_DOUBLE
@@ -3113,17 +3196,17 @@ public:
             ~ConstValue();
             ConstValue(const Value &rhs);
             ConstValue(const ConstValue &rhs);
-            // cast operators for signed integers
-            
-            // we need an explicit case for signed char
-            operator signed char() const;
-            operator short()       const;
-            operator int()         const;
-            operator long()        const;
-            #ifdef CONDUIT_HAS_LONG_LONG
-                operator long long() const;
-            #endif
 
+            operator char()  const;
+
+            // cast operators for signed integers
+            operator signed char()  const;
+            operator signed short() const;
+            operator signed int()   const;
+            operator signed long()  const;
+            #ifdef CONDUIT_HAS_LONG_LONG
+                operator signed long long() const;
+            #endif
 
             // cast operators for unsigned integers
             operator unsigned char()   const;
@@ -3140,20 +3223,20 @@ public:
             #ifdef CONDUIT_USE_LONG_DOUBLE
                 operator long double() const;
             #endif
-            
-        
+
             // -- as pointer -- //
+            // char is special
+            // we need a char operator to support char8_str case
+            operator const char*()  const;
+
 
             // as signed int ptr
-            operator const char*()        const;
-            // we need an explicit case for signed char, due to how int8 
-            // is implemented
-            operator const signed char*() const;
-            operator const short*()       const;
-            operator const int*()         const;
-            operator const long*()        const;
+            operator const signed char*()  const;
+            operator const signed short*() const;
+            operator const signed int*()   const;
+            operator const signed long*()  const;
             #ifdef CONDUIT_HAS_LONG_LONG
-                operator const long long *() const;
+                operator const signed long long *() const;
             #endif
 
             // as unsigned int ptr
@@ -3165,7 +3248,6 @@ public:
                 operator const unsigned long long *() const;
             #endif
 
-            
             // as floating point ptr
             operator const float*()  const;
             operator const double*() const;
@@ -3175,16 +3257,18 @@ public:
 
 
             // -- as array -- //
-
-            operator const char_array()  const;
-            operator const short_array() const;
-            operator const int_array()   const;
-            operator const long_array()  const;
-            #ifdef CONDUIT_HAS_LONG_LONG
-                operator const long_long_array() const;
-            #endif
+            operator const char_array() const;
             
+            // as signed array
+            operator const signed_char_array() const;
+            operator const signed_short_array() const;
+            operator const signed_int_array()   const;
+            operator const signed_long_array()  const;
+            #ifdef CONDUIT_HAS_LONG_LONG
+                operator const signed_long_long_array() const;
+            #endif
 
+            // as unsigned array
             operator const unsigned_char_array()  const;
             operator const unsigned_short_array() const;
             operator const unsigned_int_array()   const;
@@ -3193,7 +3277,7 @@ public:
                 operator const unsigned_long_long_array() const;
             #endif
 
-
+            // as floating point array
             operator const float_array()  const;
             operator const double_array() const;
             #ifdef CONDUIT_USE_LONG_DOUBLE
@@ -3635,8 +3719,8 @@ public:
 /// description:
 ///  Direct access to data at leaf types (native c++ types)
 //-----------------------------------------------------------------------------`
-     
-     // signed integer scalars
+
+    // c style scalar
     char           as_char()  const;
     short          as_short() const;
     int            as_int()   const;
@@ -3646,10 +3730,19 @@ public:
     long long      as_long_long() const;
 #endif
 
+    // signed integer scalars
+    signed char    as_signed_char() const;
+    signed short   as_signed_short() const;
+    signed int     as_signed_int()   const;
+    signed long    as_signed_long()  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    signed long long  as_signed_long_long() const;
+#endif
+
     // unsigned integer scalars
     unsigned char    as_unsigned_char()  const;
     unsigned short   as_unsigned_short() const;
-    
     unsigned int     as_unsigned_int()   const;
     unsigned long    as_unsigned_long()  const;
 
@@ -3665,7 +3758,7 @@ public:
     long double      as_long_double() const;
 #endif
 
-    // signed integers via pointers
+    // c style via pointer
     char            *as_char_ptr();
     short           *as_short_ptr();
     int             *as_int_ptr();
@@ -3673,6 +3766,16 @@ public:
 
 #ifdef CONDUIT_HAS_LONG_LONG
     long long       *as_long_long_ptr();
+#endif
+
+    // signed integers via pointers
+    signed char      *as_signed_char_ptr();
+    signed short     *as_signed_short_ptr();
+    signed int       *as_signed_int_ptr();
+    signed long      *as_signed_long_ptr();
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    signed long long *as_signed_long_long_ptr();
 #endif
 
     // unsigned integers via pointers
@@ -3693,7 +3796,7 @@ public:
     long double         *as_long_double_ptr();
 #endif
 
-    // signed integers via pointers (const variants)
+    // char via pointer (const variant)
     const char       *as_char_ptr()  const;
     const short      *as_short_ptr() const;
     const int        *as_int_ptr()   const;
@@ -3701,6 +3804,16 @@ public:
 
 #ifdef CONDUIT_HAS_LONG_LONG
     const long long  *as_long_long_ptr() const;
+#endif
+
+    // signed integers via pointers (const variants)
+    const signed char       *as_signed_char_ptr()  const;
+    const signed short      *as_signed_short_ptr() const;
+    const signed int        *as_signed_int_ptr()   const;
+    const signed long       *as_signed_long_ptr()  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    const signed long long  *as_signed_long_long_ptr() const;
 #endif
 
     // unsigned integers via pointers (const variants)
@@ -3721,14 +3834,24 @@ public:
     const long double     *as_long_double_ptr() const;
 #endif
 
-    // signed integer array types via conduit::DataArray
-    char_array       as_char_array();
-    short_array      as_short_array();
-    int_array        as_int_array();
-    long_array       as_long_array();
+    // c style array via conduit::DataArray
+    char_array        as_char_array();
+    short_array       as_short_array();
+    int_array         as_int_array();
+    long_array        as_long_array();
 
 #ifdef CONDUIT_HAS_LONG_LONG
     long_long_array  as_long_long_array();
+#endif
+
+    // signed integer array types via conduit::DataArray
+    signed_char_array  as_signed_char_array();
+    signed_short_array as_signed_short_array();
+    signed_int_array   as_signed_int_array();
+    signed_long_array  as_signed_long_array();
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    signed_long_long_array  as_signed_long_long_array();
 #endif
 
     // unsigned integer array types via conduit::DataArray
@@ -3749,7 +3872,7 @@ public:
     long_double_array as_long_double_array();
 #endif
 
-    // signed integer array types via conduit::DataArray (const variants)
+    // c array type via conduit::DataArray (const variant)
     const char_array       as_char_array()  const;
     const short_array      as_short_array() const;
     const int_array        as_int_array()   const;
@@ -3757,6 +3880,16 @@ public:
 
 #ifdef CONDUIT_HAS_LONG_LONG
     const long_long_array  as_long_long_array() const;
+#endif
+    
+    // signed integer array types via conduit::DataArray (const variants)
+    const signed_char_array       as_signed_char_array()  const;
+    const signed_short_array      as_signed_short_array() const;
+    const signed_int_array        as_signed_int_array()   const;
+    const signed_long_array       as_signed_long_array()  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    const signed_long_long_array  as_signed_long_long_array() const;
 #endif
 
 

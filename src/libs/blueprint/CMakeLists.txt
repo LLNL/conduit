@@ -106,9 +106,9 @@ if(FORTRAN_FOUND)
     # Specify fortran sources
     #
     set(blueprint_fortran_sources
-        fortran/conduit_blueprint_fortran.f
-        fortran/conduit_blueprint_mcarray_fortran.f
-        fortran/conduit_blueprint_mesh_fortran.f)
+        fortran/conduit_blueprint_fortran.f90
+        fortran/conduit_blueprint_mcarray_fortran.f90
+        fortran/conduit_blueprint_mesh_fortran.f90)
 
 endif()
 
@@ -123,15 +123,7 @@ add_compiled_library(NAME conduit_blueprint
                      HEADERS_DEST_DIR include/conduit)
 
 
-# #
-# # Link with conduit
-# #
-# target_link_libraries(conduit_blueprint conduit)
-
 if(FORTRAN_FOUND)
-    set_target_properties(conduit_blueprint
-                          PROPERTIES Fortran_FORMAT "FREE")
-
     ###############################################################################
     # Special install targets for conduit fortran modules 
     ###############################################################################
