@@ -74,6 +74,13 @@ The ``Mesh Blueprint`` facilitates this. For more details, please see the :ref:`
 
 For more background on Conduit, please see :doc:`presentations`.
 
+
+Getting Started
+----------------
+
+To get started building and using Conduit, see the :doc:`Quick Start Guide <quick_start>`  and the Conduit Tutorials for  :doc:`C++ <tutorial_cpp>` and :doc:`Python <tutorial_python>`. For more details about building Conduit see the :doc:`Building documentation<building>`.
+
+
 Unique Features
 ----------------
 
@@ -161,7 +168,8 @@ Conduit Documentation
 
 .. toctree::
    :maxdepth: 2
-
+   
+   quick_start
    user
    developer
    releases

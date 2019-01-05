@@ -48,39 +48,18 @@
 Building
 =================
 
-This page provides details on several ways to build Conduit.
+This page provides details on several ways to build Conduit from source.
 
+For the shortest path from zero to Conduit, see :doc:`getting_started`.
 
 If you are building features that depend on third party libraries we recommend using :ref:`uberenv <building_with_uberenv>` which leverages Spack or :ref:`Spack directly<building_with_spack>`. 
 We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>`.
 and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
-.. _uberenv_quickstart:
-
-Quick Start Install With Third Party Dependencies 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The quickest path to install conduit and its dependencies is via :ref:`uberenv <building_with_uberenv>`:
-
-.. code:: bash
-    
-    git clone --recursive https://github.com/llnl/conduit.git
-    cd conduit
-    python scripts/uberenv/uberenv.py --install --prefix="build"
 
 
-After this completes, ``build/conduit-install`` will contain a Conduit install.
-
-If you would like to run tests during the build process to validate the build and install, you can use the ``--run_tests`` option:
-
-.. code:: bash
-
-    python scripts/uberenv/uberenv.py --install --run_tests --prefix="build"
-
-
-
-Detailed Getting Started
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Obtain the Conduit source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Clone the Conduit repo from Github:
 
@@ -99,7 +78,8 @@ If you cloned without ``--recursive``, you can checkout this submodule using:
     git submodule update
 
 
-Configure a build:
+Configure a build
+~~~~~~~~~~~~~~~~~~~~
 
 Conduit uses CMake for its build system. These instructions assume ``cmake`` is in your path. 
 We recommend CMake 3.9 or newer, for more details see :ref:`Supported CMake Versions <supported_cmake>`.
@@ -300,6 +280,21 @@ Default invocation on OSX:
     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
                                       --spec %clang \
                                       --spack-config-dir scripts/uberenv/spack_configs/darwin/
+
+
+The uberenv `--install` installs conduit\@master (not just the development dependencies):
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install
+
+
+To run tests during the build process to validate the build and install, you can use the ``--run_tests`` option:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install \
+                                      --run_tests
 
 For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
 
