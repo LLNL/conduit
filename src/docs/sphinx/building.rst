@@ -50,7 +50,7 @@ Building
 
 This page provides details on several ways to build Conduit from source.
 
-For the shortest path from zero to Conduit, see :doc:`getting_started`.
+For the shortest path from zero to Conduit, see :doc:`quick_start`.
 
 If you are building features that depend on third party libraries we recommend using :ref:`uberenv <building_with_uberenv>` which leverages Spack or :ref:`Spack directly<building_with_spack>`. 
 We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>`.
