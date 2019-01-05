@@ -66,7 +66,7 @@ packages:
     paths:
       mvapich2@2.2%gcc@4.9.3: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-4.9.3/ 
       mvapich2@2.2%clang@coral: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-clang-upstream-2018.12.03/
-      mvapich2@2.2%xl@coral: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-2018.11.26/bin/mpicc 
+      mvapich2@2.2%xl@coral: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-2018.11.26/ 
     buildable: False
 
 
