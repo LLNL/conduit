@@ -89,6 +89,7 @@ set(conduit_relay_headers
     conduit_relay_io.hpp
     conduit_relay_io_identify_protocol.hpp
     conduit_relay_io_blueprint.hpp
+    conduit_relay_io_blueprint_api.hpp
     conduit_relay_web.hpp
     conduit_relay_web_node_viewer_server.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h

@@ -63,6 +63,8 @@
 #include "conduit_relay_exports.h"
 #include "conduit_relay_config.h"
 
+#include <mpi.h>
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -76,27 +78,37 @@ namespace relay
 {
 
 //-----------------------------------------------------------------------------
+// -- begin conduit::relay::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
+{
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::relay::io_blueprint --
 //-----------------------------------------------------------------------------
 namespace io_blueprint
 {
 
-// Define an argument macro that does not add the communicator argument.
-#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) 
+// Define an argument macro that *does* add the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) ,ARG
 
 // Functions are provided by this include file.
 #include "conduit_relay_io_blueprint_api.hpp"
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::relay::io_blueprint --
+// -- end conduit::relay::mpi::io_blueprint --
+//-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::mpi --
 //-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay --
 //-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------
