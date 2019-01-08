@@ -115,7 +115,12 @@ IF(ENABLE_MPI)
      endforeach()
 
      foreach(lib_val ${adios_mpi_libs})
-         set(adios_mpi_make_libs "${adios_mpi_make_libs} ${lib_val}")
+         if(IS_ABSOLUTE ${lib_val})
+             set(adios_mpi_make_libs "${adios_mpi_make_libs} ${lib_val}")
+         else()
+             # if its not an abs path, we need to add the -l
+             set(adios_mpi_make_libs "${adios_mpi_make_libs} -l${lib_val}")
+         endif()
      endforeach()
 
      set("CONDUIT_ADIOS_MPI_MAKE_INCLUDES_STR" "${adios_mpi_make_incs}")
@@ -143,8 +148,13 @@ foreach(inc_val ${adios_nompi_includes})
     set(adios_nompi_make_incs "${adios_nompi_make_incs} -I${inc_val}")
 endforeach()
 
-foreach(lib_val ${adios_mpi_libs})
-    set(adios_nompi_make_libs "${adios_nompi_make_libs} ${lib_val}")
+foreach(lib_val ${adios_nompi_libs})
+    if(IS_ABSOLUTE ${lib_val})
+        set(adios_nompi_make_libs "${adios_nompi_make_libs} ${lib_val}")
+    else()
+        # if its not an abs path, we need to add the -l
+        set(adios_nompi_make_libs "${adios_nompi_make_libs} -l${lib_val}")
+    endif()
 endforeach()
 
 set("CONDUIT_ADIOS_NOMPI_MAKE_INCLUDES_STR" "${adios_nompi_make_incs}")
