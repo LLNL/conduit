@@ -105,7 +105,23 @@ IF(ENABLE_MPI)
     blt_register_library(NAME adios_mpi
                          INCLUDES ${adios_mpi_includes}
                          LIBRARIES ${adios_mpi_libs})
-ENDIF(ENABLE_MPI)
+
+     # generate libs and include strs to export to config.mk
+     set(adios_mpi_make_incs "")
+     set(adios_mpi_make_libs "")
+     
+     foreach(inc_val ${adios_mpi_includes})
+         set(adios_mpi_make_incs "${adios_mpi_make_incs} -I${inc_val}")
+     endforeach()
+
+     foreach(lib_val ${adios_mpi_libs})
+         set(adios_mpi_make_libs "${adios_mpi_make_libs} ${lib_val}")
+     endforeach()
+
+     set("CONDUIT_ADIOS_MPI_MAKE_INCLUDES_STR" "${adios_mpi_make_incs}")
+     set("CONDUIT_ADIOS_MPI_MAKE_LIBS_STR" "${adios_mpi_make_libs}")
+
+ ENDIF(ENABLE_MPI)
 
 # Find the serial ADIOS library variants that we want.
 FIND_ADIOS("sequential" ADIOS_FOUND ADIOS_SEQ_INC ADIOS_SEQ_LIB)
@@ -118,6 +134,21 @@ set(adios_nompi_libs  ${ADIOS_SEQ_LIB} ${ADIOSREAD_SEQ_LIB})
 if(UNIX AND NOT APPLE)
     list(APPEND adios_nompi_libs rt ${CMAKE_THREAD_LIBS_INIT})
 endif()
+
+# generate libs and include strs to export to config.mk
+set(adios_nompi_make_incs "")
+set(adios_nompi_make_libs "")
+
+foreach(inc_val ${adios_nompi_includes})
+    set(adios_nompi_make_incs "${adios_nompi_make_incs} -I${inc_val}")
+endforeach()
+
+foreach(lib_val ${adios_mpi_libs})
+    set(adios_nompi_make_libs "${adios_nompi_make_libs} ${lib_val}")
+endforeach()
+
+set("CONDUIT_ADIOS_NOMPI_MAKE_INCLUDES_STR" "${adios_nompi_make_incs}")
+set("CONDUIT_ADIOS_NOMPI_MAKE_LIBS_STR" "${adios_nompi_make_libs}")
 
 # bundle both seq and seq read only libs as 'adios_nompi'
 blt_register_library(NAME adios_nompi

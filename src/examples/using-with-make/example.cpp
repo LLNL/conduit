@@ -59,6 +59,7 @@ int main(int argc, char **argv)
 {
     std::cout << conduit::about() << std::endl
               << conduit::relay::about() << std::endl
+              << conduit::relay::io::about() << std::endl
               << conduit::blueprint::about() << std::endl;
 }
 

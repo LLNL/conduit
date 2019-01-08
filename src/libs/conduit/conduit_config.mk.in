@@ -64,8 +64,6 @@ CONDUIT_HDF5_DIR = @HDF5_DIR@
 CONDUIT_ZLIB_DIR = @ZLIB_DIR@
 CONDUIT_ADIOS_DIR = @ADIOS_DIR@
 
-# TODO: ADIOS Flags
-
 
 #################
 # Include Flags
@@ -78,6 +76,13 @@ CONDUIT_INCLUDE_FLAGS += $(if $(CONDUIT_HDF5_DIR),-I$(CONDUIT_HDF5_DIR)/include)
 # Linking Flags
 #################
 
+###################################################
+# ADIOS
+#################
+CONDUIT_ADIOS_LIB_FLAGS = $(if $(CONDUIT_ADIOS_DIR),@CONDUIT_ADIOS_NOMPI_MAKE_LIBS_STR@)
+CONDUIT_ADIOS_MPI_LIB_FLAGS = $(if $(CONDUIT_ADIOS_DIR),@CONDUIT_ADIOS_MPI_MAKE_LIBS_STR@)
+
+
 ##########
 # HDF5
 ##########
@@ -89,6 +94,8 @@ CONDUIT_HDF5_LIB_FLAGS = $(if $(CONDUIT_HDF5_DIR),-L $(CONDUIT_HDF5_DIR)/lib -lh
 ##########
 CONDUIT_ZLIB_LIB_FLAGS = $(if $(CONDUIT_ZLIB_DIR),-L $(CONDUIT_ZLIB_DIR)/lib -lz)
 
+
+
 ##########
 # Conduit
 ##########
@@ -97,6 +104,7 @@ CONDUIT_LIB_FLAGS = -L $(CONDUIT_DIR)/lib \
                     -lconduit_blueprint \
                     -lconduit_relay \
                     -lconduit \
+                    $(CONDUIT_ADIOS_LIB_FLAGS) \
                     $(CONDUIT_HDF5_LIB_FLAGS) \
                     $(CONDUIT_ZLIB_LIB_FLAGS) \
                     -ldl
@@ -108,6 +116,7 @@ CONDUIT_MPI_LIB_FLAGS = -L $(CONDUIT_DIR)/lib \
                         -lconduit_blueprint \
                         -lconduit_relay \
                         -lconduit \
+                        $(CONDUIT_ADIOS_MPI_LIB_FLAGS) \
                         $(CONDUIT_HDF5_LIB_FLAGS) \
                         $(CONDUIT_ZLIB_LIB_FLAGS) \
                         -ldl

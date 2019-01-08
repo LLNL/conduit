@@ -46,18 +46,25 @@
 # based build system.
 #
 # To build:
-#  env CONDUIT_DIR={conduit install path} make
+#  make CONDUIT_DIR={conduit install path} 
+#  ./example
+#
+# From within a conduit install:
+#  make 
+#  ./example
+#
+# Which corresponds to:
+#
+#  make CONDUIT_DIR=../../../ 
 #  ./example
 #
 ###############################################################################
 
-# See $(CONDUIT_DIR)/share/conduit/conduit_config.mk for detailed linking info 
+CONDUIT_DIR ?= ../../..
+
+# See $(CONDUIT_DIR)/share/conduit/conduit_config.mk for detailed linking info
 include $(CONDUIT_DIR)/share/conduit/conduit_config.mk
 
 main:
 	$(CXX) $(CONDUIT_INCLUDE_FLAGS) example.cpp $(CONDUIT_LIB_FLAGS) -o example
-
-# Note: conduit_config.mk does not yet support ADIOS, hence the extra logic here
-with_adios:
-	$(CXX) $(CONDUIT_INCLUDE_FLAGS) example.cpp $(CONDUIT_LIB_FLAGS) -o example -L$(ADIOS_DIR)/lib/ -L$(ZFP_DIR)/lib/ -L$(LZ4_DIR)/lib/ -L$(BLOSC_DIR)/lib/ -L$(SZ_DIR)/lib/ -ladios_nompi -ladiosread_nompi -lzfp -llz4 -lblosc -lSZ -lz -lrt
 
