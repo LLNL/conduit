@@ -49,21 +49,15 @@
 #  env CONDUIT_DIR={conduit install path} make
 #  ./example
 #
-# Note:
-#  If you use features that leverage external third party libraries 
-#  (ex: relay hdf5 features), you may need to pass additional include 
-#   and linking flags. 
-# 
-#
 ###############################################################################
 
-
-INC_FLAGS=-I$(CONDUIT_DIR)/include/conduit
-LINK_FLAGS=-L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint -L$(HDF5_DIR)/lib/ -lhdf5 
+# See $(CONDUIT_DIR)/share/conduit/conduit_config.mk for detailed linking info 
+include $(CONDUIT_DIR)/share/conduit/conduit_config.mk
 
 main:
-	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example
+	$(CXX) $(CONDUIT_INCLUDE_FLAGS) example.cpp $(CONDUIT_LIB_FLAGS) -o example
 
+# Note: conduit_config.mk does not yet support ADIOS, hence the extra logic here
 with_adios:
-	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example -L$(ADIOS_DIR)/lib/ -L$(ZFP_DIR)/lib/ -L$(LZ4_DIR)/lib/ -L$(BLOSC_DIR)/lib/ -L$(SZ_DIR)/lib/ -ladios_nompi -ladiosread_nompi -lzfp -llz4 -lblosc -lSZ -lz -lrt
+	$(CXX) $(CONDUIT_INCLUDE_FLAGS) example.cpp $(CONDUIT_LIB_FLAGS) -o example -L$(ADIOS_DIR)/lib/ -L$(ZFP_DIR)/lib/ -L$(LZ4_DIR)/lib/ -L$(BLOSC_DIR)/lib/ -L$(SZ_DIR)/lib/ -ladios_nompi -ladiosread_nompi -lzfp -llz4 -lblosc -lSZ -lz -lrt
 
