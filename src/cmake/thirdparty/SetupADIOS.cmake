@@ -118,8 +118,14 @@ IF(ENABLE_MPI)
          if(IS_ABSOLUTE ${lib_val})
              set(adios_mpi_make_libs "${adios_mpi_make_libs} ${lib_val}")
          else()
-             # if its not an abs path, we need to add the -l
-             set(adios_mpi_make_libs "${adios_mpi_make_libs} -l${lib_val}")
+             string(SUBSTRING ${lib_val} 0 1 check_start)
+             if("${check_start}" STREQUAL "-")
+                 set(adios_nompi_make_libs "${adios_mpi_make_libs} ${lib_val}")
+             else()
+                 # if its not an abs path and it doesn't start with "-"
+                 # we need to add the -l
+                 set(adios_mpi_make_libs "${adios_mpi_make_libs} -l${lib_val}")
+             endif()
          endif()
      endforeach()
 
@@ -152,8 +158,14 @@ foreach(lib_val ${adios_nompi_libs})
     if(IS_ABSOLUTE ${lib_val})
         set(adios_nompi_make_libs "${adios_nompi_make_libs} ${lib_val}")
     else()
-        # if its not an abs path, we need to add the -l
-        set(adios_nompi_make_libs "${adios_nompi_make_libs} -l${lib_val}")
+        string(SUBSTRING ${lib_val} 0 1 check_start)
+        if("${check_start}" STREQUAL "-")
+            set(adios_nompi_make_libs "${adios_nompi_make_libs} ${lib_val}")
+        else()
+            # if its not an abs path and it doesn't start with "-"
+            # we need to add the -l
+            set(adios_nompi_make_libs "${adios_nompi_make_libs} -l${lib_val}")
+        endif()
     endif()
 endforeach()
 
