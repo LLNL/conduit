@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -69,6 +69,8 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_bitwidth_style_types.h.in"
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_exports.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h")
 
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.mk.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk")
 
 #
 # Specify conduit cpp headers
@@ -212,4 +214,8 @@ if(FORTRAN_FOUND)
             DESTINATION include/conduit)
 endif()
 
+
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk"
+        DESTINATION share/conduit/)
 
