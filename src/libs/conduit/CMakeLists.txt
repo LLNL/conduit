@@ -55,6 +55,8 @@ include("cmake/BitwidthMapping.cmake")
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     CONDUIT_INSTALL_PREFIX)
 
+set(CONDUIT_INSTALL_PREFIX ${CONDUIT_INSTALL_PREFIX} CACHE STRING "" FORCE)
+
 if(FORTRAN_FOUND)
     set(CONDUIT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
@@ -68,9 +70,6 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_bitwidth_style_types.h.in"
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_exports.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h")
-
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.mk.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk")
 
 #
 # Specify conduit cpp headers
@@ -214,8 +213,4 @@ if(FORTRAN_FOUND)
             DESTINATION include/conduit)
 endif()
 
-
-install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk"
-        DESTINATION share/conduit/)
 

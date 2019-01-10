@@ -153,6 +153,10 @@ else()
     message(STATUS "Skipping test targets (ENABLE_TESTS = OFF)")
 endif()
 
+################################
+# Add our config helpers
+################################
+add_subdirectory(config)
 
 ################################
 # Create CMake importable

@@ -176,7 +176,9 @@ if(UNIX AND NOT APPLE)
     # we need these for civetweb on linux, we may need similar libs
     # on windows (OSX appears ok without them)
     list(APPEND conduit_relay_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
+    set(CONDUIT_MAKE_EXTRA_LIBS "${CONDUIT_MAKE_EXTRA_LIBS} -ldl -lrt ${CMAKE_THREAD_LIBS_INIT}" CACHE STRING "" FORCE)
 endif()
+
 
 #
 # Link with silo and hdf5 and adios if these are enabled
