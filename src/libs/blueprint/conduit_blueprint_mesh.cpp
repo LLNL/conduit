@@ -2807,9 +2807,9 @@ mesh::adjset::verify(const Node &adjset,
                 group_res &= verify_integer_field(protocol, chld,
                     chld_info, "values");
             }
-            if(chld.has_child("boundary"))
+            else if(chld.has_child("boundary"))
             {
-                group_res &= verify_integer_field(protocol, chld,
+                group_res &= verify_string_field(protocol, chld,
                     chld_info, "boundary");
                 group_res &= verify_integer_field(protocol, chld,
                     chld_info, "location");
