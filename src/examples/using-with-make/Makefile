@@ -71,3 +71,6 @@ LNK_FLAGS = $(CONDUIT_LINK_RPATH) $(CONDUIT_LIB_FLAGS)
 main:
 	$(CXX) $(INC_FLAGS) example.cpp $(LNK_FLAGS) -o example
 
+clean:
+	rm -f example
+

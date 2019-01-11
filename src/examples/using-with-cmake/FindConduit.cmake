@@ -68,6 +68,8 @@ if(NOT CONDUIT_DIR)
     MESSAGE(FATAL_ERROR "Could not find Conduit. Conduit requires explicit CONDUIT_DIR.")
 endif()
 
+get_filename_component(CONDUIT_DIR ${CONDUIT_DIR} ABSOLUTE)
+
 if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit.cmake)
     MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit.cmake)")
 endif()
@@ -75,6 +77,8 @@ endif()
 ###############################################################################
 # Import Conduit's CMake targets
 ###############################################################################
+include(${CONDUIT_DIR}/lib/cmake/conduit-deps-paths.cmake)
+include(${CONDUIT_DIR}/lib/cmake/conduit-config.cmake)
 include(${CONDUIT_DIR}/lib/cmake/conduit.cmake)
 
 ###############################################################################

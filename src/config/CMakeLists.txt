@@ -46,10 +46,52 @@
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.mk.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk")
 
+if (NOT DEFINED CONDUIT_INSTALL_INCLUDE_DIR)
+  set(CONDUIT_INSTALL_INCLUDE_DIR "include")
+endif()
+
+if (NOT DEFINED CONDUIT_INSTALL_CONFIG_DIR)
+  set(CONDUIT_INSTALL_CONFIG_DIR "lib")
+endif()
+
+if (NOT DEFINED CONDUIT_INSTALL_LIB_DIR)
+  set(CONDUIT_INSTALL_LIB_DIR "lib")
+endif()
+
+if (NOT DEFINED CONDUIT_INSTALL_BIN_DIR)
+  set(CONDUIT_INSTALL_BIN_DIR "bin")
+endif()
+
+if (NOT DEFINED CONDUIT_INSTALL_SHARED_RESOURCES_DIR)
+  set(CONDUIT_INSTALL_SHARED_RESOURCES_DIR "share/conduit")
+endif()
+
+if (NOT DEFINED CONDUIT_INSTALL_CMAKE_MODULE_DIR)
+  set(CONDUIT_INSTALL_CMAKE_MODULE_DIR "${CONDUIT_INSTALL_CONFIG_DIR}/cmake")
+endif()
+
+include(CMakePackageConfigHelpers)
+# setup cmake exports
+configure_package_config_file(
+  ${PROJECT_SOURCE_DIR}/cmake/conduit-config.cmake.in
+  ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-config.cmake
+  INSTALL_DESTINATION ${CONDUIT_INSTALL_CONFIG_DIR}
+  PATH_VARS
+    CONDUIT_INSTALL_INCLUDE_DIR
+    CONDUIT_INSTALL_LIB_DIR
+    CONDUIT_INSTALL_BIN_DIR
+    CONDUIT_INSTALL_SHARED_RESOURCES_DIR
+    CONDUIT_INSTALL_CMAKE_MODULE_DIR
+    )
+
+configure_file (${PROJECT_SOURCE_DIR}/cmake/conduit-deps-paths.cmake.in
+                ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-deps-paths.cmake)
 
 install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk"
         DESTINATION share/conduit/)
 
-
-
+install(FILES
+        ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-config.cmake
+        ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-deps-paths.cmake
+        DESTINATION ${CONDUIT_INSTALL_CMAKE_MODULE_DIR})

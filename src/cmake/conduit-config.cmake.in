@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -9,7 +9,7 @@
 # 
 # This file is part of Conduit. 
 # 
-# For details, see https://lc.llnl.gov/conduit/.
+# For details, see: http://software.llnl.gov/conduit/.
 # 
 # Please also read conduit/LICENSE
 # 
@@ -41,45 +41,24 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-#
-# Example that shows how to use an installed instance of Conduit in another
-# CMake-based build system.
-#
-# To build:
-#  mkdir build
-#  cd build
-#  cmake -DCONDUIT_DIR={conduit install path} ../
-#  make
-#  ./example
-#
-#
-# If run in sub directory of a conduit install, 
-# CONDUIT_DIR will be defaulted to ../../..
-# 
-#  mkdir build
-#  cd build
-#  cmake ..
-#  make
-#  ./example
-#
-###############################################################################
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
-cmake_minimum_required(VERSION 3.0)
+@PACKAGE_INIT@
 
-project(using_with_cmake)
+# Conduit version number
+set(CONDUIT_VERSION "@CONDUIT_VERSION@")
 
-if(NOT CONDUIT_DIR)
-    set(CONDUIT_DIR "../../..")
+set(CONDUIT_INCLUDE_DIRS "@PACKAGE_CONDUIT_INSTALL_INCLUDE_DIR@")
+
+# This is true when the package is still in the build directory (not installed)
+if(CMAKE_CURRENT_LIST_DIR STREQUAL "@CONDUIT_BINARY_DIR@/@CONDUIT_INSTALL_CONFIG_DIR@")
+  set(CONDUIT_PACKAGE_IN_BUILD TRUE)
 endif()
 
-include("FindConduit.cmake")
 
-# setup the conduit include path
-include_directories(${CONDUIT_INCLUDE_DIRS})
+set(CONDUIT_INCLUDE_DIRS "@PACKAGE_CONDUIT_INSTALL_INCLUDE_DIR@")
+set(CONDUIT_TPLS_HDF5_DIR  "@HDF5_DIR@")
+set(CONDUIT_TPLS_ADIOS_DIR "@ADIOS_DIR@")
 
-# create our example 
-add_executable(example example.cpp)
 
-# link to conduit targets
-target_link_libraries(example conduit conduit_relay conduit_blueprint)
 
