@@ -104,14 +104,13 @@
 #define F_CONDUIT_FLOAT32_NATIVE_NAME "@CONDUIT_FLOAT32_NATIVE_TYPE@"
 #define F_CONDUIT_FLOAT64_NATIVE_NAME "@CONDUIT_FLOAT64_NATIVE_TYPE@"
 
-
 !------------------------------------------------------------------------------
 ! -- c style signed integer type maps --
 !------------------------------------------------------------------------------
-#define F_CONDUIT_NATIVE_CHAR_ID  @CONDUIT_NATIVE_CHAR_ID@
-#define F_CONDUIT_NATIVE_SHORT_ID @CONDUIT_NATIVE_SHORT_ID@
-#define F_CONDUIT_NATIVE_INT_ID   @CONDUIT_NATIVE_INT_ID@
-#define F_CONDUIT_NATIVE_LONG_ID  @CONDUIT_NATIVE_LONG_ID@
+#define F_CONDUIT_NATIVE_SIGNED_CHAR_ID  @CONDUIT_NATIVE_SIGNED_CHAR_ID@
+#define F_CONDUIT_NATIVE_SIGNED_SHORT_ID @CONDUIT_NATIVE_SIGNED_SHORT_ID@
+#define F_CONDUIT_NATIVE_SIGNED_INT_ID   @CONDUIT_NATIVE_SIGNED_INT_ID@
+#define F_CONDUIT_NATIVE_SIGNED_LONG_ID  @CONDUIT_NATIVE_SIGNED_LONG_ID@
 
 !------------------------------------------------------------------------------
 ! -- c style unsigned integer type maps --
@@ -121,6 +120,17 @@
 #define F_CONDUIT_NATIVE_UNSIGNED_INT_ID   @CONDUIT_NATIVE_UNSIGNED_INT_ID@
 #define F_CONDUIT_NATIVE_UNSIGNED_LONG_ID  @CONDUIT_NATIVE_UNSIGNED_LONG_ID@
 
+!------------------------------------------------------------------------------
+! -- c style integer type maps --
+!------------------------------------------------------------------------------
+#if (CHAR_MIN==0)
+#define F_CONDUIT_NATIVE_CHAR_ID  @CONDUIT_NATIVE_UNSIGNED_CHAR_ID@
+#else 
+#define F_CONDUIT_NATIVE_CHAR_ID  @CONDUIT_NATIVE_SIGNED_CHAR_ID@
+#endif
+#define F_CONDUIT_NATIVE_SHORT_ID @CONDUIT_NATIVE_SIGNED_SHORT_ID@
+#define F_CONDUIT_NATIVE_INT_ID   @CONDUIT_NATIVE_SIGNED_INT_ID@
+#define F_CONDUIT_NATIVE_LONG_ID  @CONDUIT_NATIVE_SIGNED_LONG_ID@
 
 !------------------------------------------------------------------------------
 ! -- c style floating point type maps --

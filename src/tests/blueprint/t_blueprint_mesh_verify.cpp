@@ -236,14 +236,19 @@ bool verify_nestset_index_protocol(const Node &n, Node &info)
 
 bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
 {
-    return blueprint::mesh::is_multi_domain(n);
+    // we can only call is_multi_domain if verify is true
+    return  blueprint::mesh::verify(n,info) && 
+            blueprint::mesh::is_multi_domain(n);
 }
 
-void CHECK_MESH(VerifyFun verify, const Node &n, Node &info, bool expected)
-{
-    EXPECT_EQ(verify(n, info), expected);
-    EXPECT_TRUE(has_consistent_validity(info));
-}
+
+/// Helper for mesh verify checks ///
+
+#define CHECK_MESH(verify, n, info, expected)    \
+{                                                \
+    EXPECT_EQ(verify(n, info), expected);        \
+    EXPECT_TRUE(has_consistent_validity(info));  \
+}                                                \
 
 /// Mesh Coordinate Set Tests ///
 
@@ -674,7 +679,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
 
     { // Single Shape Topology Tests //
         n["elements"].reset();
-        n["elements"]["shape"].set("polygon");
+        n["elements"]["shape"].set("undefined");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
 
         n["elements"]["shape"].set("quad");
@@ -688,6 +693,13 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["connectivity"].set(DataType::int32(1));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["offsets"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+        n["elements"].remove("offsets");
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["type"].set("structured");
@@ -706,7 +718,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["a"]["connectivity"].set(DataType::int32(5));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
-        n["elements"]["b"]["shape"].set("polygon");
+        n["elements"]["b"]["shape"].set("undefined");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["elements"]["b"]["shape"].set("quad");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
@@ -717,6 +729,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
 
         n["elements"]["c"]["shape"].set("tri");
         n["elements"]["c"]["connectivity"].set(DataType::int32(5));
+        n["elements"]["c"]["offsets"].set(DataType::int32(5));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["type"].set("structured");
@@ -736,9 +749,13 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
 
     Node n, info;
 
-    const std::string topology_types[] = {"points", "uniform", "rectilinear", "structured", "unstructured"};
-    const std::string topology_fids[] = {"points_implicit", "uniform", "rectilinear", "structured", "quads"};
-    for(index_t ti = 0; ti < 5; ti++)
+    const std::string topology_types[] = {
+        "points", "uniform", "rectilinear", "structured", "unstructured"};
+    const std::string topology_fids[] = {
+        "points_implicit", "uniform", "rectilinear", "structured", "quads"};
+    const index_t topo_type_count = sizeof(topology_types) / sizeof(std::string);
+
+    for(index_t ti = 0; ti < topo_type_count; ti++)
     {
         n.reset();
         blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
@@ -769,9 +786,17 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
 
     Node n, info;
 
-    const std::string topology_shapes[] = {"point", "line", "tri", "quad", "tet", "hex"};
-    const std::string topology_fids[] = {"points", "lines", "tris", "quads", "tets", "hexs"};
-    for(index_t ti = 0; ti < 6; ti++)
+    const std::string topology_shapes[] = {
+        "point", "line",
+        "tri", "quad", "polygonal",
+        "tet", "hex", "polyhedral"};
+    const std::string topology_fids[] = {
+        "points", "lines",
+        "tris", "quads", "quads_poly",
+        "tets", "hexs", "hexs_poly"};
+    const index_t topo_shape_count = sizeof(topology_shapes) / sizeof(std::string);
+
+    for(index_t ti = 0; ti < topo_shape_count; ti++)
     {
         n.reset();
         blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
@@ -1833,7 +1858,9 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
 {
     Node mesh, info;
-    EXPECT_FALSE(blueprint::mesh::is_multi_domain(mesh));
+    // is_multi_domain can only be called if mesh verify is true
+    EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
+                  blueprint::mesh::is_multi_domain(mesh));
 
     Node domains[2];
     blueprint::mesh::examples::braid("quads",10,10,1,domains[0]);
@@ -1855,9 +1882,11 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
         Node& domain = mesh.child(di);
         EXPECT_FALSE(blueprint::mesh::is_multi_domain(domain));
 
+        // is_multi_domain can only be called if mesh verify is true
         Node coordsets = domain["coordsets"];
         domain.remove("coordsets");
-        EXPECT_FALSE(blueprint::mesh::is_multi_domain(mesh));
+        EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
+                      blueprint::mesh::is_multi_domain(mesh));
 
         domain["coordsets"].reset();
         domain["coordsets"].set(coordsets);
@@ -2090,4 +2119,25 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
             CHECK_MESH(verify_mesh,mesh,info,true);
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, mesh_bad_spacing_name)
+{
+
+    Node n_test;
+    n_test["coordsets/coords/type"]= "uniform";
+    n_test["coordsets/coords/dims/i"] = 10;
+    n_test["coordsets/coords/dims/j"] = 10;
+    n_test["coordsets/coords/dims/k"] = 10;
+    n_test["coordsets/coords/spacing/x"] = 10;
+    n_test["coordsets/coords/spacing/y"] = 10;
+    n_test["coordsets/coords/spacing/z"] = 10;
+    n_test["topologies/topo/coordset"] = "coords";
+    n_test["topologies/topo/type"] = "uniform";
+    Node info;
+    bool res = blueprint::mesh::verify(n_test,info);
+    info.print();
+    Node n_idx;
+    blueprint::mesh::generate_index(n_test,"",1,n_idx);
 }

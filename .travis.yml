@@ -59,41 +59,60 @@ env:
     #  static vs shared libs
     #  python 2 vs 3
     #  cmake 3.9.4
+    #  adios vs no adios
     #  coverage of unit tests
     #################################
     # TODO re-enable docs after resolving doxygen dep build issues
     #################################
-    # everything on, shared libs, python 2.7
+    # mpi on, docs off, shared libs, python 2.7, adios off
     # TODO turn on coverage for this case
     - BUILD_SHARED_LIBS=ON
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
-    # mpi and docs on, shared libs, python 2.7
+    # mpi on, docs off, static libs, python 2.7, adios off
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
-    # mpi and docs on, shared libs, python 3.6
+    # mpi on, docs off, shared libs, python 3.6, adios off
     - BUILD_SHARED_LIBS=ON
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=3.6.3
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
-    # mpi and docs on, static libs, python 3.6
+    # mpi on, docs off, static libs, python 3.6, adios off
     - BUILD_SHARED_LIBS=OFF
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_ADIOS=OFF
+      ENABLE_PYTHON=ON
       PYTHON_VERSION=3.6.3
+      CMAKE_VERSION=3.9.4
+      BLT_CXX_STD=c++11
+    # mpi on, docs off, static libs, python 2.7, adios on
+    - BUILD_SHARED_LIBS=OFF
+      ENABLE_COVERAGE=OFF
+      ENABLE_MPI=ON
+      ENABLE_DOCS=OFF
+      ENABLE_ADIOS=ON
+      ENABLE_PYTHON=ON
+      PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
 addons:
@@ -115,7 +134,7 @@ addons:
        - libreadline-dev
        - libsqlite3-dev
        - libbz2-dev
-
+       - perl
 script:
   - which g++
   - g++ --version
@@ -126,17 +145,22 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - echo $TRAVIS_BUILD_DIR 
   # setup spack spec based on our travis options
-  - export SPACK_SPEC="%gcc@4.8+cmake+python"
-  - export SPACK_SPEC="%gcc@4.8+cmake+python"
+  - export SPACK_SPEC="%gcc@4.8"
   # variants
   - if [ $ENABLE_DOCS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
   - if [ $ENABLE_DOCS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
   - if [ $ENABLE_MPI = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+mpi"; fi
   - if [ $ENABLE_MPI = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
+  - if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+python"; fi
+  - if [ $ENABLE_PYTHON = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
+  - if [ $ENABLE_ADIOS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios"; fi
+  - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
   # versions and package selections
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
   - echo $SPACK_SPEC
+  # Output something every 10 minutes or Travis kills the job
+  - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &
   # build deps using uberenv
   - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
   # todo:
@@ -157,10 +181,12 @@ script:
   - CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_MPI=${ENABLE_MPI}"
   # set c++ std
   - CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
+  # enable ADIOS if selected
+  - if [ $ENABLE_ADIOS = 'ON' ]; then CMAKE_OPTS="${CMAKE_OPTS} -DADIOS_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/adios*/`"; fi
   # install path
   - CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/travis-debug-install"
   # make sure cmake is in our path
-  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+  - export CMAKE_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin | head -n1`
   - export PATH=${CMAKE_BIN_DIR}:$PATH
   - echo $PATH
   - which cmake
@@ -169,6 +195,8 @@ script:
   - export HOST_CONFIG=`ls ${TRAVIS_BUILD_DIR}/uberenv_libs/*.cmake`
   # configure with cmake using host-config
   - cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ${TRAVIS_BUILD_DIR}/src
+  #- echo "Printing CMakeError.log"
+  #- tail -n200 /home/travis/build/BradWhitlock/conduit/travis-debug-build/CMakeFiles/CMakeError.log
   # build, test, and install
   - make
   - env CTEST_OUTPUT_ON_FAILURE=1 make test

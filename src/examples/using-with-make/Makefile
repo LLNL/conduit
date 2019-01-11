@@ -46,22 +46,25 @@
 # based build system.
 #
 # To build:
-#  env CONDUIT_DIR={conduit install path} make
+#  make CONDUIT_DIR={conduit install path} 
 #  ./example
 #
-# Note:
-#  If you use features that leverage external third party libraries 
-#  (ex: relay hdf5 features), you may need to pass additional include 
-#   and linking flags. 
-# 
+# From within a conduit install:
+#  make 
+#  ./example
+#
+# Which corresponds to:
+#
+#  make CONDUIT_DIR=../../../ 
+#  ./example
 #
 ###############################################################################
 
+CONDUIT_DIR ?= ../../..
 
-INC_FLAGS=-I$(CONDUIT_DIR)/include/conduit
-LINK_FLAGS=-L$(CONDUIT_DIR)/lib/ -lconduit -lconduit_relay -lconduit_blueprint -L$(HDF5_DIR)/lib/ -lhdf5 
+# See $(CONDUIT_DIR)/share/conduit/conduit_config.mk for detailed linking info
+include $(CONDUIT_DIR)/share/conduit/conduit_config.mk
 
 main:
-	$(CXX) $(INC_FLAGS) example.cpp $(LINK_FLAGS) -o example
-
+	$(CXX) $(CONDUIT_INCLUDE_FLAGS) example.cpp $(CONDUIT_LIB_FLAGS) -o example
 

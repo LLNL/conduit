@@ -117,6 +117,11 @@ namespace examples
     void CONDUIT_BLUEPRINT_API spiral(conduit::index_t ndomains,
                                       conduit::Node &res);
 
+    /// Generates a tessellated heterogeneous polygonal mesh consisting of
+    /// packed octogons and rectangles.
+    void CONDUIT_BLUEPRINT_API polytess(conduit::index_t nlevels,
+                                        conduit::Node &res);
+
     /// Generates an assortment of extra meshes that demonstrate the use of
     /// less common concepts (e.g. adjacency sets, amr blocks, etc.).
     void CONDUIT_BLUEPRINT_API misc(const std::string &mesh_type,

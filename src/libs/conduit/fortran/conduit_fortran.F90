@@ -100,10 +100,10 @@ module conduit
     !--------------------------------------------------------------------------
     ! c style signed integer types
     !--------------------------------------------------------------------------
-    integer, parameter :: CONDUIT_CHAR_ID  = F_CONDUIT_NATIVE_CHAR_ID
-    integer, parameter :: CONDUIT_SHORT_ID = F_CONDUIT_NATIVE_SHORT_ID
-    integer, parameter :: CONDUIT_INT_ID   = F_CONDUIT_NATIVE_INT_ID
-    integer, parameter :: CONDUIT_LONG_ID  = F_CONDUIT_NATIVE_LONG_ID
+    integer, parameter :: CONDUIT_CHAR_ID  = F_CONDUIT_NATIVE_SIGNED_CHAR_ID
+    integer, parameter :: CONDUIT_SHORT_ID = F_CONDUIT_NATIVE_SIGNED_SHORT_ID
+    integer, parameter :: CONDUIT_INT_ID   = F_CONDUIT_NATIVE_SIGNED_INT_ID
+    integer, parameter :: CONDUIT_LONG_ID  = F_CONDUIT_NATIVE_SIGNED_LONG_ID
     !--------------------------------------------------------------------------
     ! c style unsigned integer types
     !--------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 {
+"package_name" : "conduit",
 "uberenv_package_name" : "uberenv-conduit",
 "spack_url": "https://github.com/alpine-DAV/spack",
-"spack_branch": "task/2018_04_update_ascent",
+"spack_branch": "task/2019_01_update_ascent",
 "spack_activate" : {"py-numpy" : ["+python"], "py-sphinx":["+python","+doc"]}
 }

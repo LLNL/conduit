@@ -166,23 +166,23 @@ The mesh blueprint protocol describes meshes in terms of ``vertices``, ``edges``
 
 The following element shape names are supported:
 
-====== ================  ===================================================
-Name    Geometric Type    Specified By 
-====== ================  ===================================================
-point   point             an index to a single coordinate tuple
-line    line              indices to 2 coordinate tuples
-tri     triangle          indices to 3 coordinate tuples
-quad    quadrilateral     indices to 4 coordinate tuples
-tet     tetrahedron       indices to 4 coordinate tuples
-hex     hexahedron        indices to 8 coordinate tuples
-====== ================  ===================================================
+========== ================  ===================================================
+Name        Geometric Type    Specified By
+========== ================  ===================================================
+point       point             an index to a single coordinate tuple
+line        line              indices to 2 coordinate tuples
+tri         triangle          indices to 3 coordinate tuples
+quad        quadrilateral     indices to 4 coordinate tuples
+tet         tetrahedron       indices to 4 coordinate tuples
+hex         hexahedron        indices to 8 coordinate tuples
+polygonal   polygon           an index count N, then indices to N coordinate tuples
+polyhedral  polyhedron        a face count M, then M polygonal face definitions
+========== ================  ===================================================
 
 .. note
-   
    The expected index ordering with in an element (also referred to as a winding order) is not specified by the blueprint. 
    In the future, we plan to provide transforms to help convert between orderings, are not likely to specify specific orderings.
-
-.. * future: polygon, polyhedron
+..
 
 Association with a Coordinate Set
 ====================================
@@ -190,7 +190,6 @@ Association with a Coordinate Set
 Each topology entry must have a child ``coordset`` with a string that references a valid coordinate set by name.
 
     * topologies/topo/coordset: "coords"
-
 
 Optional association with a Grid Function
 ==========================================
@@ -244,7 +243,7 @@ Explicit (Unstructured) Topology
 =================================
 
 
-Single Shape Topology
+Single Shape Topologies
 ************************
 
 For topologies using a homogenous collection of element shapes (eg: all hexs), the topology can be specified by 
@@ -260,7 +259,7 @@ a connectivity array and a shape name.
 Mixed Shape Toplogies 
 ************************
 
-For topologies using a non-homogenous collections of element shapes (eg: hexs and texs), the topology can 
+For topologies using a non-homogenous collections of element shapes (eg: hexs and tets), the topology can 
 specified using a single shape topology for each element shape.
 
 * **list** - A Node in the *List* role, that contains a children that conform to the *Single Shape Topology* case. 
@@ -309,6 +308,115 @@ That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or Asc
 ..     * topology/elements/segment_index/stream_ids: ()
 ..     * topology/elements/segment_index/element_counts: ()
 ..     * topology/elements/stream: ()
+
+
+Polygonal/Polyhedral Topologies
+*********************************
+
+While the ``polygonal`` and ``polyhedral`` topology shape types share the same
+structural specification as all the the implicit topology shape types (i.e.
+their schema at the *Object* level is identical), the contents of their
+``elements/connectivity`` arrays look slightly different. In particular,
+the connectivity for each element in this array is prefixed by an index
+count that specifies the total number of indices (polygonal) or faces (polyhedral)
+that comprise that element, allowing the shape of each element to be
+arbitrarily specified and independently controlled. Put more explicitly, the
+connectivity lists for the ``polygonal`` and ``polyhedral`` topology shapes
+follow these rules:
+
+* **polygonal** - The first element starts at the beginning of the ``elements/connectivity``
+  list. The first value ``V`` for each element ``E`` indicates the number of
+  vertices that comprise polygon ``E``. The next ``V`` values in the list
+  are indices for the ``V`` coordinates that comprise ``E``. The next
+  element begins after this sequence of ``V`` values, and this specification
+  continues until the connectivity list is exhausted of items.
+
+  .. code:: cpp
+
+      // Example Diagram:
+      //
+      //       4-----5
+      //       |`\   |
+      // e1 -> |  \  | <- e0
+      //       |   \.|
+      //       7-----6
+      //
+
+      //    index count ---+     +--- coordinate index values
+      //                   |     |
+      //                   v  |-----|
+      int64 poly_data[] = {3, 4, 6, 5,   // element 0
+                           3, 7, 6, 4};  // element 1
+
+      conduit::Node topology = mesh["topologies/poly_topo"];
+      topology["coordset"] = "coords";
+      topology["type"] = "unstructured";
+      topology["elements/shape"] = "polygonal";
+      topology["elements/connectivity"].set_int64_ptr(&poly_data[0], 8);
+
+
+* **polyhedral** - The first element begins at the first index of the
+  ``elements/connectivity`` list. The first value ``F`` for each element ``E``
+  specifies the number of faces that comprise polyhedron ``E``. The next value
+  ``V`` denotes the number of vertices that comprise the first polygonal face
+  ``F1`` of polyhedron ``E``. Exactly like the polygonal specification, the following
+  sequence of ``V`` values contain the indices of the coordinates for face ``F1``.
+  The next face ``F2`` begins immediately after this sequence, and this process
+  continues until ``F`` faces are enumerated. The next element then begins after
+  this supersequence, and this specification continues until the connectivity list
+  is exhausted of items.
+
+  .. code:: cpp
+
+      // Example Diagram:
+      //
+      //         0
+      //        /|\
+      //       / | \ <- e0
+      //      /  |  \
+      //     /_.-3-._\
+      //    1.,  |  ,.4
+      //     \ `'2'` /
+      //      \  |  /
+      // e1 -> \ | /
+      //        \|/
+      //         5
+      //
+
+      //  face index count ---+
+      //                      |
+      //     face count ---+  |     +--- coordinate index values
+      //                   |  |     |
+      //                   v  v  |-----|
+      int64 poly_data[] = {5, 3, 0, 1, 2, 3, 0, 2, 4, 3, 0, 1, 3, 3, 0, 3, 4, 4, 1, 2, 4, 3,   // element 0
+                           5, 3, 5, 1, 2, 3, 5, 2, 4, 3, 5, 1, 3, 3, 5, 3, 4, 4, 1, 2, 4, 3};  // element 1
+
+      conduit::Node topology = mesh["topologies/poly_topo"];
+      topology["coordset"] = "coords";
+      topology["type"] = "unstructured";
+      topology["elements/shape"] = "polyhedral";
+      topology["elements/connectivity"].set_int64_ptr(&poly_data[0], 44);
+
+
+(Optional) Element Offsets
+****************************
+
+Unstructured topologies can optionally include a child ``elements/offsets`` to
+indicate the starting position of each element defined in the ``elements/connectivity``
+array. This list is most often specified for heterogeneous and polygonal/polyhedral
+topologies so that the elements don't need to be found by stepping through the input
+connectivity array.
+
+    * topologies/topo/elements/offsets: (index array)
+
+To generate this array for a given unstructured topology ``topo``, make the
+following call:
+
+  .. code:: cpp
+
+      conduit::blueprint::mesh::topology::unstructured::generate_offsets(topo,                       // input topology
+                                                                         topo["elements/offsets"]);  // output node for offset array
+
 
 Material Sets
 ++++++++++++++++++++
@@ -443,9 +551,13 @@ supported values for this parameter and their corresponding effects are outlined
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 | `quads <Quads_>`_              | 2d                 | explicit          | explicit          | quad             |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `polygons <Polygons_>`_        | 2d                 | explicit          | explicit          | polygon          |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
 | `tets <Tets_>`_                | 3d                 | explicit          | explicit          | tet              |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 | `hexs <Hexs_>`_                | 3d                 | explicit          | explicit          | hex              |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `polyhedra <Polyhedra_>`_      | 3d                 | explicit          | explicit          | polyhedron       |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 
 The remainder of this section demonstrates each of the different ``basic()`` mesh types, outlining
@@ -475,7 +587,7 @@ Uniform
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'uniform')
+    Pseudocolor plot of ``basic`` (mesh type 'uniform')
 
 Rectilinear
 ====================================
@@ -500,7 +612,7 @@ Rectilinear
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'rectilinear')
+    Pseudocolor plot of ``basic`` (mesh type 'rectilinear')
 
 Structured
 ====================================
@@ -525,7 +637,7 @@ Structured
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'structured')
+    Pseudocolor plot of ``basic`` (mesh type 'structured')
 
 Tris
 ====================================
@@ -550,7 +662,7 @@ Tris
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'tris')
+    Pseudocolor plot of ``basic`` (mesh type 'tris')
 
 Quads
 ====================================
@@ -575,7 +687,32 @@ Quads
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'quads')
+    Pseudocolor plot of ``basic`` (mesh type 'quads')
+
+Polygons
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 514-519
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 522-558
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_hex_2d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (mesh type 'polygons')
 
 Tets
 ====================================
@@ -600,7 +737,7 @@ Tets
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'tets')
+    Pseudocolor plot of ``basic`` (mesh type 'tets')
 
 Hexs
 ====================================
@@ -625,7 +762,33 @@ Hexs
     :width: 400px
     :align: center
 
-    Pseudocolor plot of ``basic`` (element type 'hexs')
+    Pseudocolor plot of ``basic`` (mesh type 'hexs')
+
+Polyhedra
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 567-572
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :lines: 575-612
+   :language: cpp
+   :dedent: 4
+
+* **Visual**
+
+.. figure:: basic_hex_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (mesh type 'polyhedra')
+
 
 braid
 ++++++
@@ -755,6 +918,34 @@ for each point tested or zero if not found in the set.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
+polytess
+++++++++++
+
+.. figure:: polytess_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field.
+
+The ``polytess()`` function generates a polygonal tesselation in the 2D
+plane comprised of octogons and squares (known formally as a `two-color
+truncated square tiling <https://en.wikipedia.org/wiki/Truncated_square_tiling>`_).
+
+The scalar element-centered field ``level`` defined in the result mesh associates each element with its
+topological distance from the center of the tesselation.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::polytess(index_t nlevels,
+                                                 Node &res);
+
+
+``nlevels`` specifies the number of tesselation levels/layers to generate. If this value is specified
+as 1 or less, only the central tesselation level (i.e. the octogon in the center of the geometry) will
+be generated in the result.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
 miscellaneous
 ++++++++++++++
 
@@ -812,7 +1003,7 @@ This snippet provides a complete C++ example that demonstrates:
   * Saving the result to a JSON file that VisIt can open
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 515-574
+   :lines: 621-680
    :language: cpp
    :dedent: 4
    

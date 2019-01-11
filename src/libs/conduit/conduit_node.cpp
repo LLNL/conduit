@@ -769,12 +769,20 @@ Node::set(float64 data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+void
+Node::set(char data)
+{
+    set((CONDUIT_NATIVE_CHAR)data);
+}
+
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
 Node::set(signed char data)
 {
-    set((CONDUIT_NATIVE_CHAR)data);
+    set((CONDUIT_NATIVE_SIGNED_CHAR)data);
 }
 
 //-----------------------------------------------------------------------------
@@ -1059,15 +1067,26 @@ Node::set(const float64_array &data)
 // set array gap methods for c-native types
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-#ifndef CONDUIT_USE_CHAR
-//-----------------------------------------------------------------------------
 void
 Node::set(const char_array &data)
 {
     init(DataType::c_char(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
+
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const signed_char_array &data)
+{
+    init(DataType::c_signed_char(data.number_of_elements()));
+    data.compact_elements_to((uint8*)m_data);
+}
+
 
 //-----------------------------------------------------------------------------
 void
@@ -1440,13 +1459,21 @@ Node::set(const std::vector<float64> &data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-#ifndef CONDUIT_USE_CHAR
-//-----------------------------------------------------------------------------
 void
 Node::set(const std::vector<char> &data)
 {
     init(DataType::c_char(data.size()));
     memcpy(m_data,&data[0],sizeof(char)*data.size());
+}
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::vector<signed char> &data)
+{
+    init(DataType::c_char(data.size()));
+    memcpy(m_data,&data[0],sizeof(signed char)*data.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -1874,6 +1901,23 @@ Node::set(const float64 *data,
 // set pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
+void 
+Node::set_char_ptr(const char *data,
+                   index_t num_elements,
+                   index_t offset,
+                   index_t stride,
+                   index_t element_bytes,
+                   index_t endianness)
+{
+    set(char_array(data,DataType::c_char(num_elements,
+                                         offset,
+                                         stride,
+                                         element_bytes,
+                                         endianness)));
+}
+
+
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
@@ -1885,11 +1929,11 @@ Node::set(const signed char *data,
           index_t element_bytes,
           index_t endianness)
 {
-    set(char_array(data,DataType::c_char(num_elements,
-                                         offset,
-                                         stride,
-                                         element_bytes,
-                                         endianness)));
+    set(signed_char_array(data,DataType::c_signed_char(num_elements,
+                                                       offset,
+                                                       stride,
+                                                       element_bytes,
+                                                       endianness)));
 }
 
 //-----------------------------------------------------------------------------
@@ -2387,12 +2431,19 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path, char data)
+{
+    set_path(path,(CONDUIT_NATIVE_CHAR)data);
+}
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path, signed char data)
 {
-    set_path(path,(CONDUIT_NATIVE_CHAR)data);
+    set_path(path,(CONDUIT_NATIVE_SIGNED_CHAR)data);
 }
 
 //-----------------------------------------------------------------------------
@@ -2687,11 +2738,19 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const char_array &data)
+{
+    fetch(path).set(data);
+}
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               const char_array &data)
+               const signed_char_array &data)
 {
     fetch(path).set(data);
 }
@@ -3029,11 +3088,20 @@ Node::set_path(const std::string &path,const std::vector<float64> &data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+void
+Node::set_path(const std::string &path,
+               const std::vector<char> &data)
+{
+    fetch(path).set(data);
+}
+
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
 Node::set_path(const std::string &path,
-               const std::vector<char> &data)
+               const std::vector(<signed char> &data)
 {
     fetch(path).set(data);
 }
@@ -3546,6 +3614,24 @@ Node::set_path(const std::string &path,
 //-----------------------------------------------------------------------------
 // set_path pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+Node::set_path_char_ptr(const std::string &path,
+                        const char *data,
+                        index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    fetch(path).set_char_ptr(data,
+                             num_elements,
+                             offset,
+                             stride,
+                             element_bytes,
+                             endianness);
+}
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
@@ -4242,6 +4328,23 @@ Node::set_external(float64 *data,
 //-----------------------------------------------------------------------------
 // set pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
+void
+Node::set_external_char_ptr(char *data,
+                            index_t num_elements,
+                            index_t offset,
+                            index_t stride,
+                            index_t element_bytes,
+                            index_t endianness)
+{       
+    release();
+    m_schema->set(DataType::c_char(num_elements,
+                                   offset,
+                                   stride,
+                                   element_bytes,
+                                   endianness));
+    m_data  = data;
+}
+
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
@@ -4255,11 +4358,11 @@ Node::set_external(signed char *data,
                    index_t endianness)
 {
     release();
-    m_schema->set(DataType::c_char(num_elements,
-                                   offset,
-                                   stride,
-                                   element_bytes,
-                                   endianness));
+    m_schema->set(DataType::c_signed_char(num_elements,
+                                          offset,
+                                          stride,
+                                          element_bytes,
+                                          endianness));
     m_data  = data;
 }
 
@@ -4698,10 +4801,21 @@ Node::set_external_char8_str(char *data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+void
+Node::set_external(const char_array &data)
+{
+    release();
+    m_schema->set(data.dtype());
+    m_data  = data.data_ptr();
+}
+
+
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-Node::set_external(const char_array &data)
+Node::set_external(const signed_char_array &data)
 {
     release();
     m_schema->set(data.dtype());
@@ -5042,14 +5156,25 @@ Node::set_external(std::vector<float64> &data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-#ifndef CONDUIT_USE_CHAR
-//-----------------------------------------------------------------------------
 void
 Node::set_external(const std::vector<char> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
     m_schema->set(DataType::c_char(data_num_ele));
+    if(data_num_ele > 0)
+        m_data  = (void*)&data[0];
+}
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set_external(const std::vector<signed char> &data)
+{
+    release();
+    index_t data_num_ele = (index_t)data.size();
+    m_schema->set(DataType::c_signed_char(data_num_ele));
     if(data_num_ele > 0)
         m_data  = (void*)&data[0];
 }
@@ -5675,6 +5800,24 @@ Node::set_path_external(const std::string &path,
 // set_path_external pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
 
+void
+Node::set_path_external_char_ptr(const std::string &path,
+                                 char *data,
+                                 index_t num_elements,
+                                 index_t offset,
+                                 index_t stride,
+                                 index_t element_bytes,
+                                 index_t endianness)
+{
+    fetch(path).set_external_char_ptr(data,
+                                      num_elements,
+                                      offset,
+                                      stride,
+                                      element_bytes,
+                                      endianness);
+}
+
+
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
@@ -6108,13 +6251,20 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 // set_path_external array gap methods for c-native types
 //-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const char_array &data)
+{
+    fetch(path).set_external(data);
+}
+
 
 //-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        const char_array &data)
+                        const signed_char_array &data)
 {
     fetch(path).set_external(data);
 }
@@ -6438,11 +6588,19 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+void
+Node::set_path_external(const std::string &path,
+                        const std::vector<char> &data)
+{
+    fetch(path).set_external(data);
+}
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        const std::vector<char> &data)
+                        const std::vector<signed char> &data)
 {
     fetch(path).set_external(data);
 }
@@ -6715,6 +6873,14 @@ Node::operator=(float64 data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+Node &
+Node::operator=(char data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 Node &
@@ -6967,10 +7133,18 @@ Node::operator=(const float64_array &data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+Node &
+Node::operator=(const char_array &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(const char_array &data)
+Node::operator=(const signed_char_array &data)
 {
     set(data);
     return *this;
@@ -7198,10 +7372,18 @@ Node::operator=(const std::vector<float64> &data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::vector<char> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(const std::vector<char> &data)
+Node::operator=(const std::vector<signed char> &data)
 {
     set(data);
     return *this;
@@ -7984,7 +8166,6 @@ Node::to_float64() const
             if(ss >> res)
                 return res;
         }
-        
     }
     return 0.0;
 }
@@ -8179,7 +8360,6 @@ Node::to_long_long() const
             if(ss >> res)
                 return res;
         }
-        
     }
     return 0;
 }
@@ -8189,6 +8369,172 @@ Node::to_long_long() const
 
 //---------------------------------------------------------------------------//
 // -- std signed types -- //
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+signed char
+Node::to_signed_char() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:  return (signed char)as_int8();
+        case DataType::INT16_ID: return (signed char)as_int16();
+        case DataType::INT32_ID: return (signed char)as_int32();
+        case DataType::INT64_ID: return (signed char)as_int64();
+        /* uints */
+        case DataType::UINT8_ID:  return (signed char)as_uint8();
+        case DataType::UINT16_ID: return (signed char)as_uint16();
+        case DataType::UINT32_ID: return (signed char)as_uint32();
+        case DataType::UINT64_ID: return (signed char)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_ID: return (signed char)as_float32();
+        case DataType::FLOAT64_ID: return (signed char)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            int16 res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return (signed char)res;
+        }
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+signed short
+Node::to_signed_short() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:  return (signed short)as_int8();
+        case DataType::INT16_ID: return (signed short)as_int16();
+        case DataType::INT32_ID: return (signed short)as_int32();
+        case DataType::INT64_ID: return (signed short)as_int64();
+        /* uints */
+        case DataType::UINT8_ID:  return (signed short)as_uint8();
+        case DataType::UINT16_ID: return (signed short)as_uint16();
+        case DataType::UINT32_ID: return (signed short)as_uint32();
+        case DataType::UINT64_ID: return (signed short)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_ID: return (signed short)as_float32();
+        case DataType::FLOAT64_ID: return (signed short)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            signed short res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+signed int
+Node::to_signed_int() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:  return (signed int)as_int8();
+        case DataType::INT16_ID: return (signed int)as_int16();
+        case DataType::INT32_ID: return (signed int)as_int32();
+        case DataType::INT64_ID: return (signed int)as_int64();
+        /* uints */
+        case DataType::UINT8_ID:  return (signed int)as_uint8();
+        case DataType::UINT16_ID: return (signed int)as_uint16();
+        case DataType::UINT32_ID: return (signed int)as_uint32();
+        case DataType::UINT64_ID: return (signed int)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_ID: return (signed int)as_float32();
+        case DataType::FLOAT64_ID: return (signed int)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            signed int res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+signed long
+Node::to_signed_long() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:  return (signed long)as_int8();
+        case DataType::INT16_ID: return (signed long)as_int16();
+        case DataType::INT32_ID: return (signed long)as_int32();
+        case DataType::INT64_ID: return (signed long)as_int64();
+        /* uints */
+        case DataType::UINT8_ID:  return (signed long)as_uint8();
+        case DataType::UINT16_ID: return (signed long)as_uint16();
+        case DataType::UINT32_ID: return (signed long)as_uint32();
+        case DataType::UINT64_ID: return (signed long)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_ID: return (signed long)as_float32();
+        case DataType::FLOAT64_ID: return (signed long)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            signed long res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+signed long long
+Node::to_signed_long_long() const
+{
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:  return (signed long long)as_int8();
+        case DataType::INT16_ID: return (signed long long)as_int16();
+        case DataType::INT32_ID: return (signed long long)as_int32();
+        case DataType::INT64_ID: return (signed long long)as_int64();
+        /* uints */
+        case DataType::UINT8_ID:  return (signed long long)as_uint8();
+        case DataType::UINT16_ID: return (signed long long)as_uint16();
+        case DataType::UINT32_ID: return (signed long long)as_uint32();
+        case DataType::UINT64_ID: return (signed long long)as_uint64();
+        /* floats */
+        case DataType::FLOAT32_ID: return (signed long long)as_float32();
+        case DataType::FLOAT64_ID: return (signed long long)as_float64();
+        // string case
+        case DataType::CHAR8_STR_ID:
+        {
+            signed long long res;
+            std::stringstream ss(as_char8_str());
+            if(ss >> res)
+                return res;
+        }
+    }
+    return 0;
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+
+//---------------------------------------------------------------------------//
+// -- std unsigned types -- //
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -10035,10 +10381,12 @@ Node::Value::~Value()
     
 }
 
-// TODO: why do we have to use a signed char here, does it have to do with
-// how we danced around setting string types?
 //---------------------------------------------------------------------------//
-Node::Value::operator signed char() const
+// c style signed ints
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator char() const
 {
     if(m_coerse)
         return m_node->to_char();
@@ -10046,53 +10394,57 @@ Node::Value::operator signed char() const
         return m_node->as_char();
 }
 
-////---------------------------------------------------------------------------//
-//Node::Value::operator char() const
-//{
-//    if(m_coerse)
-//        return m_node->to_char();
-//    else
-//        return m_node->as_char();
-//}
-
 //---------------------------------------------------------------------------//
-Node::Value::operator short() const
+Node::Value::operator signed char() const
 {
     if(m_coerse)
-        return m_node->to_short();
+        return m_node->to_signed_char();
     else
-        return m_node->as_short();
+        return m_node->as_signed_char();
 }
 
 //---------------------------------------------------------------------------//
-Node::Value::operator int() const
+Node::Value::operator signed short() const
 {
     if(m_coerse)
-        return m_node->to_int();
+        return m_node->to_signed_short();
     else
-        return m_node->as_int();
+        return m_node->as_signed_short();
 }
 
 //---------------------------------------------------------------------------//
-Node::Value::operator long() const
+Node::Value::operator signed int() const
 {
     if(m_coerse)
-        return m_node->to_long();
+        return m_node->to_signed_int();
     else
-        return m_node->as_long();
+        return m_node->as_signed_int();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed long() const
+{
+    if(m_coerse)
+        return m_node->to_signed_long();
+    else
+        return m_node->as_signed_long();
 }
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
-Node::Value::operator long long() const
+Node::Value::operator signed long long() const
 {
     if(m_coerse)
-        return m_node->to_long_long();
+        return m_node->to_signed_long_long();
     else
-        return m_node->as_long_long();
+        return m_node->as_signed_long_long();
 }
 #endif
+
+
+//---------------------------------------------------------------------------//
+// c style unsigned ints
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -10144,6 +10496,9 @@ Node::Value::operator unsigned long long() const
 #endif
 //---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+// c style floating point
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 Node::Value::operator float() const
@@ -10181,44 +10536,56 @@ Node::Value::operator long double() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
+// char case ptr (supports char8_str use cases)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::Value::operator char*() const
 {
     return m_node->as_char_ptr();
 }
 
 //---------------------------------------------------------------------------//
+// c style signed int ptrs
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::Value::operator signed char*() const
 {
-    return (signed char*)m_node->as_char_ptr();
+    return m_node->as_signed_char_ptr();
 }
 
 //---------------------------------------------------------------------------//
-Node::Value::operator short*() const
+Node::Value::operator signed short*() const
 {
-    return m_node->as_short_ptr();
+    return m_node->as_signed_short_ptr();
 }
 
 //---------------------------------------------------------------------------//
-Node::Value::operator int*() const
+Node::Value::operator signed int*() const
 {
-    return m_node->as_int_ptr();
+    return m_node->as_signed_int_ptr();
 }
 
 //---------------------------------------------------------------------------//
-Node::Value::operator long*() const
+Node::Value::operator signed long*() const
 {
-    return m_node->as_long_ptr();
+    return m_node->as_signed_long_ptr();
 }
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
-Node::Value::operator long long*() const
+Node::Value::operator signed long long*() const
 {
-    return m_node->as_long_long_ptr();
+    return m_node->as_signed_long_long_ptr();
 }
 //---------------------------------------------------------------------------//
 #endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned int ptrs
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -10257,6 +10624,10 @@ Node::Value::operator unsigned long long*() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
+// c style floating point ptrs
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::Value::operator float*() const
 {
     return m_node->as_float_ptr();
@@ -10286,38 +10657,56 @@ Node::Value::operator long double*() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
+// c style arrays
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style signed arrays
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::Value::operator char_array() const
 {
     return m_node->as_char_array();
 }
 
 //---------------------------------------------------------------------------//
-Node::Value::operator short_array() const
+Node::Value::operator signed_char_array() const
 {
-    return m_node->as_short_array();
+    return m_node->as_signed_char_array();
 }
 
 //---------------------------------------------------------------------------//
-Node::Value::operator int_array() const
+Node::Value::operator signed_short_array() const
 {
-    return m_node->as_int_array();
+    return m_node->as_signed_short_array();
 }
 
 //---------------------------------------------------------------------------//
-Node::Value::operator long_array() const
+Node::Value::operator signed_int_array() const
 {
-    return m_node->as_long_array();
+    return m_node->as_signed_int_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_long_array() const
+{
+    return m_node->as_signed_long_array();
 }
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
-Node::Value::operator long_long_array() const
+Node::Value::operator signed_long_long_array() const
 {
-    return m_node->as_long_long_array();
+    return m_node->as_signed_long_long_array();
 }
 //---------------------------------------------------------------------------//
 #endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned arrays
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -10355,6 +10744,9 @@ Node::Value::operator unsigned_long_long_array() const
 #endif
 //---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+// c style floating point arrays
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 Node::Value::operator float_array() const
@@ -10413,64 +10805,61 @@ Node::ConstValue::~ConstValue()
 
 }
 
-// TODO: why do we have to use a signed char here, does it have to do with
-// how we danced around setting string types?
+//---------------------------------------------------------------------------//
+// c style signed ints
+//---------------------------------------------------------------------------//
+
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator signed char() const
 {
     if(m_coerse)
-        return m_node->to_char();
+        return m_node->to_signed_char();
     else
-        return m_node->as_char();
-}
-
-////---------------------------------------------------------------------------//
-//Node::ConstValue::operator char() const
-//{
-//    if(m_coerse)
-//        return m_node->to_char();
-//    else
-//        return m_node->as_char();
-//}
-
-//---------------------------------------------------------------------------//
-Node::ConstValue::operator short() const
-{
-    if(m_coerse)
-        return m_node->to_short();
-    else
-        return m_node->as_short();
+        return m_node->as_signed_char();
 }
 
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator int() const
+Node::ConstValue::operator signed short() const
 {
     if(m_coerse)
-        return m_node->to_int();
+        return m_node->to_signed_short();
     else
-        return m_node->as_int();
+        return m_node->as_signed_short();
 }
 
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator long() const
+Node::ConstValue::operator signed int() const
 {
     if(m_coerse)
-        return m_node->to_long();
+        return m_node->to_signed_int();
     else
-        return m_node->as_long();
+        return m_node->as_signed_int();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed long() const
+{
+    if(m_coerse)
+        return m_node->to_signed_long();
+    else
+        return m_node->as_signed_long();
 }
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator long long() const
+Node::ConstValue::operator signed long long() const
 {
     if(m_coerse)
-        return m_node->to_long_long();
+        return m_node->to_signed_long_long();
     else
-        return m_node->as_long_long();
+        return m_node->as_signed_long_long();
 }
 #endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned ints
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -10522,6 +10911,9 @@ Node::ConstValue::operator unsigned long long() const
 #endif
 //---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+// c style floating point
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator float() const
@@ -10559,44 +10951,56 @@ Node::ConstValue::operator long double() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
+// char case ptr (supports char8_str use cases)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::ConstValue::operator const char*() const
 {
     return m_node->as_char_ptr();
 }
 
 //---------------------------------------------------------------------------//
+// c style signed int ptrs
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::ConstValue::operator const signed char*() const
 {
-    return (signed char*)m_node->as_char_ptr();
+    return m_node->as_signed_char_ptr();
 }
 
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator const short*() const
+Node::ConstValue::operator const signed short*() const
 {
-    return m_node->as_short_ptr();
+    return m_node->as_signed_short_ptr();
 }
 
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator const int*() const
+Node::ConstValue::operator const signed int*() const
 {
-    return m_node->as_int_ptr();
+    return m_node->as_signed_int_ptr();
 }
 
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator const long*() const
+Node::ConstValue::operator const signed long*() const
 {
-    return m_node->as_long_ptr();
+    return m_node->as_signed_long_ptr();
 }
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator const long long*() const
+Node::ConstValue::operator const signed long long*() const
 {
-    return m_node->as_long_long_ptr();
+    return m_node->as_signed_long_long_ptr();
 }
 //---------------------------------------------------------------------------//
 #endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned int ptrs
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -10635,6 +11039,10 @@ Node::ConstValue::operator const unsigned long long*() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
+// c style floating point ptrs
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::ConstValue::operator const float*() const
 {
     return m_node->as_float_ptr();
@@ -10664,38 +11072,52 @@ Node::ConstValue::operator const long double*() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
+// c style signed arrays
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 Node::ConstValue::operator const char_array() const
 {
     return m_node->as_char_array();
 }
 
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator const short_array() const
+Node::ConstValue::operator const signed_char_array() const
 {
-    return m_node->as_short_array();
+    return m_node->as_signed_char_array();
 }
 
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator const int_array() const
+Node::ConstValue::operator const signed_short_array() const
 {
-    return m_node->as_int_array();
+    return m_node->as_signed_short_array();
 }
 
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator const long_array() const
+Node::ConstValue::operator const signed_int_array() const
 {
-    return m_node->as_long_array();
+    return m_node->as_signed_int_array();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator const signed_long_array() const
+{
+    return m_node->as_signed_long_array();
 }
 
 //---------------------------------------------------------------------------//
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
-Node::ConstValue::operator const long_long_array() const
+Node::ConstValue::operator const signed_long_long_array() const
 {
-    return m_node->as_long_long_array();
+    return m_node->as_signed_long_long_array();
 }
 //---------------------------------------------------------------------------//
 #endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned arrays
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -10733,6 +11155,9 @@ Node::ConstValue::operator const unsigned_long_long_array() const
 #endif
 //---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+// c style floating point arrays
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 Node::ConstValue::operator const float_array() const
@@ -11380,6 +11805,11 @@ Node::fetch(const std::string &path)
     if(dtype().is_object())
     {
         init(DataType::object());
+    }
+
+    if(path.empty())
+    {
+        CONDUIT_ERROR("Cannot fetch empty path string");
     }
     
     std::string p_curr;
@@ -12383,7 +12813,7 @@ Node::data_ptr() const
 //-----------------------------------------------------------------------------
      
 //---------------------------------------------------------------------------//
-// signed integer scalars
+// integer scalars
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -12442,6 +12872,71 @@ Node::as_long_long()  const
                         "as_long_long() const",
                         0);
     return *((long long*)element_ptr(0));
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// signed integer scalars
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+signed char
+Node::as_signed_char() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_CHAR_ID,
+                        "as_signed_char() const",
+                        0);
+    return *((signed char*)element_ptr(0));
+}
+
+//---------------------------------------------------------------------------//
+signed short
+Node::as_signed_short() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_SHORT_ID,
+                        "as_signed_short() const",
+                        0);
+    return *((signed short*)element_ptr(0));
+}
+
+//---------------------------------------------------------------------------//
+signed int
+Node::as_signed_int() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_INT_ID,
+                        "as_signed_int() const",
+                        0);
+    return *((signed int*)element_ptr(0));
+}
+
+//---------------------------------------------------------------------------//
+long
+Node::as_signed_long()  const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_ID,
+                        "as_signed_long() const",
+                        0);
+    return *((signed long*)element_ptr(0));
+}
+
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+signed long long
+Node::as_signed_long_long()  const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
+                        "as_signed_long_long() const",
+                        0);
+    return *((signed long long*)element_ptr(0));
 }
 //---------------------------------------------------------------------------//
 #endif
@@ -12554,7 +13049,7 @@ Node::as_long_double() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-// signed integers via pointers
+// integers via pointers
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -12613,6 +13108,72 @@ Node::as_long_long_ptr()
                         "as_long_long_ptr()",
                         NULL);
     return (long long*)element_ptr(0);
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// signed integers via pointers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+signed char *
+Node::as_signed_char_ptr()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_CHAR_ID,
+                        "as_signed_char_ptr()",
+                        NULL);
+    return (signed char*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+signed short *
+Node::as_signed_short_ptr()
+{ 
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_SHORT_ID,
+                        "as_signed_short_ptr()",
+                        NULL);
+    return (signed short*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+signed int *
+Node::as_signed_int_ptr()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_INT_ID,
+                        "as_signed_int_ptr()",
+                        NULL);
+    return (signed int*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+signed long *
+Node::as_signed_long_ptr()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_ID,
+                        "as_signed_long_ptr()",
+                        NULL);
+    return (signed long*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+signed long long *
+Node::as_signed_long_long_ptr()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
+                        "as_signed_long_long_ptr()",
+                        NULL);
+    return (signed long long*)element_ptr(0);
 }
 //---------------------------------------------------------------------------//
 #endif
@@ -12740,9 +13301,8 @@ Node::as_long_double_ptr() const
 #endif
 //---------------------------------------------------------------------------//
 
-
 //---------------------------------------------------------------------------//
-// signed integers via pointers (const)
+// int via pointers (const)
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -12806,6 +13366,70 @@ Node::as_long_long_ptr() const
 #endif
 //---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+// signed integers via pointers (const)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+const signed char *
+Node::as_signed_char_ptr() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_CHAR_ID,
+                        "as_signed_char_ptr() const",
+                        NULL);
+    return (signed char*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const signed short *
+Node::as_signed_short_ptr() const
+{ 
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_SHORT_ID,
+                        "as_signed_short_ptr() const",
+                        NULL);
+    return (signed short*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const signed int *
+Node::as_signed_int_ptr() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_INT_ID,
+                        "as_signed_ptr() const",
+                        NULL);
+    return (signed int*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const signed long *
+Node::as_signed_long_ptr() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_ID,
+                        "as_signed_ong_ptr() const",
+                        NULL);
+    return (signed long*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+const signed long long *
+Node::as_signed_long_long_ptr() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
+                        "as_signed_long_long_ptr() const",
+                        NULL);
+    return (signed long long*)element_ptr(0);
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 // unsigned integers via pointers (const)
@@ -12874,8 +13498,6 @@ Node::as_unsigned_long_long_ptr() const
 //---------------------------------------------------------------------------//
 
 
-
-
 //---------------------------------------------------------------------------//
 // floating point via pointers (const)
 //---------------------------------------------------------------------------//
@@ -12919,9 +13541,8 @@ Node::as_long_double_ptr() const
 #endif
 //---------------------------------------------------------------------------//
 
-
 //---------------------------------------------------------------------------//
-// signed integer array types via conduit::DataArray
+// array via conduit::DataArray
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -12980,6 +13601,72 @@ Node::as_long_long_array()
                         "as_long_long_array()",
                         long_long_array());
     return long_long_array(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// signed integer array types via conduit::DataArray
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+signed_char_array
+Node::as_signed_char_array()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_CHAR_ID,
+                        "as_signed_char_array()",
+                        signed_char_array());
+    return signed_char_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_short_array
+Node::as_signed_short_array()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_SHORT_ID,
+                        "as_signed_short_array()",
+                        signed_short_array());
+    return signed_short_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_int_array
+Node::as_signed_int_array()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_INT_ID,
+                        "as_signed_int_array()",
+                        int_array());
+    return signed_int_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_long_array
+Node::as_signed_long_array()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_ID,
+                        "as_signed_long_array()",
+                        signed_long_array());
+    return signed_long_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+signed_long_long_array
+Node::as_signed_long_long_array()
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
+                        "as_signed_long_long_array()",
+                        signed_long_long_array());
+    return signed_long_long_array(m_data,dtype());
 }
 //---------------------------------------------------------------------------//
 #endif
@@ -13095,9 +13782,8 @@ Node::as_long_double_array()
 #endif
 //---------------------------------------------------------------------------//
 
-
 //---------------------------------------------------------------------------//
-// signed integer array types via conduit::DataArray (const variants)
+// array via conduit::DataArray (const variant)
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
@@ -13155,6 +13841,71 @@ Node::as_long_long_array() const
                         "as_long_long_array() const",
                         long_long_array());
     return long_long_array(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// signed integer array types via conduit::DataArray (const variants)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+const signed_char_array
+Node::as_signed_char_array() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_CHAR_ID,
+                        "as_signed_char_array() const",
+                        signed_char_array());
+    return signed_char_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+const signed_short_array
+Node::as_signed_short_array() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_SHORT_ID,
+                        "as_signed_short_array() const",
+                        signed_short_array());
+    return signed_short_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+const signed_int_array
+Node::as_signed_int_array() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_INT_ID,
+                        "as_signed_int_array() const",
+                        signed_int_array());
+    return signed_int_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+const signed_long_array
+Node::as_signed_long_array() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_ID,
+                        "as_signed_long_array() const",
+                        signed_long_array());
+    return signed_long_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+const signed_long_long_array
+Node::as_signed_long_long_array() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
+                        "as_signed_ong_long_array() const",
+                        signed_long_long_array());
+    return signed_long_long_array(m_data,dtype());
 }
 //---------------------------------------------------------------------------//
 #endif
@@ -13294,9 +14045,9 @@ Node::set_schema_ptr(Schema *schema_ptr)
         delete m_schema;
         m_owns_schema = false;
     }
-    m_schema = schema_ptr;    
+    m_schema = schema_ptr;
 }
-    
+
 //---------------------------------------------------------------------------//
 void
 Node::set_data_ptr(void *data)

@@ -148,6 +148,7 @@ endif()
 #
 message(STATUS "HDF5 Include Dirs ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 Libraries    ${HDF5_LIBRARIES}")
+message(STATUS "HDF5 is parallel  ${HDF5_IS_PARALLEL}")
 
 
 blt_register_library(NAME hdf5

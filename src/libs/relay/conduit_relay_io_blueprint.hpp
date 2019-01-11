@@ -81,14 +81,11 @@ namespace relay
 namespace io_blueprint
 {
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &mesh,
-                            const std::string &path);
+// Define an argument macro that does not add the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) 
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &mesh,
-                            const std::string &path,
-                            const std::string &protocol);
+// Functions are provided by this include file.
+#include "conduit_relay_io_blueprint_api.hpp"
 
 }
 //-----------------------------------------------------------------------------

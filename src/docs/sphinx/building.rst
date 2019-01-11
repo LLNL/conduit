@@ -48,20 +48,20 @@
 Building
 =================
 
+This page provides details on several ways to build Conduit from source.
 
-This page provides details on several ways to build Conduit.
+For the shortest path from zero to Conduit, see :doc:`quick_start`.
 
-If you are building features that depend on third party libraries we recommend using :ref:`Spack <building_with_spack>`,
-or :ref:`uberenv <building_with_uberenv>`, which leverages Spack. We also provide a 
-:ref:`Docker example <building_with_docker>` that leverages Spack.
+If you are building features that depend on third party libraries we recommend using :ref:`uberenv <building_with_uberenv>` which leverages Spack or :ref:`Spack directly<building_with_spack>`. 
+We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>`.
+and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
-Getting Started
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Clone the Conduit repo:
+Obtain the Conduit source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* From Github
+Clone the Conduit repo from Github:
 
 .. code:: bash
     
@@ -78,10 +78,11 @@ If you cloned without ``--recursive``, you can checkout this submodule using:
     git submodule update
 
 
-Configure a build:
+Configure a build
+~~~~~~~~~~~~~~~~~~~~
 
 Conduit uses CMake for its build system. These instructions assume ``cmake`` is in your path. 
-We recommend CMake 3.9.x or newer, for more details see :ref:`Supported CMake Versions <supported_cmake>`.
+We recommend CMake 3.9 or newer, for more details see :ref:`Supported CMake Versions <supported_cmake>`.
 
 ``config-build.sh`` is a simple wrapper for the cmake call to configure conduit. 
 This creates a new out-of-source build directory ``build-debug`` and a directory for the install ``install-debug``.
@@ -119,7 +120,8 @@ Conduit's build system supports the following CMake options:
 * **ENABLE_PYTHON** - Controls if the Conduit Python module is built. *(default = OFF)*
 
 
-The Conduit Python module will build for both Python 2 and Python 3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install. 
+The Conduit Python module can be built for Python 2 or Python 3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install.
+Note: You can not use compiled Python modules built with Python 2 in Python 3 and vice versa. You need to compile against the version you expect to use. 
 
 * **ENABLE_MPI** - Controls if the conduit_relay_mpi library is built. *(default = OFF)*
 
@@ -139,6 +141,12 @@ The Conduit Python module will build for both Python 2 and Python 3. To select a
  Controls if Silo I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
  
  * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
+
+* **ADIOS_DIR** - Path to an ADIOS install *(optional)*. 
+
+ Controls if ADIOS I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
+ 
+ * **HDF5_DIR** - Path to a HDF5 install. (ADIOS support depends on HDF5) 
 
 
 * **BLT_SOURCE_DIR** - Path to BLT.  *(default = "blt")*
@@ -189,14 +197,19 @@ These files use standard CMake commands. To properly seed the cache, CMake *set*
 
 .. _building_with_uberenv:
 
-Bootstrapping Third Party Dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Conduit and Third Party Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We use **Spack** (http://software.llnl.gov/spack) to help build Conduit's third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit's optional features.
 
-We use **Spack** (http://software.llnl.gov/spack) to automate builds of third party dependencies on OSX and Linux. Conduit builds on Windows as well, but there is no automated process to build dependencies necessary to support Conduit's optional features.
+Uberenv (``scripts/uberenv/uberenv.py``) automates fetching spack, building and installing third party dependencies, and can optionally install Conduit as well.  To automate the full install process, Uberenv uses the Conduit Spack package along with extra settings such as Spack compiler and external third party package details for common HPC platforms.
+
+
+Building Third Party Dependencies for Development
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
   Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit development.
-  This path uses the Conduit Spack package and extra settings, including Spack compiler and external third party package details for some platforms.  For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
+  For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
   
 
 On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
@@ -230,16 +243,18 @@ Uberenv Options for Building Third Party Dependencies
 
 ``uberenv.py`` has a few options that allow you to control how dependencies are built:
 
- ==================== ==================================== ================================================
-  Option               Description                          Default
- ==================== ==================================== ================================================
-  --prefix             Destination directory                ``uberenv_libs``
-  --spec               Spack spec                           linux: **%gcc**
-                                                            osx: **%clang**
-  --spack-config-dir   Folder with Spack settings files     linux: (empty)
-                                                            osx: ``scripts/uberenv/spack_configs/darwin/``
-  -k                   Ignore SSL Errors                    **False**
- ==================== ==================================== ================================================
+ ==================== ============================================== ================================================
+  Option               Description                                     Default
+ ==================== ============================================== ================================================
+  --prefix             Destination directory                          ``uberenv_libs``
+  --spec               Spack spec                                     linux: **%gcc**
+                                                                      osx: **%clang**
+  --spack-config-dir   Folder with Spack settings files               linux: (empty)
+                                                                      osx: ``scripts/uberenv/spack_configs/darwin/``
+  -k                   Ignore SSL Errors                              **False**
+  --install            Fully install conduit, not just dependencies   **False**
+  --run_tests          Invoke tests during build and against install  **False** 
+ ==================== ============================================== ================================================
 
 The ``-k`` option exists for sites where SSL certificate interception undermines fetching
 from github and https hosted source tarballs. When enabled, ``uberenv.py`` clones spack using:
@@ -266,11 +281,25 @@ Default invocation on OSX:
                                       --spec %clang \
                                       --spack-config-dir scripts/uberenv/spack_configs/darwin/
 
+
+The uberenv `--install` installs conduit\@master (not just the development dependencies):
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install
+
+
+To run tests during the build process to validate the build and install, you can use the ``--run_tests`` option:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install \
+                                      --run_tests
+
 For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
 
  
-You can edit ``scripts/uberenv/compilers.yaml`` or use the **--spack-config-dir** option to change compiler settings and external packages
-used by Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#manual-compiler-configuration>`_
+You can edit yaml files under ``scripts/uberenv/spack_config/{platform}`` or use the **--spack-config-dir** option to specify a directory with compiler and packages yaml files to use with Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#manual-compiler-configuration>`_
 and `Spack System Packages
 <http://spack.readthedocs.io/en/latest/getting_started.html#system-packages>`_
 documentation for details.
@@ -285,6 +314,28 @@ When run, ``uberenv.py`` checkouts a specific version of Spack from github as ``
 destination directory. It then uses Spack to build and install Conduit's dependencies into 
 ``spack/opt/spack/``. Finally, it generates a host-config file ``{hostname}.cmake`` in the 
 destination directory that specifies the compiler settings and paths to all of the dependencies.
+
+
+.. _building_known_hpc:
+
+Building with Uberenv on Known HPC Platforms 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To support testing and installing on common platforms, we maintain sets of Spack compiler and package settings
+for a few known HPC platforms.  Here are the commonly tested configurations:
+
+ ================== ====================== ======================================
+  System             OS                     Tested Configurations (Spack Specs)
+ ================== ====================== ======================================
+  pascal.llnl.gov     Linux: TOSS3          %gcc
+                                            
+                                            %gcc~shared
+  lassen.llnl.gov     Linux: BlueOS         %clang\@coral~python~fortran
+  cori.nersc.gov      Linux: SUSE / CNL     %gcc
+ ================== ====================== ======================================
+
+
+See ``scripts/spack_build_tests/`` for the exact invocations used to test on these platforms.
 
 
 .. _building_with_spack:
@@ -318,6 +369,7 @@ The Conduit Spack package provides several `variants <http://spack.readthedocs.i
   **mpi**             Enable Conduit MPI support           ON (+mpi)
   **hdf5**            Enable Conduit HDF5 support          ON (+hdf5)
   **silo**            Enable Conduit Silo support          ON (+silo)
+  **adios**           Enable Conduit ADIOS support         OFF (+adios)
   **doc**             Build Conduit's Documentation        OFF (+docs)
  ================== ==================================== ======================================
 
@@ -341,7 +393,7 @@ You can specify specific versions of a dependency using ``^``. For Example, to b
 
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We recommend CMake 3.9. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python and C++11 support.
+We recommend CMake 3.9 or newer. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python and C++11 support.
 
 
 
@@ -376,6 +428,8 @@ You can avoid related linking warnings by adding the ``-dynamic`` compiler flag,
 
 `Shared Memory Maps are read only <https://pubs.cray.com/content/S-0005/CLE%206.0.UP02/xctm-series-dvs-administration-guide-cle-60up02-s-0005/dvs-caveats>`_
 on Cray systems, so updates to data using ``Node::mmap`` will not be seen between processes.
+
+
 
 
 

@@ -290,6 +290,46 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(n['a'][1], 2)
         self.assertEqual(n['a'][2], 3)
 
+    def test_compact_to(self):
+        n = Node()
+        n['a'] = 1
+        n['b'] = 2
+        n['c'] = 3
+        ni = n.info()
+        self.assertEqual(ni["mem_spaces"].number_of_children(), 3)
+        
+        n2 = Node()
+        n.compact_to(n2)
+        ni = n2.info()
+        print(ni)
+        self.assertEqual(ni["mem_spaces"].number_of_children(), 1)
+
+    def test_update(self):
+        n = Node()
+        data = array(range(10), dtype='float64')
+        n["data"].set_external(data)
+        
+        print(n)
+        
+        n2 = Node()
+        n2.update(n)
+        print(n2)
+        self.assertEqual(n2["data"][0],0)
+        
+        n3 = Node()
+        n3.update_external(n)
+        data[0] = 10
+        print(n3)
+        self.assertEqual(n3["data"][0],10)
+        
+        n4 = Node()
+        n4["data"] = 10
+        n4.update_compatible(n)
+        print(n4)
+        self.assertEqual(n4["data"],10)
+    
+
+
 if __name__ == '__main__':
     unittest.main()
 

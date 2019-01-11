@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 """
- file: python_relay_web.py
+ file: t_python_relay_web.py
  description: Unit tests for the conduit relay web python module interface.
 
 """

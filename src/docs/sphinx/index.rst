@@ -74,6 +74,13 @@ The ``Mesh Blueprint`` facilitates this. For more details, please see the :ref:`
 
 For more background on Conduit, please see :doc:`presentations`.
 
+
+Getting Started
+----------------
+
+To get started building and using Conduit, see the :doc:`Quick Start Guide <quick_start>`  and the Conduit Tutorials for  :doc:`C++ <tutorial_cpp>` and :doc:`Python <tutorial_python>`. For more details about building Conduit see the :doc:`Building documentation<building>`.
+
+
 Unique Features
 ----------------
 
@@ -122,12 +129,12 @@ relay
    - I/O functionally beyond simple binary, memory mapped, and json-based text file I/O.
    - A light-weight web server for REST and WebSocket clients. 
    - Interfaces for MPI communication using conduit::Node instances as payloads.
- - *Optionally depends on silo, hdf5, szip and mpi*
+ - *Optionally depends on silo, hdf5, szip, adios, and mpi*
 
 blueprint
 ~~~~~~~~~~
  - Provides interfaces for common higher-level conventions and data exchange protocols (eg. describing a “mesh”) using Conduit.
- - *No optional dependancies* 
+ - *No optional dependencies* 
 
 See the :doc:`user` for more details on these libraries. 
 
@@ -144,6 +151,7 @@ Contributors
 - Kenny Weiss (LLNL)
 - Matt Larsen (LLNL)
 - Todd Gamblin (LLNL)
+- Brad Whitlock (Intelligent Light)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)
 - Rupert Deese (Harvey Mudd)
@@ -160,7 +168,8 @@ Conduit Documentation
 
 .. toctree::
    :maxdepth: 2
-
+   
+   quick_start
    user
    developer
    releases

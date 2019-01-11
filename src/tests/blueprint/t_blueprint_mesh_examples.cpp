@@ -65,7 +65,7 @@ std::string PROTOCOL_VER = CONDUIT_VERSION;
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
     Node io_protos;
-    relay::about(io_protos);
+    relay::io::about(io_protos["io"]);
 
     bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
@@ -191,7 +191,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
 TEST(conduit_blueprint_mesh_examples, mesh_3d)
 {
     Node io_protos;
-    relay::about(io_protos);
+    relay::io::about(io_protos["io"]);
 
     bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
@@ -353,6 +353,54 @@ TEST(conduit_blueprint_mesh_examples, spiral)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polytess)
+{
+    const index_t nlevels = 3;
+    Node res;
+    blueprint::mesh::examples::polytess(nlevels,
+                                        res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_json());
+
+    relay::io_blueprint::save(res, "polytess_example.blueprint_root");
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
+{
+    Node mesh, info;
+    // these checks make sure braid generates valid fields even when
+    // # of z pointers == 0
+    int npts_x = 5;
+    int npts_y = 5;
+    int npts_z = 0;
+
+    std::vector<std::string> braid_type_strings;
+    braid_type_strings.push_back("points");
+    braid_type_strings.push_back("points_implicit");
+    braid_type_strings.push_back("lines");
+    braid_type_strings.push_back("rectilinear");
+    braid_type_strings.push_back("structured");
+    braid_type_strings.push_back("tris");
+    braid_type_strings.push_back("quads");
+    
+    for(index_t i = 0; i < braid_type_strings.size(); i++)
+    {
+        mesh.reset();
+        blueprint::mesh::examples::braid(braid_type_strings[i],
+                                          npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          mesh);
+        // make the braid vertex-assoced field has with more than zero entries
+        EXPECT_GT(mesh["fields/braid/values"].dtype().number_of_elements(),0);
+        mesh.print();
+    }
+}
 
 
 //-----------------------------------------------------------------------------
