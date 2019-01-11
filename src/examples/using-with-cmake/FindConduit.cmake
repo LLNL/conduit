@@ -70,24 +70,22 @@ endif()
 
 get_filename_component(CONDUIT_DIR ${CONDUIT_DIR} ABSOLUTE)
 
-if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit.cmake)
+if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit-config.cmake)
     MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit.cmake)")
 endif()
 
 ###############################################################################
 # Import Conduit's CMake targets
 ###############################################################################
-include(${CONDUIT_DIR}/lib/cmake/conduit-deps-paths.cmake)
 include(${CONDUIT_DIR}/lib/cmake/conduit-config.cmake)
-include(${CONDUIT_DIR}/lib/cmake/conduit.cmake)
+MESSAGE(STATUS "Found Conduit at ${CONDUIT_DIR}")
+MESSAGE(STATUS "CONDUIT_INCLUDE_DIRS = ${CONDUIT_INCLUDE_DIRS}")
 
 ###############################################################################
 # Set remaning CMake variables 
 ###############################################################################
 # we found Conduit
 set(CONDUIT_FOUND TRUE)
-# provide location of the headers in CONDUIT_INCLUDE_DIRS
-set(CONDUIT_INCLUDE_DIRS ${CONDUIT_DIR}/include/conduit)
 
 
 

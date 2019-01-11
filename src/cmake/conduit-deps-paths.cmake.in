@@ -42,8 +42,10 @@
 # 
 ###############################################################################
 
-set(CONDUIT_DEPS_HDF5_DIR  "@HDF5_DIR@")
-set(CONDUIT_DEPS_ADIOS_DIR "@ADIOS_DIR@")
-
+set(CONDUIT_INSTALL_PREFIX "@CONDUIT_INSTALL_PREFIX@")
+set(CONDUIT_HDF5_DIR  "@HDF5_DIR@")
+set(CONDUIT_ADIOS_DIR "@ADIOS_DIR@")
+set(CONDUIT_SILO_DIR "@SILO_DIR@")
+set(CONDUIT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
 
 
