@@ -53,17 +53,24 @@
 #  ./example
 #
 #
-# Note:
-#  If you use features that leverage external third party libraries 
-#  (ex: relay hdf5 features), the imported CMake targets will handle linking 
-#  these libraries, however you may need to add additional include
-#  include directories to use their headers. 
+# If run in sub directory of a conduit install, 
+# CONDUIT_DIR will be defaulted to ../../..
 # 
+#  mkdir build
+#  cd build
+#  cmake ..
+#  make
+#  ./example
+#
 ###############################################################################
 
 cmake_minimum_required(VERSION 3.0)
 
 project(using_with_cmake)
+
+if(NOT CONDUIT_DIR)
+    set(CONDUIT_DIR "../../..")
+endif()
 
 include("FindConduit.cmake")
 

@@ -64,6 +64,21 @@ CONDUIT_HDF5_DIR = @HDF5_DIR@
 CONDUIT_ZLIB_DIR = @ZLIB_DIR@
 CONDUIT_ADIOS_DIR = @ADIOS_DIR@
 
+CONDUIT_EXTRA_LIB_FLAGS = @CONDUIT_MAKE_EXTRA_LIBS@
+
+CONDUIT_LINK_RPATH = -Wl,-rpath,$(CONDUIT_DIR)
+
+# two steps are used b/c there are commas in the linker commands
+# which will undermine parsing of the makefile
+CONDUIT_HDF5_RPATH_FLAGS_VALUE = -Wl,-rpath,$(CONDUIT_HDF5_DIR)/lib
+CONDUIT_ZLIB_RPATH_FLAGS_VALUE = -Wl,-rpath,$(CONDUIT_ZLIB_DIR)/lib
+CONDUIT_ADIOS_RPATH_FLAGS_VALUE = -Wl,-rpath,$(CONDUIT_ADIOS_DIR)/lib
+
+CONDUIT_LINK_RPATH += $(if $(CONDUIT_HDF5_DIR), $(CONDUIT_HDF5_RPATH_FLAGS_VALUE))
+CONDUIT_LINK_RPATH += $(if $(CONDUIT_ZLIB_DIR), $(CONDUIT_ZLIB_RPATH_FLAGS_VALUE))
+CONDUIT_LINK_RPATH += $(if $(CONDUIT_ADIOS_DIR), $(CONDUIT_ADIOS_RPATH_FLAGS_VALUE))
+
+
 
 #################
 # Include Flags
@@ -103,11 +118,7 @@ CONDUIT_ZLIB_LIB_FLAGS = $(if $(CONDUIT_ZLIB_DIR),-L $(CONDUIT_ZLIB_DIR)/lib -lz
 CONDUIT_LIB_FLAGS = -L $(CONDUIT_DIR)/lib \
                     -lconduit_blueprint \
                     -lconduit_relay \
-                    -lconduit \
-                    $(CONDUIT_ADIOS_LIB_FLAGS) \
-                    $(CONDUIT_HDF5_LIB_FLAGS) \
-                    $(CONDUIT_ZLIB_LIB_FLAGS) \
-                    -ldl
+                    -lconduit $(CONDUIT_ADIOS_LIB_FLAGS) $(CONDUIT_HDF5_LIB_FLAGS) $(CONDUIT_ZLIB_LIB_FLAGS) $(CONDUIT_EXTRA_LIB_FLAGS)
 
 # All conduit libs, with MPI
 CONDUIT_MPI_LIB_FLAGS = -L $(CONDUIT_DIR)/lib \
@@ -115,12 +126,5 @@ CONDUIT_MPI_LIB_FLAGS = -L $(CONDUIT_DIR)/lib \
                         -lconduit_relay_mpi \
                         -lconduit_blueprint \
                         -lconduit_relay \
-                        -lconduit \
-                        $(CONDUIT_ADIOS_MPI_LIB_FLAGS) \
-                        $(CONDUIT_HDF5_LIB_FLAGS) \
-                        $(CONDUIT_ZLIB_LIB_FLAGS) \
-                        -ldl
-
-
-
+                        -lconduit $(CONDUIT_ADIOS_MPI_LIB_FLAGS) $(CONDUIT_HDF5_LIB_FLAGS) $(CONDUIT_ZLIB_LIB_FLAGS) $(CONDUIT_EXTRA_LIB_FLAGS)
 

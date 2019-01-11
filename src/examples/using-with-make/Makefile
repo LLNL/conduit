@@ -65,6 +65,12 @@ CONDUIT_DIR ?= ../../..
 # See $(CONDUIT_DIR)/share/conduit/conduit_config.mk for detailed linking info
 include $(CONDUIT_DIR)/share/conduit/conduit_config.mk
 
+INC_FLAGS = $(CONDUIT_INCLUDE_FLAGS)
+LNK_FLAGS = $(CONDUIT_LINK_RPATH) $(CONDUIT_LIB_FLAGS)
+
 main:
-	$(CXX) $(CONDUIT_INCLUDE_FLAGS) example.cpp $(CONDUIT_LIB_FLAGS) -o example
+	$(CXX) $(INC_FLAGS) example.cpp $(LNK_FLAGS) -o example
+
+clean:
+	rm -f example
 

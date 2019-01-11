@@ -97,6 +97,12 @@ else()
     message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == 1)")
 endif()
 
+#######################################
+# Global Helpers (clear every config)
+#######################################
+set(CONDUIT_INSTALL_PREFIX CACHE STRING "" FORCE)
+set(CONDUIT_MAKE_EXTRA_LIBS CACHE STRING "" FORCE)
+
 ################################
 # Coverage Flags
 ################################
