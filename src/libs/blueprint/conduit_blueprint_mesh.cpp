@@ -2802,7 +2802,26 @@ mesh::adjset::verify(const Node &adjset,
 
             bool group_res = true;
             group_res &= verify_integer_field(protocol, chld, chld_info, "neighbors");
-            group_res &= verify_integer_field(protocol, chld, chld_info, "values");
+            if(chld.has_child("values"))
+            {
+                group_res &= verify_integer_field(protocol, chld,
+                    chld_info, "values");
+            }
+            if(chld.has_child("boundary"))
+            {
+                group_res &= verify_integer_field(protocol, chld,
+                    chld_info, "boundary");
+                group_res &= verify_integer_field(protocol, chld,
+                    chld_info, "location");
+
+                if(chld.has_child("orientation"))
+                {
+                    group_res &= verify_integer_field(protocol, chld,
+                        chld_info, "orientation");
+                }
+            }
+
+ 
 
             log::validation(chld_info,group_res);
             groups_res &= group_res;
