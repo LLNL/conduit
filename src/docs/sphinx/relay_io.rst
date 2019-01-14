@@ -49,7 +49,7 @@ Relay I/O
 Conduit Relay I/O provides optional Silo, HDF5, and ADIOS I/O interfaces. 
 
 These interfaces can be accessed through a basic generic API or through APIs specific to each underlying I/O interface. 
-The specific APIs provide more lower level control and allow reuse of handles, which is more efficient for most non-trivial use cases.
+The specific APIs provide lower level control and allow reuse of handles, which is more efficient for most non-trivial use cases.
 We plan to provide a Generic I/O Handle interface (https://github.com/LLNL/conduit/issues/321) in a future release. 
 
 
@@ -58,7 +58,7 @@ We plan to provide a Generic I/O Handle interface (https://github.com/LLNL/condu
 Generic Relay I/O Interface
 ---------------------------
 
-The generic Relay I/O interface allows you to read and write conduit::Nodes using any enabled I/O interface through a simple path-based API. The I/O interface used is selected using the extension of the destination path or an explicit protocol argument.
+The generic Relay I/O interface allows you to read and write conduit::Nodes using any enabled I/O interface through a simple path-based API. The underlying I/O interface is selected using the extension of the destination path or an explicit protocol argument.
 
 
 The ``conduit_relay`` library provides the following methods in the ``conduit::relay::io`` namespace:
@@ -81,7 +81,7 @@ The ``conduit_relay`` library provides the following methods in the ``conduit::r
    * Merges the contents of a file into the passed Node. Works like a ``Node::update`` rom the contents of the file: if the Node has existing data, new data paths are appended, common paths are overwritten, and other existing paths are not changed. 
 
                              
-The ``conduit_relay_mpi_io`` library provides the ``conduit::relay::mpi::io`` namespace which includes variants variants of these methods which take a MPI Communicator. The communicator is passed to the underlying I/O interface to enable collective I/O. Relay currently only supports this for ADIOS.
+The ``conduit_relay_mpi_io`` library provides the ``conduit::relay::mpi::io`` namespace which includes variants of these methods which take a MPI Communicator. These variants pass the communicator to the underlying I/O interface to enable collective I/O. Relay currently only supports collective I/O for ADIOS.
 
 
 Generic Relay I/O Interface Examples
