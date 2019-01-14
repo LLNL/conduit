@@ -2807,12 +2807,46 @@ mesh::adjset::verify(const Node &adjset,
                 group_res &= verify_integer_field(protocol, chld,
                     chld_info, "values");
             }
-            else if(chld.has_child("boundary"))
+            else if(chld.has_child("windows"))
             {
-                group_res &= verify_string_field(protocol, chld,
-                    chld_info, "boundary");
-                group_res &= verify_integer_field(protocol, chld,
-                    chld_info, "location");
+
+                group_res &= verify_object_field(protocol, chld,
+                    chld_info, "windows");
+
+                bool windows_res = true;
+                NodeConstIterator witr = chld["windows"].children();
+                while(witr.has_next())
+                {
+                    const Node &wndw = witr.next();
+                    const std::string wndw_name = witr.name();
+                    Node &wndw_info = chld_info["windows"][wndw_name];
+
+                    bool window_res = true;
+                    window_res &= verify_field_exists(protocol, wndw,
+                        wndw_info, "origin") &&
+                        mesh::logical_dims::verify(wndw["origin"],
+                            wndw_info["origin"]);
+                    window_res &= verify_field_exists(protocol, wndw,
+                        wndw_info, "dims") &&
+                        mesh::logical_dims::verify(wndw["dims"],
+                            wndw_info["dims"]);
+
+                    // one last pass: verify that dimensions for "origin", and
+                    // "dims" are the same
+                    if(window_res)
+                    {
+                        index_t window_dim = wndw["origin"].number_of_children();
+                        window_res &= !wndw.has_child("dims") ||
+                            verify_object_field(protocol, wndw,
+                                wndw_info, "dims", false, window_dim);
+                    }
+
+                    log::validation(wndw_info,window_res);
+                    windows_res &= window_res;
+                }
+
+                log::validation(chld_info["windows"],windows_res);
+                res &= windows_res;
 
                 if(chld.has_child("orientation"))
                 {
@@ -2820,9 +2854,7 @@ mesh::adjset::verify(const Node &adjset,
                         chld_info, "orientation");
                 }
             }
-
  
-
             log::validation(chld_info,group_res);
             groups_res &= group_res;
         }
