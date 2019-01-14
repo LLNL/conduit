@@ -1,0 +1,49 @@
+Running main() from gtest_main.cc
+[==========] Running 1 test from 1 test case.
+[----------] Global test environment set-up.
+[----------] 1 test from conduit_docs
+[ RUN      ] conduit_docs.relay_io_example_hdf5_interface_1
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 64]
+ relay_io_example_hdf5_interface_1
+
+Node to write:
+
+{
+  "a": 
+  {
+    "my_data": 1.0,
+    "b": 
+    {
+      "my_string": "value"
+    }
+  }
+}
+
+Path 'myoutput.hdf5:a/my_data' exists
+
+Data loaded:
+1.0
+
+Data loaded:
+
+{
+  "a": 
+  {
+    "my_data": 3.1415,
+    "b": 
+    {
+      "my_string": "value",
+      "c": 144
+    }
+  }
+}
+File 
+'myoutput.hdf5' is a hdf5 file
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 116]
+ relay_io_example_hdf5_interface_1
+[       OK ] conduit_docs.relay_io_example_hdf5_interface_1 (6 ms)
+[----------] 1 test from conduit_docs (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test case ran. (6 ms total)
+[  PASSED  ] 1 test.
