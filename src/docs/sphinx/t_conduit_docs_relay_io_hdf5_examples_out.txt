@@ -1,7 +1,7 @@
 Running main() from gtest_main.cc
-[==========] Running 1 test from 1 test case.
+[==========] Running 2 tests from 1 test case.
 [----------] Global test environment set-up.
-[----------] 1 test from conduit_docs
+[----------] 2 tests from conduit_docs
 [ RUN      ] conduit_docs.relay_io_example_hdf5_interface_1
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 64]
  relay_io_example_hdf5_interface_1
@@ -41,9 +41,75 @@ File
 'myoutput.hdf5' is a hdf5 file
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 116]
  relay_io_example_hdf5_interface_1
-[       OK ] conduit_docs.relay_io_example_hdf5_interface_1 (6 ms)
-[----------] 1 test from conduit_docs (6 ms total)
+[       OK ] conduit_docs.relay_io_example_hdf5_interface_1 (5 ms)
+[ RUN      ] conduit_docs.relay_io_example_hdf5_interface_2
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 126]
+ relay_io_example_hdf5_interface_opts
+
+Relay I/O Info and Default Options:
+
+{
+  "protocols": 
+  {
+    "json": "enabled",
+    "conduit_json": "enabled",
+    "conduit_bin": "enabled",
+    "hdf5": "enabled",
+    "conduit_silo": "disabled",
+    "conduit_silo_mesh": "disabled",
+    "adios": "disabled"
+  },
+  "options": 
+  {
+    "hdf5": 
+    {
+      "compact_storage": 
+      {
+        "enabled": "true",
+        "threshold": 1024
+      },
+      "chunking": 
+      {
+        "enabled": "true",
+        "threshold": 2000000,
+        "chunk_size": 1000000,
+        "compression": 
+        {
+          "method": "gzip",
+          "level": 5
+        }
+      }
+    }
+  }
+}
+
+New HDF5 I/O Options:
+
+{
+  "compact_storage": 
+  {
+    "enabled": "true",
+    "threshold": 1024
+  },
+  "chunking": 
+  {
+    "enabled": "true",
+    "threshold": 2000,
+    "chunk_size": 2000,
+    "compression": 
+    {
+      "method": "gzip",
+      "level": 5
+    }
+  }
+}
+
+saving data to 'myoutput_chunked.hdf5' 
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 161]
+ relay_io_example_hdf5_interface_opts
+[       OK ] conduit_docs.relay_io_example_hdf5_interface_2 (2 ms)
+[----------] 2 tests from conduit_docs (7 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test case ran. (6 ms total)
-[  PASSED  ] 1 test.
+[==========] 2 tests from 1 test case ran. (7 ms total)
+[  PASSED  ] 2 tests.

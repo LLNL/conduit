@@ -49,7 +49,8 @@ Relay I/O
 Conduit Relay I/O provides optional Silo, HDF5, and ADIOS I/O interfaces. 
 
 These interfaces can be accessed through a basic generic API or through APIs specific to each underlying I/O interface. 
-
+The specific APIs provide more lower level control and allow reuse of handles, which is more efficient for most non-trivial use cases.
+We plan to provide a Generic I/O Handle interface (https://github.com/LLNL/conduit/issues/321) in a future release. 
 
 
 .. _relay_io_generic_interface:
@@ -198,5 +199,23 @@ HDF5 I/O Interface Basics
    :lines: 9-41
 
 
+
+HDF5 I/O Options 
+++++++++++++++++++
+
+* **C++ Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp
+   :lines: 128-160
+   :language: cpp
+   :dedent: 4
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_relay_io_hdf5_examples_out.txt
+   :lines: 49-107
+
+You can verify using ``h5stat`` that the data set was written to the hdf5 file using chunking and
+compression.
 
 
