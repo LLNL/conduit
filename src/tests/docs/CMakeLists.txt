@@ -55,15 +55,19 @@ set(DOCS_TESTS
     t_conduit_docs_tutorial_json
     t_conduit_docs_tutorial_ownership
     t_conduit_docs_tutorial_errors
+    t_conduit_docs_relay_io_generic_examples
     t_conduit_docs_blueprint_examples
     t_conduit_docs_blueprint_demos)
+
+set(DOCS_HDF5_TESTS  
+    t_conduit_docs_relay_io_hdf5_examples)
+
 
 set(DOCS_PYTHON_TESTS  
     t_conduit_docs_tutorial_python_basics
     t_conduit_docs_tutorial_python_numeric
     t_conduit_docs_tutorial_python_json
     t_conduit_docs_tutorial_python_ownership)
-
 
 
 ################################
@@ -73,6 +77,15 @@ message(STATUS "Adding docs related unit tests")
 foreach(TEST ${DOCS_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
 endforeach()
+
+################################
+# Add HDF5 Tests
+################################
+if(HDF5_FOUND)
+    foreach(TEST ${DOCS_HDF5_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
+    endforeach()
+endif()
 
 ################################
 # Add Python Tests
