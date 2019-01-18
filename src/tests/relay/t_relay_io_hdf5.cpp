@@ -1012,6 +1012,45 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, test_remove_path)
+{
+    Node n;
+    n["path/mydata"] = 20;
+    n["path/otherdata/leaf"] = 42;
+    std::string tout = "tout_test_remove_path.hdf5";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
+    
+    io::save(n,tout, "hdf5");
+    
+    hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    io::hdf5_remove_path(h5_file_id,"path/otherdata/leaf");
+    io::hdf5_close_file(h5_file_id);
+    
+    n.reset();
+    io::load(tout,n);
+    EXPECT_FALSE(n.has_path("path/otherdata/leaf"));
+    EXPECT_TRUE(n.has_path("path/otherdata"));
+    n.print();
+    
+    
+    h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    io::hdf5_remove_path(h5_file_id,"path/otherdata");
+    io::hdf5_close_file(h5_file_id);
+    
+    n.reset();
+    io::load(tout,n);
+    EXPECT_FALSE(n.has_path("path/otherdata"));
+    EXPECT_TRUE(n.has_path("path"));
+    n.print();
+    
+}
+
+
 
 
 

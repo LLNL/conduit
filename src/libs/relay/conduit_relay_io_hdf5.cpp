@@ -2274,6 +2274,23 @@ hdf5_has_path(hid_t hdf5_id,
     // enable hdf5 error stack
 }
 
+//---------------------------------------------------------------------------//
+void
+hdf5_remove_path(hid_t hdf5_id,
+                 const std::string &hdf5_path)
+{
+    // disable hdf5 error stack
+    HDF5ErrorStackSupressor supress_hdf5_errors;
+    
+    CONDUIT_CHECK_HDF5_ERROR(H5Ldelete(hdf5_id,
+                                       hdf5_path.c_str(),
+                                       H5P_DEFAULT),
+                             "Error deleting HDF5 path: "
+                              << hdf5_id << ":" << hdf5_path);
+    // enable hdf5 error stack
+}
+
+
 
 
 //---------------------------------------------------------------------------//
