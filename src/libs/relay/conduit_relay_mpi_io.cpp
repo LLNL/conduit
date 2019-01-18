@@ -106,7 +106,7 @@ about(MPI_Comm comm)
 
 //---------------------------------------------------------------------------//
 void
-about(Node &n, MPI_Comm /* comm */)
+about(Node &n, MPI_Comm comm)
 {
     n.reset();
     Node &io_protos = n["io/protocols"];
@@ -149,6 +149,7 @@ about(Node &n, MPI_Comm /* comm */)
     io_protos["adios"] = "enabled";
     adios_options(n["io/options/adios"], comm);
 #else
+    CONDUIT_UNUSED(comm);
     io_protos["adios"] = "disabled";
 #endif
 }

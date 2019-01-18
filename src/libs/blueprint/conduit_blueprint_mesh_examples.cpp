@@ -2356,7 +2356,6 @@ void spiral(index_t ndoms,
 {
     res.reset();
     
-    int f_2 = 1;
     int f_1 = 1;
     int f = 1;
     
@@ -2477,7 +2476,6 @@ void spiral(index_t ndoms,
         {
             int f_prev = f;
             f = f + f_1;
-            f_2 = f_1;
             f_1 = f_prev;
         }
     }
