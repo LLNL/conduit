@@ -106,7 +106,7 @@ about(MPI_Comm comm)
 
 //---------------------------------------------------------------------------//
 void
-about(Node &n, MPI_Comm comm)
+about(Node &n, MPI_Comm /* comm */)
 {
     n.reset();
     Node &io_protos = n["io/protocols"];
@@ -160,6 +160,8 @@ initialize(MPI_Comm comm)
 {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
     adios_initialize_library(comm);
+#else 
+    CONDUIT_UNUSED(comm);
 #endif
 }
 
@@ -169,6 +171,8 @@ finalize(MPI_Comm comm)
 {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
     adios_finalize_library(comm);
+#else 
+    CONDUIT_UNUSED(comm);
 #endif
 }
 
@@ -306,6 +310,7 @@ save(const Node &node,
             adios_set_options(prev_options, comm);
         }
 #else
+        CONDUIT_UNUSED(comm);
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
@@ -416,6 +421,7 @@ save_merged(const Node &node,
             adios_set_options(prev_options, comm);
         }
 #else
+        CONDUIT_UNUSED(comm);
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
@@ -481,6 +487,10 @@ add_step(const Node &node,
         {
             adios_set_options(prev_options, comm);
         }
+#else
+    CONDUIT_UNUSED(node);
+    CONDUIT_UNUSED(options);
+    CONDUIT_UNUSED(comm);
 #endif
     }
     else
@@ -575,6 +585,7 @@ load(const std::string &path,
             adios_set_options(prev_options, comm);
         }
 #else
+        CONDUIT_UNUSED(comm);
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
@@ -665,6 +676,10 @@ load(const std::string &path,
             adios_set_options(prev_options, comm);
         }
 #else
+        CONDUIT_UNUSED(step);
+        CONDUIT_UNUSED(domain);
+        CONDUIT_UNUSED(options);
+        CONDUIT_UNUSED(comm);
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
@@ -748,6 +763,7 @@ load_merged(const std::string &path,
         adios_load(path,n,comm);
         node.update(n);
 #else
+        CONDUIT_UNUSED(comm);
         CONDUIT_ERROR("relay lacks ADIOS support: " << 
                       "Failed to read conduit node from path " << path);
 #endif
@@ -772,6 +788,8 @@ int query_number_of_steps(const std::string &path, MPI_Comm comm)
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         // TODO: see if we can do this on comm's rank 0 and bcast.
         nsteps = adios_query_number_of_steps(path, comm);
+#else
+        CONDUIT_UNUSED(comm);
 #endif
     }
 
@@ -790,6 +808,8 @@ int query_number_of_domains(const std::string &path, MPI_Comm comm)
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
         // TODO: see if we can do this on comm's rank 0 and bcast.
         ndoms = adios_query_number_of_domains(path, comm);
+#else
+        CONDUIT_UNUSED(comm);
 #endif
     }
 

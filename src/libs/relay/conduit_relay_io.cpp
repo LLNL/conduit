@@ -241,6 +241,11 @@ add_step(const Node &node,
         {
             adios_set_options(prev_options);
         }
+#else
+        CONDUIT_UNUSED(node);
+        CONDUIT_UNUSED(options);
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+                      "Failed to add_step");
 #endif
     }
     else
@@ -557,6 +562,9 @@ load(const std::string &path,
             adios_set_options(prev_options);
         }
 #else
+        CONDUIT_UNUSED(step);
+        CONDUIT_UNUSED(domain);
+        CONDUIT_UNUSED(options);
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
