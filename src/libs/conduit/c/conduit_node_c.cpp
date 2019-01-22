@@ -55,6 +55,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // -- begin extern C
 //-----------------------------------------------------------------------------
@@ -127,7 +133,7 @@ conduit_node_number_of_elements(conduit_node *cnode)
 char *
 conduit_node_path(const conduit_node *cnode)
 {
-    return strdup(cpp_node(cnode)->path().c_str());
+    return _conduit_strdup(cpp_node(cnode)->path().c_str());
 }
 
 //-----------------------------------------------------------------------------
