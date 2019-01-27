@@ -298,6 +298,10 @@ save(const Node &node,
      const std::string &protocol_,
      const Node &options)
 {
+    // we expect options to unused if all 3rd party i/o options are disabled
+    // avoid warning using CONDUIT_UNUSED macro.
+    CONDUIT_UNUSED(options);
+
     std::string protocol = protocol_;
     // allow empty protocol to be used for auto detect
     if(protocol.empty())
@@ -398,6 +402,10 @@ save_merged(const Node &node,
             const std::string &protocol_,
             const Node &options)
 {
+    // we expect options to unused if all 3rd party i/o options are disabled
+    // avoid warning using CONDUIT_UNUSED macro.
+    CONDUIT_UNUSED(options);
+
     std::string protocol = protocol_;
     // allow empty protocol to be used for auto detect
     if(protocol.empty())

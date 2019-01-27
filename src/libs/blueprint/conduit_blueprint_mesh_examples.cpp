@@ -673,8 +673,8 @@ void braid_init_example_nestset(Node &mesh)
     // initialize data to easily index domains by id/level //
 
     std::map<index_t, const Node*> mesh_id_map;
-    index_t max_dom_id = 0, max_level_id = 0;
-    {
+	index_t max_dom_id = 0, max_level_id = 0;
+	{
         conduit::NodeConstIterator doms_it = mesh.children();
         while(doms_it.has_next())
         {
@@ -831,11 +831,11 @@ void braid_init_example_nestset(Node &mesh)
             window window_extrema = dom_window_itr->second;
             std::string window_name;
             {
-                index_t min_dom_id = std::min(dom_id, odom_id);
-                index_t max_dom_id = std::max(dom_id, odom_id);
-
                 std::ostringstream oss;
-                oss << "window_" <<  min_dom_id << "_" << max_dom_id;
+                // window_{min_dom_id}_{max_dom_id}
+                oss << "window_" << std::min(dom_id, odom_id) 
+                                 << "_"
+                                 << std::max(dom_id, odom_id);
                 window_name = oss.str();
             }
 
@@ -2698,12 +2698,13 @@ void polytess(index_t nlevels,
     field["topology"].set("topo");
     field["association"].set("element");
     field["volume_dependent"].set("false");
+	// TODO: should we try to use index_t as the data type here?
     field["values"].set(DataType::uint32(polygons.size()));
 
     uint32_array level_array = field["values"].value();
     for(index_t pi = 0; pi < (index_t)polygons.size(); pi++)
     {
-        level_array[pi] = levels[pi];
+        level_array[pi] = (uint32) levels[pi];
     }
 }
 
