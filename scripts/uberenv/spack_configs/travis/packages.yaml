@@ -40,9 +40,5 @@ packages:
     buildable: False
     paths:
       openssl: /usr
-  zlib:
-    buildable: False
-    paths:
-      zlib: /usr
   conduit:
     version: [master]
