@@ -219,7 +219,7 @@ TEST(conduit_node_compare, compare_leaf_string)
             char* leaf_cstr = (char*)&compare_buffs[ci+1] - leaf_str.length() - 1;
             size_t leaf_buff_size = (size_t)leaf_type.spanned_bytes();
             memset(leaf_buff, 0, leaf_buff_size);
-            strcpy_s(leaf_cstr, leaf_buff_size,leaf_str.c_str());
+            snprintf(leaf_cstr, leaf_buff_size,leaf_str.c_str());
 
             Node n(leaf_type, (void*)leaf_buff, true);
 
