@@ -2379,8 +2379,9 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
     }
 
     const std::string topo_shape_type = topo["elements/shape"].as_string();
-	// TODO: Looks like topo_shape_faces needs to be inited to -1, check with Joe.
-	index_t topo_shape_indices = 0, topo_shape_faces = -1, topo_shape_findices = 0;
+    // TODO: Given if statment below this for loop, 
+    // Does topo_shape_faces needs to be inited to -1? 
+    index_t topo_shape_indices = 0, topo_shape_faces = 0, topo_shape_findices = 0;
     index_t* topo_shape_farrange = NULL;
     for(index_t i = 0; i < (index_t)topo_shapes.size(); i++)
     {
@@ -2393,7 +2394,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
                 const_cast<index_t*>(topo_shape_face_arrangements[i]);
         }
     }
-
+    // TODO: Does this expect topo_shape_faces to be inited to -1
     // polygonal topology case
     if(topo_shape_faces < 0)
     {

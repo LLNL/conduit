@@ -2698,7 +2698,7 @@ void polytess(index_t nlevels,
     field["topology"].set("topo");
     field["association"].set("element");
     field["volume_dependent"].set("false");
-	// TODO: should we try to use index_t as the data type here?
+    // TODO: should we try to use index_t as the data type here?
     field["values"].set(DataType::uint32(polygons.size()));
 
     uint32_array level_array = field["values"].value();
