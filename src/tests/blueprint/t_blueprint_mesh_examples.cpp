@@ -159,7 +159,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     }
     if(silo_enabled)
     {
-        itr.to_front();
+        // we removed datasets above, so we need an updated iterator
+        itr = dsets.children();
         while(itr.has_next())
         {
             const Node &mesh = itr.next();
@@ -278,7 +279,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     }
     if(silo_enabled)
     {
-        itr.to_front();
+        // we removed datasets above, so we need an updated iterator
+        itr = dsets.children();
         while(itr.has_next())
         {
             const Node &mesh = itr.next();

@@ -762,12 +762,14 @@ convert_coordset_to_explicit(const std::string &base_type,
 
     std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
     const std::vector<std::string> &logical_axes = blueprint::mesh::logical_axes;
-    index_t dim_lens[3], coords_len = 1;
+	
+    index_t dim_lens[3] = { 0,0,0 } , coords_len = 1;
     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
     {
-        coords_len *= (dim_lens[i] = is_base_rectilinear ?
+        dim_lens[i] = is_base_rectilinear ?
             coordset["values"][csys_axes[i]].dtype().number_of_elements() :
-            coordset["dims"][logical_axes[i]].value());
+            coordset["dims"][logical_axes[i]].value();
+        coords_len *= dim_lens[i];
     }
 
     Node info;
@@ -2377,8 +2379,10 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
     }
 
     const std::string topo_shape_type = topo["elements/shape"].as_string();
-    index_t topo_shape_indices, topo_shape_faces, topo_shape_findices;
-    index_t* topo_shape_farrange;
+    // TODO: Given if statment below this for loop, 
+    // Does topo_shape_faces needs to be inited to -1? 
+    index_t topo_shape_indices = 0, topo_shape_faces = 0, topo_shape_findices = 0;
+    index_t* topo_shape_farrange = NULL;
     for(index_t i = 0; i < (index_t)topo_shapes.size(); i++)
     {
         if(topo_shapes[i] == topo_shape_type)
@@ -2390,7 +2394,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
                 const_cast<index_t*>(topo_shape_face_arrangements[i]);
         }
     }
-
+    // TODO: Does this expect topo_shape_faces to be inited to -1
     // polygonal topology case
     if(topo_shape_faces < 0)
     {
@@ -2466,7 +2470,7 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
     const std::string topo_shape_type = topo["elements/shape"].as_string();
-    index_t topo_shape_indices;
+    index_t topo_shape_indices = 0;
     for(index_t i = 0; i < (index_t)topo_shapes.size(); i++)
     {
         if(topo_shapes[i] == topo_shape_type)
@@ -2477,12 +2481,12 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
 
     if(topo_shape_indices > 0)
     {
-        const index_t topo_shapes =
+        const index_t num_topo_shapes =
             topo_conn.dtype().number_of_elements() / topo_shape_indices;
 
-        Node shape_node(DataType::int64(topo_shapes));
+        Node shape_node(DataType::int64(num_topo_shapes));
         int64_array shape_array = shape_node.as_int64_array();
-        for(index_t s = 0; s < topo_shapes; s++)
+        for(index_t s = 0; s < num_topo_shapes; s++)
         {
             shape_array[s] = s * topo_shape_indices;
         }

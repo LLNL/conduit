@@ -94,7 +94,9 @@ CONDUIT_API int conduit_datatype_is_uint64(const conduit_datatype *cdatatype);
 
 CONDUIT_API int conduit_datatype_is_float32(const conduit_datatype *cdatatype);
 CONDUIT_API int conduit_datatype_is_float64(const conduit_datatype *cdatatype);
-CONDUIT_API int conduit_datatype_is_index_t(const conduit_datatype *cdatatype);
+
+// skipping b/c we don't provide this yet, unsure if we will
+// CONDUIT_API int conduit_datatype_is_index_t(const conduit_datatype *cdatatype);
 
 CONDUIT_API int conduit_datatype_is_char(const conduit_datatype *cdatatype);
 CONDUIT_API int conduit_datatype_is_short(const conduit_datatype *cdatatype);

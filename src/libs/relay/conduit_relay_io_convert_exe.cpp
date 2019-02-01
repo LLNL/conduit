@@ -51,7 +51,7 @@
 #include "conduit.hpp"
 #include "conduit_relay.hpp"
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-#include "conduit_relay_hdf5.hpp"
+#include "conduit_relay_io_hdf5.hpp"
 #endif
 #include <iostream>
 #include <stdlib.h>

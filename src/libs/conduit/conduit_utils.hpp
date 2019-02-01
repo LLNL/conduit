@@ -181,6 +181,16 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_EPSILON 1e-12
 
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_UNUSED macro is used to identify unused variables 
+/// in cases where it is difficult to avoid defining in the method signature 
+/// for methods that use optional features. 
+///
+//-----------------------------------------------------------------------------
+#define CONDUIT_UNUSED( var ) (void)(var)
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------

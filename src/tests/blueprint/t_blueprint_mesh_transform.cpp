@@ -91,7 +91,7 @@ std::string get_braid_type(const std::string &mesh_type)
         blueprint::mesh::examples::braid(mesh_type,1,1,1,mesh);
         braid_type = mesh_type;
     }
-    catch(conduit::Error &e)
+    catch(conduit::Error &) // actual exception is unused
     {
         braid_type = "hexs";
     }
