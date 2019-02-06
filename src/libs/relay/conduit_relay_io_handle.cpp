@@ -141,7 +141,7 @@ RelayIOHandle::open(const std::string &path,
 void
 RelayIOHandle::read(Node &node)
 {
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -149,14 +149,14 @@ void
 RelayIOHandle::read(const std::string &path,
                     Node &node)
 {
-    
+
 }
 
 //-----------------------------------------------------------------------------
 void
 RelayIOHandle::write(const Node &node)
 {
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -164,21 +164,21 @@ void
 RelayIOHandle::write(const Node &node,
                      const std::string &path)
 {
-    
+
 }
 
 //-----------------------------------------------------------------------------
 void
 RelayIOHandle::remove(const std::string &path)
 {
-    
+
 }
 
 //-----------------------------------------------------------------------------
 bool
 RelayIOHandle::has_path(const std::string &path)
 {
-    
+    return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -193,14 +193,14 @@ void
 RelayIOHandle::read_schema(const std::string &path,
                            Schema &schema)
 {
-    
+
 }
 
 //-----------------------------------------------------------------------------
 void
 RelayIOHandle::close()
 {
-    
+
 }
 
 
