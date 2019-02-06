@@ -44,60 +44,38 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.hpp
+/// file: t_relay_io_handle.cpp
 ///
 //-----------------------------------------------------------------------------
 
+#include "conduit_relay.hpp"
+#include <iostream>
+#include "gtest/gtest.h"
 
-#ifndef CONDUIT_RELAY_HPP
-#define CONDUIT_RELAY_HPP
-
-//-----------------------------------------------------------------------------
-// conduit lib include 
-//-----------------------------------------------------------------------------
-#include "conduit.hpp"
-
-#include "conduit_relay_exports.h"
-#include "conduit_relay_config.h"
-
-#include "conduit_relay_io.hpp"
-#include "conduit_relay_io_handle.hpp"
-#include "conduit_relay_io_blueprint.hpp"
-#include "conduit_relay_web.hpp"
-#include "conduit_relay_web_node_viewer_server.hpp"
+using namespace conduit;
+using namespace conduit::relay;
 
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
+TEST(conduit_relay_io_basic, basic_bin)
 {
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay --
-//-----------------------------------------------------------------------------
-namespace relay
-{
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
 
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how relay was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string CONDUIT_RELAY_API about();
-void        CONDUIT_RELAY_API about(conduit::Node &res);
-
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+    
+    io::RelayIOHandle h;
+    h.open("test_conduit_relay_io_handle.conduit_bin");
+    h.write(n);
+    h.close();
 }
-//-----------------------------------------------------------------------------
-// -- end conduit::relay --
-//-----------------------------------------------------------------------------
 
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
-
-
-#endif
 

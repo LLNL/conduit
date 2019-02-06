@@ -44,59 +44,64 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.hpp
+/// file: conduit_relay_io_handle_api.hpp
 ///
 //-----------------------------------------------------------------------------
 
 
-#ifndef CONDUIT_RELAY_HPP
-#define CONDUIT_RELAY_HPP
-
-//-----------------------------------------------------------------------------
-// conduit lib include 
-//-----------------------------------------------------------------------------
-#include "conduit.hpp"
-
-#include "conduit_relay_exports.h"
-#include "conduit_relay_config.h"
-
-#include "conduit_relay_io.hpp"
-#include "conduit_relay_io_handle.hpp"
-#include "conduit_relay_io_blueprint.hpp"
-#include "conduit_relay_web.hpp"
-#include "conduit_relay_web_node_viewer_server.hpp"
+#ifndef CONDUIT_RELAY_IO_HANDLE_API_HPP
+#define CONDUIT_RELAY_IO_HANDLE_API_HPP
 
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+///
+/// class: conduit::relay::{mpi}::io::RelayIOHandle
+///
+/// Contract: Changes to backing (file on disk, etc) aren't guaranteed to 
+//  be reflected until a call to close
 //-----------------------------------------------------------------------------
-namespace conduit
+class CONDUIT_API RelayIOHandle
 {
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay --
-//-----------------------------------------------------------------------------
-namespace relay
-{
+public:
+     RelayIOHandle();
+    ~RelayIOHandle();
+    
+    void open(const std::string &path);
+    void open(const std::string &path,
+              const std::string &protocol);
 
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how relay was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string CONDUIT_RELAY_API about();
-void        CONDUIT_RELAY_API about(conduit::Node &res);
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay --
-//-----------------------------------------------------------------------------
+    void open(const std::string &path,
+              const std::string &protocol,
+              const Node &options);
 
 
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
+    void read(Node &node);
+    void read(const std::string &path,
+              Node &node);
 
+    void write(const Node &node);
+    void write(const Node &node,
+               const std::string &path);
+
+    // TODO: options variants for read and write above? with update of 
+    // above options with passed?
+
+    void remove(const std::string &path);
+
+    bool has_path(const std::string &path);
+
+    void read_schema(Schema &schema);
+    void read_schema(const std::string &path,
+                     Schema &schema);
+
+    void close();
+
+private:
+    class GenericHandle;
+    GenericHandle *m_handle;
+
+};
 
 
 #endif
