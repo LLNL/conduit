@@ -12063,6 +12063,16 @@ Node::remove(const std::string &path)
     }
 }
 
+//---------------------------------------------------------------------------//
+void
+Node::rename_child(const std::string &current_name,
+                   const std::string &new_name)
+{
+    // this is a pass through to the schema, 
+    // which handles all the book keeping related to child rename
+    m_schema->rename_child(current_name,new_name);
+}
+
 
 //---------------------------------------------------------------------------//
 // helper to create a node using Schema the describes a list of a homogenous 

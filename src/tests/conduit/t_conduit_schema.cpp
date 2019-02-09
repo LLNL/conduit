@@ -298,6 +298,41 @@ TEST(schema_basics, schema_errors)
     EXPECT_THROW(s.fetch_child(".."),conduit::Error);
 }
 
+//-----------------------------------------------------------------------------
+TEST(schema_basics, rename_child)
+{
+    Schema s;
+    
+    // error, can't rename non object;
+    EXPECT_THROW(s.rename_child("a","b"),conduit::Error);
+    
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::float64());
+    s["c"].set(DataType::float32(10));
+    
+    s.print();
+
+    // error, can't rename to existing child name
+    EXPECT_THROW(s.rename_child("a","b"),conduit::Error);
+
+    // error, can't rename non existing child
+    EXPECT_THROW(s.rename_child("bad","d"),conduit::Error);
+
+    std::vector<std::string> cnames = s.child_names();
+    EXPECT_EQ(cnames[2],"c");
+    EXPECT_TRUE(s.has_child("c"));
+    EXPECT_FALSE(s.has_child("d"));
+
+    s.rename_child("c","d");
+
+    s.print();
+
+    cnames = s.child_names();
+    EXPECT_TRUE(s.has_child("d"));
+    EXPECT_FALSE(s.has_child("c"));
+    EXPECT_EQ(cnames[2],"d");
+}
+
 
 
 
