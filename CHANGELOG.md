@@ -112,7 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change Node set_external to support const Node ref
 - Refactor path and file systems utils functions for clarity
 
-###Fixed
+### Fixed
 - Added fixes to support static builds on BGQ using xlc and gcc
 - Fixed missing install of fortran module files
 
@@ -147,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved several bugs across libraries 
 - Resolved compiler warnings and memory leaks
 
-## [0.1.0] - Released 2016-03-30
+## 0.1.0 - Released 2016-03-30
 
 ### Added
 - Initial Open Source Release on GitHub
