@@ -26,10 +26,6 @@ Conduit's source is hosted on GitHub:
 
 https://github.com/llnl/conduit
 
-Changelog
-===========
-- [Changelog](/CHANGELOG.MD)
-
 License
 ===========
 
@@ -41,6 +37,9 @@ or the following files in the Conduit source tree:
 - [LICENSE](/LICENSE)
 - [thirdparty_licenses.md](/thirdparty_licenses.md)
 
+Changelog
+===========
+- [Changelog](/CHANGELOG.md)
 
 
 

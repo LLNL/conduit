@@ -1,5 +1,5 @@
-# Changelog
-All notable changes to this project will be documented in this file.
+# Conduit Changelog
+Notable changes to Conduit are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Relay: Fixed MPI send_with_schema bug when data was compact but not contiguous  
 - Relay: Switched to use MPI bit-width style data type enums in ``relay::mpi``
 
-## [0.3.1] - 2018-02-26
+## [0.3.1] - Released 2018-02-26
 
 ### Added
 - Added new ``Node::diff`` and ``Node::diff_compatible`` methods
@@ -76,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Blueprint: Removed unnecessary state member in the braid example
 
-## [0.3.0] - 2017-08-21
+## [0.3.0] - Released 2017-08-21
 
 ### Added 
 - Exposed more of the Conduit API in Python
@@ -101,7 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bug fixes for `conduit::Nodes` in the List Role
    
 
-## [0.2.1] - 2017-01-06
+## [0.2.1] - Released 2017-01-06
 
 ### Added
 - Blueprint: Added support to the blueprint python module for the mesh and mcarray protocol methods 
@@ -120,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Relay: Updated the version of civetweb used to avoid dlopen issues with SSL for static builds
 
-## [0.2.0] - 2016-11-03
+## [0.2.0] - Released 2016-11-03
 
 ### Added
 - Added const access to conduit::Node's children and a new NodeConstIterator
@@ -147,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved several bugs across libraries 
 - Resolved compiler warnings and memory leaks
 
-## [0.1.0] - 2016-03-30
+## [0.1.0] - Released 2016-03-30
 
 ### Added
 - Initial Open Source Release on GitHub
