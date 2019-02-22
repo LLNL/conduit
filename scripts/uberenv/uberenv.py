@@ -1,5 +1,7 @@
+#!/bin/sh
+"exec" "python" "-u" "-B" "$0" "$@"
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -123,8 +125,6 @@ def parse_args():
                       default=pjoin(uberenv_script_dir(),"project.json"),
                       help="uberenv project settings json file")
 
-
-
     # flag to use insecure curl + git
     parser.add_option("-k",
                       action="store_true",
@@ -154,7 +154,7 @@ def parse_args():
                       default=False,
                       help="Invoke build tests during spack install")
 
-    # option to force a spack pull
+    # option to init osx sdk env flags
     parser.add_option("--macos-sdk-env-setup",
                       action="store_true",
                       dest="macos_sdk_env_setup",
@@ -449,6 +449,10 @@ def main():
     cln_cmd = "spack/bin/spack clean "
     res = sexe(cln_cmd, echo=True)
 
+    # clean out any spack cached downloads
+    cln_cmd = "spack/bin/spack clean -d"
+    res = sexe(cln_cmd, echo=True)
+
     # check if we need to force uninstall of selected packages
     if opts["spack_clean"]:
         if project_opts.has_key("spack_clean_packages"):
@@ -481,7 +485,7 @@ def main():
         install_cmd = "spack/bin/spack "
         if opts["ignore_ssl_errors"]:
             install_cmd += "-k "
-        install_cmd += "install " 
+        install_cmd += "install "
         if opts["run_tests"]:
             install_cmd += "--test=root "
         install_cmd += uberenv_pkg_name + opts["spec"]
@@ -508,7 +512,7 @@ def main():
         if opts["install"] and "+python" in full_spec:
             activate_cmd = "spack/bin/spack activate " + uberenv_pkg_name
             sexe(activate_cmd, echo=True)
-        # if user opt'd for an install, we want to symlink the final ascent 
+        # if user opt'd for an install, we want to symlink the final ascent
         # install to an easy place:
         if opts["install"]:
             pkg_path = find_spack_pkg_path(uberenv_pkg_name)
