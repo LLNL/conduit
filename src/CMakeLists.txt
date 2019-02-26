@@ -72,6 +72,7 @@ option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 
+option(ENABLE_EXAMPLES     "Build examples"             ON)
 ################################
 # Invoke CMake Fortran setup
 # if ENABLE_FORTRAN == ON
@@ -133,7 +134,9 @@ add_subdirectory(libs)
 ################################
 # Add our examples
 ################################
-add_subdirectory(examples)
+if(ENABLE_EXAMPLES)
+    add_subdirectory(examples)
+endif()
 
 ################################
 # Add docs
