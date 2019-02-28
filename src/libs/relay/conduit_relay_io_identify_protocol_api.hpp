@@ -54,8 +54,7 @@
 //-----------------------------------------------------------------------------
 /// Helper that identifies a relay io protocol from a file path.
 //-----------------------------------------------------------------------------
-void
-identify_protocol(const std::string &path,
-                  std::string &io_type);
+void CONDUIT_RELAY_API identify_protocol(const std::string &path,
+                                         std::string &io_type);
 
 #endif

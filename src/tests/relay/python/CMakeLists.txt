@@ -47,6 +47,7 @@
 ####################################
 set(PYTHON_MODULE_TESTS t_python_relay_smoke
                         t_python_relay_io
+                        t_python_relay_io_handle
                         t_python_relay_web)
 
 
