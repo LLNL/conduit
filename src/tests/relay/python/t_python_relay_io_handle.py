@@ -108,9 +108,7 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             h2.read(n2);
             info = conduit.Node()
             self.assertFalse(n.diff(n2,info,0.0))
-            # TODO: NO RESET?
-            # n_val2.reset()
-            n_val = conduit.Node()
+            n_val.reset()
             h2.read(n_val,"c");
             self.assertTrue(n_val.value() == 12)
             h2.close()

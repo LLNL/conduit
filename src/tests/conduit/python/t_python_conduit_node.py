@@ -327,7 +327,16 @@ class Test_Conduit_Node(unittest.TestCase):
         n4.update_compatible(n)
         print(n4)
         self.assertEqual(n4["data"],10)
-    
+
+    def test_reset(self):
+        n = Node()
+        data = array(range(10), dtype='float64')
+        n["data"].set_external(data)
+        
+        print(n)
+        
+        n.reset()
+        self.assertEqual(n.number_of_children(), 0)
 
 
 if __name__ == '__main__':
