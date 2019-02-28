@@ -57,8 +57,10 @@ using namespace conduit::relay;
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_basic, basic_bin)
+TEST(conduit_relay_io_handle, basic_bin)
 {
+    std::string test_file = "test_conduit_relay_io_handle.conduit_bin";
+
     uint32 a_val = 20;
     uint32 b_val = 8;
     uint32 c_val = 13;
@@ -67,15 +69,131 @@ TEST(conduit_relay_io_basic, basic_bin)
     n["a"] = a_val;
     n["b"] = b_val;
     n["c"] = c_val;
+    n["d/here"] = 10;
+
 
     EXPECT_EQ(n["a"].as_uint32(), a_val);
     EXPECT_EQ(n["b"].as_uint32(), b_val);
     EXPECT_EQ(n["c"].as_uint32(), c_val);
-    
-    io::RelayIOHandle h;
-    h.open("test_conduit_relay_io_handle.conduit_bin");
+
+    std::vector<std::string> cnames;
+
+    io::IOHandle h;
+    h.open(test_file);
     h.write(n);
+
+    EXPECT_TRUE(h.has_path("d/here"));
+    h.list_child_names(cnames);
+
+    EXPECT_EQ(cnames[0],"a");
+    EXPECT_EQ(cnames[1],"b");
+    EXPECT_EQ(cnames[2],"c");
+    EXPECT_EQ(cnames[3],"d");
+
+    h.list_child_names("d",cnames);
+    EXPECT_EQ(cnames[0],"here");
+
+    h.remove("d");
+    EXPECT_FALSE(h.has_path("d"));
+    EXPECT_FALSE(h.has_path("d/here"));
     h.close();
+
+    Node n2;
+    io::IOHandle h2;
+    h2.open(test_file);
+    h2.list_child_names(cnames);
+    EXPECT_EQ(cnames[0],"a");
+    EXPECT_EQ(cnames[1],"b");
+    EXPECT_EQ(cnames[2],"c");
+
+    Node n_val;
+    n_val = 10;
+    // write with path
+    h2.write(n_val,"d/here");
+
+    h2.read(n2);
+    Node info;
+    EXPECT_FALSE(n.diff(n2, info, 0.0));
+    info.print();
+
+    // read with path
+    n_val.reset();
+    h2.read("c",n_val);
+
+    EXPECT_EQ(n_val.as_uint32(),c_val);
+
+    h2.close();
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, hdf5)
+{
+    std::string test_file = "test_conduit_relay_io_handle.hdf5";
+
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["d/here"] = 10;
+
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    std::vector<std::string> cnames;
+
+    io::IOHandle h;
+    h.open(test_file);
+    h.write(n);
+
+    EXPECT_TRUE(h.has_path("d/here"));
+    h.list_child_names(cnames);
+
+    EXPECT_EQ(cnames[0],"a");
+    EXPECT_EQ(cnames[1],"b");
+    EXPECT_EQ(cnames[2],"c");
+    EXPECT_EQ(cnames[3],"d");
+
+    h.list_child_names("d",cnames);
+    EXPECT_EQ(cnames[0],"here");
+
+    h.remove("d");
+    EXPECT_FALSE(h.has_path("d"));
+    EXPECT_FALSE(h.has_path("d/here"));
+    h.close();
+
+    Node n2;
+    io::IOHandle h2;
+    h2.open(test_file);
+    h2.list_child_names(cnames);
+    EXPECT_EQ(cnames[0],"a");
+    EXPECT_EQ(cnames[1],"b");
+    EXPECT_EQ(cnames[2],"c");
+
+    Node n_val;
+    n_val = 10;
+    // write with path
+    h2.write(n_val,"d/here");
+
+    h2.read(n2);
+    Node info;
+    EXPECT_FALSE(n.diff(n2, info, 0.0));
+    info.print();
+
+    // read with path
+    n_val.reset();
+    h2.read("c",n_val);
+
+    EXPECT_EQ(n_val.as_uint32(),c_val);
+
+    h2.close();
+}
+
 
 

@@ -55,6 +55,13 @@
     #include "conduit_relay_io_handle.hpp"
 #endif
 
+#include "conduit_relay_io.hpp"
+
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+    #include "conduit_relay_io_hdf5.hpp"
+#endif
+
+
 //-----------------------------------------------------------------------------
 // standard lib includes
 //-----------------------------------------------------------------------------
@@ -87,120 +94,692 @@ namespace io
 
 
 //-----------------------------------------------------------------------------
-class RelayIOHandle::GenericHandle
+// HandleInterface -- base class for all concrete IO Handle Implementations
+//-----------------------------------------------------------------------------
+class IOHandle::HandleInterface
 {
-     GenericHandle()
-         {}
-    ~GenericHandle()
-         {}
+public:
+    
+    HandleInterface(const std::string &path,
+                    const std::string &protocol,
+                    const Node &options);
+    virtual ~HandleInterface();
 
-    // mirror methods
+    // main interface methods
+    virtual void open() = 0;
+    virtual void read(Node &node) = 0;
+    virtual void read(const std::string &path,
+                      Node &node) = 0;
+    virtual void write(const Node &node) = 0;
+    virtual void write(const Node &node,
+               const std::string &path) = 0;
+    virtual void list_child_names(std::vector<std::string> &res) = 0;
+    virtual void list_child_names(const std::string &path,
+                          std::vector<std::string> &res) = 0;
+    virtual void remove(const std::string &path) = 0;
+    virtual bool has_path(const std::string &path) = 0;
+    virtual void close() = 0;
+
+    // factory helper methods used by interface class 
+    static HandleInterface *create(const std::string &path);
+
+    static HandleInterface *create(const std::string &path,
+                                   const std::string &protocol);
+
+    static HandleInterface *create(const std::string &path,
+                                   const std::string &protocol,
+                                   const Node &options);
+protected:
+    // access to common state
+    const std::string &path();
+    const std::string &protocol();
+    const Node        &options();
+
+private:
+
+    std::string m_path;
+    std::string m_protocol;
+    Node        m_options;
 };
 
+
 //-----------------------------------------------------------------------------
-RelayIOHandle::RelayIOHandle()
+// BasicHandle -- IO Handle implementation for built-in protocols
+//-----------------------------------------------------------------------------
+class BasicHandle: public IOHandle::HandleInterface
+{
+public:
+    BasicHandle(const std::string &path,
+                const std::string &protocol,
+                const Node &options);
+    virtual ~BasicHandle();
+
+    void open();
+    
+    // main interface methods
+    void read(Node &node);
+    void read(const std::string &path,
+              Node &node);
+
+    void write(const Node &node);
+    void write(const Node &node,
+               const std::string &path);
+
+    void remove(const std::string &path);
+
+    void list_child_names(std::vector<std::string> &res);
+    void list_child_names(const std::string &path,
+                          std::vector<std::string> &res);
+
+    bool has_path(const std::string &path);
+    
+    void close();
+    
+private:
+    Node m_node;
+    bool m_open;
+
+};
+
+
+//-----------------------------------------------------------------------------
+// HDF5Handle -- IO Handle implementation for HDF5
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+//-----------------------------------------------------------------------------
+class HDF5Handle: public IOHandle::HandleInterface
+{
+public:
+    HDF5Handle(const std::string &path,
+               const std::string &protocol,
+               const Node &options);
+    virtual ~HDF5Handle();
+
+    void open();
+    
+    // main interface methods
+    void read(Node &node);
+    void read(const std::string &path,
+              Node &node);
+
+    void write(const Node &node);
+    void write(const Node &node,
+               const std::string &path);
+
+    void remove(const std::string &path);
+
+    void list_child_names(std::vector<std::string> &res);
+    void list_child_names(const std::string &path,
+                          std::vector<std::string> &res);
+
+    bool has_path(const std::string &path);
+    
+    void close();
+    
+private:
+    hid_t m_h5_id;
+    
+};
+//-----------------------------------------------------------------------------
+#endif
+//-----------------------------------------------------------------------------
+    
+
+//-----------------------------------------------------------------------------
+// HandleInterface Implementation 
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+IOHandle::HandleInterface::HandleInterface(const std::string &path,
+                                           const std::string &protocol,
+                                           const Node &options)
+: m_path(path),
+  m_protocol(protocol),
+  m_options(options)
+{
+    // empty
+}
+
+//-----------------------------------------------------------------------------
+IOHandle::HandleInterface::~HandleInterface()
+{
+    // empty
+}
+
+//-----------------------------------------------------------------------------
+IOHandle::HandleInterface *
+IOHandle::HandleInterface::create(const std::string &path)
+{
+    std::string protocol;
+    Node options;
+    return create(path,protocol,options);
+}
+
+//-----------------------------------------------------------------------------
+IOHandle::HandleInterface *
+IOHandle::HandleInterface::create(const std::string &path,
+                                  const std::string &protocol)
+{
+    Node options;
+    return create(path,protocol,options);
+}
+
+//-----------------------------------------------------------------------------
+IOHandle::HandleInterface *
+IOHandle::HandleInterface::create(const std::string &path,
+                                  const std::string &protocol_,
+                                  const Node &options)
+{
+    HandleInterface *res = NULL;
+    std::string protocol = protocol_;
+    
+    // allow empty protocol to be used for auto detect
+    if(protocol.empty())
+    {
+        conduit::relay::io::identify_protocol(path,protocol);
+    }
+
+    if(protocol == "conduit_bin" ||
+       protocol == "json" || 
+       protocol == "conduit_json" ||
+       protocol == "conduit_base64_json" )
+    {
+        res = new BasicHandle(path, protocol, options);
+    }
+    else if( protocol == "hdf5" )
+    {
+    #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        res = new HDF5Handle(path, protocol, options);
+    #else
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+                      "Cannot create Relay I/O Handle for HDF5" << path);
+    #endif
+    }
+    else
+    {
+        CONDUIT_ERROR("Relay I/O Handle does not support the protocol: " 
+                      << protocol);
+    }
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+const std::string &
+IOHandle::HandleInterface::path()
+{
+    return m_path;
+}
+
+//-----------------------------------------------------------------------------
+const std::string &
+IOHandle::HandleInterface::protocol()
+{
+    return m_protocol;
+}
+
+//-----------------------------------------------------------------------------
+const Node &
+IOHandle::HandleInterface::options()
+{
+    return m_options;
+}
+
+
+//-----------------------------------------------------------------------------
+// BasicHandle Implementation 
+//-----------------------------------------------------------------------------
+BasicHandle::BasicHandle(const std::string &path,
+                         const std::string &protocol,
+                         const Node &options)
+: HandleInterface(path,protocol,options),
+  m_node(),
+  m_open(false)
+{
+    // empty
+}
+//-----------------------------------------------------------------------------
+BasicHandle::~BasicHandle()
+{
+    close();
+}
+
+//-----------------------------------------------------------------------------
+void 
+BasicHandle::open()
+{
+    close();
+    // read from file if it already exists, other wise
+    // we start out with a blank slate
+    if( utils::is_file( path() ) )
+    {
+        // read from file 
+        io::load(path(),
+                 protocol(),
+                 options(),
+                 m_node);
+        m_node.print();
+    }
+    
+    m_open = true;
+}
+
+//-----------------------------------------------------------------------------
+void 
+BasicHandle::read(Node &node)
+{
+    node.update(m_node);
+}
+
+//-----------------------------------------------------------------------------
+void 
+BasicHandle::read(const std::string &path,
+                  Node &node)
+{
+    if(m_node.has_path(path))
+    {
+        node.update(m_node[path]);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void 
+BasicHandle::write(const Node &node)
+{
+    m_node.update(node);
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+BasicHandle::write(const Node &node,
+                   const std::string &path)
+{
+    m_node[path].update(node);
+}
+
+//-----------------------------------------------------------------------------
+void
+BasicHandle::list_child_names(std::vector<std::string> &res)
+{
+    res = m_node.child_names();
+}
+
+//-----------------------------------------------------------------------------
+void
+BasicHandle::list_child_names(const std::string &path,
+                             std::vector<std::string> &res)
+{
+    res.clear();
+    if(m_node.has_path(path))
+        res = m_node[path].child_names();
+}
+
+//-----------------------------------------------------------------------------
+void 
+BasicHandle::remove(const std::string &path)
+{
+    m_node.remove(path);
+}
+
+//-----------------------------------------------------------------------------
+bool 
+BasicHandle::has_path(const std::string &path)
+{
+    return m_node.has_path(path);
+}
+
+//-----------------------------------------------------------------------------
+void 
+BasicHandle::close()
+{
+    if(m_open)
+    {
+        // here is where it actually gets realized on disk
+        m_node.print();
+        io::save(m_node,
+                 path(),
+                 protocol(),
+                 options());
+        m_node.reset();
+        m_open = false;
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+// HDF5Handle Implementation 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+HDF5Handle::HDF5Handle(const std::string &path,
+                       const std::string &protocol,
+                       const Node &options)
+: HandleInterface(path,protocol,options),
+  m_h5_id(-1)
+{
+    // empty
+}
+//-----------------------------------------------------------------------------
+HDF5Handle::~HDF5Handle()
+{
+    close();
+}
+
+//-----------------------------------------------------------------------------
+void 
+HDF5Handle::open()
+{
+    if( !utils::is_file( path() ) )
+    {
+        m_h5_id = hdf5_create_file( path() );
+    }
+    else
+    {
+        m_h5_id = hdf5_open_file_for_read_write( path() );
+    }
+}
+
+//-----------------------------------------------------------------------------
+void 
+HDF5Handle::read(Node &node)
+{
+    hdf5_read(m_h5_id,node);
+}
+
+//-----------------------------------------------------------------------------
+void 
+HDF5Handle::read(const std::string &path,
+                 Node &node)
+{
+    hdf5_read(m_h5_id,path,node);
+}
+
+//-----------------------------------------------------------------------------
+void 
+HDF5Handle::write(const Node &node)
+{
+    // Options Push / Pop (only needed for write, since hdf5 only supports
+    // write options
+    Node prev_options;
+    if(options().has_child("hdf5"))
+    {
+        hdf5_options(prev_options);
+        hdf5_set_options(options()["hdf5"]);
+    }
+
+    hdf5_write(node,m_h5_id);
+
+    if(!prev_options.dtype().is_empty())
+    {
+        hdf5_set_options(prev_options);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+HDF5Handle::write(const Node &node,
+                  const std::string &path)
+{
+    // Options Push / Pop (only needed for write, since hdf5 only supports
+    // write options
+    Node prev_options;
+    if(options().has_child("hdf5"))
+    {
+        hdf5_options(prev_options);
+        hdf5_set_options(options()["hdf5"]);
+    }
+
+    hdf5_write(node,m_h5_id,path);
+    
+    if(!prev_options.dtype().is_empty())
+    {
+        hdf5_set_options(prev_options);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+HDF5Handle::list_child_names(std::vector<std::string> &res)
+{
+    hdf5_group_list_child_names(m_h5_id, "/", res);
+}
+
+//-----------------------------------------------------------------------------
+void
+HDF5Handle::list_child_names(const std::string &path,
+                             std::vector<std::string> &res)
+{
+    hdf5_group_list_child_names(m_h5_id, path, res);
+}
+
+//-----------------------------------------------------------------------------
+void 
+HDF5Handle::remove(const std::string &path)
+{
+    hdf5_remove_path(m_h5_id,path);
+}
+
+//-----------------------------------------------------------------------------
+bool 
+HDF5Handle::has_path(const std::string &path)
+{
+    return hdf5_has_path(m_h5_id,path);
+}
+
+
+//-----------------------------------------------------------------------------
+void 
+HDF5Handle::close()
+{
+    if(m_h5_id >= 0)
+    {
+        hdf5_close_file(m_h5_id);
+    }
+    m_h5_id = -1;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+#endif
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+
+
+
+//-----------------------------------------------------------------------------
+// IOHandle Implementation 
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+IOHandle::IOHandle()
 : m_handle(NULL)
 {
 
 }
 
 //-----------------------------------------------------------------------------
-RelayIOHandle::~RelayIOHandle()
+IOHandle::~IOHandle()
 {
     close();
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::open(const std::string &path)
+IOHandle::open(const std::string &path)
 {
     close();
-    //m_handle = GenericHandle::create(path);
+    m_handle = HandleInterface::create(path);
+    if(m_handle != NULL)
+    {
+        m_handle->open();
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::open(const std::string &path,
+IOHandle::open(const std::string &path,
                     const std::string &protocol)
 {
     close();
-    //m_handle = GenericHandle::create(path, protocol);
+    m_handle = HandleInterface::create(path, protocol);
+    if(m_handle != NULL)
+    {
+        m_handle->open();
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::open(const std::string &path,
-                    const std::string &protocol,
-                    const Node &options)
+IOHandle::open(const std::string &path,
+               const std::string &protocol,
+               const Node &options)
 {
-    //m_handle = GenericHandle::create(path, protocol, options);
     close();
+    m_handle = HandleInterface::create(path, protocol, options);
+    if(m_handle != NULL)
+    {
+        m_handle->open();
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::read(Node &node)
-{
-
+IOHandle::read(Node &node)
+{    
+    if(m_handle != NULL)
+    {
+        m_handle->read(node);
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid or closed handle.");
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::read(const std::string &path,
-                    Node &node)
+IOHandle::read(const std::string &path,
+               Node &node)
 {
-
+    if(m_handle != NULL)
+    {
+        m_handle->read(path, node);
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid or closed handle.");
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::write(const Node &node)
+IOHandle::write(const Node &node)
 {
-
+    if(m_handle != NULL)
+    {
+        m_handle->write(node);
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid or closed handle.");
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::write(const Node &node,
-                     const std::string &path)
+IOHandle::write(const Node &node,
+                const std::string &path)
 {
-
+    if(m_handle != NULL)
+    {
+        m_handle->write(node, path);
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid or closed handle.");
+    }
+    
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::remove(const std::string &path)
+IOHandle::remove(const std::string &path)
 {
+    if(m_handle != NULL)
+    {
+        m_handle->remove(path);
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid or closed handle.");
+    }
+}
 
+//-----------------------------------------------------------------------------
+void
+IOHandle::list_child_names(std::vector<std::string> &names)
+{
+    names.clear();
+    if(m_handle != NULL)
+    {
+        return m_handle->list_child_names(names);
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid or closed handle.");
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void
+IOHandle::list_child_names(const std::string &path,
+                           std::vector<std::string> &names)
+{
+    names.clear();
+    if(m_handle != NULL)
+    {
+        return m_handle->list_child_names(path, names);
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid or closed handle.");
+    }
 }
 
 //-----------------------------------------------------------------------------
 bool
-RelayIOHandle::has_path(const std::string &path)
+IOHandle::has_path(const std::string &path)
 {
+    if(m_handle != NULL)
+    {
+        return m_handle->has_path(path);
+    }
+    else
+    {
+        CONDUIT_ERROR("Invalid or closed handle.");
+    }
+    
     return false;
 }
 
 //-----------------------------------------------------------------------------
 void
-RelayIOHandle::read_schema(Schema &schema)
+IOHandle::close()
 {
-
-}
-
-//-----------------------------------------------------------------------------
-void
-RelayIOHandle::read_schema(const std::string &path,
-                           Schema &schema)
-{
-
-}
-
-//-----------------------------------------------------------------------------
-void
-RelayIOHandle::close()
-{
-
+    if(m_handle != NULL)
+    {
+        m_handle->close();
+        delete m_handle;
+        m_handle = NULL;
+    }
+    // else, ignore ... 
 }
 
 
