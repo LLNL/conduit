@@ -41,65 +41,73 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+"""
+ file: t_conduit_docs_tutorial_python_examples.py
+"""
 
-################################
-# Conduit Unit Tests
-################################
+import sys
+import unittest
+import inspect
+import numpy
+import conduit
+import conduit.relay
 
-################################
-# Docs Related Unit Tests
-################################
-set(DOCS_TESTS  
-    t_conduit_docs_tutorial_basics
-    t_conduit_docs_tutorial_numeric
-    t_conduit_docs_tutorial_json
-    t_conduit_docs_tutorial_ownership
-    t_conduit_docs_tutorial_errors
-    t_conduit_docs_relay_io_generic_examples
-    t_conduit_docs_blueprint_examples
-    t_conduit_docs_blueprint_demos)
+def echo_src(s,fname,lineno):
+    print("\n{}: {},{}".format(s,fname,lineno))
 
-set(DOCS_HDF5_TESTS  
-    t_conduit_docs_relay_io_handle_examples
-    t_conduit_docs_relay_io_hdf5_examples)
+class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
 
+    def test_001_io_handle(self):
+        import conduit.relay
+        if conduit.relay.io.about()["protocols/hdf5"] != "enabled":
+            return
+        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
+        import conduit
+        import conduit.relay.io
 
-set(DOCS_PYTHON_TESTS  
-    t_conduit_docs_tutorial_python_basics
-    t_conduit_docs_tutorial_python_numeric
-    t_conduit_docs_tutorial_python_json
-    t_conduit_docs_tutorial_python_ownership
-    t_conduit_docs_tutorial_python_relay_io_handle_examples)
+        n = conduit.Node()
+        n["a/data"]   = 1.0
+        n["a/more_data"] = 2.0
+        n["a/b/my_string"] = "value"
+        print("\nNode to write:")
+        print(n)
 
+        # save to hdf5 file using the path-based api
+        conduit.relay.io.save(n,"my_output.hdf5")
 
-################################
-# Add our tests
-################################
-message(STATUS "Adding docs related unit tests")
-foreach(TEST ${DOCS_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
-endforeach()
+        # inspect and modify with an IOHandle
+        h = conduit.relay.io.IOHandle()
+        h.open("my_output.hdf5")
 
-################################
-# Add HDF5 Tests
-################################
-if(HDF5_FOUND)
-    foreach(TEST ${DOCS_HDF5_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
-    endforeach()
-endif()
+        # check for and read a path we are interested in
+        if h.has_path("a/data"):
+             nread = conduit.Node()
+             h.read(nread,"a/data")
+             print('\nValue at "a/data" = {0}').format(nread.value())
 
-################################
-# Add Python Tests
-################################
-if(PYTHON_FOUND)
-    foreach(TEST ${DOCS_PYTHON_TESTS})
-        add_python_test(${TEST})
-    endforeach()
-else()
-    message(STATUS "Python disabled: Skipping conduit python tutorial examples")
-endif()
+        # check for and remove a path we don't want
+        if h.has_path("a/more_data"):
+            h.remove("a/more_data")
+            print('\nRemoved "a/more_data"')
 
+        # verify the data was removed
+        if not h.has_path("a/more_data"):
+            print('\nPath "a/more_data" is no more')
 
+        # write some new data
+        print('\nWriting to "a/c"')
+        n.set(42.0)
+        h.write(n,"a/c")
+        
+        # find the names of the children of "a"
+        cnames = h.list_child_names("a")
+        print '\nChildren of "a": {0}'.format(cnames)
 
+        nread = conduit.Node()
+        # read the entire contents
+        h.read(nread)
+
+        print("\nRead Result:")
+        print(nread)
+        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
 

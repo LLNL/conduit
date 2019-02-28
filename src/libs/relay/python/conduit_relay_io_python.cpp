@@ -230,35 +230,6 @@ PyRelay_IOHandle_init(PyRelay_IOHandle *self,
     return 0;
 }
 
-// /// establish a handle
-// void open(const std::string &path,
-//           const std::string &protocol,
-//           const Node &options);
-//
-// /// read contents starting at given subpath
-// void read(const std::string &path,
-//           Node &node);
-//
-// /// write contents of passed node to given subpath
-// void write(const Node &node,
-//            const std::string &path);
-//
-//
-// /// remove contents at given path
-// void remove(const std::string &path);
-//
-// /// check if given path exists
-// bool has_path(const std::string &path);
-//
-// /// close the handle
-// void close();
-
-// /// list child names at subpath
-// void list_child_names(const std::string &path,
-//                       std::vector<std::string> &res);
-
-
-
 //-----------------------------------------------------------------------------
 static PyObject *
 PyRelay_IOHandle_open(PyRelay_IOHandle *self,
@@ -452,7 +423,7 @@ PyRelay_IOHandle_list_child_names(PyRelay_IOHandle *self,
          itr < cld_names.end(); ++itr)
     {
         PyList_Append(retval, PyString_FromString( (*itr).c_str()));
-    };
+    }
 
     return retval;
 }
