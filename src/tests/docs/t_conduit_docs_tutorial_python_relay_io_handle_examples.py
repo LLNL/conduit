@@ -101,7 +101,7 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         
         # find the names of the children of "a"
         cnames = h.list_child_names("a")
-        print '\nChildren of "a": {0}'.format(cnames)
+        print('\nChildren of "a": {0}').format(cnames)
 
         nread = conduit.Node()
         # read the entire contents
