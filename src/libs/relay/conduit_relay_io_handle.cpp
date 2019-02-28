@@ -357,7 +357,6 @@ BasicHandle::open()
                  protocol(),
                  options(),
                  m_node);
-        m_node.print();
     }
     
     m_open = true;
@@ -435,7 +434,6 @@ BasicHandle::close()
     if(m_open)
     {
         // here is where it actually gets realized on disk
-        m_node.print();
         io::save(m_node,
                  path(),
                  protocol(),

@@ -51,6 +51,8 @@
 #define CONDUIT_RELAY_IO_IDENTIFY_PROTOCOL_API_HPP
 #include <string>
 
+#include "conduit_relay_exports.h"
+
 //-----------------------------------------------------------------------------
 /// Helper that identifies a relay io protocol from a file path.
 //-----------------------------------------------------------------------------
