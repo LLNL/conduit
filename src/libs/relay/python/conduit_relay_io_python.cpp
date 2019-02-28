@@ -281,10 +281,19 @@ PyRelay_IOHandle_open(PyRelay_IOHandle *self,
         protocol_str = std::string(protocol);
     }
     
-    // TODO: TRY CATCH
-    self->handle->open(std::string(path),
-                       protocol_str,
-                       *opts_ptr);
+    
+    try
+    {
+        self->handle->open(std::string(path),
+                           protocol_str,
+                           *opts_ptr);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
 
     Py_RETURN_NONE; 
 }
@@ -323,15 +332,22 @@ PyRelay_IOHandle_read(PyRelay_IOHandle *self,
 
     Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_node);
     
-    // TODO: TRY CATCH
-    
-    if(path == NULL)
+    try
     {
-        self->handle->read(*node_ptr);
+        if(path == NULL)
+        {
+            self->handle->read(*node_ptr);
+        }
+        else
+        {
+            self->handle->read(std::string(path),*node_ptr);
+        }
     }
-    else
+    catch(conduit::Error e)
     {
-        self->handle->read(std::string(path),*node_ptr);
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
     }
 
     Py_RETURN_NONE; 
@@ -370,16 +386,23 @@ PyRelay_IOHandle_write(PyRelay_IOHandle *self,
     }
 
     Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_node);
-    
-    // TODO: TRY CATCH
-    
-    if(path == NULL)
+
+    try
     {
-        self->handle->write(*node_ptr);
+        if(path == NULL)
+        {
+            self->handle->write(*node_ptr);
+        }
+        else
+        {
+            self->handle->write(*node_ptr,std::string(path));
+        }
     }
-    else
+    catch(conduit::Error e)
     {
-        self->handle->write(*node_ptr,std::string(path));
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
     }
 
     Py_RETURN_NONE; 
@@ -405,15 +428,25 @@ PyRelay_IOHandle_list_child_names(PyRelay_IOHandle *self,
     
     std::vector<std::string> cld_names;
     
-    if(path == NULL)
+    try
     {
-        self->handle->list_child_names(cld_names);
+        if(path == NULL)
+        {
+            self->handle->list_child_names(cld_names);
+        }
+        else
+        {
+            self->handle->list_child_names(std::string(path),
+                                           cld_names);
+        }
     }
-    else
+    catch(conduit::Error e)
     {
-        self->handle->list_child_names(std::string(path),
-                                       cld_names);
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
     }
+
 
     /// TODO: I think there is a faster way in the Python CAPI
     /// since we know the size of the list.
@@ -448,8 +481,18 @@ PyRelay_IOHandle_has_path(PyRelay_IOHandle *self,
         return NULL;
     }
 
+    bool res = false;
 
-    bool res = self->handle->has_path(std::string(path));
+    try
+    {
+        res = self->handle->has_path(std::string(path));
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
 
     if(res)
         Py_RETURN_TRUE;
@@ -477,7 +520,17 @@ PyRelay_IOHandle_remove(PyRelay_IOHandle *self,
         return NULL;
     }
 
-    self->handle->remove(std::string(path));
+    try
+    {
+        self->handle->remove(std::string(path));
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
     Py_RETURN_NONE; 
 }
 
@@ -485,7 +538,17 @@ PyRelay_IOHandle_remove(PyRelay_IOHandle *self,
 static PyObject *
 PyRelay_IOHandle_close(PyRelay_IOHandle *self)
 {
-    self->handle->close();
+    try
+    {
+        self->handle->close();
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
     Py_RETURN_NONE; 
 }
 

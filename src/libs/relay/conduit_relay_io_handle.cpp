@@ -358,7 +358,14 @@ BasicHandle::open()
                  options(),
                  m_node);
     }
-    
+    else
+    {
+        // make sure we can actually write to this location
+        // we don't want to fail on close if the path 
+        // is bogus
+        relay::io::save(m_node, path());
+    }
+
     m_open = true;
 }
 

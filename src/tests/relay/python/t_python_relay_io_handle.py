@@ -114,8 +114,25 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             h2.read(n_val,"c");
             self.assertTrue(n_val.value() == 12)
             h2.close()
-        
-        
+
+    def test_io_handle_exceptions(self):
+            h = conduit.relay.io.IOHandle()
+            n = conduit.Node()
+            # call to un-opend
+            with self.assertRaises(IOError):
+                h.read(n);
+            with self.assertRaises(IOError):
+                h.write(n);
+            with self.assertRaises(IOError):
+                h.has_path("here");
+            with self.assertRaises(IOError):
+                h.remove("here");
+            with self.assertRaises(IOError):
+                h.list_child_names();
+
+            # bad path
+            with self.assertRaises(IOError):
+                h.open("here/is/a/garbage/file/path.json");
 
 if __name__ == '__main__':
     unittest.main()

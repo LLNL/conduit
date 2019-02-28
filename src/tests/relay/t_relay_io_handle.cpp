@@ -148,3 +148,123 @@ TEST(conduit_relay_io_handle, test_active_protos)
 }
 
 
+//-----------------------------------------------------------------------------
+// NOTE: If we add support for opening subpaths, here is a start at testing
+// //-----------------------------------------------------------------------------
+// TEST(conduit_relay_io_handle, test_active_protos_subpath)
+// {
+//
+//     std::string tfile_base = "tout_conduit_relay_io_handle_subpath.";
+//     std::vector<std::string> protocols;
+//
+//     protocols.push_back("conduit_bin");
+//     protocols.push_back("conduit_json");
+//     protocols.push_back("conduit_base64_json");
+//
+//     Node n_about;
+//     io::about(n_about);
+//
+//     if(n_about["protocols/hdf5"].as_string() == "enabled")
+//         protocols.push_back("hdf5");
+//
+//     for (std::vector<std::string>::const_iterator itr = protocols.begin();
+//              itr < protocols.end(); ++itr)
+//     {
+//         std::string protocol = *itr;
+//         CONDUIT_INFO("Testing Relay IO Handle with protocol: "
+//                      << protocol );
+//         std::string test_file_name = tfile_base  + protocol;
+//
+//         if(utils::is_file(test_file_name))
+//         {
+//             utils::remove_file(test_file_name);
+//         }
+//
+//         Node n_seed;
+//
+//
+//         int64 a_val = 20;
+//         int64 b_val = 8;
+//         int64 c_val = 13;
+//         int64 here_val = 10;
+//
+//         n_seed["here/is/my/data/a"] = a_val;
+//         n_seed["here/is/my/data/b"] = b_val;
+//         n_seed["here/is/my/data/c"] = c_val;
+//
+//         n_seed["here/is/other/data/here"] = here_val;
+//
+//         io::IOHandle h;
+//         h.open(test_file_name);
+//         h.write(n_seed);
+//         h.close();
+//
+//         io::IOHandle h2;
+//         Node n;
+//         h2.open(test_file_name + ":here/is/my" );
+//         h2.read(n);
+//         n.print();
+//     }
+// }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_exceptions)
+{
+    io::IOHandle h;
+
+    // check throw on methods called on not open handle
+    Node n;
+    
+    EXPECT_THROW(h.write(n), conduit::Error);
+    EXPECT_THROW(h.read(n), conduit::Error);
+    EXPECT_THROW(h.has_path("here"), conduit::Error);
+    EXPECT_THROW(h.remove("here"), conduit::Error);
+
+    std::vector<std::string> cld_names;
+    EXPECT_THROW(h.list_child_names(cld_names), conduit::Error);
+
+    EXPECT_THROW(h.open("here/is/a/garbage/file/path.json"),
+                 conduit::Error);
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_reuse_handle)
+{
+    int64 a_val = 20;
+    int64 b_val = 8;
+    int64 c_val = 13;
+    int64 here_val = 10;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["d/here"] = here_val;
+
+    io::IOHandle h;
+    h.open("tout_conduit_relay_io_handle_reopen_1.conduit_bin");
+    h.write(n);
+    h.close();
+    
+    h.open("tout_conduit_relay_io_handle_reopen_2.conduit_bin");
+    h.write(n);
+    h.close();
+
+    Node nread;
+    h.open("tout_conduit_relay_io_handle_reopen_1.conduit_bin");
+    h.read(nread);
+
+    Node info;
+    EXPECT_FALSE(n.diff(nread, info, 0.0));
+
+    nread.reset();
+    // check open w/o close
+    h.open("tout_conduit_relay_io_handle_reopen_2.conduit_bin");
+    h.read(nread);
+
+    EXPECT_FALSE(n.diff(nread, info, 0.0));
+
+}
+
