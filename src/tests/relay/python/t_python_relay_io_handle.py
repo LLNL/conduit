@@ -75,10 +75,10 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             test_file = tbase + proto
             
             n = conduit.Node();
-            n["a"] = 20;
-            n["b"] = 8;
-            n["c"] = 12;
-            n["d/here"] = 10;
+            n["a"] = int64(20);
+            n["b"] = int64(8);
+            n["c"] = int64(12);
+            n["d/here"] = int64(10);
 
             h = conduit.relay.io.IOHandle();
             h.open(test_file)
@@ -103,7 +103,7 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             self.assertTrue(cnames[1] == "b")
             self.assertTrue(cnames[2] == "c")
             n_val = conduit.Node()
-            n_val.set(10)
+            n_val.set(int64(10))
             h2.write(n_val,"d/here")
             h2.read(n2);
             info = conduit.Node()
