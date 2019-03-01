@@ -145,19 +145,17 @@ endif()
 # add conduit_blueprint_verify exe
 ###################################
 
-blt_add_executable(
-    NAME        conduit_blueprint_verify
-    SOURCES     conduit_blueprint_verify_exe.cpp
-    DEPENDS_ON  conduit conduit_relay conduit_blueprint
-    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+if(ENABLE_UTILS)
+    blt_add_executable(
+        NAME        conduit_blueprint_verify
+        SOURCES     conduit_blueprint_verify_exe.cpp
+        DEPENDS_ON  conduit conduit_relay conduit_blueprint
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-# add_executable(conduit_blueprint_verify conduit_blueprint_verify_exe.cpp)
-# target_link_libraries(conduit_blueprint_verify conduit conduit_relay conduit_blueprint)
-
-# add install target
-install(TARGETS conduit_blueprint_verify
-        RUNTIME DESTINATION bin)
-
+    # add install target
+    install(TARGETS conduit_blueprint_verify
+            RUNTIME DESTINATION bin)
+endif()
 
 ################################
 # Add python wrappers if python
