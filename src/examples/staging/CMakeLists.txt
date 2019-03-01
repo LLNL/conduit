@@ -47,7 +47,7 @@
 # Add a staging example
 ################################
 
-if(MPI_FOUND and ENABLE_EXAMPLES)
+if(MPI_FOUND AND ENABLE_EXAMPLES)
     message(STATUS "MPI enabled: Adding staging example program")
 
     set(conduit_staging_support_files conduit_staging.json conduit_staging.sh)

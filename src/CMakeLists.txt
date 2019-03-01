@@ -64,6 +64,8 @@ project(conduit VERSION "0.3.2")
 ################################
 option(BUILD_SHARED_LIBS  "Build shared libraries"      ON)
 option(ENABLE_TESTS       "Build conduit tests"         ON)
+option(ENABLE_EXAMPLES    "Build Examples"              ON)
+option(ENABLE_UTILS       "Build Utilities"             ON)
 option(ENABLE_DOCS        "Build conduit documentation" ON)
 option(ENABLE_COVERAGE    "Build with coverage flags"   OFF)
 
@@ -72,8 +74,6 @@ option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 
-option(ENABLE_EXAMPLES    "Build Examples"            ON)
-option(ENABLE_UTILS       "Build Utilities"           ON)
 
 ################################
 # Invoke CMake Fortran setup
