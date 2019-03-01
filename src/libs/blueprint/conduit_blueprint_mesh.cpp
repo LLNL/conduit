@@ -1436,6 +1436,18 @@ mesh::generate_index(const Node &mesh,
     index_out.reset();
 
     index_out["state/number_of_domains"] = number_of_domains;
+    
+    // check if the input mesh has state/cycle state/time
+    // if so, add those to the index
+    if(mesh.has_path("state/cycle"))
+    {
+        index_out["state/cycle"].set(mesh["state/cycle"]);
+    }
+
+    if(mesh.has_path("state/time"))
+    {
+        index_out["state/time"].set(mesh["state/time"]);
+    }
 
     NodeConstIterator itr = mesh["coordsets"].children();
     while(itr.has_next())

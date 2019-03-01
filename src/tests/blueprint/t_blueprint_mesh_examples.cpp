@@ -406,6 +406,29 @@ TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
+{
+    // braid provides cycle and time, make sure those make it into 
+    // an index created with generate_index
+    Node mesh;
+    blueprint::mesh::examples::braid("hexs",
+                                      5,
+                                      5,
+                                      5,
+                                      mesh);
+
+    Node idx;
+    blueprint::mesh::generate_index(mesh,
+                                    "",
+                                    1,
+                                    idx);
+
+    EXPECT_TRUE(idx.has_path("state/cycle"));
+    EXPECT_TRUE(idx.has_path("state/time"));
+}
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
