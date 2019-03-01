@@ -106,7 +106,10 @@ public:
     virtual ~HandleInterface();
 
     // main interface methods
-    virtual void open() = 0;
+
+    // note: make sure to call HandleInterface::open in derived class 
+    //       open() overrides
+    virtual void open();
     virtual void read(Node &node) = 0;
     virtual void read(const std::string &path,
                       Node &node) = 0;
@@ -246,6 +249,29 @@ IOHandle::HandleInterface::~HandleInterface()
     // empty
 }
 
+
+//-----------------------------------------------------------------------------
+void
+IOHandle::HandleInterface::open()
+{
+    // checks for subpaths, which we don't currently support 
+    
+    std::string file_path;
+    std::string subpath;
+
+    // check for ":" split
+    conduit::utils::split_file_path(path(),
+                                    std::string(":"),
+                                    file_path,
+                                    subpath);
+    if( !subpath.empty() )
+    {
+        CONDUIT_ERROR("IOHandle does not (yet) support opening paths with "
+                      "subpaths specified: \"" << path() << "\"");
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 IOHandle::HandleInterface *
 IOHandle::HandleInterface::create(const std::string &path)
@@ -348,6 +374,9 @@ void
 BasicHandle::open()
 {
     close();
+    // call base class method, which does final sanity checks
+    HandleInterface::open();
+
     // read from file if it already exists, other wise
     // we start out with a blank slate
     if( utils::is_file( path() ) )
@@ -478,6 +507,11 @@ HDF5Handle::~HDF5Handle()
 void 
 HDF5Handle::open()
 {
+    close();
+
+    // call base class method, which does final sanity checks
+    HandleInterface::open();
+    
     if( !utils::is_file( path() ) )
     {
         m_h5_id = hdf5_create_file( path() );

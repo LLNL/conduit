@@ -225,6 +225,19 @@ TEST(conduit_relay_io_handle, test_exceptions)
 
     EXPECT_THROW(h.open("here/is/a/garbage/file/path.json"),
                  conduit::Error);
+
+    // if hdf5 is enabled, check bad path open for that imp
+    Node n_about;
+    io::about(n_about);
+    if(n_about["protocols/hdf5"].as_string() == "enabled")
+    {
+        EXPECT_THROW(h.open("here/is/a/garbage/file/path.hdf5"),
+                     conduit::Error);
+    }
+    
+    // test subpath for exceptions
+    EXPECT_THROW(h.open("file.json:here/is/a/subpath/to/data"),
+                 conduit::Error);
 }
 
 
