@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -101,7 +101,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Conduit'
-copyright = u'Copyright (c) 2015-2018, LLNS'
+copyright = u'Copyright (c) 2015-2019, LLNS'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
