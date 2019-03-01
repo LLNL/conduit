@@ -83,7 +83,7 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         if h.has_path("a/data"):
              nread = conduit.Node()
              h.read(nread,"a/data")
-             print('\nValue at "a/data" = {0}').format(nread.value())
+             print('\nValue at "a/data" = {0}'.format(nread.value()))
 
         # check for and remove a path we don't want
         if h.has_path("a/more_data"):
@@ -101,7 +101,7 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         
         # find the names of the children of "a"
         cnames = h.list_child_names("a")
-        print('\nChildren of "a": {0}').format(cnames)
+        print('\nChildren of "a": {0}'.format(cnames))
 
         nread = conduit.Node()
         # read the entire contents
