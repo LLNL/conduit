@@ -97,6 +97,22 @@ else()
     message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == 1)")
 endif()
 
+################################
+# Examples and Utils Flags
+################################
+if(ENABLE_EXAMPLES)
+    message(STATUS "Building examples (ENABLE_EXAMPLES == ON)")
+else()
+    message(STATUS "Skipping examples (ENABLE_EXAMPLES == OFF)")
+endif()
+
+if(ENABLE_UTILS)
+    message(STATUS "Building utilities (ENABLE_UTILS == ON)")
+else()
+    message(STATUS "Skipping utilities (ENABLE_UTILS == OFF)")
+endif()
+
+
 #######################################
 # Global Helpers (clear every config)
 #######################################

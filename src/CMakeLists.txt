@@ -72,6 +72,9 @@ option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 
+option(ENABLE_EXAMPLES    "Build Examples"            ON)
+option(ENABLE_UTILS       "Build Utilities"           ON)
+
 ################################
 # Invoke CMake Fortran setup
 # if ENABLE_FORTRAN == ON
