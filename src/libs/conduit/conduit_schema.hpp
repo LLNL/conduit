@@ -271,6 +271,13 @@ public:
     /// this schema does not describe an object.
     std::string      child_name(index_t idx) const;
 
+    /// rename existing child
+    ///
+    /// throws an error if child does not exist, new name is invalid
+    /// or if this schema does not describe an object.
+    void             rename_child(const std::string &current_name,
+                                  const std::string &new_name);
+
     /// this uses the fetch method
     Schema           &operator[](const std::string &path);
     /// the const variant uses the "fetch_child" method

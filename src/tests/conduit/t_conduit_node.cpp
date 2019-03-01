@@ -1005,6 +1005,51 @@ TEST(conduit_node, check_empty_path_fetch_error)
     EXPECT_THROW(n[""],conduit::Error);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, rename_child)
+{
+    Node n;
+    
+    // error, can't rename non object
+    EXPECT_THROW(n.rename_child("a","b"),conduit::Error);
+    
+    n["a"].set(DataType::int64());
+    n["b"].set(DataType::float64());
+    n["c"].set(DataType::float32(10));
+    
+    float32_array c_vals = n["c"].value();
+    for(index_t i=0;i<10;i++)
+    {
+        c_vals[i] = i;
+    }
+    
+    n.print();
+
+    // error, can't rename to existing child name
+    EXPECT_THROW(n.rename_child("a","b"),conduit::Error);
+
+    // error, can't rename non existing child
+    EXPECT_THROW(n.rename_child("bad","d"),conduit::Error);
+
+    std::vector<std::string> cnames = n.child_names();
+    EXPECT_EQ(cnames[2],"c");
+    EXPECT_TRUE(n.has_child("c"));
+    EXPECT_FALSE(n.has_child("d"));
+
+    n.rename_child("c","d");
+
+    n.print();
+
+    cnames = n.child_names();
+    EXPECT_TRUE(n.has_child("d"));
+    EXPECT_FALSE(n.has_child("c"));
+    EXPECT_EQ(cnames[2],"d");
+
+    // or old c_vals ptr should now be wired to d,
+    // give the name change
+    EXPECT_EQ(c_vals.data_ptr(),n["d"].data_ptr());
+}
+
 
 
 

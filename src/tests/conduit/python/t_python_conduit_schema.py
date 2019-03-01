@@ -90,6 +90,27 @@ class Test_Conduit_Schema(unittest.TestCase):
         self.assertEqual(sr.total_strided_bytes(), 8 * 10 + 4 * 10)
         self.assertEqual(sr["a"].total_strided_bytes(),8 * 10)
         self.assertEqual(sr["b"].total_strided_bytes(),4 * 10)
+        
+    def test_schema_child_rename(self):
+        s = Schema()
+        with self.assertRaises(Exception):
+            s.rename_child('a','b')
+        s["a"] = DataType.float64(10)
+        s["b"] = DataType.float32(10)
+
+        with self.assertRaises(Exception):
+            s.rename_child('bad','good')
+
+        with self.assertRaises(Exception):
+            s.rename_child('b','a')
+
+        s.rename_child("b","c")
+        n = Node()
+        n.set(s)
+        sr = n.schema()
+        self.assertEqual(sr.total_strided_bytes(), 8 * 10 + 4 * 10)
+        self.assertEqual(sr["a"].total_strided_bytes(),8 * 10)
+        self.assertEqual(sr["c"].total_strided_bytes(),4 * 10)
 
 
 

@@ -2668,6 +2668,43 @@ static int PyConduit_Schema_set_item(PyConduit_Schema *self,
     return (0);
 }
 
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Schema_rename_child(PyConduit_Schema *self,
+                              PyObject *args,
+                              PyObject *kwargs)
+{
+    const char *curr_name = NULL;
+    const char *new_name = NULL;
+
+    static const char *kwlist[] = {"current_name","new_name", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "ss",
+                                     const_cast<char**>(kwlist),
+                                     &curr_name, &new_name))
+    {
+        return (NULL);
+    }
+    
+    
+    try
+    {
+        self->schema->rename_child(std::string(curr_name),
+                                   std::string(new_name));
+
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -2752,6 +2789,11 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
       (PyCFunction)PyConduit_Schema_parent,
       METH_NOARGS,
       "{todo}"},
+      //-----------------------------------------------------------------------//
+      {"rename_child",
+       (PyCFunction)PyConduit_Schema_rename_child,
+       METH_VARARGS | METH_KEYWORDS,
+       "Rename an existing child (object role)"},
     //-----------------------------------------------------------------------//
     // end Schema methods table
     //-----------------------------------------------------------------------//
@@ -3706,6 +3748,44 @@ PyConduit_Node_remove(PyConduit_Node *self,
     Py_RETURN_NONE;
 }
 
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Node_rename_child(PyConduit_Node *self,
+                            PyObject *args,
+                            PyObject *kwargs)
+{
+    const char *curr_name = NULL;
+    const char *new_name = NULL;
+
+    static const char *kwlist[] = {"current_name","new_name", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "ss",
+                                     const_cast<char**>(kwlist),
+                                     &curr_name, &new_name))
+    {
+        return (NULL);
+    }
+    
+    
+    try
+    {
+        self->node->rename_child(std::string(curr_name),
+                                 std::string(new_name));
+
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -4467,6 +4547,11 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_remove,
      METH_VARARGS | METH_KEYWORDS, 
      "Remove as node at a given index or path."},
+    //-----------------------------------------------------------------------//
+    {"rename_child",
+     (PyCFunction)PyConduit_Node_rename_child,
+     METH_VARARGS | METH_KEYWORDS,
+     "Rename an existing child (object role)"},
     //-----------------------------------------------------------------------//
     {"diff", 
      (PyCFunction)PyConduit_Node_diff,
