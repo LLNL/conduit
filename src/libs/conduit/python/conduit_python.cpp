@@ -3418,7 +3418,6 @@ PyConduit_Node_python_attach(PyConduit_Node *self)
     Py_RETURN_NONE;
 }
 
-
 //---------------------------------------------------------------------------//
 // end Node python special methods
 //---------------------------------------------------------------------------//
@@ -4036,6 +4035,14 @@ PyConduit_Node_iter(PyObject *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_reset(PyConduit_Node *self)
+{
+    self->node->reset();
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_set(PyConduit_Node* self,
                    PyObject* args)
 {
@@ -4454,6 +4461,11 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_python_detach,
      METH_NOARGS,
      "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"reset",
+     (PyCFunction)PyConduit_Node_reset,
+     METH_NOARGS,
+     "Reset the name"},
     //-----------------------------------------------------------------------//
     {"set",
      (PyCFunction)PyConduit_Node_set,

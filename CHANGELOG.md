@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added Generic IO Handle class (relay::io::IOHandle) with C++ and Python APIs, tests, and docs.
 - Added ``rename_child`` method to Schema and Node 
 - Added generation and install of conduit_config.mk for using-with-make example
 - Added datatype helpers for long long and long double

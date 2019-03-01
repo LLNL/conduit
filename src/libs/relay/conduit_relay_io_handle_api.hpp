@@ -44,59 +44,79 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.hpp
+/// file: conduit_relay_io_handle_api.hpp
 ///
 //-----------------------------------------------------------------------------
 
 
-#ifndef CONDUIT_RELAY_HPP
-#define CONDUIT_RELAY_HPP
-
-//-----------------------------------------------------------------------------
-// conduit lib include 
-//-----------------------------------------------------------------------------
-#include "conduit.hpp"
-
-#include "conduit_relay_exports.h"
-#include "conduit_relay_config.h"
-
-#include "conduit_relay_io.hpp"
-#include "conduit_relay_io_handle.hpp"
-#include "conduit_relay_io_blueprint.hpp"
-#include "conduit_relay_web.hpp"
-#include "conduit_relay_web_node_viewer_server.hpp"
+#ifndef CONDUIT_RELAY_IO_HANDLE_API_HPP
+#define CONDUIT_RELAY_IO_HANDLE_API_HPP
 
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+///
+/// class: conduit::relay::{mpi}::io::IOHandle
+///
+/// Contract: Changes to backing (file on disk, etc) aren't guaranteed to 
+//  be reflected until a call to close
 //-----------------------------------------------------------------------------
-namespace conduit
+class CONDUIT_API IOHandle
 {
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay --
-//-----------------------------------------------------------------------------
-namespace relay
-{
+public:
+     IOHandle();
+    ~IOHandle();
 
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how relay was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string CONDUIT_RELAY_API about();
-void        CONDUIT_RELAY_API about(conduit::Node &res);
+    /// establish a handle
+    void open(const std::string &path);
+    void open(const std::string &path,
+              const std::string &protocol);
 
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay --
-//-----------------------------------------------------------------------------
+    void open(const std::string &path,
+              const std::string &protocol,
+              const Node &options);
 
 
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
+    /// read contents starting at the root of the handle
+    void read(Node &node);
+    /// read contents starting at given subpath
+    void read(const std::string &path,
+              Node &node);
 
+    /// write contents of passed node to the root of the handle
+    void write(const Node &node);
+    /// write contents of passed node to given subpath
+    void write(const Node &node,
+               const std::string &path);
+
+    /// list child names at root of handle
+    void list_child_names(std::vector<std::string> &res);
+    /// list child names at subpath
+    void list_child_names(const std::string &path,
+                          std::vector<std::string> &res);
+
+    // TODO: options variants for read and write above? with update of 
+    // above options with passed?
+
+    /// remove contents at given path
+    void remove(const std::string &path);
+
+    /// check if given path exists
+    bool has_path(const std::string &path);
+
+    // FUTURE: also provide access to read schema
+    // void read_schema(Schema &schema);
+    // void read_schema(const std::string &path,
+    //                  Schema &schema);
+
+    /// close the handle
+    void close();
+
+    class HandleInterface;
+private:
+    HandleInterface *m_handle;
+
+};
 
 
 #endif

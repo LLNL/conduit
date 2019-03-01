@@ -60,6 +60,7 @@ set(DOCS_TESTS
     t_conduit_docs_blueprint_demos)
 
 set(DOCS_HDF5_TESTS  
+    t_conduit_docs_relay_io_handle_examples
     t_conduit_docs_relay_io_hdf5_examples)
 
 
@@ -67,7 +68,8 @@ set(DOCS_PYTHON_TESTS
     t_conduit_docs_tutorial_python_basics
     t_conduit_docs_tutorial_python_numeric
     t_conduit_docs_tutorial_python_json
-    t_conduit_docs_tutorial_python_ownership)
+    t_conduit_docs_tutorial_python_ownership
+    t_conduit_docs_tutorial_python_relay_io_handle_examples)
 
 
 ################################

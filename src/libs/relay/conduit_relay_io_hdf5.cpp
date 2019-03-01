@@ -1871,6 +1871,9 @@ create_hdf5_file_create_plist()
 hid_t
 hdf5_create_file(const std::string &file_path)
 {
+    // disable hdf5 error stack
+    HDF5ErrorStackSupressor supress_hdf5_errors;
+        
     hid_t h5_fc_plist = create_hdf5_file_create_plist();
     hid_t h5_fa_plist = create_hdf5_file_access_plist();
 
@@ -1893,6 +1896,8 @@ hdf5_create_file(const std::string &file_path)
                              << "property list: " << h5_fa_plist);
     
     return h5_file_id;
+    
+    // enable hdf5 error stack
 }
 
 //-----------------------------------------------------------------------------
@@ -2121,6 +2126,9 @@ hdf5_write(const Node &node,
 hid_t
 hdf5_open_file_for_read(const std::string &file_path)
 {
+    // disable hdf5 error stack
+    HDF5ErrorStackSupressor supress_hdf5_errors;
+    
     hid_t h5_fa_plist = create_hdf5_file_access_plist();
     
     // open the hdf5 file for reading
@@ -2137,12 +2145,17 @@ hdf5_open_file_for_read(const std::string &file_path)
                              << "property list: " << h5_fa_plist);
     
     return h5_file_id;
+
+    // restore hdf5 error stack
 }
 
 //---------------------------------------------------------------------------//
 hid_t
 hdf5_open_file_for_read_write(const std::string &file_path)
 {
+    // disable hdf5 error stack
+    HDF5ErrorStackSupressor supress_hdf5_errors;
+
     hid_t h5_fa_plist = create_hdf5_file_access_plist();
     
     // open the hdf5 file for read + write
@@ -2159,6 +2172,8 @@ hdf5_open_file_for_read_write(const std::string &file_path)
                              << "property list: " << h5_fa_plist);
     
     return h5_file_id;
+
+    // restore hdf5 error stack
 }
 
 
@@ -2188,7 +2203,7 @@ hdf5_read(hid_t hdf5_id,
                              "Failed to close HDF5 Object: "
                              << h5_child_obj);
     
-    // enable hdf5 error stack
+    // restore hdf5 error stack
 }
 //---------------------------------------------------------------------------//
 void
@@ -2196,6 +2211,8 @@ hdf5_read(const std::string &file_path,
           const std::string &hdf5_path,
           Node &node)
 {
+    // note: hdf5 error stack is suppressed in these calls
+    
     // open the hdf5 file for reading
     hid_t h5_file_id = hdf5_open_file_for_read(file_path);
 
@@ -2228,6 +2245,7 @@ hdf5_read(const std::string &path,
         hdf5_path = "/";
     }
     
+    // note: hdf5 error stack is suppressed in this call
     hdf5_read(file_path,
               hdf5_path,
               node);
@@ -2246,7 +2264,7 @@ hdf5_read(hid_t hdf5_id,
                                      "",
                                      dest);
     
-    // enable hdf5 error stack
+    // restore hdf5 error stack
 }
 
 
@@ -2271,7 +2289,7 @@ hdf5_has_path(hid_t hdf5_id,
     // For our cases, we treat 0 and negative as does not exist. 
 
     return (res > 0);
-    // enable hdf5 error stack
+    // restore hdf5 error stack
 }
 
 //---------------------------------------------------------------------------//
@@ -2287,7 +2305,8 @@ hdf5_remove_path(hid_t hdf5_id,
                                        H5P_DEFAULT),
                              "Error deleting HDF5 path: "
                               << hdf5_id << ":" << hdf5_path);
-    // enable hdf5 error stack
+
+    // restore hdf5 error stack
 }
 
 
@@ -2312,15 +2331,18 @@ is_hdf5_file(const std::string &file_path)
         H5Fclose(h5_file_id);
     }
 
-    // enable hdf5 error stack
     return res;
+    // restore hdf5 error stack
 }
 
 //---------------------------------------------------------------------------//
 void hdf5_group_list_child_names(hid_t hdf5_id,
                                  const std::string &hdf5_path,
                                  std::vector<std::string> &res)
-{
+{   
+    // disable hdf5 error stack
+    HDF5ErrorStackSupressor supress_hdf5_errors;
+    
     res.clear();
     // first, hdf5_id + path must be a group in order to have children
 
@@ -2427,7 +2449,8 @@ void hdf5_group_list_child_names(hid_t hdf5_id,
                                           "",
                                           "Failed to close HDF5 Group " 
                                           << h5_group_id);
-   
+
+   // restore hdf5 error stack
 }
 
 

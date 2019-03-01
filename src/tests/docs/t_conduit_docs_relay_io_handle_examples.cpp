@@ -44,60 +44,93 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.hpp
+/// file: t_conduit_docs_blueprint_examples.cpp
 ///
 //-----------------------------------------------------------------------------
 
-
-#ifndef CONDUIT_RELAY_HPP
-#define CONDUIT_RELAY_HPP
-
-//-----------------------------------------------------------------------------
-// conduit lib include 
-//-----------------------------------------------------------------------------
 #include "conduit.hpp"
+#include "conduit_blueprint.hpp"
+#include "conduit_relay.hpp"
 
-#include "conduit_relay_exports.h"
-#include "conduit_relay_config.h"
-
-#include "conduit_relay_io.hpp"
-#include "conduit_relay_io_handle.hpp"
-#include "conduit_relay_io_blueprint.hpp"
-#include "conduit_relay_web.hpp"
-#include "conduit_relay_web_node_viewer_server.hpp"
-
+#include <iostream>
+#include "gtest/gtest.h"
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
+// 65-114
+TEST(conduit_docs, relay_io_handle_1)
 {
+    CONDUIT_INFO("relay_io_handle_example_1");
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay --
-//-----------------------------------------------------------------------------
-namespace relay
-{
+    // setup node with example data to save
+    Node n;
+    n["a/data"]   = 1.0;
+    n["a/more_data"] = 2.0;
+    n["a/b/my_string"] = "value";
+    std::cout << "\nNode to write:" << std::endl;
+    n.print();
 
-//-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how relay was
-/// configured.
-//-----------------------------------------------------------------------------
-std::string CONDUIT_RELAY_API about();
-void        CONDUIT_RELAY_API about(conduit::Node &res);
+    // save to hdf5 file using the path-based api
+    conduit::relay::io::save(n,"my_output.hdf5");
 
+    // inspect and modify with an IOHandle
+    conduit::relay::io::IOHandle h;
+    h.open("my_output.hdf5");
+
+    // check for and read a path we are interested in
+    if( h.has_path("a/data") )
+    {
+        Node nread;
+        h.read("a/data",nread);
+        std::cout << "\nValue at \"a/data\" = " 
+                  << nread.to_float64()
+                  << std::endl;
+    }
+
+    // check for and remove a path we don't want
+    if( h.has_path("a/more_data") )
+    {
+        h.remove("a/more_data");
+        std::cout << "\nRemoved \"a/more_data\"" 
+                  << std::endl;
+    }
+
+    // verify the data was removed
+    if( !h.has_path("a/more_data") )
+    {
+        std::cout << "\nPath \"a/more_data\" is no more" 
+                  << std::endl;
+    }
+
+    std::cout << "\nWriting to \"a/c\""
+              << std::endl;
+    // write some new data
+    n = 42.0;
+    h.write(n,"a/c");
+
+    // find the names of the children of "a"
+    std::vector<std::string> cld_names;
+    h.list_child_names("a",cld_names);
+
+    // print the names
+    std::cout << "\nChildren of \"a\": ";
+    std::vector<std::string>::const_iterator itr;
+    for (itr = cld_names.begin();
+         itr < cld_names.end();
+         ++itr)
+    {
+        std::cout << "\"" << *itr << "\" ";
+    }
+    
+    std::cout << std::endl;
+
+    Node nread;
+    // read the entire contents
+    h.read(nread);
+
+    std::cout << "\nRead Result:" << std::endl;
+    nread.print();
+
+    CONDUIT_INFO("relay_io_handle_example_1");
 }
-//-----------------------------------------------------------------------------
-// -- end conduit::relay --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
-
-
-#endif
 

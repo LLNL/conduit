@@ -44,28 +44,20 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.hpp
+/// file: conduit_relay_io_handle.hpp
 ///
 //-----------------------------------------------------------------------------
 
 
-#ifndef CONDUIT_RELAY_HPP
-#define CONDUIT_RELAY_HPP
+#ifndef CONDUIT_RELAY_IO_HANDLE_HPP
+#define CONDUIT_RELAY_IO_HANDLE_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib include 
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
 #include "conduit_relay_exports.h"
 #include "conduit_relay_config.h"
-
-#include "conduit_relay_io.hpp"
-#include "conduit_relay_io_handle.hpp"
-#include "conduit_relay_io_blueprint.hpp"
-#include "conduit_relay_web.hpp"
-#include "conduit_relay_web_node_viewer_server.hpp"
-
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -80,11 +72,19 @@ namespace relay
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how relay was
-/// configured.
+// -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
-std::string CONDUIT_RELAY_API about();
-void        CONDUIT_RELAY_API about(conduit::Node &res);
+namespace io
+{
+
+
+#include "conduit_relay_io_handle_api.hpp"
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::io --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
@@ -96,7 +96,6 @@ void        CONDUIT_RELAY_API about(conduit::Node &res);
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
-
 
 
 #endif

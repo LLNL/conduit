@@ -48,17 +48,15 @@ Relay I/O
 
 Conduit Relay I/O provides optional Silo, HDF5, and ADIOS I/O interfaces. 
 
-These interfaces can be accessed through a basic generic API or through APIs specific to each underlying I/O interface. 
-The specific APIs provide lower level control and allow reuse of handles, which is more efficient for most non-trivial use cases.
-We plan to provide a Generic I/O Handle interface (https://github.com/LLNL/conduit/issues/321) in a future release. 
+These interfaces can be accessed through a generic path-based API, generic handle class, or through APIs specific to each underlying I/O interface.  The specific APIs provide lower level control and allow reuse of handles, which is more efficient for most non-trivial use cases. The generic handle class strikes a balance between usability and efficiency. 
 
 
 .. _relay_io_generic_interface:
 
-Generic Relay I/O Interface
----------------------------
+Relay I/O Path-based Interface
+--------------------------------
 
-The generic Relay I/O interface allows you to read and write conduit::Nodes using any enabled I/O interface through a simple path-based API. The underlying I/O interface is selected using the extension of the destination path or an explicit protocol argument.
+The path-based Relay I/O interface allows you to read and write conduit::Nodes using any enabled I/O interface through a simple path-based (string) API. The underlying I/O interface is selected using the extension of the destination path or an explicit protocol argument.
 
 
 The ``conduit_relay`` library provides the following methods in the ``conduit::relay::io`` namespace:
@@ -76,7 +74,7 @@ The ``conduit_relay`` library provides the following methods in the ``conduit::r
     
    * Loads the contents of a file into the passed Node. Works like a ``Node::set`` from the contents of the file: if the Node has existing data, it is overwritten to reflect contents of the file.
  
- * ``relay::io::save_merged`` 
+ * ``relay::io::load_merged`` 
    
    * Merges the contents of a file into the passed Node. Works like a ``Node::update`` rom the contents of the file: if the Node has existing data, new data paths are appended, common paths are overwritten, and other existing paths are not changed. 
 
@@ -84,8 +82,8 @@ The ``conduit_relay`` library provides the following methods in the ``conduit::r
 The ``conduit_relay_mpi_io`` library provides the ``conduit::relay::mpi::io`` namespace which includes variants of these methods which take a MPI Communicator. These variants pass the communicator to the underlying I/O interface to enable collective I/O. Relay currently only supports collective I/O for ADIOS.
 
 
-Generic Relay I/O Interface Examples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Relay I/O Path-based Interface Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Save and Load
 +++++++++++++++
@@ -168,14 +166,84 @@ Save to Subpath
 
 .. things not yet covered: options
 
+Relay I/O Handle Interface
+----------------------------
+
+The ``relay::io::IOHandle`` class provides a high level interface to query, read, and modify files.
+
+It provides a generic interface that is more efficient than the path-based interface for protocols like HDF5 which support partial I/O and querying without reading the entire contents of a file.
+It also supports simpler built-in protocols (conduit_bin, json, etc) that do not support partial I/O for convenience. Its basic contract is that changes to backing (file on disk, etc) are not guaranteed to be reflected until the handle is closed. Relay I/O Handle does not yet support Silo or ADIOS. 
+
+IOHandle has the following instance methods: 
+
+ * ``open``
+   
+   * Opens a handle. The underlying I/O interface is selected using the extension of the destination path or an explicit protocol argument.
+
+  .. DANGER::
+    Note: While you can read from and write to subpaths using a handle, IOHandle *does not* yet support opening a file with a subpath (e.g. ``myhandle.open("file.hdf5:path/data")``).
+
+
+ * ``read``
+   
+   * Merges the contents from the handle or contents from a subpath of the handle into the passed Node. Works like a ``Node::update`` from the handle: if the Node has existing data, new data paths are appended, common paths are overwritten, and other existing paths are not changed. 
+
+
+ * ``write``
+ 
+   * Writes the contents of the passed Node to the handle or to a subpath of the handle. Works like a ``Node::update`` to the handle: if the handle has existing data, new data paths are appended, common paths are overwritten, and other existing paths are not changed. 
+
+ * ``has_path``
+ 
+   * Checks if the handle contains a given path.
+
+ * ``list_child_names``
+ 
+   * Returns a list of the child names at a given path, or an empty list if the path does not exist.
+
+ * ``remove``
+ 
+   * Removes any data at and below a given path. With HDF5 the space may not be fully reclaimed.
+
+ * ``close``
+   
+   * Closes a handle. This is when changes are realized to the backing (file on disc, etc).
+
+
+Relay I/O Handle Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+* **C++ Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_handle_examples.cpp
+   :lines: 64-132
+   :language: cpp
+   :dedent: 4
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_relay_io_handle_examples_out.txt
+   :lines: 9-45
+
+* **Python Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_io_handle_examples.py
+   :lines: 65-111
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_python_tutorial_relay_io_handle_examples_out.txt
+   :lines: 28-64
+   :dedent: 4
 
 Relay I/O HDF5 Interface
 ---------------------------
 
 The Relay I/O HDF5 interface provides methods to read and write Nodes using HDF5 handles.
-It is also the interface used to implement the Generic I/O interface for HDF5. This 
-interface provides more control and allows more efficient reuse of I/O handles.
-
+It is also the interface used to implement the path-based and handle I/O interfaces for 
+HDF5. This interface provides more control and allows more efficient reuse of I/O handles.
+It is only available in C++.
 
 Relay I/O HDF5 Interface Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
