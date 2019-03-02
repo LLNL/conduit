@@ -531,5 +531,13 @@
    obj:/bin/bash
 }
 
+{
+   MacoOS_LauncherLeak
+   Memcheck:Leak
+   fun:calloc
+   fun:map_images_nolock
+   ...
+   fun:libSystem_initializer
+}
 
 
