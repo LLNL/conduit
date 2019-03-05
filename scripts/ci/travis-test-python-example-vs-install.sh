@@ -44,13 +44,35 @@
 #!/bin/bash
 set -ev
 
+if [ "${ENABLE_HDF5}" == "ON" ]; then
+    # find spack installed HDF5
+    export HDF5_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*`
+    export RUN_LIB_PATH="${RUN_LIB_PATH}:${HDF5_DIR}/lib"
+fi
+
+if [ "${ENABLE_SILO}" == "ON" ]; then
+    # find spack installed Silo
+    export SILO_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/silo*`
+    export RUN_LIB_PATH="${RUN_LIB_PATH}:${SILO_DIR}/lib"
+fi
+
+if [ "${ENABLE_ADIOS}" == "ON" ]; then
+    # find spack installed ADIOS
+    export ADIOS_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/adios*`
+    export ZFP_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/zfp*`
+    export LZ4_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/lz4*`
+    export BLOSC_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/c-blosc*`
+    export SZ_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/sz*`
+    export RUN_LIB_PATH="${RUN_LIB_PATH}:${ADIOS_DIR}/lib:${ZFP_DIR}/lib:${LZ4_DIR}/lib:${BLOSC_DIR}/lib:${SZ_DIR}/lib"
+fi
+
 ##########################################################
 # test our installed python example
 ##########################################################
 
 if [ "${ENABLE_PYTHON}" == "ON" ]; then
     cd ${TRAVIS_BUILD_DIR}/travis-debug-install/
-    ./bin/run_python_with_conduit.sh <  examples/conduit/python/conduit_python_example.py 
+    env LD_LIBRARY_PATH=${RUN_LIB_PATH} ./bin/run_python_with_conduit.sh <  examples/conduit/python/conduit_python_example.py 
 fi
 
 
