@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -213,6 +213,7 @@ script:
   # test our examples that demo using an installed conduit
   - cd $TRAVIS_BUILD_DIR
   - ./scripts/ci/travis-test-build-examples-vs-install.sh
+  - ./scripts/ci/travis-test-python-example-vs-install.sh 
 
 after_success:
   - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
