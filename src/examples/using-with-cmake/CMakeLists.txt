@@ -54,7 +54,7 @@
 #
 #
 # If run in sub directory of a conduit install, 
-# CONDUIT_DIR will be defaulted to ../../..
+# CONDUIT_DIR will default to ../../..
 # 
 #  mkdir build
 #  cd build
@@ -74,12 +74,13 @@ endif()
 
 include("FindConduit.cmake")
 
-# setup the conduit include path
-include_directories(${CONDUIT_INCLUDE_DIRS})
-
 # create our example 
 add_executable(example example.cpp)
 
 # link to conduit targets
-target_link_libraries(example conduit conduit_relay conduit_blueprint)
+target_link_libraries(example conduit::conduit)
+
+# if you are using conduit's mpi features
+# target_link_libraries(example conduit::conduit_mpi)
+
 

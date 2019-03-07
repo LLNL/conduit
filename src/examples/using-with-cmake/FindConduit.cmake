@@ -48,16 +48,14 @@
 #
 #  Expects CONDUIT_DIR to point to a Conduit installations.
 #
-# This file defines the following CMake variables:
-#  CONDUIT_FOUND - If Conduit was found
-#  CONDUIT_INCLUDE_DIRS - The Conduit include directories
-#
 #  If found, the conduit CMake targets will also be imported.
-#  The main conduit library targets are:
-#   conduit
-#   conduit_relay
-#   conduit_relay_mpi (if conduit was built with mpi support)
-#   conduit_blueprint
+#
+#  The main imported targets are:
+#   conduit::conduit 
+#     includes: conduit, conduit_relay, and conduit_blueprint
+#
+#   conduit::conduit_mpi (if conduit was built with mpi support)
+#     includes: conduit_relay_mpi and conduit_relay_io_mpi
 #
 ###############################################################################
 
@@ -68,18 +66,19 @@ if(NOT CONDUIT_DIR)
     MESSAGE(FATAL_ERROR "Could not find Conduit. Conduit requires explicit CONDUIT_DIR.")
 endif()
 
+# if given relative path, resolve
 get_filename_component(CONDUIT_DIR ${CONDUIT_DIR} ABSOLUTE)
 
-if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit-config.cmake)
+if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit.cmake)
     MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit.cmake)")
 endif()
 
 ###############################################################################
 # Import Conduit's CMake targets
 ###############################################################################
-include(${CONDUIT_DIR}/lib/cmake/conduit-config.cmake)
-MESSAGE(STATUS "Found Conduit at ${CONDUIT_DIR}")
-MESSAGE(STATUS "CONDUIT_INCLUDE_DIRS = ${CONDUIT_INCLUDE_DIRS}")
+# CONDUIT_VERBOSE_IMPORT = TRUE will echo details about the conduit install
+set(CONDUIT_VERBOSE_IMPORT TRUE)
+include(${CONDUIT_DIR}/lib/cmake/conduit.cmake)
 
 ###############################################################################
 # Set remaning CMake variables 
