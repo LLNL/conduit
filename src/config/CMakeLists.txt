@@ -89,6 +89,7 @@ configure_file (${PROJECT_SOURCE_DIR}/cmake/conduit-deps-paths.cmake.in
 
 # install extra cmake files
 install(FILES
+        ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-config.cmake
         ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-deps-paths.cmake
         DESTINATION ${CONDUIT_INSTALL_CMAKE_MODULE_DIR})
 
