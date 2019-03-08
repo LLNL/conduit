@@ -41,17 +41,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
-
-@PACKAGE_INIT@
-
-
-# Conduit version number
-set(CONDUIT_VERSION "@CONDUIT_VERSION@")
-
-# Include other cmake vars
-get_filename_component(CONDUIT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit-deps-paths.cmake)
 
 set(CONDUIT_INCLUDE_DIRS "${CONDUIT_INSTALL_PREFIX}/include/conduit")
 
@@ -116,34 +105,33 @@ if(CONDUIT_RELAY_MPI_ENABLED)
                  conduit::conduit conduit_relay_mpi conduit_relay_mpi_io)
 endif()
 
-if(CONDUIT_VERBOSE_IMPORT)
-    message(STATUS "FOUND Conduit")
-    message(STATUS "CONDUIT_VERSION             = ${CONDUIT_VERSION}")
-    message(STATUS "CONDUIT_INSTALL_PREFIX      = ${CONDUIT_INSTALL_PREFIX}")
-    message(STATUS "CONDUIT_INCLUDE_DIRS        = ${CONDUIT_INCLUDE_DIRS}")
-    message(STATUS "CONDUIT_FORTRAN_ENABLED     = ${CONDUIT_FORTRAN_ENABLED}")
-    message(STATUS "CONDUIT_PYTHON_EXECUTABLE   = ${CONDUIT_PYTHON_EXECUTABLE}")
-    message(STATUS "Conduit Relay features:")  
-    message(STATUS " CONDUIT_RELAY_HDF5_ENABLED  = ${CONDUIT_RELAY_HDF5_ENABLED}")
-    message(STATUS " CONDUIT_HDF5_DIR            = ${CONDUIT_HDF5_DIR}")
-    message(STATUS " CONDUIT_RELAY_ADIOS_ENABLED = ${CONDUIT_RELAY_ADIOS_ENABLED}")
-    message(STATUS " CONDUIT_ADIOS_DIR           = ${CONDUIT_ADIOS_DIR}")
-    message(STATUS " CONDUIT_RELAY_SILO_ENABLED  = ${CONDUIT_RELAY_SILO_ENABLED}")
-    message(STATUS " CONDUIT_SILO_DIR            = ${CONDUIT_SILO_DIR}")
-    message(STATUS " CONDUIT_RELAY_MPI_ENABLED   = ${CONDUIT_RELAY_MPI_ENABLED}")
-    
-    set(_print_targets "conduit::conduit ")
-    if(CONDUIT_RELAY_MPI_ENABLED)
-        set(_print_targets "${_print_targets} conduit::conduit_mpi")
-    endif()
-    
-    message(STATUS "Conduit imported targets: ${_print_targets}")
-    unset(_print_targets)
+message(STATUS "CONDUIT_VERSION             = ${CONDUIT_VERSION}")
+message(STATUS "CONDUIT_INSTALL_PREFIX      = ${CONDUIT_INSTALL_PREFIX}")
+message(STATUS "CONDUIT_INCLUDE_DIRS        = ${CONDUIT_INCLUDE_DIRS}")
+message(STATUS "CONDUIT_FORTRAN_ENABLED     = ${CONDUIT_FORTRAN_ENABLED}")
+message(STATUS "CONDUIT_PYTHON_EXECUTABLE   = ${CONDUIT_PYTHON_EXECUTABLE}")
+message(STATUS "Conduit Relay features:")  
+message(STATUS " CONDUIT_RELAY_HDF5_ENABLED  = ${CONDUIT_RELAY_HDF5_ENABLED}")
+message(STATUS " CONDUIT_HDF5_DIR            = ${CONDUIT_HDF5_DIR}")
+message(STATUS " CONDUIT_RELAY_ADIOS_ENABLED = ${CONDUIT_RELAY_ADIOS_ENABLED}")
+message(STATUS " CONDUIT_ADIOS_DIR           = ${CONDUIT_ADIOS_DIR}")
+message(STATUS " CONDUIT_RELAY_SILO_ENABLED  = ${CONDUIT_RELAY_SILO_ENABLED}")
+message(STATUS " CONDUIT_SILO_DIR            = ${CONDUIT_SILO_DIR}")
+message(STATUS " CONDUIT_RELAY_MPI_ENABLED   = ${CONDUIT_RELAY_MPI_ENABLED}")
+
+set(_print_targets "conduit::conduit ")
+if(CONDUIT_RELAY_MPI_ENABLED)
+    set(_print_targets "${_print_targets} conduit::conduit_mpi")
 endif()
 
+message(STATUS "Conduit imported targets: ${_print_targets}")
+unset(_print_targets)
 
 
-set(CONDUIT_IMPORTED TRUE)
+
+
+
+
 
 
 

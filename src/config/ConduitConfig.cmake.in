@@ -42,10 +42,32 @@
 # 
 ###############################################################################
 
+###############################################################################
+# Note:
+# This file is named ConduitConfig.cmake because once upon a time
+# when it was named conduit-config.cmake, we found that CMake's exported
+# targets script includes all "ascent-*.cmake" files. This logic would
+# cause this script to be included more than once, seeding instability
+# that caused great harm to the kingdom.
+###############################################################################
+
+
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+
+@PACKAGE_INIT@
+
+set(CONDUIT_VERSION "@PROJECT_VERSION@")
 set(CONDUIT_INSTALL_PREFIX "@CONDUIT_INSTALL_PREFIX@")
 set(CONDUIT_HDF5_DIR  "@HDF5_DIR@")
 set(CONDUIT_ADIOS_DIR "@ADIOS_DIR@")
 set(CONDUIT_SILO_DIR "@SILO_DIR@")
 set(CONDUIT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
+
+get_filename_component(CONDUIT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+# include targets exported by cmake
+include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit.cmake)
+
+# finally setup our final imported targets
+include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_targets.cmake)
 
 

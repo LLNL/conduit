@@ -71,10 +71,19 @@ if (NOT DEFINED CONDUIT_INSTALL_CMAKE_MODULE_DIR)
 endif()
 
 include(CMakePackageConfigHelpers)
+
+# write version heler
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+
 # setup cmake exports
 configure_package_config_file(
-  ${PROJECT_SOURCE_DIR}/cmake/conduit-config.cmake.in
-  ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-config.cmake
+  ConduitConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfig.cmake
   INSTALL_DESTINATION ${CONDUIT_INSTALL_CONFIG_DIR}
   PATH_VARS
     CONDUIT_INSTALL_INCLUDE_DIR
@@ -84,13 +93,12 @@ configure_package_config_file(
     CONDUIT_INSTALL_CMAKE_MODULE_DIR
     )
 
-configure_file (${PROJECT_SOURCE_DIR}/cmake/conduit-deps-paths.cmake.in
-                ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-deps-paths.cmake)
 
 # install extra cmake files
 install(FILES
-        ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-config.cmake
-        ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-deps-paths.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfigVersion.cmake
+        conduit_setup_targets.cmake
         DESTINATION ${CONDUIT_INSTALL_CMAKE_MODULE_DIR})
 
 # install our config.mk
