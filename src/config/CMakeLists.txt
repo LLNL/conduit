@@ -42,9 +42,21 @@
 #
 ###############################################################################
 
-# Configure our Makefile-based build helper
+###############################################################################
+# create config.mk for makefile-based build systems
+###############################################################################
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.mk.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk")
+
+# install our config.mk
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk"
+        DESTINATION share/conduit/)
+
+###############################################################################
+# export everything for a cmake build to be able to import with find_package
+###############################################################################
 
 if (NOT DEFINED CONDUIT_INSTALL_INCLUDE_DIR)
   set(CONDUIT_INSTALL_INCLUDE_DIR "include")
@@ -80,7 +92,7 @@ write_basic_package_version_file(
 )
 
 
-# setup cmake exports
+# setup cmake package config file
 configure_package_config_file(
   ConduitConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfig.cmake
@@ -94,15 +106,12 @@ configure_package_config_file(
     )
 
 
-# install extra cmake files
+# install everything needed
 install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfig.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfigVersion.cmake
         conduit_setup_targets.cmake
         DESTINATION ${CONDUIT_INSTALL_CMAKE_MODULE_DIR})
 
-# install our config.mk
-install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk"
-        DESTINATION share/conduit/)
+
 
