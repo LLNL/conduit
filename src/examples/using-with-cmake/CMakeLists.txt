@@ -88,7 +88,7 @@ endif()
 #
 # Use CMake's find_package to import conduit's targets
 #
-find_package(conduit REQUIRED
+find_package(Conduit REQUIRED
              NO_DEFAULT_PATH 
              PATHS ${CONDUIT_DIR}/lib/cmake)
 

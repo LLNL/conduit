@@ -56,18 +56,23 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 @PACKAGE_INIT@
 
-set(CONDUIT_VERSION "@PROJECT_VERSION@")
-set(CONDUIT_INSTALL_PREFIX "@CONDUIT_INSTALL_PREFIX@")
-set(CONDUIT_HDF5_DIR  "@HDF5_DIR@")
-set(CONDUIT_ADIOS_DIR "@ADIOS_DIR@")
-set(CONDUIT_SILO_DIR "@SILO_DIR@")
-set(CONDUIT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
+if(NOT CONDUIT_FOUND)
 
-get_filename_component(CONDUIT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-# include targets exported by cmake
-include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit.cmake)
+    set(CONDUIT_VERSION "@PROJECT_VERSION@")
+    set(CONDUIT_INSTALL_PREFIX "@CONDUIT_INSTALL_PREFIX@")
+    set(CONDUIT_HDF5_DIR  "@HDF5_DIR@")
+    set(CONDUIT_ADIOS_DIR "@ADIOS_DIR@")
+    set(CONDUIT_SILO_DIR "@SILO_DIR@")
+    set(CONDUIT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
 
-# finally setup our final imported targets
-include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_targets.cmake)
+    get_filename_component(CONDUIT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+    # include targets exported by cmake
+    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit.cmake)
 
+    # finally setup our final imported targets
+    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_targets.cmake)
+
+    set(CONDUIT_FOUND TRUE)
+
+endif()
 
