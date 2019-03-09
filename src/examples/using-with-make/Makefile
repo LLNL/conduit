@@ -47,16 +47,16 @@
 #
 # To build:
 #  make CONDUIT_DIR={conduit install path} 
-#  ./example
+#  ./conduit_example
 #
 # From within a conduit install:
 #  make 
-#  ./example
+#  ./conduit_example
 #
 # Which corresponds to:
 #
 #  make CONDUIT_DIR=../../../ 
-#  ./example
+#  ./conduit_example
 #
 ###############################################################################
 
@@ -69,8 +69,8 @@ INC_FLAGS = $(CONDUIT_INCLUDE_FLAGS)
 LNK_FLAGS = $(CONDUIT_LINK_RPATH) $(CONDUIT_LIB_FLAGS)
 
 main:
-	$(CXX) $(INC_FLAGS) example.cpp $(LNK_FLAGS) -o example
+	$(CXX) $(INC_FLAGS) conduit_example.cpp $(LNK_FLAGS) -o conduit_example
 
 clean:
-	rm -f example
+	rm -f conduit_example
 

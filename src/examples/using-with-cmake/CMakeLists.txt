@@ -50,7 +50,7 @@
 #  cd build
 #  cmake -DCONDUIT_DIR={conduit install path} ../
 #  make
-#  ./example
+#  ./conduit_example
 #
 #
 # If run in sub directory of a conduit install, 
@@ -60,7 +60,7 @@
 #  cd build
 #  cmake ..
 #  make
-#  ./example
+#  ./conduit_example
 #
 ###############################################################################
 
@@ -93,10 +93,14 @@ find_package(Conduit REQUIRED
              PATHS ${CONDUIT_DIR}/lib/cmake)
 
 # create our example 
-add_executable(example example.cpp)
+add_executable(conduit_example conduit_example.cpp)
 
 # link to conduit targets
 target_link_libraries(example conduit::conduit)
+
+# if you are using conduit's python CAPI capsule interface
+# target_link_libraries(example conduit::conduit_python)
+
 
 # if you are using conduit's mpi features
 # target_link_libraries(example conduit::conduit_mpi)
