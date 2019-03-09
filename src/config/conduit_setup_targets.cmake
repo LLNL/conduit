@@ -97,6 +97,16 @@ set_property(TARGET conduit::conduit
              conduit conduit_relay conduit_blueprint)
 
 
+if(CONDUIT_PYTHON_ENABLED)
+    # create convenience target that exposes the header file for the
+    # Python Capsule API for conduit
+    add_library(conduit::conduit_python INTERFACE IMPORTED)
+
+    set_property(TARGET conduit::conduit_python
+                 APPEND PROPERTY
+                 INTERFACE_INCLUDE_DIRECTORIES "${CONDUIT_PYTHON_MODULE_DIR}/conduit/")
+endif()
+
 # and if mpi enabled, a convenience target for remaining mpi deps (conduit::conduit_mpi)
 if(CONDUIT_RELAY_MPI_ENABLED)
     add_library(conduit::conduit_mpi INTERFACE IMPORTED)
@@ -110,7 +120,9 @@ if(NOT Conduit_FIND_QUIETLY)
     message(STATUS "CONDUIT_INSTALL_PREFIX      = ${CONDUIT_INSTALL_PREFIX}")
     message(STATUS "CONDUIT_INCLUDE_DIRS        = ${CONDUIT_INCLUDE_DIRS}")
     message(STATUS "CONDUIT_FORTRAN_ENABLED     = ${CONDUIT_FORTRAN_ENABLED}")
+    message(STATUS "CONDUIT_PYTHON_ENABLED      = ${CONDUIT_PYTHON_ENABLED}")
     message(STATUS "CONDUIT_PYTHON_EXECUTABLE   = ${CONDUIT_PYTHON_EXECUTABLE}")
+    message(STATUS "CONDUIT_PYTHON_MODULE_DIR   = ${CONDUIT_PYTHON_MODULE_DIR}")
     message(STATUS "Conduit Relay features:")  
     message(STATUS " CONDUIT_RELAY_HDF5_ENABLED  = ${CONDUIT_RELAY_HDF5_ENABLED}")
     message(STATUS " CONDUIT_HDF5_DIR            = ${CONDUIT_HDF5_DIR}")
@@ -121,6 +133,11 @@ if(NOT Conduit_FIND_QUIETLY)
     message(STATUS " CONDUIT_RELAY_MPI_ENABLED   = ${CONDUIT_RELAY_MPI_ENABLED}")
 
     set(_print_targets "conduit::conduit")
+
+    if(CONDUIT_PYTHON_ENABLED)
+        set(_print_targets "${_print_targets} conduit::conduit_python")
+    endif()
+
     if(CONDUIT_RELAY_MPI_ENABLED)
         set(_print_targets "${_print_targets} conduit::conduit_mpi")
     endif()
