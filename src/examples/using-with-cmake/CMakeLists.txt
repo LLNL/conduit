@@ -96,13 +96,13 @@ find_package(Conduit REQUIRED
 add_executable(conduit_example conduit_example.cpp)
 
 # link to conduit targets
-target_link_libraries(example conduit::conduit)
+target_link_libraries(conduit_example conduit::conduit)
 
 # if you are using conduit's python CAPI capsule interface
-# target_link_libraries(example conduit::conduit_python)
+# target_link_libraries(conduit_example conduit::conduit_python)
 
 
 # if you are using conduit's mpi features
-# target_link_libraries(example conduit::conduit_mpi)
+# target_link_libraries(conduit_example conduit::conduit_mpi)
 
 
