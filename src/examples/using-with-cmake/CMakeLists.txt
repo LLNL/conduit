@@ -50,17 +50,17 @@
 #  cd build
 #  cmake -DCONDUIT_DIR={conduit install path} ../
 #  make
-#  ./example
+#  ./conduit_example
 #
 #
 # If run in sub directory of a conduit install, 
-# CONDUIT_DIR will be defaulted to ../../..
+# CONDUIT_DIR will default to ../../..
 # 
 #  mkdir build
 #  cd build
 #  cmake ..
 #  make
-#  ./example
+#  ./conduit_example
 #
 ###############################################################################
 
@@ -68,18 +68,41 @@ cmake_minimum_required(VERSION 3.0)
 
 project(using_with_cmake)
 
+#
+# Provide default CONDUIT_DIR that works in a conduit install
+#
 if(NOT CONDUIT_DIR)
     set(CONDUIT_DIR "../../..")
 endif()
 
-include("FindConduit.cmake")
+#
+# Check for valid conduit install
+#
 
-# setup the conduit include path
-include_directories(${CONDUIT_INCLUDE_DIRS})
+# if given relative path, resolve
+get_filename_component(CONDUIT_DIR ${CONDUIT_DIR} ABSOLUTE)
+if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/ConduitConfig.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/ConduitConfig.cmake)")
+endif()
+
+#
+# Use CMake's find_package to import conduit's targets
+#
+find_package(Conduit REQUIRED
+             NO_DEFAULT_PATH 
+             PATHS ${CONDUIT_DIR}/lib/cmake)
 
 # create our example 
-add_executable(example example.cpp)
+add_executable(conduit_example conduit_example.cpp)
 
 # link to conduit targets
-target_link_libraries(example conduit conduit_relay conduit_blueprint)
+target_link_libraries(conduit_example conduit::conduit)
+
+# if you are using conduit's python CAPI capsule interface
+# target_link_libraries(conduit_example conduit::conduit_python)
+
+
+# if you are using conduit's mpi features
+# target_link_libraries(conduit_example conduit::conduit_mpi)
+
 

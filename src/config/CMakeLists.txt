@@ -42,24 +42,36 @@
 #
 ###############################################################################
 
-# Configure our Makefile-based build helper
+###############################################################################
+# create config.mk for makefile-based build systems
+###############################################################################
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.mk.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk")
 
+# install our config.mk
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk"
+        DESTINATION share/conduit/)
+
+###############################################################################
+# export everything for a cmake build to be able to import with find_package
+###############################################################################
+
 if (NOT DEFINED CONDUIT_INSTALL_INCLUDE_DIR)
-  set(CONDUIT_INSTALL_INCLUDE_DIR "include")
+    set(CONDUIT_INSTALL_INCLUDE_DIR "include")
 endif()
 
 if (NOT DEFINED CONDUIT_INSTALL_CONFIG_DIR)
-  set(CONDUIT_INSTALL_CONFIG_DIR "lib")
+    set(CONDUIT_INSTALL_CONFIG_DIR "lib")
 endif()
 
 if (NOT DEFINED CONDUIT_INSTALL_LIB_DIR)
-  set(CONDUIT_INSTALL_LIB_DIR "lib")
+    set(CONDUIT_INSTALL_LIB_DIR "lib")
 endif()
 
 if (NOT DEFINED CONDUIT_INSTALL_BIN_DIR)
-  set(CONDUIT_INSTALL_BIN_DIR "bin")
+    set(CONDUIT_INSTALL_BIN_DIR "bin")
 endif()
 
 if (NOT DEFINED CONDUIT_INSTALL_SHARED_RESOURCES_DIR)
@@ -70,11 +82,28 @@ if (NOT DEFINED CONDUIT_INSTALL_CMAKE_MODULE_DIR)
   set(CONDUIT_INSTALL_CMAKE_MODULE_DIR "${CONDUIT_INSTALL_CONFIG_DIR}/cmake")
 endif()
 
+if (NOT DEFINED CONDUIT_INSTALL_PYTHON_MODULE_DIR)
+    if(PYTHON_MODULE_INSTALL_PREFIX)
+        set(CONDUIT_INSTALL_PYTHON_MODULE_DIR ${PYTHON_MODULE_INSTALL_PREFIX})
+    else()
+        set(CONDUIT_INSTALL_PYTHON_MODULE_DIR ${CMAKE_INSTALL_PREFIX}/python-modules/)
+    endif()
+endif()
+
 include(CMakePackageConfigHelpers)
-# setup cmake exports
+
+# write version heler
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+
+# setup cmake package config file
 configure_package_config_file(
-  ${PROJECT_SOURCE_DIR}/cmake/conduit-config.cmake.in
-  ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-config.cmake
+  ConduitConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfig.cmake
   INSTALL_DESTINATION ${CONDUIT_INSTALL_CONFIG_DIR}
   PATH_VARS
     CONDUIT_INSTALL_INCLUDE_DIR
@@ -84,14 +113,13 @@ configure_package_config_file(
     CONDUIT_INSTALL_CMAKE_MODULE_DIR
     )
 
-configure_file (${PROJECT_SOURCE_DIR}/cmake/conduit-deps-paths.cmake.in
-                ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-deps-paths.cmake)
 
+# install everything needed
 install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.mk"
-        DESTINATION share/conduit/)
-
-install(FILES
-        ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-config.cmake
-        ${PROJECT_BINARY_DIR}/${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit-deps-paths.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfigVersion.cmake
+        conduit_setup_targets.cmake
         DESTINATION ${CONDUIT_INSTALL_CMAKE_MODULE_DIR})
+
+
+

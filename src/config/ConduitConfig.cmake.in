@@ -41,24 +41,41 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # 
 ###############################################################################
+
+###############################################################################
+# Note:
+# This file is named ConduitConfig.cmake because once upon a time
+# when it was named conduit-config.cmake, we found that CMake's exported
+# targets script includes all "ascent-*.cmake" files. This logic would
+# cause this script to be included more than once, seeding instability
+# that caused great harm to the kingdom.
+###############################################################################
+
+
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 @PACKAGE_INIT@
 
-# Conduit version number
-set(CONDUIT_VERSION "@CONDUIT_VERSION@")
+if(NOT CONDUIT_FOUND)
 
-set(CONDUIT_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include/conduit")
+    set(CONDUIT_VERSION "@PROJECT_VERSION@")
+    set(CONDUIT_INSTALL_PREFIX "@CONDUIT_INSTALL_PREFIX@")
+    set(CONDUIT_HDF5_DIR  "@HDF5_DIR@")
+    set(CONDUIT_ADIOS_DIR "@ADIOS_DIR@")
+    set(CONDUIT_SILO_DIR "@SILO_DIR@")
+    set(CONDUIT_PYTHON_ENABLED "@PYTHON_FOUND@")
+    set(CONDUIT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
+    set(CONDUIT_PYTHON_MODULE_DIR "@CONDUIT_INSTALL_PYTHON_MODULE_DIR@")
 
-# This is true when the package is still in the build directory (not installed)
-if(CMAKE_CURRENT_LIST_DIR STREQUAL "@CONDUIT_BINARY_DIR@/@CONDUIT_INSTALL_CONFIG_DIR@")
-  set(CONDUIT_PACKAGE_IN_BUILD TRUE)
+
+    get_filename_component(CONDUIT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+    # include targets exported by cmake
+    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit.cmake)
+
+    # finally setup our final imported targets
+    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_targets.cmake)
+
+    set(CONDUIT_FOUND TRUE)
+
 endif()
-
-get_filename_component(CONDUIT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit-deps-paths.cmake)
-include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit.cmake)
-
-
-
 

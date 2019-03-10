@@ -5,9 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## Unreleased 
+
+### Changed
+
+#### General 
+
+- Improved CMake export logic to make it easier to find and use Conduit install in a CMake-based build system. (See using-with-cmake example for new recipe)
+
+
 ## [0.4.0] - Released 2019-03-01
 
 ### Added
+
+#### General
+
 - Added Generic IO Handle class (relay::io::IOHandle) with C++ and Python APIs, tests, and docs.
 - Added ``rename_child`` method to Schema and Node 
 - Added generation and install of conduit_config.mk for using-with-make example
@@ -18,153 +30,216 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added C bindings for relay IO
 - Added several more functions to conduit node python interfaces
 
+#### Blueprint
 
-- Blueprint: Added implicit point topology docs and example
-- Blueprint: Added julia and spiral mesh bp examples
-- Blueprint: Added mesh topology transformations to blueprint
-- Blueprint: Added polygonal mesh support to mesh blueprint
-- Blueprint: Added verify method for mesh blueprint nestset
+- Added implicit point topology docs and example
+- Added julia and spiral mesh bp examples
+- Added mesh topology transformations to blueprint
+- Added polygonal mesh support to mesh blueprint
+- Added verify method for mesh blueprint nestset
 
+#### Relay
 
-- Relay: Added ADIOS Support, enabling ADIOS read and write of Node objects.
-- Relay: Added a relay::mpi::io library that mirrors the API of relay::io, except  that all functions take an MPI communicator. The functions are implemented in parallel for the ADIOS protocol. For other protocols, they will behave the same as the serial functions in relay::io. For the ADIOS protocol, the save() and save_merged() functions operate collectively within a communicator to enable multiple MPI ranks to save data to a single file as separate "domains".
-- Relay: Added an add_time_step() function to that lets the caller append data collectively to an existing  ADIOS file
-- Relay: Added a function to query the number of time steps and the number of domains in a  ADIOS file.
-- Relay: Added versions of save and save_merged that take an options node. 
-- Relay: Added C API for new save, save_merged functions.
-- Relay: Added method to list an HDF5 group's child names
-- Relay: Added save and append methods to the HDF5 I/O interface
-- Relay: Added docs and examples for relay io
+- Added ADIOS Support, enabling ADIOS read and write of Node objects.
+- Added a relay::mpi::io library that mirrors the API of relay::io, except  that all functions take an MPI communicator. The functions are implemented in parallel for the ADIOS protocol. For other protocols, they will behave the same as the serial functions in relay::io. For the ADIOS protocol, the save() and save_merged() functions operate collectively within a communicator to enable multiple MPI ranks to save data to a single file as separate "domains".
+- Added an add_time_step() function to that lets the caller append data collectively to an existing  ADIOS file
+- Added a function to query the number of time steps and the number of domains in a  ADIOS file.
+- Added versions of save and save_merged that take an options node. 
+- Added C API for new save, save_merged functions.
+- Added method to list an HDF5 group's child names
+- Added save and append methods to the HDF5 I/O interface
+- Added docs and examples for relay io
 
 
 ### Changed
+
+#### General 
+
 - Changed mapping of c types to bit-width style to be compatible with C++11 std bit-width types when C++11 is enabled
 - Several improvements to uberenv, our automated build process, and building directions
 - Upgraded the type system with more explicit signed support
 
+#### Relay
 
-- Relay: Improvements to the Silo mesh writer
-- Relay: Refactor to support both relay::io and relay::mpi::io namespaces. 
-- Relay: Refactor to add support for steps and domains to I/O interfaces
-- Relay: Changed to only use ``libver latest`` setting for for hdf5 1.8 to minimize compatibility issues 
+- Improvements to the Silo mesh writer
+- Refactor to support both relay::io and relay::mpi::io namespaces. 
+- Refactor to add support for steps and domains to I/O interfaces
+- Changed to only use ``libver latest`` setting for for hdf5 1.8 to minimize compatibility issues 
 
 ### Fixed
+
+#### General 
+
 - Fixed bugs with std::vector gap methods
 - Fixed A few C function names in conduit_node.h 
 - Fixed bug in python that was requesting unsigned array for signed cases
 - Fixed issue with Node::diff failing for string data with offsets
 - Fixes for building on BlueOS with the xl compiler
 
+#### Blueprint
 
-- Blueprint: Fixed validity status for blueprint functions
-- Blueprint: Fixed improper error reporting for Blueprint references
+- Fixed validity status for blueprint functions
+- Fixed improper error reporting for Blueprint references
 
+#### Relay
 
-- Relay: Relay I/O exceptions are now forwarded to python  
-- Relay: Fixed MPI send_with_schema bug when data was compact but not contiguous  
-- Relay: Switched to use MPI bit-width style data type enums in ``relay::mpi``
+- Relay I/O exceptions are now forwarded to python  
+- Fixed MPI send_with_schema bug when data was compact but not contiguous  
+- Switched to use MPI bit-width style data type enums in ``relay::mpi``
 
 ## [0.3.1] - Released 2018-02-26
 
 ### Added
+
+#### General
+
 - Added new ``Node::diff`` and ``Node::diff_compatible`` methods
 - Expanded the Node Python Capsule API
 - Added Python version of basic tutorial
 
+#### Blueprint
 
-- Blueprint: Added Multi-level Array Protocol (conduit::blueprint::mlarray)
-
+- Added Multi-level Array Protocol (conduit::blueprint::mlarray)
 
 ### Changed
+
+#### General
+
 - Updated uberenv to use a newer spack and removed several custom packages
 - C++ ``Node::set`` methods now take const pointers for data
 
 ### Fixed 
+
+#### General
+
 - Various Python API bug fixes
 - Fixed API exports for static libs on Windows
 
+#### Relay
 
-- Relay: Bug fixes for HDF5 support on Windows
+- Bug fixes for HDF5 support on Windows
 
 ### Removed
-- Blueprint: Removed unnecessary state member in the braid example
+
+#### Blueprint
+
+- Removed unnecessary state member in the braid example
 
 ## [0.3.0] - Released 2017-08-21
 
 ### Added 
+
+#### General
+
 - Exposed more of the Conduit API in Python
 
+#### Blueprint
 
-- Blueprint: Added support for multi-material fields via *matsets* (volume fractions and per-material values)
-- Blueprint: Added initial support for domain boundary info via *adjsets* for distributed-memory unstructured meshes  
+- Added support for multi-material fields via *matsets* (volume fractions and per-material values)
+- Added initial support for domain boundary info via *adjsets* for distributed-memory unstructured meshes  
 
+#### Relay
 
-- Relay: Added support for MPI reductions and broadcast
-- Relay: Added support zero-copy pass to MPI for a wide set of calls
-- Relay: Hardened notion of `known schema` vs `generic` MPI support
-- Relay: Add heuristics with knobs for controlling use of HDF5 compact datasets and compression support
+- Added support for MPI reductions and broadcast
+- Added support zero-copy pass to MPI for a wide set of calls
+- Hardened notion of `known schema` vs `generic` MPI support
+- Add heuristics with knobs for controlling use of HDF5 compact datasets and compression support
 
 ### Changed
+
+#### General
+
 - Moved to use BLT (https://github.com/llnl/blt) as our core CMake-based build system
 - Use ints instead of bools in the Conduit C-APIs for wider compiler compatibility
 
+#### Relay
 
-- Relay: Improved error checking and error messages for HDF5 I/O support
+- Improved error checking and error messages for HDF5 I/O support
 
 ### Fixed
-- Fixed memory leaks in *conduit* and *conduit_relay* 
+
+#### General
+
+- Fixed memory leaks in *conduit* 
 - Bug fixes to support building on Visual Studio 2013
 - Bug fixes for `conduit::Nodes` in the List Role
-   
+
+#### Relay
+
+- Fixed memory leaks in *conduit_relay*    
 
 ## [0.2.1] - Released 2017-01-06
 
 ### Added
-- Blueprint: Added support to the blueprint python module for the mesh and mcarray protocol methods 
-- Blueprint: Added stand alone blueprint verify executable
+
+#### Blueprint
+
+- Added support to the blueprint python module for the mesh and mcarray protocol methods 
+- Added stand alone blueprint verify executable
 
 ### Changed
+
+#### General
+
 - Eliminated separate fortran libs by moving fortran symbols into their associated main libs
 - Change Node set_external to support const Node ref
 - Refactor path and file systems utils functions for clarity
 
 ### Fixed
+
+#### General
+
 - Added fixes to support static builds on BGQ using xlc and gcc
 - Fixed missing install of fortran module files
 
+#### Blueprint
 
-- Blueprint: Fixed bug with verify of mesh/coords for rectilinear case
+- Fixed bug with verify of mesh/coords for rectilinear case
 
 
-- Relay: Updated the version of civetweb used to avoid dlopen issues with SSL for static builds
+#### Relay
+
+- Updated the version of civetweb used to avoid dlopen issues with SSL for static builds
 
 ## [0.2.0] - Released 2016-11-03
 
 ### Added
+
+#### General
+
 - Added const access to conduit::Node's children and a new NodeConstIterator
 - Added support for building on Windows 
 - Added more Python, C, and Fortran API support
 
+#### Blueprint
 
-- Blueprint: Added verify support for the mcarray and mesh protocols
-- Blueprint: Added functions that create examples instances of mcarrays and meshes
-- Blueprint: Added memory layout transform helpers for mcarrays
-- Blueprint: Added a helper that creates a mesh blueprint index from a valid mesh
+- Added verify support for the mcarray and mesh protocols
+- Added functions that create examples instances of mcarrays and meshes
+- Added memory layout transform helpers for mcarrays
+- Added a helper that creates a mesh blueprint index from a valid mesh
 
+#### Relay
 
-- Relay: Added entangle, a python script ssh tunneling solution
-- Relay: Added extensive HDF5 I/O support for reading and writing between HDF5 files and conduit Node trees
+- Added entangle, a python script ssh tunneling solution
+- Added extensive HDF5 I/O support for reading and writing between HDF5 files and conduit Node trees
 
 ###  Changed
+
+#### General
+
 - Changes to clarify concepts in the conduit::Node API 
 - Improved unit test coverage
 - Renamed source and header files for clarity and to avoid potential conflicts with other projects 
 
+#### Relay
 
-- Relay: Changed I/O protocol string names for clarity 
-- Relay: Refactored the relay::WebServer and the Conduit Node Viewer application 
+- Changed I/O protocol string names for clarity 
+- Refactored the relay::WebServer and the Conduit Node Viewer application 
 
 ### Fixed
+
+#### General
+
 - Resolved several bugs across libraries 
 - Resolved compiler warnings and memory leaks
 

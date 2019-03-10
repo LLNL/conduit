@@ -85,11 +85,12 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_conduit.sh.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_conduit_build.sh" @ONLY)
 
 if(PYTHON_MODULE_INSTALL_PREFIX)
-    set(_PYMOD_DIR ${PYTHON_MODULE_INSTALL_PREFIX}/conduit/)
+    set(_PYMOD_DIR ${PYTHON_MODULE_INSTALL_PREFIX})
 else()
     set(_PYMOD_DIR ${CMAKE_INSTALL_PREFIX}/python-modules/)
-
 endif()
+
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_conduit.sh.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_conduit_install.sh" @ONLY)
 

@@ -61,7 +61,7 @@ mkdir build
 cd build
 cmake -DCONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install ../
 make
-./example
+./conduit_example
 ##########################################
 # using with make example
 ##########################################
@@ -93,5 +93,5 @@ if [ "${ENABLE_ADIOS}" == "ON" ]; then
 fi
 
 env CXX=${COMPILER_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install make
-env LD_LIBRARY_PATH=${RUN_LIB_PATH} ./example
+env LD_LIBRARY_PATH=${RUN_LIB_PATH} ./conduit_example
 

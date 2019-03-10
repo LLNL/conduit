@@ -74,7 +74,7 @@ The install includes examples that demonstrate how to use Conduit in a CMake-bas
 CMake-based build system example (see: ``examples/conduit/using-with-cmake``):
 
 .. literalinclude:: ../../examples/using-with-cmake/CMakeLists.txt 
-   :lines: 45-53
+   :lines: 45-63
    :dedent: 2
 
 
