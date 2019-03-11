@@ -93,10 +93,10 @@ public:
                const std::string &path);
 
     /// list child names at root of handle
-    void list_child_names(std::vector<std::string> &res);
+    void list_child_names(std::vector<std::string> &res) const;
     /// list child names at subpath
     void list_child_names(const std::string &path,
-                          std::vector<std::string> &res);
+                          std::vector<std::string> &res) const;
 
     // TODO: options variants for read and write above? with update of 
     // above options with passed?
@@ -105,7 +105,7 @@ public:
     void remove(const std::string &path);
 
     /// check if given path exists
-    bool has_path(const std::string &path);
+    bool has_path(const std::string &path) const;
 
     // FUTURE: also provide access to read schema
     // void read_schema(Schema &schema);

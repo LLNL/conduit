@@ -117,11 +117,11 @@ public:
     virtual void write(const Node &node) = 0;
     virtual void write(const Node &node,
                const std::string &path) = 0;
-    virtual void list_child_names(std::vector<std::string> &res) = 0;
+    virtual void list_child_names(std::vector<std::string> &res) const = 0;
     virtual void list_child_names(const std::string &path,
-                          std::vector<std::string> &res) = 0;
+                          std::vector<std::string> &res) const = 0;
     virtual void remove(const std::string &path) = 0;
-    virtual bool has_path(const std::string &path) = 0;
+    virtual bool has_path(const std::string &path) const = 0;
     virtual void close() = 0;
 
     // factory helper methods used by interface class 
@@ -173,11 +173,11 @@ public:
 
     void remove(const std::string &path);
 
-    void list_child_names(std::vector<std::string> &res);
+    void list_child_names(std::vector<std::string> &res) const;
     void list_child_names(const std::string &path,
-                          std::vector<std::string> &res);
+                          std::vector<std::string> &res) const;
 
-    bool has_path(const std::string &path);
+    bool has_path(const std::string &path) const;
     
     void close();
     
@@ -216,11 +216,11 @@ public:
 
     void remove(const std::string &path);
 
-    void list_child_names(std::vector<std::string> &res);
+    void list_child_names(std::vector<std::string> &res) const;
     void list_child_names(const std::string &path,
-                          std::vector<std::string> &res);
+                          std::vector<std::string> &res) const;
 
-    bool has_path(const std::string &path);
+    bool has_path(const std::string &path) const;
     
     void close();
     
@@ -446,7 +446,7 @@ BasicHandle::write(const Node &node,
 
 //-----------------------------------------------------------------------------
 void
-BasicHandle::list_child_names(std::vector<std::string> &res)
+BasicHandle::list_child_names(std::vector<std::string> &res) const
 {
     res = m_node.child_names();
 }
@@ -454,7 +454,7 @@ BasicHandle::list_child_names(std::vector<std::string> &res)
 //-----------------------------------------------------------------------------
 void
 BasicHandle::list_child_names(const std::string &path,
-                             std::vector<std::string> &res)
+                              std::vector<std::string> &res) const
 {
     res.clear();
     if(m_node.has_path(path))
@@ -470,7 +470,7 @@ BasicHandle::remove(const std::string &path)
 
 //-----------------------------------------------------------------------------
 bool 
-BasicHandle::has_path(const std::string &path)
+BasicHandle::has_path(const std::string &path) const
 {
     return m_node.has_path(path);
 }
@@ -603,7 +603,7 @@ HDF5Handle::write(const Node &node,
 
 //-----------------------------------------------------------------------------
 void
-HDF5Handle::list_child_names(std::vector<std::string> &res)
+HDF5Handle::list_child_names(std::vector<std::string> &res) const
 {
     hdf5_group_list_child_names(m_h5_id, "/", res);
 }
@@ -611,7 +611,7 @@ HDF5Handle::list_child_names(std::vector<std::string> &res)
 //-----------------------------------------------------------------------------
 void
 HDF5Handle::list_child_names(const std::string &path,
-                             std::vector<std::string> &res)
+                             std::vector<std::string> &res) const
 {
     hdf5_group_list_child_names(m_h5_id, path, res);
 }
@@ -625,7 +625,7 @@ HDF5Handle::remove(const std::string &path)
 
 //-----------------------------------------------------------------------------
 bool 
-HDF5Handle::has_path(const std::string &path)
+HDF5Handle::has_path(const std::string &path) const
 {
     return hdf5_has_path(m_h5_id,path);
 }
@@ -796,7 +796,7 @@ IOHandle::remove(const std::string &path)
 
 //-----------------------------------------------------------------------------
 void
-IOHandle::list_child_names(std::vector<std::string> &names)
+IOHandle::list_child_names(std::vector<std::string> &names) const
 {
     names.clear();
     if(m_handle != NULL)
@@ -813,7 +813,7 @@ IOHandle::list_child_names(std::vector<std::string> &names)
 //-----------------------------------------------------------------------------
 void
 IOHandle::list_child_names(const std::string &path,
-                           std::vector<std::string> &names)
+                           std::vector<std::string> &names) const
 {
     names.clear();
     if(m_handle != NULL)
@@ -828,7 +828,7 @@ IOHandle::list_child_names(const std::string &path,
 
 //-----------------------------------------------------------------------------
 bool
-IOHandle::has_path(const std::string &path)
+IOHandle::has_path(const std::string &path) const
 {
     if(m_handle != NULL)
     {
