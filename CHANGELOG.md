@@ -13,6 +13,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 - Improved CMake export logic to make it easier to find and use Conduit install in a CMake-based build system. (See using-with-cmake example for new recipe)
 
+#### Relay
+
+- Added is_open() method to IOHandle in the C++ and Python interfaces
 
 ## [0.4.0] - Released 2019-03-01
 

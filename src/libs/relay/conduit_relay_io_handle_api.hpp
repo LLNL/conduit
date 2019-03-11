@@ -76,6 +76,9 @@ public:
               const std::string &protocol,
               const Node &options);
 
+    /// check if the handle is currently open
+              
+    bool is_open() const;
 
     /// read contents starting at the root of the handle
     void read(Node &node);

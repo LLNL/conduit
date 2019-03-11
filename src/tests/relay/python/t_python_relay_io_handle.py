@@ -132,6 +132,23 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             with self.assertRaises(IOError):
                 h.open("here/is/a/garbage/file/path.json");
 
+    def test_io_handle_is_open(self):
+            h = conduit.relay.io.IOHandle()
+            self.assertFalse(h.is_open())
+            # bad path
+            with self.assertRaises(IOError):
+                h.open("here/is/a/garbage/file/path.json");
+            # still not open
+            self.assertFalse(h.is_open())
+            # open valid path
+            h.open("tout_python_relay_io_handle.conduit_json")
+            # better be open
+            self.assertTrue(h.is_open())
+            # close it
+            h.close()
+            # better be closed
+            self.assertFalse(h.is_open())
+
 if __name__ == '__main__':
     unittest.main()
 

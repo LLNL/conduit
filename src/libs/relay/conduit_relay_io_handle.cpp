@@ -110,6 +110,7 @@ public:
     // note: make sure to call HandleInterface::open in derived class 
     //       open() overrides
     virtual void open();
+    virtual bool is_open() const = 0;
     virtual void read(Node &node) = 0;
     virtual void read(const std::string &path,
                       Node &node) = 0;
@@ -159,6 +160,8 @@ public:
 
     void open();
     
+    bool is_open() const;
+    
     // main interface methods
     void read(Node &node);
     void read(const std::string &path,
@@ -199,7 +202,9 @@ public:
     virtual ~HDF5Handle();
 
     void open();
-    
+
+    bool is_open() const;
+
     // main interface methods
     void read(Node &node);
     void read(const std::string &path,
@@ -399,6 +404,13 @@ BasicHandle::open()
 }
 
 //-----------------------------------------------------------------------------
+bool
+BasicHandle::is_open() const
+{
+    return m_open;
+}
+
+//-----------------------------------------------------------------------------
 void 
 BasicHandle::read(Node &node)
 {
@@ -520,6 +532,14 @@ HDF5Handle::open()
     {
         m_h5_id = hdf5_open_file_for_read_write( path() );
     }
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+HDF5Handle::is_open() const
+{
+    return m_h5_id != -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -685,6 +705,20 @@ IOHandle::open(const std::string &path,
     {
         m_handle->open();
     }
+}
+
+//-----------------------------------------------------------------------------
+bool
+IOHandle::is_open() const
+{
+    bool res = false;
+
+    if(m_handle != NULL)
+    {
+        res = m_handle->is_open();
+    }
+
+    return res;
 }
 
 //-----------------------------------------------------------------------------
