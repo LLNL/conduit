@@ -149,6 +149,54 @@ TEST(conduit_relay_io_handle, test_active_protos)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_is_open)
+{
+    io::IOHandle h;
+
+    EXPECT_FALSE(h.is_open());
+    
+    EXPECT_THROW(h.open("here/is/a/garbage/file/path.json"),
+                 conduit::Error);
+
+    EXPECT_FALSE(h.is_open());
+
+    // if hdf5 is enabled, check bad path open for that imp
+    Node n_about;
+    io::about(n_about);
+    if(n_about["protocols/hdf5"].as_string() == "enabled")
+    {
+        EXPECT_THROW(h.open("here/is/a/garbage/file/path.hdf5"),
+                     conduit::Error);
+
+        EXPECT_FALSE(h.is_open());
+        
+        h.open("tout_conduit_relay_io_handle_is_open.hdf5");
+
+        EXPECT_TRUE(h.is_open());
+
+        h.close();
+
+        EXPECT_FALSE(h.is_open());
+        
+    }
+    
+    // test subpath for exceptions
+    EXPECT_THROW(h.open("file.json:here/is/a/subpath/to/data"),
+                 conduit::Error);
+
+    EXPECT_FALSE(h.is_open());
+    
+    h.open("tout_conduit_relay_io_handle_is_open.conduit_json");
+
+    EXPECT_TRUE(h.is_open());
+
+    h.close();
+
+    EXPECT_FALSE(h.is_open());
+}
+
+
+//-----------------------------------------------------------------------------
 // NOTE: If we add support for opening subpaths, here is a start at testing
 // //-----------------------------------------------------------------------------
 // TEST(conduit_relay_io_handle, test_active_protos_subpath)

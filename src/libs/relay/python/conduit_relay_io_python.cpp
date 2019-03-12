@@ -300,6 +300,22 @@ PyRelay_IOHandle_open(PyRelay_IOHandle *self,
 
 //-----------------------------------------------------------------------------
 static PyObject *
+PyRelay_IOHandle_is_open(PyRelay_IOHandle *self)
+{
+    //Note: is_open does not throw
+    bool res = self->handle->is_open();
+
+    if(res)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+
+    Py_RETURN_NONE; 
+}
+
+
+//-----------------------------------------------------------------------------
+static PyObject *
 PyRelay_IOHandle_read(PyRelay_IOHandle *self,
                        PyObject *args,
                        PyObject *kwargs)
@@ -562,6 +578,10 @@ static PyMethodDef PyRelay_IOHandle_METHODS[] = {
      (PyCFunction)PyRelay_IOHandle_open,
      METH_VARARGS | METH_KEYWORDS,
      "Opens a Relay IO Handle"},
+    {"is_open",
+     (PyCFunction)PyRelay_IOHandle_is_open,
+     METH_NOARGS,
+     "Checks if a Relay IO Handle is currently open"},
     {"read",
      (PyCFunction)PyRelay_IOHandle_read,
      METH_VARARGS | METH_KEYWORDS,
