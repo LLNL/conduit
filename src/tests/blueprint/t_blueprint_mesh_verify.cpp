@@ -1046,7 +1046,7 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
 
             n["groups"].reset();
             n["groups"]["g1"]["neighbors"].set(DataType::int32(5));
-            CHECK_MESH(verify_adjset,n,info,false);
+            CHECK_MESH(verify_adjset,n,info,true);
             n["groups"]["g1"]["values"].set(DataType::float32(5));
             CHECK_MESH(verify_adjset,n,info,false);
             n["groups"]["g1"]["values"].set(DataType::int32(5));
@@ -2094,7 +2094,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
 
             Node &groups = domain["adjsets"]["mesh"]["groups"];
             groups["g1"]["neighbors"].set(DataType::int32(10));
-            CHECK_MESH(verify_mesh,mesh,info,false);
+            CHECK_MESH(verify_mesh,mesh,info,true);
             groups["g1"]["values"].set(DataType::float32(10));
             CHECK_MESH(verify_mesh,mesh,info,false);
             groups["g1"]["values"].set(DataType::int32(10));
