@@ -1077,6 +1077,27 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, adjset_structured)
+{
+    VerifyFun verify_adjset_funs[] = {
+        blueprint::mesh::adjset::verify,
+        verify_adjset_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_adjset = verify_adjset_funs[fi];
+
+        Node mesh, info;
+        CHECK_MESH(verify_adjset,mesh,info,false);
+
+        blueprint::mesh::examples::adjset_uniform(mesh);
+        Node& n = mesh.child(0)["adjsets"].child(0);
+        CHECK_MESH(verify_adjset,n,info,true);
+    }
+}
+
 /// Mesh Domain Nesting (AMR) Tests ///
 
 //-----------------------------------------------------------------------------
