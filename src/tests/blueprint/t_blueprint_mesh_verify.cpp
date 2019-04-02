@@ -1093,8 +1093,16 @@ TEST(conduit_blueprint_mesh_verify, adjset_structured)
         CHECK_MESH(verify_adjset,mesh,info,false);
 
         blueprint::mesh::examples::adjset_uniform(mesh);
-        Node& n = mesh.child(0)["adjsets"].child(0);
-        CHECK_MESH(verify_adjset,n,info,true);
+
+        NodeConstIterator itr = mesh.children();
+        while(itr.has_next())
+        {
+           const Node &chld= itr.next();
+           const std::string chld_name = itr.name();
+
+           const Node& n = chld["adjsets/adjset"];
+           CHECK_MESH(verify_adjset,n,info[chld_name],true);
+        }
     }
 }
 
