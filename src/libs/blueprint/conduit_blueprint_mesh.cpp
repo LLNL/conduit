@@ -546,71 +546,51 @@ std::vector<std::string> identify_coordset_axes(const Node &coordset)
 }
 
 //-----------------------------------------------------------------------------
-DataType find_widest_type(const Node &node,
-                          const std::vector<std::string> &paths,
-                          const std::vector<DataType> &defaults)
+DataType find_widest_dtype(const Node &node,
+                           const std::vector<DataType> &default_dtypes)
 {
-    std::vector<DataType> widest_types;
-    for(index_t t = 0; t < (index_t)defaults.size(); t++)
-    {
-        widest_types.push_back(DataType(defaults[t].id(), 1));
-    }
+    DataType widest_dtype(default_dtypes[0].id(), 0, 0, 0, 0, default_dtypes[0].endianness());
 
-    Node info;
-    for(index_t p = 0; p < (index_t)paths.size(); p++)
+    std::vector<const Node*> node_bag(1, &node);
+    while(!node_bag.empty())
     {
-        const std::string &curr_path = paths[p];
-        if(node.has_path(curr_path))
+        const Node *curr_node = node_bag.back(); node_bag.pop_back();
+        const DataType curr_dtype = curr_node->dtype();
+        if( curr_dtype.is_list() || curr_dtype.is_object() )
         {
-            const Node &curr_node = node.fetch(curr_path);
-
-            DataType curr_type;
-            if(conduit::blueprint::mcarray::verify(curr_node, info))
+            NodeConstIterator curr_node_it = curr_node->children();
+            while(curr_node_it.has_next())
             {
-                curr_type.set(find_widest_type(curr_node, curr_node.child_names(), defaults));
+                node_bag.push_back(&curr_node_it.next());
             }
-            else
+        }
+        else
+        {
+            for(index_t ti = 0; ti < (index_t)default_dtypes.size(); ti++)
             {
-                curr_type.set(DataType(curr_node.dtype().id(), 1));
-            }
-
-            for(index_t t = 0; t < (index_t)widest_types.size(); t++)
-            {
-                DataType &widest_type = widest_types[t];
-
-                bool are_types_equivalent =
-                    (curr_type.is_float() && widest_type.is_float()) ||
-                    (curr_type.is_signed_integer() && widest_type.is_signed_integer()) ||
-                    (curr_type.is_unsigned_integer() && widest_type.is_unsigned_integer()) ||
-                    (curr_type.is_string() && widest_type.is_string());
-                if(are_types_equivalent &&
-                    (widest_type.element_bytes() >= curr_type.element_bytes()))
+                const DataType &valid_dtype = default_dtypes[ti];
+                bool is_valid_dtype =
+                    (curr_dtype.is_floating_point() && valid_dtype.is_floating_point()) ||
+                    (curr_dtype.is_signed_integer() && valid_dtype.is_signed_integer()) ||
+                    (curr_dtype.is_unsigned_integer() && valid_dtype.is_unsigned_integer()) ||
+                    (curr_dtype.is_string() && valid_dtype.is_string());
+                if(is_valid_dtype && (widest_dtype.element_bytes() < curr_dtype.element_bytes()))
                 {
-                    widest_type.set(curr_type);
+                    widest_dtype.set(DataType(curr_dtype.id(), 1));
                 }
             }
         }
     }
 
-    DataType widest_type(widest_types[0]);
-    for(index_t t = 1; t < (index_t)widest_types.size(); t++)
-    {
-        if(widest_type.element_bytes() < widest_types[t].element_bytes())
-        {
-            widest_type.set(widest_types[t]);
-        }
-    }
-
-    return widest_type;
+    bool no_type_found = widest_dtype.element_bytes() == 0;
+    return no_type_found ? default_dtypes[0] : widest_dtype;
 }
 
 //-----------------------------------------------------------------------------
-DataType find_widest_type(const Node &node,
-                          const std::vector<std::string> &paths,
-                          const DataType &default_type)
+DataType find_widest_dtype(const Node &node,
+                           const DataType &default_dtype)
 {
-    std::vector<DataType> defaults(1, default_type);
-    return find_widest_type(node, paths, defaults);
+    return find_widest_dtype(node, std::vector<DataType>(1, default_dtype));
 }
 
 //-----------------------------------------------------------------------------
@@ -697,14 +677,7 @@ convert_coordset_to_rectilinear(const std::string &/*base_type*/,
     dest.reset();
     dest["type"].set("rectilinear");
 
-    DataType float_type;
-    {
-        std::vector<std::string> float_paths;
-        float_paths.push_back("origin");
-        float_paths.push_back("spacing");
-        float_type.set(find_widest_type(coordset, float_paths,
-            blueprint::mesh::default_float_type));
-    }
+    DataType float_type = find_widest_dtype(coordset, blueprint::mesh::default_float_type);
 
     std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
     const std::vector<std::string> &logical_axes = blueprint::mesh::logical_axes;
@@ -714,10 +687,10 @@ convert_coordset_to_rectilinear(const std::string &/*base_type*/,
         const std::string& logical_axis = logical_axes[i];
 
         float64 dim_origin = coordset.has_child("origin") ?
-            coordset["origin"][csys_axis].value() : 0.0;
+            coordset["origin"][csys_axis].to_float64() : 0.0;
         float64 dim_spacing = coordset.has_child("spacing") ?
-            coordset["spacing"]["d"+csys_axis].value() : 1.0;
-        index_t dim_len = coordset["dims"][logical_axis].value();
+            coordset["spacing"]["d"+csys_axis].to_float64() : 1.0;
+        index_t dim_len = coordset["dims"][logical_axis].to_int64();
 
         Node &dst_cvals_node = dest["values"][csys_axis];
         dst_cvals_node.set(DataType(float_type.id(), dim_len));
@@ -744,31 +717,17 @@ convert_coordset_to_explicit(const std::string &base_type,
     dest.reset();
     dest["type"].set("explicit");
 
-    DataType float_type;
-    if(is_base_rectilinear)
-    {
-        std::vector<std::string> float_paths(1, "values");
-        float_type.set(find_widest_type(coordset, float_paths,
-            blueprint::mesh::default_float_type));
-    }
-    else if(is_base_uniform)
-    {
-        std::vector<std::string> float_paths;
-        float_paths.push_back("origin");
-        float_paths.push_back("spacing");
-        float_type.set(find_widest_type(coordset, float_paths,
-            blueprint::mesh::default_float_type));
-    }
+    DataType float_type = find_widest_dtype(coordset, blueprint::mesh::default_float_type);
 
     std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
     const std::vector<std::string> &logical_axes = blueprint::mesh::logical_axes;
-	
+
     index_t dim_lens[3] = { 0,0,0 } , coords_len = 1;
     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
     {
         dim_lens[i] = is_base_rectilinear ?
             coordset["values"][csys_axes[i]].dtype().number_of_elements() :
-            coordset["dims"][logical_axes[i]].value();
+            coordset["dims"][logical_axes[i]].to_int64();
         coords_len *= dim_lens[i];
     }
 
@@ -784,9 +743,9 @@ convert_coordset_to_explicit(const std::string &base_type,
         // NOTE: The following values are specific to the
         // uniform transform case.
         float64 dim_origin = coordset.has_child("origin") ?
-            coordset["origin"][csys_axis].value() : 0.0;
+            coordset["origin"][csys_axis].to_float64() : 0.0;
         float64 dim_spacing = coordset.has_child("spacing") ?
-            coordset["spacing"]["d"+csys_axis].value() : 1.0;
+            coordset["spacing"]["d"+csys_axis].to_float64() : 1.0;
 
         index_t dim_block_size = 1, dim_block_count = 1;
         for(index_t j = 0; j < (index_t)csys_axes.size(); j++)
@@ -890,12 +849,7 @@ convert_topology_to_structured(const std::string &base_type,
 
     // TODO(JRC): In this case, should we reach back into the coordset
     // and use its types to inform those of the topology?
-    DataType int_type;
-    {
-        std::vector<std::string> int_paths(1, "origin");
-        int_type.set(find_widest_type(topo, int_paths,
-            blueprint::mesh::default_int_types));
-    }
+    DataType int_type = find_widest_dtype(topo, blueprint::mesh::default_int_types);
 
     std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
     const std::vector<std::string> &logical_axes = blueprint::mesh::logical_axes;
@@ -903,7 +857,7 @@ convert_topology_to_structured(const std::string &base_type,
     {
         Node src_dlen_node;
         src_dlen_node.set(is_base_uniform ?
-            coordset["dims"][logical_axes[i]].value() :
+            coordset["dims"][logical_axes[i]].to_int64() :
             coordset["values"][csys_axes[i]].dtype().number_of_elements());
         // NOTE: The number of elements in the topology is one less
         // than the number of points along each dimension.
@@ -952,21 +906,7 @@ convert_topology_to_unstructured(const std::string &base_type,
 
     // TODO(JRC): In this case, should we reach back into the coordset
     // and use its types to inform those of the topology?
-    DataType int_type;
-    if(is_base_structured)
-    {
-        std::vector<std::string> int_paths;
-        int_paths.push_back("elements/dims");
-        int_paths.push_back("elements/origin");
-        int_type.set(find_widest_type(topo, int_paths,
-            blueprint::mesh::default_int_types));
-    }
-    else
-    {
-        std::vector<std::string> int_paths(1, "origin");
-        int_type.set(find_widest_type(topo, int_paths,
-            blueprint::mesh::default_int_types));
-    }
+    DataType int_type = find_widest_dtype(topo, blueprint::mesh::default_int_types);
 
     std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
     dest["elements/shape"].set(
@@ -2383,12 +2323,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 {
     dest.reset();
 
-    DataType int_type;
-    {
-        std::vector<std::string> int_paths(1, "elements/connectivity");
-        int_type.set(find_widest_type(topo, int_paths,
-            blueprint::mesh::default_int_types));
-    }
+    DataType int_type = find_widest_dtype(topo, blueprint::mesh::default_int_types);
 
     const std::string topo_shape_type = topo["elements/shape"].as_string();
     // TODO: Given if statment below this for loop, 
@@ -2470,12 +2405,7 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
 {
     dest.reset();
 
-    DataType int_type;
-    {
-        std::vector<std::string> int_paths(1, "elements/connectivity");
-        int_type.set(find_widest_type(topo, int_paths,
-            blueprint::mesh::default_int_types));
-    }
+    DataType int_type = find_widest_dtype(topo, blueprint::mesh::default_int_types);
 
     const Node &topo_conn = topo["elements/connectivity"];
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
