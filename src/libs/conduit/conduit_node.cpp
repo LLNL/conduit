@@ -7594,17 +7594,18 @@ Node::compact_to(Node &n_dest) const
 {
     n_dest.reset();
     index_t c_size = total_bytes_compact();
-    // zero-bytes == empty node, avoid allocation + keep empty
+
+    // avoid allocation for zero-bytes cases
     if(c_size > 0)
     {
-        m_schema->compact_to(*n_dest.schema_ptr());
         n_dest.allocate(c_size);
-    
-        uint8 *n_dest_data = (uint8*)n_dest.m_data;
-        compact_to(n_dest_data,0);
-        // need node structure
-        walk_schema(&n_dest,n_dest.m_schema,n_dest_data);
     }
+
+    m_schema->compact_to(*n_dest.schema_ptr());
+    uint8 *n_dest_data = (uint8*)n_dest.m_data;
+    compact_to(n_dest_data,0);
+    // need node structure
+    walk_schema(&n_dest,n_dest.m_schema,n_dest_data);
 }
 
 //-----------------------------------------------------------------------------
