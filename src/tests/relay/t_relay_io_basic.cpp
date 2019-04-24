@@ -176,3 +176,9 @@ TEST(conduit_relay_io_basic, identify_protocol)
     EXPECT_EQ(protocol,"adios");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_basic, save_empty)
+{
+    Node n;
+    io::save(n, "test_conduit_relay_io_save_empty.conduit_bin");
+}
