@@ -290,6 +290,81 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(n['a'][1], 2)
         self.assertEqual(n['a'][2], 3)
 
+    def test_compact_to(self):
+        n = Node()
+        n['a'] = 1
+        n['b'] = 2
+        n['c'] = 3
+        ni = n.info()
+        self.assertEqual(ni["mem_spaces"].number_of_children(), 3)
+        
+        n2 = Node()
+        n.compact_to(n2)
+        ni = n2.info()
+        print(ni)
+        self.assertEqual(ni["mem_spaces"].number_of_children(), 1)
+
+    def test_update(self):
+        n = Node()
+        data = array(range(10), dtype='float64')
+        n["data"].set_external(data)
+        
+        print(n)
+        
+        n2 = Node()
+        n2.update(n)
+        print(n2)
+        self.assertEqual(n2["data"][0],0)
+        
+        n3 = Node()
+        n3.update_external(n)
+        data[0] = 10
+        print(n3)
+        self.assertEqual(n3["data"][0],10)
+        
+        n4 = Node()
+        n4["data"] = 10
+        n4.update_compatible(n)
+        print(n4)
+        self.assertEqual(n4["data"],10)
+
+
+    def test_reset(self):
+        n = Node()
+        data = array(range(10), dtype='float64')
+        n["data"].set_external(data)
+        
+        print(n)
+        
+        n.reset()
+        self.assertEqual(n.number_of_children(), 0)
+
+    def test_child_rename(self):
+        a_val = uint32(10)
+        b_val = uint32(20)
+
+        n = Node()
+        with self.assertRaises(Exception):
+            n.rename_child('a','b')
+
+        n['a'] = a_val
+        n['b'] = b_val
+
+        with self.assertRaises(Exception):
+            n.rename_child('bad','good')
+
+        with self.assertRaises(Exception):
+            n.rename_child('b','a')
+
+        self.assertTrue(n['a'] == a_val)
+        self.assertTrue(n['b'] == b_val)
+        
+        n.rename_child('b','c')
+        
+        self.assertTrue(n['a'] == a_val)
+        self.assertTrue(n['c'] == b_val)
+
+
 if __name__ == '__main__':
     unittest.main()
 

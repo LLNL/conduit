@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -48,6 +48,8 @@
 #
 ###############################################################################
 
+add_subdirectory(staging)
+
 # install using and python examples
 install(DIRECTORY using-with-cmake using-with-make python
-        DESTINATION examples)
+        DESTINATION examples/conduit)

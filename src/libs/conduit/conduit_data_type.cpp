@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -315,6 +315,71 @@ DataType::c_long_long(index_t num_elements,
                     num_elements,offset,stride,element_bytes,endianness);
 }
 #endif
+
+/// unsigned integer arrays
+//---------------------------------------------------------------------------//
+DataType
+DataType::c_signed_char(index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    return DataType(CONDUIT_NATIVE_SIGNED_CHAR_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+}
+
+//---------------------------------------------------------------------------//
+DataType
+DataType::c_signed_short(index_t num_elements,
+                         index_t offset,
+                         index_t stride,
+                         index_t element_bytes,
+                         index_t endianness)
+{
+    return DataType(CONDUIT_NATIVE_SIGNED_SHORT_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+}
+
+//---------------------------------------------------------------------------//
+DataType 
+DataType::c_signed_int(index_t num_elements,
+                       index_t offset,
+                       index_t stride,
+                       index_t element_bytes,
+                       index_t endianness)
+{
+    return DataType(CONDUIT_NATIVE_SIGNED_INT_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+}
+
+//---------------------------------------------------------------------------//
+DataType
+DataType::c_signed_long(index_t num_elements,
+                        index_t offset,
+                        index_t stride,
+                        index_t element_bytes,
+                        index_t endianness)
+{
+    return DataType(CONDUIT_NATIVE_SIGNED_LONG_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+}
+
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+DataType
+DataType::c_signed_long_long(index_t num_elements,
+                             index_t offset,
+                             index_t stride,
+                             index_t element_bytes,
+                             index_t endianness)
+{
+    return DataType(CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+}
+#endif
+
+
 
 /// unsigned integer arrays
 //---------------------------------------------------------------------------//
@@ -797,6 +862,48 @@ DataType::is_long_long() const
 #endif
 }
 
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_signed_char() const
+{
+    return m_id == CONDUIT_NATIVE_SIGNED_CHAR_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_signed_short() const
+{
+    return m_id == CONDUIT_NATIVE_SIGNED_SHORT_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_signed_int() const
+{
+    return m_id == CONDUIT_NATIVE_SIGNED_INT_ID;
+}
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_signed_long() const
+{
+    return m_id == CONDUIT_NATIVE_SIGNED_LONG_ID;
+}
+
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_signed_long_long() const
+{
+#ifdef CONDUIT_HAS_LONG_LONG
+    return m_id == CONDUIT_NATIVE_SIGNED_LONG_LONG_ID;
+#else
+    return false;
+#endif
+}
+
+
 //---------------------------------------------------------------------------//
 bool
 DataType::is_unsigned_char() const
@@ -992,17 +1099,29 @@ DataType::id_to_name(index_t dtype_id)
 index_t 
 DataType::c_type_name_to_id(const std::string &dtype_name)
 {
-    if(dtype_name == "char")         
+    if(dtype_name == "char")
         return CONDUIT_NATIVE_CHAR_ID;
-    else if(dtype_name == "short")   
+    else if(dtype_name == "short")
         return CONDUIT_NATIVE_SHORT_ID;
-    else if(dtype_name == "int")    
+    else if(dtype_name == "int")
         return CONDUIT_NATIVE_INT_ID;
     else if(dtype_name == "long")
         return CONDUIT_NATIVE_LONG_ID;
 #ifdef CONDUIT_HAS_LONG_LONG
     else if(dtype_name == "long long")
         return CONDUIT_NATIVE_LONG_LONG_ID;
+#endif
+    else if(dtype_name == "signed char")
+        return CONDUIT_NATIVE_SIGNED_CHAR_ID;
+    else if(dtype_name == "signed short")
+        return CONDUIT_NATIVE_SIGNED_SHORT_ID;
+    else if(dtype_name == "signed int")
+        return CONDUIT_NATIVE_SIGNED_INT_ID;
+    else if(dtype_name == "signed long")
+        return CONDUIT_NATIVE_SIGNED_LONG_ID;
+#ifdef CONDUIT_HAS_LONG_LONG
+    else if(dtype_name == "signed long long")
+        return CONDUIT_NATIVE_SIGNED_LONG_LONG_ID;
 #endif
     else if(dtype_name == "unsigned char")
         return CONDUIT_NATIVE_UNSIGNED_CHAR_ID;

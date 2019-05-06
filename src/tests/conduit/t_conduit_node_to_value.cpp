@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -73,15 +73,21 @@ TEST(conduit_node_to_value, string_to_scalar)
     EXPECT_NEAR( n.to_float32(),127,0.0001);
     EXPECT_NEAR( n.to_float64(),127,0.0001);
 
+    EXPECT_EQ( n.to_char(),127);
+    EXPECT_EQ( n.to_short(),127);
+    EXPECT_EQ( n.to_int(),127);
+    EXPECT_EQ( n.to_long(),127);
+
+    EXPECT_EQ( n.to_signed_char(),127);
+    EXPECT_EQ( n.to_signed_short(),127);
+    EXPECT_EQ( n.to_signed_int(),127);
+    EXPECT_EQ( n.to_signed_long(),127);
+
     EXPECT_EQ( n.to_unsigned_char(),127);
     EXPECT_EQ( n.to_unsigned_short(),127);
     EXPECT_EQ( n.to_unsigned_int(),127);
     EXPECT_EQ( n.to_unsigned_long(),127);
 
-    EXPECT_EQ( n.to_char(),127);
-    EXPECT_EQ( n.to_short(),127);
-    EXPECT_EQ( n.to_int(),127);
-    EXPECT_EQ( n.to_long(),127);
     
     EXPECT_NEAR( n.to_float(),127,0.0001);
     EXPECT_NEAR( n.to_double(),127,0.0001);
@@ -500,6 +506,25 @@ TEST(conduit_node_to_value, data_type_to_scalar)
                     EXPECT_NEAR(to_node.as_float64(),127.0,1e-4);
                     break;
                 }
+                case DataType::CHAR8_STR_ID:
+                {
+                    EXPECT_EQ(to_node.to_json(),"127");
+                }
+                case DataType::EMPTY_ID:
+                {
+                    // no conversion to test
+                    break;
+                }
+                case DataType::LIST_ID:
+                {
+                    // no conversion to test
+                    break;
+                }
+                case DataType::OBJECT_ID:
+                {
+                    // no conversion to test
+                    break;
+                }
             }
         }
     }
@@ -599,6 +624,12 @@ TEST(conduit_node_set, get_from_empty)
     int    *int_ptr    = n.value();
     long   *long_ptr   = n.value();
 
+    signed char   *schar_ptr  = n.value();
+    signed short  *sshort_ptr = n.value();
+    signed int    *sint_ptr   = n.value();
+    signed long   *slong_ptr  = n.value();
+
+
     unsigned char   *uchar_ptr  = n.value();
     unsigned short  *ushort_ptr = n.value();
     unsigned int    *uint_ptr   = n.value();
@@ -612,6 +643,11 @@ TEST(conduit_node_set, get_from_empty)
     EXPECT_TRUE(int_ptr == NULL);
     EXPECT_TRUE(long_ptr == NULL);
 
+    EXPECT_TRUE(schar_ptr == NULL);
+    EXPECT_TRUE(sshort_ptr == NULL);
+    EXPECT_TRUE(sint_ptr == NULL);
+    EXPECT_TRUE(slong_ptr == NULL);
+
     EXPECT_TRUE(uchar_ptr == NULL);
     EXPECT_TRUE(ushort_ptr == NULL);
     EXPECT_TRUE(uint_ptr == NULL);
@@ -621,11 +657,16 @@ TEST(conduit_node_set, get_from_empty)
     EXPECT_TRUE(double_ptr == NULL);
     
     // c native types (scalars)
-    signed char  char_val  = n.value();
-    
+    char   char_val  = n.value();
     short  short_val = n.value();
     int    int_val   = n.value();
     long   long_val  = n.value();
+
+    signed char   schar_val  = n.value();
+    signed short  sshort_val = n.value();
+    signed int    sint_val   = n.value();
+    signed long   slong_val  = n.value();
+
 
     unsigned char   uchar_val  = n.value();
     unsigned short  ushort_val = n.value();
@@ -640,6 +681,10 @@ TEST(conduit_node_set, get_from_empty)
     EXPECT_EQ(int_val,0);
     EXPECT_EQ(long_val,0);
 
+    EXPECT_EQ(schar_val,0);
+    EXPECT_EQ(sshort_val,0);
+    EXPECT_EQ(sint_val,0);
+    EXPECT_EQ(slong_val,0);
 
     EXPECT_EQ(uchar_val,0);
     EXPECT_EQ(ushort_val,0);

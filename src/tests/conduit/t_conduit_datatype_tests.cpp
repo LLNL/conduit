@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -143,15 +143,15 @@ TEST(dtype_tests, c_types_value_print)
     
     DataType dt;
     
-    // signed ints
+    // ints
     dt = DataType::c_char();
     EXPECT_TRUE(dt.is_char());
     print_dt(dt);
-    
+
     dt = DataType::c_short();
     EXPECT_TRUE(dt.is_short());
     print_dt(dt);
-    
+
     dt = DataType::c_int();
     EXPECT_TRUE(dt.is_int());
     print_dt(dt);
@@ -166,6 +166,32 @@ TEST(dtype_tests, c_types_value_print)
     print_dt(dt);
 #else
     EXPECT_FALSE(dt.is_long_long());
+#endif
+
+    
+    // signed ints
+    dt = DataType::c_signed_char();
+    EXPECT_TRUE(dt.is_signed_char());
+    print_dt(dt);
+    
+    dt = DataType::c_signed_short();
+    EXPECT_TRUE(dt.is_signed_short());
+    print_dt(dt);
+    
+    dt = DataType::c_signed_int();
+    EXPECT_TRUE(dt.is_signed_int());
+    print_dt(dt);
+
+    dt = DataType::c_signed_long();
+    EXPECT_TRUE(dt.is_signed_long());
+    print_dt(dt);
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    dt = DataType::c_signed_long_long();
+    EXPECT_TRUE(dt.is_signed_long_long());
+    print_dt(dt);
+#else
+    EXPECT_FALSE(dt.is_signed_long_long());
 #endif
 
     // unsigned ints
@@ -473,6 +499,25 @@ TEST(dtype_tests,dtype_id_from_c_type_names)
     EXPECT_EQ(CONDUIT_NATIVE_LONG_LONG_ID,
               DataType::c_type_name_to_id("long long"));
 #endif
+
+
+    EXPECT_EQ(CONDUIT_NATIVE_SIGNED_CHAR_ID,
+              DataType::c_type_name_to_id("signed char"));
+
+    EXPECT_EQ(CONDUIT_NATIVE_SIGNED_SHORT_ID,
+              DataType::c_type_name_to_id("signed short"));
+
+    EXPECT_EQ(CONDUIT_NATIVE_SIGNED_INT_ID,
+              DataType::c_type_name_to_id("signed int"));
+
+    EXPECT_EQ(CONDUIT_NATIVE_SIGNED_LONG_ID,
+              DataType::c_type_name_to_id("signed long"));
+
+#if CONDUIT_HAS_LONG_LONG
+    EXPECT_EQ(CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
+              DataType::c_type_name_to_id("signed long long"));
+#endif
+
 
     EXPECT_EQ(CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
               DataType::c_type_name_to_id("unsigned char"));

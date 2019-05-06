@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -122,10 +122,10 @@ if(CONDUIT_HAS_LONG_LONG)
         if(NOT CONDUIT_INT8_TYPE)
             set(CONDUIT_USE_LONG_LONG 1)
             #
-            set(CONDUIT_INT8_TYPE   "conduit_long_long")
-            set(CONDUIT_UINT8_TYPE  "conduit_ulong_long")
+            set(CONDUIT_INT8_TYPE   "conduit_signed_long_long")
+            set(CONDUIT_UINT8_TYPE  "conduit_unsigned_long_long")
             #
-            set(CONDUIT_INT8_NATIVE_TYPE  "long long")
+            set(CONDUIT_INT8_NATIVE_TYPE  "signed long long")
             set(CONDUIT_UINT8_NATIVE_TYPE "unsigned long long")
             #
         endif()
@@ -133,12 +133,12 @@ if(CONDUIT_HAS_LONG_LONG)
         # native to conduit
         ####
         # check to see if the native type map has been made
-        if(NOT CONDUIT_NATIVE_LONG_LONG_TYPE)
+        if(NOT CONDUIT_NATIVE_SIGNED_LONG_LONG_ID)
             #
-            set(CONDUIT_NATIVE_LONG_LONG_ID          ${CONDUIT_INT8_ID})
+            set(CONDUIT_NATIVE_SIGNED_LONG_LONG_ID   ${CONDUIT_INT8_ID})
             set(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID ${CONDUIT_UINT8_ID})
             #
-            set(CONDUIT_NATIVE_LONG_LONG_TYPE          "conduit_int8")
+            set(CONDUIT_NATIVE_SIGNED_LONG_LONG_TYPE   "conduit_int8")
             set(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_TYPE "conduit_uint8")
         endif()
     elseif(${CONDUIT_BITSOF_LONG_LONG} EQUAL 16)
@@ -149,10 +149,10 @@ if(CONDUIT_HAS_LONG_LONG)
         if(NOT CONDUIT_INT16_TYPE)
             set(CONDUIT_USE_LONG_LONG 1)
             #
-            set(CONDUIT_INT16_TYPE   "conduit_long_long")
-            set(CONDUIT_UINT16_TYPE  "conduit_ulong_long")
+            set(CONDUIT_INT16_TYPE   "conduit_signed_long_long")
+            set(CONDUIT_UINT16_TYPE  "conduit_unsigned_long_long")
             #
-            set(CONDUIT_INT16_NATIVE_TYPE  "long long")
+            set(CONDUIT_INT16_NATIVE_TYPE  "signed long long")
             set(CONDUIT_UINT16_NATIVE_TYPE "unsigned long long")
             #
         endif()
@@ -160,12 +160,12 @@ if(CONDUIT_HAS_LONG_LONG)
         # native to conduit
         ####
         # check to see if the native type map has been made
-        if(NOT CONDUIT_NATIVE_LONG_LONG_TYPE)
+        if(NOT CONDUIT_NATIVE_SIGNED_LONG_LONG_ID)
             #
-            set(CONDUIT_NATIVE_LONG_LONG_ID          ${CONDUIT_INT16_ID})
+            set(CONDUIT_NATIVE_SIGNED_LONG_LONG_ID   ${CONDUIT_INT16_ID})
             set(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID ${CONDUIT_UINT16_ID})
             #
-            set(CONDUIT_NATIVE_LONG_LONG_ID          "conduit_int16")
+            set(CONDUIT_NATIVE_SIGNED_LONG_LONG_ID   "conduit_int16")
             set(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID "conduit_uint16")
         endif()
     elseif(${CONDUIT_BITSOF_LONG_LONG} EQUAL 32)
@@ -176,10 +176,10 @@ if(CONDUIT_HAS_LONG_LONG)
         if(NOT CONDUIT_INT32_TYPE)
             set(CONDUIT_USE_LONG_LONG 1)
             #
-            set(CONDUIT_INT32_TYPE   "conduit_long_long")
-            set(CONDUIT_UINT32_TYPE  "conduit_ulong_long")
+            set(CONDUIT_INT32_TYPE   "conduit_signed_long_long")
+            set(CONDUIT_UINT32_TYPE  "conduit_unsigned_long_long")
             #
-            set(CONDUIT_INT32_NATIVE_TYPE  "long long")
+            set(CONDUIT_INT32_NATIVE_TYPE  "signed long long")
             set(CONDUIT_UINT32_NATIVE_TYPE "unsigned long long")
             #
         endif()
@@ -187,12 +187,12 @@ if(CONDUIT_HAS_LONG_LONG)
         # native to conduit
         ####
         # check to see if the native type map has been made
-        if(NOT CONDUIT_NATIVE_LONG_LONG_TYPE)
+        if(NOT CONDUIT_NATIVE_SIGNED_LONG_LONG_ID)
             #
-            set(CONDUIT_NATIVE_LONG_LONG_ID          ${CONDUIT_INT32_ID})
+            set(CONDUIT_NATIVE_SIGNED_LONG_LONG_ID   ${CONDUIT_INT32_ID})
             set(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID ${CONDUIT_UINT32_ID})
             #
-            set(CONDUIT_NATIVE_LONG_LONG_TYPE          "conduit_int32")
+            set(CONDUIT_NATIVE_SIGNED_LONG_LONG_TYPE   "conduit_int32")
             set(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_TYPE "conduit_uint32")
         endif()
     elseif(${CONDUIT_BITSOF_LONG_LONG} EQUAL 64)
@@ -203,10 +203,10 @@ if(CONDUIT_HAS_LONG_LONG)
         if(NOT CONDUIT_INT64_TYPE)
             set(CONDUIT_USE_LONG_LONG 1)
             #
-            set(CONDUIT_INT64_TYPE   "conduit_long_long")
-            set(CONDUIT_UINT64_TYPE  "conduit_ulong_long")
+            set(CONDUIT_INT64_TYPE   "conduit_signed_long_long")
+            set(CONDUIT_UINT64_TYPE  "conduit_unsigned_long_long")
             #
-            set(CONDUIT_INT64_NATIVE_TYPE  "long long")
+            set(CONDUIT_INT64_NATIVE_TYPE  "signed long long")
             set(CONDUIT_UINT64_NATIVE_TYPE "unsigned long long")
             #
         endif()
@@ -214,12 +214,12 @@ if(CONDUIT_HAS_LONG_LONG)
         # native to conduit
         ####
         # check to see if the native type map has been made
-        if(NOT CONDUIT_NATIVE_LONG_LONG_TYPE)
+        if(NOT CONDUIT_NATIVE_SIGNED_LONG_LONG_TYPE)
             #
-            set(CONDUIT_NATIVE_LONG_LONG_ID          ${CONDUIT_INT64_ID})
+            set(CONDUIT_NATIVE_SIGNED_LONG_LONG_ID   ${CONDUIT_INT64_ID})
             set(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID ${CONDUIT_UINT64_ID})
             #
-            set(CONDUIT_NATIVE_LONG_LONG_TYPE          "conduit_int64")
+            set(CONDUIT_NATIVE_SIGNED_LONG_LONG_TYPE   "conduit_int64")
             set(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_TYPE "conduit_uint64")
         endif()
     endif()
@@ -238,21 +238,21 @@ if(${CONDUIT_BITSOF_LONG} EQUAL 8)
     if(NOT CONDUIT_INT8_TYPE)
         set(CONDUIT_USE_LONG 1)
         #
-        set(CONDUIT_INT8_TYPE   "conduit_long")
-        set(CONDUIT_UINT8_TYPE  "conduit_ulong")
+        set(CONDUIT_INT8_TYPE   "conduit_signed_long")
+        set(CONDUIT_UINT8_TYPE  "conduit_unsigned_long")
         #
-        set(CONDUIT_INT8_NATIVE_TYPE  "long")
+        set(CONDUIT_INT8_NATIVE_TYPE  "signed long")
         set(CONDUIT_UINT8_NATIVE_TYPE "unsigned long")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_LONG_TYPE)
-        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT8_ID})
+    if(NOT CONDUIT_NATIVE_SIGNED_LONG_TYPE)
+        set(CONDUIT_NATIVE_SIGNED_LONG_ID   ${CONDUIT_INT8_ID})
         set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT8_ID})
         #
-        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int8")
+        set(CONDUIT_NATIVE_SIGNED_LONG_TYPE   "conduit_int8")
         set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint8")
     endif()
 elseif(${CONDUIT_BITSOF_LONG} EQUAL 16)
@@ -263,22 +263,22 @@ elseif(${CONDUIT_BITSOF_LONG} EQUAL 16)
     if(NOT CONDUIT_INT16_TYPE)
         set(CONDUIT_USE_LONG 1)
         #
-        set(CONDUIT_INT16_TYPE   "conduit_long")
-        set(CONDUIT_UINT16_TYPE  "conduit_ulong")
+        set(CONDUIT_INT16_TYPE   "conduit_signed_long")
+        set(CONDUIT_UINT16_TYPE  "conduit_unsigned_long")
         #
-        set(CONDUIT_INT16_NATIVE_TYPE  "long")
+        set(CONDUIT_INT16_NATIVE_TYPE  "signed long")
         set(CONDUIT_UINT16_NATIVE_TYPE "unsigned long")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_LONG_TYPE)
         #
-        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT16_ID})
+        set(CONDUIT_NATIVE_SIGNED_LONG_ID   ${CONDUIT_INT16_ID})
         set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT16_ID})
         #
-        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int16")
+        set(CONDUIT_NATIVE_SIGNED_LONG_TYPE   "conduit_int16")
         set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint16")
     endif()
 elseif(${CONDUIT_BITSOF_LONG} EQUAL 32)
@@ -289,22 +289,22 @@ elseif(${CONDUIT_BITSOF_LONG} EQUAL 32)
     if(NOT CONDUIT_INT32_TYPE)
         set(CONDUIT_USE_LONG 1)
         #
-        set(CONDUIT_INT32_TYPE   "conduit_long")
-        set(CONDUIT_UINT32_TYPE  "conduit_ulong")
+        set(CONDUIT_INT32_TYPE   "conduit_signed_long")
+        set(CONDUIT_UINT32_TYPE  "conduit_unsigned_long")
         #
-        set(CONDUIT_INT32_NATIVE_TYPE  "long")
+        set(CONDUIT_INT32_NATIVE_TYPE  "signed long")
         set(CONDUIT_UINT32_NATIVE_TYPE "unsigned long")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_LONG_TYPE)
         #
-        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT32_ID})
+        set(CONDUIT_NATIVE_SIGNED_LONG_ID   ${CONDUIT_INT32_ID})
         set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT32_ID})
         #
-        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int32")
+        set(CONDUIT_NATIVE_SIGNED_LONG_TYPE   "conduit_int32")
         set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint32")
     endif()
 elseif(${CONDUIT_BITSOF_LONG} EQUAL 64)
@@ -315,22 +315,22 @@ elseif(${CONDUIT_BITSOF_LONG} EQUAL 64)
     if(NOT CONDUIT_INT64_TYPE)
         set(CONDUIT_USE_LONG 1)
         #
-        set(CONDUIT_INT64_TYPE   "conduit_long")
-        set(CONDUIT_UINT64_TYPE  "conduit_ulong")
+        set(CONDUIT_INT64_TYPE   "conduit_signed_long")
+        set(CONDUIT_UINT64_TYPE  "conduit_unsigned_long")
         #
-        set(CONDUIT_INT64_NATIVE_TYPE  "long")
+        set(CONDUIT_INT64_NATIVE_TYPE  "signed long")
         set(CONDUIT_UINT64_NATIVE_TYPE "unsigned long")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_LONG_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_LONG_TYPE)
         #
-        set(CONDUIT_NATIVE_LONG_ID          ${CONDUIT_INT64_ID})
+        set(CONDUIT_NATIVE_SIGNED_LONG_ID   ${CONDUIT_INT64_ID})
         set(CONDUIT_NATIVE_UNSIGNED_LONG_ID ${CONDUIT_UINT64_ID})
         #
-        set(CONDUIT_NATIVE_LONG_TYPE          "conduit_int64")
+        set(CONDUIT_NATIVE_SIGNED_LONG_TYPE   "conduit_int64")
         set(CONDUIT_NATIVE_UNSIGNED_LONG_TYPE "conduit_uint64")
     endif()
 endif()
@@ -351,19 +351,19 @@ if(${CONDUIT_BITSOF_INT} EQUAL 8)
         set(CONDUIT_INT8_TYPE   "conduit_int")
         set(CONDUIT_UINT8_TYPE  "conduit_uint")
         #
-        set(CONDUIT_INT8_NATIVE_TYPE  "int")
+        set(CONDUIT_INT8_NATIVE_TYPE  "signed int")
         set(CONDUIT_UINT8_NATIVE_TYPE "unsigned int")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_INT_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_INT_TYPE)
         #
-        set(CONDUIT_NATIVE_INT_ID          ${CONDUIT_INT8_ID})
+        set(CONDUIT_NATIVE_SIGNED_INT_ID   ${CONDUIT_INT8_ID})
         set(CONDUIT_NATIVE_UNSIGNED_INT_ID ${CONDUIT_UINT8_ID})
         #
-        set(CONDUIT_NATIVE_INT_TYPE          "conduit_int8")
+        set(CONDUIT_NATIVE_SIGNED_INT_TYPE   "conduit_int8")
         set(CONDUIT_NATIVE_UNSIGNED_INT_TYPE "conduit_uint8")
     endif()
 elseif(${CONDUIT_BITSOF_INT} EQUAL 16)
@@ -374,22 +374,22 @@ elseif(${CONDUIT_BITSOF_INT} EQUAL 16)
     if(NOT CONDUIT_INT16_TYPE)
         set(CONDUIT_USE_INT 1)
         #
-        set(CONDUIT_INT16_TYPE   "conduit_int")
-        set(CONDUIT_UINT16_TYPE  "conduit_uint")
+        set(CONDUIT_INT16_TYPE   "conduit_signed_int")
+        set(CONDUIT_UINT16_TYPE  "conduit_unsigned_int")
         #
-        set(CONDUIT_INT16_NATIVE_TYPE  "int")
+        set(CONDUIT_INT16_NATIVE_TYPE  "signed int")
         set(CONDUIT_UINT16_NATIVE_TYPE "unsigned int")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_INT_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_INT_TYPE)
         #
-        set(CONDUIT_NATIVE_INT_ID          ${CONDUIT_INT16_ID})
+        set(CONDUIT_NATIVE_SIGNED_INT_ID   ${CONDUIT_INT16_ID})
         set(CONDUIT_NATIVE_UNSIGNED_INT_ID ${CONDUIT_UINT16_ID})
         #
-        set(CONDUIT_NATIVE_INT_TYPE          "conduit_int16")
+        set(CONDUIT_NATIVE_SIGNED_INT_TYPE   "conduit_int16")
         set(CONDUIT_NATIVE_UNSIGNED_INT_TYPE "conduit_uint16")
     endif()
 elseif(${CONDUIT_BITSOF_INT} EQUAL 32)
@@ -400,22 +400,22 @@ elseif(${CONDUIT_BITSOF_INT} EQUAL 32)
     if(NOT CONDUIT_INT32_TYPE)
         set(CONDUIT_USE_INT 1)
         #
-        set(CONDUIT_INT32_TYPE   "conduit_int")
-        set(CONDUIT_UINT32_TYPE  "conduit_uint")
+        set(CONDUIT_INT32_TYPE   "conduit_signed_int")
+        set(CONDUIT_UINT32_TYPE  "conduit_unsigned_int")
         #
-        set(CONDUIT_INT32_NATIVE_TYPE  "int")
+        set(CONDUIT_INT32_NATIVE_TYPE  "signed int")
         set(CONDUIT_UINT32_NATIVE_TYPE "unsigned int")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_INT_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_INT_TYPE)
         #
-        set(CONDUIT_NATIVE_INT_ID          ${CONDUIT_INT32_ID})
+        set(CONDUIT_NATIVE_SIGNED_INT_ID   ${CONDUIT_INT32_ID})
         set(CONDUIT_NATIVE_UNSIGNED_INT_ID ${CONDUIT_UINT32_ID})
         #
-        set(CONDUIT_NATIVE_INT_TYPE          "conduit_int32")
+        set(CONDUIT_NATIVE_SIGNED_INT_TYPE   "conduit_int32")
         set(CONDUIT_NATIVE_UNSIGNED_INT_TYPE "conduit_uint32")
     endif()
 elseif(${CONDUIT_BITSOF_INT} EQUAL 64)
@@ -429,19 +429,19 @@ elseif(${CONDUIT_BITSOF_INT} EQUAL 64)
         set(CONDUIT_INT64_TYPE   "conduit_int")
         set(CONDUIT_UINT64_TYPE  "conduit_uint")
         #
-        set(CONDUIT_INT64_NATIVE_TYPE  "int")
+        set(CONDUIT_INT64_NATIVE_TYPE  "signed int")
         set(CONDUIT_UINT64_NATIVE_TYPE "unsigned int")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_INT_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_INT_TYPE)
         #
-        set(CONDUIT_NATIVE_INT_ID          ${CONDUIT_INT64_ID})
+        set(CONDUIT_NATIVE_SIGNED_INT_ID   ${CONDUIT_INT64_ID})
         set(CONDUIT_NATIVE_UNSIGNED_INT_ID ${CONDUIT_UINT64_ID})
         #
-        set(CONDUIT_NATIVE_INT_TYPE          "conduit_int64")
+        set(CONDUIT_NATIVE_SIGNED_INT_TYPE   "conduit_int64")
         set(CONDUIT_NATIVE_UNSIGNED_INT_TYPE "conduit_uint64")
     endif()
 endif()
@@ -460,22 +460,22 @@ if(${CONDUIT_BITSOF_SHORT} EQUAL 8)
     if(NOT CONDUIT_INT8_TYPE)
         set(CONDUIT_USE_SHORT 1)
         #
-        set(CONDUIT_INT8_TYPE   "conduit_short")
-        set(CONDUIT_UINT8_TYPE  "conduit_ushort")
+        set(CONDUIT_INT8_TYPE   "conduit_signed_short")
+        set(CONDUIT_UINT8_TYPE  "conduit_unsigned_short")
         #
-        set(CONDUIT_INT8_NATIVE_TYPE  "short")
+        set(CONDUIT_INT8_NATIVE_TYPE  "signed short")
         set(CONDUIT_UINT8_NATIVE_TYPE "unsigned short")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_SHORT_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_SHORT_TYPE)
         #
-        set(CONDUIT_NATIVE_SHORT_ID          ${CONDUIT_INT8_ID})
+        set(CONDUIT_NATIVE_SIGNED_SHORT_ID   ${CONDUIT_INT8_ID})
         set(CONDUIT_NATIVE_UNSIGNED_SHORT_ID ${CONDUIT_UINT8_ID})
         #
-        set(CONDUIT_NATIVE_SHORT_TYPE          "conduit_int8")
+        set(CONDUIT_NATIVE_SIGNED_SHORT_TYPE   "conduit_int8")
         set(CONDUIT_NATIVE_UNSIGNED_SHORT_TYPE "conduit_uint8")
     endif()
 elseif(${CONDUIT_BITSOF_SHORT} EQUAL 16)
@@ -486,22 +486,22 @@ elseif(${CONDUIT_BITSOF_SHORT} EQUAL 16)
     if(NOT CONDUIT_INT16_TYPE)
         set(CONDUIT_USE_SHORT 1)
         #
-        set(CONDUIT_INT16_TYPE   "conduit_short")
-        set(CONDUIT_UINT16_TYPE  "conduit_ushort")
+        set(CONDUIT_INT16_TYPE   "conduit_signed_short")
+        set(CONDUIT_UINT16_TYPE  "conduit_unsigned_short")
         #
-        set(CONDUIT_INT16_NATIVE_TYPE  "short")
+        set(CONDUIT_INT16_NATIVE_TYPE  "signed short")
         set(CONDUIT_UINT16_NATIVE_TYPE "unsigned short")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_SHORT_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_SHORT_TYPE)
         #
-        set(CONDUIT_NATIVE_SHORT_ID          ${CONDUIT_INT16_ID})
+        set(CONDUIT_NATIVE_SIGNED_SHORT_ID   ${CONDUIT_INT16_ID})
         set(CONDUIT_NATIVE_UNSIGNED_SHORT_ID ${CONDUIT_UINT16_ID})
         #
-        set(CONDUIT_NATIVE_SHORT_TYPE          "conduit_int16")
+        set(CONDUIT_NATIVE_SIGNED_SHORT_TYPE   "conduit_int16")
         set(CONDUIT_NATIVE_UNSIGNED_SHORT_TYPE "conduit_uint16")
     endif()
 elseif(${CONDUIT_BITSOF_SHORT} EQUAL 32)
@@ -512,22 +512,22 @@ elseif(${CONDUIT_BITSOF_SHORT} EQUAL 32)
     if(NOT CONDUIT_INT32_TYPE)
         set(CONDUIT_USE_SHORT 1)
         #
-        set(CONDUIT_INT32_TYPE   "conduit_short")
-        set(CONDUIT_UINT32_TYPE  "conduit_ushort")
+        set(CONDUIT_INT32_TYPE   "conduit_signed_short")
+        set(CONDUIT_UINT32_TYPE  "conduit_unsigned_short")
         #
-        set(CONDUIT_INT32_NATIVE_TYPE  "short")
+        set(CONDUIT_INT32_NATIVE_TYPE  "signed short")
         set(CONDUIT_UINT32_NATIVE_TYPE "unsigned short")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_SHORT_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_SHORT_TYPE)
         #
-        set(CONDUIT_NATIVE_SHORT_ID          ${CONDUIT_INT32_ID})
+        set(CONDUIT_NATIVE_SIGNED_SHORT_ID   ${CONDUIT_INT32_ID})
         set(CONDUIT_NATIVE_UNSIGNED_SHORT_ID ${CONDUIT_UINT32_ID})
         #
-        set(CONDUIT_NATIVE_SHORT_TYPE          "conduit_int32")
+        set(CONDUIT_NATIVE_SIGNED_SHORT_TYPE   "conduit_int32")
         set(CONDUIT_NATIVE_UNSIGNED_SHORT_TYPE "conduit_uint32")
     endif()
 elseif(${CONDUIT_BITSOF_SHORT} EQUAL 64)
@@ -538,22 +538,22 @@ elseif(${CONDUIT_BITSOF_SHORT} EQUAL 64)
     if(NOT CONDUIT_INT64_TYPE)
         set(CONDUIT_USE_SHORT 1)
         #
-        set(CONDUIT_INT64_TYPE   "conduit_short")
-        set(CONDUIT_UINT64_TYPE  "conduit_ushort")
+        set(CONDUIT_INT64_TYPE   "conduit_signed_short")
+        set(CONDUIT_UINT64_TYPE  "conduit_unsigned_short")
         #
-        set(CONDUIT_INT64_NATIVE_TYPE  "short")
+        set(CONDUIT_INT64_NATIVE_TYPE  "signed short")
         set(CONDUIT_UINT64_NATIVE_TYPE "unsigned short")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_INT_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_INT_TYPE)
         #
-        set(CONDUIT_NATIVE_SHORT__ID          ${CONDUIT_INT64_ID})
+        set(CONDUIT_NATIVE_SIGNED_SHORT_ID   ${CONDUIT_INT64_ID})
         set(CONDUIT_NATIVE_UNSIGNED_SHORT_ID ${CONDUIT_UINT64_ID})
         #
-        set(CONDUIT_NATIVE_SHORT_TYPE          "conduit_int64")
+        set(CONDUIT_NATIVE_SIGNED_SHORT_TYPE   "conduit_int64")
         set(CONDUIT_NATIVE_UNSIGNED_SHORT_TYPE "conduit_uint64")
     endif()
 endif()
@@ -572,22 +572,22 @@ if(${CONDUIT_BITSOF_CHAR} EQUAL 8)
     if(NOT CONDUIT_INT8_TYPE)
         set(CONDUIT_USE_CHAR 1)
         #
-        set(CONDUIT_INT8_TYPE   "conduit_byte")
-        set(CONDUIT_UINT8_TYPE  "conduit_ubyte")
+        set(CONDUIT_INT8_TYPE   "conduit_signed_char")
+        set(CONDUIT_UINT8_TYPE  "conduit_unsigned_char")
         #
-        set(CONDUIT_INT8_NATIVE_TYPE  "char")
+        set(CONDUIT_INT8_NATIVE_TYPE  "signed char")
         set(CONDUIT_UINT8_NATIVE_TYPE "unsigned char")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_CHAR_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_CHAR_TYPE)
         #
-        set(CONDUIT_NATIVE_CHAR_ID          ${CONDUIT_INT8_ID})
+        set(CONDUIT_NATIVE_SIGNED_CHAR_ID   ${CONDUIT_INT8_ID})
         set(CONDUIT_NATIVE_UNSIGNED_CHAR_ID ${CONDUIT_UINT8_ID})
         #
-        set(CONDUIT_NATIVE_CHAR_TYPE          "conduit_int8")
+        set(CONDUIT_NATIVE_SIGNED_CHAR_TYPE   "conduit_int8")
         set(CONDUIT_NATIVE_UNSIGNED_CHAR_TYPE "conduit_uint8")
     endif()
 elseif(${CONDUIT_BITSOF_SHORT} EQUAL 16)
@@ -598,22 +598,22 @@ elseif(${CONDUIT_BITSOF_SHORT} EQUAL 16)
     if(NOT CONDUIT_INT16_TYPE)
         set(CONDUIT_USE_CHAR 1)
         #
-        set(CONDUIT_INT16_TYPE   "conduit_byte")
-        set(CONDUIT_UINT16_TYPE  "conduit_ubyte")
+        set(CONDUIT_INT16_TYPE   "conduit_signed_char")
+        set(CONDUIT_UINT16_TYPE  "conduit_unsigned_char")
         #
-        set(CONDUIT_INT16_NATIVE_TYPE  "char")
+        set(CONDUIT_INT16_NATIVE_TYPE  "signed char")
         set(CONDUIT_UINT16_NATIVE_TYPE "unsigned char")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_CHAR_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_CHAR_TYPE)
         #
-        set(CONDUIT_NATIVE_CHAR_ID          ${CONDUIT_INT16_ID})
+        set(CONDUIT_NATIVE_SIGNED_CHAR_ID   ${CONDUIT_INT16_ID})
         set(CONDUIT_NATIVE_UNSIGNED_CHAR_ID ${CONDUIT_UINT16_ID})
         #
-        set(CONDUIT_NATIVE_CHAR_TYPE          "conduit_int16")
+        set(CONDUIT_NATIVE_SIGNED_CHAR_TYPE   "conduit_int16")
         set(CONDUIT_NATIVE_UNSIGNED_CHAR_TYPE "conduit_uint16")
     endif()
 elseif(${CONDUIT_BITSOF_SHORT} EQUAL 32)
@@ -624,22 +624,22 @@ elseif(${CONDUIT_BITSOF_SHORT} EQUAL 32)
     if(NOT CONDUIT_INT32_TYPE)
         set(CONDUIT_USE_CHAR 1)
         #
-        set(CONDUIT_INT32_TYPE   "conduit_byte")
-        set(CONDUIT_UINT32_TYPE  "conduit_ubyte")
+        set(CONDUIT_INT32_TYPE   "conduit_signed_char")
+        set(CONDUIT_UINT32_TYPE  "conduit_unsigned_char")
         #
-        set(CONDUIT_INT32_NATIVE_TYPE  "char")
+        set(CONDUIT_INT32_NATIVE_TYPE  "signed char")
         set(CONDUIT_UINT32_NATIVE_TYPE "unsigned char")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_CHAR_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_CHAR_TYPE)
         #
-        set(CONDUIT_NATIVE_CHAR_ID          ${CONDUIT_INT32_ID})
+        set(CONDUIT_NATIVE_SIGNED_CHAR_ID   ${CONDUIT_INT32_ID})
         set(CONDUIT_NATIVE_UNSIGNED_CHAR_ID ${CONDUIT_UINT32_ID})
         #
-        set(CONDUIT_NATIVE_CHAR_TYPE          "conduit_int32")
+        set(CONDUIT_NATIVE_SIGNED_CHAR_TYPE   "conduit_int32")
         set(CONDUIT_NATIVE_UNSIGNED_CHAR_TYPE "conduit_uint32")
     endif()
 elseif(${CONDUIT_BITSOF_SHORT} EQUAL 64)
@@ -650,22 +650,22 @@ elseif(${CONDUIT_BITSOF_SHORT} EQUAL 64)
     if(NOT CONDUIT_INT64_TYPE)
         set(CONDUIT_USE_CHAR 1)
         #
-        set(CONDUIT_INT64_TYPE   "conduit_byte")
-        set(CONDUIT_UINT64_TYPE  "conduit_ubyte")
+        set(CONDUIT_INT64_TYPE   "conduit_signed_char")
+        set(CONDUIT_UINT64_TYPE  "conduit_unsigned_char")
         #
-        set(CONDUIT_INT64_NATIVE_TYPE  "char")
+        set(CONDUIT_INT64_NATIVE_TYPE  "signed_char")
         set(CONDUIT_UINT64_NATIVE_TYPE "unsigned char")
     endif()
     ####
     # native to conduit
     ####
     # check to see if the native type map has been made
-    if(NOT CONDUIT_NATIVE_CHAR_TYPE)
+    if(NOT CONDUIT_NATIVE_SIGNED_CHAR_TYPE)
         #
-        set(CONDUIT_NATIVE_CHAR_ID          ${CONDUIT_INT64_ID})
+        set(CONDUIT_NATIVE_SIGNED_CHAR_ID   ${CONDUIT_INT64_ID})
         set(CONDUIT_NATIVE_UNSIGNED_CHAR_ID ${CONDUIT_UINT64_ID})
         #
-        set(CONDUIT_NATIVE_CHAR_TYPE          "conduit_int64")
+        set(CONDUIT_NATIVE_SIGNED_CHAR_TYPE   "conduit_int64")
         set(CONDUIT_NATIVE_UNSIGNED_CHAR_TYPE "conduit_uint64")
     endif()
 endif()

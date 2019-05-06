@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -49,7 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit_relay.hpp"
-#include "conduit_relay_silo.hpp"
+#include "conduit_relay_io_silo.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 

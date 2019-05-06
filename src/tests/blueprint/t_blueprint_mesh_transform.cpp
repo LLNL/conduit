@@ -71,10 +71,16 @@ using namespace conduit::utils;
 static const std::string COORD_TYPE_LIST[3] = {"uniform", "rectilinear", "explicit"};
 static const std::vector<std::string> COORD_TYPES(COORD_TYPE_LIST,
     COORD_TYPE_LIST + sizeof(COORD_TYPE_LIST) / sizeof(COORD_TYPE_LIST[0]));
-
 static const std::string TOPO_TYPE_LIST[5] = {"points", "uniform", "rectilinear", "structured", "unstructured"};
 static const std::vector<std::string> TOPO_TYPES(TOPO_TYPE_LIST,
     TOPO_TYPE_LIST + sizeof(TOPO_TYPE_LIST) / sizeof(TOPO_TYPE_LIST[0]));
+
+static const DataType INT_DTYPE_LIST[2] = {conduit::DataType::int32(0), conduit::DataType::int64(0)};
+static const std::vector<DataType> INT_DTYPES(INT_DTYPE_LIST,
+    INT_DTYPE_LIST + sizeof(INT_DTYPE_LIST) / sizeof(INT_DTYPE_LIST[0]));
+static const DataType FLOAT_DTYPE_LIST[2] = {conduit::DataType::float32(0), conduit::DataType::float64(0)};
+static const std::vector<DataType> FLOAT_DTYPES(FLOAT_DTYPE_LIST,
+    FLOAT_DTYPE_LIST + sizeof(FLOAT_DTYPE_LIST) / sizeof(FLOAT_DTYPE_LIST[0]));
 
 typedef void (*XformCoordsFun)(const Node&, Node&);
 typedef void (*XformTopoFun)(const Node&, Node&, Node&);
@@ -91,12 +97,69 @@ std::string get_braid_type(const std::string &mesh_type)
         blueprint::mesh::examples::braid(mesh_type,1,1,1,mesh);
         braid_type = mesh_type;
     }
-    catch(conduit::Error &e)
+    catch(conduit::Error &) // actual exception is unused
     {
         braid_type = "hexs";
     }
 
     return braid_type;
+}
+
+// TODO(JRC): It would be useful to eventually have this type of procedure
+// available as an abstracted iteration strategy within Conduit (e.g. leaf iterate).
+void set_node_data(conduit::Node &node, const conduit::DataType &dtype)
+{
+    std::vector<conduit::Node*> node_bag(1, &node);
+    while(!node_bag.empty())
+    {
+        conduit::Node* curr_node = node_bag.back(); node_bag.pop_back();
+        conduit::DataType curr_dtype = curr_node->dtype();
+
+        bool are_types_equivalent =
+            (curr_dtype.is_floating_point() && dtype.is_floating_point()) ||
+            (curr_dtype.is_integer() && dtype.is_integer()) ||
+            (curr_dtype.is_string() && dtype.is_string());
+        if(curr_dtype.is_object() || curr_dtype.is_list())
+        {
+            conduit::NodeIterator curr_node_it = curr_node->children();
+            while(curr_node_it.has_next()) { node_bag.push_back(&curr_node_it.next()); }
+        }
+        else if(are_types_equivalent)
+        {
+            conduit::Node temp_node;
+            curr_node->to_data_type(dtype.id(), temp_node);
+            curr_node->set(temp_node);
+        }
+    }
+}
+
+
+bool verify_node_data(conduit::Node &node, const conduit::DataType &dtype)
+{
+    bool is_data_valid = true;
+
+    std::vector<conduit::Node*> node_bag(1, &node);
+    while(!node_bag.empty())
+    {
+        conduit::Node* curr_node = node_bag.back(); node_bag.pop_back();
+        conduit::DataType curr_dtype = curr_node->dtype();
+
+        bool are_types_equivalent =
+            (curr_dtype.is_floating_point() && dtype.is_floating_point()) ||
+            (curr_dtype.is_integer() && dtype.is_integer()) ||
+            (curr_dtype.is_string() && dtype.is_string());
+        if(curr_dtype.is_object() || curr_dtype.is_list())
+        {
+            conduit::NodeIterator curr_node_it = curr_node->children();
+            while(curr_node_it.has_next()) { node_bag.push_back(&curr_node_it.next()); }
+        }
+        else if(are_types_equivalent)
+        {
+            is_data_valid &= curr_dtype.id() == dtype.id();
+        }
+    }
+
+    return is_data_valid;
 }
 
 /// Transform Tests ///
@@ -144,6 +207,55 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
 
             EXPECT_TRUE(verify_new_coordset(xcoordset, info));
             EXPECT_FALSE(jcoordset.diff(xcoordset, info));
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
+{
+    XformCoordsFun xform_funs[3][3] = {
+        {NULL, blueprint::mesh::coordset::uniform::to_rectilinear, blueprint::mesh::coordset::uniform::to_explicit},
+        {NULL, NULL, blueprint::mesh::coordset::rectilinear::to_explicit},
+        {NULL, NULL, NULL}};
+
+    for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
+    {
+        const std::string icoordset_type = COORD_TYPES[xi];
+        const std::string icoordset_braid = get_braid_type(icoordset_type);
+
+        conduit::Node imesh;
+        blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
+        const conduit::Node &icoordset = imesh["coordsets"].child(0);
+
+        for(index_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
+        {
+            conduit::Node jcoordset;
+            const std::string jcoordset_type = COORD_TYPES[xj];
+            XformCoordsFun to_new_coordset = xform_funs[xi][xj];
+
+            for(index_t ii = 0; ii < INT_DTYPES.size(); ii++)
+            {
+                for(index_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
+                {
+                    // NOTE: The following lines are for debugging purposes only.
+                    std::cout << "Testing " <<
+                        "int-" << 32 * (ii + 1) << "/float-" << 32 * (fi + 1) << " coordset " <<
+                        icoordset_type << " -> " << jcoordset_type << "..." << std::endl;
+
+                    conduit::Node icoordset = imesh["coordsets"].child(0);
+                    conduit::Node jcoordset;
+
+                    set_node_data(icoordset, INT_DTYPES[ii]);
+                    set_node_data(icoordset, FLOAT_DTYPES[fi]);
+
+                    to_new_coordset(icoordset, jcoordset);
+
+                    EXPECT_TRUE(verify_node_data(jcoordset, INT_DTYPES[ii]));
+                    EXPECT_TRUE(verify_node_data(jcoordset, FLOAT_DTYPES[fi]));
+                }
+            }
         }
     }
 }
@@ -221,6 +333,70 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
 
             imesh["topologies"].remove("test");
             imesh["coordsets"].remove("test");
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
+{
+    XformTopoFun xform_funs[5][5] = {
+        {NULL, NULL, NULL, NULL, NULL},
+        {NULL, NULL, blueprint::mesh::topology::uniform::to_rectilinear, blueprint::mesh::topology::uniform::to_structured, blueprint::mesh::topology::uniform::to_unstructured},
+        {NULL, NULL, NULL, blueprint::mesh::topology::rectilinear::to_structured, blueprint::mesh::topology::rectilinear::to_unstructured},
+        {NULL, NULL, NULL, NULL, blueprint::mesh::topology::structured::to_unstructured},
+        {NULL, NULL, NULL, NULL, NULL}};
+
+    // NOTE(JRC): We skip the "points" topology during this general check
+    // because its rules are peculiar and specific.
+    for(index_t xi = 1; xi < TOPO_TYPES.size(); xi++)
+    {
+        const std::string itopology_type = TOPO_TYPES[xi];
+        const std::string itopology_braid = get_braid_type(itopology_type);
+
+        // NOTE(JRC): For the data type checks, we're only interested in the parts
+        // of the subtree that are being transformed; we kull all other data.
+        conduit::Node ibase;
+        blueprint::mesh::examples::braid(itopology_braid,2,3,4,ibase);
+        {
+            conduit::Node temp;
+            temp["coordsets"].set(ibase["coordsets"]);
+            temp["topologies"].set(ibase["topologies"]);
+            ibase.set(temp);
+        }
+
+        for(index_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
+        {
+            const std::string jtopology_type = TOPO_TYPES[xj];
+            XformTopoFun to_new_topology = xform_funs[xi][xj];
+
+            for(index_t ii = 0; ii < INT_DTYPES.size(); ii++)
+            {
+                for(index_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
+                {
+                    // NOTE: The following lines are for debugging purposes only.
+                    std::cout << "Testing " <<
+                        "int-" << 32 * (ii + 1) << "/float-" << 32 * (fi + 1) << " topology " <<
+                        itopology_type << " -> " << jtopology_type << "..." << std::endl;
+
+                    conduit::Node imesh = ibase;
+                    conduit::Node &itopology = imesh["topologies"].child(0);
+                    conduit::Node &icoordset = imesh["coordsets"].child(0);
+
+                    conduit::Node jmesh;
+                    conduit::Node jtopology = jmesh["topologies"][itopology.name()];
+                    conduit::Node jcoordset = jmesh["coordsets"][icoordset.name()];
+
+                    set_node_data(imesh, INT_DTYPES[ii]);
+                    set_node_data(imesh, FLOAT_DTYPES[fi]);
+
+                    to_new_topology(itopology, jtopology, jcoordset);
+
+                    EXPECT_TRUE(verify_node_data(jmesh, INT_DTYPES[ii]));
+                    EXPECT_TRUE(verify_node_data(jmesh, FLOAT_DTYPES[fi]));
+                }
+            }
         }
     }
 }

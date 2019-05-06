@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -50,29 +50,59 @@
 #  cd build
 #  cmake -DCONDUIT_DIR={conduit install path} ../
 #  make
-#  ./example
+#  ./conduit_example
 #
 #
-# Note:
-#  If you use features that leverage external third party libraries 
-#  (ex: relay hdf5 features), the imported CMake targets will handle linking 
-#  these libraries, however you may need to add additional include
-#  include directories to use their headers. 
+# If run in sub directory of a conduit install, 
+# CONDUIT_DIR will default to ../../..
 # 
+#  mkdir build
+#  cd build
+#  cmake ..
+#  make
+#  ./conduit_example
+#
 ###############################################################################
 
 cmake_minimum_required(VERSION 3.0)
 
 project(using_with_cmake)
 
-include("FindConduit.cmake")
+#
+# Provide default CONDUIT_DIR that works in a conduit install
+#
+if(NOT CONDUIT_DIR)
+    set(CONDUIT_DIR "../../..")
+endif()
 
-# setup the conduit include path
-include_directories(${CONDUIT_INCLUDE_DIRS})
+#
+# Check for valid conduit install
+#
+
+# if given relative path, resolve
+get_filename_component(CONDUIT_DIR ${CONDUIT_DIR} ABSOLUTE)
+if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/ConduitConfig.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/ConduitConfig.cmake)")
+endif()
+
+#
+# Use CMake's find_package to import conduit's targets
+#
+find_package(Conduit REQUIRED
+             NO_DEFAULT_PATH 
+             PATHS ${CONDUIT_DIR}/lib/cmake)
 
 # create our example 
-add_executable(example example.cpp)
+add_executable(conduit_example conduit_example.cpp)
 
 # link to conduit targets
-target_link_libraries(example conduit conduit_relay conduit_blueprint)
+target_link_libraries(conduit_example conduit::conduit)
+
+# if you are using conduit's python CAPI capsule interface
+# target_link_libraries(conduit_example conduit::conduit_python)
+
+
+# if you are using conduit's mpi features
+# target_link_libraries(conduit_example conduit::conduit_mpi)
+
 

@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -96,6 +96,28 @@ else()
     set(CONDUIT_USE_CXX11 1)
     message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == 1)")
 endif()
+
+################################
+# Examples and Utils Flags
+################################
+if(ENABLE_EXAMPLES)
+    message(STATUS "Building examples (ENABLE_EXAMPLES == ON)")
+else()
+    message(STATUS "Skipping examples (ENABLE_EXAMPLES == OFF)")
+endif()
+
+if(ENABLE_UTILS)
+    message(STATUS "Building utilities (ENABLE_UTILS == ON)")
+else()
+    message(STATUS "Skipping utilities (ENABLE_UTILS == OFF)")
+endif()
+
+
+#######################################
+# Global Helpers (clear every config)
+#######################################
+set(CONDUIT_INSTALL_PREFIX CACHE STRING "" FORCE)
+set(CONDUIT_MAKE_EXTRA_LIBS CACHE STRING "" FORCE)
 
 ################################
 # Coverage Flags

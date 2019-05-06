@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -52,6 +52,7 @@
 #define CONDUIT_BITWIDTH_STYLE_TYPES_H
 
 #include "conduit_config.h"
+#include <climits>
 
 //-----------------------------------------------------------------------------
 // byte len of native types
@@ -90,27 +91,34 @@
 #cmakedefine CONDUIT_USE_LONG_DOUBLE    @CONDUIT_USE_LONG_DOUBLE@
 
 //-----------------------------------------------------------------------------
-// native types
+// unsigned native types
 //-----------------------------------------------------------------------------
 
-typedef signed char         conduit_byte;
-typedef unsigned char       conduit_ubyte;
-typedef unsigned short      conduit_ushort;
-typedef unsigned int        conduit_uint;
-typedef unsigned long       conduit_ulong;
+typedef unsigned char       conduit_unsigned_char;
+typedef unsigned short      conduit_unsigned_short;
+typedef unsigned int        conduit_unsigned_int;
+typedef unsigned long       conduit_unsigned_long;
 
 #ifdef CONDUIT_HAS_LONG_LONG
-typedef unsigned long long  conduit_ulong_long;
+typedef unsigned long long  conduit_unsigned_long_long;
 #endif
 
-typedef char                conduit_char;
-typedef short               conduit_short;
-typedef int                 conduit_int;
-typedef long                conduit_long;
+//-----------------------------------------------------------------------------
+// signed native types
+//-----------------------------------------------------------------------------
+
+typedef signed char         conduit_signed_char;
+typedef signed short        conduit_signed_short;
+typedef signed int          conduit_signed_int;
+typedef signed long         conduit_signed_long;
 
 #ifdef CONDUIT_HAS_LONG_LONG
-typedef long long           conduit_long_long;
+typedef signed long long    conduit_signed_long_long;
 #endif
+
+//-----------------------------------------------------------------------------
+// floating point native types
+//-----------------------------------------------------------------------------
 
 typedef float               conduit_float;
 typedef double              conduit_double;
@@ -121,6 +129,57 @@ typedef double              conduit_double;
 #ifdef CONDUIT_HAS_LONG_DOUBLE
         typedef long double conduit_long_double;
 #endif
+#endif
+
+// char can be signed or unsigned
+#if (CHAR_MIN==0)
+#define CONDUIT_CHAR_IS_UNSIGNED
+#else
+#define CONDUIT_CHAR_IS_SIGNED
+#endif
+
+// per standard, the rest of types w/o
+// signed-ness should never be unsigned
+
+#if (SHRT_MIN==0)
+#define CONDUIT_SHORT_IS_UNSIGNED
+#else
+#define CONDUIT_SHORT_IS_SIGNED
+#endif
+
+#if (INT_MIN==0)
+#define CONDUIT_INT_IS_UNSIGNED
+#else
+#define CONDUIT_INT_IS_SIGNED
+#endif
+
+#if (LONG_MIN==0)
+#define CONDUIT_LONG_IS_UNSIGNED
+#else
+#define CONDUIT_LONG_IS_SIGNED
+#endif
+
+#ifdef CONDUIT_HAS_LONG_LONG
+#if (LLONG_MIN==0)
+#define CONDUIT_LONG_LONG_IS_UNSIGNED
+#else
+#define CONDUIT_LONG_LONG_IS_SIGNED
+#endif
+#endif
+
+
+#if defined(CONDUIT_CHAR_IS_UNSIGNED)
+typedef conduit_unsigned_char conduit_char;
+#else
+typedef conduit_signed_char   conduit_char;
+#endif
+
+typedef conduit_signed_short  conduit_short;
+typedef conduit_signed_int    conduit_int;
+typedef conduit_signed_long   conduit_long;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+typedef conduit_signed_long_long  conduit_long_long;
 #endif
 
 /*-----------------------------------------------------------------------------
@@ -194,20 +253,20 @@ typedef @CONDUIT_FLOAT64_TYPE@ conduit_float64;
 //-----------------------------------------------------------------------------
 // -- c style signed integer type maps --
 //-----------------------------------------------------------------------------
-#define CONDUIT_NATIVE_CHAR  @CONDUIT_NATIVE_CHAR_TYPE@
-#define CONDUIT_NATIVE_SHORT @CONDUIT_NATIVE_SHORT_TYPE@
-#define CONDUIT_NATIVE_INT   @CONDUIT_NATIVE_INT_TYPE@
-#define CONDUIT_NATIVE_LONG  @CONDUIT_NATIVE_LONG_TYPE@
+#define CONDUIT_NATIVE_SIGNED_CHAR  @CONDUIT_NATIVE_SIGNED_CHAR_TYPE@
+#define CONDUIT_NATIVE_SIGNED_SHORT @CONDUIT_NATIVE_SIGNED_SHORT_TYPE@
+#define CONDUIT_NATIVE_SIGNED_INT   @CONDUIT_NATIVE_SIGNED_INT_TYPE@
+#define CONDUIT_NATIVE_SIGNED_LONG  @CONDUIT_NATIVE_SIGNED_LONG_TYPE@
 #if defined(CONDUIT_HAS_LONG_LONG)
-#define CONDUIT_NATIVE_LONG_LONG  @CONDUIT_NATIVE_LONG_LONG_TYPE@
+#define CONDUIT_NATIVE_SIGNED_LONG_LONG  @CONDUIT_NATIVE_SIGNED_LONG_LONG_TYPE@
 #endif
 
-#define CONDUIT_NATIVE_CHAR_ID  @CONDUIT_NATIVE_CHAR_ID@
-#define CONDUIT_NATIVE_SHORT_ID @CONDUIT_NATIVE_SHORT_ID@
-#define CONDUIT_NATIVE_INT_ID   @CONDUIT_NATIVE_INT_ID@
-#define CONDUIT_NATIVE_LONG_ID  @CONDUIT_NATIVE_LONG_ID@
+#define CONDUIT_NATIVE_SIGNED_CHAR_ID  @CONDUIT_NATIVE_SIGNED_CHAR_ID@
+#define CONDUIT_NATIVE_SIGNED_SHORT_ID @CONDUIT_NATIVE_SIGNED_SHORT_ID@
+#define CONDUIT_NATIVE_SIGNED_INT_ID   @CONDUIT_NATIVE_SIGNED_INT_ID@
+#define CONDUIT_NATIVE_SIGNED_LONG_ID  @CONDUIT_NATIVE_SIGNED_LONG_ID@
 #if defined(CONDUIT_HAS_LONG_LONG)
-#define CONDUIT_NATIVE_LONG_LONG_ID  @CONDUIT_NATIVE_LONG_LONG_ID@
+#define CONDUIT_NATIVE_SIGNED_LONG_LONG_ID  @CONDUIT_NATIVE_SIGNED_LONG_LONG_ID@
 #endif
 
 //-----------------------------------------------------------------------------
@@ -228,6 +287,36 @@ typedef @CONDUIT_FLOAT64_TYPE@ conduit_float64;
 #if defined(CONDUIT_HAS_LONG_LONG)
 #define CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID  @CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID@
 #endif
+
+//-----------------------------------------------------------------------------
+// -- c style unsigned integer type maps --
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_CHAR_IS_UNSIGNED)
+#define CONDUIT_NATIVE_CHAR  CONDUIT_NATIVE_UNSIGNED_CHAR
+#else
+#define CONDUIT_NATIVE_CHAR  CONDUIT_NATIVE_SIGNED_CHAR
+#endif
+
+#define CONDUIT_NATIVE_SHORT CONDUIT_NATIVE_SIGNED_SHORT
+#define CONDUIT_NATIVE_INT   CONDUIT_NATIVE_SIGNED_INT
+#define CONDUIT_NATIVE_LONG  CONDUIT_NATIVE_SIGNED_LONG
+#if defined(CONDUIT_HAS_LONG_LONG)
+#define CONDUIT_NATIVE_LONG_LONG  CONDUIT_NATIVE_SIGNED_LONG_LONG
+#endif
+
+#if defined(CONDUIT_CHAR_IS_UNSIGNED)
+#define CONDUIT_NATIVE_CHAR_ID  CONDUIT_NATIVE_UNSIGNED_CHAR_ID
+#else
+#define CONDUIT_NATIVE_CHAR_ID  CONDUIT_NATIVE_SIGNED_CHAR_ID
+#endif
+
+#define CONDUIT_NATIVE_SHORT_ID CONDUIT_NATIVE_SIGNED_SHORT_ID
+#define CONDUIT_NATIVE_INT_ID   CONDUIT_NATIVE_SIGNED_INT_ID
+#define CONDUIT_NATIVE_LONG_ID  CONDUIT_NATIVE_SIGNED_LONG_ID
+#if defined(CONDUIT_HAS_LONG_LONG)
+#define CONDUIT_NATIVE_LONG_LONG_ID  @CONDUIT_NATIVE_SIGNED_LONG_LONG_ID@
+#endif
+
 
 //-----------------------------------------------------------------------------
 // -- c style floating point type maps --
@@ -323,7 +412,7 @@ typedef conduit_index64_t conduit_index_t;
 // check that we have a mapping for all base native types to conduit types
 //
 
-// signed ints
+// native ints
 #ifndef CONDUIT_NATIVE_CHAR
 #error C-Style Types: no conduit type found that maps to char
 #endif
@@ -338,6 +427,35 @@ typedef conduit_index64_t conduit_index_t;
 
 #ifndef CONDUIT_NATIVE_LONG
 #error C-Style Types: no conduit type found that maps to long
+#endif
+
+#if defined(CONDUIT_HAS_LONG_LONG)
+#ifndef CONDUIT_NATIVE_LONG_LONG
+#error C-Style Types: no conduit type found that maps to long long
+#endif
+#endif
+
+// signed ints
+#ifndef CONDUIT_NATIVE_SIGNED_CHAR
+#error C-Style Types: no conduit type found that maps to signed char
+#endif
+
+#ifndef CONDUIT_NATIVE_SIGNED_SHORT
+#error C-Style Types: no conduit type found that maps to signed short
+#endif
+
+#ifndef CONDUIT_NATIVE_SIGNED_INT
+#error C-Style Types: no conduit type found that maps to signed int
+#endif
+
+#ifndef CONDUIT_NATIVE_SIGNED_LONG
+#error C-Style Types: no conduit type found that maps to signed long
+#endif
+
+#if defined(CONDUIT_HAS_LONG_LONG)
+#ifndef CONDUIT_NATIVE_SIGNED_LONG_LONG
+#error C-Style Types: no conduit type found that maps to signed long long
+#endif
 #endif
 
 // unsigned ints
@@ -355,6 +473,36 @@ typedef conduit_index64_t conduit_index_t;
 
 #ifndef CONDUIT_NATIVE_UNSIGNED_LONG
 #error C-Style Types: no conduit type found that maps to unsigned long
+#endif
+
+#if defined(CONDUIT_HAS_LONG_LONG)
+#ifndef CONDUIT_NATIVE_UNSIGNED_LONG_LONG
+#error C-Style Types: no conduit type found that maps to unsigned long long
+#endif
+#endif
+
+
+// native ints
+#ifndef CONDUIT_NATIVE_CHAR
+#error C-Style Types: no conduit type found that maps to char
+#endif
+
+#ifndef CONDUIT_NATIVE_SHORT
+#error C-Style Types: no conduit type found that maps to short
+#endif
+
+#ifndef CONDUIT_NATIVE_INT
+#error C-Style Types: no conduit type found that maps to int
+#endif
+
+#ifndef CONDUIT_NATIVE_LONG
+#error C-Style Types: no conduit type found that maps to long
+#endif
+
+#if defined(CONDUIT_HAS_LONG_LONG)
+#ifndef CONDUIT_NATIVE_LONG_LONG
+#error C-Style Types: no conduit type found that maps to long long
+#endif
 #endif
 
 // floating points numbers

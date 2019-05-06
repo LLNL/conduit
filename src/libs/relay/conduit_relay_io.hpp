@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -77,6 +77,23 @@ namespace relay
 namespace io
 {
 
+//-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how relay io was
+/// configured.
+//-----------------------------------------------------------------------------
+std::string CONDUIT_RELAY_API about();
+void        CONDUIT_RELAY_API about(conduit::Node &res);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API identify_protocol(const std::string &path,
+                                         std::string &io_type);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API initialize();
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API finalize();
+
 ///
 /// ``save`` works like a 'set' to the file.
 ///
@@ -117,6 +134,26 @@ void CONDUIT_RELAY_API save_merged(const Node &node,
 
 
 ///
+/// ``add_step`` adds a new time step of data to the file.
+///
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API add_step(const Node &node,
+                                const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API add_step(const Node &node,
+                                const std::string &path,
+                                const std::string &protocol);
+
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API add_step(const Node &node,
+                                const std::string &path,
+                                const std::string &protocol,
+                                const Node &options);
+
+///
 /// ``load`` works like a 'set', the node is reset and then populated
 ///
 
@@ -129,6 +166,26 @@ void CONDUIT_RELAY_API load(const std::string &path,
                             const std::string &protocol,
                             Node &node);
 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
+                            const std::string &protocol,
+                            const Node &options,
+                            Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
+                            const std::string &protocol,
+                            int step,
+                            int domain,
+                            Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
+                            const std::string &protocol,
+                            int step,
+                            int domain,
+                            const Node &options,
+                            Node &node);
 
 ///
 /// ``load_merged`` works like an update, for the object case, entries are read
@@ -144,6 +201,18 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
 void CONDUIT_RELAY_API load_merged(const std::string &path,
                                    const std::string &protocol,
                                    Node &node);
+
+///
+/// ``query_number_of_steps`` return the number of steps.
+///
+//-----------------------------------------------------------------------------
+int CONDUIT_RELAY_API query_number_of_steps(const std::string &path);
+
+///
+/// ``query_number_of_domains`` return the number of domains.
+///
+//-----------------------------------------------------------------------------
+int CONDUIT_RELAY_API query_number_of_domains(const std::string &path);
 
 }
 //-----------------------------------------------------------------------------

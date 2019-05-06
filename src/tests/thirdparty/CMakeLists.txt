@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -85,19 +85,35 @@ endif()
 
 if(HDF5_FOUND)
     message(STATUS "HDF5 enabled: Adding related unit tests")
-    add_cpp_test(TEST t_hdf5_smoke DEPENDS_ON hdf5)
+    if(HDF5_IS_PARALLEL AND ENABLE_MPI)
+       set(HDF5_MPI_DEP mpi)
+    endif()
+    add_cpp_test(TEST t_hdf5_smoke DEPENDS_ON hdf5 ${HDF5_MPI_DEP})
 else()
     message(STATUS "HDF5 disabled: Skipping related tests")
 endif()
 
 
 if(SILO_FOUND)
+    if(HDF5_FOUND AND HDF5_IS_PARALLEL AND ENABLE_MPI)
+       set(SILO_HDF5_MPI_DEP mpi)
+    endif()
     message(STATUS "Silo enabled: Adding related unit tests")
-        add_cpp_test(TEST t_silo_smoke DEPENDS_ON silo)
+        add_cpp_test(TEST t_silo_smoke DEPENDS_ON silo ${SILO_HDF5_MPI_DEP})
 else()
     message(STATUS "Silo disabled: Skipping related tests")
 endif()
 
+if(ADIOS_FOUND)
+    set(serial_adios_deps adios_nompi)
+    if(UNIX AND NOT APPLE)
+        list(APPEND serial_adios_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
+    endif()
+    message(STATUS "ADIOS enabled: Adding related unit tests")
+        add_cpp_test(TEST t_adios_smoke DEPENDS_ON ${serial_adios_deps})
+else()
+    message(STATUS "ADIOS disabled: Skipping related tests")
+endif()
 
 if(FORTRAN_FOUND)
     message(STATUS "Fortran enabled: Adding related unit tests")

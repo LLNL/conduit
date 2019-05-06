@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -55,6 +55,7 @@
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
 #include <string>
+#include <vector>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -180,6 +181,16 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_EPSILON 1e-12
 
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_UNUSED macro is used to identify unused variables 
+/// in cases where it is difficult to avoid defining in the method signature 
+/// for methods that use optional features. 
+///
+//-----------------------------------------------------------------------------
+#define CONDUIT_UNUSED( var ) (void)(var)
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -272,6 +283,10 @@ namespace utils
                                   const std::string &sep,
                                   std::string &curr,
                                   std::string &next);
+
+    void CONDUIT_API split_string(const std::string &str,
+                                  char sep,
+                                  std::vector<std::string> &sv);
 
     void CONDUIT_API rsplit_string(const std::string &str,
                                    const std::string &sep,
@@ -430,7 +445,16 @@ namespace utils
 //-----------------------------------------------------------------------------
      void CONDUIT_API sleep(index_t milliseconds);
 
-
+//----------------------------------------------------------------------------- 
+// String hash functions
+//----------------------------------------------------------------------------- 
+     unsigned int CONDUIT_API hash(const char *k, 
+                                   unsigned int length,
+                                   unsigned int initval = 0);
+     unsigned int CONDUIT_API hash(const char *k, 
+                                   unsigned int initval = 0);
+     unsigned int CONDUIT_API hash(const std::string &k, 
+                                   unsigned int initval = 0);
 
 }
 //-----------------------------------------------------------------------------

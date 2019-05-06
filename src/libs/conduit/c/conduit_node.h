@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 //
 // Produced at the Lawrence Livermore National Laboratory
 //
@@ -58,6 +58,7 @@
 #include "conduit_bitwidth_style_types.h"
 #include "conduit_endianness_types.h"
 #include "conduit_exports.h"
+#include "conduit_datatype.h"
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
@@ -106,7 +107,8 @@ CONDUIT_API conduit_index_t conduit_node_number_of_elements(conduit_node *cnode)
 // TODO:  for Node::path() in c, thecaller must free the result, 
 // before we expose this, we need to understand the implications of this in 
 // fortran
-// CONDUIT_API char *conduit_node_path(const conduit_node *cnode);
+// NOTE: the fortran version could pass in the buffer to contain the path.
+CONDUIT_API char *conduit_node_path(const conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
 CONDUIT_API int conduit_node_has_child(const conduit_node *cnode, 
@@ -155,7 +157,7 @@ CONDUIT_API int conduit_node_compatible(const conduit_node *cnode,
                                         const conduit_node *cother);
 
 CONDUIT_API void conduit_node_info(const conduit_node *cnode,
-                                   const conduit_node *cnres);
+                                    conduit_node *cnres);
 //-----------------------------------------------------------------------------
 CONDUIT_API void conduit_node_print(conduit_node *cnode);
 CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
@@ -172,8 +174,8 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set for generic types --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    CONDUIT_API void conduit_set_node(conduit_node *cnode,
-                                      conduit_node *data);
+    CONDUIT_API void conduit_node_set_node(conduit_node *cnode,
+                                           conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     //void set_dtype(const DataType &dtype);
@@ -185,9 +187,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set_path for generic types --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    CONDUIT_API void conduit_set_path_node(conduit_node *cnode,
-                                           const char* path,
-                                           conduit_node *data);
+    CONDUIT_API void conduit_node_set_path_node(conduit_node *cnode,
+                                                const char* path,
+                                                conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     // //-------------------------------------------------------------------------
@@ -229,9 +231,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    CONDUIT_API void set_path_external_node(conduit_node *cnode,
-                                            const char *path,
-                                            conduit_node *data);
+    CONDUIT_API void conduit_node_set_path_external_node(conduit_node *cnode,
+                                                         const char *path,
+                                                         conduit_node *data);
 
     // TODO: These req c-interfaces for datatype, schema, etc
     // //-------------------------------------------------------------------------
@@ -781,7 +783,7 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 
 
     //-------------------------------------------------------------------------
-    // set_external bitwidth unsigned signed integer pointer cases
+    // set_external bitwidth unsigned integer pointer cases
     //-------------------------------------------------------------------------
     CONDUIT_API void conduit_node_set_external_uint8_ptr(conduit_node *cnode,
                                                          conduit_uint8 *data,
@@ -868,6 +870,178 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                                     conduit_index_t element_bytes,
                                                                     conduit_index_t endianness);
 
+  //-------------------------------------------------------------------------
+  // set_path_external
+  //-------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
+    // set_path_external bitwidth signed integer pointer cases
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int8_ptr(conduit_node *cnode,
+                                                             const char *path,
+                                                             conduit_int8 *data,
+                                                             conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int8_ptr_detailed(conduit_node *cnode,
+                                                                      const char *path,
+                                                                      conduit_int8 *data,
+                                                                      conduit_index_t num_elements,
+                                                                      conduit_index_t offset,
+                                                                      conduit_index_t stride,
+                                                                      conduit_index_t element_bytes,
+                                                                      conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int16_ptr(conduit_node *cnode,
+                                                              const char *path,
+                                                              conduit_int16 *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int16_ptr_detailed(conduit_node *cnode,
+                                                                       const char *path,
+                                                                       conduit_int16 *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int32_ptr(conduit_node *cnode,
+                                                              const char *path,
+                                                              conduit_int32 *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int32_ptr_detailed(conduit_node *cnode,
+                                                                       const char *path,
+                                                                       conduit_int32 *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int64_ptr(conduit_node *cnode,
+                                                              const char *path,
+                                                              conduit_int64 *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_int64_ptr_detailed(conduit_node *cnode,
+                                                                       const char *path,
+                                                                       conduit_int64 *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    // set_path_external bitwidth unsigned integer pointer cases
+    //-------------------------------------------------------------------------
+
+    CONDUIT_API void conduit_node_set_path_external_uint8_ptr(conduit_node *cnode,
+                                                              const char *path,
+                                                              conduit_uint8 *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint8_ptr_detailed(conduit_node *cnode,
+                                                                       const char *path,
+                                                                       conduit_uint8 *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint16_ptr(conduit_node *cnode,
+                                                               const char *path,
+                                                               conduit_uint16 *data,
+                                                               conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint16_ptr_detailed(conduit_node *cnode,
+                                                                        const char *path,
+                                                                        conduit_uint16 *data,
+                                                                        conduit_index_t num_elements,
+                                                                        conduit_index_t offset,
+                                                                        conduit_index_t stride,
+                                                                        conduit_index_t element_bytes,
+                                                                        conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint32_ptr(conduit_node *cnode,
+                                                               const char *path,
+                                                               conduit_uint32 *data,
+                                                               conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint32_ptr_detailed(conduit_node *cnode,
+                                                                        const char *path,
+                                                                        conduit_uint32 *data,
+                                                                        conduit_index_t num_elements,
+                                                                        conduit_index_t offset,
+                                                                        conduit_index_t stride,
+                                                                        conduit_index_t element_bytes,
+                                                                        conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint64_ptr(conduit_node *cnode,
+                                                               const char *path,
+                                                               conduit_uint64 *data,
+                                                               conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_uint64_ptr_detailed(conduit_node *cnode,
+                                                                        const char *path,
+                                                                        conduit_uint64 *data,
+                                                                        conduit_index_t num_elements,
+                                                                        conduit_index_t offset,
+                                                                        conduit_index_t stride,
+                                                                        conduit_index_t element_bytes,
+                                                                        conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    // set_path_external bitwidth floating point pointer cases
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_float32_ptr(conduit_node *cnode,
+                                                                const char *path,
+                                                                conduit_float32 *data,
+                                                                conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_float32_ptr_detailed(conduit_node *cnode,
+                                                                         const char *path,
+                                                                         conduit_float32 *data,
+                                                                         conduit_index_t num_elements,
+                                                                         conduit_index_t offset,
+                                                                         conduit_index_t stride,
+                                                                         conduit_index_t element_bytes,
+                                                                         conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_float64_ptr(conduit_node *cnode,
+                                                                const char *path,
+                                                                conduit_float64 *data,
+                                                                conduit_index_t  num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_float64_ptr_detailed(conduit_node *cnode,
+                                                                         const char *path,
+                                                                         conduit_float64 *data,
+                                                                         conduit_index_t num_elements,
+                                                                         conduit_index_t offset,
+                                                                         conduit_index_t stride,
+                                                                         conduit_index_t element_bytes,
+                                                                         conduit_index_t endianness);
+
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -878,12 +1052,13 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 // -- set for scalar cstyle types ---
 //-----------------------------------------------------------------------------
+
     //-------------------------------------------------------------------------
-    // set cstyle signed integer scalar types
+    // set cstyle native integer scalar types
     //-------------------------------------------------------------------------
+
     CONDUIT_API void conduit_node_set_char(conduit_node *cnode,
                                            char value);
-
     CONDUIT_API void conduit_node_set_short(conduit_node *cnode,
                                             short value);
 
@@ -892,6 +1067,22 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 
     CONDUIT_API void conduit_node_set_long(conduit_node *cnode,
                                            long value);
+
+    //-------------------------------------------------------------------------
+    // set cstyle signed integer scalar types
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_signed_char(conduit_node *cnode,
+                                                  signed char value);
+
+    CONDUIT_API void conduit_node_set_signed_short(conduit_node *cnode,
+                                                   signed short value);
+
+    CONDUIT_API void conduit_node_set_signed_int(conduit_node *cnode,
+                                                 signed int value);
+
+    CONDUIT_API void conduit_node_set_signed_long(conduit_node *cnode,
+                                                  signed long value);
+
     //-------------------------------------------------------------------------
     // set cstyle unsigned integer scalar types
     //-------------------------------------------------------------------------
@@ -920,8 +1111,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set via cstyle pointers for (scalar and array types) --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    // set cstyle signed integer pointer cases
+    // set cstyle native pointer cases
     //-------------------------------------------------------------------------
+
     CONDUIT_API void conduit_node_set_char_ptr(conduit_node *cnode,
                                                char *data,
                                                conduit_index_t num_elements);
@@ -976,6 +1168,65 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                         conduit_index_t stride,
                                                         conduit_index_t element_bytes,
                                                         conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    // set cstyle signed integer pointer cases
+    //-------------------------------------------------------------------------
+
+    CONDUIT_API void conduit_node_set_signed_char_ptr(conduit_node *cnode,
+                                                      signed char *data,
+                                                      conduit_index_t num_elements);
+
+    CONDUIT_API void conduit_node_set_signed_char_ptr_detailed(conduit_node *cnode,
+                                                               signed char *data,
+                                                               conduit_index_t num_elements,
+                                                               conduit_index_t offset,
+                                                               conduit_index_t stride,
+                                                               conduit_index_t element_bytes,
+                                                               conduit_index_t endianness);
+
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_signed_short_ptr(conduit_node *cnode,
+                                                       signed short *data,
+                                                       conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_signed_short_ptr_detailed(conduit_node *cnode,
+                                                                signed short *data,
+                                                                conduit_index_t num_elements,
+                                                                conduit_index_t offset,
+                                                                conduit_index_t stride,
+                                                                conduit_index_t element_bytes,
+                                                                conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_signed_int_ptr(conduit_node *cnode,
+                                                     signed int *data,
+                                                     conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_signed_int_ptr_detailed(conduit_node *cnode,
+                                                              signed int *data,
+                                                              conduit_index_t num_elements,
+                                                              conduit_index_t offset,
+                                                              conduit_index_t stride,
+                                                              conduit_index_t element_bytes,
+                                                              conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_signed_long_ptr(conduit_node *cnode,
+                                                      signed long *data,
+                                                      conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_signed_long_ptr_detailed(conduit_node *cnode,
+                                                               signed long *data,
+                                                               conduit_index_t num_elements,
+                                                               conduit_index_t offset,
+                                                               conduit_index_t stride,
+                                                               conduit_index_t element_bytes,
+                                                               conduit_index_t endianness);
 
 
     //-------------------------------------------------------------------------
@@ -1069,9 +1320,11 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 // -- set_path for scalar cstyle types ---
 //-----------------------------------------------------------------------------
+
     //-------------------------------------------------------------------------
-    // set_path cstyle signed integer scalar types
+    // set_path cstyle native integer scalar types
     //-------------------------------------------------------------------------
+
     CONDUIT_API void conduit_node_set_path_char(conduit_node *cnode,
                                                 const char *path,
                                                 char value);
@@ -1087,6 +1340,26 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
     CONDUIT_API void conduit_node_set_path_long(conduit_node *cnode,
                                                 const char *path,
                                                 long value);
+
+    //-------------------------------------------------------------------------
+    // set_path cstyle signed integer scalar types
+    //-------------------------------------------------------------------------
+
+    CONDUIT_API void conduit_node_set_path_signed_char(conduit_node *cnode,
+                                                       const char *path,
+                                                       signed char value);
+
+    CONDUIT_API void conduit_node_set_path_signed_short(conduit_node *cnode,
+                                                        const char *path,
+                                                        signed short value);
+
+    CONDUIT_API void conduit_node_set_path_signed_int(conduit_node *cnode,
+                                                      const char *path,
+                                                      signed int value);
+
+    CONDUIT_API void conduit_node_set_path_signed_long(conduit_node *cnode,
+                                                       const char *path,
+                                                       signed long value);
     //-------------------------------------------------------------------------
     // set_path cstyle unsigned integer scalar types
     //-------------------------------------------------------------------------
@@ -1112,6 +1385,7 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
     CONDUIT_API void conduit_node_set_path_float(conduit_node *cnode,
                                                 const char *path,
                                                 float value);
+
     CONDUIT_API void conduit_node_set_path_double(conduit_node *cnode,
                                                   const char *path,
                                                   double value);
@@ -1119,8 +1393,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 // -- set_path via cstyle pointers for (scalar and array types) --
 //-----------------------------------------------------------------------------
+
     //-------------------------------------------------------------------------
-    // set_path cstyle signed integer pointer cases
+    // set_path cstyle native pointer cases
     //-------------------------------------------------------------------------
     CONDUIT_API void conduit_node_set_path_char_ptr(conduit_node *cnode,
                                                     const char *path,
@@ -1136,6 +1411,7 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                              conduit_index_t stride,
                                                              conduit_index_t element_bytes,
                                                              conduit_index_t endianness);
+
 
     //-------------------------------------------------------------------------
     CONDUIT_API void conduit_node_set_path_short_ptr(conduit_node *cnode,
@@ -1184,6 +1460,73 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                              conduit_index_t stride,
                                                              conduit_index_t element_bytes,
                                                              conduit_index_t endianness);
+
+
+    //-------------------------------------------------------------------------
+    // set_path cstyle signed integer pointer cases
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_signed_char_ptr(conduit_node *cnode,
+                                                           const char *path,
+                                                           signed char *data,
+                                                           conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_signed_char_ptr_detailed(conduit_node *cnode,
+                                                                    const char *path,
+                                                                    signed char *data,
+                                                                    conduit_index_t num_elements,
+                                                                    conduit_index_t offset,
+                                                                    conduit_index_t stride,
+                                                                    conduit_index_t element_bytes,
+                                                                    conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_signed_short_ptr(conduit_node *cnode,
+                                                            const char *path,
+                                                            signed short *data,
+                                                            conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_signed_short_ptr_detailed(conduit_node *cnode,
+                                                                    const char *path,
+                                                                    signed short *data,
+                                                                    conduit_index_t num_elements,
+                                                                    conduit_index_t offset,
+                                                                    conduit_index_t stride,
+                                                                    conduit_index_t element_bytes,
+                                                                    conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_signed_int_ptr(conduit_node *cnode,
+                                                          const char *path,
+                                                          signed int *data,
+                                                          conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_signed_int_ptr_detailed(conduit_node *cnode,
+                                                                   const char *path,
+                                                                   signed int *data,
+                                                                   conduit_index_t num_elements,
+                                                                   conduit_index_t offset,
+                                                                   conduit_index_t stride,
+                                                                   conduit_index_t element_bytes,
+                                                                   conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_signed_long_ptr(conduit_node *cnode,
+                                                           const char *path,
+                                                           signed long *data,
+                                                           conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_signed_long_ptr_detailed(conduit_node *cnode,
+                                                                    const char *path,
+                                                                    signed long *data,
+                                                                    conduit_index_t num_elements,
+                                                                    conduit_index_t offset,
+                                                                    conduit_index_t stride,
+                                                                    conduit_index_t element_bytes,
+                                                                    conduit_index_t endianness);
 
 
     //-------------------------------------------------------------------------
@@ -1290,7 +1633,9 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set_external via cstyle pointers for (scalar and array types) --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    // set_external cstyle signed integer pointer cases
+    // set_external cstyle native pointer cases
+    //-------------------------------------------------------------------------
+    
     //-------------------------------------------------------------------------
     CONDUIT_API void conduit_node_set_external_char_ptr(conduit_node *cnode,
                                                         char *data,
@@ -1304,7 +1649,6 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                                  conduit_index_t stride,
                                                                  conduit_index_t element_bytes,
                                                                  conduit_index_t endianness);
-
     //-------------------------------------------------------------------------
     CONDUIT_API void conduit_node_set_external_short_ptr(conduit_node *cnode,
                                                          short *data,
@@ -1346,6 +1690,66 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                                  conduit_index_t stride,
                                                                  conduit_index_t element_bytes,
                                                                  conduit_index_t endianness);
+
+
+
+    //-------------------------------------------------------------------------
+    // set_external cstyle signed integer pointer cases
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_external_signed_char_ptr(conduit_node *cnode,
+                                                               signed char *data,
+                                                               conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_external_signed_char_ptr_detailed(conduit_node *cnode,
+                                                                        signed char *data,
+                                                                        conduit_index_t num_elements,
+                                                                        conduit_index_t offset,
+                                                                        conduit_index_t stride,
+                                                                        conduit_index_t element_bytes,
+                                                                        conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_external_signed_short_ptr(conduit_node *cnode,
+                                                                signed short *data,
+                                                                conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_external_signed_short_ptr_detailed(conduit_node *cnode,
+                                                                         signed short *data,
+                                                                         conduit_index_t num_elements,
+                                                                         conduit_index_t offset,
+                                                                         conduit_index_t stride,
+                                                                         conduit_index_t element_bytes,
+                                                                         conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_external_signed_int_ptr(conduit_node *cnode,
+                                                              signed int *data,
+                                                              conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_external_signed_int_ptr_detailed(conduit_node *cnode,
+                                                                       signed int *data,
+                                                                       conduit_index_t num_elements,
+                                                                       conduit_index_t offset,
+                                                                       conduit_index_t stride,
+                                                                       conduit_index_t element_bytes,
+                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_external_signed_long_ptr(conduit_node *cnode,
+                                                               signed long *data,
+                                                               conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_external_signed_long_ptr_detailed(conduit_node *cnode,
+                                                                        signed long *data,
+                                                                        conduit_index_t num_elements,
+                                                                        conduit_index_t offset,
+                                                                        conduit_index_t stride,
+                                                                        conduit_index_t element_bytes,
+                                                                        conduit_index_t endianness);
 
     //-------------------------------------------------------------------------
     // set_external cstyle unsigned integer pointer cases
@@ -1439,7 +1843,7 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // -- set_path_external via cstyle pointers for (scalar and array types) --
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
-    // set_path_external cstyle signed integer pointer cases
+    // set_path_external cstyle char pointer cases
     //-------------------------------------------------------------------------
     CONDUIT_API void conduit_node_set_path_external_char_ptr(conduit_node *cnode,
                                                              const char *path,
@@ -1455,7 +1859,6 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                                       conduit_index_t stride,
                                                                       conduit_index_t element_bytes,
                                                                       conduit_index_t endianness);
-
     //-------------------------------------------------------------------------
     CONDUIT_API void conduit_node_set_path_external_short_ptr(conduit_node *cnode,
                                                               const char *path,
@@ -1503,6 +1906,72 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                                       conduit_index_t stride,
                                                                       conduit_index_t element_bytes,
                                                                       conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    // set_path_external cstyle signed integer pointer cases
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_signed_char_ptr(conduit_node *cnode,
+                                                                    const char *path,
+                                                                    signed char *data,
+                                                                    conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_signed_char_ptr_detailed(conduit_node *cnode,
+                                                                             const char *path,
+                                                                             signed char *data,
+                                                                             conduit_index_t num_elements,
+                                                                             conduit_index_t offset,
+                                                                             conduit_index_t stride,
+                                                                             conduit_index_t element_bytes,
+                                                                             conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_signed_short_ptr(conduit_node *cnode,
+                                                                     const char *path,
+                                                                     signed short *data,
+                                                                     conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_signed_short_ptr_detailed(conduit_node *cnode,
+                                                                              const char *path,
+                                                                              signed short *data,
+                                                                              conduit_index_t num_elements,
+                                                                              conduit_index_t offset,
+                                                                              conduit_index_t stride,
+                                                                              conduit_index_t element_bytes,
+                                                                              conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_signed_int_ptr(conduit_node *cnode,
+                                                                   const char *path,
+                                                                   signed int *data,
+                                                                   conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_signed_int_ptr_detailed(conduit_node *cnode,
+                                                                            const char *path,
+                                                                            signed int *data,
+                                                                            conduit_index_t num_elements,
+                                                                            conduit_index_t offset,
+                                                                            conduit_index_t stride,
+                                                                            conduit_index_t element_bytes,
+                                                                            conduit_index_t endianness);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_signed_long_ptr(conduit_node *cnode,
+                                                                    const char *path,
+                                                                    signed long *data,
+                                                                    conduit_index_t num_elements);
+
+    //-------------------------------------------------------------------------
+    CONDUIT_API void conduit_node_set_path_external_signed_long_ptr_detailed(conduit_node *cnode,
+                                                                             const char *path,
+                                                                             signed long *data,
+                                                                             conduit_index_t num_elements,
+                                                                             conduit_index_t offset,
+                                                                             conduit_index_t stride,
+                                                                             conduit_index_t element_bytes,
+                                                                             conduit_index_t endianness);
 
 
     //-------------------------------------------------------------------------
@@ -1781,13 +2250,21 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 // leaf value access (native c style types)
 //-----------------------------------------------------------------------------
     //-------------------------------------------------------------------------
+    // as cstyle native scalar access
+    //-------------------------------------------------------------------------
+    CONDUIT_API char         conduit_node_as_char(conduit_node *cnode);
+    CONDUIT_API short        conduit_node_as_short(conduit_node *cnode);
+    CONDUIT_API int          conduit_node_as_int(conduit_node *cnode);
+    CONDUIT_API long         conduit_node_as_long(conduit_node *cnode);
+    
+    //-------------------------------------------------------------------------
     // as cstyle signed integer scalar access
     //-------------------------------------------------------------------------
-    CONDUIT_API char  conduit_node_as_char(conduit_node *cnode);
-    CONDUIT_API short conduit_node_as_short(conduit_node *cnode);
-    CONDUIT_API int   conduit_node_as_int(conduit_node *cnode);
-    CONDUIT_API long  conduit_node_as_long(conduit_node *cnode);
-
+    CONDUIT_API signed char  conduit_node_as_signed_char(conduit_node *cnode);
+    CONDUIT_API signed short conduit_node_as_signed_short(conduit_node *cnode);
+    CONDUIT_API signed int   conduit_node_as_signed_int(conduit_node *cnode);
+    CONDUIT_API signed long  conduit_node_as_signed_long(conduit_node *cnode);
+    
     //-------------------------------------------------------------------------
     // as cstyle unsigned integer scalar access
     //-------------------------------------------------------------------------
@@ -1803,12 +2280,20 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
     CONDUIT_API double conduit_node_as_double(conduit_node *cnode);
 
     //-------------------------------------------------------------------------
+    // as cstyle native pointer access
+    //-------------------------------------------------------------------------
+    CONDUIT_API char         *conduit_node_as_char_ptr(conduit_node *cnode);
+    CONDUIT_API short        *conduit_node_as_short_ptr(conduit_node *cnode);
+    CONDUIT_API int          *conduit_node_as_int_ptr(conduit_node *cnode);
+    CONDUIT_API long         *conduit_node_as_long_ptr(conduit_node *cnode);
+
+    //-------------------------------------------------------------------------
     // as cstyle signed integer pointer access
     //-------------------------------------------------------------------------
-    CONDUIT_API char   *conduit_node_as_char_ptr(conduit_node *cnode);
-    CONDUIT_API short  *conduit_node_as_short_ptr(conduit_node *cnode);
-    CONDUIT_API int    *conduit_node_as_int_ptr(conduit_node *cnode);
-    CONDUIT_API long   *conduit_node_as_long_ptr(conduit_node *cnode);
+    CONDUIT_API signed char  *conduit_node_as_signed_char_ptr(conduit_node *cnode);
+    CONDUIT_API signed short *conduit_node_as_signed_short_ptr(conduit_node *cnode);
+    CONDUIT_API signed int   *conduit_node_as_signed_int_ptr(conduit_node *cnode);
+    CONDUIT_API signed long  *conduit_node_as_signed_long_ptr(conduit_node *cnode);
 
     //-------------------------------------------------------------------------
     // as cstyle unsigned integer pointer access
@@ -1827,9 +2312,11 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 // leaf value access via path (native c style types)
 //-----------------------------------------------------------------------------
+
     //-------------------------------------------------------------------------
-    // fetch_path_as cstyle signed integer scalar access
+    // fetch_path_as cstyle char scalar access
     //-------------------------------------------------------------------------
+
     CONDUIT_API char  conduit_node_fetch_path_as_char(conduit_node *cnode,
                                                       const char *path);
     CONDUIT_API short conduit_node_fetch_path_as_short(conduit_node *cnode,
@@ -1838,6 +2325,19 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                      const char *path);
     CONDUIT_API long  conduit_node_fetch_path_as_long(conduit_node *cnode,
                                                       const char *path);
+
+    //-------------------------------------------------------------------------
+    // fetch_path_as cstyle signed integer scalar access
+    //-------------------------------------------------------------------------
+
+    CONDUIT_API signed char conduit_node_fetch_path_as_signed_char(conduit_node *cnode,
+                                                                   const char *path);
+    CONDUIT_API signed short conduit_node_fetch_path_as_signed_short(conduit_node *cnode,
+                                                                     const char *path);
+    CONDUIT_API signed int   conduit_node_fetch_path_as_signed_int(conduit_node *cnode,
+                                                                   const char *path);
+    CONDUIT_API signed long  conduit_node_fetch_path_as_signed_long(conduit_node *cnode,
+                                                                    const char *path);
 
     //-------------------------------------------------------------------------
     // fetch_path_as cstyle unsigned integer scalar access
@@ -1860,7 +2360,7 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                          const char *path);
 
     //-------------------------------------------------------------------------
-    // fetch_path_as cstyle signed integer pointer access
+    // fetch_path_as cstyle native pointer access
     //-------------------------------------------------------------------------
     CONDUIT_API char   *conduit_node_fetch_path_as_char_ptr(conduit_node *cnode,
                                                             const char *path);
@@ -1870,6 +2370,18 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                            const char *path);
     CONDUIT_API long   *conduit_node_fetch_path_as_long_ptr(conduit_node *cnode,
                                                             const char *path);
+
+    //-------------------------------------------------------------------------
+    // fetch_path_as cstyle signed integer pointer access
+    //-------------------------------------------------------------------------
+    CONDUIT_API signed char  *conduit_node_fetch_path_as_signed_char_ptr(conduit_node *cnode,
+                                                                         const char *path);
+    CONDUIT_API signed short *conduit_node_fetch_path_as_signed_short_ptr(conduit_node *cnode,
+                                                                          const char *path);
+    CONDUIT_API signed int   *conduit_node_fetch_path_as_signed_int_ptr(conduit_node *cnode,
+                                                                        const char *path);
+    CONDUIT_API signed long  *conduit_node_fetch_path_as_signed_long_ptr(conduit_node *cnode,
+                                                                         const char *path);
 
     //-------------------------------------------------------------------------
     // fetch_path_as cstyle unsigned integer pointer access
@@ -1890,6 +2402,11 @@ CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
                                                               const char *path);
     CONDUIT_API double  *conduit_node_fetch_path_as_double_ptr(conduit_node *cnode,
                                                               const char *path);
+
+    //-------------------------------------------------------------------------
+    // Get the dtype for the node.
+    //-------------------------------------------------------------------------
+    CONDUIT_API const conduit_datatype *conduit_node_dtype(const conduit_node *cnode);
 
 #ifdef __cplusplus
 }

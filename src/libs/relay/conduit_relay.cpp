@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -49,10 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit_relay.hpp"
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-#include "conduit_relay_hdf5.hpp"
-#endif
+#include "conduit_relay_io.hpp"
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -99,45 +96,11 @@ about(Node &n)
     
     n["web_client_root"] =  web_root;
 
-    Node &io_protos = n["io/protocols"];
-
-    // standard binary io
-    io_protos["conduit_bin"] = "enabled";
-
-#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-    // straight hdf5 
-    io_protos["hdf5"] = "enabled";
-    
-    io::hdf5_options(n["io/options/hdf5"]);
-#else
-    // straight hdf5 
-    io_protos["hdf5"] = "disabled";
-#endif
-    
-    // silo
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "enabled";
-#else
-    // node is packed into two silo objects
-    io_protos["conduit_silo"] = "disabled";
-#endif
-    
-    // silo mesh aware
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-    io_protos["conduit_silo_mesh"] = "enabled";
-#else
-    io_protos["conduit_silo_mesh"] = "disabled";
-#endif
-
-
 #ifdef CONDUIT_RELAY_MPI_ENABLED
     n["mpi"] = "enabled";
 #else
     n["mpi"] = "disabled";
 #endif
-
-
 }
 
 

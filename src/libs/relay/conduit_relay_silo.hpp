@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -51,92 +51,11 @@
 #ifndef CONDUIT_RELAY_SILO_HPP
 #define CONDUIT_RELAY_SILO_HPP
 
-//-----------------------------------------------------------------------------
-// external lib includes
-//-----------------------------------------------------------------------------
-#include <silo.h>
+// NOTE: This file is provided for backwards compatibility.
+#pragma message("The conduit_relay_silo.hpp header file is deprecated. "
+                "Include conduit_relay_io_silo.hpp instead.")
 
-//-----------------------------------------------------------------------------
-// conduit includes
-//-----------------------------------------------------------------------------
-#include "conduit_relay_io.hpp"
-
-//-----------------------------------------------------------------------------
-// -- begin conduit:: --
-//-----------------------------------------------------------------------------
-namespace conduit
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay --
-//-----------------------------------------------------------------------------
-namespace relay
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay::io --
-//-----------------------------------------------------------------------------
-namespace io
-{
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_write(const Node &node,
-                                  const std::string &path);
-
-void CONDUIT_RELAY_API silo_read(const std::string &path,
-                                 Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_write(const  Node &node,
-                                  const std::string &file_path,
-                                  const std::string &silo_obj_path);
-
-void CONDUIT_RELAY_API silo_read(const std::string &file_path,
-                                 const std::string &silo_obj_path,
-                                 Node &node);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_write(const  Node &node,
-                                  DBfile *dbfile,
-                                  const std::string &silo_obj_path);
-
-void CONDUIT_RELAY_API silo_read(DBfile *dbfile,
-                                 const std::string &silo_obj_path,
-                                 Node &node);
-
-
-//-----------------------------------------------------------------------------    
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       const std::string &file_path,
-                                       const std::string &silo_obj_path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       DBfile *dbfile,
-                                       const std::string &silo_obj_path);
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay::io --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay --
-//-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit:: --
-//-----------------------------------------------------------------------------
-
+#include "conduit_relay_io_silo.hpp"
 
 #endif
 

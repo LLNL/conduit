@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -270,6 +270,13 @@ public:
     /// returns an empty string when passed index is invalid, or 
     /// this schema does not describe an object.
     std::string      child_name(index_t idx) const;
+
+    /// rename existing child
+    ///
+    /// throws an error if child does not exist, new name is invalid
+    /// or if this schema does not describe an object.
+    void             rename_child(const std::string &current_name,
+                                  const std::string &new_name);
 
     /// this uses the fetch method
     Schema           &operator[](const std::string &path);

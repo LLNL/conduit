@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -81,14 +81,11 @@ namespace relay
 namespace io_blueprint
 {
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &mesh,
-                            const std::string &path);
+// Define an argument macro that does not add the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) 
 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const Node &mesh,
-                            const std::string &path,
-                            const std::string &protocol);
+// Functions are provided by this include file.
+#include "conduit_relay_io_blueprint_api.hpp"
 
 }
 //-----------------------------------------------------------------------------

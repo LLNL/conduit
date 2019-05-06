@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -2668,6 +2668,43 @@ static int PyConduit_Schema_set_item(PyConduit_Schema *self,
     return (0);
 }
 
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Schema_rename_child(PyConduit_Schema *self,
+                              PyObject *args,
+                              PyObject *kwargs)
+{
+    const char *curr_name = NULL;
+    const char *new_name = NULL;
+
+    static const char *kwlist[] = {"current_name","new_name", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "ss",
+                                     const_cast<char**>(kwlist),
+                                     &curr_name, &new_name))
+    {
+        return (NULL);
+    }
+    
+    
+    try
+    {
+        self->schema->rename_child(std::string(curr_name),
+                                   std::string(new_name));
+
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -2752,6 +2789,11 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
       (PyCFunction)PyConduit_Schema_parent,
       METH_NOARGS,
       "{todo}"},
+      //-----------------------------------------------------------------------//
+      {"rename_child",
+       (PyCFunction)PyConduit_Schema_rename_child,
+       METH_VARARGS | METH_KEYWORDS,
+       "Rename an existing child (object role)"},
     //-----------------------------------------------------------------------//
     // end Schema methods table
     //-----------------------------------------------------------------------//
@@ -3376,7 +3418,6 @@ PyConduit_Node_python_attach(PyConduit_Node *self)
     Py_RETURN_NONE;
 }
 
-
 //---------------------------------------------------------------------------//
 // end Node python special methods
 //---------------------------------------------------------------------------//
@@ -3707,6 +3748,44 @@ PyConduit_Node_remove(PyConduit_Node *self,
     Py_RETURN_NONE;
 }
 
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Node_rename_child(PyConduit_Node *self,
+                            PyObject *args,
+                            PyObject *kwargs)
+{
+    const char *curr_name = NULL;
+    const char *new_name = NULL;
+
+    static const char *kwlist[] = {"current_name","new_name", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "ss",
+                                     const_cast<char**>(kwlist),
+                                     &curr_name, &new_name))
+    {
+        return (NULL);
+    }
+    
+    
+    try
+    {
+        self->node->rename_child(std::string(curr_name),
+                                 std::string(new_name));
+
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -3956,6 +4035,14 @@ PyConduit_Node_iter(PyObject *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_reset(PyConduit_Node *self)
+{
+    self->node->reset();
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_set(PyConduit_Node* self,
                    PyObject* args)
 {
@@ -4103,6 +4190,144 @@ PyConduit_Node_set_path(PyConduit_Node* self,
     }
 }
 
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_compact_to(PyConduit_Node* self,
+                          PyObject *args,
+                          PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &n_dest = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    self->node->compact_to(n_dest);
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_update(PyConduit_Node* self,
+                      PyObject *args,
+                      PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    self->node->update(n_other);
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_update_compatible(PyConduit_Node* self,
+                                 PyObject *args,
+                                 PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    self->node->update_compatible(n_other);
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_update_external(PyConduit_Node* self,
+                               PyObject *args,
+                               PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    self->node->update_external(n_other);
+    Py_RETURN_NONE;
+}
+
+
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_to_json(PyConduit_Node* self,
@@ -4217,11 +4442,6 @@ PyConduit_Node_endian_swap_to_big(PyConduit_Node *self)
      Py_RETURN_NONE; 
 }
 
-
-    void endian_swap(index_t endianness);
-
-
-
 //----------------------------------------------------------------------------//
 // Node methods table
 //----------------------------------------------------------------------------//
@@ -4242,14 +4462,40 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_NOARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
+    {"reset",
+     (PyCFunction)PyConduit_Node_reset,
+     METH_NOARGS,
+     "Reset the name"},
+    //-----------------------------------------------------------------------//
     {"set",
      (PyCFunction)PyConduit_Node_set,
      METH_VARARGS,
      "Sets the node"},
+    //-----------------------------------------------------------------------//
     {"set_external",
      (PyCFunction)PyConduit_Node_set_external,
      METH_VARARGS,
      "Sets the node's data to an external numpy array"},
+    //-----------------------------------------------------------------------//
+    {"compact_to",
+     (PyCFunction)PyConduit_Node_compact_to,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Compact the contents of this node into the destination node"},
+    //-----------------------------------------------------------------------//
+    {"update",
+     (PyCFunction)PyConduit_Node_update,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Update node with the contents of another node"},
+    //-----------------------------------------------------------------------//
+    {"update_compatible",
+     (PyCFunction)PyConduit_Node_update_compatible,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Update node with the compatible contents of another node"},
+    //-----------------------------------------------------------------------//
+    {"update_external",
+     (PyCFunction)PyConduit_Node_update_external,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Update node with to externally point to another node's contents"},
     //-----------------------------------------------------------------------//
     {"fetch",
      (PyCFunction)PyConduit_Node_fetch,
@@ -4301,6 +4547,11 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_remove,
      METH_VARARGS | METH_KEYWORDS, 
      "Remove as node at a given index or path."},
+    //-----------------------------------------------------------------------//
+    {"rename_child",
+     (PyCFunction)PyConduit_Node_rename_child,
+     METH_VARARGS | METH_KEYWORDS,
+     "Rename an existing child (object role)"},
     //-----------------------------------------------------------------------//
     {"diff", 
      (PyCFunction)PyConduit_Node_diff,

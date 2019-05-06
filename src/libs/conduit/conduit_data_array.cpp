@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -684,28 +684,32 @@ template class DataArray<float64>;
 
 // gap template instantiations for c-native types
 
-#ifndef CONDUIT_USE_CHAR
+// we never use 'char' directly as a type,
+// so we always need to inst the char case
 template class DataArray<char>;
+
+#ifndef CONDUIT_USE_CHAR
+template class DataArray<signed char>;
 template class DataArray<unsigned char>;
 #endif
 
 #ifndef CONDUIT_USE_SHORT
-template class DataArray<short>;
+template class DataArray<signed short>;
 template class DataArray<unsigned short>;
 #endif
 
 #ifndef CONDUIT_USE_INT
-template class DataArray<int>;
+template class DataArray<signed int>;
 template class DataArray<unsigned int>;
 #endif
 
 #ifndef CONDUIT_USE_LONG
-template class DataArray<long>;
+template class DataArray<signed long>;
 template class DataArray<unsigned long>;
 #endif
 
 #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
-template class DataArray<long long>;
+template class DataArray<signed long long>;
 template class DataArray<unsigned long long>;
 #endif
 

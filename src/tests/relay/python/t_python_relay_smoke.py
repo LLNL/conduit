@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -42,7 +42,7 @@
 # 
 ###############################################################################
 """
- file: python_relay_smoke.py
+ file: t_python_relay_smoke.py
  description: Simple unit test for the conduit relay python module interface.
 
 """

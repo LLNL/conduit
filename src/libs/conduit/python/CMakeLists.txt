@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -75,4 +75,35 @@ if(PYTHON_MODULE_INSTALL_PREFIX)
 else()
     install(FILES ${conduit_py_headers} DESTINATION python-modules/conduit/)
 endif()
+
+
+# create scripts that make it easy to launch the proper 
+# python interp with the conduit module already in PYTHONPATH
+
+set(_PYMOD_DIR ${PROJECT_BINARY_DIR}/python-modules)
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_conduit.sh.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_conduit_build.sh" @ONLY)
+
+if(PYTHON_MODULE_INSTALL_PREFIX)
+    set(_PYMOD_DIR ${PYTHON_MODULE_INSTALL_PREFIX})
+else()
+    set(_PYMOD_DIR ${CMAKE_INSTALL_PREFIX}/python-modules/)
+endif()
+
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_conduit.sh.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_conduit_install.sh" @ONLY)
+
+unset(_PYMOD_DIR)
+
+# install the script that works for install paths
+# 'PROGRAMS' makes sure exec perms are set
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_conduit_install.sh"
+        DESTINATION bin
+        RENAME run_python_with_conduit.sh)
+
+
+
+
+
 

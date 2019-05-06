@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -125,52 +125,40 @@ conduit_dtype_to_mpi_dtype(const DataType &dt)
     index_t dt_id = dt.id();
     
     // signed integer types
-    if(dt_id == CONDUIT_NATIVE_CHAR_ID)
+    if(dt_id == CONDUIT_INT8_ID)
     {
-        res = MPI_CHAR;         
+        res = MPI_INT8_T;
     }
-    else if( dt_id == CONDUIT_NATIVE_SHORT_ID)
+    else if( dt_id == CONDUIT_INT16_ID)
     {
-        res = MPI_SHORT;
+        res = MPI_INT16_T;
     }
-    else if( dt_id == CONDUIT_NATIVE_INT_ID)
+    else if( dt_id == CONDUIT_INT32_ID)
     {
-        res = MPI_INT;
+        res = MPI_INT32_T;
     }
-    else if( dt_id == CONDUIT_NATIVE_LONG_ID)
+    else if( dt_id == CONDUIT_INT64_ID)
     {
-        res = MPI_LONG;
+        res = MPI_INT64_T;
     }
-    #if defined(CONDUIT_HAS_LONG_LONG)
-    else if( dt_id == CONDUIT_NATIVE_LONG_LONG_ID)
-    {
-        res = MPI_LONG_LONG;
-    }
-    #endif
     // unsigned integer types
-    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_CHAR_ID)
+    else if( dt_id == CONDUIT_UINT8_ID)
     {
-        res = MPI_UNSIGNED_CHAR;
+        res = MPI_UINT8_T;
     }
-    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_SHORT_ID)
+    else if( dt_id == CONDUIT_UINT16_ID)
     {
-        res = MPI_UNSIGNED_SHORT;
+        res = MPI_UINT16_T;
     }
-    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_INT_ID)
+    else if( dt_id == CONDUIT_UINT32_ID)
     {
-        res = MPI_UNSIGNED;
+        res = MPI_UINT32_T;
     }
-    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_LONG_ID)
+    else if( dt_id == CONDUIT_UINT64_ID)
     {
-        res = MPI_UNSIGNED_LONG;
-    }
-    #if defined(CONDUIT_HAS_LONG_LONG)
-    else if( dt_id == CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID)
-    {
-        res = MPI_UNSIGNED_LONG_LONG;
+        res = MPI_UINT64_T;
     }
     // floating point types
-    #endif
     else if( dt_id == CONDUIT_NATIVE_FLOAT_ID)
     {
         res = MPI_FLOAT;
@@ -210,37 +198,71 @@ mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt)
     {
         res = DataType::CHAR8_STR_ID;
     }
-    // signed integer types
+    // mpi c bw-style signed integer types
+    if(dt == MPI_INT8_T)
+    {
+        res = CONDUIT_INT8_ID;
+    }
+    else if( dt == MPI_INT16_T)
+    {
+        res = CONDUIT_INT16_ID;
+    }
+    else if( dt == MPI_INT32_T)
+    {
+        res = CONDUIT_INT32_ID;
+    }
+    else if( dt == MPI_INT64_T)
+    {
+        res = CONDUIT_INT64_ID;
+    }
+    // mpi c bw-style unsigned integer types
+    else if( dt == MPI_UINT8_T)
+    {
+        res = CONDUIT_UINT8_ID;
+    }
+    else if( dt == MPI_UINT16_T)
+    {
+        res = CONDUIT_UINT16_ID;
+    }
+    else if( dt == MPI_UINT32_T)
+    {
+        res = CONDUIT_UINT32_ID;
+    }
+    else if( dt == MPI_UINT64_T)
+    {
+        res = CONDUIT_UINT64_ID;
+    }
+    // native c signed integer types
     else if(dt == MPI_SHORT)
     {
-        res = CONDUIT_NATIVE_SHORT_ID; 
+        res = CONDUIT_NATIVE_SHORT_ID;
     }
     else if(dt == MPI_INT)
     {
-        res = CONDUIT_NATIVE_INT_ID; 
+        res = CONDUIT_NATIVE_INT_ID;
     }
     else if(dt == MPI_LONG)
     {
-        res = CONDUIT_NATIVE_LONG_ID; 
+        res = CONDUIT_NATIVE_LONG_ID;
     }
     #if defined(CONDUIT_HAS_LONG_LONG)
     else if(dt == MPI_LONG_LONG)
     {
-        res = CONDUIT_NATIVE_LONG_LONG_ID; 
+        res = CONDUIT_NATIVE_LONG_LONG_ID;
     }
     #endif
-    // unsigned integer types 
+    // native c unsigned integer types 
     else if(dt == MPI_BYTE)
     {
-        res = CONDUIT_NATIVE_UNSIGNED_CHAR_ID; 
+        res = CONDUIT_NATIVE_UNSIGNED_CHAR_ID;
     }
     else if(dt == MPI_UNSIGNED_CHAR)
     {
-        res = CONDUIT_NATIVE_UNSIGNED_CHAR_ID; 
+        res = CONDUIT_NATIVE_UNSIGNED_CHAR_ID;
     }
     else if(dt == MPI_UNSIGNED_SHORT)
     {
-        res = CONDUIT_NATIVE_UNSIGNED_SHORT_ID; 
+        res = CONDUIT_NATIVE_UNSIGNED_SHORT_ID;
     }
     else if(dt == MPI_UNSIGNED)
     {

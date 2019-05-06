@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -46,15 +46,35 @@
 # Conduit Relay C Interface Unit Tests
 ###############################################################################
 
-set(C_TESTS
+set(RELAY_C_TESTS
      t_c_relay_smoke)
+
+set(RELAY_C_IO_ADIOS_TESTS t_c_relay_io_adios)
+set(RELAY_C_MPI_IO_ADIOS_TESTS t_c_relay_mpi_io_adios)
 
 ################################
 # Add our tests
 ################################
 message(STATUS "Adding conduit relay lib c interface unit tests")
-foreach(TEST ${C_TESTS})
+foreach(TEST ${RELAY_C_TESTS})
     add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
 endforeach()
+
+
+if(ADIOS_FOUND)
+    message(STATUS "ADIOS enabled: Adding conduit_relay c interface ADIOS unit tests")
+    foreach(TEST ${RELAY_C_IO_ADIOS_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
+    endforeach()
+
+    if(MPI_FOUND)
+        message(STATUS "MPI enabled: Adding conduit_relay_mpi_adios unit tests")
+        foreach(TEST ${RELAY_C_MPI_IO_ADIOS_TESTS})
+            add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit conduit_relay_mpi_io) 
+        endforeach()
+    endif()
+else()
+    message(STATUS "ADIOS disabled: Skipping conduit_relay c interface ADIOS tests")
+endif()
 
 

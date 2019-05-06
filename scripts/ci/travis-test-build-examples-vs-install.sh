@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -56,18 +56,42 @@ fi
 ##########################################
 # using with cmake example
 ##########################################
-cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/using-with-cmake
+cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/conduit/using-with-cmake
 mkdir build
 cd build
 cmake -DCONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install ../
 make
-./example
+./conduit_example
 ##########################################
 # using with make example
 ##########################################
-# find spack installed HDF5_DIR
-export HDF5_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*`
-cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/using-with-make
-env CXX=${COMPILER_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install HDF5_DIR=${HDF5_DIR} make
-env LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/travis-debug-install/lib/:${HDF5_DIR}/lib ./example
+export RUN_LIB_PATH="${TRAVIS_BUILD_DIR}/travis-debug-install/lib/"
+
+
+cd ${TRAVIS_BUILD_DIR}/travis-debug-install/examples/conduit/using-with-make
+
+if [ "${ENABLE_HDF5}" == "ON" ]; then
+    # find spack installed HDF5
+    export HDF5_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*`
+    export RUN_LIB_PATH="${RUN_LIB_PATH}:${HDF5_DIR}/lib"
+fi
+
+if [ "${ENABLE_SILO}" == "ON" ]; then
+    # find spack installed Silo
+    export SILO_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/silo*`
+    export RUN_LIB_PATH="${RUN_LIB_PATH}:${SILO_DIR}/lib"
+fi
+
+if [ "${ENABLE_ADIOS}" == "ON" ]; then
+    # find spack installed ADIOS
+    export ADIOS_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/adios*`
+    export ZFP_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/zfp*`
+    export LZ4_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/lz4*`
+    export BLOSC_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/c-blosc*`
+    export SZ_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/sz*`
+    export RUN_LIB_PATH="${RUN_LIB_PATH}:${ADIOS_DIR}/lib:${ZFP_DIR}/lib:${LZ4_DIR}/lib:${BLOSC_DIR}/lib:${SZ_DIR}/lib"
+fi
+
+env CXX=${COMPILER_CXX} CONDUIT_DIR=${TRAVIS_BUILD_DIR}/travis-debug-install make
+env LD_LIBRARY_PATH=${RUN_LIB_PATH} ./conduit_example
 

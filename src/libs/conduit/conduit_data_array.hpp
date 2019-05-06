@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -256,14 +256,23 @@ typedef DataArray<uint64>   uint64_array;
 typedef DataArray<float32>  float32_array;
 typedef DataArray<float64>  float64_array;
 
+/// native c types arrays
+typedef DataArray<char>       char_array;
+typedef DataArray<short>      short_array;
+typedef DataArray<int>        int_array;
+typedef DataArray<long>       long_array;
+#ifdef CONDUIT_HAS_LONG_LONG
+typedef DataArray<long long>  long_long_array;
+#endif
+
 
 /// signed integer arrays
-typedef DataArray<signed char>  char_array;
-typedef DataArray<short>        short_array;
-typedef DataArray<int>          int_array;
-typedef DataArray<long>         long_array;
+typedef DataArray<signed char>       signed_char_array;
+typedef DataArray<signed short>      signed_short_array;
+typedef DataArray<signed int>        signed_int_array;
+typedef DataArray<signed long>       signed_long_array;
 #ifdef CONDUIT_HAS_LONG_LONG
-typedef DataArray<long long>    long_long_array;
+typedef DataArray<signed long long>  signed_long_long_array;
 #endif
 
 

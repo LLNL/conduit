@@ -152,11 +152,11 @@ TEST(conduit_node_compare, compare_leaf_numeric)
             const index_t type_bytes = leaf_type.stride();
             const index_t leaf_bytes = leaf_type.spanned_bytes();
 
-            conduit_byte* n_data = new conduit_byte[(size_t)leaf_bytes];
+            int8* n_data = new int8[(size_t)leaf_bytes];
             memset(n_data, 0, (size_t)leaf_bytes);
             Node n(leaf_type, (void*)n_data, true);
 
-            conduit_byte* o_data = new conduit_byte[(size_t)leaf_bytes];
+            int8* o_data = new int8[(size_t)leaf_bytes];
             memcpy(o_data, n_data, (size_t)leaf_bytes);
             Node o(leaf_type, (void*)o_data, true);
 
@@ -217,8 +217,9 @@ TEST(conduit_node_compare, compare_leaf_string)
 
             char* leaf_buff = (char*)&compare_buffs[ci];
             char* leaf_cstr = (char*)&compare_buffs[ci+1] - leaf_str.length() - 1;
-            memset(leaf_buff, 0, (size_t)leaf_type.spanned_bytes());
-            strcpy(leaf_cstr, leaf_str.c_str());
+            size_t leaf_buff_size = (size_t)leaf_type.spanned_bytes();
+            memset(leaf_buff, 0, leaf_buff_size);
+            snprintf(leaf_cstr, leaf_buff_size, "%s", leaf_str.c_str());
 
             Node n(leaf_type, (void*)leaf_buff, true);
 
@@ -262,7 +263,7 @@ TEST(conduit_node_compare, compare_leaf_mismatch)
 
             const index_t max_bytes = std::max(
                 curr_type.bytes_compact(), next_type.bytes_compact());
-            conduit_byte* max_data = new conduit_byte[(size_t)max_bytes];
+            int8* max_data = new int8[(size_t)max_bytes];
             memset(max_data, 0, (size_t)max_bytes);
 
             Node n(curr_type, (void*)max_data, true);

@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -55,6 +55,8 @@ include("cmake/BitwidthMapping.cmake")
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     CONDUIT_INSTALL_PREFIX)
 
+set(CONDUIT_INSTALL_PREFIX ${CONDUIT_INSTALL_PREFIX} CACHE STRING "" FORCE)
+
 if(FORTRAN_FOUND)
     set(CONDUIT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
@@ -68,7 +70,6 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_bitwidth_style_types.h.in"
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_exports.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h")
-
 
 #
 # Specify conduit cpp headers
@@ -97,8 +98,10 @@ set(conduit_headers
 #
 set(conduit_c_headers
     c/conduit.h
+    c/conduit_datatype.h
     c/conduit_node.h
     c/conduit_cpp_to_c.hpp
+    c/conduit_utils.h
     )
 
 #
@@ -123,8 +126,10 @@ set(conduit_sources
 #
 set(conduit_c_sources
     c/conduit_c.cpp
+    c/conduit_datatype_c.cpp
     c/conduit_node_c.cpp
     c/conduit_cpp_to_c.cpp
+    c/conduit_utils_c.cpp
     )
 
 
@@ -146,11 +151,11 @@ if(FORTRAN_FOUND)
     # Specify fortran sources
     #
     set(conduit_fortran_sources
-        fortran/conduit_fortran.F)
+        fortran/conduit_fortran.F90)
 
     #  add oo interface if the fortran compiler supports it
     if(ENABLE_FORTRAN_OBJ_INTERFACE)
-        list(APPEND conduit_fortran_sources fortran/conduit_fortran_obj.f)
+        list(APPEND conduit_fortran_sources fortran/conduit_fortran_obj.f90)
     endif()
 
 endif()
@@ -170,8 +175,6 @@ add_compiled_library(NAME   conduit
 # Fortran related target options
 #################################
 if(FORTRAN_FOUND)
-    set_target_properties(conduit PROPERTIES Fortran_FORMAT "FREE")
-
     if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
          # disable c <-> fortran binding warnings for gfortran 
          message(STATUS "Disabling c <-> fortran binding warnings for "

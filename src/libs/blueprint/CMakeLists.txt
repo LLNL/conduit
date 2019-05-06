@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -106,9 +106,9 @@ if(FORTRAN_FOUND)
     # Specify fortran sources
     #
     set(blueprint_fortran_sources
-        fortran/conduit_blueprint_fortran.f
-        fortran/conduit_blueprint_mcarray_fortran.f
-        fortran/conduit_blueprint_mesh_fortran.f)
+        fortran/conduit_blueprint_fortran.f90
+        fortran/conduit_blueprint_mcarray_fortran.f90
+        fortran/conduit_blueprint_mesh_fortran.f90)
 
 endif()
 
@@ -123,15 +123,7 @@ add_compiled_library(NAME conduit_blueprint
                      HEADERS_DEST_DIR include/conduit)
 
 
-# #
-# # Link with conduit
-# #
-# target_link_libraries(conduit_blueprint conduit)
-
 if(FORTRAN_FOUND)
-    set_target_properties(conduit_blueprint
-                          PROPERTIES Fortran_FORMAT "FREE")
-
     ###############################################################################
     # Special install targets for conduit fortran modules 
     ###############################################################################
@@ -153,19 +145,17 @@ endif()
 # add conduit_blueprint_verify exe
 ###################################
 
-blt_add_executable(
-    NAME        conduit_blueprint_verify
-    SOURCES     conduit_blueprint_verify_exe.cpp
-    DEPENDS_ON  conduit conduit_relay conduit_blueprint
-    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+if(ENABLE_UTILS)
+    blt_add_executable(
+        NAME        conduit_blueprint_verify
+        SOURCES     conduit_blueprint_verify_exe.cpp
+        DEPENDS_ON  conduit conduit_relay conduit_blueprint
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-# add_executable(conduit_blueprint_verify conduit_blueprint_verify_exe.cpp)
-# target_link_libraries(conduit_blueprint_verify conduit conduit_relay conduit_blueprint)
-
-# add install target
-install(TARGETS conduit_blueprint_verify
-        RUNTIME DESTINATION bin)
-
+    # add install target
+    install(TARGETS conduit_blueprint_verify
+            RUNTIME DESTINATION bin)
+endif()
 
 ################################
 # Add python wrappers if python

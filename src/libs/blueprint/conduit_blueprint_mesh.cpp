@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -671,7 +671,7 @@ std::string identify_coords_coordsys(const Node &coords)
         itr.next();
         const std::string axis_name = itr.name();
 
-        if(axis_name[0] == 'd')
+        if(axis_name[0] == 'd' && axis_name.size() > 1)
         {
             axes[axis_name.substr(1, axis_name.length())];
         }
@@ -759,39 +759,41 @@ std::vector<std::string> identify_coordset_axes(const Node &coordset)
 DataType find_widest_dtype(const Node &node,
                            const std::vector<DataType> &default_dtypes)
 {
-    DataType subtree_dtype(DataType::empty().id(), 0);
+    DataType widest_dtype(default_dtypes[0].id(), 0, 0, 0, 0, default_dtypes[0].endianness());
 
-    Node info;
-    if(!node.dtype().is_object() && !node.dtype().is_object())
+    std::vector<const Node*> node_bag(1, &node);
+    while(!node_bag.empty())
     {
-        DataType curr_dtype(node.dtype().id(), 1);
-        for(index_t t = 0; t < (index_t)default_dtypes.size(); t++)
+        const Node *curr_node = node_bag.back(); node_bag.pop_back();
+        const DataType curr_dtype = curr_node->dtype();
+        if( curr_dtype.is_list() || curr_dtype.is_object() )
         {
-            DataType default_dtype = default_dtypes[t];
-            if((curr_dtype.is_float() && default_dtype.is_float()) ||
-                (curr_dtype.is_signed_integer() && default_dtype.is_signed_integer()) ||
-                (curr_dtype.is_unsigned_integer() && default_dtype.is_unsigned_integer()) ||
-                (curr_dtype.is_string() && default_dtype.is_string()))
+            NodeConstIterator curr_node_it = curr_node->children();
+            while(curr_node_it.has_next())
             {
-                subtree_dtype.set(curr_dtype);
+                node_bag.push_back(&curr_node_it.next());
+            }
+        }
+        else
+        {
+            for(index_t ti = 0; ti < (index_t)default_dtypes.size(); ti++)
+            {
+                const DataType &valid_dtype = default_dtypes[ti];
+                bool is_valid_dtype =
+                    (curr_dtype.is_floating_point() && valid_dtype.is_floating_point()) ||
+                    (curr_dtype.is_signed_integer() && valid_dtype.is_signed_integer()) ||
+                    (curr_dtype.is_unsigned_integer() && valid_dtype.is_unsigned_integer()) ||
+                    (curr_dtype.is_string() && valid_dtype.is_string());
+                if(is_valid_dtype && (widest_dtype.element_bytes() < curr_dtype.element_bytes()))
+                {
+                    widest_dtype.set(DataType(curr_dtype.id(), 1));
+                }
             }
         }
     }
-    else
-    {
-        NodeConstIterator node_it = node.children();
-        while(node_it.has_next())
-        {
-            const Node &child_node = node_it.next();
-            DataType child_dtype = find_widest_dtype(child_node, default_dtypes);
-            if(subtree_dtype.element_bytes() < child_dtype.element_bytes())
-            {
-                subtree_dtype.set(child_dtype);
-            }
-        }
-    }
 
-    return !subtree_dtype.is_empty() ? subtree_dtype : default_dtypes.front();
+    bool no_type_found = widest_dtype.element_bytes() == 0;
+    return no_type_found ? default_dtypes[0] : widest_dtype;
 }
 
 //-----------------------------------------------------------------------------
@@ -799,35 +801,6 @@ DataType find_widest_dtype(const Node &node,
                            const DataType &default_dtype)
 {
     return find_widest_dtype(node, std::vector<DataType>(1, default_dtype));
-}
-
-//-----------------------------------------------------------------------------
-DataType find_widest_dtype(const std::vector<const Node*> &nodes,
-                           const std::vector<DataType> &default_dtypes)
-{
-    std::vector<DataType> widest_dtypes;
-    for(index_t i = 0; i < (index_t)nodes.size(); i++)
-    {
-        widest_dtypes.push_back(find_widest_dtype(*nodes[i], default_dtypes));
-    }
-
-    DataType widest_dtype(widest_dtypes[0]);
-    for(index_t t = 1; t < (index_t)widest_dtypes.size(); t++)
-    {
-        if(widest_dtype.element_bytes() < widest_dtypes[t].element_bytes())
-        {
-            widest_dtype.set(widest_dtypes[t]);
-        }
-    }
-
-    return widest_dtype;
-}
-
-//-----------------------------------------------------------------------------
-DataType find_widest_dtype(const std::vector<const Node*> &nodes,
-                           const DataType &default_dtype)
-{
-    return find_widest_dtype(nodes, std::vector<DataType>(1, default_dtype));
 }
 
 //-----------------------------------------------------------------------------
@@ -1347,10 +1320,10 @@ convert_coordset_to_rectilinear(const std::string &/*base_type*/,
         const std::string& logical_axis = logical_axes[i];
 
         float64 dim_origin = coordset.has_child("origin") ?
-            coordset["origin"][csys_axis].value() : 0.0;
+            coordset["origin"][csys_axis].to_float64() : 0.0;
         float64 dim_spacing = coordset.has_child("spacing") ?
-            coordset["spacing"]["d"+csys_axis].value() : 1.0;
-        index_t dim_len = coordset["dims"][logical_axis].value();
+            coordset["spacing"]["d"+csys_axis].to_float64() : 1.0;
+        index_t dim_len = coordset["dims"][logical_axis].to_int64();
 
         Node &dst_cvals_node = dest["values"][csys_axis];
         dst_cvals_node.set(DataType(float_dtype.id(), dim_len));
@@ -1381,12 +1354,14 @@ convert_coordset_to_explicit(const std::string &base_type,
 
     std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
     const std::vector<std::string> &logical_axes = blueprint::mesh::logical_axes;
-    index_t dim_lens[3], coords_len = 1;
+
+    index_t dim_lens[3] = { 0,0,0 } , coords_len = 1;
     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
     {
-        coords_len *= (dim_lens[i] = is_base_rectilinear ?
+        dim_lens[i] = is_base_rectilinear ?
             coordset["values"][csys_axes[i]].dtype().number_of_elements() :
-            coordset["dims"][logical_axes[i]].value());
+            coordset["dims"][logical_axes[i]].to_int64();
+        coords_len *= dim_lens[i];
     }
 
     Node info;
@@ -1401,9 +1376,9 @@ convert_coordset_to_explicit(const std::string &base_type,
         // NOTE: The following values are specific to the
         // uniform transform case.
         float64 dim_origin = coordset.has_child("origin") ?
-            coordset["origin"][csys_axis].value() : 0.0;
+            coordset["origin"][csys_axis].to_float64() : 0.0;
         float64 dim_spacing = coordset.has_child("spacing") ?
-            coordset["spacing"]["d"+csys_axis].value() : 1.0;
+            coordset["spacing"]["d"+csys_axis].to_float64() : 1.0;
 
         index_t dim_block_size = 1, dim_block_count = 1;
         for(index_t j = 0; j < (index_t)csys_axes.size(); j++)
@@ -1515,7 +1490,7 @@ convert_topology_to_structured(const std::string &base_type,
     {
         Node src_dlen_node;
         src_dlen_node.set(is_base_uniform ?
-            coordset["dims"][logical_axes[i]].value() :
+            coordset["dims"][logical_axes[i]].to_int64() :
             coordset["values"][csys_axes[i]].dtype().number_of_elements());
         // NOTE: The number of elements in the topology is one less
         // than the number of points along each dimension.
@@ -1565,6 +1540,7 @@ convert_topology_to_unstructured(const std::string &base_type,
     // TODO(JRC): In this case, should we reach back into the coordset
     // and use its types to inform those of the topology?
     DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
+
     std::vector<std::string> csys_axes = identify_coordset_axes(coordset);
     dest["elements/shape"].set(
         (csys_axes.size() == 1) ? "line" : (
@@ -1685,11 +1661,11 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 
     DataType int_dtype, float_dtype;
     {
-        std::vector<const Node*> src_nodes;
-        src_nodes.push_back(&topo);
-        src_nodes.push_back(&coordset);
-        int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
-        float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
+        conduit::Node src_node;
+        src_node["topology"].set_external(topo);
+        src_node["coordset"].set_external(coordset);
+        int_dtype = find_widest_dtype(src_node, blueprint::mesh::default_int_dtypes);
+        float_dtype = find_widest_dtype(src_node, blueprint::mesh::default_float_dtype);
     }
 
     const Node &topo_conn_const = topo["elements/connectivity"];
@@ -2078,9 +2054,10 @@ bool mesh::verify_multi_domain(const Node &n,
         }
 
         log::info(info, protocol, "is a multi domain mesh");
-        log::validation(info,res);
     }
-
+    
+    log::validation(info,res);
+    
     return res;
 }
 
@@ -2092,17 +2069,17 @@ mesh::verify(const Node &n,
 {
     bool res = true;
     info.reset();
-
-    if(mesh::verify_multi_domain(n, info))
+    
+    // if n has the child "coordsets", we assume it is a single domain 
+    // mesh
+    if(n.has_child("coordsets"))
     {
-        res = true;
+        res = mesh::verify_single_domain(n, info);
     }
     else
     {
-        info.reset();
-        res = mesh::verify_single_domain(n, info);
+       res = mesh::verify_multi_domain(n, info);
     }
-
     return res;
 }
 
@@ -2110,8 +2087,14 @@ mesh::verify(const Node &n,
 //-------------------------------------------------------------------------
 bool mesh::is_multi_domain(const conduit::Node &n)
 {
-    Node info;
-    return mesh::verify_multi_domain(n, info);
+    // this is a blueprint property, we can assume it will be called 
+    // only when mesh verify is true. Given that - the only check
+    // we need to make is the minimal check to distinguish between 
+    // a single domain and a multi domain tree structure.
+    // checking for a child named "coordsets" mirrors the 
+    // top level verify check
+
+    return !n.has_child("coordsets");
 }
 
 
@@ -2143,6 +2126,18 @@ mesh::generate_index(const Node &mesh,
     index_out.reset();
 
     index_out["state/number_of_domains"] = number_of_domains;
+    
+    // check if the input mesh has state/cycle state/time
+    // if so, add those to the index
+    if(mesh.has_path("state/cycle"))
+    {
+        index_out["state/cycle"].set(mesh["state/cycle"]);
+    }
+
+    if(mesh.has_path("state/time"))
+    {
+        index_out["state/time"].set(mesh["state/time"]);
+    }
 
     NodeConstIterator itr = mesh["coordsets"].children();
     while(itr.has_next())
@@ -2173,8 +2168,16 @@ mesh::generate_index(const Node &mesh,
                 {
                     spacing_itr.next();
                     std::string axis_name = spacing_itr.name();
-                    // spacing names start with "d"
-                    axis_name = axis_name.substr(1);
+
+                    // if spacing names start with "d", use substr
+                    // to determine axis name
+
+                    // otherwise use spacing name directly, to avoid empty
+                    // path fetch if just 'x', etc are passed
+                    if(axis_name[0] == 'd' && axis_name.size() > 1)
+                    {
+                        axis_name = axis_name.substr(1);
+                    }
                     idx_coordset["coord_system/axes"][axis_name];
                 }
             }
@@ -3243,11 +3246,11 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     DataType int_dtype, float_dtype;
     {
-        std::vector<const Node*> src_nodes;
-        src_nodes.push_back(&topo);
-        src_nodes.push_back(&coordset);
-        int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
-        float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
+        conduit::Node src_node;
+        src_node["topology"].set_external(topo);
+        src_node["coordset"].set_external(coordset);
+        int_dtype = find_widest_dtype(src_node, blueprint::mesh::default_int_dtypes);
+        float_dtype = find_widest_dtype(src_node, blueprint::mesh::default_float_dtype);
     }
 
     // Allocate Data Templates for Outputs //
@@ -3421,11 +3424,11 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     DataType int_dtype, float_dtype;
     {
-        std::vector<const Node*> src_nodes;
-        src_nodes.push_back(&topo);
-        src_nodes.push_back(&coordset);
-        int_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_int_dtypes);
-        float_dtype = find_widest_dtype(src_nodes, blueprint::mesh::default_float_dtype);
+        conduit::Node src_node;
+        src_node["topology"].set_external(topo);
+        src_node["coordset"].set_external(coordset);
+        int_dtype = find_widest_dtype(src_node, blueprint::mesh::default_int_dtypes);
+        float_dtype = find_widest_dtype(src_node, blueprint::mesh::default_float_dtype);
     }
 
     // Allocate Data Templates for Outputs //
@@ -3596,12 +3599,12 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
 
     if(topo_shape.indices > 0)
     {
-        const index_t topo_shapes =
+        const index_t num_topo_shapes =
             topo_conn.dtype().number_of_elements() / topo_shape.indices;
 
-        Node shape_node(DataType::int64(topo_shapes));
+        Node shape_node(DataType::int64(num_topo_shapes));
         int64_array shape_array = shape_node.as_int64_array();
-        for(index_t s = 0; s < topo_shapes; s++)
+        for(index_t s = 0; s < num_topo_shapes; s++)
         {
             shape_array[s] = s * topo_shape.indices;
         }

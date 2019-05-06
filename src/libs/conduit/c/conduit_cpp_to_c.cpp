@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -102,6 +102,48 @@ cpp_node_ref(const conduit_node *cnode)
     return *static_cast<const Node*>(cnode);
 }
 
+//---------------------------------------------------------------------------//
+DataType *
+cpp_datatype(conduit_datatype *cdatatype)
+{
+    return static_cast<DataType*>(cdatatype);
+}
+
+//---------------------------------------------------------------------------//
+conduit_datatype *
+c_datatype(DataType *datatype)
+{
+    return (void*)datatype;
+}
+
+
+//---------------------------------------------------------------------------//
+const DataType *
+cpp_datatype(const conduit_datatype *cdatatype)
+{
+    return static_cast<const DataType*>(cdatatype);
+}
+
+//---------------------------------------------------------------------------//
+const conduit_datatype *
+c_datatype(const DataType *datatype)
+{
+    return (void*)datatype;
+}
+
+//---------------------------------------------------------------------------//
+DataType &
+cpp_datatype_ref(conduit_datatype *cdatatype)
+{
+    return *static_cast<DataType*>(cdatatype);
+}
+
+//---------------------------------------------------------------------------//
+const DataType &
+cpp_datatype_ref(const conduit_datatype *cdatatype)
+{
+    return *static_cast<const DataType*>(cdatatype);
+}
 
 }
 //-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -49,7 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit_relay.hpp"
-#include "conduit_relay_hdf5.hpp"
+#include "conduit_relay_io_hdf5.hpp"
 #include "hdf5.h"
 #include <iostream>
 #include "gtest/gtest.h"
@@ -755,6 +755,77 @@ TEST(conduit_relay_io_hdf5, hdf5_path_exists)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, hdf5_create_append_methods)
+{    
+    std::string test_file_name = "tout_hdf5_open_append.hdf5";
+    if(utils::is_file(test_file_name))
+    {
+        utils::remove_file(test_file_name);
+    }
+
+
+    Node n;
+    n["a/b/c/d"] = 10;
+    
+    io::hdf5_write(n,test_file_name,true);
+    
+    n.reset();
+    n["a/b/c/e"] = 20;
+    
+    io::hdf5_write(n,test_file_name,true);
+    
+    
+    Node n_load;
+    io::hdf5_read(test_file_name,n_load);
+    
+    EXPECT_TRUE(n_load.has_path("a"));
+    EXPECT_TRUE(n_load.has_path("a/b"));
+    EXPECT_TRUE(n_load.has_path("a/b/c"));
+    EXPECT_TRUE(n_load.has_path("a/b/c/d"));
+    EXPECT_TRUE(n_load.has_path("a/b/c/e"));
+    
+    EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
+    EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);
+    
+    
+    io::hdf5_write(n,test_file_name,false);
+    
+    n_load.reset();
+    io::hdf5_read(test_file_name,n_load);
+    
+    EXPECT_FALSE(n_load.has_path("a/b/c/d"));
+    EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);
+    
+    n.reset();
+    n["a/b/c/d"] = 10;
+    io::hdf5_save(n,test_file_name);
+    
+    n_load.reset();
+    io::hdf5_read(test_file_name,n_load);
+    
+    EXPECT_FALSE(n_load.has_path("a/b/c/e"));
+    EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
+    
+    n.reset();
+    n["a/b/c/e"] = 20;
+    
+    io::hdf5_write(n,test_file_name,true);
+    
+    n.reset();
+    n["a/b/c/e"] = 20;
+    
+    io::hdf5_append(n,test_file_name);
+    n_load.reset();
+    io::hdf5_read(test_file_name,n_load);
+
+    EXPECT_TRUE(n_load.has_path("a/b/c/d"));    
+    EXPECT_TRUE(n_load.has_path("a/b/c/e"));
+    EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
+    EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);    
+    
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -904,9 +975,120 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
     EXPECT_THROW(io::hdf5_group_list_child_names(h5_file_id,"",cnames),Error);
    
     
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
+{
+    Node n;
+    n["path/mydata"] = 20;
+    std::string tout = "tout_hdf5_check_hdf5_file.hdf5";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
     
+    io::save(n,tout, "hdf5");
+    
+    // this should be recoged as hdf5
+    EXPECT_TRUE(io::is_hdf5_file(tout));
+
+    tout = "tout_hdf5_check_non_hdf5_file.json";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
+
+
+    io::save(n,tout,"json");
+    
+    // this should *not* be recoged as hdf5
+    EXPECT_FALSE(io::is_hdf5_file(tout));
+    
+    // check totally bad path
+    EXPECT_FALSE(io::is_hdf5_file("/path/to/somewhere/that/cant/exist"));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, test_remove_path)
+{
+    Node n;
+    n["path/mydata"] = 20;
+    n["path/otherdata/leaf"] = 42;
+    std::string tout = "tout_test_remove_path.hdf5";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
+    
+    io::save(n,tout, "hdf5");
+    
+    hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    io::hdf5_remove_path(h5_file_id,"path/otherdata/leaf");
+    io::hdf5_close_file(h5_file_id);
+    
+    n.reset();
+    io::load(tout,n);
+    EXPECT_FALSE(n.has_path("path/otherdata/leaf"));
+    EXPECT_TRUE(n.has_path("path/otherdata"));
+    n.print();
+    
+    
+    h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    io::hdf5_remove_path(h5_file_id,"path/otherdata");
+    io::hdf5_close_file(h5_file_id);
+    
+    n.reset();
+    io::load(tout,n);
+    EXPECT_FALSE(n.has_path("path/otherdata"));
+    EXPECT_TRUE(n.has_path("path"));
+    n.print();
     
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, file_name_in_error)
+{
+    Node n;
+    n["path/mydata"] = 20;
+    n["path/otherdata/leaf"] = 42;
+    std::string tout = "tout_our_file_to_test.hdf5";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
+    
+    io::save(n,tout, "hdf5");
+    
+    hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    
+    Node n_read;
+    bool had_error = false;
+    try
+    {
+        io::hdf5_read(h5_file_id,"bad",n_read);
+    }
+    catch(Error &e)
+    {
+        had_error = true;
+        std::cout << "error message: " << e.message() ;
+        // error should have the file name in it
+        std::size_t found = e.message().find(tout);
+        EXPECT_TRUE(found!=std::string::npos);
+    }
+
+    // make sure we took the error path
+    EXPECT_TRUE(had_error);
+
+    io::hdf5_close_file(h5_file_id);
+}
+
 
 
 
