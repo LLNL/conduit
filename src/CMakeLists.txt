@@ -94,6 +94,14 @@ if(NOT BLT_SOURCE_DIR)
     set(BLT_SOURCE_DIR "blt")
 endif()
 
+################################
+# if not set,
+# prefer c++11 lang standard
+################################
+if (NOT BLT_CXX_STD)
+  set(BLT_CXX_STD "c++11" CACHE STRING "")
+endif()
+
 # init blt using BLT_SOURCE_DIR
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
