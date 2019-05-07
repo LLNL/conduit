@@ -240,7 +240,7 @@ struct GridMeshCollection
         void print_pos() const
         {
             std::cout << "  Testing " <<
-                std::string(ptr->is_poly ? "explicit" : "implicit") << " " <<
+                std::string(ptr->is_poly ? "polygonal" : "non-polygonal") << " " <<
                 ELEM_TYPE_LIST[ptr->type] << " grid..." << std::endl;
         }
 
@@ -370,6 +370,7 @@ void calc_inversion_field(index_t type, const Node &topo, const Node &coords, No
     const index_t topo_num_elems = topo_off.dtype().number_of_elements();
 
     Node data_node;
+    Node s2d_map, d2s_map;
 
     std::vector< std::vector< std::set<index_t> > > elem_lines(topo_num_elems);
     {
@@ -409,7 +410,7 @@ void calc_inversion_field(index_t type, const Node &topo, const Node &coords, No
                 (void*)topo_conn.element_ptr(elem_start_index));
             data_node.to_data_type(DataType::int64(1).id(), elem_conn);
 
-            mesh::topology::unstructured::generate_lines(elem_topo, line_topo);
+            mesh::topology::unstructured::generate_lines(elem_topo, line_topo, s2d_map, d2s_map);
 
             Node &line_conn = line_topo["elements/connectivity"];
             for(index_t li = 0; li < line_conn.dtype().number_of_elements(); li += 2)
@@ -699,13 +700,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
 
-        Node cent_mesh;
+        Node cent_mesh, t2c_map, c2t_map;
         Node &cent_coords = cent_mesh["coordsets"][CENTROID_COORDSET_NAME];
         Node &cent_topo = cent_mesh["topologies"][CENTROID_TOPOLOGY_NAME];
         mesh::topology::unstructured::generate_centroids(
-            grid_topo, cent_topo, cent_coords);
+            grid_topo, cent_topo, cent_coords, t2c_map, c2t_map);
 
-        Node info;
+        Node data, info;
         EXPECT_TRUE(mesh::coordset::_explicit::verify(cent_coords, info));
         EXPECT_TRUE(mesh::topology::unstructured::verify(cent_topo, info));
 
@@ -732,6 +733,33 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
         EXPECT_EQ(cent_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(cent_conn.dtype().number_of_elements(), grid_mesh.elems());
 
+        // Verify Correctness of Mappings //
+
+        conduit::Node* map_nodes[2] = { &t2c_map, &c2t_map };
+        for(index_t mi = 0; mi < 2; mi++)
+        {
+            conduit::Node& map_node = *map_nodes[mi];
+            EXPECT_EQ(map_node.dtype().id(), grid_conn.dtype().id());
+            EXPECT_EQ(map_node.dtype().number_of_elements(), 2 * grid_mesh.elems());
+
+            std::vector<index_t> map_values, expected_values;
+            for(index_t ei = 0; ei < grid_mesh.elems(); ei++)
+            {
+                for(index_t esi = 0; esi < 2; esi++)
+                {
+                    data.set_external(DataType(map_node.dtype().id(), 1),
+                        map_node.element_ptr(2 * ei + esi));
+                    map_values.push_back(data.to_int64());
+                }
+
+                expected_values.push_back(1);
+                expected_values.push_back(ei);
+            }
+            EXPECT_EQ(map_values, expected_values);
+        }
+
+        // Verify Data Integrity //
+
         // TODO(JRC): Extend this test case to validate that each centroid is
         // contained within the convex hull of its source element.
     }
@@ -751,12 +779,14 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
 
         const index_t grid_points = grid_mesh.points();
 
-        Node point_mesh;
+        Node point_mesh, t2p_map, p2t_map;
         Node &point_coords = point_mesh["coordsets"][grid_coords.name()];
         point_coords.set_external(grid_coords);
 
+        // Verify Correctness of Topology //
+
         Node &point_topo = point_mesh["topologies"][POINT_TOPOLOGY_NAME];
-        mesh::topology::unstructured::generate_points(grid_topo, point_topo);
+        mesh::topology::unstructured::generate_points(grid_topo, point_topo, t2p_map, p2t_map);
 
         Node data, info;
         EXPECT_TRUE(mesh::topology::unstructured::verify(point_topo, info));
@@ -785,6 +815,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
         }
 
         EXPECT_EQ(point_conn_set, expected_conn_set);
+
+        // Verify Correctness of Mappings //
+
+        // TODO(JRC)
     }
 }
 
@@ -804,12 +838,14 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
         const Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
 
-        Node line_mesh;
+        Node line_mesh, t2l_map, l2t_map;
         Node &line_coords = line_mesh["coordsets"][grid_coords.name()];
         line_coords.set_external(grid_coords);
 
+        // Verify Correctness of Topology //
+
         Node &line_topo = line_mesh["topologies"][LINE_TOPOLOGY_NAME];
-        mesh::topology::unstructured::generate_lines(grid_topo, line_topo);
+        mesh::topology::unstructured::generate_lines(grid_topo, line_topo, t2l_map, l2t_map);
 
         Node info;
         EXPECT_TRUE(mesh::topology::unstructured::verify(line_topo, info));
@@ -829,6 +865,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
 
         // TODO(JRC): Extend this test case so that it more thoroughly checks
         // the contents of the unique line mesh.
+
+        // Verify Correctness of Mappings //
+
+        // TODO(JRC)
     }
 }
 
@@ -854,12 +894,14 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
         const std::string face_type = grid_mesh.is_poly ?
             "polygonal" : face_tstr.substr(0, face_tstr.size() - 1);
 
-        Node face_mesh;
+        Node face_mesh, t2f_map, f2t_map;
         Node &face_coords = face_mesh["coordsets"][grid_coords.name()];
         face_coords.set_external(grid_coords);
 
+        // Verify Correctness of Topology //
+
         Node &face_topo = face_mesh["topologies"][FACE_TOPOLOGY_NAME];
-        mesh::topology::unstructured::generate_faces(grid_topo, face_topo);
+        mesh::topology::unstructured::generate_faces(grid_topo, face_topo, t2f_map, f2t_map);
 
         Node info;
         EXPECT_TRUE(mesh::topology::unstructured::verify(face_topo, info));
@@ -880,6 +922,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
 
         // TODO(JRC): Extend this test case so that it more thoroughly checks
         // the contents of the unique face mesh.
+
+        // Verify Correctness of Mappings //
+
+        // TODO(JRC)
     }
 }
 
@@ -909,17 +955,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         const index_t grid_sides = grid_elems * sides_per_elem;
         const float64 side_volume = grid_mesh.elem_volume() / sides_per_elem;
 
-        Node side_mesh;
+        Node side_mesh, t2s_map, s2t_map;
         Node &side_coords = side_mesh["coordsets"][SIDE_COORDSET_NAME];
         Node &side_topo = side_mesh["topologies"][SIDE_TOPOLOGY_NAME];
-        Node &side_field = side_mesh["fields"][SIDE_FIELD_NAME];
         mesh::topology::unstructured::generate_sides(
-            grid_topo, side_topo, side_coords, side_field);
+            grid_topo, side_topo, side_coords, t2s_map, s2t_map);
 
         Node info;
         EXPECT_TRUE(mesh::coordset::_explicit::verify(side_coords, info));
         EXPECT_TRUE(mesh::topology::unstructured::verify(side_topo, info));
-        EXPECT_TRUE(mesh::field::verify(side_field, info));
 
         // Verify Correctness of Coordset //
 
@@ -963,23 +1007,9 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
             EXPECT_FALSE(side_vols["values"].diff(expected_vols, info));
         }
 
-        // Verify Correctness of Map Field //
+        // Verify Correctness of Mappings //
 
-        EXPECT_EQ(side_field["association"].as_string(), "element");
-        EXPECT_EQ(side_field["values"].dtype().number_of_elements(), grid_sides);
-
-        Node &side_fvals = side_field["values"];
-        Node expected_fvals;
-        {
-            Node expected_fvals_int64(DataType::int64(grid_sides));
-            int64_array expected_fvals_data = expected_fvals_int64.as_int64_array();
-            for(index_t si = 0; si < grid_sides; si++)
-            {
-                expected_fvals_data[si] = si / sides_per_elem;
-            }
-            expected_fvals_int64.to_data_type(side_fvals.dtype().id(), expected_fvals);
-        }
-        EXPECT_FALSE(side_fvals.diff(expected_fvals, info));
+        // TODO(JRC)
     }
 }
 
@@ -1010,17 +1040,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         const index_t grid_corners = grid_elems * corners_per_elem;
         const float64 corner_volume = grid_mesh.elem_volume() / corners_per_elem;
 
-        Node corner_mesh;
+        Node corner_mesh, t2c_map, c2t_map;
         Node &corner_coords = corner_mesh["coordsets"][CORNER_COORDSET_NAME];
         Node &corner_topo = corner_mesh["topologies"][CORNER_TOPOLOGY_NAME];
-        Node &corner_field = corner_mesh["fields"][CORNER_FIELD_NAME];
         mesh::topology::unstructured::generate_corners(
-            grid_topo, corner_topo, corner_coords, corner_field);
+            grid_topo, corner_topo, corner_coords, t2c_map, c2t_map);
 
         Node info;
         EXPECT_TRUE(mesh::coordset::_explicit::verify(corner_coords, info));
         EXPECT_TRUE(mesh::topology::unstructured::verify(corner_topo, info));
-        EXPECT_TRUE(mesh::field::verify(corner_field, info));
 
         // Verify Correctness of Coordset //
 
@@ -1064,22 +1092,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
             EXPECT_FALSE(corner_vols["values"].diff(expected_vols, info));
         }
 
-        // Verify Correctness of Map Field //
+        // Verify Correctness of Mappings //
 
-        EXPECT_EQ(corner_field["association"].as_string(), "element");
-        EXPECT_EQ(corner_field["values"].dtype().number_of_elements(), grid_corners);
-
-        Node &corner_fvals = corner_field["values"];
-        Node expected_fvals;
-        {
-            Node expected_fvals_int64(DataType::int64(grid_corners));
-            int64_array expected_fvals_data = expected_fvals_int64.as_int64_array();
-            for(index_t si = 0; si < grid_corners; si++)
-            {
-                expected_fvals_data[si] = si / corners_per_elem;
-            }
-            expected_fvals_int64.to_data_type(corner_fvals.dtype().id(), expected_fvals);
-        }
-        EXPECT_FALSE(corner_fvals.diff(expected_fvals, info));
+        // TODO(JRC)
     }
 }

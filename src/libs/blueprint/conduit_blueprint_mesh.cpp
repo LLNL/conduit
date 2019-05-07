@@ -804,6 +804,15 @@ DataType find_widest_dtype(const Node &node,
 }
 
 //-----------------------------------------------------------------------------
+Node link_nodes(const Node &lhs, const Node &rhs)
+{
+    Node linker;
+    linker.append().set_external(lhs);
+    linker.append().set_external(rhs);
+    return linker;
+}
+
+//-----------------------------------------------------------------------------
 bool find_reference_node(const Node &node, const std::string &ref_key, Node &ref)
 {
     bool res = false;
@@ -965,16 +974,15 @@ struct TopologyMetadata
     // NOTE(JRC): This type current only works at forming associations within
     // an unstructured topology's hierarchy.
     TopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset) :
-        topo(&topology), cset(&coordset), topo_cascade(topology), topo_shape(topology)
+        topo(&topology), cset(&coordset),
+        int_dtype(find_widest_dtype(link_nodes(topology, coordset), conduit::blueprint::mesh::default_int_dtypes)),
+        float_dtype(find_widest_dtype(link_nodes(topology, coordset), conduit::blueprint::mesh::default_float_dtype)),
+        topo_cascade(topology), topo_shape(topology)
     {
         Node topo_offsets;
         get_topology_offsets(topology, topo_offsets);
         const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
         const index_t topo_num_coords = get_coordset_length("unstructured", coordset);
-
-        // Discover Data Types //
-
-        const DataType int_dtype = find_widest_dtype(topology, blueprint::mesh::default_int_dtypes);
 
         // Allocate Data Templates for Outputs //
 
@@ -1202,6 +1210,26 @@ struct TopologyMetadata
         return dim_assocs[entity_dim].find(entity_id)->second[assoc_dim];
     }
 
+    void get_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const
+    {
+        Node imap_node;
+        std::vector<index_t> map_vec;
+        for(index_t sdi = 0; sdi < (index_t)dim_assocs[src_dim].size(); sdi++)
+        {
+            const std::set<index_t>& src_assocs = get_entity_assocs(sdi, src_dim, dst_dim);
+            map_vec.push_back( (index_t)src_assocs.size() );
+            for(std::set<index_t>::const_iterator assoc_it = src_assocs.begin();
+                assoc_it != src_assocs.end(); assoc_it++)
+            {
+                map_vec.push_back( *assoc_it );
+            }
+        }
+        imap_node.set(map_vec);
+
+        map_node.reset();
+        imap_node.to_data_type(int_dtype.id(), map_node);
+    }
+
     index_t get_length(index_t dim=-1) const
     {
         // NOTE: The default version of 'get_length' gets the total length of all
@@ -1288,6 +1316,7 @@ struct TopologyMetadata
     }
 
     const conduit::Node *topo, *cset;
+    const conduit::DataType int_dtype, float_dtype;
     const ShapeCascade topo_cascade;
     const ShapeType topo_shape;
 
@@ -1731,7 +1760,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
         }
 
         int64 ei_value = static_cast<int64>(ei);
-        Node ei_data(DataType::int64(), &ei_value, true);
+        Node ei_data(DataType::int64(1), &ei_value, true);
         data_node.set_external(int_dtype, dest["elements/connectivity"].element_ptr(ei));
         ei_data.to_data_type(int_dtype.id(), data_node);
 
@@ -3146,7 +3175,9 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 //-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_points(const Node &topo,
-                                              Node &dest)
+                                              Node &dest,
+                                              Node &s2dmap,
+                                              Node &d2smap)
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
@@ -3156,12 +3187,18 @@ mesh::topology::unstructured::generate_points(const Node &topo,
     TopologyMetadata topo_data(topo, coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[0]);
+
+    const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 0;
+    topo_data.get_dim_map(src_dim, dst_dim, s2dmap);
+    topo_data.get_dim_map(dst_dim, src_dim, d2smap);
 }
 
 //-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_lines(const Node &topo,
-                                             Node &dest)
+                                             Node &dest,
+                                             Node &s2dmap,
+                                             Node &d2smap)
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
@@ -3171,12 +3208,18 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
     TopologyMetadata topo_data(topo, coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[1]);
+
+    const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 1;
+    topo_data.get_dim_map(src_dim, dst_dim, s2dmap);
+    topo_data.get_dim_map(dst_dim, src_dim, d2smap);
 }
 
 //-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_faces(const Node &topo,
-                                             Node &dest)
+                                             Node &dest,
+                                             Node &s2dmap,
+                                             Node &d2smap)
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
@@ -3186,13 +3229,19 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
     TopologyMetadata topo_data(topo, coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[2]);
+
+    const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 2;
+    topo_data.get_dim_map(src_dim, dst_dim, s2dmap);
+    topo_data.get_dim_map(dst_dim, src_dim, d2smap);
 }
 
 //-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_centroids(const Node &topo,
                                                  Node &dest,
-                                                 Node &cdest)
+                                                 Node &cdest,
+                                                 Node &s2dmap,
+                                                 Node &d2smap)
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_centroids".
@@ -3200,6 +3249,22 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
     find_reference_node(topo, "coordset", coordset);
 
     calculate_unstructured_centroids(topo, coordset, dest, cdest);
+
+    Node map_node;
+    std::vector<index_t> map_vec;
+    for(index_t ei = 0; ei < get_topology_length("unstructured", topo); ei++)
+    {
+        map_vec.push_back(1);
+        map_vec.push_back(ei);
+    }
+    map_node.set(map_vec);
+
+    DataType int_dtype = find_widest_dtype(link_nodes(topo, coordset),
+        blueprint::mesh::default_int_dtypes);
+    s2dmap.reset();
+    d2smap.reset();
+    map_node.to_data_type(int_dtype.id(), s2dmap);
+    map_node.to_data_type(int_dtype.id(), d2smap);
 }
 
 //-----------------------------------------------------------------------------
@@ -3207,7 +3272,8 @@ void
 mesh::topology::unstructured::generate_sides(const Node &topo,
                                              Node &dest,
                                              Node &cdest,
-                                             Node &fdest)
+                                             Node &s2dmap,
+                                             Node &d2smap)
 {
     // Retrieve Relevent Coordinate/Topology Metadata //
 
@@ -3228,6 +3294,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     // Extract Derived Coordinate/Topology Data //
 
     const TopologyMetadata topo_data(topo, coordset);
+    const DataType &int_dtype = topo_data.int_dtype;
+    const DataType &float_dtype = topo_data.float_dtype;
 
     std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
@@ -3240,17 +3308,6 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         calculate_unstructured_centroids(
             topo_data.dim_topos[di], coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
-    }
-
-    // Discover Data Types //
-
-    DataType int_dtype, float_dtype;
-    {
-        conduit::Node src_node;
-        src_node["topology"].set_external(topo);
-        src_node["coordset"].set_external(coordset);
-        int_dtype = find_widest_dtype(src_node, blueprint::mesh::default_int_dtypes);
-        float_dtype = find_widest_dtype(src_node, blueprint::mesh::default_float_dtype);
     }
 
     // Allocate Data Templates for Outputs //
@@ -3276,12 +3333,6 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(),
             sides_num_coords));
     }
-
-    fdest.reset();
-    fdest["association"].set("element");
-    fdest["topology"].set(dest.name());
-    fdest["volume_dependent"].set("false");
-    fdest["values"].set(DataType(int_dtype.id(), sides_num_elems));
 
     // Populate Data Arrays w/ Calculated Coordinates //
 
@@ -3315,22 +3366,36 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     // Compute New Elements/Fields for Side Topology //
 
     int64 elem_index = 0, side_index = 0;
+    int64 s2d_index = 0, d2s_index = 0;
 
     std::vector<int64> line_data_raw(2);
     std::vector<int64> side_data_raw(sides_elem_degree);
 
     Node misc_data;
+    Node raw_data(DataType::int64(1));
     Node elem_index_data(DataType::int64(1), &elem_index, true);
+    Node side_index_data(DataType::int64(1), &side_index, true);
     Node line_data(DataType::int64(2), &line_data_raw[0], true);
     Node side_data(DataType::int64(sides_elem_degree), &side_data_raw[0], true);
 
+    s2dmap.reset();
+    d2smap.reset();
+    s2dmap.set(DataType(int_dtype.id(), topo_num_elems + sides_num_elems));
+    d2smap.set(DataType(int_dtype.id(), 2 * sides_num_elems));
+
     Node &dest_conn = dest["elements/connectivity"];
-    Node &dest_field = fdest["values"];
     for(; elem_index < (int64)topo_num_elems; elem_index++)
     {
         std::vector< index_t > elem_embed_stack(1, elem_index);
         std::vector< index_t > elem_edim_stack(1, topo_shape.dim);
         std::vector< std::vector<index_t> > elem_eparent_stack(1);
+
+        int64 elem_num_sides = topo_data.get_entity_assocs(
+            elem_index, topo_shape.dim, line_shape.dim).size();
+        raw_data.set(elem_num_sides);
+        misc_data.set_external(DataType(int_dtype.id(), 1),
+            s2dmap.element_ptr(s2d_index++));
+        raw_data.to_data_type(int_dtype.id(), misc_data);
 
         while(!elem_embed_stack.empty())
         {
@@ -3357,7 +3422,18 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                     dest_conn.element_ptr(sides_elem_degree * side_index));
                 side_data.to_data_type(int_dtype.id(), misc_data);
 
-                misc_data.set_external(int_dtype, dest_field.element_ptr(side_index));
+                misc_data.set_external(DataType(int_dtype.id(), 1),
+                    s2dmap.element_ptr(s2d_index++));
+                side_index_data.to_data_type(int_dtype.id(), misc_data);
+
+                int64 side_num_elems = 1;
+                raw_data.set(side_num_elems);
+                misc_data.set_external(DataType(int_dtype.id(), 1),
+                    d2smap.element_ptr(d2s_index++));
+                raw_data.to_data_type(int_dtype.id(), misc_data);
+
+                misc_data.set_external(DataType(int_dtype.id(), 1),
+                    d2smap.element_ptr(d2s_index++));
                 elem_index_data.to_data_type(int_dtype.id(), misc_data);
 
                 side_index++;
@@ -3385,7 +3461,8 @@ void
 mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &dest,
                                                Node &cdest,
-                                               Node &fdest)
+                                               Node &s2dmap,
+                                               Node &d2smap)
 {
     // Retrieve Relevent Coordinate/Topology Metadata //
 
@@ -3410,6 +3487,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     const TopologyMetadata topo_data(topo, coordset);
     const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
+    const DataType &int_dtype = topo_data.int_dtype;
+    const DataType &float_dtype = topo_data.float_dtype;
 
     std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
@@ -3418,17 +3497,6 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         calculate_unstructured_centroids(
             topo_data.dim_topos[di], coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
-    }
-
-    // Discover Data Types //
-
-    DataType int_dtype, float_dtype;
-    {
-        conduit::Node src_node;
-        src_node["topology"].set_external(topo);
-        src_node["coordset"].set_external(coordset);
-        int_dtype = find_widest_dtype(src_node, blueprint::mesh::default_int_dtypes);
-        float_dtype = find_widest_dtype(src_node, blueprint::mesh::default_float_dtype);
     }
 
     // Allocate Data Templates for Outputs //
@@ -3452,11 +3520,6 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(),
             corners_num_coords));
     }
-
-    fdest.reset();
-    fdest["association"].set("element");
-    fdest["topology"].set(dest.name());
-    fdest["volume_dependent"].set("false");
 
     // Populate Data Arrays w/ Calculated Coordinates //
 
@@ -3487,10 +3550,10 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     // Compute New Elements/Fields for corner Topology //
 
     std::vector<int64> conn_data_raw;
-    std::vector<int64> field_data_raw;
+    std::vector<int64> s2d_data_raw, d2s_data_raw;
 
     Node misc_data;
-    for(index_t elem_index = 0; elem_index < (int64)topo_num_elems; elem_index++)
+    for(index_t elem_index = 0, corner_index = 0; elem_index < (int64)topo_num_elems; elem_index++)
     {
         const std::set<index_t> &elem_lines = topo_data.get_entity_assocs(
             elem_index, topo_shape.dim, line_shape.dim);
@@ -3499,8 +3562,9 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
         const std::set<index_t> &elem_points = topo_data.get_entity_assocs(
             elem_index, topo_shape.dim, point_shape.dim);
+        s2d_data_raw.push_back(elem_points.size());
         for(std::set<index_t>::const_iterator points_it = elem_points.begin();
-            points_it != elem_points.end(); ++points_it)
+            points_it != elem_points.end(); ++points_it, corner_index++)
         {
             index_t point_index = *points_it;
             const std::set<index_t> &point_lines = topo_data.get_entity_assocs(
@@ -3566,20 +3630,23 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                 conn_data_raw.push_back(corner_cap_index);
             }
 
-            field_data_raw.push_back(elem_index);
+            s2d_data_raw.push_back(corner_index);
+            d2s_data_raw.push_back(1);
+            d2s_data_raw.push_back(elem_index);
         }
     }
 
     Node &dest_conn = dest["elements/connectivity"];
-    Node &dest_field = fdest["values"];
     {
-        Node conn_data;
-        conn_data.set_external(DataType::int64(conn_data_raw.size()), &conn_data_raw[0]);
-        conn_data.to_data_type(int_dtype.id(), dest_conn);
+        Node raw_data;
+        raw_data.set(conn_data_raw);
+        raw_data.to_data_type(int_dtype.id(), dest_conn);
 
-        Node field_data;
-        field_data.set_external(DataType::int64(field_data_raw.size()), &field_data_raw[0]);
-        field_data.to_data_type(int_dtype.id(), dest_field);
+        raw_data.set(s2d_data_raw);
+        raw_data.to_data_type(int_dtype.id(), s2dmap);
+
+        raw_data.set(d2s_data_raw);
+        raw_data.to_data_type(int_dtype.id(), d2smap);
     }
 }
 
