@@ -60,7 +60,7 @@ TEST(libyaml_smoke, basic_use)
     // Initialize parser
     EXPECT_TRUE(yaml_parser_initialize(&parser));
 
-    const char yaml_str[] = "{ \"hello\" : \"world\" }";
+    const char yaml_str[] = " hello : world\n line: 2\n";
 
     // set input
     yaml_parser_set_input_string(&parser,
