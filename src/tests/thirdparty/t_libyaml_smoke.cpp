@@ -78,8 +78,7 @@ TEST(libyaml_smoke, basic_use)
     {
         EXPECT_TRUE(yaml_parser_parse(&parser, &event));
 
-        ok = event.type != YAML_STREAM_END_EVENT;
-        
+    
         switch(event.type)
         { 
             case YAML_MAPPING_START_EVENT:
@@ -105,12 +104,9 @@ TEST(libyaml_smoke, basic_use)
                 break;
         }
 
-        if(event.type != YAML_STREAM_END_EVENT)
-        {
-            yaml_event_delete(&event);
-        }
+        ok = event.type != YAML_STREAM_END_EVENT;
+        yaml_event_delete(&event);
     }
-    yaml_event_delete(&event);
 
     EXPECT_TRUE(found_mapping);
     EXPECT_TRUE(found_scalar);
