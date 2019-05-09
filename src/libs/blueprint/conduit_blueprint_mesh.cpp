@@ -3641,12 +3641,15 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         Node raw_data;
         raw_data.set(conn_data_raw);
         raw_data.to_data_type(int_dtype.id(), dest_conn);
+        raw_data.reset();
 
         raw_data.set(s2d_data_raw);
         raw_data.to_data_type(int_dtype.id(), s2dmap);
+        raw_data.reset();
 
         raw_data.set(d2s_data_raw);
         raw_data.to_data_type(int_dtype.id(), d2smap);
+        raw_data.reset();
     }
 }
 

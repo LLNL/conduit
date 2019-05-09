@@ -78,6 +78,7 @@ static const index_t ELEM_TYPE_DIMS[]          = {     2,       2,      3,      
 static const index_t ELEM_TYPE_CELL_ELEMS[]    = {     2,       1,      6,      1};
 static const index_t ELEM_TYPE_CELL_LINES[]    = {     1,       0,     -1,      0};
 static const index_t ELEM_TYPE_INDICES[]       = {     3,       4,      4,      8};
+static const index_t ELEM_TYPE_LINES[]         = {     3,       4,      6,     12};
 static const index_t ELEM_TYPE_FACES[]         = {     1,       1,      4,      6};
 static const index_t ELEM_TYPE_FACE_INDICES[]  = {     3,       4,      3,      4};
 static const index_t ELEM_TYPE_COUNT = sizeof(ELEM_TYPE_LIST) / sizeof(ELEM_TYPE_LIST[0]);
@@ -88,7 +89,43 @@ const static index_t TRIVIAL_GRID[] = {2, 2, 2};
 const static index_t SIMPLE_GRID[] = {3, 3, 3};
 const static index_t COMPLEX_GRID[] = {4, 4, 4};
 
+typedef std::vector< std::vector<index_t> > combo_list;
+
 /// Testing Helpers ///
+
+// NOTE(JRC): This is basically an implementation of the combinatorical concept
+// of "n choose i" with all results being returned as lists over index space.
+combo_list calc_combinations(const index_t combo_length, const index_t total_length)
+{
+    combo_list combinations;
+
+    index_t max_binary_combo = 1;
+    for(index_t li = 1; li < total_length; li++)
+    {
+        max_binary_combo <<= 1;
+        max_binary_combo += 1;
+    }
+    max_binary_combo += 1;
+
+    for(index_t ci = 0; ci < max_binary_combo; ci++)
+    {
+        std::vector<index_t> combination;
+        for(index_t bi = 0; bi < total_length; bi++)
+        {
+            if((ci >> bi) & 1)
+            {
+                combination.push_back(bi);
+            }
+        }
+
+        if((index_t)combination.size() == combo_length)
+        {
+            combinations.push_back(combination);
+        }
+    }
+
+    return (combo_length > 0) ? combinations : combo_list(1);
+}
 
 struct GridMesh
 {
@@ -175,6 +212,51 @@ struct GridMesh
         return num_points;
     }
 
+    index_t elem_valence(const index_t entity_dim) const
+    {
+        index_t total_valence = 0;
+        for(index_t di = entity_dim; di <= dims(); di++)
+        {
+            index_t dim_valence = 1;
+            for(index_t ddi = entity_dim; ddi < di; ddi++, dim_valence *= 2) {}
+            dim_valence += (entity_dim == 0) ? di * ELEM_TYPE_CELL_LINES[type] : 0;
+
+            index_t dim_entities = 0;
+            combo_list axis_combos = calc_combinations(di, dims());
+            combo_list major_combos = calc_combinations(entity_dim, di);
+            for(index_t ci = 0; ci < (index_t)axis_combos.size(); ci++)
+            {
+                const std::vector<index_t> &axis_list = axis_combos[ci];
+                for(index_t mi = 0; mi < (index_t)major_combos.size(); mi++)
+                {
+                    index_t dim_combo_entities = 1;
+                    const std::vector<index_t> &major_axis_list = major_combos[mi];
+                    for(index_t ai = 0; ai < (index_t)axis_list.size(); ai++)
+                    {
+                        bool is_major_axis = std::find(major_axis_list.begin(),
+                            major_axis_list.end(), ai) != major_axis_list.end();
+                        dim_combo_entities *= npts[axis_list[ai]] - 1 -
+                            (index_t)(!is_major_axis);
+                    }
+                    dim_entities += dim_combo_entities;
+                }
+            }
+
+            index_t dim_duplicates = 1;
+            for(index_t ddi = 0; ddi < dims() - di; ddi++, dim_duplicates *= 2) {}
+
+            total_valence += dim_valence * (dim_duplicates * dim_entities);
+        }
+
+        // NOTE(JRC): The 'total_valence' value accounts only for the quad grid
+        // valence; additional edges/faces need to be considered for tri grids
+        // (i.e. corners for 0d, internal edges for 1d, internal faces for 1d).
+        return total_valence + ((ELEM_TYPE_LIST[type] != "tris") ? 0 : (
+            (entity_dim == 0) ? 2 : (
+            (entity_dim == 1) ? 2 * cells() : (
+            (entity_dim == 2) ? 1 * cells() : 0))));
+    }
+
     float64 cell_volume() const
     {
         // NOTE(JRC): This is explicitly given in the definition of the 'braid'
@@ -194,9 +276,9 @@ struct GridMesh
         return cell_volume() / ELEM_TYPE_CELL_ELEMS[type];
     }
 
-    index_t points_per_elem() const
+    index_t points_per_face() const
     {
-        return ELEM_TYPE_INDICES[type];
+        return ELEM_TYPE_FACE_INDICES[type];
     }
 
     index_t faces_per_elem() const
@@ -204,9 +286,14 @@ struct GridMesh
         return ELEM_TYPE_FACES[type];
     }
 
-    index_t points_per_face() const
+    index_t lines_per_elem() const
     {
-        return ELEM_TYPE_FACE_INDICES[type];
+        return ELEM_TYPE_LINES[type];
+    }
+
+    index_t points_per_elem() const
+    {
+        return ELEM_TYPE_INDICES[type];
     }
 
     index_t dims() const
@@ -258,7 +345,7 @@ struct GridMeshCollection
         }
 
         // HARD DEBUG
-        // meshes.push_back(GridMesh(3, npts, false));
+        // meshes.push_back(GridMesh(1, npts, false));
 
         // SOFT DEBUG
         // for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
@@ -818,7 +905,17 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
 
         // Verify Correctness of Mappings //
 
-        // TODO(JRC)
+        // NOTE(JRC): Skip testing for tetrahedral meshes because their element
+        // interfaces are complicated and make counting too difficult.
+        if(grid_it->type == 2) { continue; }
+
+        EXPECT_EQ(t2p_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(t2p_map.dtype().number_of_elements(),
+            (grid_mesh.points_per_elem() + 1) * grid_mesh.elems());
+
+        EXPECT_EQ(p2t_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(p2t_map.dtype().number_of_elements(),
+            grid_mesh.elem_valence(0) + grid_mesh.points());
     }
 }
 
@@ -859,7 +956,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
         Node &line_conn = line_topo["elements/connectivity"];
 
         EXPECT_EQ(line_conn.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(line_conn.dtype().number_of_elements() / 2, grid_mesh.lines());
+        EXPECT_EQ(line_conn.dtype().number_of_elements(), 2 * grid_mesh.lines());
 
         // Content Consistency Checks //
 
@@ -868,7 +965,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
 
         // Verify Correctness of Mappings //
 
-        // TODO(JRC)
+        EXPECT_EQ(t2l_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(t2l_map.dtype().number_of_elements(),
+            (grid_mesh.lines_per_elem() + 1) * grid_mesh.elems());
+
+        EXPECT_EQ(l2t_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(l2t_map.dtype().number_of_elements(),
+            grid_mesh.elem_valence(1) + grid_mesh.lines());
     }
 }
 
@@ -925,7 +1028,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
 
         // Verify Correctness of Mappings //
 
-        // TODO(JRC)
+        EXPECT_EQ(t2f_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(t2f_map.dtype().number_of_elements(),
+            (grid_mesh.faces_per_elem() + 1) * grid_mesh.elems());
+
+        EXPECT_EQ(f2t_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(f2t_map.dtype().number_of_elements(),
+            grid_mesh.elem_valence(2) + grid_mesh.faces());
     }
 }
 
@@ -1009,7 +1118,17 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
 
         // Verify Correctness of Mappings //
 
-        // TODO(JRC)
+        // NOTE(JRC): In 3D, each side propogates internally to each hex twice
+        // in order to cover both attached faces.
+        const index_t side_valence_factor = (grid_mesh.dims() < 3) ? 1 : 2;
+
+        EXPECT_EQ(t2s_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(t2s_map.dtype().number_of_elements(),
+            side_valence_factor * grid_mesh.elem_valence(1) + grid_mesh.elems());
+
+        EXPECT_EQ(s2t_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(s2t_map.dtype().number_of_elements(),
+            side_valence_factor * 2 * grid_mesh.elem_valence(1));
     }
 }
 
@@ -1094,6 +1213,12 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
 
         // Verify Correctness of Mappings //
 
-        // TODO(JRC)
+        EXPECT_EQ(t2c_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(t2c_map.dtype().number_of_elements(),
+            grid_mesh.elem_valence(0) + grid_mesh.elems());
+
+        EXPECT_EQ(c2t_map.dtype().id(), grid_conn.dtype().id());
+        EXPECT_EQ(c2t_map.dtype().number_of_elements(),
+            2 * grid_mesh.elem_valence(0));
     }
 }
