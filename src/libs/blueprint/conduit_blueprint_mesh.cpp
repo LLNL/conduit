@@ -3390,12 +3390,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         std::vector< index_t > elem_edim_stack(1, topo_shape.dim);
         std::vector< std::vector<index_t> > elem_eparent_stack(1);
 
-        int64 elem_num_sides = topo_data.get_entity_assocs(
-            elem_index, topo_shape.dim, line_shape.dim).size();
-        raw_data.set(elem_num_sides);
-        misc_data.set_external(DataType(int_dtype.id(), 1),
-            s2dmap.element_ptr(s2d_index++));
-        raw_data.to_data_type(int_dtype.id(), misc_data);
+        int64 s2d_start_index = s2d_index++;
 
         while(!elem_embed_stack.empty())
         {
@@ -3453,6 +3448,12 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                 }
             }
         }
+
+        int64 elem_num_sides = s2d_index - s2d_start_index - 1;
+        raw_data.set(elem_num_sides);
+        misc_data.set_external(DataType(int_dtype.id(), 1),
+            s2dmap.element_ptr(s2d_start_index++));
+        raw_data.to_data_type(int_dtype.id(), misc_data);
     }
 }
 
