@@ -1216,7 +1216,7 @@ struct TopologyMetadata
         std::vector<index_t> map_vec;
         for(index_t sdi = 0; sdi < (index_t)dim_assocs[src_dim].size(); sdi++)
         {
-            const std::set<index_t>& src_assocs = get_entity_assocs(sdi, src_dim, dst_dim);
+            const std::set<index_t> &src_assocs = get_entity_assocs(sdi, src_dim, dst_dim);
             map_vec.push_back( (index_t)src_assocs.size() );
             for(std::set<index_t>::const_iterator assoc_it = src_assocs.begin();
                 assoc_it != src_assocs.end(); assoc_it++)
