@@ -75,3 +75,8 @@ add_compiled_library(NAME conduit_libyaml
                      OBJECT
                      SOURCES ${libyaml_sources}
                      HEADERS ${libyaml_headers})
+
+if(WIN32 AND BUILD_SHARED_LIBS)
+    # we need this export to generate the right dll interface
+    target_compile_definitions(conduit_libyaml PRIVATE YAML_DECLARE_EXPORT)
+endif()
