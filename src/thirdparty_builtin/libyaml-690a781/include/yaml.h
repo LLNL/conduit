@@ -26,19 +26,27 @@ extern "C" {
 
 /** The public API declaration. */
 
-#if defined(__MINGW32__)
-#   define  YAML_DECLARE(type)  type
-#elif defined(WIN32)
-#   if defined(YAML_DECLARE_STATIC)
-#       define  YAML_DECLARE(type)  type
-#   elif defined(YAML_DECLARE_EXPORT)
-#       define  YAML_DECLARE(type)  __declspec(dllexport) type
-#   else
-#       define  YAML_DECLARE(type)  __declspec(dllimport) type
-#   endif
-#else
-#   define  YAML_DECLARE(type)  type
-#endif
+/* CDH: 2019_05_11 for Conduit
+    We are building as an object lib, we don't
+    need to export symbols.
+*/
+
+#define  YAML_DECLARE(type)  type
+ 
+// Old    
+// #if defined(__MINGW32__)
+// #   define  YAML_DECLARE(type)  type
+// #elif defined(WIN32)
+// #   if defined(YAML_DECLARE_STATIC)
+// #       define  YAML_DECLARE(type)  type
+// #   elif defined(YAML_DECLARE_EXPORT)
+// #       define  YAML_DECLARE(type)  __declspec(dllexport) type
+// #   else
+// #       define  YAML_DECLARE(type)  __declspec(dllimport) type
+// #   endif
+// #else
+// #   define  YAML_DECLARE(type)  type
+// #endif
 
 /** @} */
 
