@@ -94,24 +94,25 @@ public:
 //-----------------------------------------------------------------------------
     Generator();
 
-    /// create a generator from json, using a given protocol name, which can 
-    /// optionally be applied to a data pointer
+    /// create a generator from json or yaml using a given protocol name, 
+    //  which can optionally be applied to a data pointer
     ///
     /// protocols:
     ///   "json"
     ///   "conduit_json"
     ///   "conduit_base64_json"
+    ///   "yaml"
     ///
-    Generator(const std::string &json_schema,
+    Generator(const std::string &schema,
               const std::string &protocol = std::string("conduit_json"),
               void *data = NULL);
 
 
-    void set_json_schema(const std::string &json_schema);
+    void set_schema(const std::string &schema);
     void set_protocol(const std::string &protocol);
     void set_data_ptr(void *);
 
-    const std::string &json_schema() const;
+    const std::string &schema() const;
     const std::string &protocol()   const;
     void *data_ptr() const;
 
@@ -138,8 +139,8 @@ private:
 //-----------------------------------------------------------------------------
     
     
-    /// holds the json based schema text
-    std::string  m_json_schema;
+    /// holds the schema text
+    std::string  m_schema;
     /// holds the parsing protocol
     std::string  m_protocol;
     /// optional external data pointer
