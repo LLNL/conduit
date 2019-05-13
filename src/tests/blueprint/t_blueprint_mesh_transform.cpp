@@ -405,6 +405,9 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 {
+    // TODO(JRC): Refactor this code once 'ShapeType' and 'ShapeCascade' are
+    // exposed internally via a utilities header.
+
     const std::string TOPO_TYPE_LIST[5]      = {"lines", "tris", "quads","tets","hexs"};
     const index_t TOPO_TYPE_INDICES[5]       = {      2,      3,       4,     4,     8};
     const index_t TOPO_TYPE_FACES[5]         = {      1,      1,       1,     4,     6};
@@ -440,24 +443,24 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             topo_noelem.remove("elements");
             poly_noelem.set_external(topo_poly);
             poly_noelem.remove("elements");
-            ASSERT_FALSE(topo_noelem.diff(poly_noelem, info));
+            EXPECT_FALSE(topo_noelem.diff(poly_noelem, info));
         }
 
         { // Verify Element Components //
-            ASSERT_EQ(topo_poly["elements/shape"].as_string(),
+            EXPECT_EQ(topo_poly["elements/shape"].as_string(),
                 is_topo_3d ? "polyhedral" : "polygonal");
 
             const conduit::Node &topo_conn = topo_node["elements/connectivity"];
             conduit::Node &poly_conn = topo_poly["elements/connectivity"];
-            ASSERT_EQ(poly_conn.dtype().id(), topo_conn.dtype().id());
+            EXPECT_EQ(poly_conn.dtype().id(), topo_conn.dtype().id());
 
             const index_t topo_len = topo_conn.dtype().number_of_elements();
             const index_t poly_len = poly_conn.dtype().number_of_elements();
             const index_t topo_elems = topo_len / topo_indices;
             const index_t poly_stride = poly_len / topo_elems;
 
-            ASSERT_EQ(poly_stride, (is_topo_3d + topo_faces * (1 + topo_findices)));
-            ASSERT_EQ(poly_len % topo_elems, 0);
+            EXPECT_EQ(poly_stride, (is_topo_3d + topo_faces * (1 + topo_findices)));
+            EXPECT_EQ(poly_len % topo_elems, 0);
 
             conduit::Node topo_conn_array, poly_conn_array;
             topo_conn.to_int64_array(topo_conn_array);
@@ -467,12 +470,12 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             for(index_t ep = 0, et = 0; ep < poly_len;
                 ep += poly_stride, et += topo_indices)
             {
-                ASSERT_EQ(poly_data[ep], is_topo_3d ? topo_faces : topo_findices);
+                EXPECT_EQ(poly_data[ep], is_topo_3d ? topo_faces : topo_findices);
 
                 for(index_t efo = ep + is_topo_3d; efo < ep + poly_stride;
                     efo += 1 + topo_findices)
                 {
-                    ASSERT_EQ(poly_data[efo], topo_findices);
+                    EXPECT_EQ(poly_data[efo], topo_findices);
 
                     const std::set<index_t> topo_index_set(
                         &topo_data[et],
@@ -481,9 +484,9 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
                         &poly_data[efo + 1],
                         &poly_data[efo + 1 + topo_findices]);
                     // set of face indices is completely unique (no duplicates)
-                    ASSERT_EQ(poly_index_set.size(), topo_findices);
+                    EXPECT_EQ(poly_index_set.size(), topo_findices);
                     // all polygonal face indices can be found in the base element
-                    ASSERT_TRUE(std::includes(
+                    EXPECT_TRUE(std::includes(
                         topo_index_set.begin(), topo_index_set.end(),
                         poly_index_set.begin(), poly_index_set.end()));
                 }

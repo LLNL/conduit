@@ -7,6 +7,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased 
 
+### Added
+
+#### Blueprint
+
+- Added explicit topological data generation functions for points, lines, and faces
+- Added derived topology generation functions for element centroids, sides, and corners
+
 ### Changed
 
 #### General 
