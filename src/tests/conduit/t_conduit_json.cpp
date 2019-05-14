@@ -227,7 +227,7 @@ TEST(conduit_json, load_from_json)
 
     n.schema().save(ofname);
 
-    Schema s_dest;    
+    Schema s_dest;
     s_dest.load(ofname);
     
     EXPECT_EQ(true,s_dest.has_path("a"));

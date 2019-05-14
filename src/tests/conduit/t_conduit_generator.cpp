@@ -472,7 +472,33 @@ TEST(conduit_generator, simple_gen_schema_yaml)
     EXPECT_EQ(d_vals[1],10);
     EXPECT_EQ(d_vals[2],20);
     EXPECT_EQ(d_vals[3],30);
+    
+    
+    // test our special cases
+    
+    Generator g3("a: true\nb: false\nc: null\n",
+                 "yaml");
+    g3.walk(n);
+    n.print();
 
+    EXPECT_EQ(n["a"].as_uint8(),1);
+    EXPECT_EQ(n["b"].as_uint8(),0);
+    EXPECT_TRUE(n["c"].dtype().is_empty());
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, yaml_parsing_errors)
+{
+    Generator g("a: 10\ns","yaml");
+    Node n;
+    EXPECT_THROW(g.walk(n),conduit::Error);
+
+    // protocol will still be "yaml"
+    g.set_schema("[ 10,\ns");
+    EXPECT_THROW(g.walk(n),conduit::Error);
 }
 
 

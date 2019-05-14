@@ -92,6 +92,23 @@
                   << "\n");                                                  \
 }
 
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_YAML_PARSE_ERROR macro use as a single place for handling
+/// errors related to libyaml parsing.
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_YAML_PARSE_ERROR( yaml_doc, yaml_parser )                    \
+{                                                                            \
+    std::ostringstream __yaml_parse_oss;                                     \
+    Generator::Parser::YAML::parse_error_details( yaml_parser,               \
+                                                __yaml_parse_oss);           \
+    CONDUIT_ERROR("YAML parse error: \n"                                     \
+                  << __yaml_parse_oss.str()                                  \
+                  << "\n");                                                  \
+}
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -206,20 +223,33 @@ public:
     // Wrappers around libyaml c API that help us parse
     //-----------------------------------------------------------------------------
      
-    // TODO: YAMLDocument class to help with libyaml cleanup when exceptions 
-    // are thrown during parsing
-    //
-    // class YAMLDocument
-    // {
-    // public:
-    //     YAMLDocument();
-    //    ~YAMLDocument();
-    // };
-    //
-    
+    // YAMLParserWrapper class helps with libyaml cleanup when 
+    // exceptions are thrown during parsing
+    class YAMLParserWrapper
+    {
+    public:
+        YAMLParserWrapper();
+       ~YAMLParserWrapper();
+
+       // parses and creates doc tree, throws exception
+       // when things go wrong
+       void         parse(const char *yaml_txt);
+
+       yaml_document_t *yaml_doc_ptr();
+       yaml_node_t     *yaml_doc_root_ptr();
+
+    private:
+        yaml_document_t m_yaml_doc;
+        yaml_parser_t   m_yaml_parser;
+
+        bool m_yaml_parser_is_valid;
+        bool m_yaml_doc_is_valid;
+
+    };
+
     // 
     // yaml scalar (aka leaf) values are always strings, however that is 
-    // not a very useful way to parse into Conduit tree we apply json 
+    // not a very useful way to parse into Conduit tree. We apply json 
     // rules to the yaml leaves to get more useful types in Conduit
     //
 
@@ -291,8 +321,10 @@ public:
                                          Schema *schema,
                                          yaml_document_t *yaml_doc,
                                          yaml_node_t *yaml_node);
-
-    // TODO: Detailed parsing error helpers
+    
+    // extract human readable parser errors
+    static void    parse_error_details(yaml_parser_t *yaml_parser,
+                                       std::ostream &os);
 
   };
 
@@ -1455,6 +1487,99 @@ Generator::Parser::JSON::parse_error_details(const std::string &json,
 //-----------------------------------------------------------------------------
 
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::Generator::YAML::YAMLParserWrapper --
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+Generator::Parser::YAML::YAMLParserWrapper::YAMLParserWrapper()
+: m_yaml_parser_is_valid(false),
+  m_yaml_doc_is_valid(false)
+{
+
+}
+
+//---------------------------------------------------------------------------//
+Generator::Parser::YAML::YAMLParserWrapper::~YAMLParserWrapper()
+{
+    // cleanup!
+    if(m_yaml_parser_is_valid)
+    {
+        yaml_parser_delete(&m_yaml_parser);
+    }
+
+    if(m_yaml_doc_is_valid)
+    {
+        yaml_document_delete(&m_yaml_doc);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::Parser::YAML::YAMLParserWrapper::parse(const char *yaml_txt)
+{
+    // Initialize parser
+    if(yaml_parser_initialize(&m_yaml_parser) == 0)
+    {
+        // error!
+        CONDUIT_ERROR("yaml_parser_initialize failed");
+    }
+    else
+    {
+        m_yaml_parser_is_valid = true;
+    }
+
+    // set input
+    yaml_parser_set_input_string(&m_yaml_parser,
+                                 (const unsigned char*)yaml_txt,
+                                 strlen(yaml_txt));
+
+    // use parser to construct document
+    if( yaml_parser_load(&m_yaml_parser, &m_yaml_doc) == 0 )
+    {
+        CONDUIT_YAML_PARSE_ERROR(&m_yaml_doc,
+                                 &m_yaml_parser);
+    }
+    else
+    {
+        m_yaml_doc_is_valid = true;
+    }
+}
+
+//---------------------------------------------------------------------------//
+yaml_document_t *
+Generator::Parser::YAML::YAMLParserWrapper::yaml_doc_ptr()
+{
+    yaml_document_t *res = NULL;
+
+    if(m_yaml_doc_is_valid)
+    {
+        res = &m_yaml_doc;
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+yaml_node_t *
+Generator::Parser::YAML::YAMLParserWrapper::yaml_doc_root_ptr()
+{
+    yaml_node_t *res = NULL;
+
+    if(m_yaml_doc_is_valid)
+    {
+        res = yaml_document_get_root_node(&m_yaml_doc);
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::Generator::YAML::YAMLParserWrapper --
+//-----------------------------------------------------------------------------
+
+
 //---------------------------------------------------------------------------//
 // checks for "true" or "false" 
 bool
@@ -1742,59 +1867,24 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
                                                Schema *schema,
                                                const char *yaml_txt)
 {
-    // TODO CHECK PARSING ERRORS IN GENERAL!
-    
-    yaml_parser_t   yaml_parser;
-    yaml_document_t yaml_doc;
-    
+    YAMLParserWrapper parser;
+    parser.parse(yaml_txt);
 
-    // Initialize parser
-    if(yaml_parser_initialize(&yaml_parser) == 0)
+    yaml_document_t *yaml_doc  = parser.yaml_doc_ptr();
+    yaml_node_t     *yaml_node = parser.yaml_doc_root_ptr();
+
+
+    if(yaml_doc == NULL || yaml_node == NULL)
     {
-        // error!
-        CONDUIT_ERROR("yaml_parser_initialize failed");
+        CONDUIT_ERROR("failed to fetch yaml document root");
     }
 
-    // set input
-    yaml_parser_set_input_string(&yaml_parser,
-                                 (const unsigned char*)yaml_txt,
-                                 strlen(yaml_txt));
-
-    // construct document
-    if( yaml_parser_load(&yaml_parser, &yaml_doc) == 0)
-    {
-        // error, we ned to clean up, then trow
-        yaml_parser_delete(&yaml_parser);
-
-        yaml_document_delete(&yaml_doc);
-        CONDUIT_ERROR("yaml_parser_load failed");
-    }
-
-    yaml_node_t *yaml_node = yaml_document_get_root_node(&yaml_doc);
-    
-    if(yaml_node == NULL)
-    {
-        // cleanup doc
-        yaml_document_delete(&yaml_doc);
-
-        // cleanup parser
-        yaml_parser_delete(&yaml_parser);
-        CONDUIT_ERROR("yaml_document_get_root_node failed");
-    }
-    
-    // todo: Catch, Cleanup, then Refor? 
-    // or wrap in a class to avoid all of this error logic
     walk_pure_yaml_schema(node,
                           schema,
-                          &yaml_doc,
+                          yaml_doc,
                           yaml_node);
-    
-    
-    // cleanup doc
-    yaml_document_delete(&yaml_doc);
 
-    // cleanup parser
-    yaml_parser_delete(&yaml_parser);
+    // YAMLParserWrapper cleans up for us
 }
 
 
@@ -1869,9 +1959,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
             //   always use first instance, or always use last instance
             // however duplicate object names are most likely a
             // typo, so it's best to throw an error
-            
 
-            
             if(schema->has_child(entry_name))
             {
                 CONDUIT_ERROR("YAML Generator error:\n"
@@ -1901,7 +1989,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
                                                                    yaml_doc,
                                                                    yaml_node,
                                                                    seq_size);
-        
+
         if(hval_type == DataType::INT64_ID)
         {
 
@@ -1967,6 +2055,56 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
     }
 }
 
+
+//-----------------------------------------------------------------------------
+void
+Generator::Parser::YAML::parse_error_details(yaml_parser_t *yaml_parser,
+                                             std::ostream &os)
+{
+    os << "YAML Parsing Error (";
+    switch (yaml_parser->error)
+    {
+        case YAML_NO_ERROR:
+            os << "YAML_NO_ERROR";
+            break;
+        case YAML_MEMORY_ERROR:
+            os << "YAML_MEMORY_ERROR";
+            break;
+        case YAML_READER_ERROR:
+            os << "YAML_MEMORY_ERROR";
+            break;
+        case YAML_SCANNER_ERROR:
+            os << "YAML_SCANNER_ERROR";
+            break;
+        case YAML_PARSER_ERROR:
+            os << "YAML_PARSER_ERROR";
+            break;
+        case YAML_COMPOSER_ERROR:
+            os << "YAML_COMPOSER_ERROR";
+            break;
+        case YAML_WRITER_ERROR:
+            os << "YAML_WRITER_ERROR";
+            break;
+        case YAML_EMITTER_ERROR:
+            os << "YAML_EMITTER_ERROR";
+            break;
+        default:
+            os << "[Unknown Error!]";
+            break;
+    }
+    
+    // Q: Is yaml_parser->problem_mark.index useful here?
+    //    that might be the only case where we need the yaml_doc
+    //    otherwise using yaml_parser is sufficient
+
+    os << ")\n Problem:\n" << yaml_parser->problem << "\n"
+       << "  Problem Line: "   << yaml_parser->problem_mark.line << "\n"
+       << "  Problem Column: " << yaml_parser->problem_mark.column << "\n"
+       << " Context\n"         << yaml_parser->context << "\n"
+       << "  Context Line: "   << yaml_parser->context_mark.line << "\n"
+       << "  Context Column: " << yaml_parser->context_mark.column<< "\n"
+       << std::endl;
+}
 
 //-----------------------------------------------------------------------------
 // -- end conduit::Generator::Parser::YAML --

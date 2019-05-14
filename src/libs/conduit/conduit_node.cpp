@@ -11241,7 +11241,7 @@ Node::to_json_stream(const std::string &stream_path,
     }
     else if(protocol == "conduit_base64_json")
     {
-        return to_base64_json(stream_path,indent,depth,pad,eoe);        
+        return to_base64_json(stream_path,indent,depth,pad,eoe);
     }
     else
     {
@@ -11267,7 +11267,7 @@ Node::to_json_stream(std::ostream &os,
     }
     else if(protocol == "conduit_base64_json")
     {
-        return to_base64_json(os,indent,depth,pad,eoe);        
+        return to_base64_json(os,indent,depth,pad,eoe);
     }
     else
     {
