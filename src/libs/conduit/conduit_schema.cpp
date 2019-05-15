@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -809,6 +809,49 @@ Schema::child_name(index_t idx) const
 
     return res;
 }
+
+//---------------------------------------------------------------------------//
+void 
+Schema::rename_child(const std::string &current_name,
+                     const std::string &new_name)
+{
+    // make sure this schema describes an object
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("Cannot rename child, Schema is not OBJECT_ID");
+    
+    // check if current_name is valid
+    if(!has_child(current_name))
+    {
+        CONDUIT_ERROR("Cannot rename child, source child named: "
+                       << "'" << current_name << "'" <<
+                      " does not exist.");
+    }
+
+    // finally, make sure new_name isn't already a child
+    if(has_child(new_name))
+    {
+        CONDUIT_ERROR("Cannot rename child, destination child with name: "
+                       << "'" << new_name << "'" <<
+                      " already exists.");
+    }
+
+    std::map<std::string,index_t> &obj_map = object_map();
+    index_t idx = obj_map[current_name];
+
+    // update string to index map
+
+    // remove current_name
+    obj_map.erase(current_name);
+    // link new_name to the idx
+    obj_map[new_name] = idx;
+
+    // update index to string lookup
+    object_order()[(size_t)idx] = new_name;
+
+    // we don't need to modify children(), we are not changing the
+    // child schema 
+}
+
 
 //---------------------------------------------------------------------------//
 Schema &

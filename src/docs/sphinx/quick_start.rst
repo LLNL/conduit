@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -74,7 +74,7 @@ The install includes examples that demonstrate how to use Conduit in a CMake-bas
 CMake-based build system example (see: ``examples/conduit/using-with-cmake``):
 
 .. literalinclude:: ../../examples/using-with-cmake/CMakeLists.txt 
-   :lines: 45-53
+   :lines: 45-63
    :dedent: 2
 
 

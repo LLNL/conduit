@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -340,6 +340,45 @@ namespace topology
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &n,
                                                 conduit::Node &dest);
+
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_points(const conduit::Node &n,
+                                                   conduit::Node &dest,
+                                                   conduit::Node &s2dmap,
+                                                   conduit::Node &d2smap);
+
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_lines(const conduit::Node &n,
+                                                  conduit::Node &dest,
+                                                  conduit::Node &s2dmap,
+                                                  conduit::Node &d2smap);
+
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_faces(const conduit::Node &n,
+                                                  conduit::Node &dest,
+                                                  conduit::Node &s2dmap,
+                                                  conduit::Node &d2smap);
+
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_centroids(const conduit::Node &n,
+                                                      conduit::Node &dest,
+                                                      conduit::Node &cdest,
+                                                      conduit::Node &s2dmap,
+                                                      conduit::Node &d2smap);
+
+        //---------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &n,
+                                                  conduit::Node &dest,
+                                                  conduit::Node &cdest,
+                                                  conduit::Node &s2dmap,
+                                                  conduit::Node &d2smap);
+
+        //---------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_corners(const conduit::Node &n,
+                                                    conduit::Node &dest,
+                                                    conduit::Node &cdest,
+                                                    conduit::Node &s2dmap,
+                                                    conduit::Node &d2smap);
 
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &n,

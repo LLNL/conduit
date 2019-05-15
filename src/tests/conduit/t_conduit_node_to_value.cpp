@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -504,6 +504,25 @@ TEST(conduit_node_to_value, data_type_to_scalar)
                 case DataType::FLOAT64_ID:
                 {
                     EXPECT_NEAR(to_node.as_float64(),127.0,1e-4);
+                    break;
+                }
+                case DataType::CHAR8_STR_ID:
+                {
+                    EXPECT_EQ(to_node.to_json(),"127");
+                }
+                case DataType::EMPTY_ID:
+                {
+                    // no conversion to test
+                    break;
+                }
+                case DataType::LIST_ID:
+                {
+                    // no conversion to test
+                    break;
+                }
+                case DataType::OBJECT_ID:
+                {
+                    // no conversion to test
                     break;
                 }
             }

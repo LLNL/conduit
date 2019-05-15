@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -1010,6 +1010,85 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
     // check totally bad path
     EXPECT_FALSE(io::is_hdf5_file("/path/to/somewhere/that/cant/exist"));
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, test_remove_path)
+{
+    Node n;
+    n["path/mydata"] = 20;
+    n["path/otherdata/leaf"] = 42;
+    std::string tout = "tout_test_remove_path.hdf5";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
+    
+    io::save(n,tout, "hdf5");
+    
+    hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    io::hdf5_remove_path(h5_file_id,"path/otherdata/leaf");
+    io::hdf5_close_file(h5_file_id);
+    
+    n.reset();
+    io::load(tout,n);
+    EXPECT_FALSE(n.has_path("path/otherdata/leaf"));
+    EXPECT_TRUE(n.has_path("path/otherdata"));
+    n.print();
+    
+    
+    h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    io::hdf5_remove_path(h5_file_id,"path/otherdata");
+    io::hdf5_close_file(h5_file_id);
+    
+    n.reset();
+    io::load(tout,n);
+    EXPECT_FALSE(n.has_path("path/otherdata"));
+    EXPECT_TRUE(n.has_path("path"));
+    n.print();
+    
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, file_name_in_error)
+{
+    Node n;
+    n["path/mydata"] = 20;
+    n["path/otherdata/leaf"] = 42;
+    std::string tout = "tout_our_file_to_test.hdf5";
+
+    if(utils::is_file(tout))
+    {
+        utils::remove_file(tout);
+    }
+    
+    io::save(n,tout, "hdf5");
+    
+    hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    
+    Node n_read;
+    bool had_error = false;
+    try
+    {
+        io::hdf5_read(h5_file_id,"bad",n_read);
+    }
+    catch(Error &e)
+    {
+        had_error = true;
+        std::cout << "error message: " << e.message() ;
+        // error should have the file name in it
+        std::size_t found = e.message().find(tout);
+        EXPECT_TRUE(found!=std::string::npos);
+    }
+
+    // make sure we took the error path
+    EXPECT_TRUE(had_error);
+
+    io::hdf5_close_file(h5_file_id);
+}
+
 
 
 

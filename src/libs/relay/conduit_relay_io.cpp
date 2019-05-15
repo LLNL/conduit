@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -241,6 +241,11 @@ add_step(const Node &node,
         {
             adios_set_options(prev_options);
         }
+#else
+        CONDUIT_UNUSED(node);
+        CONDUIT_UNUSED(options);
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+                      "Failed to add_step");
 #endif
     }
     else
@@ -293,6 +298,10 @@ save(const Node &node,
      const std::string &protocol_,
      const Node &options)
 {
+    // we expect options to unused if all 3rd party i/o options are disabled
+    // avoid warning using CONDUIT_UNUSED macro.
+    CONDUIT_UNUSED(options);
+
     std::string protocol = protocol_;
     // allow empty protocol to be used for auto detect
     if(protocol.empty())
@@ -393,6 +402,10 @@ save_merged(const Node &node,
             const std::string &protocol_,
             const Node &options)
 {
+    // we expect options to unused if all 3rd party i/o options are disabled
+    // avoid warning using CONDUIT_UNUSED macro.
+    CONDUIT_UNUSED(options);
+
     std::string protocol = protocol_;
     // allow empty protocol to be used for auto detect
     if(protocol.empty())
@@ -557,6 +570,9 @@ load(const std::string &path,
             adios_set_options(prev_options);
         }
 #else
+        CONDUIT_UNUSED(step);
+        CONDUIT_UNUSED(domain);
+        CONDUIT_UNUSED(options);
         CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
 #endif

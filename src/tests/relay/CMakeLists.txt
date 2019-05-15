@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -52,6 +52,7 @@
 set(RELAY_TESTS t_relay_smoke
                 t_relay_io_basic
                 t_relay_io_file_sizes
+                t_relay_io_handle
                 t_relay_node_viewer
                 t_relay_websocket)
 
@@ -61,7 +62,7 @@ set(RELAY_TESTS t_relay_smoke
 set(RELAY_MPI_TESTS      t_relay_mpi_smoke t_relay_mpi_test)
 set(RELAY_SILO_TESTS     t_relay_io_silo)
 
-set(RELAY_HDF5_TESTS t_relay_io_hdf5 
+set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_read_and_print
                      t_relay_io_hdf5_slab
                      t_relay_io_hdf5_opts)

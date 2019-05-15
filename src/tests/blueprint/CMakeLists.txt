@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -52,7 +52,7 @@
 set(BLUEPRINT_TESTS t_blueprint_smoke 
                     t_blueprint_mesh_verify
                     t_blueprint_mesh_transform
-                    t_blueprint_mesh_misc
+                    t_blueprint_mesh_generate
                     t_blueprint_mcarray_verify
                     t_blueprint_mesh_examples
                     t_blueprint_mcarray_examples)

@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -47,7 +47,7 @@
 # Add a staging example
 ################################
 
-if(MPI_FOUND)
+if(MPI_FOUND AND ENABLE_EXAMPLES)
     message(STATUS "MPI enabled: Adding staging example program")
 
     set(conduit_staging_support_files conduit_staging.json conduit_staging.sh)

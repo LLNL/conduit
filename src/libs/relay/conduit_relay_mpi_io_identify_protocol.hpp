@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -50,6 +50,9 @@
 #ifndef CONDUIT_RELAY_IO_IDENTIFY_PROTOCOL_HPP
 #define CONDUIT_RELAY_IO_IDENTIFY_PROTOCOL_HPP
 #include <string>
+
+#include "conduit_relay_exports.h"
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -77,9 +80,8 @@ namespace io
 //-----------------------------------------------------------------------------
 /// Helper that identifies a relay io protocol from a file path.
 //-----------------------------------------------------------------------------
-void
-identify_protocol(const std::string &path,
-                  std::string &io_type);
+void CONDUIT_RELAY_API identify_protocol(const std::string &path,
+                                         std::string &io_type);
 
 //-----------------------------------------------------------------------------
 }

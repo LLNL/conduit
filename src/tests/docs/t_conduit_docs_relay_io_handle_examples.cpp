@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -44,22 +44,93 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: example.cpp
+/// file: t_conduit_docs_blueprint_examples.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <iostream>
-
 #include "conduit.hpp"
-#include "conduit_relay.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_relay.hpp"
 
+#include <iostream>
+#include "gtest/gtest.h"
+using namespace conduit;
 
-int main(int argc, char **argv)
+//-----------------------------------------------------------------------------
+// 65-114
+TEST(conduit_docs, relay_io_handle_1)
 {
-    std::cout << conduit::about() << std::endl
-              << conduit::relay::about() << std::endl
-              << conduit::relay::io::about() << std::endl
-              << conduit::blueprint::about() << std::endl;
+    CONDUIT_INFO("relay_io_handle_example_1");
+
+    // setup node with example data to save
+    Node n;
+    n["a/data"]   = 1.0;
+    n["a/more_data"] = 2.0;
+    n["a/b/my_string"] = "value";
+    std::cout << "\nNode to write:" << std::endl;
+    n.print();
+
+    // save to hdf5 file using the path-based api
+    conduit::relay::io::save(n,"my_output.hdf5");
+
+    // inspect and modify with an IOHandle
+    conduit::relay::io::IOHandle h;
+    h.open("my_output.hdf5");
+
+    // check for and read a path we are interested in
+    if( h.has_path("a/data") )
+    {
+        Node nread;
+        h.read("a/data",nread);
+        std::cout << "\nValue at \"a/data\" = " 
+                  << nread.to_float64()
+                  << std::endl;
+    }
+
+    // check for and remove a path we don't want
+    if( h.has_path("a/more_data") )
+    {
+        h.remove("a/more_data");
+        std::cout << "\nRemoved \"a/more_data\"" 
+                  << std::endl;
+    }
+
+    // verify the data was removed
+    if( !h.has_path("a/more_data") )
+    {
+        std::cout << "\nPath \"a/more_data\" is no more" 
+                  << std::endl;
+    }
+
+    std::cout << "\nWriting to \"a/c\""
+              << std::endl;
+    // write some new data
+    n = 42.0;
+    h.write(n,"a/c");
+
+    // find the names of the children of "a"
+    std::vector<std::string> cld_names;
+    h.list_child_names("a",cld_names);
+
+    // print the names
+    std::cout << "\nChildren of \"a\": ";
+    std::vector<std::string>::const_iterator itr;
+    for (itr = cld_names.begin();
+         itr < cld_names.end();
+         ++itr)
+    {
+        std::cout << "\"" << *itr << "\" ";
+    }
+    
+    std::cout << std::endl;
+
+    Node nread;
+    // read the entire contents
+    h.read(nread);
+
+    std::cout << "\nRead Result:" << std::endl;
+    nread.print();
+
+    CONDUIT_INFO("relay_io_handle_example_1");
 }
 

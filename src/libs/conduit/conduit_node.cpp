@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -7594,14 +7594,18 @@ Node::compact_to(Node &n_dest) const
 {
     n_dest.reset();
     index_t c_size = total_bytes_compact();
+
+    // avoid allocation for zero-bytes cases
+    if(c_size > 0)
+    {
+        n_dest.allocate(c_size);
+    }
+
     m_schema->compact_to(*n_dest.schema_ptr());
-    n_dest.allocate(c_size);
-    
     uint8 *n_dest_data = (uint8*)n_dest.m_data;
     compact_to(n_dest_data,0);
     // need node structure
     walk_schema(&n_dest,n_dest.m_schema,n_dest_data);
-
 }
 
 //-----------------------------------------------------------------------------
@@ -12061,6 +12065,16 @@ Node::remove(const std::string &path)
         m_schema->remove(p_curr);
         m_children.erase(m_children.begin() + idx);
     }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::rename_child(const std::string &current_name,
+                   const std::string &new_name)
+{
+    // this is a pass through to the schema, 
+    // which handles all the book keeping related to child rename
+    m_schema->rename_child(current_name,new_name);
 }
 
 

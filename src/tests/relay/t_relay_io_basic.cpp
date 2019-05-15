@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -135,3 +135,50 @@ TEST(conduit_relay_io_basic, json)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_basic, identify_protocol)
+{
+    std::string protocol;
+
+    // basic checks
+    io::identify_protocol("test.conduit_bin",protocol);
+    EXPECT_EQ(protocol,"conduit_bin");
+
+    io::identify_protocol("test.conduit_json",protocol);
+    EXPECT_EQ(protocol,"conduit_json");
+
+    io::identify_protocol("test.conduit_base64_json",protocol);
+    EXPECT_EQ(protocol,"conduit_base64_json");
+
+    io::identify_protocol("test.json",protocol);
+    EXPECT_EQ(protocol,"json");
+    
+    // silo check
+    io::identify_protocol("test.silo",protocol);
+    EXPECT_EQ(protocol,"conduit_silo");
+
+    // hdf5 checks
+    io::identify_protocol("test.hdf5",protocol);
+    EXPECT_EQ(protocol,"hdf5");
+
+    io::identify_protocol("test.h5",protocol);
+    EXPECT_EQ(protocol,"hdf5");
+
+
+    // adios checks
+    io::identify_protocol("test.bp",protocol);
+    EXPECT_EQ(protocol,"adios");
+
+    io::identify_protocol("test.bp",protocol);
+    EXPECT_EQ(protocol,"adios");
+
+    io::identify_protocol("test.adios",protocol);
+    EXPECT_EQ(protocol,"adios");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_basic, save_empty)
+{
+    Node n;
+    io::save(n, "test_conduit_relay_io_save_empty.conduit_bin");
+}

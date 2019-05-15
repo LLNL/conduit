@@ -159,7 +159,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     }
     if(silo_enabled)
     {
-        itr.to_front();
+        // we removed datasets above, so we need an updated iterator
+        itr = dsets.children();
         while(itr.has_next())
         {
             const Node &mesh = itr.next();
@@ -278,7 +279,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     }
     if(silo_enabled)
     {
-        itr.to_front();
+        // we removed datasets above, so we need an updated iterator
+        itr = dsets.children();
         while(itr.has_next())
         {
             const Node &mesh = itr.next();
@@ -400,6 +402,29 @@ TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
         EXPECT_GT(mesh["fields/braid/values"].dtype().number_of_elements(),0);
         mesh.print();
     }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
+{
+    // braid provides cycle and time, make sure those make it into 
+    // an index created with generate_index
+    Node mesh;
+    blueprint::mesh::examples::braid("hexs",
+                                      5,
+                                      5,
+                                      5,
+                                      mesh);
+
+    Node idx;
+    blueprint::mesh::generate_index(mesh,
+                                    "",
+                                    1,
+                                    idx);
+
+    EXPECT_TRUE(idx.has_path("state/cycle"));
+    EXPECT_TRUE(idx.has_path("state/time"));
 }
 
 

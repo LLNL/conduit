@@ -87,7 +87,10 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_exports.h.in"
 set(conduit_relay_headers
     conduit_relay.hpp
     conduit_relay_io.hpp
+    conduit_relay_io_handle.hpp
+    conduit_relay_io_handle_api.hpp
     conduit_relay_io_identify_protocol.hpp
+    conduit_relay_io_identify_protocol_api.hpp
     conduit_relay_io_blueprint.hpp
     conduit_relay_io_blueprint_api.hpp
     conduit_relay_web.hpp
@@ -108,6 +111,7 @@ set(conduit_relay_c_headers
 set(conduit_relay_sources
     conduit_relay.cpp
     conduit_relay_io.cpp
+    conduit_relay_io_handle.cpp
     conduit_relay_io_identify_protocol.cpp
     conduit_relay_io_blueprint.cpp
     conduit_relay_web.cpp
@@ -176,7 +180,9 @@ if(UNIX AND NOT APPLE)
     # we need these for civetweb on linux, we may need similar libs
     # on windows (OSX appears ok without them)
     list(APPEND conduit_relay_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
+    set(CONDUIT_MAKE_EXTRA_LIBS "${CONDUIT_MAKE_EXTRA_LIBS} -ldl -lrt ${CMAKE_THREAD_LIBS_INIT}" CACHE STRING "" FORCE)
 endif()
+
 
 #
 # Link with silo and hdf5 and adios if these are enabled
@@ -207,49 +213,48 @@ add_compiled_library(NAME conduit_relay
                      DEPENDS_ON ${conduit_relay_deps}
                      HEADERS_DEST_DIR include/conduit)
 
-###################################
-# add conduit_relay_node_viewer exe
-###################################
+if(ENABLE_UTILS)
+    ###################################
+    # add conduit_relay_node_viewer exe
+    ###################################
+    blt_add_executable(
+        NAME        conduit_relay_node_viewer
+        SOURCES     conduit_relay_web_node_viewer_exe.cpp
+        DEPENDS_ON  conduit_relay
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-blt_add_executable(
-    NAME        conduit_relay_node_viewer
-    SOURCES     conduit_relay_web_node_viewer_exe.cpp
-    DEPENDS_ON  conduit_relay
-    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    # add install target for conduit_relay_node_viewer
+    install(TARGETS conduit_relay_node_viewer
+            RUNTIME DESTINATION bin)
 
-# add install target for conduit_relay_node_viewer
-install(TARGETS conduit_relay_node_viewer
-        RUNTIME DESTINATION bin)
-
-
-###################################
-# add conduit_relay_io_ls exe
-###################################
-blt_add_executable(
-    NAME        conduit_relay_io_ls
-    SOURCES     conduit_relay_io_ls_exe.cpp
-    DEPENDS_ON  conduit_relay
-    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    ###################################
+    # add conduit_relay_io_ls exe
+    ###################################
+    blt_add_executable(
+        NAME        conduit_relay_io_ls
+        SOURCES     conduit_relay_io_ls_exe.cpp
+        DEPENDS_ON  conduit_relay
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 
-# add install target
-install(TARGETS conduit_relay_io_ls
-        RUNTIME DESTINATION bin)
+    # add install target
+    install(TARGETS conduit_relay_io_ls
+            RUNTIME DESTINATION bin)
 
-###################################
-# add conduit_relay_io_convert exe
-###################################
+    ###################################
+    # add conduit_relay_io_convert exe
+    ###################################
 
-blt_add_executable(
-    NAME        conduit_relay_io_convert
-    SOURCES     conduit_relay_io_convert_exe.cpp
-    DEPENDS_ON  conduit_relay
-    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    blt_add_executable(
+        NAME        conduit_relay_io_convert
+        SOURCES     conduit_relay_io_convert_exe.cpp
+        DEPENDS_ON  conduit_relay
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-# add install target for conduit_relay_io_convert
-install(TARGETS conduit_relay_io_convert
-        RUNTIME DESTINATION bin)
-
+    # add install target for conduit_relay_io_convert
+    install(TARGETS conduit_relay_io_convert
+            RUNTIME DESTINATION bin)
+endif()
 
 ##############################################################
 # install files needed for the relay web node viewer client

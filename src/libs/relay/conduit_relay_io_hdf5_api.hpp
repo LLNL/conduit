@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -296,6 +296,16 @@ void CONDUIT_RELAY_API hdf5_group_list_child_names(hid_t hdf5_id,
 /// Check if path exists relative to hdf5 id
 //-----------------------------------------------------------------------------
 bool CONDUIT_RELAY_API hdf5_has_path(hid_t hdf5_id, const std::string &path);
+
+//-----------------------------------------------------------------------------
+/// Remove a hdf5 path, if it exists
+///
+/// Note: This does not necessarily reclaim the space used, however
+/// it does allow you to write new data to this path, avoiding errors 
+/// related to incompatible groups or data sets.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_remove_path(hid_t hdf5_id, const std::string &path);
+
 
 //-----------------------------------------------------------------------------
 /// Pass a Node to set hdf5 i/o options.

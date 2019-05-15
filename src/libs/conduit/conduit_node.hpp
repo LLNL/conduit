@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // 
 // Produced at the Lawrence Livermore National Laboratory
 // 
@@ -3567,6 +3567,9 @@ public:
     void    remove(index_t idx);
     /// remove child at given path (object interface)
     void    remove(const std::string &path);
+    /// rename a child (object interface)
+    void    rename_child(const std::string &current_name,
+                         const std::string &new_name);
 
 
     /// helpers to create a list of a homogenous types

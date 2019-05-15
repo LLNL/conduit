@@ -1,5 +1,5 @@
 .. ############################################################################
-.. # Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+.. # Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 .. # 
 .. # Produced at the Lawrence Livermore National Laboratory
 .. # 
@@ -61,6 +61,7 @@ The **io** and **web** features are built into the *conduit_relay* library. The 
 
 
 .. toctree::
+     relay_io
      relay_mpi
 ..    relay_web
 ..     relay_mpi

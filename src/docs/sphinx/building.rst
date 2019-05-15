@@ -115,6 +115,9 @@ Conduit's build system supports the following CMake options:
 
 * **BUILD_SHARED_LIBS** - Controls if shared (ON) or static (OFF) libraries are built. *(default = ON)* 
 * **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
+* **ENABLE_EXAMPLES** - Controls if examples are built. *(default = ON)* 
+* **ENABLE_UTILS** - Controls if utilities are built. *(default = ON)* 
+* **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
 * **ENABLE_DOCS** - Controls if the Conduit documentation is built (when sphinx and doxygen are found ). *(default = ON)*
 * **ENABLE_COVERAGE** - Controls if code coverage compiler flags are used to build Conduit. *(default = OFF)*
 * **ENABLE_PYTHON** - Controls if the Conduit Python module is built. *(default = OFF)*

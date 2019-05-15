@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -71,7 +71,8 @@ else()
                  REQUIRED
                  HINTS ${HDF5_DIR}/cmake/hdf5 
                        ${HDF5_DIR}/lib/cmake/hdf5
-                       ${HDF5_DIR}/share/cmake/hdf5)
+                       ${HDF5_DIR}/share/cmake/hdf5
+                       ${HDF5_DIR}/cmake)
 endif()
 
 # FindHDF5/find_package sets HDF5_DIR to it's installed CMake info if it exists

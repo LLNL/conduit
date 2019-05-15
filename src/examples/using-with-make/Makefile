@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
+# Copyright (c) Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -47,16 +47,16 @@
 #
 # To build:
 #  make CONDUIT_DIR={conduit install path} 
-#  ./example
+#  ./conduit_example
 #
 # From within a conduit install:
 #  make 
-#  ./example
+#  ./conduit_example
 #
 # Which corresponds to:
 #
 #  make CONDUIT_DIR=../../../ 
-#  ./example
+#  ./conduit_example
 #
 ###############################################################################
 
@@ -65,6 +65,12 @@ CONDUIT_DIR ?= ../../..
 # See $(CONDUIT_DIR)/share/conduit/conduit_config.mk for detailed linking info
 include $(CONDUIT_DIR)/share/conduit/conduit_config.mk
 
+INC_FLAGS = $(CONDUIT_INCLUDE_FLAGS)
+LNK_FLAGS = $(CONDUIT_LINK_RPATH) $(CONDUIT_LIB_FLAGS)
+
 main:
-	$(CXX) $(CONDUIT_INCLUDE_FLAGS) example.cpp $(CONDUIT_LIB_FLAGS) -o example
+	$(CXX) $(INC_FLAGS) conduit_example.cpp $(LNK_FLAGS) -o conduit_example
+
+clean:
+	rm -f conduit_example
 

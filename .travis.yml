@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -59,17 +59,19 @@ env:
     #  static vs shared libs
     #  python 2 vs 3
     #  cmake 3.9.4
+    #  silo vs no silo
     #  adios vs no adios
     #  coverage of unit tests
     #################################
     # TODO re-enable docs after resolving doxygen dep build issues
     #################################
-    # mpi on, docs off, shared libs, python 2.7, adios off
+    # mpi on, docs on, shared libs, python 2.7, adios off
     # TODO turn on coverage for this case
     - BUILD_SHARED_LIBS=ON
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
-      ENABLE_DOCS=OFF
+      ENABLE_DOCS=ON
+      ENABLE_SILO=ON
       ENABLE_ADIOS=OFF
       ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
@@ -80,6 +82,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_SILO=ON
       ENABLE_ADIOS=OFF
       ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
@@ -90,6 +93,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_SILO=ON
       ENABLE_ADIOS=OFF
       ENABLE_PYTHON=ON
       PYTHON_VERSION=3.6.3
@@ -100,6 +104,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_SILO=ON
       ENABLE_ADIOS=OFF
       ENABLE_PYTHON=ON
       PYTHON_VERSION=3.6.3
@@ -110,6 +115,7 @@ env:
       ENABLE_COVERAGE=OFF
       ENABLE_MPI=ON
       ENABLE_DOCS=OFF
+      ENABLE_SILO=ON
       ENABLE_ADIOS=ON
       ENABLE_PYTHON=ON
       PYTHON_VERSION=2.7.14
@@ -153,11 +159,14 @@ script:
   - if [ $ENABLE_MPI = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
   - if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+python"; fi
   - if [ $ENABLE_PYTHON = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
+  - if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+silo"; fi
+  - if [ $ENABLE_SILO = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~silo"; fi
   - if [ $ENABLE_ADIOS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios"; fi
   - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
   # versions and package selections
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
+  - if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
   - echo $SPACK_SPEC
   # Output something every 10 minutes or Travis kills the job
   - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &
@@ -204,6 +213,7 @@ script:
   # test our examples that demo using an installed conduit
   - cd $TRAVIS_BUILD_DIR
   - ./scripts/ci/travis-test-build-examples-vs-install.sh
+  - ./scripts/ci/travis-test-python-example-vs-install.sh 
 
 after_success:
   - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;
