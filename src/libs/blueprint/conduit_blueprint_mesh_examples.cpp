@@ -2815,8 +2815,8 @@ adjset_uniform(Node &res)
         domain_node["state/domain_id"].set(i);
         Node &domain_coords = domain_node["coordsets/coords"];
         domain_coords["type"].set_string("uniform");
-        domain_coords["dims/i"].set_int32(20);
-        domain_coords["dims/j"].set_int32(20);
+        domain_coords["dims/i"].set_int32(21);
+        domain_coords["dims/j"].set_int32(21);
         domain_coords["spacing/dx"].set_float64(0.0125);
         domain_coords["spacing/dy"].set_float64(0.025);
         domain_coords["origin/x"].set_float64(0.25*(i/2));
