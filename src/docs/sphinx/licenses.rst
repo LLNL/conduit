@@ -59,9 +59,10 @@ Here is a list of the software components used by conduit in source form and the
 C and C++ Libraries
 =====================
 - *gtest*: From BLT - (BSD Style License)
-- *libb64*: thirdparty_builtin/libb64/LICENSE (Public Domain)
-- *rapidjson*: thirdparty_builtin/rapidjson/license.txt (MIT License)
-- *civetweb*: thirdparty_builtin/civetweb-1.8/LICENSE.md (MIT License)
+- *libb64*: src/thirdparty_builtin/libb64/LICENSE (Public Domain)
+- *rapidjson*: src/thirdparty_builtin/rapidjson/license.txt (MIT License)
+- *civetweb*: src/thirdparty_builtin/civetweb-0a95342/LICENSE.md (MIT License)
+- *libyaml*: src/thirdparty_builtin/libyaml-690a781/LICENSE (MIT License)
 
 JavaScript Libraries
 =====================

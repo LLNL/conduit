@@ -266,7 +266,7 @@ public:
     // checks if c-string is "null"
     static bool string_is_null(const char *txt_value);
 
-    // checks if c-string is empty
+    // checks if c-string is a null pointer or empty
     static bool string_is_empty(const char *txt_value);
 
     // checks if input c-string is an integer or a double
@@ -1615,16 +1615,7 @@ Generator::Parser::YAML::string_is_null(const char *txt_value)
 }
 
 //---------------------------------------------------------------------------//
-// checks if input string holds something that converts
-// to a double (integer strings will pass this check )
-bool
-Generator::Parser::YAML::string_is_number(const char *txt_value)
-{
-    return string_is_integer(txt_value) || string_is_double(txt_value);
-}
-
-//---------------------------------------------------------------------------//
-// checks if input string is null or empty
+// checks if input string is a null pointer or empty
 bool
 Generator::Parser::YAML::string_is_empty(const char *txt_value)
 {
@@ -1637,11 +1628,21 @@ Generator::Parser::YAML::string_is_empty(const char *txt_value)
 // checks if input string holds something that converts
 // to a double (integer strings will pass this check )
 bool
+Generator::Parser::YAML::string_is_number(const char *txt_value)
+{
+    return string_is_integer(txt_value) || string_is_double(txt_value);
+}
+
+//---------------------------------------------------------------------------//
+// checks if input string holds something that converts
+// to a double (integer strings will pass this check )
+bool
 Generator::Parser::YAML::string_is_double(const char *txt_value)
 {
-    char *val_end = NULL;
-    if(strlen(txt_value) == 0)
+    // TODO: inline check for empty ?
+    if(string_is_empty(txt_value))
         return false;
+    char *val_end = NULL;
     strtod(txt_value,&val_end);
     return *val_end == 0;
 }
@@ -1652,9 +1653,10 @@ Generator::Parser::YAML::string_is_double(const char *txt_value)
 bool
 Generator::Parser::YAML::string_is_integer(const char *txt_value)
 {
-    char *val_end = NULL;
-    if(strlen(txt_value) == 0)
+    // TODO: inline check for empty ?
+    if(string_is_empty(txt_value))
         return false;
+    char *val_end = NULL;
     strtol(txt_value,&val_end,10);
     return *val_end == 0;
 }
@@ -1663,7 +1665,7 @@ Generator::Parser::YAML::string_is_integer(const char *txt_value)
 double 
 Generator::Parser::YAML::string_to_double(const char *txt_value)
 {
-    char *val_end;
+    char *val_end = NULL;
     return strtod(txt_value,&val_end);
 }
 
@@ -1671,7 +1673,7 @@ Generator::Parser::YAML::string_to_double(const char *txt_value)
 long int
 Generator::Parser::YAML::string_to_long(const char *txt_value)
 {
-    char *val_end;
+    char *val_end = NULL;
     return strtol(txt_value,&val_end,10);
 }
 
