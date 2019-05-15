@@ -249,7 +249,6 @@ TEST(conduit_generator, simple_gen_schema_with_gen_setters)
 }
 
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_generator, gen_array_with_num_eles)
 {

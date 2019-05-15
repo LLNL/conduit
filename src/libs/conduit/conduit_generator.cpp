@@ -266,6 +266,9 @@ public:
     // checks if c-string is "null"
     static bool string_is_null(const char *txt_value);
 
+    // checks if c-string is empty
+    static bool string_is_empty(const char *txt_value);
+
     // checks if input c-string is an integer or a double
     static bool string_is_number(const char *txt_value);
 
@@ -1621,12 +1624,24 @@ Generator::Parser::YAML::string_is_number(const char *txt_value)
 }
 
 //---------------------------------------------------------------------------//
+// checks if input string is null or empty
+bool
+Generator::Parser::YAML::string_is_empty(const char *txt_value)
+{
+    if(txt_value == NULL)
+        return true;
+    return strlen(txt_value) == 0;
+}
+
+//---------------------------------------------------------------------------//
 // checks if input string holds something that converts
 // to a double (integer strings will pass this check )
 bool
 Generator::Parser::YAML::string_is_double(const char *txt_value)
 {
-    char *val_end;
+    char *val_end = NULL;
+    if(strlen(txt_value) == 0)
+        return false;
     strtod(txt_value,&val_end);
     return *val_end == 0;
 }
@@ -1637,7 +1652,9 @@ Generator::Parser::YAML::string_is_double(const char *txt_value)
 bool
 Generator::Parser::YAML::string_is_integer(const char *txt_value)
 {
-    char *val_end;
+    char *val_end = NULL;
+    if(strlen(txt_value) == 0)
+        return false;
     strtol(txt_value,&val_end,10);
     return *val_end == 0;
 }
@@ -1850,7 +1867,7 @@ Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
     {
         node.set((uint8)0);
     }
-    else if(string_is_null(yaml_txt))
+    else if( string_is_null(yaml_txt) || string_is_empty(yaml_txt) )
     {
         node.reset();
     }

@@ -102,7 +102,7 @@ TEST(conduit_json, to_json_2)
 
     //
     // JSON parsing will place values into an int64, 
-    // here we use "to_uint32" to do a direct comparsion
+    // here we use "to_int64" to do a direct comparison
     //
     EXPECT_EQ(n["a"].to_int64(),n2["a"].to_int64());
     EXPECT_EQ(n["b"].to_int64(),n2["b"].to_int64());
