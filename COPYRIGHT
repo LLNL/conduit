@@ -20,7 +20,6 @@ PackageLicenseDeclared: BSD-3-Clause
 
 PackageName: libb64
 PackageHomePage: http://libb64.sourceforge.net/
-PackageLicenseDeclared: Public-Domain
 
 PackageName: rapidjson
 PackageHomePage: http://rapidjson.org/
