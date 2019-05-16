@@ -199,9 +199,95 @@ TEST(conduit_yaml, parse_yaml_5)
     EXPECT_EQ(n["a"].dtype().number_of_elements(),5);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, parse_yaml_6)
+{
+    // test promote to float64
+    std::string yaml_txt ="a: myfunc(\"here\")\nb: myfunc('here')";
+    Generator g(yaml_txt,
+                "yaml");
+    Node n;
+    g.walk(n);
+    std::cout << n.to_yaml() << std::endl;
+
+    EXPECT_TRUE(n["a"].dtype().is_char8_str());
+    EXPECT_TRUE(n["b"].dtype().is_char8_str());
+
+    EXPECT_EQ(n["a"].as_string(),"myfunc(\"here\")");
+    EXPECT_EQ(n["b"].as_string(),"myfunc('here')");
+}
 
 //-----------------------------------------------------------------------------
-TEST(conduit_yaml, sneaky_string)
+TEST(conduit_yaml, parse_yaml_7)
+{
+    // test promote to float64
+    std::string yaml_txt ="a: \"string with an embedded :\"\n";
+    Generator g(yaml_txt,
+                "yaml");
+    Node n;
+    g.walk(n);
+    std::cout << n.to_yaml() << std::endl;
+
+    EXPECT_TRUE(n["a"].dtype().is_char8_str());
+
+    EXPECT_EQ(n["a"].as_string(),"string with an embedded :");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, parse_yaml_8)
+{
+    // test promote to float64
+    std::string yaml_txt ="a: [ b: [ c,d,e ], f: g]\n";
+    Generator g(yaml_txt,
+                "yaml");
+    Node n;
+    g.walk(n);
+    std::cout << n.to_yaml() << std::endl;
+
+
+    EXPECT_EQ(n["a"][0]["b"][0].as_string(),"c");
+    EXPECT_EQ(n["a"][0]["b"][1].as_string(),"d");
+    EXPECT_EQ(n["a"][0]["b"][2].as_string(),"e");
+    EXPECT_EQ(n["a"][1]["f"].as_string(),"g");
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, parse_yaml_9)
+{
+    // test promote to float64
+    std::string yaml_txt ="a:    leading and trailing space eaten     \n";
+    yaml_txt += "b: '      leading and trailing space survives    '\n";
+    yaml_txt += "c: \"      leading and trailing space survives    \"\n";
+    Generator g(yaml_txt,
+                "yaml");
+    Node n;
+    g.walk(n);
+    std::cout << n.to_yaml() << std::endl;
+
+    EXPECT_EQ(n["a"].as_string(),"leading and trailing space eaten");
+    EXPECT_EQ(n["b"].as_string(),"      leading and trailing space survives    ");
+    EXPECT_EQ(n["c"].as_string(),"      leading and trailing space survives    ");
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, parse_yaml_10)
+{
+    // test promote to float64
+    std::string yaml_txt ="# comment\n# comment 2\na: not a comment";
+    Generator g(yaml_txt,
+                "yaml");
+    Node n;
+    g.walk(n);
+    std::cout << n.to_yaml() << std::endl;
+    
+    EXPECT_EQ(n["a"].as_string(),"not a comment");
+    
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, suprise_string)
 {
     // test promote to float64
     std::string yaml_txt ="a: [0,1,-2,3.0,4, hamburger]";
@@ -377,46 +463,84 @@ TEST(conduit_yaml, yaml_inf_and_nan)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_yaml, json_parse_error_detailed)
+TEST(conduit_yaml, parse_error_detailed)
 {
-    try
     {
-        std::string pure_json = "{\"value\": \n \n \n \n \"\\\"mystring!\\\"\" \n :}";
-        Generator g(pure_json,"yaml");
+        bool throw_occured = false;
+        try
+        {
+            std::string pure_json = "{\"value\": \n \n \n \n \"\\\"mystring!\\\"\" \n :}";
+            Generator g(pure_json,"yaml");
 
-        Node n_res;
-        g.walk(n_res);
-    }
-    catch(conduit::Error e)
-    {
-        CONDUIT_INFO(e.message());
-    }
+            Node n_res;
+            g.walk(n_res);
+        }
+        catch(conduit::Error e)
+        {
+            CONDUIT_INFO(e.message());
+             throw_occured = true;
+        }
 
-
-    try
-    {
-        std::string pure_json = "{\"value\":\"\\\"mystring!\\\"\" :}";
-        Generator g(pure_json,"yaml");
-
-        Node n_res;
-        g.walk(n_res);
-    }
-    catch(conduit::Error e)
-    {
-        CONDUIT_INFO(e.message());
+        EXPECT_TRUE(throw_occured);
     }
 
-    try
     {
-        std::string pure_json = "\n\n\n\n\n\n{\"value\":\"\\\"mystring!\\\"\" :}";
-        Generator g(pure_json,"yaml");
+        bool throw_occured = false;
+        try
+        {
+            std::string pure_json = "{\"value\":\"\\\"mystring!\\\"\" :}";
+            Generator g(pure_json,"yaml");
 
-        Node n_res;
-        g.walk(n_res);
+            Node n_res;
+            g.walk(n_res);
+        }
+        catch(conduit::Error e)
+        {
+            CONDUIT_INFO(e.message());
+            throw_occured = true;
+        }
+
+        EXPECT_TRUE(throw_occured);
     }
-    catch(conduit::Error e)
+
     {
-        CONDUIT_INFO(e.message());
+        bool throw_occured = false;
+
+        try
+        {
+            std::string pure_json = "\n\n\n\n\n\n{\"value\":\"\\\"mystring!\\\"\" :}";
+            Generator g(pure_json,"yaml");
+
+            Node n_res;
+            g.walk(n_res);
+        }
+        catch(conduit::Error e)
+        {
+            CONDUIT_INFO(e.message());
+            throw_occured = true;
+        }
+
+        EXPECT_TRUE(throw_occured);
+    }
+
+    {
+        bool throw_occured = false;
+
+        try
+        {
+            std::string pure_yaml = "a: here is a string with a colon : to test";;
+            Generator g(pure_yaml,"yaml");
+
+            Node n_res;
+            g.walk(n_res);
+        }
+        catch(conduit::Error e)
+        {
+            CONDUIT_INFO(e.message());
+            throw_occured = true;
+        }
+
+        EXPECT_TRUE(throw_occured);
     }
 
 }
@@ -455,6 +579,9 @@ TEST(conduit_yaml, dup_object_name_error)
     ASSERT_THROW(g3.walk(n),conduit::Error);
     EXPECT_TRUE(n3.dtype().is_empty());
 }
+
+
+
 
 
 

@@ -2116,13 +2116,23 @@ Generator::Parser::YAML::parse_error_details(yaml_parser_t *yaml_parser,
     //    that might be the only case where we need the yaml_doc
     //    otherwise using yaml_parser is sufficient
 
-    os << ")\n Problem:\n" << yaml_parser->problem << "\n"
-       << "  Problem Line: "   << yaml_parser->problem_mark.line << "\n"
-       << "  Problem Column: " << yaml_parser->problem_mark.column << "\n"
-       << " Context\n"         << yaml_parser->context << "\n"
-       << "  Context Line: "   << yaml_parser->context_mark.line << "\n"
-       << "  Context Column: " << yaml_parser->context_mark.column<< "\n"
-       << std::endl;
+    if(yaml_parser->problem != NULL)
+    {
+        os << ")\n Problem:\n" << yaml_parser->problem << "\n"
+           << "  Problem Line: "   << yaml_parser->problem_mark.line << "\n"
+           << "  Problem Column: " << yaml_parser->problem_mark.column << "\n";
+    }
+    else
+    {
+        os << "unexpected: yaml_parser->problem is NULL (missing)\n";
+    }
+    if(yaml_parser->context != NULL)
+    {
+       os << " Context\n"         << yaml_parser->context << "\n"
+          << "  Context Line: "   << yaml_parser->context_mark.line << "\n"
+          << "  Context Column: " << yaml_parser->context_mark.column<< "\n";
+    }
+    os << std::endl;
 }
 
 //-----------------------------------------------------------------------------
