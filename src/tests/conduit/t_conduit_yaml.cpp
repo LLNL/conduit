@@ -57,7 +57,7 @@
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-TEST(conduit_yaml, to_yaml_1)
+TEST(conduit_yaml, to_yaml)
 {
 
     uint32   a_val  = 10;
@@ -75,7 +75,7 @@ TEST(conduit_yaml, to_yaml_1)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_yaml, to_yaml_2)
+TEST(conduit_yaml, parse_yaml_2)
 {
 
     uint32   a_val  = 10;
@@ -112,23 +112,41 @@ TEST(conduit_yaml, to_yaml_2)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_yaml, to_yaml_3)
+TEST(conduit_yaml, parse_yaml_3)
 {
     Generator g("{\"a\": [0,1,2,3,4], \"b\":[0.0,1.1,2.2,3.3] }",
                 "yaml");
     Node n(g,true);
     std::cout << n.to_yaml() << std::endl;
+    
+    EXPECT_TRUE(n["a"].dtype().is_int64());
+    EXPECT_TRUE(n["b"].dtype().is_float64());
 
-    Generator g2("a: [0,1,2,3,4]\nb: [0.0,1.1,2.2,3.3]\n",
+    Generator g2("a: [0,-1,2,-3,4]\nb: [0.0,-1.1,2.2,-3.3]\n",
                  "yaml");
-    Node n2(g,true);
+    Node n2(g2,true);
     std::cout << n2.to_yaml() << std::endl;
-
+    
+    EXPECT_TRUE(n["a"].dtype().is_int64());
+    EXPECT_TRUE(n["b"].dtype().is_float64());
+    
+    int64_array a_val = n2["a"].value();
+    EXPECT_EQ(a_val[0],0);
+    EXPECT_EQ(a_val[1],-1);
+    EXPECT_EQ(a_val[2],2);
+    EXPECT_EQ(a_val[3],-3);
+    EXPECT_EQ(a_val[4],4);
+    
+    float64_array b_val = n2["b"].value();
+    EXPECT_EQ(b_val[0],0);
+    EXPECT_EQ(b_val[1],-1.1);
+    EXPECT_EQ(b_val[2],2.2);
+    EXPECT_EQ(b_val[3],-3.3);
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_yaml, to_yaml_4)
+TEST(conduit_yaml, parse_yaml_4)
 {
     std::string yaml_txt ="{\"a\": [0,1,2,3,4], \"b\":[0.0,1.1,2.2,3.3] }";
     Generator g(yaml_txt,
@@ -136,12 +154,18 @@ TEST(conduit_yaml, to_yaml_4)
     Node n;
     g.walk(n);
     std::cout << n.to_yaml() << std::endl;
+    
+    EXPECT_TRUE(n["a"].dtype().is_int64());
+    EXPECT_TRUE(n["b"].dtype().is_float64());
 
     yaml_txt = "- here is a string\n- here is another string\n- 10\n";
     g.set_schema(yaml_txt);
-    
     g.walk(n);
     std::cout << n.to_yaml() << std::endl;
+
+    EXPECT_TRUE(n[0].dtype().is_char8_str());
+    EXPECT_TRUE(n[1].dtype().is_char8_str());
+    EXPECT_TRUE(n[2].dtype().is_int64());
 
     yaml_txt  = "- here is a string\n";
     yaml_txt += "-  a: here is another string\n";
@@ -151,7 +175,51 @@ TEST(conduit_yaml, to_yaml_4)
     
     g.walk(n);
     std::cout << n.to_yaml() << std::endl;
+    
+    EXPECT_TRUE(n[0].dtype().is_char8_str());
+    EXPECT_TRUE(n[1]["a"].dtype().is_char8_str());
+    EXPECT_TRUE(n[1]["b"].dtype().is_char8_str());
+    EXPECT_TRUE(n[2].dtype().is_int64());
 
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, parse_yaml_5)
+{
+    // test promote to float64
+    std::string yaml_txt ="a: [0,1,2,3.0,4]";
+    Generator g(yaml_txt,
+                "yaml");
+    Node n;
+    g.walk(n);
+    std::cout << n.to_yaml() << std::endl;
+
+    EXPECT_TRUE(n["a"].dtype().is_float64());
+    EXPECT_EQ(n["a"].dtype().number_of_elements(),5);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, sneaky_string)
+{
+    // test promote to float64
+    std::string yaml_txt ="a: [0,1,-2,3.0,4, hamburger]";
+    Generator g(yaml_txt,
+                "yaml");
+    Node n;
+    g.walk(n);
+    std::cout << n.to_yaml() << std::endl;
+
+    EXPECT_TRUE(n["a"].dtype().is_list());
+    EXPECT_EQ(n["a"].number_of_children(),6);
+
+    EXPECT_EQ(n["a"][0].as_int64(),0);
+    EXPECT_EQ(n["a"][1].as_int64(),1);
+    EXPECT_EQ(n["a"][2].as_int64(),-2);
+    EXPECT_EQ(n["a"][3].as_float64(),3.0);
+    EXPECT_EQ(n["a"][4].as_int64(),4);
+    EXPECT_EQ(n["a"][5].as_string(),"hamburger");
 }
 
 
