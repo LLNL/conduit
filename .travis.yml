@@ -63,12 +63,10 @@ env:
     #  adios vs no adios
     #  coverage of unit tests
     #################################
-    # TODO re-enable docs after resolving doxygen dep build issues
     #################################
     # mpi on, docs on, shared libs, python 2.7, adios off
-    # TODO turn on coverage for this case
     - BUILD_SHARED_LIBS=ON
-      ENABLE_COVERAGE=OFF
+      ENABLE_COVERAGE=ON
       ENABLE_MPI=ON
       ENABLE_DOCS=ON
       ENABLE_SILO=ON
@@ -141,6 +139,10 @@ addons:
        - libsqlite3-dev
        - libbz2-dev
        - perl
+
+before_install:
+  - pip install --user cpp-coveralls
+
 script:
   - which g++
   - g++ --version
