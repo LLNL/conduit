@@ -57,8 +57,8 @@ from conduit import Generator
 from numpy import *
 
 def default_node():
-    a_val = uint32(10)
-    b_val = uint32(20)
+    a_val = int64(10)
+    b_val = int64(20)
     c_val = float64(30.0)
 
     n = Node()
@@ -66,14 +66,13 @@ def default_node():
     n['b'] = b_val
     n['c'] = c_val
     return n;
-    
 
 class Test_Conduit_Generator(unittest.TestCase):
     def test_simple(self):
         n = default_node()
         n_schema = n.to_json("conduit_json");
         print("result detailed json", n_schema)
-        g = Generator(json_schema=n_schema);
+        g = Generator(schema=n_schema);
         ng = Node();
         sg = Schema()
         g.walk(node=ng);
@@ -90,7 +89,44 @@ class Test_Conduit_Generator(unittest.TestCase):
             print(ng)
             print(p, orig, curr)
             self.assertEqual(orig,curr)
-        
+
+    def test_json(self):
+        n = default_node()
+        n_schema = n.to_json("json");
+        print("result json", n_schema)
+        g = Generator(schema=n_schema,protocol="yaml");
+        ng = Node();
+        g.walk(node=ng);
+        print(ng)
+        for p in ["a","b","c"]:
+            orig = n.fetch(p).value()
+            curr = ng.fetch(p).value()
+            print(ng)
+            print(p, orig, curr)
+            orig = n[p]
+            curr = ng[p]
+            print(ng)
+            print(p, orig, curr)
+            self.assertEqual(orig,curr)
+
+    def test_yaml(self):
+        n = default_node()
+        n_schema = n.to_yaml();
+        print("result yaml", n_schema)
+        g = Generator(schema=n_schema,protocol="yaml");
+        ng = Node();
+        g.walk(node=ng);
+        print(ng)
+        for p in ["a","b","c"]:
+            orig = n.fetch(p).value()
+            curr = ng.fetch(p).value()
+            print(ng)
+            print(p, orig, curr)
+            orig = n[p]
+            curr = ng[p]
+            print(ng)
+            print(p, orig, curr)
+            self.assertEqual(orig,curr)
 
     def test_base64(self):
         n = default_node()
@@ -112,7 +148,6 @@ class Test_Conduit_Generator(unittest.TestCase):
             print(ng)
             print(p, orig, curr)
             self.assertEqual(orig,curr)
-
 
 
 if __name__ == '__main__':

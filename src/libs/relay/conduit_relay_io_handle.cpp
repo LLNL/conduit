@@ -311,7 +311,7 @@ IOHandle::HandleInterface::create(const std::string &path,
     }
 
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )

@@ -2256,7 +2256,7 @@ Generator::walk_external(Node &node) const
     }
     else if(m_protocol == "yaml")
     {
-        // errors should flow up from this call ... 
+        // errors will flow up from this call 
         Parser::YAML::walk_pure_yaml_schema(&node,
                                             node.schema_ptr(),
                                             m_schema.c_str());

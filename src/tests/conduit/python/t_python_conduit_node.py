@@ -126,6 +126,12 @@ class Test_Conduit_Node(unittest.TestCase):
         print(nl)
         self.assertEqual(nl['a'][alen-1], alen-1)
 
+        n.save("test_pyconduit_node_json_save_load.yaml",protocol="yaml")
+        nl = Node()
+        nl.load("test_pyconduit_node_json_save_load.yaml", protocol="yaml")
+        print(nl)
+        self.assertEqual(nl['a'][alen-1], alen-1)
+
     def test_parent(self):
         vec = array(range(100), uint32)
         n = Node()

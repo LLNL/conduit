@@ -173,7 +173,7 @@ TEST(conduit_node_save_load, other_protocols)
 
     n.load("tout_conduit_relay_io_other_protos_pure_yaml.yaml",
            "yaml");
-    
+
     n.print_detailed();
 
     EXPECT_EQ(n["a"].to_int32(), a_val);

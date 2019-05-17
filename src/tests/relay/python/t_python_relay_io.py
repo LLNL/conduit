@@ -97,7 +97,8 @@ class Test_Relay_IO(unittest.TestCase):
         protos = ["conduit_bin",
                   "json",
                   "conduit_json",
-                  "conduit_base64_json"]
+                  "conduit_base64_json",
+                  "yaml"]
         
         # only test hdf5 if relay was built with hdf5 support
         if relay.io.about()["protocols/hdf5"] == "enabled":

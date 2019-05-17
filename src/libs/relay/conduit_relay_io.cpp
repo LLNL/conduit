@@ -315,7 +315,7 @@ save(const Node &node,
 
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )
@@ -420,7 +420,7 @@ save_merged(const Node &node,
     
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )
@@ -529,7 +529,7 @@ load(const std::string &path,
     
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )
@@ -638,7 +638,7 @@ load_merged(const std::string &path,
     
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )
