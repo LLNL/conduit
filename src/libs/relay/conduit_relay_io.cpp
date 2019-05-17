@@ -110,6 +110,10 @@ about(Node &n)
     // json io
     io_protos["json"] = "enabled";
     io_protos["conduit_json"] = "enabled";
+    io_protos["conduit_base64_json"] = "enabled";
+
+    // yaml io
+    io_protos["yaml"] = "enabled";
 
     // standard binary io
     io_protos["conduit_bin"] = "enabled";
@@ -313,7 +317,8 @@ save(const Node &node,
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         node.save(path,protocol);
     }
@@ -417,7 +422,8 @@ save_merged(const Node &node,
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         Node n;
         // support case where the path is initially empty
@@ -525,7 +531,8 @@ load(const std::string &path,
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         node.load(path,protocol);
     }
@@ -633,7 +640,8 @@ load_merged(const std::string &path,
     if(protocol == "conduit_bin" ||
        protocol == "json" || 
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         Node n;
         n.load(path,protocol);

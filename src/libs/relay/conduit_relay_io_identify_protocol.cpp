@@ -129,6 +129,10 @@ identify_protocol(const std::string &path,
     {
         io_type = "conduit_base64_json";
     }
+    else if(file_name_ext == "yaml")
+    {
+        io_type = "yaml";
+    }
     else if(file_name_ext == "bp" ||
             file_name_ext == "adios")
     {

@@ -64,8 +64,10 @@ TEST(conduit_relay_io_handle, test_active_protos)
     std::vector<std::string> protocols;
     
     protocols.push_back("conduit_bin");
+    protocols.push_back("json");
     protocols.push_back("conduit_json");
     protocols.push_back("conduit_base64_json");
+    protocols.push_back("yaml");
 
     Node n_about;
     io::about(n_about);

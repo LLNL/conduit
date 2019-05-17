@@ -136,14 +136,50 @@ TEST(conduit_relay_io_basic, json)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_basic, yaml)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+    
+
+    io::save(n, "test_conduit_relay_io_dump.yaml");
+
+    Node n_load;
+    io::load("test_conduit_relay_io_dump.yaml",n_load);
+    
+    // note type diff for pure json
+    EXPECT_EQ(n_load["a"].as_int64(), a_val);
+    EXPECT_EQ(n_load["b"].as_int64(), b_val);
+    EXPECT_EQ(n_load["c"].as_int64(), c_val);
+    
+    EXPECT_EQ(n_load["a"].to_uint32(), a_val);
+    EXPECT_EQ(n_load["b"].to_uint32(), b_val);
+    EXPECT_EQ(n_load["c"].to_uint32(), c_val);
+
+}
+
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, identify_protocol)
 {
     std::string protocol;
 
-    // basic checks
+    // conduit bin check
     io::identify_protocol("test.conduit_bin",protocol);
     EXPECT_EQ(protocol,"conduit_bin");
 
+    // json checks
     io::identify_protocol("test.conduit_json",protocol);
     EXPECT_EQ(protocol,"conduit_json");
 
@@ -152,7 +188,11 @@ TEST(conduit_relay_io_basic, identify_protocol)
 
     io::identify_protocol("test.json",protocol);
     EXPECT_EQ(protocol,"json");
-    
+
+    // yaml check
+    io::identify_protocol("test.yaml",protocol);
+    EXPECT_EQ(protocol,"yaml");
+
     // silo check
     io::identify_protocol("test.silo",protocol);
     EXPECT_EQ(protocol,"conduit_silo");
@@ -163,7 +203,6 @@ TEST(conduit_relay_io_basic, identify_protocol)
 
     io::identify_protocol("test.h5",protocol);
     EXPECT_EQ(protocol,"hdf5");
-
 
     // adios checks
     io::identify_protocol("test.bp",protocol);
