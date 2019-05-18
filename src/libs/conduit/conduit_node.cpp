@@ -359,6 +359,8 @@ void
 Node::load(const std::string &ibase,
            const std::string &protocol)
 {
+    // TODO: auto detect protocol?
+
     if(protocol == "conduit_bin")
     {
         // TODO: use generator?
@@ -389,6 +391,8 @@ void
 Node::save(const std::string &obase,
            const std::string &protocol) const
 {
+    // TODO: auto detect protocol?
+    
     if(protocol == "conduit_bin")
     {
         Node res;
@@ -413,7 +417,6 @@ void
 Node::mmap(const std::string &stream_path)
 {
     std::string ifschema = stream_path + "_json";
-
 
     Schema s;
     s.load(ifschema);
@@ -11707,8 +11710,8 @@ Node::to_yaml_generic(const std::string &stream_path,
 //---------------------------------------------------------------------------//
 void
 Node::to_yaml_generic(std::ostream &os,
-                      bool detailed, 
-                      index_t indent, 
+                      bool  detailed,
+                      index_t indent,
                       index_t depth,
                       const std::string &pad,
                       const std::string &eoe) const
@@ -11729,7 +11732,6 @@ Node::to_yaml_generic(std::ostream &os,
                                            depth+1,
                                            pad,
                                            eoe);
-            os << eoe;
         }
     }
     else if(dtype().id() == DataType::LIST_ID)
@@ -11746,26 +11748,10 @@ Node::to_yaml_generic(std::ostream &os,
                                            depth+1,
                                            pad,
                                            eoe);
-            os << eoe;
         }
     }
     else // assume leaf data type
     {
-        if(detailed)
-        {
-            std::string dtype_json = dtype().to_json();
-            std::string dtype_open;
-            std::string dtype_rest;
-
-            // trim the last "}"
-            utils::split_string(dtype_json,
-                                "}",
-                                dtype_open,
-                                dtype_rest);
-            os<< dtype_open;
-            os << ", value : ";
-        }
-
         switch(dtype().id())
         {
             // ints 
@@ -11814,13 +11800,9 @@ Node::to_yaml_generic(std::ostream &os,
 
         }
 
-        if(detailed)
-        {
-            // complete json entry 
-            // os << "}";
-        }
-    }  
-    
+        os << eoe;
+    }
+
     os.flags(prev_stream_flags);
 }
 

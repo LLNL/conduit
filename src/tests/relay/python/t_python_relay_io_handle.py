@@ -74,6 +74,8 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             protos.append("hdf5")
         for proto in protos:
             test_file = tbase + proto
+            if os.path.isfile(test_file):
+                os.remove(test_file)
             
             n = conduit.Node();
             n["a"] = int64(20);
