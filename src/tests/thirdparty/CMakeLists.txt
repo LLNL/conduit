@@ -54,6 +54,9 @@ add_cpp_test(TEST t_rapidjson_smoke)
 add_cpp_test(TEST t_libb64_smoke
                  SOURCES $<TARGET_OBJECTS:conduit_b64>)
 
+add_cpp_test(TEST t_libyaml_smoke
+            SOURCES $<TARGET_OBJECTS:conduit_libyaml>)
+
 set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
 
 if(UNIX AND NOT APPLE)

@@ -68,6 +68,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_to_string
                 t_conduit_json
                 t_conduit_json_sanitize
+                t_conduit_yaml
                 t_conduit_generator
                 t_conduit_node_update
                 t_conduit_node_compact

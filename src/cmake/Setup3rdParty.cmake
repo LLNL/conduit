@@ -73,6 +73,12 @@ add_subdirectory(thirdparty_builtin/libb64-1.2.1/)
 include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 
 ################################
+# Setup and build libyaml
+################################
+add_subdirectory(thirdparty_builtin/libyaml-690a781/)
+include_directories(thirdparty_builtin/libyaml-690a781/include)
+
+################################
 # Setup and build civetweb
 ################################
 add_subdirectory(thirdparty_builtin/civetweb-0a95342/)

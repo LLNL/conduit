@@ -167,6 +167,19 @@ TEST(conduit_node_save_load, other_protocols)
 
     EXPECT_EQ(n["a"].as_int32(), a_val);
     EXPECT_EQ(n["b"].as_int32(), b_val);
+    
+    nsrc.save("tout_conduit_relay_io_other_protos_pure_yaml.yaml",
+              "yaml");
+
+    n.load("tout_conduit_relay_io_other_protos_pure_yaml.yaml",
+           "yaml");
+
+    n.print_detailed();
+
+    EXPECT_EQ(n["a"].to_int32(), a_val);
+    EXPECT_EQ(n["b"].to_int32(), b_val);
+    
+    
 
 }
 

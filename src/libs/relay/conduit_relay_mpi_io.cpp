@@ -114,6 +114,11 @@ about(Node &n, MPI_Comm comm)
     // json io
     io_protos["json"] = "enabled";
     io_protos["conduit_json"] = "enabled";
+    io_protos["conduit_base64_json"] = "enabled";
+    
+    // yaml io
+    io_protos["yaml"] = "enabled";
+    
 
     // standard binary io
     io_protos["conduit_bin"] = "enabled";
@@ -249,9 +254,10 @@ save(const Node &node,
     
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         node.save(path,protocol);
     }
@@ -350,9 +356,10 @@ save_merged(const Node &node,
     
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         Node n;
         n.load(path,protocol);
@@ -526,9 +533,10 @@ load(const std::string &path,
     
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         node.load(path,protocol);
     }
@@ -628,9 +636,10 @@ load(const std::string &path,
     
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         node.load(path,protocol);
     }
@@ -720,9 +729,10 @@ load_merged(const std::string &path,
     }
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
-       protocol == "json" || 
+       protocol == "json" ||
        protocol == "conduit_json" ||
-       protocol == "conduit_base64_json" )
+       protocol == "conduit_base64_json" ||
+       protocol == "yaml" )
     {
         Node n;
         n.load(path,protocol);

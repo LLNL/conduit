@@ -111,6 +111,8 @@ identify_protocol(const std::string &path)
     {
         std::string file_name_true_ext = file_name_ext.substr(
             std::string("blueprint_root").length(), file_name_ext.length());
+
+        // TODO: Add support for yaml protocol
         if(file_name_true_ext == "")
         {
             io_type = "json";
@@ -148,6 +150,7 @@ save(const Node &mesh,
      const std::string &protocol
      CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
 {
+    // TODO: Add support for yaml protocol
     Node info;
     if(protocol != "json" && protocol != "hdf5")
     {

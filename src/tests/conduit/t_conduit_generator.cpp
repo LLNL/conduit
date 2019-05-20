@@ -161,10 +161,10 @@ TEST(conduit_generator, simple_gen_schema_with_gen_setters)
 
     std::string s1_str = "{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}";
 
-    g.set_json_schema(s1_str);
+    g.set_schema(s1_str);
     g.set_data_ptr(data);
 
-    EXPECT_EQ(g.json_schema(), s1_str);
+    EXPECT_EQ(g.schema(), s1_str);
     EXPECT_EQ(g.protocol(), std::string("conduit_json"));
     EXPECT_EQ(g.data_ptr(), data);
     
@@ -178,7 +178,7 @@ TEST(conduit_generator, simple_gen_schema_with_gen_setters)
     std::string s2_str = "{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}";
     std::cout << s2_str << std::endl;
 
-    g.set_json_schema(s2_str);
+    g.set_schema(s2_str);
     g.set_data_ptr(NULL);
 
     Schema schema2;
@@ -194,7 +194,7 @@ TEST(conduit_generator, simple_gen_schema_with_gen_setters)
         data2[i] = i * 5;
     }
 
-    g.set_json_schema("{\"dtype\":\"uint32\",\"length\":  5}");
+    g.set_schema("{\"dtype\":\"uint32\",\"length\":  5}");
 
     Schema schema3;
     g.walk(schema3);
@@ -204,7 +204,7 @@ TEST(conduit_generator, simple_gen_schema_with_gen_setters)
         EXPECT_EQ(n3.as_uint32_ptr()[i], i * 5);
     }
 
-    g.set_json_schema("[\"uint32\", \"float64\", \"uint32\"]");
+    g.set_schema("[\"uint32\", \"float64\", \"uint32\"]");
 
     char* data3 = new char[16];
     memcpy(&data3[0], &a_val, 4);
@@ -217,7 +217,7 @@ TEST(conduit_generator, simple_gen_schema_with_gen_setters)
     EXPECT_EQ(n4[1].as_float64(), c_val);
     EXPECT_EQ(n4[2].as_uint32(), b_val);
 
-    g.set_json_schema("{\"top\":[{\"int1\":\"uint32\", \"int2\":\"uint32\"}, \"float64\", \"uint32\"], \"other\":\"float64\"}");
+    g.set_schema("{\"top\":[{\"int1\":\"uint32\", \"int2\":\"uint32\"}, \"float64\", \"uint32\"], \"other\":\"float64\"}");
     
     Schema schema5;
     g.walk(schema5);
@@ -247,7 +247,6 @@ TEST(conduit_generator, simple_gen_schema_with_gen_setters)
     delete[] data4;
 
 }
-
 
 
 //-----------------------------------------------------------------------------
@@ -444,5 +443,61 @@ TEST(conduit_generator, gen_endianness)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, simple_gen_schema_yaml)
+{
+    Generator g1("a: 10\nb: 20\nc: \"30\"\nd:\n  - hi\n  - there",
+                 "yaml");
+    Node n;
+    g1.walk(n);
+    n.print();
+
+    EXPECT_EQ(n["a"].as_int64(),10);
+    EXPECT_EQ(n["b"].as_int64(),20);
+    EXPECT_EQ(n["c"].as_int64(),30);
+    EXPECT_EQ(n["d"][0].as_string(),"hi");
+    EXPECT_EQ(n["d"][1].as_string(),"there");
+    
+    Generator g2("a: 10\nb: 20\nc: \"30\"\nd: [0, 10, 20, 30]\n",
+                 "yaml");
+    g2.walk(n);
+    n.print();
+
+    EXPECT_EQ(n["a"].as_int64(),10);
+    EXPECT_EQ(n["b"].as_int64(),20);
+    EXPECT_EQ(n["c"].as_int64(),30);
+    int64_array d_vals = n["d"].value();
+    EXPECT_EQ(d_vals[0],0);
+    EXPECT_EQ(d_vals[1],10);
+    EXPECT_EQ(d_vals[2],20);
+    EXPECT_EQ(d_vals[3],30);
+    
+    
+    // test our special cases
+    
+    Generator g3("a: true\nb: false\nc: null\n",
+                 "yaml");
+    g3.walk(n);
+    n.print();
+
+    EXPECT_EQ(n["a"].as_uint8(),1);
+    EXPECT_EQ(n["b"].as_uint8(),0);
+    EXPECT_TRUE(n["c"].dtype().is_empty());
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, yaml_parsing_errors)
+{
+    Generator g("a: 10\ns","yaml");
+    Node n;
+    EXPECT_THROW(g.walk(n),conduit::Error);
+
+    // protocol will still be "yaml"
+    g.set_schema("[ 10,\ns");
+    EXPECT_THROW(g.walk(n),conduit::Error);
+}
 
 

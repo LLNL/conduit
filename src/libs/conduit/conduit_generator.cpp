@@ -54,12 +54,19 @@
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
 #include <stdio.h>
+#include <cstdlib>
 
 //-----------------------------------------------------------------------------
 // -- rapidjson includes -- 
 //-----------------------------------------------------------------------------
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
+
+//-----------------------------------------------------------------------------
+// -- libyaml includes -- 
+//-----------------------------------------------------------------------------
+#include "yaml.h"
+
 
 //-----------------------------------------------------------------------------
 // -- conduit library includes -- 
@@ -77,11 +84,28 @@
 #define CONDUIT_JSON_PARSE_ERROR(json_str, document )                        \
 {                                                                            \
     std::ostringstream __json_parse_oss;                                     \
-    Generator::Parser::parse_error_details( json_str,                        \
-                                            document,                        \
-                                            __json_parse_oss);               \
+    Generator::Parser::JSON::parse_error_details( json_str,                  \
+                                                 document,                   \
+                                                __json_parse_oss);           \
     CONDUIT_ERROR("JSON parse error: \n"                                     \
                   << __json_parse_oss.str()                                  \
+                  << "\n");                                                  \
+}
+
+
+//-----------------------------------------------------------------------------
+//
+/// The CONDUIT_YAML_PARSE_ERROR macro use as a single place for handling
+/// errors related to libyaml parsing.
+//
+//-----------------------------------------------------------------------------
+#define CONDUIT_YAML_PARSE_ERROR( yaml_doc, yaml_parser )                    \
+{                                                                            \
+    std::ostringstream __yaml_parse_oss;                                     \
+    Generator::Parser::YAML::parse_error_details( yaml_parser,               \
+                                                __yaml_parse_oss);           \
+    CONDUIT_ERROR("YAML parse error: \n"                                     \
+                  << __yaml_parse_oss.str()                                  \
                   << "\n");                                                  \
 }
 
@@ -97,34 +121,56 @@ namespace conduit
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// Generator::Parser handles parsing via rapidjson.
+// Generator::Parser -- concrete parsing implementations
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+class Generator::Parser
+{
+public:
+//-----------------------------------------------------------------------------
+// Generator::Parser::JSON handles parsing via rapidjson.
 // We want to isolate the conduit API from the rapidjson headers
 // so any methods using rapidjson types are defined in here.
 // "friend Generator" in Node, allows Generator::Parser to construct complex
 // nodes. 
 //-----------------------------------------------------------------------------
-
- class Generator::Parser
-{
-public:
+  class JSON
+  {
+  public:
+      
+    static const rapidjson::ParseFlag RAPIDJSON_PARSE_OPTS = rapidjson::kParseNoFlags;
+    
     static index_t json_to_numeric_dtype(const rapidjson::Value &jvalue);
     
     static index_t check_homogenous_json_array(const rapidjson::Value &jvalue);
     
     static void    parse_json_int64_array(const rapidjson::Value &jvalue,
                                           std::vector<int64> &res);
-                                         
+
+    // for efficiency - assumes res is already alloced to proper size
+    static void    parse_json_int64_array(const rapidjson::Value &jvalue,
+                                          int64_array &res);
+
     static void    parse_json_int64_array(const rapidjson::Value &jvalue,
                                           Node &node);
                                           
     static void    parse_json_uint64_array(const rapidjson::Value &jvalue,
                                            std::vector<uint64> &res);
+
+    // for efficiency - assumes res is already alloced to proper size
+    static void    parse_json_uint64_array(const rapidjson::Value &jvalue,
+                                          uint64_array &res);
+
                                            
     static void    parse_json_uint64_array(const rapidjson::Value &jvalue,
                                            Node &node);
                                            
     static void    parse_json_float64_array(const rapidjson::Value &jvalue,
                                             std::vector<float64> &res);
+
+    // for efficiency - assumes res is already alloced to proper size
+    static void    parse_json_float64_array(const rapidjson::Value &jvalue,
+                                            float64_array &res);
 
     static void    parse_json_float64_array(const rapidjson::Value &jvalue,
                                             Node &node);
@@ -160,12 +206,140 @@ public:
     static void    parse_error_details(const std::string &json,
                                        const rapidjson::Document &document,
                                        std::ostream &os);
+  };
+//-----------------------------------------------------------------------------
+// Generator::Parser::YAML handles parsing via libyaml.
+// We want to isolate the conduit API from the libyaml headers
+// so any methods using libyaml types are defined in here.
+// "friend Generator" in Node, allows Generator::Parser to construct complex
+// nodes. 
+//-----------------------------------------------------------------------------
+  class YAML
+  {
+  public:
+
+
+    //-----------------------------------------------------------------------------
+    // Wrappers around libyaml c API that help us parse
+    //-----------------------------------------------------------------------------
+     
+    // YAMLParserWrapper class helps with libyaml cleanup when 
+    // exceptions are thrown during parsing
+    class YAMLParserWrapper
+    {
+    public:
+        YAMLParserWrapper();
+       ~YAMLParserWrapper();
+
+       // parses and creates doc tree, throws exception
+       // when things go wrong
+       void         parse(const char *yaml_txt);
+
+       yaml_document_t *yaml_doc_ptr();
+       yaml_node_t     *yaml_doc_root_ptr();
+
+    private:
+        yaml_document_t m_yaml_doc;
+        yaml_parser_t   m_yaml_parser;
+
+        bool m_yaml_parser_is_valid;
+        bool m_yaml_doc_is_valid;
+
+    };
+
+    // 
+    // yaml scalar (aka leaf) values are always strings, however that is 
+    // not a very useful way to parse into Conduit tree. We apply json 
+    // rules to the yaml leaves to get more useful types in Conduit
+    //
+
+    // TODO: try to inline these helpers? Not sure it matters since
+    // they call other routines
+    
+    // checks if c-string is "true" or "false" 
+    static bool string_is_bool(const char *txt_value);
+    // checks if c-string is "true" 
+    static bool string_is_bool_true(const char *txt_value);
+    // checks if c-string is "false"
+    static bool string_is_bool_false(const char *txt_value);
+    
+    // checks if c-string is "null"
+    static bool string_is_null(const char *txt_value);
+
+    // checks if c-string is a null pointer or empty
+    static bool string_is_empty(const char *txt_value);
+
+    // checks if input c-string is an integer or a double
+    static bool string_is_number(const char *txt_value);
+
+    // checks if input string holds something that converts
+    // to a double (integer c-string will pass this check )
+    static bool string_is_double(const char *txt_value);
+
+    // checks if input c-string holds something that converts
+    // to an integer
+    static bool string_is_integer(const char *txt_value);
+
+    // converts c-string to double
+    static double string_to_double(const char *txt_value);
+    // converts c-string to long
+    static long int string_to_long(const char *txt_value);
+
+    // assumes res is already inited to DataType::int64 w/ proper size
+    static void parse_yaml_int64_array(yaml_document_t *yaml_doc,
+                                       yaml_node_t *yaml_node,
+                                       Node &res);
+
+    // assumes res is already inited to DataType::float64 w/ proper size
+    static void parse_yaml_float64_array(yaml_document_t *yaml_doc,
+                                         yaml_node_t *yaml_node,
+                                         Node &res);
+    // parses generic leaf and places value in res
+    static void parse_yaml_inline_leaf(const char *yaml_txt,
+                                       Node &res);
+
+    // finds if leaf string is int64, float64, or neither (DataType::EMPTY_T)
+    static index_t yaml_leaf_to_numeric_dtype(const char *txt_value);
+
+    // checks if the input yaml node is a homogenous numeric sequence
+    // 
+    // if not: returns DataType::EMPTY_T and seq_size = -1
+    //
+    // if so:
+    //  seq_size contains the sequence length and:
+    //  if homogenous integer sequence returns DataType::INT64_T 
+    //  if homogenous floating point sequence returns DataType::FLOAT64_T 
+    static index_t check_homogenous_yaml_numeric_sequence(const Node &node,
+                                                          yaml_document_t *yaml_doc,
+                                                          yaml_node_t *yaml_node,
+                                                          index_t &seq_size);
+
+    // main entry point for parsing pure yaml
+    static void    walk_pure_yaml_schema(Node  *node,
+                                         Schema *schema,
+                                         const char *yaml_txt);
+
+    // workhorse for parsing a pure yaml tree
+    static void    walk_pure_yaml_schema(Node  *node,
+                                         Schema *schema,
+                                         yaml_document_t *yaml_doc,
+                                         yaml_node_t *yaml_node);
+    
+    // extract human readable parser errors
+    static void    parse_error_details(yaml_parser_t *yaml_parser,
+                                       std::ostream &os);
+
+  };
 
 };
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::Generator::Parser::JSON --
+//-----------------------------------------------------------------------------
+
 //---------------------------------------------------------------------------//
 index_t 
-Generator::Parser::json_to_numeric_dtype(const rapidjson::Value &jvalue)
+Generator::Parser::JSON::json_to_numeric_dtype(const rapidjson::Value &jvalue)
 {
     index_t res = DataType::EMPTY_ID; 
     if(jvalue.IsNumber())
@@ -190,7 +364,7 @@ Generator::Parser::json_to_numeric_dtype(const rapidjson::Value &jvalue)
 
 //---------------------------------------------------------------------------//
 index_t
-Generator::Parser::check_homogenous_json_array(const rapidjson::Value &jvalue)
+Generator::Parser::JSON::check_homogenous_json_array(const rapidjson::Value &jvalue)
 {
     // check for homogenous array of ints or floats
     // promote to float64 as the most wide type
@@ -222,10 +396,10 @@ Generator::Parser::check_homogenous_json_array(const rapidjson::Value &jvalue)
     return val_type;
 }
 
-//---------------------------------------------------------------------------// 
+//---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
-                                          std::vector<int64> &res)
+Generator::Parser::JSON::parse_json_int64_array(const rapidjson::Value &jvalue,
+                                                std::vector<int64> &res)
 {
    res.resize(jvalue.Size(),0);
    for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
@@ -234,10 +408,23 @@ Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
    }
 }
 
+//---------------------------------------------------------------------------// 
+void
+Generator::Parser::JSON::parse_json_int64_array(const rapidjson::Value &jvalue,
+                                                int64_array &res)
+{
+    // for efficiency - assumes res is already alloced to proper size
+    for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
+    {
+       res[i] = jvalue[i].GetInt64();
+    }
+}
+
+
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
-                                          Node &node)
+Generator::Parser::JSON::parse_json_int64_array(const rapidjson::Value &jvalue,
+                                                Node &node)
 {
     // TODO: we can make this more efficient 
     std::vector<int64> vals;
@@ -288,8 +475,8 @@ Generator::Parser::parse_json_int64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
-                                           std::vector<uint64> &res)
+Generator::Parser::JSON::parse_json_uint64_array(const rapidjson::Value &jvalue,
+                                                 std::vector<uint64> &res)
 {
     res.resize(jvalue.Size(),0);
     for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
@@ -298,10 +485,22 @@ Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
     }
 }
 
+//---------------------------------------------------------------------------// 
+void
+Generator::Parser::JSON::parse_json_uint64_array(const rapidjson::Value &jvalue,
+                                                 uint64_array &res)
+{
+    // for efficiency - assumes res is already alloced to proper size
+    for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
+    {
+       res[i] = jvalue[i].GetUint64();
+    }
+}
+
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
-                                           Node &node)
+Generator::Parser::JSON::parse_json_uint64_array(const rapidjson::Value &jvalue,
+                                                 Node &node)
 {
     // TODO: we can make this more efficient 
     std::vector<uint64> vals;
@@ -352,8 +551,8 @@ Generator::Parser::parse_json_uint64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
-                                            std::vector<float64> &res)
+Generator::Parser::JSON::parse_json_float64_array(const rapidjson::Value &jvalue,
+                                                  std::vector<float64> &res)
 {
     res.resize(jvalue.Size(),0);
     for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
@@ -362,10 +561,23 @@ Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
     }
 }
 
+//---------------------------------------------------------------------------// 
+void
+Generator::Parser::JSON::parse_json_float64_array(const rapidjson::Value &jvalue,
+                                                  float64_array &res)
+{
+    // for efficiency - assumes res is already alloced to proper size
+    for (rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
+    {
+       res[i] = jvalue[i].GetDouble();
+    }
+}
+
+
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
-                                            Node &node)
+Generator::Parser::JSON::parse_json_float64_array(const rapidjson::Value &jvalue,
+                                                  Node &node)
 {
     // TODO: we can make this more efficient 
     std::vector<float64> vals;
@@ -416,7 +628,7 @@ Generator::Parser::parse_json_float64_array(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 index_t 
-Generator::Parser::parse_leaf_dtype_name(const std::string &dtype_name)
+Generator::Parser::JSON::parse_leaf_dtype_name(const std::string &dtype_name)
 {
     index_t dtype_id = DataType::name_to_id(dtype_name);
     if(dtype_id == DataType::EMPTY_ID)
@@ -437,9 +649,9 @@ Generator::Parser::parse_leaf_dtype_name(const std::string &dtype_name)
 
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
-                                    index_t offset,
-                                    DataType &dtype_res)
+Generator::Parser::JSON::parse_leaf_dtype(const rapidjson::Value &jvalue,
+                                          index_t offset,
+                                          DataType &dtype_res)
 {
     
     if(jvalue.IsString())
@@ -612,8 +824,8 @@ Generator::Parser::parse_leaf_dtype(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
-                                     Node &node)
+Generator::Parser::JSON::parse_inline_leaf(const rapidjson::Value &jvalue,
+                                           Node &node)
 {
     if(jvalue.IsString())
     {
@@ -711,8 +923,8 @@ Generator::Parser::parse_inline_leaf(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
-                                      Node &node)
+Generator::Parser::JSON::parse_inline_value(const rapidjson::Value &jvalue,
+                                            Node &node)
 {
     if(jvalue.IsArray())
     {
@@ -756,9 +968,9 @@ Generator::Parser::parse_inline_value(const rapidjson::Value &jvalue,
 
 //---------------------------------------------------------------------------//
 void 
-Generator::Parser::walk_json_schema(Schema *schema,
-                                    const   rapidjson::Value &jvalue,
-                                    index_t curr_offset)
+Generator::Parser::JSON::walk_json_schema(Schema *schema,
+                                          const   rapidjson::Value &jvalue,
+                                          index_t curr_offset)
 {
     // object cases
     if(jvalue.IsObject())
@@ -866,9 +1078,9 @@ Generator::Parser::walk_json_schema(Schema *schema,
 
 //---------------------------------------------------------------------------//
 void 
-Generator::Parser::walk_pure_json_schema(Node *node,
-                                         Schema *schema,
-                                         const rapidjson::Value &jvalue)
+Generator::Parser::JSON::walk_pure_json_schema(Node *node,
+                                               Schema *schema,
+                                               const rapidjson::Value &jvalue)
 {
     // object cases
     if(jvalue.IsObject())
@@ -914,15 +1126,15 @@ Generator::Parser::walk_pure_json_schema(Node *node,
         index_t hval_type = check_homogenous_json_array(jvalue);
         if(hval_type == DataType::INT64_ID)
         {
-            std::vector<int64> res;
-            parse_json_int64_array(jvalue,res);
-            node->set(res);
+            node->set(DataType::int64(jvalue.Size()));
+            int64_array vals = node->value();
+            parse_json_int64_array(jvalue,vals);
         }
         else if(hval_type == DataType::FLOAT64_ID)
         {
-            std::vector<float64> res;
-            parse_json_float64_array(jvalue,res);
-            node->set(res);
+            node->set(DataType::float64(jvalue.Size()));
+            float64_array vals = node->value();
+            parse_json_float64_array(jvalue,vals);
         }
         else // not numeric array
         {
@@ -994,11 +1206,11 @@ Generator::Parser::walk_pure_json_schema(Node *node,
 
 //---------------------------------------------------------------------------//
 void 
-Generator::Parser::walk_json_schema(Node   *node,
-                                    Schema *schema,
-                                    void   *data,
-                                    const rapidjson::Value &jvalue,
-                                    index_t curr_offset)
+Generator::Parser::JSON::walk_json_schema(Node   *node,
+                                          Schema *schema,
+                                          void   *data,
+                                          const rapidjson::Value &jvalue,
+                                          index_t curr_offset)
 {
     // object cases
     if(jvalue.IsObject())
@@ -1181,8 +1393,8 @@ Generator::Parser::walk_json_schema(Node   *node,
 
 //---------------------------------------------------------------------------//
 void 
-Generator::Parser::parse_base64(Node *node,
-                                const rapidjson::Value &jvalue)
+Generator::Parser::JSON::parse_base64(Node *node,
+                                      const rapidjson::Value &jvalue)
 {
     // object case
 
@@ -1204,7 +1416,7 @@ Generator::Parser::parse_base64(Node *node,
         {
             // parse schema
             index_t curr_offset = 0;
-            Parser::walk_json_schema(&s,jvalue["schema"],curr_offset);
+            walk_json_schema(&s,jvalue["schema"],curr_offset);
         }
         else
         {
@@ -1236,9 +1448,9 @@ Generator::Parser::parse_base64(Node *node,
 
 //---------------------------------------------------------------------------//
 void 
-Generator::Parser::parse_error_details(const std::string &json,
-                                       const rapidjson::Document &document,
-                                       std::ostream &os)
+Generator::Parser::JSON::parse_error_details(const std::string &json,
+                                             const rapidjson::Document &document,
+                                             std::ostream &os)
 {
     // provide message with line + char from rapidjson parse error offset 
     index_t doc_offset = (index_t)document.GetErrorOffset();
@@ -1270,12 +1482,661 @@ Generator::Parser::parse_error_details(const std::string &json,
 }
 
 //-----------------------------------------------------------------------------
-// -- end conduit::Generator::Parser --
+// -- end conduit::Generator::Parser::JSON --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::Generator::YAML --
 //-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::Generator --
+// -- begin conduit::Generator::YAML::YAMLParserWrapper --
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+Generator::Parser::YAML::YAMLParserWrapper::YAMLParserWrapper()
+: m_yaml_parser_is_valid(false),
+  m_yaml_doc_is_valid(false)
+{
+
+}
+
+//---------------------------------------------------------------------------//
+Generator::Parser::YAML::YAMLParserWrapper::~YAMLParserWrapper()
+{
+    // cleanup!
+    if(m_yaml_parser_is_valid)
+    {
+        yaml_parser_delete(&m_yaml_parser);
+    }
+
+    if(m_yaml_doc_is_valid)
+    {
+        yaml_document_delete(&m_yaml_doc);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::Parser::YAML::YAMLParserWrapper::parse(const char *yaml_txt)
+{
+    // Initialize parser
+    if(yaml_parser_initialize(&m_yaml_parser) == 0)
+    {
+        // error!
+        CONDUIT_ERROR("yaml_parser_initialize failed");
+    }
+    else
+    {
+        m_yaml_parser_is_valid = true;
+    }
+
+    // set input
+    yaml_parser_set_input_string(&m_yaml_parser,
+                                 (const unsigned char*)yaml_txt,
+                                 strlen(yaml_txt));
+
+    // use parser to construct document
+    if( yaml_parser_load(&m_yaml_parser, &m_yaml_doc) == 0 )
+    {
+        CONDUIT_YAML_PARSE_ERROR(&m_yaml_doc,
+                                 &m_yaml_parser);
+    }
+    else
+    {
+        m_yaml_doc_is_valid = true;
+    }
+}
+
+//---------------------------------------------------------------------------//
+yaml_document_t *
+Generator::Parser::YAML::YAMLParserWrapper::yaml_doc_ptr()
+{
+    yaml_document_t *res = NULL;
+
+    if(m_yaml_doc_is_valid)
+    {
+        res = &m_yaml_doc;
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+yaml_node_t *
+Generator::Parser::YAML::YAMLParserWrapper::yaml_doc_root_ptr()
+{
+    yaml_node_t *res = NULL;
+
+    if(m_yaml_doc_is_valid)
+    {
+        res = yaml_document_get_root_node(&m_yaml_doc);
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::Generator::YAML::YAMLParserWrapper --
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+// checks for "true" or "false" 
+bool
+Generator::Parser::YAML::string_is_bool(const char *txt_value)
+{
+    return string_is_bool_true(txt_value) || string_is_bool_false(txt_value);
+}
+
+//---------------------------------------------------------------------------//
+bool
+Generator::Parser::YAML::string_is_bool_true(const char *txt_value)
+{
+    return strcmp(txt_value,"true") == 0;
+}
+
+//---------------------------------------------------------------------------//
+bool
+Generator::Parser::YAML::string_is_bool_false(const char *txt_value)
+{
+    return strcmp(txt_value,"false") == 0;
+}
+
+
+//---------------------------------------------------------------------------//
+// checks for "null"
+bool
+Generator::Parser::YAML::string_is_null(const char *txt_value)
+{
+    return strcmp(txt_value,"null") == 0;
+}
+
+//---------------------------------------------------------------------------//
+// checks if input string is a null pointer or empty
+bool
+Generator::Parser::YAML::string_is_empty(const char *txt_value)
+{
+    if(txt_value == NULL)
+        return true;
+    return strlen(txt_value) == 0;
+}
+
+//---------------------------------------------------------------------------//
+// checks if input string holds something that converts
+// to a double (integer strings will pass this check )
+bool
+Generator::Parser::YAML::string_is_number(const char *txt_value)
+{
+    return string_is_integer(txt_value) || string_is_double(txt_value);
+}
+
+//---------------------------------------------------------------------------//
+// checks if input string holds something that converts
+// to a double (integer strings will pass this check )
+bool
+Generator::Parser::YAML::string_is_double(const char *txt_value)
+{
+    // TODO: inline check for empty ?
+    if(string_is_empty(txt_value))
+        return false;
+    char *val_end = NULL;
+    strtod(txt_value,&val_end);
+    return *val_end == 0;
+}
+
+//---------------------------------------------------------------------------//
+// checks if input string holds something that converts
+// to an integer
+bool
+Generator::Parser::YAML::string_is_integer(const char *txt_value)
+{
+    // TODO: inline check for empty ?
+    if(string_is_empty(txt_value))
+        return false;
+    char *val_end = NULL;
+    strtol(txt_value,&val_end,10);
+    return *val_end == 0;
+}
+
+//---------------------------------------------------------------------------//
+double 
+Generator::Parser::YAML::string_to_double(const char *txt_value)
+{
+    char *val_end = NULL;
+    return strtod(txt_value,&val_end);
+}
+
+//---------------------------------------------------------------------------//
+long int
+Generator::Parser::YAML::string_to_long(const char *txt_value)
+{
+    char *val_end = NULL;
+    return strtol(txt_value,&val_end,10);
+}
+
+//---------------------------------------------------------------------------//
+index_t 
+Generator::Parser::YAML::yaml_leaf_to_numeric_dtype(const char *txt_value)
+{
+    index_t res = DataType::EMPTY_ID;
+    if(string_is_integer(txt_value))
+    {
+        res = DataType::INT64_ID;
+    }
+    else if(string_is_double(txt_value))
+    {
+        res = DataType::FLOAT64_ID;
+    }
+    //else, already inited to DataType::EMPTY_ID
+
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+// NOTE: Assumes Node res is already DataType::int64, w/ proper len
+void
+Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
+                                                yaml_node_t *yaml_node,
+                                                Node &res)
+{
+    int64_array res_vals = res.value();
+    int cld_idx = 0;
+    while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+    {
+        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
+                                                 yaml_node->data.sequence.items.start[cld_idx]);
+                                     
+        if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid int64 array value at path: "
+                          << res.path() << "[" << cld_idx << "]");
+        }
+
+
+        // check type of string contents
+        const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
+
+        if(yaml_value_str == NULL )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid int64 array value at path: "
+                          << res.path() << "[" << cld_idx << "]");
+        }
+
+        res_vals[cld_idx] = (int64) string_to_long(yaml_value_str);
+
+        cld_idx++;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// NOTE: Assumes Node res is already DataType::float64, w/ proper len
+void
+Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
+                                                  yaml_node_t *yaml_node,
+                                                  Node &res)
+{
+    float64_array res_vals = res.value();
+    int cld_idx = 0;
+    while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+    {
+        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
+                                                 yaml_node->data.sequence.items.start[cld_idx]);
+                                     
+        if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid float64 array value at path: "
+                          << res.path() << "[" << cld_idx << "]");
+        }
+
+
+        // check type of string contents
+        const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
+
+        if(yaml_value_str == NULL )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid float64 array value at path: "
+                          << res.path() << "[" << cld_idx << "]");
+        }
+
+        res_vals[cld_idx] = (float64) string_to_double(yaml_value_str);
+
+        cld_idx++;
+    }
+}
+
+//---------------------------------------------------------------------------//
+index_t
+Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node,
+                                                                yaml_document_t *yaml_doc,
+                                                                yaml_node_t *yaml_node,
+                                                                index_t &seq_size)
+{
+     index_t res = DataType::EMPTY_ID;
+     seq_size = -1;
+     bool ok = true;
+     int cld_idx = 0;
+     while( ok && yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+     {
+         yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
+                                                 yaml_node->data.sequence.items.start[cld_idx]);
+                                                 
+        if(yaml_child == NULL )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid sequence child at path: "
+                          << node.path() << "[" << cld_idx << "]");
+        }
+
+        // first make sure we only have yaml scalars
+        if(yaml_child->type == YAML_SCALAR_NODE)
+        {
+
+            // check type of string contents
+            const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
+
+            if(yaml_value_str == NULL )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid value for sequence child at path: "
+                              << node.path() << "[" << cld_idx << "]");
+            }
+
+            // check for integers, then widen to floats
+
+            index_t child_dtype_id = yaml_leaf_to_numeric_dtype(yaml_value_str);
+
+            if(child_dtype_id == DataType::EMPTY_ID)
+            {
+                ok = false;
+            }
+            else if(res == DataType::EMPTY_ID)
+            {
+                // good so far, promote to child's dtype
+                res = child_dtype_id;
+            }
+            else if( res == DataType::INT64_ID && child_dtype_id == DataType::FLOAT64_ID)
+            {
+                // promote to float64
+                res = DataType::FLOAT64_ID;
+            }
+        }
+        else
+        {
+            ok = false;
+        }
+
+        cld_idx++;
+     }
+
+     // if we are ok, seq_size is the final cld_idx
+     if(ok)
+     {
+         seq_size = cld_idx;
+     }
+     else
+     {
+        res = DataType::EMPTY_ID;
+     }
+
+     return res;
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
+                                                Node &node)
+{
+    if(string_is_integer(yaml_txt))
+    {
+        node.set((int64)string_to_long(yaml_txt));
+    }
+    else if(string_is_double(yaml_txt))
+    {
+        node.set((float64)string_to_double(yaml_txt));
+    }
+    else if(string_is_bool_true(yaml_txt))
+    {
+        node.set((uint8)1);
+    }
+    else if(string_is_bool_false(yaml_txt))
+    {
+        node.set((uint8)0);
+    }
+    else if( string_is_null(yaml_txt) || string_is_empty(yaml_txt) )
+    {
+        node.reset();
+    }
+    else // general string case
+    {
+        node.set_char8_str(yaml_txt);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
+                                               Schema *schema,
+                                               const char *yaml_txt)
+{
+    YAMLParserWrapper parser;
+    parser.parse(yaml_txt);
+
+    yaml_document_t *yaml_doc  = parser.yaml_doc_ptr();
+    yaml_node_t     *yaml_node = parser.yaml_doc_root_ptr();
+
+
+    if(yaml_doc == NULL || yaml_node == NULL)
+    {
+        CONDUIT_ERROR("failed to fetch yaml document root");
+    }
+
+    walk_pure_yaml_schema(node,
+                          schema,
+                          yaml_doc,
+                          yaml_node);
+
+    // YAMLParserWrapper cleans up for us
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
+                                               Schema *schema,
+                                               yaml_document_t *yaml_doc,
+                                               yaml_node_t *yaml_node)
+{
+    
+    // object cases
+    if( yaml_node->type == YAML_MAPPING_NODE )
+    {
+        // if we make it here and have an empty json object
+        // we still want the conduit node to take on the
+        // object role
+        schema->set(DataType::object());
+        // loop over all entries
+        
+        int cld_idx = 0;
+        // while (has_next) --> grab next, then process
+        while( (yaml_node->data.mapping.pairs.start + cld_idx) < yaml_node->data.mapping.pairs.top)
+        {
+            yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
+
+            if(yaml_pair == NULL)
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "failed to fetch mapping pair at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+            yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
+            
+            if(yaml_key == NULL)
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "failed to fetch mapping key at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+            if(yaml_key->type != YAML_SCALAR_NODE )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid mapping key type at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+            const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
+
+            if(yaml_key_str == NULL )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid mapping key value at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+            
+            std::string entry_name(yaml_key_str);
+
+            yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
+
+            if(yaml_child == NULL )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid mapping child at path: "
+                              << utils::join_path(node->path(),entry_name));
+            }
+
+            // yaml files may have duplicate object names
+            // we could provide some clear semantics, such as:
+            //   always use first instance, or always use last instance
+            // however duplicate object names are most likely a
+            // typo, so it's best to throw an error
+
+            if(schema->has_child(entry_name))
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Duplicate YAML object name: "
+                              << utils::join_path(node->path(),entry_name));
+            }
+
+            Schema *curr_schema = schema->fetch_ptr(entry_name);
+
+            Node *curr_node = new Node();
+            curr_node->set_schema_ptr(curr_schema);
+            curr_node->set_parent(node);
+            node->append_node_ptr(curr_node);
+        
+            walk_pure_yaml_schema(curr_node,
+                                  curr_schema,
+                                  yaml_doc,
+                                  yaml_child);
+            cld_idx++;
+        }
+    }
+    // List case
+    else if( yaml_node->type == YAML_SEQUENCE_NODE )
+    {
+        index_t seq_size  = -1;
+        index_t hval_type = check_homogenous_yaml_numeric_sequence(*node,
+                                                                   yaml_doc,
+                                                                   yaml_node,
+                                                                   seq_size);
+
+        if(hval_type == DataType::INT64_ID)
+        {
+
+            node->set(DataType::int64(seq_size));
+            parse_yaml_int64_array(yaml_doc, yaml_node, *node);
+
+        }
+        else if(hval_type == DataType::FLOAT64_ID)
+        {
+            node->set(DataType::float64(seq_size));
+            parse_yaml_float64_array(yaml_doc, yaml_node, *node);
+        }
+        else
+        {
+            // general case (not a numeric array)
+            index_t cld_idx = 0;
+            while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+            {
+                yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
+                                                        yaml_node->data.sequence.items.start[cld_idx]);
+            
+                if(yaml_child == NULL )
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Invalid sequence child at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+
+                schema->append();
+                Schema *curr_schema = schema->child_ptr(cld_idx);
+                Node * curr_node = new Node();
+                curr_node->set_schema_ptr(curr_schema);
+                curr_node->set_parent(node);
+                node->append_node_ptr(curr_node);
+                walk_pure_yaml_schema(curr_node,
+                                      curr_schema,
+                                      yaml_doc,
+                                      yaml_child);
+                cld_idx++;
+            }
+        }
+    }
+    else if(yaml_node->type == YAML_SCALAR_NODE)// bytestr case
+    {
+        const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+
+        if( yaml_value_str == NULL )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid yaml scalar value at path: "
+                          << node->path());
+        }
+
+        parse_yaml_inline_leaf(yaml_value_str,*node);
+    }
+    else // this will include unknown enum vals and YAML_NO_NODE
+    {
+        // not sure if can an even land here, but catch error just in case.
+        CONDUIT_ERROR("YAML Generator error:\n"
+                      << "Invalid YAML type for parsing Node from pure YAML."
+                      << " Expected: YAML Map, Sequence, String, Null,"
+                      << " Boolean, or Number");
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Generator::Parser::YAML::parse_error_details(yaml_parser_t *yaml_parser,
+                                             std::ostream &os)
+{
+    os << "YAML Parsing Error (";
+    switch (yaml_parser->error)
+    {
+        case YAML_NO_ERROR:
+            os << "YAML_NO_ERROR";
+            break;
+        case YAML_MEMORY_ERROR:
+            os << "YAML_MEMORY_ERROR";
+            break;
+        case YAML_READER_ERROR:
+            os << "YAML_MEMORY_ERROR";
+            break;
+        case YAML_SCANNER_ERROR:
+            os << "YAML_SCANNER_ERROR";
+            break;
+        case YAML_PARSER_ERROR:
+            os << "YAML_PARSER_ERROR";
+            break;
+        case YAML_COMPOSER_ERROR:
+            os << "YAML_COMPOSER_ERROR";
+            break;
+        case YAML_WRITER_ERROR:
+            os << "YAML_WRITER_ERROR";
+            break;
+        case YAML_EMITTER_ERROR:
+            os << "YAML_EMITTER_ERROR";
+            break;
+        default:
+            os << "[Unknown Error!]";
+            break;
+    }
+    
+    // Q: Is yaml_parser->problem_mark.index useful here?
+    //    that might be the only case where we need the yaml_doc
+    //    otherwise using yaml_parser is sufficient
+
+    if(yaml_parser->problem != NULL)
+    {
+        os << ")\n Problem:\n" << yaml_parser->problem << "\n"
+           << "  Problem Line: "   << yaml_parser->problem_mark.line << "\n"
+           << "  Problem Column: " << yaml_parser->problem_mark.column << "\n";
+    }
+    else
+    {
+        os << "unexpected: yaml_parser->problem is NULL (missing)\n";
+    }
+    if(yaml_parser->context != NULL)
+    {
+       os << " Context\n"         << yaml_parser->context << "\n"
+          << "  Context Line: "   << yaml_parser->context_mark.line << "\n"
+          << "  Context Column: " << yaml_parser->context_mark.column<< "\n";
+    }
+    os << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::Generator::Parser::YAML --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -1284,26 +2145,26 @@ Generator::Parser::parse_error_details(const std::string &json,
 
 //---------------------------------------------------------------------------//
 Generator::Generator()
-:m_json_schema(""),
+:m_schema(""),
  m_protocol("conduit_json"),
  m_data(NULL)
 {}
 
 
 //---------------------------------------------------------------------------//
-Generator::Generator(const std::string &json_schema,
+Generator::Generator(const std::string &schema,
                      const std::string &protocol,
                      void *data)
-:m_json_schema(json_schema),
+:m_schema(schema),
  m_protocol(protocol),
  m_data(data)
 {}
 
 //---------------------------------------------------------------------------//
 void
-Generator::set_json_schema(const std::string &json_schema)
+Generator::set_schema(const std::string &schema)
 {
-    m_json_schema = json_schema;
+    m_schema = schema;
 }
 
 //---------------------------------------------------------------------------//
@@ -1322,9 +2183,9 @@ Generator::set_data_ptr(void *data_ptr)
 
 //---------------------------------------------------------------------------//
 const std::string &
-Generator::json_schema() const
+Generator::schema() const
 {
-    return m_json_schema;
+    return m_schema;
 }
 
 //---------------------------------------------------------------------------//
@@ -1346,7 +2207,6 @@ Generator::data_ptr() const
 // JSON Parsing interface
 //-----------------------------------------------------------------------------s
 
-const rapidjson::ParseFlag RAPIDJSON_PARSE_OPTS = rapidjson::kParseNoFlags;
 
 //---------------------------------------------------------------------------//
 void 
@@ -1354,14 +2214,14 @@ Generator::walk(Schema &schema) const
 {
     schema.reset();
     rapidjson::Document document;
-    std::string res = utils::json_sanitize(m_json_schema);
+    std::string res = utils::json_sanitize(m_schema);
 
-    if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+    if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
     {
         CONDUIT_JSON_PARSE_ERROR(res, document);
     }
     index_t curr_offset = 0;
-    Parser::walk_json_schema(&schema,document,curr_offset);
+    Parser::JSON::walk_json_schema(&schema,document,curr_offset);
 }
 
 //---------------------------------------------------------------------------//
@@ -1383,45 +2243,53 @@ Generator::walk_external(Node &node) const
     if(m_protocol == "json")
     {
         rapidjson::Document document;
-        std::string res = utils::json_sanitize(m_json_schema);
+        std::string res = utils::json_sanitize(m_schema);
                 
-        if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+        if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
             CONDUIT_JSON_PARSE_ERROR(res, document);
         }
 
-        Parser::walk_pure_json_schema(&node,
-                                      node.schema_ptr(),
-                                      document);
+        Parser::JSON::walk_pure_json_schema(&node,
+                                            node.schema_ptr(),
+                                            document);
+    }
+    else if(m_protocol == "yaml")
+    {
+        // errors will flow up from this call 
+        Parser::YAML::walk_pure_yaml_schema(&node,
+                                            node.schema_ptr(),
+                                            m_schema.c_str());
     }
     else if( m_protocol == "conduit_base64_json")
     {
         rapidjson::Document document;
-        std::string res = utils::json_sanitize(m_json_schema);
+        std::string res = utils::json_sanitize(m_schema);
         
-        if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+        if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
             CONDUIT_JSON_PARSE_ERROR(res, document);
         }
-        Parser::parse_base64(&node,
-                             document);
+
+        Parser::JSON::parse_base64(&node,
+                                   document);
     }
     else if( m_protocol == "conduit_json")
     {
         rapidjson::Document document;
-        std::string res = utils::json_sanitize(m_json_schema);
+        std::string res = utils::json_sanitize(m_schema);
         
-        if(document.Parse<RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+        if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
         {
             CONDUIT_JSON_PARSE_ERROR(res, document);
         }
         index_t curr_offset = 0;
 
-        Parser::walk_json_schema(&node,
-                                 node.schema_ptr(),
-                                 m_data,
-                                 document,
-                                 curr_offset);
+        Parser::JSON::walk_json_schema(&node,
+                                       node.schema_ptr(),
+                                       m_data,
+                                       document,
+                                       curr_offset);
     }
     else
     {
