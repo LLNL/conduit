@@ -70,7 +70,7 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_header)
     zfp::array2f arr(nx, ny, rate);
 
     // write zfparray to Node
-    io::zfp_read(&arr, result);
+    EXPECT_EQ(0, io::zfp_read(&arr, result));
 
     // verify header entry was set
     EXPECT_TRUE(result.has_child(io::ZFP_HEADER_FIELD_NAME));
@@ -109,7 +109,7 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_compressed_data)
     zfp::array2f arr(nx, ny, rate, vals);
 
     // write zfparray to Node
-    io::zfp_read(&arr, result);
+    EXPECT_EQ(0, io::zfp_read(&arr, result));
 
     // verify compressed data entry was set
     EXPECT_TRUE(result.has_child(io::ZFP_COMPRESSED_DATA_FIELD_NAME));
@@ -161,6 +161,21 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_compressed_data)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_zfp, zfp_read_with_header_exception)
+{
+    // create compressed-array that does not support short header
+    uint nx = 9;
+    uint ny = 12;
+    uint nz = 5;
+    double rate = 64.0;
+    zfp::array3d arr(nx, ny, nz, rate);
+
+    // write zfparray to Node, but expect failure
+    Node result;
+    EXPECT_EQ(1, io::zfp_read(&arr, result));
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_zfp, zfp_write)
 {
     // create compressed-array
@@ -180,7 +195,7 @@ TEST(conduit_relay_zfp, zfp_write)
 
     // write zfparray to Node
     Node result;
-    io::zfp_read(&original_arr, result);
+    EXPECT_EQ(0, io::zfp_read(&original_arr, result));
 
     // fetch zfparray object from Node
     zfp::array* fetched_arr = io::zfp_write(result);
@@ -200,5 +215,37 @@ TEST(conduit_relay_zfp, zfp_write)
     EXPECT_TRUE(0 == std::memcmp(original_arr.compressed_data(), casted_arr->compressed_data(), original_arr.compressed_size()));
 
     delete fetched_arr;
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_zfp, zfp_write_with_exception)
+{
+    // create compressed-array
+    uint nx = 9;
+    uint ny = 12;
+
+    float vals[nx * ny];
+    uint i, j;
+    for (j = 0; j < ny; j++) {
+        for (i = 0; i < nx; i++) {
+            vals[nx*j + i] = i * 10. + j*j;
+        }
+    }
+
+    double rate = 32.0;
+    zfp::array2f original_arr(nx, ny, rate, vals);
+
+    // write zfparray to Node
+    Node result;
+    EXPECT_EQ(0, io::zfp_read(&original_arr, result));
+
+    // corrupt the Node's data
+    result[io::ZFP_HEADER_FIELD_NAME].set(vals, sizeof(vals));
+
+    // fetch zfparray object from Node
+    zfp::array* fetched_arr = io::zfp_write(result);
+
+    // verify no instance returned
+    ASSERT_TRUE(fetched_arr == 0);
 }
 
