@@ -77,7 +77,13 @@ zfp_write(const Node &node)
     memcpy(header->buffer, node.fetch_child(ZFP_HEADER_FIELD_NAME).data_ptr(), sizeof(header));
 
     Node compressedData = node.fetch_child(ZFP_COMPRESSED_DATA_FIELD_NAME);
-    return zfp::array::construct(header[0], static_cast<uchar*>(compressedData.data_ptr()), compressedData.allocated_bytes());
+
+    try {
+        return zfp::array::construct(header[0], static_cast<uchar*>(compressedData.data_ptr()), compressedData.allocated_bytes());
+    } catch(std::exception const &) {
+        // could be zfp::array::header::exception, or std::bad_alloc
+        return NULL;
+    }
 }
 
 template<typename T>
@@ -88,12 +94,17 @@ cast_and_set_compressed_data(Node &dest, uchar* compressed_data, size_t num_data
     dest[ZFP_COMPRESSED_DATA_FIELD_NAME].set(static_cast<T*>(intermediate_ptr), num_data_words);
 }
 
-void
+int
 zfp_read(const zfp::array *arr,
          Node &dest)
 {
     // store header
-    zfp::array::header header = arr->get_header();
+    zfp::array::header header;
+    try {
+        header = arr->get_header();
+    } catch(zfp::array::header::exception const &) {
+        return 1;
+    }
     dest[ZFP_HEADER_FIELD_NAME].set(static_cast<uint8*>(header.buffer), sizeof(header));
 
     // store compressed data
@@ -121,8 +132,10 @@ zfp_read(const zfp::array *arr,
 
         default:
             // error
-            break;
+            return 1;
     }
+
+    return 0;
 }
 
 }

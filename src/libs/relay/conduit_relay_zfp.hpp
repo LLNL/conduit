@@ -86,8 +86,8 @@ static const std::string ZFP_COMPRESSED_DATA_FIELD_NAME = "zfp_compressed_data";
 
 zfp::array* CONDUIT_RELAY_API zfp_write(const Node &node);
 
-void CONDUIT_RELAY_API zfp_read(const zfp::array* arr,
-                                Node &node);
+int CONDUIT_RELAY_API zfp_read(const zfp::array* arr,
+                               Node &node);
 
 }
 //-----------------------------------------------------------------------------
