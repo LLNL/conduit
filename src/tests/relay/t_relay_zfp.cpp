@@ -160,3 +160,45 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_compressed_data)
     EXPECT_TRUE(0 == std::memcmp(arr.compressed_data(), n_data.data_ptr(), arr.compressed_size()));
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_zfp, zfp_write)
+{
+    // create compressed-array
+    uint nx = 9;
+    uint ny = 12;
+
+    float vals[nx * ny];
+    uint i, j;
+    for (j = 0; j < ny; j++) {
+        for (i = 0; i < nx; i++) {
+            vals[nx*j + i] = i * 10. + j*j;
+        }
+    }
+
+    double rate = 32.0;
+    zfp::array2f original_arr(nx, ny, rate, vals);
+
+    // write zfparray to Node
+    Node result;
+    io::zfp_read(&original_arr, result);
+
+    // fetch zfparray object from Node
+    zfp::array* fetched_arr = io::zfp_write(result);
+
+    // verify against original_arr
+    ASSERT_TRUE(fetched_arr != 0);
+
+    zfp::array2f* casted_arr = dynamic_cast<zfp::array2f*>(fetched_arr);
+    ASSERT_TRUE(casted_arr != 0);
+
+    EXPECT_EQ(nx, casted_arr->size_x());
+    EXPECT_EQ(ny, casted_arr->size_y());
+    EXPECT_EQ(rate, casted_arr->rate());
+
+    // verify compressed data
+    EXPECT_EQ(original_arr.compressed_size(), casted_arr->compressed_size());
+    EXPECT_TRUE(0 == std::memcmp(original_arr.compressed_data(), casted_arr->compressed_data(), original_arr.compressed_size()));
+
+    delete fetched_arr;
+}
+
