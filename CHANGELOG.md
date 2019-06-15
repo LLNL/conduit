@@ -25,6 +25,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added is_open() method to IOHandle in the C++ and Python interfaces
 - Added file name information to Relay HDF5 error messages
 
+
+### Fixed
+
+#### Relay
+
+- Fixed crash with mpi broadcast_using_schema() when receiving tasks pass a non empty node.
+
 ## [0.4.0] - Released 2019-03-01
 
 ### Added
