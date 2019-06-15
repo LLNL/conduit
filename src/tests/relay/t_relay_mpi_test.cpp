@@ -1017,7 +1017,7 @@ TEST(conduit_mpi_test, bcast_using_schema)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, bcast_using_schema_crash) 
+TEST(conduit_mpi_test, bcast_using_schema_non_empty_node) 
 {
 
     int rank = mpi::rank(MPI_COMM_WORLD);
@@ -1028,18 +1028,22 @@ TEST(conduit_mpi_test, bcast_using_schema_crash)
         Node n;
 
         std::vector<int64> vals;
-        // if(rank == root)
-        // {
+        if(rank == root)
+        {
             vals.push_back(11);
             vals.push_back(22);
             vals.push_back(33);
         
             n["here"].set(vals);
-        // }
+        }
+        else
+        {
+            n["there"] = "here is a string";
+        }
 
         mpi::broadcast_using_schema(n,root,MPI_COMM_WORLD);
-
-        int64 *vals_ptr = n.value();
+        n.print();
+        int64 *vals_ptr = n["here"].value();
 
         EXPECT_EQ(vals_ptr[0], 11);
         EXPECT_EQ(vals_ptr[1], 22);
