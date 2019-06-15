@@ -1017,6 +1017,46 @@ TEST(conduit_mpi_test, bcast_using_schema)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, bcast_using_schema_non_empty_node) 
+{
+
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    for(int root = 0; root < com_size; root++)
+    {
+        Node n;
+
+        std::vector<int64> vals;
+        if(rank == root)
+        {
+            vals.push_back(11);
+            vals.push_back(22);
+            vals.push_back(33);
+        
+            n["here"].set(vals);
+        }
+        else
+        {
+            n["there"] = "here is a string";
+        }
+
+        mpi::broadcast_using_schema(n,root,MPI_COMM_WORLD);
+        n.print();
+        int64 *vals_ptr = n["here"].value();
+
+        EXPECT_EQ(vals_ptr[0], 11);
+        EXPECT_EQ(vals_ptr[1], 22);
+        EXPECT_EQ(vals_ptr[2], 33);
+    
+        CONDUIT_INFO("Bcast from root = " 
+                     << root  << "\n"
+                     << "rank: " << rank << " res = "
+                     << n.to_json());
+    }
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
