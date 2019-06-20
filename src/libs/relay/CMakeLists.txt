@@ -179,7 +179,7 @@ set(conduit_relay_deps conduit conduit_blueprint)
 if(UNIX AND NOT APPLE)
     # we need these for civetweb on linux, we may need similar libs
     # on windows (OSX appears ok without them)
-    list(APPEND conduit_relay_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
+    list(APPEND conduit_relay_deps dl rt Threads::Threads)
     set(CONDUIT_MAKE_EXTRA_LIBS "${CONDUIT_MAKE_EXTRA_LIBS} -ldl -lrt ${CMAKE_THREAD_LIBS_INIT}" CACHE STRING "" FORCE)
 endif()
 
