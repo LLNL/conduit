@@ -210,11 +210,18 @@ TEST(conduit_json, json_bool)
 //-----------------------------------------------------------------------------
 TEST(conduit_json, json_default)
 {
-    std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
-    Generator g(pure_json,"json");
-    Node n(g,true);
+    {
+        std::string pure_json ="{dtype:uint32, length:5}";
+        Schema s(pure_json);
+        EXPECT_EQ(s.to_json_default(), s.to_json());
+    }
 
-    EXPECT_EQ(n.to_json_default(), n.to_json());
+    {
+        std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
+        Generator g(pure_json,"json");
+        Node n(g,true);
+        EXPECT_EQ(n.to_json_default(), n.to_json());
+    }
 }
 
 

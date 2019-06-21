@@ -330,7 +330,6 @@ TEST(conduit_yaml, yaml_default)
     Generator g(yaml_txt,"yaml");
     Node n;
     g.walk(n);
-
     EXPECT_EQ(n.to_yaml_default(), n.to_yaml());
 }
 
