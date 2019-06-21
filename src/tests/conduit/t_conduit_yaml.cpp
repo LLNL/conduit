@@ -324,6 +324,18 @@ TEST(conduit_yaml, yaml_bool)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_yaml, yaml_default)
+{
+    std::string yaml_txt ="{\"a\": [0,1,2,3,4], \"b\":[0.0,1.1,2.2,3.3] }";
+    Generator g(yaml_txt,"yaml");
+    Node n;
+    g.walk(n);
+
+    EXPECT_EQ(n.to_yaml_default(), n.to_yaml());
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_yaml, check_empty)
 {
     Node n;
@@ -579,11 +591,3 @@ TEST(conduit_yaml, dup_object_name_error)
     ASSERT_THROW(g3.walk(n),conduit::Error);
     EXPECT_TRUE(n3.dtype().is_empty());
 }
-
-
-
-
-
-
-
-
