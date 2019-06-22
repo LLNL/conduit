@@ -115,6 +115,65 @@ validation(Node &info,
 
 
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+filter_invalid(Node &info)
+{
+    if(info.dtype().id() == DataType::OBJECT_ID)
+    {
+        if(info.has_child("valid") && info["valid"].dtype().is_string() && info["valid"].as_string() == "true")
+        {
+            info.set(DataType::empty());
+        }
+    }
+    if(info.dtype().id() == DataType::OBJECT_ID || info.dtype().id() == DataType::LIST_ID)
+    {
+        std::vector<index_t> filtered_children;
+
+        NodeIterator info_itr = info.children();
+        while(info_itr.has_next())
+        {
+            conduit::Node &info_child = info_itr.next();
+            filter_invalid(info_child);
+            if(info_child.dtype().is_empty())
+            {
+                filtered_children.push_back(info_itr.index());
+            }
+        }
+
+        for(index_t ci = filtered_children.size(); ci-- > 0;)
+        {
+            info.remove(filtered_children[ci]);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void
+filter_nonoptional(Node &info)
+{
+    if(info.dtype().id() == DataType::OBJECT_ID || info.dtype().id() == DataType::LIST_ID)
+    {
+        if(info.has_child("optional"))
+        {
+            info.remove("optional");
+        }
+
+        NodeIterator info_itr = info.children();
+        while(info_itr.has_next())
+        {
+            conduit::Node &info_child = info_itr.next();
+            filter_nonoptional(info_child);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 std::string
 quote(const std::string &str,
       bool pad_before)
