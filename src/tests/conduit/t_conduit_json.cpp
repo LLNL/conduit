@@ -106,7 +106,6 @@ TEST(conduit_json, to_json_2)
     //
     EXPECT_EQ(n["a"].to_int64(),n2["a"].to_int64());
     EXPECT_EQ(n["b"].to_int64(),n2["b"].to_int64());
-
 }
 
 //-----------------------------------------------------------------------------
@@ -206,6 +205,23 @@ TEST(conduit_json, json_bool)
     n.print_detailed();
     EXPECT_EQ(n["value"].dtype().id(),DataType::UINT8_ID);
 
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_default)
+{
+    {
+        std::string pure_json ="{dtype:uint32, length:5}";
+        Schema s(pure_json);
+        EXPECT_EQ(s.to_json_default(), s.to_json());
+    }
+
+    {
+        std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
+        Generator g(pure_json,"json");
+        Node n(g,true);
+        EXPECT_EQ(n.to_json_default(), n.to_json());
+    }
 }
 
 
@@ -730,8 +746,3 @@ TEST(conduit_json, dup_object_name_error)
     
 
 }
-
-
-
-
-

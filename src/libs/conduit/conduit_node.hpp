@@ -3340,6 +3340,10 @@ public:
                                        const std::string &pad=" ",
                                        const std::string &eoe="\n") const;
 
+    // NOTE(JRC): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string         to_json_default() const;
 
 //-----------------------------------------------------------------------------
 // -- YAML construction methods ---
@@ -3367,6 +3371,10 @@ public:
                                        const std::string &pad=" ",
                                        const std::string &eoe="\n") const;
 
+    // NOTE(JRC): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string         to_yaml_default() const;
 
 //-----------------------------------------------------------------------------
 //
@@ -3972,8 +3980,8 @@ private:
     void             append_node_ptr(Node *node)
                         {m_children.push_back(node);}
 
-    void             set_parent(Node *parent) 
-                        { m_parent = parent;}
+    void             set_parent(Node *new_parent) 
+                        { m_parent = new_parent;}
 
 
 //-----------------------------------------------------------------------------

@@ -551,6 +551,30 @@ Schema::to_json_stream(std::ostream &os,
     }
 }
 
+//---------------------------------------------------------------------------//
+void
+Schema::to_json_stream(const std::string &stream_path,
+                       bool detailed, 
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("<Schema::to_json_stream> failed to open: " << stream_path);
+    to_json_stream(ofs,detailed,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+//---------------------------------------------------------------------------//
+std::string
+Schema::to_json_default() const
+{
+   return to_json();
+}
+
 //-----------------------------------------------------------------------------
 //
 /// Basic I/O methods

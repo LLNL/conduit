@@ -11254,6 +11254,7 @@ Node::to_json_stream(const std::string &stream_path,
         CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
     }
 }
+
 //-----------------------------------------------------------------------------
 void
 Node::to_json_stream(std::ostream &os,
@@ -11281,6 +11282,12 @@ Node::to_json_stream(std::ostream &os,
     }
 }
 
+//-----------------------------------------------------------------------------
+std::string
+Node::to_json_default() const
+{
+    return to_json();
+}
 
 //-----------------------------------------------------------------------------
 // -- YAML construction methods ---
@@ -11298,6 +11305,7 @@ Node::to_yaml(const std::string &protocol,
     {
         return to_pure_yaml(indent,depth,pad,eoe);
     }
+    else
     {
         CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
     }
@@ -11340,6 +11348,13 @@ Node::to_yaml_stream(std::ostream &os,
     {
         CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
     }
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_yaml_default() const
+{
+    return to_yaml();
 }
 
 //---------------------------------------------------------------------------//
