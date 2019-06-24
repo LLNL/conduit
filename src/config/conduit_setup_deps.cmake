@@ -42,46 +42,16 @@
 # 
 ###############################################################################
 
+include(CMakeFindDependencyMacro)
+
 ###############################################################################
-# Note:
-# This file is named ConduitConfig.cmake because once upon a time
-# when it was named conduit-config.cmake, we found that CMake's exported
-# targets script includes all "ascent-*.cmake" files. This logic would
-# cause this script to be included more than once, seeding instability
-# that caused great harm to the kingdom.
+# Setup Threads
 ###############################################################################
-
-
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
-
-@PACKAGE_INIT@
-
-if(NOT CONDUIT_FOUND)
-
-    set(CONDUIT_VERSION "@PROJECT_VERSION@")
-    set(CONDUIT_INSTALL_PREFIX "@CONDUIT_INSTALL_PREFIX@")
-    set(CONDUIT_HDF5_DIR  "@HDF5_DIR@")
-    set(CONDUIT_ADIOS_DIR "@ADIOS_DIR@")
-    set(CONDUIT_SILO_DIR "@SILO_DIR@")
-    set(CONDUIT_PYTHON_ENABLED "@PYTHON_FOUND@")
-    set(CONDUIT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
-    set(CONDUIT_PYTHON_MODULE_DIR "@CONDUIT_INSTALL_PYTHON_MODULE_DIR@")
-
-    get_filename_component(CONDUIT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-
-    # setup dependent pkgs
-    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_deps.cmake)
-
-    # include targets exported by cmake
-    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit.cmake)
-
-    # setup dependent pkgs
-    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_deps.cmake)
-
-    # finally setup our final imported targets
-    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_targets.cmake)
-
-    set(CONDUIT_FOUND TRUE)
-
+if(UNIX AND NOT APPLE)
+# we depend on Threads::Threads in our exported targets
+# so we need to bootstrap that here
+    if(NOT Threads::Threads)
+        find_package( Threads REQUIRED )
+    endif()
 endif()
 
