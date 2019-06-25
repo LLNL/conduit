@@ -68,6 +68,7 @@ contains
     !--------------------------------------------------------------------------
     subroutine t_node_create
         type(C_PTR) cnode
+        type(C_PTR) cinfo
         integer res
         
         !----------------------------------------------------------------------
@@ -82,7 +83,15 @@ contains
         cnode = conduit_node_create()
         call assert_true(conduit_node_is_root(cnode) .eqv. .true. )
         call conduit_node_print_detailed(cnode)
+        ! Node n_info;
+        ! n.info(n_info);
+        ! n_info.print();
+        cinfo = conduit_node_create()
+        call conduit_node_info(cnode,cinfo)
+        call conduit_node_print(cinfo)
+
         call conduit_node_destroy(cnode)
+        call conduit_node_destroy(cinfo)
     
     end subroutine t_node_create
 
@@ -223,6 +232,42 @@ contains
     end subroutine t_node_set_float64
 
     !--------------------------------------------------------------------------
+    subroutine t_node_set_node
+        type(C_PTR) cnode1
+        type(C_PTR) cnode2
+        real(kind=8) res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_node")
+        !----------------------------------------------------------------------
+        cnode1 = conduit_node_create()
+        cnode2 = conduit_node_create()
+        call conduit_node_set_path_float64(cnode1,"a",3.1415d+0)
+        call conduit_node_set_path_node(cnode2,"path/to",cnode1)
+        call assert_true( conduit_node_has_path(cnode2,"path/to/a") .eqv. .true.)
+
+
+        call conduit_node_set_path_external_node(cnode2,"another/path/to",cnode1)
+
+        res = conduit_node_fetch_path_as_float64(cnode2,"path/to/a");
+        call assert_equals(3.1415d+0, res)
+
+        res = conduit_node_fetch_path_as_float64(cnode2,"another/path/to/a");
+        call assert_equals(3.1415d+0, res)
+
+        call conduit_node_set_path_float64(cnode1,"a",42.0d+0)
+
+        res = conduit_node_fetch_path_as_float64(cnode2,"another/path/to/a");
+        call assert_equals(42.0d+0, res)
+        
+        call conduit_node_print(cnode2)
+        call conduit_node_destroy(cnode1)
+        call conduit_node_destroy(cnode2)
+
+    end subroutine t_node_set_node
+
+
+    !--------------------------------------------------------------------------
     subroutine t_node_diff
         type(C_PTR) cnode1
         type(C_PTR) cnode2
@@ -241,6 +286,7 @@ contains
         cnode1 = conduit_node_create()
         cnode2 = conduit_node_create()
         cinfo  = conduit_node_create()
+
 
         ! n1["a"].set_float64(3.1415);
         call conduit_node_set_path_float64(cnode1,"a",3.1415d+0)
@@ -268,6 +314,144 @@ contains
 
     end subroutine t_node_diff
 
+    !--------------------------------------------------------------------------
+    subroutine t_node_update
+        type(C_PTR) cnode1
+        type(C_PTR) cnode2
+        real(kind=8) val
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_update")
+        !----------------------------------------------------------------------
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n1;
+        ! Node n2;
+        cnode1 = conduit_node_create()
+        cnode2 = conduit_node_create()
+
+        ! n1["a"].set_float64(3.1415);
+        call conduit_node_set_path_float64(cnode1,"a",3.1415d+0)
+        ! n2.update(n1)
+        call conduit_node_update(cnode2, cnode1)
+
+        call assert_true( conduit_node_has_path(cnode2,"a") .eqv. .true.)
+
+        call conduit_node_set_path_float64(cnode1,"a",42.0d+0)
+        call conduit_node_set_path_float64(cnode1,"b",52.0d+0)
+
+        ! n2.update_compatible(n1)
+        call conduit_node_update_compatible(cnode2, cnode1)
+        ! float64 val = n2["a"].value()
+        val = conduit_node_fetch_path_as_float64(cnode2,"a");
+
+        call assert_equals(42.0d+0, val)
+
+        call assert_true( conduit_node_has_path(cnode2,"a") .eqv. .true.)
+        call assert_true( conduit_node_has_path(cnode2,"b") .eqv. .false.)
+
+
+        ! n2.update_external(n1)
+        call conduit_node_update_external(cnode2, cnode1)
+        ! n2["a"].set(float64(62.0));
+        call conduit_node_set_path_float64(cnode1,"a",62d+0)
+        ! float64 val = n2["a"].value()
+        val = conduit_node_fetch_path_as_float64(cnode2,"a");
+
+        call assert_equals(62.0d+0, val)
+
+        call assert_true( conduit_node_has_path(cnode2,"a") .eqv. .true.)
+        call assert_true( conduit_node_has_path(cnode2,"b") .eqv. .true.)
+
+        val = conduit_node_fetch_path_as_float64(cnode2,"b");
+
+        call assert_equals(52.0d+0, val)
+
+        call conduit_node_destroy(cnode1)
+        call conduit_node_destroy(cnode2)
+
+    end subroutine t_node_update
+    
+    
+    !--------------------------------------------------------------------------
+    subroutine t_node_compact_to
+        type(C_PTR) cnode1
+        type(C_PTR) cnode2
+        real(kind=8) val
+        integer    bytes_res
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_compact_to")
+        !----------------------------------------------------------------------
+        
+        cnode1 = conduit_node_create()
+        cnode2 = conduit_node_create()
+
+        call conduit_node_set_path_int32(cnode1,"a",10)
+        call conduit_node_set_path_int32(cnode1,"b",20)
+        call conduit_node_set_path_float64(cnode1,"c",30d+0)
+
+        bytes_res = conduit_node_total_bytes_allocated(cnode1);
+        call assert_equals( bytes_res, 16)
+
+        call assert_true( conduit_node_is_contiguous(cnode1) .eqv. .false.)
+        
+        call conduit_node_compact_to(cnode1,cnode2);
+
+        call assert_true( conduit_node_is_contiguous(cnode2) .eqv. .true.)
+
+        bytes_res = conduit_node_total_bytes_compact(cnode2);
+        call assert_equals( bytes_res, 16)
+        bytes_res = conduit_node_total_strided_bytes(cnode2)
+        call assert_equals( bytes_res, 16)
+        bytes_res = conduit_node_total_bytes_allocated(cnode2)
+        call assert_equals( bytes_res, 16)
+
+        call conduit_node_destroy(cnode1)
+        call conduit_node_destroy(cnode2)
+
+    end subroutine t_node_compact_to
+    
+    
+    !--------------------------------------------------------------------------
+    subroutine t_node_remove
+        type(C_PTR) cnode
+        real(kind=8) val
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_remove")
+        !----------------------------------------------------------------------
+
+        cnode = conduit_node_create()
+
+        call conduit_node_set_path_float64(cnode,"a",62d+0)
+        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .true.)
+        call conduit_node_remove_path(cnode,"a")
+        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .false.)
+
+        call conduit_node_set_path_float64(cnode,"a",62d+0)
+        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .true.)
+        ! remove child using idx (still using zero-based idx)
+        call conduit_node_remove_child(cnode, 0_8)
+        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .false.)
+
+
+        call conduit_node_set_path_float64(cnode,"a",62d+0)
+        call conduit_node_rename_child(cnode,"a","b")
+        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .false.)
+        call assert_true( conduit_node_has_path(cnode,"b") .eqv. .true.)
+
+        val = conduit_node_fetch_path_as_float64(cnode,"b");
+
+        call assert_equals(62.0d+0, val)
+
+        call conduit_node_destroy(cnode)
+
+    end subroutine t_node_remove
+
+
 
 !------------------------------------------------------------------------------
 end module f_conduit_node
@@ -291,7 +475,11 @@ program fortran_test
   call t_node_set_int
   call t_node_set_double
   call t_node_set_float64
+  call t_node_set_node
   call t_node_diff
+  call t_node_update
+  call t_node_compact_to
+  call t_node_remove
 
   
   call fruit_summary

@@ -131,10 +131,46 @@ conduit_node_number_of_elements(conduit_node *cnode)
 
 //-----------------------------------------------------------------------------
 char *
+conduit_node_name(const conduit_node *cnode)
+{
+    return _conduit_strdup(cpp_node(cnode)->name().c_str());
+}
+
+//-----------------------------------------------------------------------------
+char *
 conduit_node_path(const conduit_node *cnode)
 {
     return _conduit_strdup(cpp_node(cnode)->path().c_str());
 }
+
+//-----------------------------------------------------------------------------
+/// remove path
+void
+conduit_node_remove_path(conduit_node *cnode,
+                         const char *path)
+{
+    cpp_node(cnode)->remove(path);
+}
+
+//-----------------------------------------------------------------------------
+/// remove child by index
+void
+conduit_node_remove_child(conduit_node *cnode,
+                          conduit_index_t idx)
+{
+    cpp_node(cnode)->remove(idx);
+}
+
+//-----------------------------------------------------------------------------
+/// rename a child (object interface)
+void
+conduit_node_rename_child(conduit_node *cnode,
+                          const char *current_name,
+                          const char *new_name)
+{
+    cpp_node(cnode)->rename_child(current_name, new_name);
+}
+
 
 //-----------------------------------------------------------------------------
 int 
@@ -189,6 +225,14 @@ conduit_node_total_bytes_compact(const conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
+conduit_index_t
+conduit_node_total_bytes_allocated(const conduit_node *cnode)
+{
+    return cpp_node(cnode)->total_bytes_allocated();
+}
+
+
+//-----------------------------------------------------------------------------
 int
 conduit_node_is_compact(const conduit_node *cnode)
 {
@@ -200,6 +244,14 @@ int
 conduit_node_is_contiguous(const conduit_node *cnode)
 {
     return (int)cpp_node(cnode)->is_contiguous();
+}
+
+//-----------------------------------------------------------------------------
+int
+conduit_node_compatible(const conduit_node *cnode,
+                        const conduit_node *cother)
+{
+    return (int)cpp_node(cnode)->compatible(cpp_node_ref(cother));
 }
 
 //-----------------------------------------------------------------------------
@@ -266,6 +318,41 @@ conduit_node_print_detailed(conduit_node *cnode)
     cpp_node(cnode)->print_detailed();
 }
 
+//-----------------------------------------------------------------------------
+// -- compaction methods ---
+//-----------------------------------------------------------------------------
+void
+conduit_node_compact_to(const conduit_node *cnode,
+                        conduit_node *cnres)
+{
+    cpp_node(cnode)->compact_to(cpp_node_ref(cnres));
+}
+
+//-----------------------------------------------------------------------------
+// -- update methods ---
+//-----------------------------------------------------------------------------
+void
+conduit_node_update(conduit_node *cnode,
+                    const conduit_node *cother)
+{
+    cpp_node(cnode)->update(cpp_node_ref(cother));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_update_compatible(conduit_node *cnode,
+                               const conduit_node *cother)
+{
+    cpp_node(cnode)->update_compatible(cpp_node_ref(cother));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_update_external(conduit_node *cnode,
+                             conduit_node *cother)
+{
+    cpp_node(cnode)->update_external(cpp_node_ref(cother));
+}
 
 
 
