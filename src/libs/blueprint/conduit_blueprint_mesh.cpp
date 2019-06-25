@@ -87,6 +87,10 @@ namespace conduit { namespace blueprint { namespace mesh {
     static const std::vector<std::string> associations(association_list,
         association_list + sizeof(association_list) / sizeof(association_list[0]));
 
+    static const std::string boolean_list[2] = {"true", "false"};
+    static const std::vector<std::string> booleans(boolean_list,
+        boolean_list + sizeof(boolean_list) / sizeof(boolean_list[0]));
+
     static const std::string coord_type_list[3] = {"uniform", "rectilinear", "explicit"};
     static const std::vector<std::string> coord_types(coord_type_list,
         coord_type_list + sizeof(coord_type_list) / sizeof(coord_type_list[0]));
@@ -1816,6 +1820,10 @@ mesh::verify(const std::string &protocol,
     {
         res = matset::verify(n,info);
     }
+    else if(protocol == "specset")
+    {
+        res = specset::verify(n,info);
+    }
     else if(protocol == "field")
     {
         res = field::verify(n,info);
@@ -1843,6 +1851,10 @@ mesh::verify(const std::string &protocol,
     else if(protocol == "matset/index")
     {
         res = matset::index::verify(n,info);
+    }
+    else if(protocol == "specset/index")
+    {
+        res = specset::index::verify(n,info);
     }
     else if(protocol == "field/index")
     {
@@ -1937,6 +1949,33 @@ mesh::verify_single_domain(const Node &n,
 
             log::validation(info["matsets"],mset_res);
             res &= mset_res;
+        }
+    }
+
+    // optional: "specsets", each child must conform to "mesh::specset"
+    if(n.has_path("specsets"))
+    {
+        if(!verify_object_field(protocol, n, info, "specsets"))
+        {
+            res = false;
+        }
+        else
+        {
+            bool sset_res = true;
+            NodeConstIterator itr = n["specsets"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                Node &chld_info = info["specsets"][chld_name];
+
+                sset_res &= specset::verify(chld, chld_info);
+                sset_res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "matset", "matsets");
+            }
+
+            log::validation(info["specsets"],sset_res);
+            res &= sset_res;
         }
     }
 
@@ -2261,7 +2300,7 @@ mesh::generate_index(const Node &mesh,
         std::string tp_ref_path = join_path(ref_path,"topologies");
         tp_ref_path = join_path(tp_ref_path,topo_name);
         idx_topo["path"] = tp_ref_path;
-        
+
         // a topology may also specify a grid_function
         if(topo.has_child("grid_function"))
         {
@@ -2285,10 +2324,35 @@ mesh::generate_index(const Node &mesh,
                 mats_itr.next();
                 idx_matset["materials"][mats_itr.name()];
             }
-            
+
             std::string ms_ref_path = join_path(ref_path, "matsets");
             ms_ref_path = join_path(ms_ref_path, matset_name);
             idx_matset["path"] = ms_ref_path;
+        }
+    }
+
+    if(mesh.has_child("specsets"))
+    {
+        itr = mesh["specsets"].children();
+        while(itr.has_next())
+        {
+            const Node &specset = itr.next();
+            const std::string specset_name = itr.name();
+            Node &idx_specset = index_out["specsets"][specset_name];
+
+            idx_specset["matset"] = specset["matset"].as_string();
+            // TODO(JRC): Is the 'materials' entry necessary given that it will
+            // always match the 'materials' entry in the 'matset' list?
+            NodeConstIterator specs_itr = specset["matset_values"].child(0).children();
+            while(specs_itr.has_next())
+            {
+                specs_itr.next();
+                idx_specset["species"][specs_itr.name()];
+            }
+
+            std::string ms_ref_path = join_path(ref_path, "specsets");
+            ms_ref_path = join_path(ms_ref_path, specset_name);
+            idx_specset["path"] = ms_ref_path;
         }
     }
 
@@ -3884,6 +3948,8 @@ mesh::field::verify(const Node &field,
         res &= verify_mlarray_field(protocol, field, info, "matset_values");
     }
 
+    res &= verify_enum_field(protocol, field, info, "volume_dependent", mesh::booleans);
+
     log::validation(info, res);
 
     return res;
@@ -3956,6 +4022,53 @@ mesh::field::index::verify(const Node &field_idx,
 
     res &= verify_integer_field(protocol, field_idx, info, "number_of_components");
     res &= verify_string_field(protocol, field_idx, info, "path");
+
+    log::validation(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::specset protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::specset::verify(const Node &specset,
+                    Node &info)
+{
+    const std::string protocol = "mesh::specset";
+    bool res = true;
+    info.reset();
+
+    res &= verify_string_field(protocol, specset, info, "matset");
+    res &= verify_mlarray_field(protocol, specset, info, "matset_values");
+    res &= verify_enum_field(protocol, specset, info, "volume_dependent", mesh::booleans);
+
+    log::validation(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::specset::index::verify protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::specset::index::verify(const Node &specset_idx,
+                           Node &info)
+{
+    const std::string protocol = "mesh::specset::index";
+    bool res = true;
+    info.reset();
+
+    // TODO(JRC): Determine whether or not extra verification needs to be
+    // performed on the "species" field.
+
+    res &= verify_string_field(protocol, matset_idx, info, "matset");
+    res &= verify_object_field(protocol, matset_idx, info, "species");
+    res &= verify_string_field(protocol, matset_idx, info, "path");
 
     log::validation(info, res);
 
@@ -4224,6 +4337,34 @@ mesh::index::verify(const Node &n,
 
             log::validation(info["matsets"],mset_res);
             res &= mset_res;
+        }
+    }
+
+    // optional: "specsets", each child must conform to
+    // "mesh::index::specset"
+    if(n.has_path("specsets"))
+    {
+        if(!verify_object_field(protocol, n, info, "specsets"))
+        {
+            res = false;
+        }
+        else
+        {
+            bool sset_res = true;
+            NodeConstIterator itr = n["specsets"].children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                Node &chld_info = info["specsets"][chld_name];
+
+                sset_res &= specset::index::verify(chld, chld_info);
+                sset_res &= verify_reference_field(protocol, n, info,
+                    chld, chld_info, "matset", "matsets");
+            }
+
+            log::validation(info["specsets"],sset_res);
+            res &= sset_res;
         }
     }
 
