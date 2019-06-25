@@ -102,9 +102,26 @@ CONDUIT_API conduit_index_t conduit_node_number_of_children(conduit_node *cnode)
 //-----------------------------------------------------------------------------
 CONDUIT_API conduit_index_t conduit_node_number_of_elements(conduit_node *cnode);
 
+//-----------------------------------------------------------------------------
+/// remove path
+CONDUIT_API void conduit_node_remove_path(conduit_node *cnode,
+                                          const char *path);
 
 //-----------------------------------------------------------------------------
-// TODO:  for Node::path() in c, thecaller must free the result, 
+/// remove child by index
+CONDUIT_API void conduit_node_remove_child(conduit_node *cnode,
+                                           conduit_index_t idx);
+
+
+//-----------------------------------------------------------------------------
+// TODO:  for Node::name() in c, the caller must free the result, 
+// before we expose this, we need to understand the implications of this in 
+// fortran
+// NOTE: the fortran version could pass in the buffer to contain the path.
+CONDUIT_API char *conduit_node_name(const conduit_node *cnode);
+
+//-----------------------------------------------------------------------------
+// TODO:  for Node::path() in c, the caller must free the result, 
 // before we expose this, we need to understand the implications of this in 
 // fortran
 // NOTE: the fortran version could pass in the buffer to contain the path.
@@ -115,6 +132,12 @@ CONDUIT_API int conduit_node_has_child(const conduit_node *cnode,
                                        const char *name);
 CONDUIT_API int conduit_node_has_path(const conduit_node *cnode, 
                                       const char *path);
+
+//-----------------------------------------------------------------------------
+/// rename a child (object interface)
+CONDUIT_API void conduit_node_rename_child(conduit_node *cnode,
+                                           const char *current_name,
+                                           const char *new_name);
 
 //-----------------------------------------------------------------------------
 // -- node info --
@@ -130,9 +153,15 @@ CONDUIT_API conduit_node *conduit_node_parent(conduit_node *cnode);
 //-----------------------------------------------------------------------------
 CONDUIT_API conduit_index_t conduit_node_total_strided_bytes(const conduit_node *cnode);
 CONDUIT_API conduit_index_t conduit_node_total_bytes_compact(const conduit_node *cnode);
+CONDUIT_API conduit_index_t conduit_node_total_bytes_allocated(const conduit_node *cnode);
     
 //-----------------------------------------------------------------------------
 CONDUIT_API int conduit_node_is_compact(const conduit_node *cnode);
+
+
+//-----------------------------------------------------------------------------
+CONDUIT_API int conduit_node_compatible(const conduit_node *cnode,
+                                        const conduit_node *cother);
 
 //-----------------------------------------------------------------------------
 CONDUIT_API int conduit_node_is_contiguous(const conduit_node *cnode);
@@ -157,10 +186,28 @@ CONDUIT_API int conduit_node_compatible(const conduit_node *cnode,
                                         const conduit_node *cother);
 
 CONDUIT_API void conduit_node_info(const conduit_node *cnode,
-                                    conduit_node *cnres);
+                                conduit_node *cnres);
 //-----------------------------------------------------------------------------
 CONDUIT_API void conduit_node_print(conduit_node *cnode);
 CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
+
+
+//-----------------------------------------------------------------------------
+// -- compaction methods ---
+//-----------------------------------------------------------------------------
+CONDUIT_API void conduit_node_compact_to(const conduit_node *cnode,
+                                         conduit_node *cnres);
+
+//-----------------------------------------------------------------------------
+// -- update methods ---
+//-----------------------------------------------------------------------------
+CONDUIT_API void conduit_node_update(conduit_node *cnode,
+                                     const conduit_node *cother);
+CONDUIT_API void conduit_node_update_compatible(conduit_node *cnode,
+                                                const conduit_node *cother);
+CONDUIT_API void conduit_node_update_external(conduit_node *cnode,
+                                              conduit_node *cother);
+
 
 
 //-----------------------------------------------------------------------------

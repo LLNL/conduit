@@ -67,6 +67,7 @@ contains
     !--------------------------------------------------------------------------
     subroutine t_node_obj_create
         type(node) obj
+        type(node) info_obj
         integer res
         
         !----------------------------------------------------------------------
@@ -81,7 +82,14 @@ contains
         obj = conduit_node_obj_create()
         call obj%print_detailed()
         call assert_true(obj%is_root() .eqv. .true. )
+        ! Node n_info;
+        ! n.info(n_info);
+        ! n_info.print();
+        info_obj = conduit_node_obj_create()
+        call obj%info(info_obj)
+        call info_obj%print() 
         call conduit_node_obj_destroy(obj)
+        call conduit_node_obj_destroy(info_obj)
     
     end subroutine t_node_obj_create
 
@@ -277,6 +285,7 @@ contains
         obj = conduit_node_obj_create()
         ! n.set_external_int32_ptr(data,5);
         call obj%set_external_int32_ptr(data,5_8)
+        call assert_true( obj%is_data_external() .eqv. .true. )
         ! change the first element in the array
         ! so we can check the external semantics
         data(1) = 42
@@ -574,6 +583,42 @@ contains
     end subroutine t_node_obj_set_generic_fetch_ptr
 
     !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_node
+        type(node) n1
+        type(node) n2
+        real(kind=8) res
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_node")
+        !----------------------------------------------------------------------
+        n1 = conduit_node_obj_create()
+        n2 = conduit_node_obj_create()
+        
+        call n1%set_path("a",3.1415d+0)
+        call n2%set_path("path/to",n1)
+        call assert_true( n2%has_path("path/to/a") .eqv. .true.)
+
+
+        call n2%set_path_external("another/path/to",n1)
+
+        res = n2%fetch_path_as_float64("path/to/a");
+        call assert_equals(3.1415d+0, res)
+
+        res = n2%fetch_path_as_float64("another/path/to/a");
+        call assert_equals(3.1415d+0, res)
+
+        call n1%set_path_float64("a",42.0d+0)
+
+        res = n2%fetch_path_as_float64("another/path/to/a");
+        call assert_equals(42.0d+0, res)
+        
+        call n2%print()
+        call conduit_node_obj_destroy(n1)
+        call conduit_node_obj_destroy(n2)
+
+    end subroutine t_node_obj_set_node
+
+    !--------------------------------------------------------------------------
     subroutine t_node_obj_diff
         type(node) obj
         type(node) other
@@ -610,7 +655,144 @@ contains
         
     end subroutine t_node_obj_diff
 
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_update
+        type(node) n1
+        type(node) n2
+        real(kind=8) val
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_update")
+        !----------------------------------------------------------------------
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n1;
+        ! Node n2;
+        n1 = conduit_node_obj_create()
+        n2 = conduit_node_obj_create()
 
+        ! n1["a"].set_float64(3.1415);
+        call n1%set_path("a",3.1415d+0)
+        ! n2.update(n1)
+        call n2%update(n1)
+
+        call assert_true( n2%has_path("a") .eqv. .true.)
+
+        call n1%set_path("a",42.0d+0)
+        call n1%set_path("b",52.0d+0)
+
+        ! n2.update_compatible(n1)
+        call n2%update_compatible(n1)
+        ! float64 val = n2["a"].value()
+        val = n2%fetch_path_as_float64("a");
+
+        call assert_equals(42.0d+0, val)
+
+        call assert_true( n2%has_path("a") .eqv. .true.)
+        call assert_true( n2%has_path("b") .eqv. .false.)
+
+
+        ! n2.update_external(n1)
+        call n2%update_external(n1)
+        ! n2["a"].set(float64(62.0));
+        call n1%set_path("a",62d+0)
+        ! float64 val = n2["a"].value()
+        val = n2%fetch_path_as_float64("a");
+
+        call assert_equals(62.0d+0, val)
+
+        call assert_true( n2%has_path("a") .eqv. .true.)
+        call assert_true( n2%has_path("a") .eqv. .true.)
+
+        val = n2%fetch_path_as_float64("b");
+
+        call assert_equals(52.0d+0, val)
+
+        call conduit_node_obj_destroy(n1)
+        call conduit_node_obj_destroy(n2)
+
+    end subroutine t_node_obj_update
+    
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_compact_to
+        type(node) n1
+        type(node) n2
+        real(kind=8) val
+        integer    bytes_res
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_compact_to")
+        !----------------------------------------------------------------------
+        
+        n1 = conduit_node_obj_create()
+        n2 = conduit_node_obj_create()
+
+        call n1%set_path("a",10)
+        call n1%set_path("b",20)
+        call n1%set_path("c",30d+0)
+
+        bytes_res = n1%total_bytes_allocated();
+        
+        call assert_equals( bytes_res, 16)
+
+        call assert_true( n1%is_contiguous() .eqv. .false.)
+        
+        call n1%compact_to(n2);
+
+        call assert_true( n2%is_contiguous() .eqv. .true.)
+
+        bytes_res = n2%total_bytes_compact();
+        call assert_equals( bytes_res, 16)
+        bytes_res = n2%total_strided_bytes()
+        call assert_equals( bytes_res, 16)
+        bytes_res = n2%total_bytes_allocated()
+        call assert_equals( bytes_res, 16)
+
+
+        call conduit_node_obj_destroy(n1)
+        call conduit_node_obj_destroy(n2)
+
+
+    end subroutine t_node_obj_compact_to
+    
+    
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_remove
+        type(node) n
+        real(kind=8) val
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_remove")
+        !----------------------------------------------------------------------
+
+        n = conduit_node_obj_create()
+
+        call n%set_path("a",62d+0)
+        call assert_true( n%has_path("a") .eqv. .true.)
+        call n%remove_path("a")
+        call assert_true( n%has_path("a") .eqv. .false.)
+
+        call n%set_path("a",62d+0)
+        call assert_true( n%has_path("a") .eqv. .true.)
+        ! remove child using idx (still using zero-based idx)
+        call n%remove_child(0_8)
+        call assert_true( n%has_path("a") .eqv. .false.)
+
+
+        call n%set_path("a",62d+0)
+        call n%rename_child("a","b")
+        call assert_true( n%has_path("a") .eqv. .false.)
+        call assert_true( n%has_path("b") .eqv. .true.)
+
+        val = n%fetch_path_as_float64("b");
+
+        call assert_equals(62.0d+0, val)
+
+        call conduit_node_obj_destroy(n)
+
+    end subroutine t_node_obj_remove
+    
 !------------------------------------------------------------------------------
 end module f_conduit_node_obj
 !------------------------------------------------------------------------------
@@ -641,7 +823,11 @@ program fortran_test
   call t_node_obj_set_fetch_path_int32
   call t_node_obj_set_fetch_generic
   call t_node_obj_set_generic_fetch_ptr
+  call t_node_obj_set_node
   call t_node_obj_diff
+  call t_node_obj_update
+  call t_node_obj_compact_to
+  call t_node_obj_remove
 
   call fruit_summary
   call fruit_finalize

@@ -9,6 +9,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### General 
+- Added support to parse YAML into Conduit Nodes and to create YAML from Conduit Nodes. Support closely follows the "json" protocol, making similar choices related to promoting YAML string leaves to concrete data types.
+- Added several more Conduit Node methods to the C and Fortran APIs. Additions are enumerated here:  https://github.com/LLNL/conduit/pull/426
+
+
 #### Blueprint
 
 - Added explicit topological data generation functions for points, lines, and faces
@@ -17,7 +22,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 #### General 
-- Added support to parse YAML into Conduit Nodes and to create YAML from Conduit Nodes. Support closely follows the "json" protocol, making similar choices related to promoting YAML string leaves to concrete data types.
 - Improved CMake export logic to make it easier to find and use Conduit install in a CMake-based build system. (See using-with-cmake example for new recipe)
 
 #### Relay
