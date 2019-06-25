@@ -285,6 +285,7 @@ contains
         obj = conduit_node_obj_create()
         ! n.set_external_int32_ptr(data,5);
         call obj%set_external_int32_ptr(data,5_8)
+        call assert_true( obj%is_data_external() .eqv. .true. )
         ! change the first element in the array
         ! so we can check the external semantics
         data(1) = 42

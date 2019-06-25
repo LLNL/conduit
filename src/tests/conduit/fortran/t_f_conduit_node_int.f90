@@ -146,6 +146,7 @@ contains
         cnode = conduit_node_create()
         ! n.set_external_int32_ptr(data,5);
         call conduit_node_set_external_int32_ptr(cnode,data,5_8)
+        call assert_true( conduit_node_is_data_external(cnode) .eqv. .true. )
         ! change the first element in the array
         ! so we can check the external semantics
         data(1) = 42
