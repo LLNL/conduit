@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -9,7 +9,7 @@
 # 
 # This file is part of Conduit. 
 # 
-# For details, see https://lc.llnl.gov/conduit/.
+# For details, see: http://software.llnl.gov/conduit/.
 # 
 # Please also read conduit/LICENSE
 # 
@@ -42,61 +42,21 @@
 # 
 ###############################################################################
 
-FROM ubuntu:trusty
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+################################################################
+# if BLT_SOURCE_DIR is not set - use "blt" as default
+################################################################
+if(NOT BLT_SOURCE_DIR)
+    set(BLT_SOURCE_DIR "blt")
+endif()
 
-# fetch build env
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    build-essential \
-    gcc \
-    g++ \
-    gfortran \
-    zlib1g-dev \
-    python \
-    unzip \
- && rm -rf /var/lib/apt/lists/*
+################################################################
+# if not set, prefer c++11 lang standard
+################################################################
+if(NOT BLT_CXX_STD)
+    set(BLT_CXX_STD "c++11" CACHE STRING "")
+endif()
 
-
-# untar the current source  (created as part of example_build.sh)
-COPY conduit.docker.src.tar /
-RUN tar -xf conduit.docker.src.tar
-
-# if you would like to clone conduit master directly, you can use:
-#RUN git clone --depth 1 https://github.com/LLNL/conduit.git
-
-# at some sites ssl certs are intercepted, which cases issues fetching 
-# tpl sources via https
-
-# to resolve this, either:
-# 1) pass the "-k" option to uberenv (recommended), 
-# 2) install the proper certs into the image, or
-# 3) use  the following commands to disable ssl for git and 
-#    curl (both are used by spack):
-#RUN git config --global http.sslVerify false
-#RUN echo insecure >> ~/.curlrc
-
-# bootstrap third party libs using spack and uberenv
-#  for this example we use mpich for MPI b/c openmpi's mpiexec
-#  will not run for the root user
-RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~silo ^mpich ^cmake@3.9.6"
-
-# configure a debug build with cmake
-RUN cd conduit && mkdir build-debug
-RUN cd conduit/build-debug && \
-    ../uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_INSTALL_PREFIX=/conduit/install-debug \
-    -C ../uberenv_libs/*.cmake \
-    ../src
-
-# build, test, and install conduit
-RUN cd conduit/build-debug && make
-RUN cd conduit/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
-RUN cd conduit/build-debug && make install
-
-# open port 9000, for use by conduit relay
-EXPOSE 9000
-
-CMD ["/bin/bash"]
+################################################################
+# init blt using BLT_SOURCE_DIR
+################################################################
+include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
