@@ -564,7 +564,9 @@ bool verify_mcarray_field(const std::string &protocol,
 bool verify_mlarray_field(const std::string &protocol,
                           const conduit::Node &node,
                           conduit::Node &info,
-                          const std::string &field_name)
+                          const std::string &field_name,
+                          const index_t min_depth,
+                          const index_t max_depth)
 {
     Node &field_info = info[field_name];
 
@@ -572,7 +574,7 @@ bool verify_mlarray_field(const std::string &protocol,
     if(res)
     {
         const Node &field_node = node[field_name];
-        res = blueprint::mlarray::verify(field_node,field_info);
+        res = blueprint::mlarray::verify(field_node,field_info,min_depth,max_depth);
         if(res)
         {
             log::info(info, protocol, log::quote(field_name) + "is an mlarray");
@@ -3940,15 +3942,17 @@ mesh::field::verify(const Node &field,
     if(has_topo)
     {
         res &= verify_string_field(protocol, field, info, "topology");
-        res &= verify_mlarray_field(protocol, field, info, "values");
+        res &= verify_mlarray_field(protocol, field, info, "values", 0, 1);
     }
     if(has_matset)
     {
         res &= verify_string_field(protocol, field, info, "matset");
-        res &= verify_mlarray_field(protocol, field, info, "matset_values");
+        res &= verify_mlarray_field(protocol, field, info, "matset_values", 1, 2);
     }
 
-    res &= verify_enum_field(protocol, field, info, "volume_dependent", mesh::booleans);
+    // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
+    // entry for fields.
+    // res &= verify_enum_field(protocol, field, info, "volume_dependent", mesh::booleans);
 
     log::validation(info, res);
 
@@ -4042,8 +4046,10 @@ mesh::specset::verify(const Node &specset,
     info.reset();
 
     res &= verify_string_field(protocol, specset, info, "matset");
-    res &= verify_mlarray_field(protocol, specset, info, "matset_values");
-    res &= verify_enum_field(protocol, specset, info, "volume_dependent", mesh::booleans);
+    res &= verify_mlarray_field(protocol, specset, info, "matset_values", 2, 2);
+    // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
+    // entry for specsets.
+    // res &= verify_enum_field(protocol, specset, info, "volume_dependent", mesh::booleans);
 
     log::validation(info, res);
 
@@ -4066,9 +4072,9 @@ mesh::specset::index::verify(const Node &specset_idx,
     // TODO(JRC): Determine whether or not extra verification needs to be
     // performed on the "species" field.
 
-    res &= verify_string_field(protocol, matset_idx, info, "matset");
-    res &= verify_object_field(protocol, matset_idx, info, "species");
-    res &= verify_string_field(protocol, matset_idx, info, "path");
+    res &= verify_string_field(protocol, specset_idx, info, "matset");
+    res &= verify_object_field(protocol, specset_idx, info, "species");
+    res &= verify_string_field(protocol, specset_idx, info, "path");
 
     log::validation(info, res);
 

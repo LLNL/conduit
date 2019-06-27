@@ -184,6 +184,11 @@ bool verify_matset_protocol(const Node &n, Node &info)
     return blueprint::mesh::verify("matset",n,info);
 }
 
+bool verify_specset_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("specset",n,info);
+}
+
 bool verify_field_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("field",n,info);
@@ -217,6 +222,11 @@ bool verify_topology_index_protocol(const Node &n, Node &info)
 bool verify_matset_index_protocol(const Node &n, Node &info)
 {
     return blueprint::mesh::verify("matset/index",n,info);
+}
+
+bool verify_specset_index_protocol(const Node &n, Node &info)
+{
+    return blueprint::mesh::verify("specset/index",n,info);
 }
 
 bool verify_field_index_protocol(const Node &n, Node &info)
@@ -926,6 +936,72 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
     }
 }
 
+/// Mesh Specsets Tests ///
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, specset_general)
+{
+    VerifyFun verify_specset_funs[] = {
+        blueprint::mesh::specset::verify,
+        verify_specset_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_specset = verify_specset_funs[fi];
+
+        Node mesh, info;
+        CHECK_MESH(verify_specset,mesh,info,false);
+
+        blueprint::mesh::examples::misc("specsets",10,10,1,mesh);
+        Node& n = mesh["specsets"]["mesh"];
+        CHECK_MESH(verify_specset,n,info,true);
+
+        { // Matset Field Tests //
+            n.remove("matset");
+            CHECK_MESH(verify_specset,n,info,false);
+            n["matset"].set(10);
+            CHECK_MESH(verify_specset,n,info,false);
+            n["matset"].set("mesh");
+            CHECK_MESH(verify_specset,n,info,true);
+        }
+
+        { // Matset Values Field Tests //
+            Node mfs = n["matset_values"];
+
+            n.remove("matset_values");
+            CHECK_MESH(verify_specset,n,info,false);
+            n["matset_values"].set("values");
+            CHECK_MESH(verify_specset,n,info,false);
+            n["matset_values"].set(DataType::float64(10));
+            CHECK_MESH(verify_specset,n,info,false);
+
+            n["matset_values"].reset();
+            n["matset_values"]["x"].set("Hello, ");
+            n["matset_values"]["y"].set("World!");
+            CHECK_MESH(verify_specset,n,info,false);
+
+            n["matset_values"].reset();
+            n["matset_values"]["m1"].set(DataType::float64(5));
+            n["matset_values"]["m2"].set(DataType::float64(5));
+            CHECK_MESH(verify_specset,n,info,false);
+
+            n["matset_values"].reset();
+            n["matset_values"]["m1"]["s1"].set(DataType::float64(5));
+            n["matset_values"]["m2"]["s1"].set(DataType::float64(5));
+            CHECK_MESH(verify_specset,n,info,true);
+
+            n["matset_values"].reset();
+            n["matset_values"]["m1"]["s2"].set(DataType::float64(5));
+            n["matset_values"]["m2"]["s2"].set(DataType::float64(5));
+            CHECK_MESH(verify_specset,n,info,true);
+
+            n["matset_values"].reset();
+            n["matset_values"].set(mfs);
+            CHECK_MESH(verify_specset,n,info,true);
+        }
+    }
+}
+
 /// Mesh Field Tests ///
 
 //-----------------------------------------------------------------------------
@@ -1400,6 +1476,63 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
 
             mindex["path"].set("path");
             CHECK_MESH(verify_matset_index,mindex,info,true);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, index_specset)
+{
+    VerifyFun verify_specset_index_funs[] = {
+        blueprint::mesh::specset::index::verify,
+        verify_specset_index_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_specset_index = verify_specset_index_funs[fi];
+
+        Node mesh, index, info;
+        CHECK_MESH(verify_specset_index,mesh,info,false);
+
+        blueprint::mesh::examples::misc("specsets",10,10,1,mesh);
+        blueprint::mesh::generate_index(mesh,"quads",1,index);
+        Node& mindex = index["specsets"]["mesh"];
+        CHECK_MESH(verify_specset_index,mindex,info,true);
+
+        { // Matset Field Tests //
+            mindex.remove("matset");
+            CHECK_MESH(verify_specset_index,mindex,info,false);
+
+            mindex["matset"].set(0);
+            CHECK_MESH(verify_specset_index,mindex,info,false);
+
+            mindex["matset"].set("path");
+            CHECK_MESH(verify_specset_index,mindex,info,true);
+        }
+
+        { // Spcies Field Tests //
+            mindex.remove("species");
+            CHECK_MESH(verify_specset_index,mindex,info,false);
+
+            mindex["species"];
+            CHECK_MESH(verify_specset_index,mindex,info,false);
+
+            mindex["species/spec1"].set(1);
+            CHECK_MESH(verify_specset_index,mindex,info,true);
+            mindex["species/spec2"].set(2);
+            CHECK_MESH(verify_specset_index,mindex,info,true);
+        }
+
+        { // Path Field Tests //
+            mindex.remove("path");
+            CHECK_MESH(verify_specset_index,mindex,info,false);
+
+            mindex["path"].set(5);
+            CHECK_MESH(verify_specset_index,mindex,info,false);
+
+            mindex["path"].set("path");
+            CHECK_MESH(verify_specset_index,mindex,info,true);
         }
     }
 }
@@ -2137,7 +2270,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_bad_spacing_name)
     n_test["topologies/topo/type"] = "uniform";
     Node info;
     bool res = blueprint::mesh::verify(n_test,info);
-    info.print();
+    // info.print();
     Node n_idx;
     blueprint::mesh::generate_index(n_test,"",1,n_idx);
 }

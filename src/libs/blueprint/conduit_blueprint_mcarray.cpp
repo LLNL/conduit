@@ -347,6 +347,18 @@ verify(const std::string &/*protocol*/,
 bool verify(const conduit::Node &n,
             Node &info)
 {
+    // TODO(JRC): Make the second parameter the largest value for the 'index_t'
+    // type (unfortunately this isn't trivial to get because 'index_t' can be
+    // signed or unsigned depending on Conduit's build options).
+    return mlarray::verify(n, info, 0, 10000);
+}
+
+//----------------------------------------------------------------------------
+bool verify(const conduit::Node &n,
+            Node &info,
+            const index_t min_depth,
+            const index_t max_depth)
+{
     info.reset();
     bool res = true;
 
@@ -449,6 +461,18 @@ bool verify(const conduit::Node &n,
                 res = false;
             }
         }
+    }
+
+    // Verify Proper Depth Level //
+
+    if(node_max_depth < min_depth || node_max_depth > max_depth)
+    {
+        std::ostringstream oss;
+        oss << "mlarray depth has depth " << node_max_depth <<
+            ", which isn't in the required depth bounds of " <<
+            "[" << min_depth << ", " << max_depth << "]";
+        log::error(info,protocol,oss.str());
+        res = false;
     }
 
     return res;
