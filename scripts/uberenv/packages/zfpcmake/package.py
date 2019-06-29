@@ -6,7 +6,7 @@
 from spack import *
 
 
-class Zfp(CMakePackage):
+class Zfpcmake(CMakePackage):
     """zfp is an open source C/C++ library for high-fidelity, high-throughput
        lossy compression of floating-point and integer multi-dimensional
        arrays.

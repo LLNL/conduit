@@ -169,7 +169,6 @@ script:
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
   - export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
   - if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
-  - if [ $ENABLE_ADIOS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^adios~zfp"; fi
   - echo $SPACK_SPEC
   # Output something every 10 minutes or Travis kills the job
   - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &

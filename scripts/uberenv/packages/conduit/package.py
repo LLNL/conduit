@@ -116,7 +116,7 @@ class Conduit(Package):
     depends_on("adios~mpi~hdf5~shared~blosc", when="+adios~mpi~shared")
 
     # zfp
-    depends_on("zfp", when="+zfp")
+    depends_on("zfpcmake", when="+zfp")
 
     #######################
     # MPI
@@ -441,7 +441,7 @@ class Conduit(Package):
         cfg.write("# zfp from spack \n")
 
         if "+zfp" in spec:
-            cfg.write(cmake_cache_entry("ZFP_DIR", spec['zfp'].prefix))
+            cfg.write(cmake_cache_entry("ZFP_DIR", spec['zfpcmake'].prefix))
         else:
             cfg.write("# zfp not built by spack \n")
 
