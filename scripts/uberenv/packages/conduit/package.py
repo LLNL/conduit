@@ -91,6 +91,10 @@ class Conduit(Package):
     depends_on("python+shared", when="+python")
     extends("python", when="+python")
     depends_on("py-numpy", when="+python", type=('build', 'run'))
+    # extra bells an whistles we are working on ...
+    depends_on("py-mpi4py", when="+python")
+    depends_on("py-pip", when="+python")
+
 
     #######################
     # I/O Packages
