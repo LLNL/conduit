@@ -335,6 +335,8 @@ TEST(c_conduit_node, c_name_and_path)
 
     free(e_name);
     free(e_path);
+
+    conduit_node_destroy(n);
 }
 
 //-----------------------------------------------------------------------------
