@@ -295,7 +295,7 @@ void braid_init_example_element_scalar_field(index_t nele_x,
                                              Node &res,
                                              index_t prims_per_ele=1)
 {
-    index_t nele = nele_x*nele_y;
+    index_t nele = nele_x * nele_y;
     
     if(nele_z > 0)
     {
@@ -305,7 +305,10 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     res["association"] = "element";
     res["type"] = "scalar";
     res["topology"] = "mesh";
-    res["values"].set(DataType::float64(nele*prims_per_ele));
+    
+    index_t vals_size = nele * prims_per_ele;
+    
+    res["values"].set(DataType::float64(vals_size));
 
     float64 *vals = res["values"].value();
 
@@ -2171,6 +2174,16 @@ braid(const std::string &mesh_type,
       index_t npts_z, // number of points in z
       Node &res)
 {
+    index_t nele_x = npts_x -1;
+    index_t nele_y = npts_y -1;
+
+    if( (nele_x == 0 || nele_y == 0) && 
+        (mesh_type != "points" && mesh_type != "points_implicit") )
+    {
+        // error, not enough points to create the topo
+        CONDUIT_ERROR("braid with non-points topology requires"
+                      " npts_x > 1 and npts_y > 1");
+    }
 
     if(mesh_type == "uniform")
     {
