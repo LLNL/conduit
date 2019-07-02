@@ -60,6 +60,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <limits>
 
 using namespace conduit;
 // Easier access to the Conduit logging functions
@@ -347,10 +348,7 @@ verify(const std::string &/*protocol*/,
 bool verify(const conduit::Node &n,
             Node &info)
 {
-    // TODO(JRC): Make the second parameter the largest value for the 'index_t'
-    // type (unfortunately this isn't trivial to get because 'index_t' can be
-    // signed or unsigned depending on Conduit's build options).
-    return mlarray::verify(n, info, 0, 10000);
+    return mlarray::verify(n, info, 0, std::numeric_limits<index_t>::max());
 }
 
 //----------------------------------------------------------------------------
