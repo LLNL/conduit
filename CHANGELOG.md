@@ -11,6 +11,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 
+- Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
 - Added explicit topological data generation functions for points, lines, and faces
 - Added derived topology generation functions for element centroids, sides, and corners
 
