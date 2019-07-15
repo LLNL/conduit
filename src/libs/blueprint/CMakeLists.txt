@@ -112,8 +112,6 @@ if(FORTRAN_FOUND)
 
 endif()
 
-set(conduit_blueprint_deps conduit)
-
 ###################
 # Add zfp interface
 # if zfp was found
@@ -122,7 +120,6 @@ set(conduit_blueprint_deps conduit)
 if(ZFP_FOUND)
   list(APPEND blueprint_headers "conduit_blueprint_zfparray.hpp")
   list(APPEND blueprint_sources "conduit_blueprint_zfparray.cpp")
-  list(APPEND conduit_blueprint_deps zfp)
 endif()
 
 #
@@ -132,7 +129,7 @@ add_compiled_library(NAME conduit_blueprint
                      EXPORT conduit
                      HEADERS ${blueprint_headers} ${blueprint_c_headers} 
                      SOURCES ${blueprint_sources} ${blueprint_c_sources} ${blueprint_fortran_sources}
-                     DEPENDS_ON ${conduit_blueprint_deps}
+                     DEPENDS_ON conduit
                      HEADERS_DEST_DIR include/conduit)
 
 

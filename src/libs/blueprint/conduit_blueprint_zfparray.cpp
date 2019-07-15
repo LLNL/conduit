@@ -54,8 +54,6 @@
 #include "conduit_blueprint_zfparray.hpp"
 #include "conduit_log.hpp"
 
-#include "zfp.h"
-
 using namespace conduit;
 // Easier access to the Conduit logging functions
 using namespace conduit::utils;
@@ -134,40 +132,9 @@ bool verify(const conduit::Node &n,
     {
         const Node &compressed_data = n.fetch_child(ZFP_COMPRESSED_DATA_FIELD_NAME);
 
-        // zfp's bitstream consists of uint words
-        switch(stream_word_bits) {
-            case 64:
-                if(!compressed_data.dtype().is_uint64()) {
-                    log::error(info, proto_name, "ZFP compressed-data node's dtype is incompatible with the compiled ZFP bitstream word size");
-                    res = false;
-                }
-                break;
-
-            case 32:
-                if(!compressed_data.dtype().is_uint32()) {
-                    log::error(info, proto_name, "ZFP compressed-data node's dtype is incompatible with the compiled ZFP bitstream word size");
-                    res = false;
-                }
-                break;
-
-            case 16:
-                if(!compressed_data.dtype().is_uint16()) {
-                    log::error(info, proto_name, "ZFP compressed-data node's dtype is incompatible with the compiled ZFP bitstream word size");
-                    res = false;
-                }
-                break;
-
-            case 8:
-                if(!compressed_data.dtype().is_uint8()) {
-                    log::error(info, proto_name, "ZFP compressed-data node's dtype is incompatible with the compiled ZFP bitstream word size");
-                    res = false;
-                }
-                break;
-
-            default:
-                log::error(info, proto_name, "ZFP compressed-data node's dtype is incompatible with the compiled ZFP bitstream word size");
-                res = false;
-                break;
+        if(!compressed_data.dtype().is_unsigned_integer()) {
+            log::error(info, proto_name, "ZFP compressed-data node's dtype is incompatible with the compiled ZFP bitstream word size");
+            res = false;
         }
     }
 

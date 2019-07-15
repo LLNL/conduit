@@ -73,13 +73,42 @@ namespace io
 zfp::array*
 zfp_write(const Node &node)
 {
+    Node compressed_data = node.fetch_child(ZFP_COMPRESSED_DATA_FIELD_NAME);
+
+    // verify word size is readable with zfp
+    // zfp's bitstream consists of uint words
+    bool is_readable = true;
+    switch(stream_word_bits) {
+        case 64:
+            is_readable = compressed_data.dtype().is_uint64();
+            break;
+
+        case 32:
+            is_readable = compressed_data.dtype().is_uint32();
+            break;
+
+        case 16:
+            is_readable = compressed_data.dtype().is_uint16();
+            break;
+
+        case 8:
+            is_readable = compressed_data.dtype().is_uint8();
+            break;
+
+        default:
+            is_readable = false;
+            break;
+    }
+
+    if(!is_readable) {
+        return NULL;
+    }
+
     zfp::array::header header[1];
     memcpy(header->buffer, node.fetch_child(ZFP_HEADER_FIELD_NAME).data_ptr(), sizeof(header));
 
-    Node compressedData = node.fetch_child(ZFP_COMPRESSED_DATA_FIELD_NAME);
-
     try {
-        return zfp::array::construct(header[0], static_cast<uchar*>(compressedData.data_ptr()), compressedData.allocated_bytes());
+        return zfp::array::construct(header[0], static_cast<uchar*>(compressed_data.data_ptr()), compressed_data.allocated_bytes());
     } catch(std::exception const &) {
         // could be zfp::array::header::exception, or std::bad_alloc
         return NULL;

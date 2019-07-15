@@ -224,16 +224,9 @@ TEST(conduit_relay_zfp, zfp_write_with_exception)
     uint nx = 9;
     uint ny = 12;
 
-    float vals[nx * ny];
-    uint i, j;
-    for (j = 0; j < ny; j++) {
-        for (i = 0; i < nx; i++) {
-            vals[nx*j + i] = i * 10. + j*j;
-        }
-    }
-
+    float vals[nx * ny] = {0};
     double rate = 32.0;
-    zfp::array2f original_arr(nx, ny, rate, vals);
+    zfp::array2f original_arr(nx, ny, rate);
 
     // write zfparray to Node
     Node result;
@@ -241,6 +234,54 @@ TEST(conduit_relay_zfp, zfp_write_with_exception)
 
     // corrupt the Node's data
     result[io::ZFP_HEADER_FIELD_NAME].set(vals, sizeof(vals));
+
+    // fetch zfparray object from Node
+    zfp::array* fetched_arr = io::zfp_write(result);
+
+    // verify no instance returned
+    ASSERT_TRUE(fetched_arr == 0);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_zfp, zfp_write_with_compressed_data_dtype_mismatched_with_compiled_zfp_word_size)
+{
+    // create compressed-array
+    uint nx = 9;
+    uint ny = 12;
+    uint nz = 15;
+
+    double rate = 16.0;
+    zfp::array3f arr(nx, ny, nz, rate);
+
+    // write zfparray to Node
+    Node result;
+    EXPECT_EQ(0, relay::io::zfp_read(&arr, result));
+
+    // remove compressed-data node
+    EXPECT_TRUE(result.has_child(io::ZFP_COMPRESSED_DATA_FIELD_NAME));
+    result.remove(io::ZFP_COMPRESSED_DATA_FIELD_NAME);
+
+    // re-add compressed-data node as the wrong type
+    switch(stream_word_bits) {
+        case 64:
+        case 32:
+        case 16:
+            {
+                uint8 data = 3;
+                result[io::ZFP_COMPRESSED_DATA_FIELD_NAME] = data;
+            }
+            break;
+
+        case 8:
+            {
+                uint64 data = 3;
+                result[io::ZFP_COMPRESSED_DATA_FIELD_NAME] = data;
+            }
+            break;
+
+        default:
+            FAIL() << "ZFP was compiled with an unrecognizable word type";
+    }
 
     // fetch zfparray object from Node
     zfp::array* fetched_arr = io::zfp_write(result);
