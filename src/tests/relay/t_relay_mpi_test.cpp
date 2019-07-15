@@ -505,6 +505,45 @@ TEST(conduit_mpi_test, send_recv_without_using_schema)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, isend_irecv_using_schema) 
+{
+    int rank = 0;
+    int size = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    EXPECT_EQ(size, 2);
+
+    if (rank == 0) 
+    {
+        Node n1;
+        std::vector<double> doubles;
+        doubles.push_back(1);
+        doubles.push_back(3.4124);
+        doubles.push_back(10.7);
+        n1["/one"].set_external(doubles);
+        n1["/two"].set("xyz");
+
+        mpi::Request request;
+        MPI_Status status;
+        mpi::isend_using_schema(n1, 1, 0, MPI_COMM_WORLD, &request);
+        mpi::wait_send(&request, &status);
+    } else if (rank == 1) 
+    {
+        Node n2;
+        mpi::Request request;
+        MPI_Status status;
+        mpi::irecv_using_schema(n2, 0, 0, MPI_COMM_WORLD, &request);
+        mpi::wait_recv(&request, &status);
+
+        EXPECT_EQ(n2["/one"].as_float64_ptr()[0], 1);
+        EXPECT_EQ(n2["/one"].as_float64_ptr()[1], 3.4124);
+        EXPECT_EQ(n2["/one"].as_float64_ptr()[2], 10.7);
+        std::string v = n2["/two"].as_string();
+        EXPECT_EQ(v, "xyz");
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, isend_irecv_wait) 
 {
     Node n1;
