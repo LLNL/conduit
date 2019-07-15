@@ -307,6 +307,57 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     }
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
+{
+
+    std::vector<std::string> braid_type_strings;
+
+
+    braid_type_strings.push_back("uniform");
+    braid_type_strings.push_back("lines");
+    braid_type_strings.push_back("rectilinear");
+    braid_type_strings.push_back("structured");
+
+    // 2d extra
+    braid_type_strings.push_back("tris");
+    braid_type_strings.push_back("quads");
+
+
+    // 3d extra
+
+    braid_type_strings.push_back("tets");
+    braid_type_strings.push_back("hexs");
+    
+    Node mesh;
+    
+    for(index_t i = 0; i < braid_type_strings.size(); i++)
+    {
+        mesh.reset();
+        EXPECT_THROW(blueprint::mesh::examples::braid(braid_type_strings[i],
+                                                      1,
+                                                      1,
+                                                      1,
+                                                      mesh), conduit::Error);
+    }
+
+    braid_type_strings.clear();
+    braid_type_strings.push_back("points");
+    braid_type_strings.push_back("points_implicit");
+    
+    for(index_t i = 0; i < braid_type_strings.size(); i++)
+    {
+        mesh.reset();
+        blueprint::mesh::examples::braid(braid_type_strings[i],
+                                         1,
+                                         1,
+                                         1,
+                                         mesh);
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, julia)

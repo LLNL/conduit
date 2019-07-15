@@ -94,7 +94,7 @@ std::string get_braid_type(const std::string &mesh_type)
     try
     {
         conduit::Node mesh;
-        blueprint::mesh::examples::braid(mesh_type,1,1,1,mesh);
+        blueprint::mesh::examples::braid(mesh_type,2,2,2,mesh);
         braid_type = mesh_type;
     }
     catch(conduit::Error &) // actual exception is unused

@@ -14628,13 +14628,11 @@ Node::cleanup()
     if(m_owns_schema && m_schema != NULL)
     {
         delete m_schema;
-        m_schema = NULL;
-        m_owns_schema = false;
     }
-    else if(m_schema != NULL)
-    {
-        m_schema->set(DataType::EMPTY_ID);
-    }
+
+    m_schema = NULL;
+    m_owns_schema = false;
+
 }
 
 

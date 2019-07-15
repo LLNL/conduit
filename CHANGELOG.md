@@ -16,6 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 
+- Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
 - Added explicit topological data generation functions for points, lines, and faces
 - Added derived topology generation functions for element centroids, sides, and corners
 
@@ -32,9 +33,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 
+#### General 
+- Fixed bug that caused memory access after free during Node destruction
+
 #### Relay
 
-- Fixed crash with mpi broadcast_using_schema() when receiving tasks pass a non empty node.
+- Fixed crash with mpi broadcast_using_schema() when receiving tasks pass a non empty Node.
 
 ## [0.4.0] - Released 2019-03-01
 

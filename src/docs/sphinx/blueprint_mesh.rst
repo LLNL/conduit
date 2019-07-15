@@ -475,7 +475,24 @@ Topology Association for Field Values
 
 For implicit topologies, the field values are associated with the topology by fast varying logical dimensions starting with ``i``, then ``j``, then ``k``.
 
-For explicit topologies, the field values are associated with the topology by assuming the order of the field values matches the order the elements are defined in the topology. 
+For explicit topologies, the field values are associated with the topology by assuming the order of the field values matches the order the elements are defined in the topology.
+
+
+
+Species Sets
+++++++++++++++++++++
+
+Species Sets are a means of representing multi-dimensional per-material quantities, most commonly per-material substance fractions.
+
+Individual Species Sets are entries in the ``specsets`` section of the Blueprint hierarchy, and these entries are formatted in much the same way as ``fields`` entries that describe per-material, multi-dimensional fields.
+Just as with this class of ``fields`` entries, each ``specsets`` entry must specify the material set over which it is defined and enumerate its values within an **mcarray** that's organized in material-major and component-minor order.
+Additionally, like ``field`` entries, each ``specsets`` item must indicate a volumetric scaling type (e.g. volume-dependent, volume-independent).
+To put it in short, each entry in the ``specsets`` section of the Blueprint hierarchy must be an *Object* that follows this template:
+
+ * specsets/specset/volume_dependent: "true" | "false"
+ * specsets/specset/matset: "matset"
+ * specsets/specset/matset_values: (mcarray)
+
 
 
 Adjacency Sets
