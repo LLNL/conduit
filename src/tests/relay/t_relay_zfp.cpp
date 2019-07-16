@@ -98,10 +98,10 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_compressed_data)
     // create compressed-array
     uint nx = 9;
     uint ny = 12;
-
-    float vals[nx * ny] = {0};
+    uint ntotal = nx * ny;
+    float * vals = new float[ntotal];
     uint i;
-    for (i = 0; i < nx*ny; i++) {
+    for (i = 0; i < ntotal; i++) {
         vals[i] = i*i;
     }
 
@@ -156,6 +156,8 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_compressed_data)
             FAIL() << "ZFP was compiled with an unrecognizable word type";
             break;
     }
+
+    delete [] vals;
 
     EXPECT_TRUE(0 == std::memcmp(arr.compressed_data(), n_data.data_ptr(), arr.compressed_size()));
 }
@@ -267,14 +269,14 @@ TEST(conduit_relay_zfp, zfp_write_with_compressed_data_dtype_mismatched_with_com
         case 32:
         case 16:
             {
-                uint8 data = 3;
+                conduit::uint8 data = 3;
                 result[io::ZFP_COMPRESSED_DATA_FIELD_NAME] = data;
             }
             break;
 
         case 8:
             {
-                uint64 data = 3;
+                conduit::uint64 data = 3;
                 result[io::ZFP_COMPRESSED_DATA_FIELD_NAME] = data;
             }
             break;

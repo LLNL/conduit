@@ -64,7 +64,7 @@ find_path(ZFP_INCLUDE_DIR zfp.h
           NO_CMAKE_SYSTEM_PATH)
 
 find_library(ZFP_LIB NAMES zfp
-             PATHS ${ZFP_DIR}/lib64
+             PATHS ${ZFP_DIR}/lib64 ${ZFP_DIR}/lib
              NO_DEFAULT_PATH
              NO_CMAKE_ENVIRONMENT_PATH
              NO_CMAKE_PATH
