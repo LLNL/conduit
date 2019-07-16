@@ -226,7 +226,6 @@ TEST(conduit_relay_zfp, zfp_write_with_exception)
     uint nx = 9;
     uint ny = 12;
 
-    float vals[nx * ny] = {0};
     double rate = 32.0;
     zfp::array2f original_arr(nx, ny, rate);
 
@@ -235,6 +234,11 @@ TEST(conduit_relay_zfp, zfp_write_with_exception)
     EXPECT_EQ(0, io::zfp_read(&original_arr, result));
 
     // corrupt the Node's data
+    size_t n = 10;
+    float * vals = new float[n];
+    for (size_t i = 0; i < n; i++) {
+        vals[i] = 0;
+    }
     result[io::ZFP_HEADER_FIELD_NAME].set(vals, sizeof(vals));
 
     // fetch zfparray object from Node
@@ -242,6 +246,8 @@ TEST(conduit_relay_zfp, zfp_write_with_exception)
 
     // verify no instance returned
     ASSERT_TRUE(fetched_arr == 0);
+
+    delete [] vals;
 }
 
 //-----------------------------------------------------------------------------
