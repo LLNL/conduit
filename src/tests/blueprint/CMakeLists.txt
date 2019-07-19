@@ -88,10 +88,6 @@ else()
     message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
-if(ZFP_FOUND)
-    message(STATUS "Adding blueprint lib Zfp unit tests")
-    add_cpp_test(TEST t_blueprint_zfp DEPENDS_ON conduit conduit_blueprint conduit_relay)
-else()
-    message(STATUS "Zfp disabled: Skipping conduit blueprint zfp tests")
-endif()
+message(STATUS "Adding blueprint lib Zfp unit tests")
+add_cpp_test(TEST t_blueprint_zfp DEPENDS_ON conduit conduit_blueprint conduit_relay)
 
