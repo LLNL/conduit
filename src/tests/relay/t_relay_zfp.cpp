@@ -57,7 +57,7 @@ using namespace conduit;
 using namespace conduit::relay;
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_zfp, zfp_read_and_verify_header)
+TEST(conduit_relay_zfp, wrap_zfparray_and_verify_header)
 {
     // initialize empty result Node
     Node result;
@@ -70,7 +70,7 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_header)
     zfp::array2f arr(nx, ny, rate);
 
     // write zfparray to Node
-    EXPECT_EQ(0, io::zfp_read(&arr, result));
+    EXPECT_EQ(0, io::wrap_zfparray(&arr, result));
 
     // verify header entry was set
     EXPECT_TRUE(result.has_child(io::ZFP_HEADER_FIELD_NAME));
@@ -89,7 +89,7 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_header)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_zfp, zfp_read_and_verify_compressed_data)
+TEST(conduit_relay_zfp, wrap_zfparray_and_verify_compressed_data)
 {
     // initialize empty result Node
     Node result;
@@ -109,7 +109,7 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_compressed_data)
     zfp::array2f arr(nx, ny, rate, vals);
 
     // write zfparray to Node
-    EXPECT_EQ(0, io::zfp_read(&arr, result));
+    EXPECT_EQ(0, io::wrap_zfparray(&arr, result));
 
     // verify compressed data entry was set
     EXPECT_TRUE(result.has_child(io::ZFP_COMPRESSED_DATA_FIELD_NAME));
@@ -163,7 +163,7 @@ TEST(conduit_relay_zfp, zfp_read_and_verify_compressed_data)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_zfp, zfp_read_with_header_exception)
+TEST(conduit_relay_zfp, wrap_zfparray_with_header_exception)
 {
     // create compressed-array that does not support short header
     uint nx = 9;
@@ -174,11 +174,11 @@ TEST(conduit_relay_zfp, zfp_read_with_header_exception)
 
     // write zfparray to Node, but expect failure
     Node result;
-    EXPECT_EQ(1, io::zfp_read(&arr, result));
+    EXPECT_EQ(1, io::wrap_zfparray(&arr, result));
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_zfp, zfp_write)
+TEST(conduit_relay_zfp, unwrap_zfparray)
 {
     // create compressed-array
     uint nx = 9;
@@ -197,10 +197,10 @@ TEST(conduit_relay_zfp, zfp_write)
 
     // write zfparray to Node
     Node result;
-    EXPECT_EQ(0, io::zfp_read(&original_arr, result));
+    EXPECT_EQ(0, io::wrap_zfparray(&original_arr, result));
 
     // fetch zfparray object from Node
-    zfp::array* fetched_arr = io::zfp_write(result);
+    zfp::array* fetched_arr = io::unwrap_zfparray(result);
 
     // verify against original_arr
     ASSERT_TRUE(fetched_arr != 0);
@@ -220,7 +220,7 @@ TEST(conduit_relay_zfp, zfp_write)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_zfp, zfp_write_with_exception)
+TEST(conduit_relay_zfp, unwrap_zfparray_with_exception)
 {
     // create compressed-array
     uint nx = 9;
@@ -231,7 +231,7 @@ TEST(conduit_relay_zfp, zfp_write_with_exception)
 
     // write zfparray to Node
     Node result;
-    EXPECT_EQ(0, io::zfp_read(&original_arr, result));
+    EXPECT_EQ(0, io::wrap_zfparray(&original_arr, result));
 
     // corrupt the Node's data
     size_t n = 10;
@@ -242,7 +242,7 @@ TEST(conduit_relay_zfp, zfp_write_with_exception)
     result[io::ZFP_HEADER_FIELD_NAME].set(vals, sizeof(vals));
 
     // fetch zfparray object from Node
-    zfp::array* fetched_arr = io::zfp_write(result);
+    zfp::array* fetched_arr = io::unwrap_zfparray(result);
 
     // verify no instance returned
     ASSERT_TRUE(fetched_arr == 0);
@@ -251,7 +251,7 @@ TEST(conduit_relay_zfp, zfp_write_with_exception)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_zfp, zfp_write_with_compressed_data_dtype_mismatched_with_compiled_zfp_word_size)
+TEST(conduit_relay_zfp, unwrap_zfparray_with_compressed_data_dtype_mismatched_with_compiled_zfp_word_size)
 {
     // create compressed-array
     uint nx = 9;
@@ -263,7 +263,7 @@ TEST(conduit_relay_zfp, zfp_write_with_compressed_data_dtype_mismatched_with_com
 
     // write zfparray to Node
     Node result;
-    EXPECT_EQ(0, relay::io::zfp_read(&arr, result));
+    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
 
     // remove compressed-data node
     EXPECT_TRUE(result.has_child(io::ZFP_COMPRESSED_DATA_FIELD_NAME));
@@ -292,7 +292,7 @@ TEST(conduit_relay_zfp, zfp_write_with_compressed_data_dtype_mismatched_with_com
     }
 
     // fetch zfparray object from Node
-    zfp::array* fetched_arr = io::zfp_write(result);
+    zfp::array* fetched_arr = io::unwrap_zfparray(result);
 
     // verify no instance returned
     ASSERT_TRUE(fetched_arr == 0);

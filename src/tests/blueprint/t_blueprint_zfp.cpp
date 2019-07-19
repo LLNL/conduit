@@ -65,7 +65,7 @@ TEST(conduit_blueprint_zfp, zfp_verify_valid_zfparray)
     Node result, info;
 
     zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::zfp_read(&arr, result));
+    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
 
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 }
@@ -76,7 +76,7 @@ TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_without_header)
     Node result, info;
 
     zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::zfp_read(&arr, result));
+    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 
     // remove header node
@@ -92,7 +92,7 @@ TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_without_compressed_data)
     Node result, info;
 
     zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::zfp_read(&arr, result));
+    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 
     // remove compressed-data node
@@ -108,7 +108,7 @@ TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_with_incorrect_header_dt
     Node result, info;
 
     zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::zfp_read(&arr, result));
+    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 
     // remove header node
@@ -128,7 +128,7 @@ TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_with_incorrect_compresse
     Node result, info;
 
     zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::zfp_read(&arr, result));
+    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 
     // remove compressed-data node

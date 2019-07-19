@@ -84,10 +84,10 @@ namespace io
 static const std::string ZFP_HEADER_FIELD_NAME = "zfp_header";
 static const std::string ZFP_COMPRESSED_DATA_FIELD_NAME = "zfp_compressed_data";
 
-zfp::array* CONDUIT_RELAY_API zfp_write(const Node &node);
+zfp::array* CONDUIT_RELAY_API unwrap_zfparray(const Node &node);
 
-int CONDUIT_RELAY_API zfp_read(const zfp::array* arr,
-                               Node &node);
+int CONDUIT_RELAY_API wrap_zfparray(const zfp::array* arr,
+                                    Node &node);
 
 }
 //-----------------------------------------------------------------------------

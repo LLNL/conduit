@@ -71,7 +71,7 @@ namespace io
 {
 
 zfp::array*
-zfp_write(const Node &node)
+unwrap_zfparray(const Node &node)
 {
     Node compressed_data = node.fetch_child(ZFP_COMPRESSED_DATA_FIELD_NAME);
 
@@ -124,7 +124,7 @@ cast_and_set_compressed_data(Node &dest, uchar* compressed_data, size_t num_data
 }
 
 int
-zfp_read(const zfp::array *arr,
+wrap_zfparray(const zfp::array *arr,
          Node &dest)
 {
     // store header
