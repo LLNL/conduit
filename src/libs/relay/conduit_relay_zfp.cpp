@@ -104,11 +104,11 @@ unwrap_zfparray(const Node &node)
         return NULL;
     }
 
-    zfp::array::header header[1];
-    memcpy(header->buffer, node.fetch_child(ZFP_HEADER_FIELD_NAME).data_ptr(), sizeof(header));
+    zfp::array::header header;
+    memcpy(header.buffer, node.fetch_child(ZFP_HEADER_FIELD_NAME).data_ptr(), sizeof(header));
 
     try {
-        return zfp::array::construct(header[0], static_cast<uchar*>(compressed_data.data_ptr()), compressed_data.allocated_bytes());
+        return zfp::array::construct(header, static_cast<uchar*>(compressed_data.data_ptr()), compressed_data.allocated_bytes());
     } catch(std::exception const &) {
         // could be zfp::array::header::exception, or std::bad_alloc
         return NULL;
@@ -161,7 +161,7 @@ wrap_zfparray(const zfp::array *arr,
 
         default:
             // error
-            return 1;
+            return 2;
     }
 
     return 0;
