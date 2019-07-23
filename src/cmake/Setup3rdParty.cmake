@@ -150,3 +150,16 @@ if(ADIOS_DIR)
         message(FATAL_ERROR "ADIOS_DIR is set, but ADIOS wasn't found.")
     endif()
 endif()
+
+################################
+# Setup Zfp if available
+################################
+# Search for Zfp.
+if(ZFP_DIR)
+    include(cmake/thirdparty/SetupZfp.cmake)
+    include_directories(${ZFP_INCLUDE_DIR})
+    # if we don't find Zfp, throw a fatal error
+    if(NOT ZFP_FOUND)
+        message(FATAL_ERROR "ZFP_DIR is set, but Zfp wasn't found.")
+    endif()
+endif()

@@ -69,6 +69,7 @@ set(RELAY_HDF5_TESTS t_relay_io_hdf5
 
 set(RELAY_ADIOS_TESTS t_relay_io_adios)
 set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios)
+set(RELAY_ZFP_TESTS t_relay_zfp)
 
 ################################
 # Add our main tests
@@ -131,6 +132,16 @@ if(MPI_FOUND)
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping conduit_relay_mpi tests")
+endif()
+
+
+if(ZFP_FOUND)
+    message(STATUS "ZFP enabled: Adding conduit_relay_zfp unit tests")
+    foreach(TEST ${RELAY_ZFP_TESTS})
+        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
+    endforeach()
+else()
+    message(STATUS "ZFP disabled: Skipping conduit_relay_zfp tests")
 endif()
 
 
