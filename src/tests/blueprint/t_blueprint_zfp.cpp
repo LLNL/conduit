@@ -50,32 +50,50 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
-#include "conduit_relay.hpp"
-#include "conduit_relay_zfp.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
 
 using namespace conduit;
 
+// some CI do not have zfp available
+// these tests look at dtypes and Npde entries, so contents don't matter
+
+void set_zfparray_node_entries(Node& result, uint8* header, size_t n_header, uint8* compressed_data, size_t n_compressed_data) {
+  result[blueprint::zfparray::ZFP_HEADER_FIELD_NAME].set(header, n_header);
+  result[blueprint::zfparray::ZFP_COMPRESSED_DATA_FIELD_NAME].set(compressed_data, n_compressed_data);
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_zfp, zfp_verify_valid_zfparray)
 {
-    Node result, info;
+    size_t n_header = 4;
+    uint8 * header = new uint8[n_header]();
 
-    zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
+    size_t n_compressed_data = 4;
+    uint8 * compressed_data = new uint8[n_compressed_data]();
+
+    Node result, info;
+    set_zfparray_node_entries(result, header, n_header, compressed_data, n_compressed_data);
 
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
+
+    delete [] header;
+    delete [] compressed_data;
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_without_header)
 {
-    Node result, info;
+    size_t n_header = 4;
+    uint8 * header = new uint8[n_header]();
 
-    zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
+    size_t n_compressed_data = 4;
+    uint8 * compressed_data = new uint8[n_compressed_data]();
+
+    Node result, info;
+    set_zfparray_node_entries(result, header, n_header, compressed_data, n_compressed_data);
+
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 
     // remove header node
@@ -83,15 +101,23 @@ TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_without_header)
     result.remove(blueprint::zfparray::ZFP_HEADER_FIELD_NAME);
 
     EXPECT_FALSE(blueprint::zfparray::verify(result, info));
+
+    delete [] header;
+    delete [] compressed_data;
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_without_compressed_data)
 {
-    Node result, info;
+    size_t n_header = 4;
+    uint8 * header = new uint8[n_header]();
 
-    zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
+    size_t n_compressed_data = 4;
+    uint8 * compressed_data = new uint8[n_compressed_data]();
+
+    Node result, info;
+    set_zfparray_node_entries(result, header, n_header, compressed_data, n_compressed_data);
+
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 
     // remove compressed-data node
@@ -99,15 +125,23 @@ TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_without_compressed_data)
     result.remove(blueprint::zfparray::ZFP_COMPRESSED_DATA_FIELD_NAME);
 
     EXPECT_FALSE(blueprint::zfparray::verify(result, info));
+
+    delete [] header;
+    delete [] compressed_data;
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_with_incorrect_header_dtype)
 {
-    Node result, info;
+    size_t n_header = 4;
+    uint8 * header = new uint8[n_header]();
 
-    zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
+    size_t n_compressed_data = 4;
+    uint8 * compressed_data = new uint8[n_compressed_data]();
+
+    Node result, info;
+    set_zfparray_node_entries(result, header, n_header, compressed_data, n_compressed_data);
+
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 
     // remove header node
@@ -119,15 +153,23 @@ TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_with_incorrect_header_dt
     result[blueprint::zfparray::ZFP_HEADER_FIELD_NAME] = dummy;
 
     EXPECT_FALSE(blueprint::zfparray::verify(result, info));
+
+    delete [] header;
+    delete [] compressed_data;
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_with_incorrect_compressed_data_dtype)
 {
-    Node result, info;
+    size_t n_header = 4;
+    uint8 * header = new uint8[n_header]();
 
-    zfp::array3f arr(9, 12, 15, 16.0);
-    EXPECT_EQ(0, relay::io::wrap_zfparray(&arr, result));
+    size_t n_compressed_data = 4;
+    uint8 * compressed_data = new uint8[n_compressed_data]();
+
+    Node result, info;
+    set_zfparray_node_entries(result, header, n_header, compressed_data, n_compressed_data);
+
     EXPECT_TRUE(blueprint::zfparray::verify(result, info));
 
     // remove compressed-data node
@@ -139,5 +181,8 @@ TEST(conduit_blueprint_zfp, zfp_verify_invalid_zfparray_with_incorrect_compresse
     result[blueprint::zfparray::ZFP_COMPRESSED_DATA_FIELD_NAME] = dummy;
 
     EXPECT_FALSE(blueprint::zfparray::verify(result, info));
+
+    delete [] header;
+    delete [] compressed_data;
 }
 

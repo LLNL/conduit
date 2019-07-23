@@ -89,5 +89,5 @@ else()
 endif()
 
 message(STATUS "Adding blueprint lib Zfp unit tests")
-add_cpp_test(TEST t_blueprint_zfp DEPENDS_ON conduit conduit_blueprint conduit_relay zfp)
+add_cpp_test(TEST t_blueprint_zfp DEPENDS_ON conduit conduit_blueprint)
 
