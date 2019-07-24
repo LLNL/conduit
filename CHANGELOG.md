@@ -16,9 +16,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 
+- Added support for a "zfparray" blueprint that holds ZFP compressed array data. 
 - Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
 - Added explicit topological data generation functions for points, lines, and faces
 - Added derived topology generation functions for element centroids, sides, and corners
+
+#### Relay
+- Added optional ZFP support to relay, that enables wrapping and unwraping zfp arrays into conduit Nodes. 
+
 
 ### Changed
 
