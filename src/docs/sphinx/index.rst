@@ -150,6 +150,7 @@ Contributors
 - George Zagaris (LLNL)
 - Kenny Weiss (LLNL)
 - Matt Larsen (LLNL)
+- Markus Salasoo (LLNL)
 - Todd Gamblin (LLNL)
 - Brad Whitlock (Intelligent Light)
 - George Aspesi (Harvey Mudd)
