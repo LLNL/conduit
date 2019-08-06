@@ -76,7 +76,8 @@ def sexe(cmd,ret_output=False,echo = False):
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
-        res =p.communicate()[0]
+        res = p.communicate()[0]
+        res = res.decode('utf8')
         return p.returncode,res
     else:
         return subprocess.call(cmd,shell=True)

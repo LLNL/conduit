@@ -68,7 +68,8 @@ def sexe(cmd,ret_output=False,echo = True):
                              shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
-        res =p.communicate()[0]
+        res = p.communicate()[0]
+        res = res.decode('utf8')
         return p.returncode,res
     else:
         return subprocess.call(cmd,shell=True)
@@ -95,7 +96,7 @@ def spack_exe(spath=None):
 def find_pkg(pkg_name):
     r,rout = sexe(spack_exe() + " find -p " + pkg_name,ret_output = True)
     print(rout)
-    for l in rout.decode('utf8').split("\n"):
+    for l in rout.split("\n"):
         print(l)
         if l.startswith(" "):
             return {"name": pkg_name, "path": l.split()[-1]}
