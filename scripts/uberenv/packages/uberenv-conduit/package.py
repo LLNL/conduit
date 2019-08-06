@@ -30,7 +30,7 @@ import os
 from os.path import join as pjoin
 from os import environ as env
 
-from conduit import Conduit
+from .conduit import Conduit
 
 class UberenvConduit(Conduit):
     """Conduit is an open source project from Lawrence Livermore National
