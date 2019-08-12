@@ -125,8 +125,7 @@ CONDUIT_HDF5_LIB_FLAGS += $(if $(CONDUIT_HDF5_DIR),$(CONDUIT_HDF5_EXTRA_INCLUDE_
 ##########
 # ZFP
 ##########
-CONDUIT_HDF5_LIB_FLAGS  = $(if $(CONDUIT_ZFP_DIR),-L $(CONDUIT_ZFP_DIR)/lib -lzfp)
-
+CONDUIT_ZFP_LIB_FLAGS  = $(if $(CONDUIT_ZFP_DIR),-L $(CONDUIT_ZFP_DIR)/lib -lzfp)
 
 
 ##########
