@@ -473,16 +473,21 @@ TEST(conduit_generator, simple_gen_schema_yaml)
     EXPECT_EQ(d_vals[3],30);
     
     
-    // test our special cases
+    // these are no longer special cases
+    // we handle as string, but keep checking them
     
     Generator g3("a: true\nb: false\nc: null\n",
                  "yaml");
     g3.walk(n);
     n.print();
 
-    EXPECT_EQ(n["a"].as_uint8(),1);
-    EXPECT_EQ(n["b"].as_uint8(),0);
-    EXPECT_TRUE(n["c"].dtype().is_empty());
+    EXPECT_TRUE(n["a"].dtype().is_string());
+    EXPECT_TRUE(n["b"].dtype().is_string());
+    EXPECT_TRUE(n["c"].dtype().is_string());
+
+    EXPECT_EQ(n["a"].as_string(),"true");
+    EXPECT_EQ(n["b"].as_string(),"false");
+    EXPECT_EQ(n["c"].as_string(),"null");
 
 }
 
