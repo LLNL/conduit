@@ -248,23 +248,23 @@ public:
     };
 
     // 
-    // yaml scalar (aka leaf) values are always strings, however that is 
-    // not a very useful way to parse into Conduit tree. We apply json 
+    // yaml scalar (aka leaf) values are always strings, however that is
+    // not a very useful way to parse into Conduit tree. We apply json
     // rules to the yaml leaves to get more useful types in Conduit
+    //
+    // excluded from the JSON-like rules are:
+    //  boolean literals (true, false)
+    //  the null literal (null)
+    // 
+    // This is b/c we can't distinguish between string values like
+    //    "true"
+    // vs non-quoted literals like 
+    //    true
+    // with the yaml parser
     //
 
     // TODO: try to inline these helpers? Not sure it matters since
     // they call other routines
-    
-    // checks if c-string is "true" or "false" 
-    static bool string_is_bool(const char *txt_value);
-    // checks if c-string is "true" 
-    static bool string_is_bool_true(const char *txt_value);
-    // checks if c-string is "false"
-    static bool string_is_bool_false(const char *txt_value);
-    
-    // checks if c-string is "null"
-    static bool string_is_null(const char *txt_value);
 
     // checks if c-string is a null pointer or empty
     static bool string_is_empty(const char *txt_value);
@@ -1582,38 +1582,6 @@ Generator::Parser::YAML::YAMLParserWrapper::yaml_doc_root_ptr()
 // -- end conduit::Generator::YAML::YAMLParserWrapper --
 //-----------------------------------------------------------------------------
 
-
-//---------------------------------------------------------------------------//
-// checks for "true" or "false" 
-bool
-Generator::Parser::YAML::string_is_bool(const char *txt_value)
-{
-    return string_is_bool_true(txt_value) || string_is_bool_false(txt_value);
-}
-
-//---------------------------------------------------------------------------//
-bool
-Generator::Parser::YAML::string_is_bool_true(const char *txt_value)
-{
-    return strcmp(txt_value,"true") == 0;
-}
-
-//---------------------------------------------------------------------------//
-bool
-Generator::Parser::YAML::string_is_bool_false(const char *txt_value)
-{
-    return strcmp(txt_value,"false") == 0;
-}
-
-
-//---------------------------------------------------------------------------//
-// checks for "null"
-bool
-Generator::Parser::YAML::string_is_null(const char *txt_value)
-{
-    return strcmp(txt_value,"null") == 0;
-}
-
 //---------------------------------------------------------------------------//
 // checks if input string is a null pointer or empty
 bool
@@ -1861,15 +1829,7 @@ Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
     {
         node.set((float64)string_to_double(yaml_txt));
     }
-    else if(string_is_bool_true(yaml_txt))
-    {
-        node.set((uint8)1);
-    }
-    else if(string_is_bool_false(yaml_txt))
-    {
-        node.set((uint8)0);
-    }
-    else if( string_is_null(yaml_txt) || string_is_empty(yaml_txt) )
+    else if(string_is_empty(yaml_txt))
     {
         node.reset();
     }
