@@ -11810,7 +11810,6 @@ Node::to_yaml_generic(std::ostream &os,
                 break;
             // empty
             case DataType::EMPTY_ID: 
-                os << "null";
                 break;
 
         }

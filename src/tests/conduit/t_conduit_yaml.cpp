@@ -310,16 +310,19 @@ TEST(conduit_yaml, suprise_string)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_yaml, yaml_bool)
+TEST(conduit_yaml, yaml_bool_literal)
 {
+    // when parsing with libyaml,
+    // we can't diff between "true" and true
+    // this case results in the string "true"
     std::string pure_yaml = "{\"value\": true}";
     Generator g(pure_yaml,"yaml");
     Node n(g,true);
     
     std::cout << n.to_yaml() << std::endl;
     
-    EXPECT_EQ(n["value"].dtype().id(),DataType::UINT8_ID);
-
+    EXPECT_EQ(n["value"].dtype().id(),DataType::CHAR8_STR_ID);
+    EXPECT_EQ(n["value"].as_string(), "true");
 }
 
 
@@ -332,7 +335,6 @@ TEST(conduit_yaml, yaml_default)
     g.walk(n);
     EXPECT_EQ(n.to_yaml_default(), n.to_yaml());
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_yaml, check_empty)
