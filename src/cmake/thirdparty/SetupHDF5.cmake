@@ -94,7 +94,7 @@ message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
 #
 # HDF5_INCLUDE_DIRS may also include paths to external lib headers 
 # (such as szip), so we check that *at least one* of the includes
-# listed in HDF5_INCLUDE_DIRS exists in the HDF5_DIR specified. 
+# listed in HDF5_INCLUDE_DIRS exists in the HDF5_DIR specified.
 #
 
 # HDF5_INCLUDE_DIR is deprecated, but there are still some cases
@@ -110,8 +110,8 @@ endif()
 message(STATUS "HDF5_INCLUDE_DIRS=${HDF5_INCLUDE_DIRS}")
 set(check_hdf5_inc_dir_ok 0)
 foreach(IDIR ${HDF5_INCLUDE_DIRS})
-    
-    # get real path of the include dir 
+
+    # get real path of the include dir
     # w/ abs and symlinks resolved
     get_filename_component(IDIR_REAL "${IDIR}" REALPATH)
     # check if idir_real is a substring of hdf5_dir
