@@ -75,9 +75,6 @@ if(NOT CONDUIT_FOUND)
     # include targets exported by cmake
     include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit.cmake)
 
-    # setup dependent pkgs
-    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_deps.cmake)
-
     # finally setup our final imported targets
     include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_targets.cmake)
 

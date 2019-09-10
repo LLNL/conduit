@@ -148,60 +148,92 @@ endif()
 # for downstream static builds using config.mk
 ##########################################################
 
-#Run HDF5_C_COMPILER_EXECUTABLE -showconfig
-execute_process(COMMAND "${HDF5_C_COMPILER_EXECUTABLE}" "-showconfig"
-    RESULT_VARIABLE _HDF5_CC_CONFIG_SUCCESS
-    OUTPUT_VARIABLE _HDF5_CC_CONFIG_VALUE
-    ERROR_VARIABLE  _HDF5_CC_CONFIG_ERROR_VALUE
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+message(STATUS "Attempting to find libhdf5.settings in HDF5_REAL_DIR...")
+find_file(HDF5_SETTINGS_FILE
+          NAMES libhdf5.settings
+          PATHS ${HDF5_DIR}
+          PATH_SUFFIXES lib share/cmake/hdf5
+          NO_DEFAULT_PATH
+          NO_CMAKE_ENVIRONMENT_PATH
+          NO_CMAKE_PATH
+          NO_SYSTEM_ENVIRONMENT_PATH
+          NO_CMAKE_SYSTEM_PATH)
 
-if(_HDF5_CC_CONFIG_SUCCESS MATCHES 0)
-    #h 5cc ran ok
-    message(STATUS "SUCCESS: h5cc -showconfig")
-
-    #######
-    # parse include flags (key = AM_CPPFLAGS)
-    #######
-    string(REGEX MATCHALL "AM_CPPFLAGS: .+\n" hdf5_tpl_inc_flags ${_HDF5_CC_CONFIG_VALUE})
-    #strip prefix 
-    string(REGEX REPLACE  "AM_CPPFLAGS: " "" hdf5_tpl_inc_flags ${hdf5_tpl_inc_flags})
-    # strip after
-    string(FIND  ${hdf5_tpl_inc_flags} "\n" hdf5_tpl_inc_flags_end_pos)
-    string(SUBSTRING ${hdf5_tpl_inc_flags} 0 ${hdf5_tpl_inc_flags_end_pos} hdf5_tpl_inc_flags)
-    string(STRIP ${hdf5_tpl_inc_flags} hdf5_tpl_inc_flags)
-    #######
-    # parse -L flags (key = AM_LDFLAGS)
-    #######
-    string(REGEX MATCHALL "AM_LDFLAGS: .+\n" hdf5_tpl_lnk_flags ${_HDF5_CC_CONFIG_VALUE})
-    #strip prefix 
-    string(REGEX REPLACE  "AM_LDFLAGS: " "" hdf5_tpl_lnk_flags ${hdf5_tpl_lnk_flags})
-    # strip after
-    string(FIND  ${hdf5_tpl_lnk_flags} "\n" hdf5_tpl_lnk_flags_end_pos)
-    string(SUBSTRING ${hdf5_tpl_lnk_flags} 0 ${hdf5_tpl_lnk_flags_end_pos} hdf5_tpl_lnk_flags)
-    string(STRIP ${hdf5_tpl_lnk_flags} hdf5_tpl_lnk_flags)
-
-    # parse -l flags (key = Extra libraries)
-    string(REGEX MATCHALL "Extra libraries: .+\n" hdf5_tpl_lnk_libs ${_HDF5_CC_CONFIG_VALUE})
-    #strip prefix 
-    string(REGEX REPLACE  "Extra libraries: " "" hdf5_tpl_lnk_libs ${hdf5_tpl_lnk_libs})
-    # strip after
-    string(FIND  ${hdf5_tpl_lnk_libs} "\n" hdf5_tpl_lnk_libs_end_pos)
-    string(SUBSTRING ${hdf5_tpl_lnk_libs} 0 ${hdf5_tpl_lnk_libs_end_pos} hdf5_tpl_lnk_libs)
-    string(STRIP ${hdf5_tpl_lnk_libs} hdf5_tpl_lnk_libs)
-
-    # append hdf5_tpl_lnk_libs to hdf5_tpl_lnk_flags
-    set(hdf5_tpl_lnk_flags "${hdf5_tpl_lnk_flags} ${hdf5_tpl_lnk_libs}")
-
-    #
-    # these will be used in Conduit's config.mk
-    #
-    set(CONDUIT_HDF5_TPL_INC_FLAGS ${hdf5_tpl_inc_flags})
-    set(CONDUIT_HDF5_TPL_LIB_FLAGS ${hdf5_tpl_lnk_flags})
-
+if(EXISTS ${HDF5_SETTINGS_FILE})
+    message(STATUS "Found HDF5 settings file: ${HDF5_SETTINGS_FILE}")
+    #Output by HDF5 CMake build system
+    message(STATUS "Reading 'HDF5_SETTINGS_FILE' to determine hdf5 config settings")
+    file(READ ${HDF5_SETTINGS_FILE} _HDF5_CC_CONFIG_VALUE)
 else()
-    # not ok ... 
-    message(FATAL_ERROR "h5cc -showconfig call failed")
+    message(STATUS "Unable to find libhdf5.settings, defaulting to h5cc output")
+    #Run HDF5_C_COMPILER_EXECUTABLE -showconfig
+    message(STATUS "Using 'h5cc -showconfig' to determine hdf5 config settings")
+    execute_process(COMMAND "${HDF5_C_COMPILER_EXECUTABLE}" "-showconfig"
+        RESULT_VARIABLE _HDF5_CC_CONFIG_SUCCESS
+        OUTPUT_VARIABLE _HDF5_CC_CONFIG_VALUE
+        ERROR_VARIABLE  _HDF5_CC_CONFIG_ERROR_VALUE
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if(_HDF5_CC_CONFIG_SUCCESS MATCHES 0)
+        #h5cc ran ok
+        message(STATUS "SUCCESS: h5cc -showconfig")
+    else()
+        message(FATAL_ERROR "h5cc -showconfig call failed")
+    endif()
 endif()
+
+
+#######
+# parse include flags (key = AM_CPPFLAGS)
+#######
+string(REGEX MATCHALL "AM_CPPFLAGS: .+\n" hdf5_tpl_inc_flags ${_HDF5_CC_CONFIG_VALUE})
+#strip prefix 
+string(REGEX REPLACE  "AM_CPPFLAGS: " "" hdf5_tpl_inc_flags ${hdf5_tpl_inc_flags})
+# strip after
+string(FIND  "${hdf5_tpl_inc_flags}" "\n" hdf5_tpl_inc_flags_end_pos)
+string(SUBSTRING "${hdf5_tpl_inc_flags}" 0 ${hdf5_tpl_inc_flags_end_pos} hdf5_tpl_inc_flags)
+string(STRIP "${hdf5_tpl_inc_flags}" hdf5_tpl_inc_flags)
+#######
+# parse -L flags (key = AM_LDFLAGS)
+#######
+string(REGEX MATCHALL "AM_LDFLAGS: .+\n" hdf5_tpl_lnk_flags ${_HDF5_CC_CONFIG_VALUE})
+#strip prefix 
+string(REGEX REPLACE  "AM_LDFLAGS: " "" hdf5_tpl_lnk_flags ${hdf5_tpl_lnk_flags})
+# strip after
+string(FIND  "${hdf5_tpl_lnk_flags}" "\n" hdf5_tpl_lnk_flags_end_pos)
+string(SUBSTRING "${hdf5_tpl_lnk_flags}" 0 ${hdf5_tpl_lnk_flags_end_pos} hdf5_tpl_lnk_flags)
+string(STRIP "${hdf5_tpl_lnk_flags}" hdf5_tpl_lnk_flags)
+
+# parse -l flags (key = Extra libraries)
+string(REGEX MATCHALL "Extra libraries: .+\n" hdf5_tpl_lnk_libs ${_HDF5_CC_CONFIG_VALUE})
+#strip prefix 
+string(REGEX REPLACE  "Extra libraries: " "" hdf5_tpl_lnk_libs ${hdf5_tpl_lnk_libs})
+# strip after
+string(FIND  "${hdf5_tpl_lnk_libs}" "\n" hdf5_tpl_lnk_libs_end_pos)
+string(SUBSTRING "${hdf5_tpl_lnk_libs}" 0 ${hdf5_tpl_lnk_libs_end_pos} hdf5_tpl_lnk_libs)
+string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
+# add -l to any libraries that are just their names (like "m" instead of "-lm")
+separate_arguments(_temp_link_libs NATIVE_COMMAND ${hdf5_tpl_lnk_libs})
+set(_fixed_link_libs)
+foreach(lib ${_temp_link_libs})
+    if(NOT "${lib}" MATCHES "^[\\-\\/]")
+        # lib doesn't start with '-' (-l) or '/' ()
+        set(_fixed_link_libs "${_fixed_link_libs} -l${lib}")
+    else()
+        set(_fixed_link_libs "${_fixed_link_libs} ${lib}")
+    endif()
+endforeach()
+set(hdf5_tpl_lnk_libs "${_fixed_link_libs}")
+
+
+# append hdf5_tpl_lnk_libs to hdf5_tpl_lnk_flags
+set(hdf5_tpl_lnk_flags "${hdf5_tpl_lnk_flags} ${hdf5_tpl_lnk_libs}")
+
+#
+# these will be used in Conduit's config.mk
+#
+set(CONDUIT_HDF5_TPL_INC_FLAGS ${hdf5_tpl_inc_flags})
+set(CONDUIT_HDF5_TPL_LIB_FLAGS ${hdf5_tpl_lnk_flags})
 
 
 #
@@ -218,6 +250,3 @@ message(STATUS "HDF5 Thirdparty Link Flags: ${hdf5_tpl_lnk_flags}")
 blt_register_library(NAME hdf5
                      INCLUDES ${HDF5_INCLUDE_DIRS}
                      LIBRARIES ${HDF5_LIBRARIES} )
-
-
-
