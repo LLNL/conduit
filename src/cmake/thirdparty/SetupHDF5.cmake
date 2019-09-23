@@ -158,7 +158,6 @@ execute_process(COMMAND "${HDF5_C_COMPILER_EXECUTABLE}" "-showconfig"
 if(_HDF5_CC_CONFIG_SUCCESS MATCHES 0)
     #h 5cc ran ok
     message(STATUS "SUCCESS: h5cc -showconfig")
-
     #######
     # parse include flags (key = AM_CPPFLAGS)
     #######
@@ -168,7 +167,10 @@ if(_HDF5_CC_CONFIG_SUCCESS MATCHES 0)
     # strip after
     string(FIND  ${hdf5_tpl_inc_flags} "\n" hdf5_tpl_inc_flags_end_pos)
     string(SUBSTRING ${hdf5_tpl_inc_flags} 0 ${hdf5_tpl_inc_flags_end_pos} hdf5_tpl_inc_flags)
-    string(STRIP ${hdf5_tpl_inc_flags} hdf5_tpl_inc_flags)
+    # only strip if not empty
+    if(${hdf5_tpl_inc_flags})
+         string(STRIP ${hdf5_tpl_inc_flags} hdf5_tpl_inc_flags)
+    endif()
     #######
     # parse -L flags (key = AM_LDFLAGS)
     #######
@@ -178,8 +180,10 @@ if(_HDF5_CC_CONFIG_SUCCESS MATCHES 0)
     # strip after
     string(FIND  ${hdf5_tpl_lnk_flags} "\n" hdf5_tpl_lnk_flags_end_pos)
     string(SUBSTRING ${hdf5_tpl_lnk_flags} 0 ${hdf5_tpl_lnk_flags_end_pos} hdf5_tpl_lnk_flags)
-    string(STRIP ${hdf5_tpl_lnk_flags} hdf5_tpl_lnk_flags)
-
+    # only strip if not empty
+    if(${hdf5_tpl_lnk_flags})
+        string(STRIP ${hdf5_tpl_lnk_flags} hdf5_tpl_lnk_flags)
+    endif()
     # parse -l flags (key = Extra libraries)
     string(REGEX MATCHALL "Extra libraries: .+\n" hdf5_tpl_lnk_libs ${_HDF5_CC_CONFIG_VALUE})
     #strip prefix 
@@ -187,8 +191,10 @@ if(_HDF5_CC_CONFIG_SUCCESS MATCHES 0)
     # strip after
     string(FIND  ${hdf5_tpl_lnk_libs} "\n" hdf5_tpl_lnk_libs_end_pos)
     string(SUBSTRING ${hdf5_tpl_lnk_libs} 0 ${hdf5_tpl_lnk_libs_end_pos} hdf5_tpl_lnk_libs)
-    string(STRIP ${hdf5_tpl_lnk_libs} hdf5_tpl_lnk_libs)
-
+    # only strip if not empty
+    if(${hdf5_tpl_lnk_libs})
+        string(STRIP ${hdf5_tpl_lnk_libs} hdf5_tpl_lnk_libs)
+    endif()
     # append hdf5_tpl_lnk_libs to hdf5_tpl_lnk_flags
     set(hdf5_tpl_lnk_flags "${hdf5_tpl_lnk_flags} ${hdf5_tpl_lnk_libs}")
 
