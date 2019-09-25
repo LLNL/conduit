@@ -144,10 +144,10 @@ if(HDF5_HL_LIB)
 endif()
 
 ##########################################################
-# Use h5cc to capture transitive hdf5 deps (mainly zlib)
-# for downstream static builds using config.mk
+# Use libhdf5.settings or h5cc to capture transitive hdf5
+# deps (mainly zlib) for downstream static builds using 
+# config.mk
 ##########################################################
-
 message(STATUS "Attempting to find libhdf5.settings in HDF5_REAL_DIR...")
 find_file(HDF5_SETTINGS_FILE
           NAMES libhdf5.settings
@@ -178,7 +178,8 @@ else()
         #h5cc ran ok
         message(STATUS "SUCCESS: h5cc -showconfig")
     else()
-        message(FATAL_ERROR "h5cc -showconfig call failed")
+        # use warning b/c fatal error is to heavy handed
+        message(WARNING "h5cc -showconfig failed, config.mk may not correclty report HDF5 details.")
     endif()
 endif()
 
@@ -192,7 +193,10 @@ string(REGEX REPLACE  "AM_CPPFLAGS: " "" hdf5_tpl_inc_flags ${hdf5_tpl_inc_flags
 # strip after
 string(FIND  "${hdf5_tpl_inc_flags}" "\n" hdf5_tpl_inc_flags_end_pos)
 string(SUBSTRING "${hdf5_tpl_inc_flags}" 0 ${hdf5_tpl_inc_flags_end_pos} hdf5_tpl_inc_flags)
-string(STRIP "${hdf5_tpl_inc_flags}" hdf5_tpl_inc_flags)
+# only do final strip if not empty
+if(${hdf5_tpl_inc_flags})
+    string(STRIP "${hdf5_tpl_inc_flags}" hdf5_tpl_inc_flags)
+endif()
 #######
 # parse -L flags (key = AM_LDFLAGS)
 #######
@@ -202,16 +206,23 @@ string(REGEX REPLACE  "AM_LDFLAGS: " "" hdf5_tpl_lnk_flags ${hdf5_tpl_lnk_flags}
 # strip after
 string(FIND  "${hdf5_tpl_lnk_flags}" "\n" hdf5_tpl_lnk_flags_end_pos)
 string(SUBSTRING "${hdf5_tpl_lnk_flags}" 0 ${hdf5_tpl_lnk_flags_end_pos} hdf5_tpl_lnk_flags)
-string(STRIP "${hdf5_tpl_lnk_flags}" hdf5_tpl_lnk_flags)
-
+# only do final strip if not empty
+if(${hdf5_tpl_lnk_flags})
+    string(STRIP "${hdf5_tpl_lnk_flags}" hdf5_tpl_lnk_flags)
+#endif()
+#######
 # parse -l flags (key = Extra libraries)
+#######
 string(REGEX MATCHALL "Extra libraries: .+\n" hdf5_tpl_lnk_libs ${_HDF5_CC_CONFIG_VALUE})
 #strip prefix 
 string(REGEX REPLACE  "Extra libraries: " "" hdf5_tpl_lnk_libs ${hdf5_tpl_lnk_libs})
 # strip after
 string(FIND  "${hdf5_tpl_lnk_libs}" "\n" hdf5_tpl_lnk_libs_end_pos)
 string(SUBSTRING "${hdf5_tpl_lnk_libs}" 0 ${hdf5_tpl_lnk_libs_end_pos} hdf5_tpl_lnk_libs)
-string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
+# only do final strip if not empty
+if(${hdf5_tpl_lnk_libs})
+    string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
+endif()
 # add -l to any libraries that are just their names (like "m" instead of "-lm")
 separate_arguments(_temp_link_libs NATIVE_COMMAND ${hdf5_tpl_lnk_libs})
 set(_fixed_link_libs)
