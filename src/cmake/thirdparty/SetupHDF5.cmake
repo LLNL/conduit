@@ -188,7 +188,7 @@ endif()
 # parse include flags (key = AM_CPPFLAGS)
 #######
 string(REGEX MATCHALL "AM_CPPFLAGS: .+\n" hdf5_tpl_inc_flags ${_HDF5_CC_CONFIG_VALUE})
-#strip prefix 
+# strip prefix 
 string(REGEX REPLACE  "AM_CPPFLAGS: " "" hdf5_tpl_inc_flags ${hdf5_tpl_inc_flags})
 # strip after
 string(FIND  "${hdf5_tpl_inc_flags}" "\n" hdf5_tpl_inc_flags_end_pos)
@@ -201,7 +201,7 @@ endif()
 # parse -L flags (key = AM_LDFLAGS)
 #######
 string(REGEX MATCHALL "AM_LDFLAGS: .+\n" hdf5_tpl_lnk_flags ${_HDF5_CC_CONFIG_VALUE})
-#strip prefix 
+# strip prefix 
 string(REGEX REPLACE  "AM_LDFLAGS: " "" hdf5_tpl_lnk_flags ${hdf5_tpl_lnk_flags})
 # strip after
 string(FIND  "${hdf5_tpl_lnk_flags}" "\n" hdf5_tpl_lnk_flags_end_pos)
@@ -209,12 +209,12 @@ string(SUBSTRING "${hdf5_tpl_lnk_flags}" 0 ${hdf5_tpl_lnk_flags_end_pos} hdf5_tp
 # only do final strip if not empty
 if(${hdf5_tpl_lnk_flags})
     string(STRIP "${hdf5_tpl_lnk_flags}" hdf5_tpl_lnk_flags)
-#endif()
+endif()
 #######
 # parse -l flags (key = Extra libraries)
 #######
 string(REGEX MATCHALL "Extra libraries: .+\n" hdf5_tpl_lnk_libs ${_HDF5_CC_CONFIG_VALUE})
-#strip prefix 
+# strip prefix 
 string(REGEX REPLACE  "Extra libraries: " "" hdf5_tpl_lnk_libs ${hdf5_tpl_lnk_libs})
 # strip after
 string(FIND  "${hdf5_tpl_lnk_libs}" "\n" hdf5_tpl_lnk_libs_end_pos)
