@@ -479,6 +479,7 @@ join_ref_paths(const std::string &parent, const std::string &child)
 // Data Type Helper methods that are a part of public conduit::relay::io
 //
 //  conduit_dtype_to_hdf5_dtype
+//  conduit_dtype_to_hdf5_dtype_cleanup
 //  hdf5_dtype_to_conduit_dtype
 //-----------------------------------------------------------------------------
 
@@ -488,8 +489,35 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt,
                             const std::string &ref_path)
 {
     hid_t res = -1;
-    // first check endianness
-    if(dt.is_little_endian()) // we know we are little endian
+    
+    // strings are special, check for them first
+    if(dt.is_string())
+    {
+        // modify the default hdf5 type to include string length info,
+        // so hdf5 tools display the string contents in a human friendly way
+
+        // create a copy of the default type
+        res = H5Tcopy(H5T_C_S1);
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(res,
+                                               ref_path,
+                                        "Failed to copy HDF5 type for string");
+        
+        // set the size
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH( 
+                                    H5Tset_size(res,
+                                                // string size + null
+                                                dt.number_of_elements()),
+                                    ref_path,
+                                    "Failed to set size in HDF5 string type");
+
+        // set term
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(
+                                    H5Tset_strpad(res, H5T_STR_NULLTERM),
+                                    ref_path,
+                                    "Failed to set strpad in HDF5 string type");
+    }
+    // next check endianness
+    else if(dt.is_little_endian()) // we know we are little endian
     {
         switch(dt.id())
         {
@@ -506,8 +534,13 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt,
             case DataType::FLOAT32_ID: res = H5T_IEEE_F32LE; break;
             case DataType::FLOAT64_ID: res = H5T_IEEE_F64LE; break;
             
-            case DataType::CHAR8_STR_ID: res = H5T_C_S1; break;
-            
+            case DataType::CHAR8_STR_ID: 
+                CONDUIT_HDF5_ERROR(ref_path,
+                              "conduit::DataType to HDF5 Leaf DataType "
+                              << "Conversion:"
+                              << dt.to_json() 
+                              << " needs to be handled with string logic");
+                        break;
             default:
                 CONDUIT_HDF5_ERROR(ref_path,
                                   "conduit::DataType to HDF5 Leaf DataType "
@@ -533,8 +566,13 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt,
             case DataType::FLOAT32_ID: res = H5T_IEEE_F32BE; break;
             case DataType::FLOAT64_ID: res = H5T_IEEE_F64BE; break;
             
-            case DataType::CHAR8_STR_ID: res = H5T_C_S1; break;
-            
+            case DataType::CHAR8_STR_ID: 
+                CONDUIT_HDF5_ERROR(ref_path,
+                              "conduit::DataType to HDF5 Leaf DataType "
+                              << "Conversion:"
+                              << dt.to_json() 
+                              << " needs to be handled with string logic");
+                        break;
             default:
                 CONDUIT_HDF5_ERROR(ref_path,
                                   "conduit::DataType to HDF5 Leaf DataType "
@@ -545,6 +583,27 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt,
     }
     
     return res;
+}
+
+//-----------------------------------------------------------------------------
+// cleanup conduit created hdf5 dtype
+// (effectively a noop, except for the string case)
+// TODO: This could be a macro ... ?
+//-----------------------------------------------------------------------------
+void
+conduit_dtype_to_hdf5_dtype_cleanup(hid_t hdf5_dtype_id,
+                            const std::string &ref_path)
+{
+    // if this is a string using a custom type we need to cleanup 
+    // the conduit_dtype_to_hdf5_dtype result
+    if( (! H5Tequal(hdf5_dtype_id, H5T_C_S1) ) && 
+        (H5Tget_class(hdf5_dtype_id) == H5T_STRING ) )
+    {
+        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(H5Tclose(hdf5_dtype_id),
+                                                        ref_path,
+                                    "Failed to close HDF5 string Type "
+                                                        << hdf5_dtype_id);
+    }
 }
 
 
@@ -679,7 +738,16 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     //-----------------------------------------------
     else if(H5Tequal(hdf5_dtype_id,H5T_C_S1))
     {
+        // string as array case (old way of writing)
         res = DataType::char8_str(num_elems);
+    }
+    // extended string reps
+    else if( H5Tget_class(hdf5_dtype_id) == H5T_STRING )
+    {
+        // for strings of this type, the length 
+        // is encoded in the hdf5 type not the hdf5 data space
+        index_t hdf5_strlen = H5Tget_size(hdf5_dtype_id);
+        res = DataType::char8_str(hdf5_strlen);
     }
     //-----------------------------------------------
     // Unsupported
@@ -691,9 +759,6 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                            << "Leaf Conversion");
     }
 
-    // set proper number of elems from what was passed
-    res.set_number_of_elements(num_elems);
-    
     return res;
 }
 
@@ -777,9 +842,23 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
             // we will check the 1d-properties of the hdf5 dataspace
             hssize_t h5_test_num_ele = H5Sget_simple_extent_npoints(h5_test_dspace);
     
-            // make sure we have the write dtype and the 1d size matches
-            if( ! ( (H5Tequal(h5_dtype, h5_test_dtype) > 0) && 
-                    (dtype.number_of_elements() ==  h5_test_num_ele) ) )
+            
+            // string case is special, check it first
+            
+            // if the dataset in the file is a custom string type
+            // check the type's size vs the # of elements
+            if(   ( ! H5Tequal(h5_test_dtype, H5T_C_S1) &&
+                  ( H5Tget_class(h5_test_dtype) == H5T_STRING ) &&
+                  ( H5Tget_class(h5_dtype) == H5T_STRING ) ) &&  
+                 // if not shorted out, we have a string w/ custom type
+                 // check length to see if compat
+                 // note: both hdf5 and conduit dtypes include null term in string size
+                 (dtype.number_of_elements() !=  (index_t)H5Tget_size(h5_test_dtype) ) )
+            {
+                    res = false;
+            }
+            else if( ! ( (H5Tequal(h5_dtype, h5_test_dtype) > 0) && 
+                         (dtype.number_of_elements() ==  h5_test_num_ele) ) )
             {
                     res = false;
             }
@@ -789,6 +868,8 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
                                                             ref_path,
                                      "Failed to close HDF5 Datatype "
                                      << h5_test_dtype);
+            // clean up when necessary
+            conduit_dtype_to_hdf5_dtype_cleanup(h5_dtype);
         }
 
         CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(H5Sclose(h5_test_dspace),
@@ -951,8 +1032,7 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
     hid_t h5_dtype = conduit_dtype_to_hdf5_dtype(dtype,ref_path);
 
     hsize_t num_eles = (hsize_t) dtype.number_of_elements();
-    
-    
+
     hid_t h5_cprops_id = H5P_DEFAULT;
     
 
@@ -970,11 +1050,20 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_cprops_id,
                                                     hdf5_group_id,
                                                     ref_path,
-                                         "Failed to create HDF5 property list");
 
-    hid_t h5_dspace_id = H5Screate_simple(1,
-                                          &num_eles,
-                                          NULL);
+                                         "Failed to create HDF5 property list");
+    hid_t h5_dspace_id = -1;
+    
+    if(dtype.is_string())
+    {
+        h5_dspace_id = H5Screate(H5S_SCALAR);
+    }
+    else
+    {
+        h5_dspace_id = H5Screate_simple(1,
+                                        &num_eles,
+                                        NULL);
+    }
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_dspace_id,
                                                     hdf5_group_id,
@@ -996,6 +1085,9 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
                                            "Failed to create HDF5 Dataset " 
                                            << hdf5_group_id << " " 
                                            << hdf5_dset_name);
+
+    // cleanup if custom data type was used
+    conduit_dtype_to_hdf5_dtype_cleanup(h5_dtype);
 
     // close plist used for compression
     if(h5_cprops_id != H5P_DEFAULT)
@@ -1110,6 +1202,7 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                            "Failed to write to HDF5 Dataset "
                                            << hdf5_dset_id);
 
+    conduit_dtype_to_hdf5_dtype_cleanup(h5_dtype_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1752,12 +1845,13 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                                "Error reading HDF5 Datatype: "
                                                << hdf5_dset_id);
 
-
-    
         index_t nelems     = H5Sget_simple_extent_npoints(h5_dspace_id);
+
+        // Note: string case is handed properly in hdf5_dtype_to_conduit_dtype
         DataType dt        = hdf5_dtype_to_conduit_dtype(h5_dtype_id,
                                                          nelems,
                                                          ref_path);
+
         // if the endianness of the dset in the file doesn't
         // match the current machine we always want to convert it
         // on read.
@@ -1775,6 +1869,7 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                                             ref_path,
                                         "Error closing HDF5 Datatype: "
                                         << h5_dtype_id);
+
             // get ref to standard variant of this dtype
             h5_dtype_id  = conduit_dtype_to_hdf5_dtype(dt,
                                                        ref_path);
@@ -1784,14 +1879,16 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                                             ref_path,
                                         "Error creating HDF5 Datatype");
 
-            // copy this handle, b/c clean up code later will close it
+            // copy since the logic after read will cleanup
             h5_dtype_id  = H5Tcopy(h5_dtype_id);
             CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_dtype_id,
                                                             hdf5_dset_id,
                                                             ref_path,
                                         "Error copying HDF5 Datatype");
+            // cleanup our ref from conduit_dtype_to_hdf5_dtype if necessary
+            conduit_dtype_to_hdf5_dtype_cleanup(h5_dtype_id);
         }
-        
+
         hid_t h5_status    = 0;
     
         if(dest.dtype().is_compact() && 
@@ -1822,7 +1919,7 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                 n_tmp.data_ptr());
         
             // copy out to our dest
-        dest.set(n_tmp);
+            dest.set(n_tmp);
         }
 
         CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
