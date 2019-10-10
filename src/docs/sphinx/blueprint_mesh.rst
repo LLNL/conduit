@@ -313,16 +313,17 @@ That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or Asc
 Polygonal/Polyhedral Topologies
 *********************************
 
-While the ``polygonal`` and ``polyhedral`` topology shape types share the same
-structural specification as all the the implicit topology shape types (i.e.
-their schema at the *Object* level is identical), the contents of their
-``elements/connectivity`` arrays look slightly different. In particular,
-the connectivity for each element in this array is prefixed by an index
-count that specifies the total number of indices (polygonal) or faces (polyhedral)
-that comprise that element, allowing the shape of each element to be
-arbitrarily specified and independently controlled. Put more explicitly, the
-connectivity lists for the ``polygonal`` and ``polyhedral`` topology shapes
-follow these rules:
+The ``polygonal`` and ``polyhedral`` topology shape types are structually
+identical to the other explicit topology shape types (see the *Single Shape Topologies*
+section above), but the contents of their ``elements/connectivity`` sections look slightly different.
+In particular, the shape index connectivity for each element in these topologies is **explicit**,
+which means that the index sequence for each element is prefixed by a count that specifies
+the total number of indices (polygonal) or faces (polyhedral) that comprise that element.
+This explicit shape index facilitates both the specification of non-standard shapes (e.g. octogons)
+and of highly mixed shape topologies (e.g. polygons/polyhedra of many different shapes in one topology).
+
+In more explicit terms, the ``elements/connectivity`` lists for the ``polygonal`` and ``polyhedral``
+topology shapes follow these rules:
 
 * **polygonal** - The first element starts at the beginning of the ``elements/connectivity``
   list. The first value ``V`` for each element ``E`` indicates the number of
