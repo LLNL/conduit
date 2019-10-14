@@ -193,6 +193,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string)
 
 }
 
+
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
 {
@@ -1252,8 +1253,35 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
     H5Dclose(h5_dset_id);
 
 
-    // TODO: 
-    // case 5: string written using variable length ?
+    // case 5: string written using variable length
+
+    h5_dtype_id  = H5Tcreate(H5T_STRING, H5T_VARIABLE);
+    h5_dspace_id = H5Screate(H5S_SCALAR);
+
+    
+    
+    const char *mystr_char_ptr = my_string.c_str();
+    
+    // create new dataset
+    
+    h5_dset_id  = H5Dcreate(h5_file_id,
+                            "case_5",
+                            h5_dtype_id,
+                            h5_dspace_id,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+    // write data
+    status = H5Dwrite(h5_dset_id,
+                      h5_dtype_id,
+                      H5S_ALL,
+                      H5S_ALL,
+                      H5P_DEFAULT,
+                      &mystr_char_ptr);
+    //
+    H5Tclose(h5_dtype_id);
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
 
     H5Fclose(h5_file_id);
     
@@ -1267,8 +1295,43 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
     EXPECT_EQ(n_load["case_2"].as_string(), my_string );
     EXPECT_EQ(n_load["case_3"].as_string(), my_string3 );
     EXPECT_EQ(n_load["case_4"].as_string(), my_string );
+    EXPECT_EQ(n_load["case_5"].as_string(), my_string );
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string_compress)
+{
+    uint32 s_len = 10000;
+    std::string tout_std = "tout_hdf5_wr_string_no_compression.hdf5";
+    std::string tout_cmp = "tout_hdf5_wr_string_with_compression.hdf5";
+
+    std::string s_val = std::string(s_len, 'z');
+
+    Node n;
+    n["my_string"] = s_val;
+
+    Node opts;
+    opts["hdf5/chunking/threshold"]  = 100;
+    opts["hdf5/chunking/chunk_size"] = 100;
+
+    // write out the string w and w/o compression
+    io::save(n,tout_std, "hdf5");
+    io::save(n,tout_cmp, "hdf5", opts);
+
+    Node n_out;
+    io::hdf5_read(tout_cmp,n_out);
+    EXPECT_EQ(n_out["my_string"].as_string(), s_val);
+
+
+    int64 tout_std_fs = utils::file_size(tout_std);
+    int64 tout_cmp_fs = utils::file_size(tout_cmp);
+    CONDUIT_INFO("fs test: std = "
+                 << tout_std_fs
+                 << ", cmp ="
+                 << tout_cmp_fs);
+    EXPECT_TRUE(tout_cmp_fs < tout_std_fs);
+
+}
 
 

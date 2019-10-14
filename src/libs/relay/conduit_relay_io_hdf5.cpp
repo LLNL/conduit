@@ -489,32 +489,43 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt,
                             const std::string &ref_path)
 {
     hid_t res = -1;
-    
+
+    // // This code path enables writing strings in a way that is friendlier 
+    // // to hdf5 command line tools like hd5dump and h5ls. However
+    // // using this path we *cannot* compress that string data, so
+    // // is currently disabled
+    //
+    // if(dt.is_string())
+    // {
+    //
+    //     // modify the default hdf5 type to include string length info,
+    //     // so hdf5 tools display the string contents in a human friendly way
+    //
+    //     // create a copy of the default type
+    //     res = H5Tcopy(H5T_C_S1);
+    //     CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(res,
+    //                                            ref_path,
+    //                                     "Failed to copy HDF5 type for string");
+    //
+    //     // set the size
+    //     CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(
+    //                                 H5Tset_size(res,
+    //                                             // string size + null
+    //                                             dt.number_of_elements()),
+    //                                 ref_path,
+    //                                 "Failed to set size in HDF5 string type");
+    //
+    //     // set term
+    //     CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(
+    //                                 H5Tset_strpad(res, H5T_STR_NULLTERM),
+    //                                 ref_path,
+    //                                 "Failed to set strpad in HDF5 string type");
+    // }
+
     // strings are special, check for them first
-    if(dt.is_string())
+    if( dt.is_string() )
     {
-        // modify the default hdf5 type to include string length info,
-        // so hdf5 tools display the string contents in a human friendly way
-
-        // create a copy of the default type
-        res = H5Tcopy(H5T_C_S1);
-        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(res,
-                                               ref_path,
-                                        "Failed to copy HDF5 type for string");
-        
-        // set the size
-        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH( 
-                                    H5Tset_size(res,
-                                                // string size + null
-                                                dt.number_of_elements()),
-                                    ref_path,
-                                    "Failed to set size in HDF5 string type");
-
-        // set term
-        CONDUIT_CHECK_HDF5_ERROR_WITH_REF_PATH(
-                                    H5Tset_strpad(res, H5T_STR_NULLTERM),
-                                    ref_path,
-                                    "Failed to set strpad in HDF5 string type");
+        res = H5T_C_S1;
     }
     // next check endianness
     else if(dt.is_little_endian()) // we know we are little endian
@@ -581,7 +592,7 @@ conduit_dtype_to_hdf5_dtype(const DataType &dt,
                                   << " is not a leaf data type");
         };
     }
-    
+
     return res;
 }
 
@@ -594,6 +605,11 @@ void
 conduit_dtype_to_hdf5_dtype_cleanup(hid_t hdf5_dtype_id,
                             const std::string &ref_path)
 {
+    // NOTE: This cleanup won't be triggered when we use thee
+    // based H5T_C_S1 with a data space that encodes # of elements
+    // (Our current path, given our logic to encode string size in the 
+    //  hdf5 type is disabled )
+    
     // if this is a string using a custom type we need to cleanup 
     // the conduit_dtype_to_hdf5_dtype result
     if( (! H5Tequal(hdf5_dtype_id, H5T_C_S1) ) && 
@@ -605,7 +621,6 @@ conduit_dtype_to_hdf5_dtype_cleanup(hid_t hdf5_dtype_id,
                                                         << hdf5_dtype_id);
     }
 }
-
 
 
 //-----------------------------------------------------------------------------
@@ -747,7 +762,15 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
         // for strings of this type, the length 
         // is encoded in the hdf5 type not the hdf5 data space
         index_t hdf5_strlen = H5Tget_size(hdf5_dtype_id);
-        res = DataType::char8_str(hdf5_strlen);
+        // check for variable type first
+        if( H5Tis_variable_str(hdf5_dtype_id) )
+        {
+            res = DataType::char8_str(-1);
+        }
+        else
+        {
+            res = DataType::char8_str(hdf5_strlen);
+        }
     }
     //-----------------------------------------------
     // Unsupported
@@ -1054,16 +1077,23 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
                                          "Failed to create HDF5 property list");
     hid_t h5_dspace_id = -1;
     
-    if(dtype.is_string())
-    {
-        h5_dspace_id = H5Screate(H5S_SCALAR);
-    }
-    else
-    {
-        h5_dspace_id = H5Screate_simple(1,
-                                        &num_eles,
-                                        NULL);
-    }
+    // string a scalar with size embedded in type is disabled
+    // b/c this path undermines compression 
+    // if(dtype.is_string())
+    // {
+    //     h5_dspace_id = H5Screate(H5S_SCALAR);
+    // }
+    // else
+    // {
+    //     h5_dspace_id = H5Screate_simple(1,
+    //                                     &num_eles,
+    //                                     NULL);
+    // }
+
+    h5_dspace_id = H5Screate_simple(1,
+                                    &num_eles,
+                                    NULL);
+
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_dspace_id,
                                                     hdf5_group_id,
@@ -1857,6 +1887,8 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         // on read.
 
         // check endianness
+        // Note: string cases never land here b/c they are 
+        // created with default endianness
         if(!dt.endianness_matches_machine())
         {
             // if they don't match, modify the dt
@@ -1889,9 +1921,34 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             conduit_dtype_to_hdf5_dtype_cleanup(h5_dtype_id);
         }
 
+
         hid_t h5_status    = 0;
-    
-        if(dest.dtype().is_compact() && 
+
+        // check for string special case, H5T_VARIABLE string
+        if( H5Tis_variable_str(h5_dtype_id) )
+        {
+            //special case for reading variable string data
+            // hdf5 reads the data onto its heap, and 
+            // gives us a pointer to that location
+
+            char *read_ptr[1] = {NULL};
+            h5_status = H5Dread(hdf5_dset_id,
+                                h5_dtype_id,
+                                H5S_ALL,
+                                H5S_ALL,
+                                H5P_DEFAULT,
+                                read_ptr);
+
+            // copy the data out to the conduit node
+            dest.set_string(read_ptr[0]);
+        }
+        // check for bad # of elements
+        else if( dt.number_of_elements() < 0 )
+        {
+            CONDUIT_HDF5_ERROR(ref_path,
+                                "Cannot read dataset with # of elements < 0");
+        }
+        else if(dest.dtype().is_compact() &&
            dest.dtype().compatible(dt) )
         {
             // we can read directly from hdf5 dataset if compact 

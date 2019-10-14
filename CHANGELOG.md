@@ -23,7 +23,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Added optional ZFP support to relay, that enables wrapping and unwraping zfp arrays into conduit Nodes. 
-- Changed how strings are written to HDF5 to improve presentation in HDF5 tools like h5dump. Preserved the ability to read strings written by old versions of relay.
+- Extended relay HDF5 I/O support to read a wider range of HDF5 string representations including H5T_VARIABLE strings.
 
 ### Changed
 
