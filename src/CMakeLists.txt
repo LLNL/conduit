@@ -74,6 +74,10 @@ option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 
+# Add another option that provides extra 
+# control over conduit tests for cases where 
+# conduit is brought in as a submodule
+option(CONDUIT_ENABLE_TESTS "Build conduit tests" ON)
 
 ################################
 # Invoke CMake Fortran setup
@@ -146,7 +150,11 @@ endif()
 # Add our tests
 ################################
 if(ENABLE_TESTS)
-    add_subdirectory(tests)
+    if(CONDUIT_ENABLE_TESTS)
+        add_subdirectory(tests)
+    else()
+        message(STATUS "Skipping test targets (CONDUIT_ENABLE_TESTS = OFF)")
+    endif()
 else()
     message(STATUS "Skipping test targets (ENABLE_TESTS = OFF)")
 endif()
