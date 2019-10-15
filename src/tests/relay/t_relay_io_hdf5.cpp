@@ -193,6 +193,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string)
 
 }
 
+
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
 {
@@ -1091,6 +1092,246 @@ TEST(conduit_relay_io_hdf5, file_name_in_error)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, test_read_various_string_style)
+{
 
+    std::string tout = "tout_hdf5_wr_various_string_style.hdf5";
+    hid_t h5_file_id = H5Fcreate(tout.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 H5P_DEFAULT,
+                                 H5P_DEFAULT);
+
+    // write this string several ways and make sure relay 
+    // can reads them all as we expect
+
+    // 21 chars + null term (22 total)
+                                 
+    std::string my_string = "this is my {} string!";
+
+
+    // case 0: conduit's current way to of doing things
+    Node n;
+    n.set(my_string);
+    io::hdf5_write(n,h5_file_id,"case_0");
+
+
+    // case 1: string that reflects our current data type
+
+    hid_t   h5_dtype_id = H5Tcopy(H5T_C_S1);
+    // set size
+    hsize_t num_eles = 22;
+    H5Tset_size(h5_dtype_id,num_eles);
+    H5Tset_strpad(h5_dtype_id, H5T_STR_NULLTERM);
+    hid_t   h5_dspace_id = H5Screate(H5S_SCALAR);
+
+    // create new dataset
+    hid_t h5_dset_id  = H5Dcreate(h5_file_id,
+                                  "case_1",
+                                  h5_dtype_id,
+                                  h5_dspace_id,
+                                  H5P_DEFAULT,
+                                  H5P_DEFAULT,
+                                  H5P_DEFAULT);
+    // write data
+    hid_t status = H5Dwrite(h5_dset_id,
+                            h5_dtype_id,
+                            H5S_ALL,
+                            H5S_ALL,
+                            H5P_DEFAULT,
+                            my_string.c_str());
+
+    H5Tclose(h5_dtype_id);
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+
+    // case 2: string that is a simple array (old conduit way)
+
+    h5_dtype_id = H5T_C_S1;
+    num_eles = 22;
+    h5_dspace_id = H5Screate_simple(1,
+                                    &num_eles,
+                                    NULL);
+
+    // create new dataset
+    h5_dset_id  = H5Dcreate(h5_file_id,
+                            "case_2",
+                            h5_dtype_id,
+                            h5_dspace_id,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+    // write data
+    status = H5Dwrite(h5_dset_id,
+                      h5_dtype_id,
+                      H5S_ALL,
+                      H5S_ALL,
+                      H5P_DEFAULT,
+                      my_string.c_str());
+
+    // H5Tclose(h5_dtype_id) -- don't need b/c we are using standard dtype
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+
+
+    // case 3: fixed lenght with diff term style
+
+
+     std::string my_string3 = "this is my {} string!        ";
+    
+    // len w/o null = 30
+
+    h5_dtype_id = H5Tcopy(H5T_C_S1);
+    num_eles = 30;
+    H5Tset_size(h5_dtype_id, num_eles);
+    H5Tset_strpad(h5_dtype_id, H5T_STR_SPACEPAD);
+    h5_dspace_id = H5Screate(H5S_SCALAR);
+
+    // create new dataset
+    h5_dset_id  = H5Dcreate(h5_file_id,
+                            "case_3",
+                            h5_dtype_id,
+                            h5_dspace_id,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+    // write data
+    status = H5Dwrite(h5_dset_id,
+                      h5_dtype_id,
+                      H5S_ALL,
+                      H5S_ALL,
+                      H5P_DEFAULT,
+                      my_string3.c_str());
+
+    H5Tclose(h5_dtype_id);
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+
+    // temp buffer to create a null padded string as 
+    // input to write to hdf5
+    Node n_tmp;
+    n_tmp.set(DataType::uint8(30));
+    
+    uint8 *mystring4_char_ptr = n_tmp.value();
+    // null out entire string (leave no doubt for test)
+    for(int i=0; i < 30; i++)
+    {
+        mystring4_char_ptr[i] = 0;
+    }
+
+    // copy over part of my_string before final space pad
+    for(int i=0; i < my_string.size(); i++)
+    {
+        mystring4_char_ptr[i] = my_string[i];
+    }
+
+
+    h5_dtype_id = H5Tcopy(H5T_C_S1);
+    num_eles = 30;
+    H5Tset_size(h5_dtype_id, num_eles);
+    H5Tset_strpad(h5_dtype_id, H5T_STR_NULLPAD);
+    h5_dspace_id = H5Screate(H5S_SCALAR);
+
+    // create new dataset
+    h5_dset_id  = H5Dcreate(h5_file_id,
+                            "case_4",
+                            h5_dtype_id,
+                            h5_dspace_id,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+    // write data
+    status = H5Dwrite(h5_dset_id,
+                      h5_dtype_id,
+                      H5S_ALL,
+                      H5S_ALL,
+                      H5P_DEFAULT,
+                      mystring4_char_ptr);
+
+    H5Tclose(h5_dtype_id);
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+
+
+    // case 5: string written using variable length
+
+    h5_dtype_id  = H5Tcreate(H5T_STRING, H5T_VARIABLE);
+    h5_dspace_id = H5Screate(H5S_SCALAR);
+
+    
+    
+    const char *mystr_char_ptr = my_string.c_str();
+    
+    // create new dataset
+    
+    h5_dset_id  = H5Dcreate(h5_file_id,
+                            "case_5",
+                            h5_dtype_id,
+                            h5_dspace_id,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT,
+                            H5P_DEFAULT);
+    // write data
+    status = H5Dwrite(h5_dset_id,
+                      h5_dtype_id,
+                      H5S_ALL,
+                      H5S_ALL,
+                      H5P_DEFAULT,
+                      &mystr_char_ptr);
+    //
+    H5Tclose(h5_dtype_id);
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+
+    H5Fclose(h5_file_id);
+    
+    // load back in and make sure we get the correct string for each case
+    Node n_load;
+    io::load(tout,n_load);
+    n_load.print();
+
+    EXPECT_EQ(n_load["case_0"].as_string(), my_string ); 
+    EXPECT_EQ(n_load["case_1"].as_string(), my_string );
+    EXPECT_EQ(n_load["case_2"].as_string(), my_string );
+    EXPECT_EQ(n_load["case_3"].as_string(), my_string3 );
+    EXPECT_EQ(n_load["case_4"].as_string(), my_string );
+    EXPECT_EQ(n_load["case_5"].as_string(), my_string );
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string_compress)
+{
+    uint32 s_len = 10000;
+    std::string tout_std = "tout_hdf5_wr_string_no_compression.hdf5";
+    std::string tout_cmp = "tout_hdf5_wr_string_with_compression.hdf5";
+
+    std::string s_val = std::string(s_len, 'z');
+
+    Node n;
+    n["my_string"] = s_val;
+
+    Node opts;
+    opts["hdf5/chunking/threshold"]  = 100;
+    opts["hdf5/chunking/chunk_size"] = 100;
+
+    // write out the string w and w/o compression
+    io::save(n,tout_std, "hdf5");
+    io::save(n,tout_cmp, "hdf5", opts);
+
+    Node n_out;
+    io::hdf5_read(tout_cmp,n_out);
+    EXPECT_EQ(n_out["my_string"].as_string(), s_val);
+
+
+    int64 tout_std_fs = utils::file_size(tout_std);
+    int64 tout_cmp_fs = utils::file_size(tout_cmp);
+    CONDUIT_INFO("fs test: std = "
+                 << tout_std_fs
+                 << ", cmp ="
+                 << tout_cmp_fs);
+    EXPECT_TRUE(tout_cmp_fs < tout_std_fs);
+
+}
 
 
