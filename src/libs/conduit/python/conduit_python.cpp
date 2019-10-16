@@ -3247,14 +3247,13 @@ PyConduit_Fill_DataArray_From_PyArray(DataArray<T> &conduit_array,
                                       PyArrayObject *numpy_array)
 {
     npy_int num_ele = (npy_int)conduit_array.number_of_elements();
-    
+
     T *numpy_data = (T*)PyArray_BYTES(numpy_array);
-    
+
     for (npy_intp i = 0; i < num_ele; i++)
     {
         conduit_array[i] = numpy_data[i];
     }
-    
 }
 
 
@@ -4941,7 +4940,14 @@ PyConduit_Node_Set_From_Python_List(Node &node,
     // a numeric case, or a more general case
     
     Py_ssize_t list_size = PyList_GET_SIZE(value);
-    
+
+    if(list_size == 0)
+    {
+        node.reset();
+        return 0;
+    }
+
+    bool ok = true;
     bool homogenous_numeric = true;
 
     index_t  dtype_id = DataType::INT64_ID;
@@ -5008,13 +5014,27 @@ PyConduit_Node_Set_From_Python_List(Node &node,
     }
     else
     {
-        // TODO: STILL BAD FOR NOW!
-        PyErr_SetString(PyExc_TypeError, "Value type not supported");
-        return -1;
+        // try general case as conduit list
+        node.reset();
+        bool ok = true;
+        for(Py_ssize_t idx=0; idx < list_size && ok; idx++)
+        {
+            PyObject *py_entry = PyList_GET_ITEM(value, idx);
+            Node &cld = node.append();
+            if( PyConduit_Node_Set_From_Python(cld,py_entry) != 0 )
+            {
+                ok = false;
+            }
+        }
     }
     
-    return 0;
+    // if not ok, we assume py error was already set
+    if(!ok)
+        return -1;
+    else
+        return 0;
 }
+
 //---------------------------------------------------------------------------//
 static int
 PyConduit_Node_Set_From_Python_Tuple(Node &node,
@@ -5026,6 +5046,13 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
     
     Py_ssize_t tuple_size = PyTuple_GET_SIZE(value);
     
+    if(tuple_size == 0)
+    {
+        node.reset();
+        return 0;
+    }
+
+    bool ok = true;    
     bool homogenous_numeric = true;
 
     index_t  dtype_id = DataType::INT64_ID;
@@ -5050,10 +5077,11 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
 
     if(homogenous_numeric)
     {
-        node.set(DataType::DataType(dtype_id,(index_t)tuple_size));
+
 
         if(dtype_id ==  DataType::INT64_ID)
         {
+            node.set(DataType::int64((index_t)tuple_size));
             int64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < tuple_size; idx++)
             {
@@ -5070,6 +5098,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
         }
         else
         {
+            node.set(DataType::float64((index_t)tuple_size));
             float64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < tuple_size; idx++)
             {
@@ -5092,18 +5121,54 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
     }
     else
     {
-        // TODO: STILL BAD FOR NOW!
-        PyErr_SetString(PyExc_TypeError, "Value type not supported");
-        return -1;
+        // try general case as conduit list
+        node.reset();
+        bool ok = true;
+        for(Py_ssize_t idx=0; idx < tuple_size && ok; idx++)
+        {
+            PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+            Node &cld = node.append();
+            if( PyConduit_Node_Set_From_Python(cld,py_entry) != 0 )
+            {
+                ok = false;
+            }
+        }
     }
     
+    // if not ok, we assume py error was already set
+    if(!ok)
+        return -1;
+    else
+        return 0;
+}
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Node_Set_From_Numpy_String_Array(Node &node,
+                                           PyArrayObject *py_arr)
+{
+    node.reset();
+    // get the number of strings, and create a conduit list of strings
+    npy_intp num_strings = PyArray_SIZE(py_arr);
+    npy_intp *dims = PyArray_DIMS(py_arr);
+    npy_intp string_len = dims[1];
+    for(npy_intp i=0; i < num_strings; i++)
+    {
+        // read each string into a child
+        Node &cld = node.append();
+        // numpy strings are fixed len + may not include
+        // NULL term.
+        cld.set(DataType::char8_str(string_len),
+                PyArray_GETPTR1(py_arr,i));
+    }
+
     return 0;
 }
 
 //---------------------------------------------------------------------------//
 static int
 PyConduit_Node_Set_From_Python(Node &node,
-                             PyObject *value)
+                               PyObject *value)
 {
     if (PyConduit_Node_Check(value))
     {
@@ -5139,6 +5204,13 @@ PyConduit_Node_Set_From_Python(Node &node,
     {
         PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
         PyArrayObject *py_arr = (PyArrayObject*)value;
+
+        if(desc->type_num == NPY_STRING)
+        {
+            return PyConduit_Node_Set_From_Numpy_String_Array(node,
+                                                              py_arr);
+        }
+
         npy_intp num_ele = PyArray_SIZE(py_arr);
         switch (desc->type_num) 
         {

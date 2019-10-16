@@ -12,6 +12,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General 
 - Added support to parse YAML into Conduit Nodes and to create YAML from Conduit Nodes. Support closely follows the "json" protocol, making similar choices related to promoting YAML string leaves to concrete data types.
 - Added several more Conduit Node methods to the C and Fortran APIs. Additions are enumerated here:  https://github.com/LLNL/conduit/pull/426
+- Added Node set support for Python Tuples and Lists with numeric and string entires
+- Added Node set support for Numpy String Arrays. String Arrays become Conduit lists with child char8_str arrays
 
 
 #### Blueprint
