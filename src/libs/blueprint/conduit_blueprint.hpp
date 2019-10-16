@@ -64,6 +64,7 @@
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_mcarray_examples.hpp"
 
+#include "conduit_blueprint_zfparray.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

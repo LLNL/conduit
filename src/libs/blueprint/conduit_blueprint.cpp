@@ -93,6 +93,7 @@ about(Node &n)
     n["protocols/mesh/index"]    = "enabled";
     
     n["protocols/mcarray"]  = "enabled";
+    n["protocols/zfparray"] = "enabled";
 }
 
 //---------------------------------------------------------------------------//

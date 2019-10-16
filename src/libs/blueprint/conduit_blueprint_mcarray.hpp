@@ -129,6 +129,13 @@ namespace mlarray
 bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                   conduit::Node &info);
 
+
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info,
+                                  const index_t min_depth,
+                                  const index_t max_pepth);
+
 //-----------------------------------------------------------------------------
 bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
                                   const conduit::Node &n,

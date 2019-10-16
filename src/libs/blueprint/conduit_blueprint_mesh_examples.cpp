@@ -295,7 +295,7 @@ void braid_init_example_element_scalar_field(index_t nele_x,
                                              Node &res,
                                              index_t prims_per_ele=1)
 {
-    index_t nele = nele_x*nele_y;
+    index_t nele = nele_x * nele_y;
     
     if(nele_z > 0)
     {
@@ -305,7 +305,10 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     res["association"] = "element";
     res["type"] = "scalar";
     res["topology"] = "mesh";
-    res["values"].set(DataType::float64(nele*prims_per_ele));
+    
+    index_t vals_size = nele * prims_per_ele;
+    
+    res["values"].set(DataType::float64(vals_size));
 
     float64 *vals = res["values"].value();
 
@@ -376,6 +379,44 @@ void braid_init_example_matset(index_t nele_x,
 
                 mat1_vals[idx] = mv;
                 mat2_vals[idx] = 1.0 - mv;
+            }
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void braid_init_example_specset(index_t nele_x,
+                                index_t nele_y,
+                                index_t nele_z,
+                                Node &res)
+{
+    index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
+
+    res["matset"] = "mesh";
+    res["volume_dependent"] = "false";
+
+    Node &mfs = res["matset_values"];
+    mfs["mat1/spec1"].set(DataType::float64(nele));
+    mfs["mat1/spec2"].set(DataType::float64(nele));
+    mfs["mat2/spec1"].set(DataType::float64(nele));
+    mfs["mat2/spec2"].set(DataType::float64(nele));
+
+    float64 *spec1_vals[2] = {mfs["mat1/spec1"].value(), mfs["mat2/spec1"].value()};
+    float64 *spec2_vals[2] = {mfs["mat1/spec2"].value(), mfs["mat2/spec2"].value()};
+
+    for(index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
+    {
+        for(index_t j = 0; (idx == 0 || j < nele_y) ; j++)
+        {
+            for(index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
+            {
+                float64 mv = (nele_y == 1) ? 0.5 : i / (nele_y - 1.0);
+                for(index_t s = 0; s < 2; s++)
+                {
+                    spec1_vals[s][idx] = mv;
+                    spec2_vals[s][idx] = 1.0 - mv;
+                }
             }
         }
     }
@@ -2171,6 +2212,16 @@ braid(const std::string &mesh_type,
       index_t npts_z, // number of points in z
       Node &res)
 {
+    index_t nele_x = npts_x -1;
+    index_t nele_y = npts_y -1;
+
+    if( (nele_x == 0 || nele_y == 0) && 
+        (mesh_type != "points" && mesh_type != "points_implicit") )
+    {
+        // error, not enough points to create the topo
+        CONDUIT_ERROR("braid with non-points topology requires"
+                      " npts_x > 1 and npts_y > 1");
+    }
 
     if(mesh_type == "uniform")
     {
@@ -2723,6 +2774,12 @@ misc(const std::string &mesh_type,
     {
         braid_quads(npts_x,npts_y,res);
         braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
+    }
+    else if(mesh_type == "specsets")
+    {
+        braid_quads(npts_x,npts_y,res);
+        braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
+        braid_init_example_specset(npts_x-1,npts_y-1,0,res["specsets/mesh"]);
     }
     else if(mesh_type == "adjsets")
     {

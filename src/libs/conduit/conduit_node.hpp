@@ -3340,7 +3340,41 @@ public:
                                        const std::string &pad=" ",
                                        const std::string &eoe="\n") const;
 
+    // NOTE(JRC): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string         to_json_default() const;
 
+//-----------------------------------------------------------------------------
+// -- YAML construction methods ---
+//-----------------------------------------------------------------------------
+    // accepted protocols:
+    //   "yaml"
+
+    std::string         to_yaml(const std::string &protocol="yaml",
+                                index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    void                to_yaml_stream(std::ostream &os,
+                                       const std::string &protocol="yaml",
+                                       index_t indent=2, 
+                                       index_t depth=0,
+                                       const std::string &pad=" ",
+                                       const std::string &eoe="\n") const;
+
+    void                to_yaml_stream(const std::string &stream_path,
+                                       const std::string &protocol="yaml",
+                                       index_t indent=2, 
+                                       index_t depth=0,
+                                       const std::string &pad=" ",
+                                       const std::string &eoe="\n") const;
+
+    // NOTE(JRC): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string         to_yaml_default() const;
 
 //-----------------------------------------------------------------------------
 //
@@ -3946,8 +3980,8 @@ private:
     void             append_node_ptr(Node *node)
                         {m_children.push_back(node);}
 
-    void             set_parent(Node *parent) 
-                        { m_parent = parent;}
+    void             set_parent(Node *new_parent) 
+                        { m_parent = new_parent;}
 
 
 //-----------------------------------------------------------------------------
@@ -4149,6 +4183,53 @@ private:
                                     const std::string &pad=" ",
                                     const std::string &eoe="\n") const;
 
+//-----------------------------------------------------------------------------
+//
+// -- private to_yaml helpers --
+//
+//-----------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
+    // the generic to_yaml methods are used by the specialized cases
+    //-------------------------------------------------------------------------
+    std::string         to_yaml_generic(bool detailed,
+                                        index_t indent=2,
+                                        index_t depth=0,
+                                        const std::string &pad=" ",
+                                        const std::string &eoe="\n") const;
+
+    void                to_yaml_generic(const std::string &stream_path,
+                                        bool detailed,
+                                        index_t indent=2,
+                                        index_t depth=0,
+                                        const std::string &pad=" ",
+                                        const std::string &eoe="\n") const;
+
+    void                to_yaml_generic(std::ostream &os,
+                                        bool detailed, 
+                                        index_t indent=2, 
+                                        index_t depth=0,
+                                        const std::string &pad=" ",
+                                        const std::string &eoe="\n") const;
+    //-------------------------------------------------------------------------
+    // transforms the node to yaml without any conduit schema constructs
+    //-------------------------------------------------------------------------
+    std::string      to_pure_yaml(index_t indent=2,
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
+
+    void             to_pure_yaml(const std::string &stream_path,
+                                  index_t indent=2,
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
+
+    void             to_pure_yaml(std::ostream &os,
+                                  index_t indent=2,
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
 
 //-----------------------------------------------------------------------------
 //

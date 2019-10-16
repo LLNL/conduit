@@ -73,6 +73,12 @@ add_subdirectory(thirdparty_builtin/libb64-1.2.1/)
 include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 
 ################################
+# Setup and build libyaml
+################################
+add_subdirectory(thirdparty_builtin/libyaml-690a781/)
+include_directories(thirdparty_builtin/libyaml-690a781/include)
+
+################################
 # Setup and build civetweb
 ################################
 add_subdirectory(thirdparty_builtin/civetweb-0a95342/)
@@ -142,5 +148,18 @@ if(ADIOS_DIR)
     # if we don't find ADIOS, throw a fatal error
     if(NOT ADIOS_FOUND)
         message(FATAL_ERROR "ADIOS_DIR is set, but ADIOS wasn't found.")
+    endif()
+endif()
+
+################################
+# Setup Zfp if available
+################################
+# Search for Zfp.
+if(ZFP_DIR)
+    include(cmake/thirdparty/SetupZfp.cmake)
+    include_directories(${ZFP_INCLUDE_DIR})
+    # if we don't find Zfp, throw a fatal error
+    if(NOT ZFP_FOUND)
+        message(FATAL_ERROR "ZFP_DIR is set, but Zfp wasn't found.")
     endif()
 endif()

@@ -359,6 +359,8 @@ void
 Node::load(const std::string &ibase,
            const std::string &protocol)
 {
+    // TODO: auto detect protocol?
+
     if(protocol == "conduit_bin")
     {
         // TODO: use generator?
@@ -389,6 +391,8 @@ void
 Node::save(const std::string &obase,
            const std::string &protocol) const
 {
+    // TODO: auto detect protocol?
+    
     if(protocol == "conduit_bin")
     {
         Node res;
@@ -398,8 +402,11 @@ Node::save(const std::string &obase,
         res.schema().save(ofschema);
         res.serialize(obase);
     }
-    // single file json cases
-    else
+    else if( protocol == "yaml")
+    {
+        to_yaml_stream(obase,protocol);
+    }
+    else     // single file json cases
     {
         to_json_stream(obase,protocol);
     }
@@ -410,7 +417,6 @@ void
 Node::mmap(const std::string &stream_path)
 {
     std::string ifschema = stream_path + "_json";
-
 
     Schema s;
     s.load(ifschema);
@@ -11241,13 +11247,14 @@ Node::to_json_stream(const std::string &stream_path,
     }
     else if(protocol == "conduit_base64_json")
     {
-        return to_base64_json(stream_path,indent,depth,pad,eoe);        
+        return to_base64_json(stream_path,indent,depth,pad,eoe);
     }
     else
     {
         CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
     }
 }
+
 //-----------------------------------------------------------------------------
 void
 Node::to_json_stream(std::ostream &os,
@@ -11267,12 +11274,87 @@ Node::to_json_stream(std::ostream &os,
     }
     else if(protocol == "conduit_base64_json")
     {
-        return to_base64_json(os,indent,depth,pad,eoe);        
+        return to_base64_json(os,indent,depth,pad,eoe);
     }
     else
     {
         CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
     }
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_json_default() const
+{
+    return to_json();
+}
+
+//-----------------------------------------------------------------------------
+// -- YAML construction methods ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_yaml(const std::string &protocol, 
+              index_t indent, 
+              index_t depth,
+              const std::string &pad,
+              const std::string &eoe) const
+{
+    if(protocol == "yaml")
+    {
+        return to_pure_yaml(indent,depth,pad,eoe);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+    }
+
+    return "{}";
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_yaml_stream(const std::string &stream_path,
+                     const std::string &protocol,
+                     index_t indent, 
+                     index_t depth,
+                     const std::string &pad,
+                     const std::string &eoe) const
+{
+    if(protocol == "yaml")
+    {
+        return to_pure_yaml(stream_path,indent,depth,pad,eoe);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+    }
+}
+//-----------------------------------------------------------------------------
+void
+Node::to_yaml_stream(std::ostream &os,
+                     const std::string &protocol,
+                     index_t indent, 
+                     index_t depth,
+                     const std::string &pad,
+                     const std::string &eoe) const
+{
+    if(protocol == "yaml")
+    {
+        return to_pure_yaml(os,indent,depth,pad,eoe);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+    }
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_yaml_default() const
+{
+    return to_yaml();
 }
 
 //---------------------------------------------------------------------------//
@@ -11367,7 +11449,7 @@ Node::to_json_generic(std::ostream &os,
             os << eoe;
         }
         utils::indent(os,indent,depth,pad);
-        os << "]";      
+        os << "]";
     }
     else // assume leaf data type
     {
@@ -11601,6 +11683,178 @@ Node::to_base64_json(std::ostream &os,
     os << "}";
     
     os.flags(prev_stream_flags);
+}
+
+//---------------------------------------------------------------------------//
+// Private to_yaml helpers
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+std::string 
+Node::to_yaml_generic(bool detailed,
+                      index_t indent, 
+                      index_t depth,
+                      const std::string &pad,
+                      const std::string &eoe) const
+{
+    std::ostringstream oss;
+    to_yaml_generic(oss,detailed,indent,depth,pad,eoe);
+    return oss.str();
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::to_yaml_generic(const std::string &stream_path,
+                      bool detailed, 
+                      index_t indent, 
+                      index_t depth,
+                      const std::string &pad,
+                      const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("<Node::to_yaml> failed to open: " << stream_path);
+    to_yaml_generic(ofs,detailed,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::to_yaml_generic(std::ostream &os,
+                      bool  detailed,
+                      index_t indent,
+                      index_t depth,
+                      const std::string &pad,
+                      const std::string &eoe) const
+{
+    std::ios_base::fmtflags prev_stream_flags(os.flags());
+    os.precision(15);
+    if(dtype().id() == DataType::OBJECT_ID)
+    {
+        os << eoe;
+        size_t nchildren = m_children.size();
+        for(size_t i=0; i <  nchildren;i++)
+        {
+            utils::indent(os,indent,depth,pad);
+            os << m_schema->object_order()[i] << ": ";
+            m_children[i]->to_yaml_generic(os,
+                                           detailed,
+                                           indent,
+                                           depth+1,
+                                           pad,
+                                           eoe);
+        }
+    }
+    else if(dtype().id() == DataType::LIST_ID)
+    {
+        os << eoe;
+        size_t nchildren = m_children.size();
+        for(size_t i=0; i < nchildren;i++)
+        {
+            utils::indent(os,indent,depth,pad);
+            os << "- ";
+            m_children[i]->to_yaml_generic(os,
+                                           detailed,
+                                           indent,
+                                           depth+1,
+                                           pad,
+                                           eoe);
+        }
+    }
+    else // assume leaf data type
+    {
+        switch(dtype().id())
+        {
+            // ints 
+            case DataType::INT8_ID:
+                as_int8_array().to_json(os);
+                break;
+            case DataType::INT16_ID:
+                as_int16_array().to_json(os);
+                break;
+            case DataType::INT32_ID:
+                as_int32_array().to_json(os);
+                break;
+            case DataType::INT64_ID:
+                as_int64_array().to_json(os);
+                break;
+            // uints 
+            case DataType::UINT8_ID:
+                as_uint8_array().to_json(os);
+                break;
+            case DataType::UINT16_ID: 
+                as_uint16_array().to_json(os);
+                break;
+            case DataType::UINT32_ID:
+                as_uint32_array().to_json(os);
+                break;
+            case DataType::UINT64_ID:
+                as_uint64_array().to_json(os);
+                break;
+            // floats 
+            case DataType::FLOAT32_ID:
+                as_float32_array().to_json(os);
+                break;
+            case DataType::FLOAT64_ID:
+                as_float64_array().to_json(os);
+                break;
+            // char8_str
+            case DataType::CHAR8_STR_ID: 
+                os << "\"" 
+                   << utils::escape_special_chars(as_string())
+                   << "\""; 
+                break;
+            // empty
+            case DataType::EMPTY_ID: 
+                break;
+
+        }
+
+        os << eoe;
+    }
+
+    os.flags(prev_stream_flags);
+}
+
+//---------------------------------------------------------------------------//
+std::string
+Node::to_pure_yaml(index_t indent,
+                   index_t depth,
+                   const std::string &pad,
+                   const std::string &eoe) const
+{
+    return to_yaml_generic(false,indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_pure_yaml(const std::string &stream_path,
+                   index_t indent,
+                   index_t depth,
+                   const std::string &pad,
+                   const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("<Node::to_pure_yaml> failed to open: " << stream_path);
+    to_yaml_generic(ofs,false,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_pure_yaml(std::ostream &os,
+                   index_t indent,
+                   index_t depth,
+                   const std::string &pad,
+                   const std::string &eoe) const
+{
+    to_yaml_generic(os,false,indent,depth,pad,eoe);
 }
 
 
@@ -14373,13 +14627,11 @@ Node::cleanup()
     if(m_owns_schema && m_schema != NULL)
     {
         delete m_schema;
-        m_schema = NULL;
-        m_owns_schema = false;
     }
-    else if(m_schema != NULL)
-    {
-        m_schema->set(DataType::EMPTY_ID);
-    }
+
+    m_schema = NULL;
+    m_owns_schema = false;
+
 }
 
 

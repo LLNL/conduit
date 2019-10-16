@@ -263,9 +263,21 @@ void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
 /// 
 ///  Throughout the relay hdf5 implementation, we use DataType::Empty when
 ///  the hdf5 data space is H5S_NULL, regardless of what the hdf5 data type is.
-///  That isn't reflected in these helper functions,they handle
+///  That isn't reflected in these helper functions, they handle
 ///  mapping of endianness and leaf types other than empty.
+/// 
+///  conduit_dtype_to_hdf5_dtype uses default HDF5 datatypes except for 
+///  the string case. String case result needs to be cleaned up with
+///  H5Tclose(). You can use conduit_dtype_to_hdf5_dtype_cleanup() to 
+///  properly cleanup in all cases. 
+/// 
+///  You also can detect the custom string type case with:
 ///
+///    if(  ! H5Tequal(hdf5_dtype_id, H5T_C_S1) &&
+///        ( H5Tget_class(hdf5_dtype_id) == H5T_STRING ) )
+///    {
+///      // custom string type case
+///    }
 ///
 ///  Note: In these functions, ref_path is used to provide context about the
 ///  hdf5 tree when an error occurs. Using it is recommend but not required.
@@ -273,6 +285,11 @@ void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
 
 //-----------------------------------------------------------------------------
 hid_t CONDUIT_RELAY_API    conduit_dtype_to_hdf5_dtype(const DataType &dt,
+                                                const std::string &ref_path="");
+
+//-----------------------------------------------------------------------------
+void                       conduit_dtype_to_hdf5_dtype_cleanup(
+                                                hid_t hdf5_dtype_id,
                                                 const std::string &ref_path="");
 
 //-----------------------------------------------------------------------------

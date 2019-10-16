@@ -62,23 +62,59 @@ module conduit_obj
         procedure :: fetch  => conduit_node_obj_fetch
         procedure :: append => conduit_node_obj_append
         procedure :: child  => conduit_node_obj_child
+        procedure :: parent => conduit_node_obj_parent
+        procedure :: info   => conduit_node_obj_info
         !----------------------------------------------------------------------
         procedure :: number_of_children => conduit_node_obj_number_of_children
         procedure :: number_of_elements => conduit_node_obj_number_of_elements
+        !---------------------------------------------------------------------
+        procedure :: total_strided_bytes => conduit_node_obj_total_strided_bytes
+        procedure :: total_bytes_compact => conduit_node_obj_total_bytes_compact
+        procedure :: total_bytes_allocated => conduit_node_obj_total_bytes_allocated
         !----------------------------------------------------------------------
         procedure :: print => conduit_node_obj_print
         procedure :: print_detailed => conduit_node_obj_print_detailed
+        !----------------------------------------------------------------------
+        procedure :: compact_to => conduit_node_obj_compact_to
         !----------------------------------------------------------------------
 
         !----------------------------------------------------------------------
         procedure :: is_root => conduit_node_obj_is_root
         procedure :: is_contiguous => conduit_node_obj_is_contiguous
+        procedure :: is_data_external => conduit_node_obj_is_data_external
 
         !----------------------------------------------------------------------
         procedure :: diff => conduit_node_obj_diff
         procedure :: diff_compatible => conduit_node_obj_diff_compatible
 
-        
+        !----------------------------------------------------------------------
+        procedure :: update => conduit_node_obj_update
+        procedure :: update_compatible => conduit_node_obj_update_compatible
+        procedure :: update_external => conduit_node_obj_update_external
+
+        !----------------------------------------------------------------------
+        procedure :: has_child  => conduit_node_obj_has_child
+        procedure :: has_path   => conduit_node_obj_has_path
+        procedure :: rename_child => conduit_node_obj_rename_child
+
+        !----------------------------------------------------------------------
+        procedure :: remove_path  => conduit_node_obj_remove_path
+        procedure :: remove_child => conduit_node_obj_remove_child
+
+        !----------------------------------------------------------------------
+        !----------------------------------------------------------------------
+        ! begin node cases
+        !----------------------------------------------------------------------
+        procedure :: set_node    => conduit_node_obj_set_node
+        procedure :: set_external_node => conduit_node_obj_set_external_node
+        !----------------------------------------------------------------------
+        procedure :: set_path_node => conduit_node_obj_set_path_node
+        procedure :: set_path_external_node => conduit_node_obj_set_path_external_node
+        !----------------------------------------------------------------------
+        ! end node cases
+        !----------------------------------------------------------------------
+        !----------------------------------------------------------------------
+
         !----------------------------------------------------------------------
         !----------------------------------------------------------------------
         ! begin int32 cases
@@ -187,22 +223,27 @@ module conduit_obj
         !----------------------------------------------------------------------
         ! generic methods
         !----------------------------------------------------------------------
-    
-        
+
         !----------------------------------------------------------------------
-        generic :: set  => set_int32, &
+        
+        generic :: remove  => remove_path, &
+                              remove_child
+
+        generic :: set  => set_node, &
+                           set_int32, &
                            set_int64, &
                            set_float32, &
                            set_float64, &
                            set_char8_str
-    
+
         generic :: set_ptr  => set_int32_ptr, &
                                set_int64_ptr, &
                                set_float32_ptr, &
                                set_float64_ptr
 
         !----------------------------------------------------------------------
-        generic :: set_path  => set_path_int32,  &
+        generic :: set_path  => set_path_node, &
+                                set_path_int32,  &
                                 set_path_int64,  &
                                 set_path_float32, &
                                 set_path_float64, &
@@ -214,13 +255,15 @@ module conduit_obj
                                     set_path_float64_ptr
 
         !----------------------------------------------------------------------
-        generic :: set_external_ptr  => set_external_int32_ptr, &
-                                        set_external_int64_ptr, &
-                                        set_external_float32_ptr, &
-                                        set_external_float64_ptr
+        generic :: set_external  => set_external_node, &
+                                    set_external_int32_ptr, &
+                                    set_external_int64_ptr, &
+                                    set_external_float32_ptr, &
+                                    set_external_float64_ptr
 
         !----------------------------------------------------------------------
-        generic :: set_path_external  => set_path_external_int32_ptr, &
+        generic :: set_path_external  => set_path_external_node, &
+                                         set_path_external_int32_ptr, &
                                          set_path_external_int64_ptr, &
                                          set_path_external_float32_ptr, &
                                          set_path_external_float64_ptr
@@ -280,6 +323,33 @@ contains
 
 
     !--------------------------------------------------------------------------
+    function conduit_node_obj_is_data_external(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        logical(C_BOOL) :: res
+        res = conduit_node_is_data_external(obj%cnode)
+     end function conduit_node_obj_is_data_external
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_is_compact(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        logical(C_BOOL) :: res
+        res = conduit_node_is_compact(obj%cnode)
+    end function conduit_node_obj_is_compact
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_compact_to(obj,other)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        class(node) :: other
+        call conduit_node_compact_to(obj%cnode, other%cnode)
+    end subroutine conduit_node_obj_compact_to
+
+    !--------------------------------------------------------------------------
     function conduit_node_obj_diff(obj,other,info,epsilon) result(res)
         use iso_c_binding
         implicit none
@@ -302,6 +372,33 @@ contains
         logical(C_BOOL) :: res
         res = conduit_node_diff_compatible(obj%cnode, other%cnode, info%cnode, epsilon)
     end function conduit_node_obj_diff_compatible
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_update(obj,other)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        class(node) :: other
+        call conduit_node_update(obj%cnode, other%cnode)
+    end subroutine conduit_node_obj_update
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_update_compatible(obj,other)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        class(node) :: other
+        call conduit_node_update_compatible(obj%cnode, other%cnode)
+    end subroutine conduit_node_obj_update_compatible
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_update_external(obj,other)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        class(node) :: other
+        call conduit_node_update_external(obj%cnode, other%cnode)
+    end subroutine conduit_node_obj_update_external
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_fetch(obj, path) result(res)
@@ -333,6 +430,82 @@ contains
     end function conduit_node_obj_child
 
     !--------------------------------------------------------------------------
+    function conduit_node_obj_has_child(obj, name) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: name
+        logical(C_BOOL) :: res
+        res = conduit_node_has_child(obj%cnode, name)
+    end function conduit_node_obj_has_child
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_has_path(obj, path) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        logical(C_BOOL) :: res
+        res = conduit_node_has_path(obj%cnode, path)
+    end function conduit_node_obj_has_path
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_remove_path(obj, path)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        call conduit_node_remove_path(obj%cnode, path)
+    end subroutine conduit_node_obj_remove_path
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_remove_child(obj, idx)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_SIZE_T) :: idx
+        call conduit_node_remove_child(obj%cnode, idx)
+    end subroutine conduit_node_obj_remove_child
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_rename_child(obj, old_name, new_name)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: old_name
+        character(*) :: new_name
+        call conduit_node_rename_child(obj%cnode, old_name, new_name)
+    end subroutine conduit_node_obj_rename_child
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_parent(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        type(node) :: res
+        res%cnode = conduit_node_parent(obj%cnode)
+    end function conduit_node_obj_parent
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_info(obj,oinfo)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        class(node) :: oinfo
+        call conduit_node_info(obj%cnode, oinfo%cnode)
+    end subroutine conduit_node_obj_info
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_compatible(obj, other) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        class(node) :: other
+        logical(C_BOOL) :: res
+        res = conduit_node_compatible(obj%cnode,other%cnode)
+    end function conduit_node_obj_compatible
+
+    !--------------------------------------------------------------------------
     function conduit_node_obj_number_of_children(obj) result(res)
         use iso_c_binding
         implicit none
@@ -349,6 +522,82 @@ contains
         integer(C_SIZE_T) :: res
         res = conduit_node_number_of_elements(obj%cnode)
     end function conduit_node_obj_number_of_elements
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_total_strided_bytes(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_SIZE_T) :: res
+        res = conduit_node_total_strided_bytes(obj%cnode)
+    end function conduit_node_obj_total_strided_bytes
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_total_bytes_compact(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_SIZE_T) :: res
+        res = conduit_node_total_bytes_compact(obj%cnode)
+    end function conduit_node_obj_total_bytes_compact
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_total_bytes_allocated(obj) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        integer(C_SIZE_T) :: res
+        res = conduit_node_total_bytes_allocated(obj%cnode)
+    end function conduit_node_obj_total_bytes_allocated
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    ! begin node
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_set_node(obj, other)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        class(node) :: other
+        call conduit_node_set_node(obj%cnode, other%cnode)
+    end subroutine conduit_node_obj_set_node
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_set_external_node(obj, other)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        class(node) :: other
+        call conduit_node_set_external_node(obj%cnode, other%cnode)
+    end subroutine conduit_node_obj_set_external_node
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_set_path_node(obj, path, other)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        class(node) :: other
+        call conduit_node_set_path_node(obj%cnode, path, other%cnode)
+    end subroutine conduit_node_obj_set_path_node
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_set_path_external_node(obj, path, other)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        class(node) :: other
+        call conduit_node_set_path_external_node(obj%cnode, path, other%cnode)
+    end subroutine conduit_node_obj_set_path_external_node
+
+    !--------------------------------------------------------------------------
+    ! end node
+    !--------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+
+
 
     !--------------------------------------------------------------------------
     !--------------------------------------------------------------------------

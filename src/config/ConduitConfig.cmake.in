@@ -67,8 +67,11 @@ if(NOT CONDUIT_FOUND)
     set(CONDUIT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
     set(CONDUIT_PYTHON_MODULE_DIR "@CONDUIT_INSTALL_PYTHON_MODULE_DIR@")
 
-
     get_filename_component(CONDUIT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+    # setup dependent pkgs
+    include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit_setup_deps.cmake)
+
     # include targets exported by cmake
     include(${CONDUIT_CMAKE_CONFIG_DIR}/conduit.cmake)
 

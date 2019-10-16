@@ -151,6 +151,11 @@ if(ADIOS_FOUND)
     list(APPEND conduit_relay_sources conduit_relay_io_adios.cpp)
 endif()
 
+if(ZFP_FOUND)
+    list(APPEND conduit_relay_headers conduit_relay_zfp.hpp)
+    list(APPEND conduit_relay_sources conduit_relay_zfp.cpp)
+endif()
+
 ################################
 # Add fortran interface if 
 # fortran support was selected
@@ -179,7 +184,7 @@ set(conduit_relay_deps conduit conduit_blueprint)
 if(UNIX AND NOT APPLE)
     # we need these for civetweb on linux, we may need similar libs
     # on windows (OSX appears ok without them)
-    list(APPEND conduit_relay_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
+    list(APPEND conduit_relay_deps dl rt Threads::Threads)
     set(CONDUIT_MAKE_EXTRA_LIBS "${CONDUIT_MAKE_EXTRA_LIBS} -ldl -lrt ${CMAKE_THREAD_LIBS_INIT}" CACHE STRING "" FORCE)
 endif()
 
@@ -201,6 +206,10 @@ endif()
 if(ADIOS_FOUND)
     # Link with the serial ADIOS libraries.
     list(APPEND conduit_relay_deps adios_nompi)
+endif()
+
+if(ZFP_FOUND)
+    list(APPEND conduit_relay_deps zfp)
 endif()
 
 

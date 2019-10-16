@@ -74,6 +74,10 @@ option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 
+# Add another option that provides extra 
+# control over conduit tests for cases where 
+# conduit is brought in as a submodule
+option(CONDUIT_ENABLE_TESTS "Build conduit tests" ON)
 
 ################################
 # Invoke CMake Fortran setup
@@ -89,14 +93,9 @@ set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 ################################
 # Init BLT
 ################################
-# if BLT_SOURCE_DIR is not set - use "blt" as default
-if(NOT BLT_SOURCE_DIR)
-    set(BLT_SOURCE_DIR "blt")
-endif()
-
-# init blt using BLT_SOURCE_DIR
-include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
-
+# This also includes 
+# Conduit's BLT defaults
+include(cmake/SetupBLT.cmake)
 
 ################################
 # Set some standard cmake opts
@@ -151,7 +150,11 @@ endif()
 # Add our tests
 ################################
 if(ENABLE_TESTS)
-    add_subdirectory(tests)
+    if(CONDUIT_ENABLE_TESTS)
+        add_subdirectory(tests)
+    else()
+        message(STATUS "Skipping test targets (CONDUIT_ENABLE_TESTS = OFF)")
+    endif()
 else()
     message(STATUS "Skipping test targets (ENABLE_TESTS = OFF)")
 endif()

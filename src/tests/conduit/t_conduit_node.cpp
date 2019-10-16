@@ -1050,6 +1050,21 @@ TEST(conduit_node, rename_child)
     EXPECT_EQ(c_vals.data_ptr(),n["d"].data_ptr());
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, list_to_obj_cleanup)
+{
+    // before resolved,
+    // this case triggered a mem-access after release case in:
+    // https://github.com/LLNL/conduit/issues/428
 
+    // create list
+    Node n;
+    n.append();
+    n.print();
+    // switch to object
+    Node &n_cld = n["cld"];
+    EXPECT_TRUE(n.has_child("cld"));
+    n_cld.print();
+}
 
 

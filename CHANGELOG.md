@@ -9,21 +9,41 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### General 
+- Added support to parse YAML into Conduit Nodes and to create YAML from Conduit Nodes. Support closely follows the "json" protocol, making similar choices related to promoting YAML string leaves to concrete data types.
+- Added several more Conduit Node methods to the C and Fortran APIs. Additions are enumerated here:  https://github.com/LLNL/conduit/pull/426
+
+
 #### Blueprint
 
+- Added support for a "zfparray" blueprint that holds ZFP compressed array data. 
+- Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
 - Added explicit topological data generation functions for points, lines, and faces
 - Added derived topology generation functions for element centroids, sides, and corners
+
+#### Relay
+- Added optional ZFP support to relay, that enables wrapping and unwraping zfp arrays into conduit Nodes. 
+- Extended relay HDF5 I/O support to read a wider range of HDF5 string representations including H5T_VARIABLE strings.
 
 ### Changed
 
 #### General 
-
 - Improved CMake export logic to make it easier to find and use Conduit install in a CMake-based build system. (See using-with-cmake example for new recipe)
 
 #### Relay
 
 - Added is_open() method to IOHandle in the C++ and Python interfaces
 - Added file name information to Relay HDF5 error messages
+
+
+### Fixed
+
+#### General 
+- Fixed bug that caused memory access after free during Node destruction
+
+#### Relay
+
+- Fixed crash with mpi broadcast_using_schema() when receiving tasks pass a non empty Node.
 
 ## [0.4.0] - Released 2019-03-01
 

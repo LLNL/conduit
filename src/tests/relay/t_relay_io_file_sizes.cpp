@@ -167,6 +167,7 @@ detect_protocols(Node &protos)
     
     protos.append().set("json");
     protos.append().set("conduit_json");
+    protos.append().set("yaml");
 }
 
 

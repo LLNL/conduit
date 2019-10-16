@@ -1438,7 +1438,18 @@ broadcast_using_schema(Node &node,
         Generator gen(bcast_buffers["schema"].as_char8_str());
         gen.walk(bcast_schema);
         
-        if( bcast_schema.compatible(node.schema()))
+        // only check compat for leaves
+        // there are more zero copy cases possible here, but
+        // we need a better way to identify them
+        // compatible won't work for object cases that
+        // have different named leaves
+        if( !(node.dtype().is_empty() ||
+              node.dtype().is_object() ||
+              node.dtype().is_list() ) && 
+            !(bcast_schema.dtype().is_empty() ||
+              bcast_schema.dtype().is_object() ||
+              bcast_schema.dtype().is_list() )
+            && bcast_schema.compatible(node.schema()))
         {
             
             bcast_data_ptr  = node.contiguous_data_ptr();

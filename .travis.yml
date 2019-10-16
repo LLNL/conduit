@@ -63,12 +63,10 @@ env:
     #  adios vs no adios
     #  coverage of unit tests
     #################################
-    # TODO re-enable docs after resolving doxygen dep build issues
     #################################
     # mpi on, docs on, shared libs, python 2.7, adios off
-    # TODO turn on coverage for this case
     - BUILD_SHARED_LIBS=ON
-      ENABLE_COVERAGE=OFF
+      ENABLE_COVERAGE=ON
       ENABLE_MPI=ON
       ENABLE_DOCS=ON
       ENABLE_SILO=ON
@@ -141,6 +139,10 @@ addons:
        - libsqlite3-dev
        - libbz2-dev
        - perl
+
+before_install:
+  - pip install --user cpp-coveralls
+
 script:
   - which g++
   - g++ --version
@@ -162,6 +164,8 @@ script:
   - if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+silo"; fi
   - if [ $ENABLE_SILO = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~silo"; fi
   - if [ $ENABLE_ADIOS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios"; fi
+  # skip conduit zfp when adios is on b/c adios needs older zfp
+  - if [ $ENABLE_ADIOS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}~zfp"; fi
   - if [ $ENABLE_ADIOS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
   # versions and package selections
   - export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"

@@ -102,11 +102,10 @@ TEST(conduit_json, to_json_2)
 
     //
     // JSON parsing will place values into an int64, 
-    // here we use "to_uint32" to do a direct comparsion
+    // here we use "to_int64" to do a direct comparison
     //
     EXPECT_EQ(n["a"].to_int64(),n2["a"].to_int64());
     EXPECT_EQ(n["b"].to_int64(),n2["b"].to_int64());
-
 }
 
 //-----------------------------------------------------------------------------
@@ -208,6 +207,23 @@ TEST(conduit_json, json_bool)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_default)
+{
+    {
+        std::string pure_json ="{dtype:uint32, length:5}";
+        Schema s(pure_json);
+        EXPECT_EQ(s.to_json_default(), s.to_json());
+    }
+
+    {
+        std::string pure_json ="{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
+        Generator g(pure_json,"json");
+        Node n(g,true);
+        EXPECT_EQ(n.to_json_default(), n.to_json());
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_json, load_from_json)
@@ -227,7 +243,7 @@ TEST(conduit_json, load_from_json)
 
     n.schema().save(ofname);
 
-    Schema s_dest;    
+    Schema s_dest;
     s_dest.load(ofname);
     
     EXPECT_EQ(true,s_dest.has_path("a"));
@@ -730,8 +746,3 @@ TEST(conduit_json, dup_object_name_error)
     
 
 }
-
-
-
-
-

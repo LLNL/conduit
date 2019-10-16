@@ -2187,12 +2187,12 @@ PyConduit_Generator_init(PyConduit_Generator *self,
                          PyObject *kwargs)
 {
     // TODO: Support "data" arg
-    static const char *kwlist[] = {"json_schema",
+    static const char *kwlist[] = {"schema",
                                    "protocol",
                                    // "data",
                                     NULL};
 
-    char *json_schema = NULL;
+    char *schema = NULL;
     char *protocol = NULL;
  
 
@@ -2200,7 +2200,7 @@ PyConduit_Generator_init(PyConduit_Generator *self,
                                      kwargs,
                                      "s|s",
                                      const_cast<char**>(kwlist),
-                                     &json_schema,
+                                     &schema,
                                      &protocol))
     {
         return -1;
@@ -2208,11 +2208,11 @@ PyConduit_Generator_init(PyConduit_Generator *self,
 
     if(protocol == NULL)
     {
-        self->generator = new Generator(std::string(json_schema));
+        self->generator = new Generator(std::string(schema));
     }
     else if(protocol != NULL)
     {
-        self->generator = new Generator(std::string(json_schema),
+        self->generator = new Generator(std::string(schema),
                                         std::string(protocol));
     }
     
@@ -3439,14 +3439,14 @@ PyConduit_Node_generate(PyConduit_Node* self,
                         PyObject* args)
 {
     /// TODO: sigs to support
-    /// json_schema
-    /// json_schema, protocol
+    /// schema
+    /// schema, protocol
     
-    /// json_schema, data
-    /// json_schema, protocol, data
+    /// schema, data
+    /// schema, protocol, data
         
     PyObject   *py_gen      = NULL;
-    const char *json_schema = NULL;
+    const char *schema = NULL;
 
     if(PyArg_ParseTuple(args, "O", &py_gen))
     {
@@ -3461,9 +3461,9 @@ PyConduit_Node_generate(PyConduit_Node* self,
          Generator *gen_ptr = ((PyConduit_Generator*)py_gen)->generator;
          self->node->generate(*gen_ptr);
     }
-    else if(PyArg_ParseTuple(args, "s", &json_schema))
+    else if(PyArg_ParseTuple(args, "s", &schema))
     {
-        self->node->generate(std::string(json_schema));
+        self->node->generate(std::string(schema));
     }
     else
     {
@@ -3509,7 +3509,18 @@ PyConduit_Node_save(PyConduit_Node *self,
         protocol_str = std::string(protocol);
     }
     
-    self->node->save(path_str,protocol_str);
+    try
+    {
+        self->node->save(path_str,protocol_str);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+    
+    
     Py_RETURN_NONE;
 }
 
@@ -3556,21 +3567,39 @@ PyConduit_Node_load(PyConduit_Node *self,
     if(py_schema != NULL)
     {
         Schema *schema_ptr = ((PyConduit_Schema*)py_schema)->schema;
-        self->node->load(path_str,
-                         *schema_ptr);
+
+        try
+        {
+            self->node->load(path_str,
+                             *schema_ptr);
+        }
+        catch(conduit::Error e)
+        {
+            PyErr_SetString(PyExc_IOError,
+                            e.message().c_str());
+            return NULL;
+        }
     }
     else
     {
         std::string protocol_str("conduit_bin");
-        
+
         if( protocol != NULL)
         {
             protocol_str =  std::string(protocol);
         }
-        
-        self->node->load(path_str,
-                         protocol_str);
-        
+
+        try
+        {
+            self->node->load(path_str,
+                             protocol_str);
+        }
+        catch(conduit::Error e)
+        {
+            PyErr_SetString(PyExc_IOError,
+                            e.message().c_str());
+            return NULL;
+        }
     }
 
     
@@ -4382,15 +4411,101 @@ PyConduit_Node_to_json(PyConduit_Node* self,
     }
     
     std::ostringstream oss;
-    self->node->to_json_stream(oss,
-                               protocol,
-                               indent,
-                               depth,
-                               pad,
-                               eoe);
+    
+    try
+    {
+        self->node->to_json_stream(oss,
+                                   protocol,
+                                   indent,
+                                   depth,
+                                   pad,
+                                   eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
 
     return (Py_BuildValue("s", oss.str().c_str()));
 }
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_to_yaml(PyConduit_Node* self,
+                       PyObject* args,
+                       PyObject* kwargs)
+{
+    
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+
+    std::string protocol = "yaml";
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    char *protocol_c_str = NULL;
+    char *pad_c_str = NULL;
+    char *eoe_c_str = NULL;
+    
+    static const char *kwlist[] = {"protocol",
+                                   "indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|snnss",
+                                     const_cast<char**>(kwlist),
+                                     &protocol_c_str,
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+    
+    if(protocol_c_str != NULL)
+    {
+        protocol = std::string(protocol_c_str);
+    }
+    
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    std::ostringstream oss;
+
+    try
+    {
+        self->node->to_yaml_stream(oss,
+                                   protocol,
+                                   indent,
+                                   depth,
+                                   pad,
+                                   eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
+
 
 //----------------------------------------------------------------------------//
 // Endianness methods
@@ -4632,6 +4747,11 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
       (PyCFunction)PyConduit_Node_to_json, 
       METH_VARARGS| METH_KEYWORDS,
       "Returns a JSON string representation of the node."},
+     //-----------------------------------------------------------------------//
+     {"to_yaml",
+      (PyCFunction)PyConduit_Node_to_yaml, 
+      METH_VARARGS| METH_KEYWORDS,
+      "Returns a YAML string representation of the node."},
      //-----------------------------------------------------------------------//
      {"children",
       (PyCFunction)PyConduit_Node_iter, 

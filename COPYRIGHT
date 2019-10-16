@@ -1,0 +1,36 @@
+Intellectual Property Notice
+------------------------------
+
+Conduit is licensed under the BSD 3-Clause license,
+(BSD-3-Clause or https://opensource.org/licenses/BSD-3-Clause).
+
+Copyrights and patents in the Conduit project are retained by contributors.
+No copyright assignment is required to contribute to Conduit.
+
+Bundled External Packages
+---------------------------
+
+PackageName: BLT
+PackageHomePage: https://github.com/LLNL/blt/
+PackageLicenseDeclared: BSD-3-Clause
+
+PackageName: uberenv
+PackageHomePage: https://github.com/LLNL/uberenv
+PackageLicenseDeclared: BSD-3-Clause
+
+PackageName: libb64
+PackageHomePage: http://libb64.sourceforge.net/
+
+PackageName: rapidjson
+PackageHomePage: http://rapidjson.org/
+PackageLicenseDeclared: MIT
+
+PackageName: civetweb
+PackageHomePage: https://github.com/civetweb/civetweb
+PackageLicenseDeclared: MIT
+
+PackageName: libyaml
+PackageHomePage: https://github.com/yaml/libyaml
+PackageLicenseDeclared: MIT
+
+
