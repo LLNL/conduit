@@ -4934,6 +4934,174 @@ PyConduit_Node_Python_Create()
 
 //---------------------------------------------------------------------------//
 static int
+PyConduit_Node_Set_From_Python_List(Node &node,
+                                    PyObject *value)
+{
+    // like json and yaml cases, identify if we are 
+    // a numeric case, or a more general case
+    
+    Py_ssize_t list_size = PyList_GET_SIZE(value);
+    
+    bool homogenous_numeric = true;
+
+    index_t  dtype_id = DataType::INT64_ID;
+    
+    for(Py_ssize_t idx=0; idx < list_size && homogenous_numeric; idx++)
+    {
+        PyObject *py_entry = PyList_GET_ITEM(value, idx);
+        if (PyInt_Check(py_entry) || PyLong_Check(py_entry))
+        {
+            // int64 still ok
+        }
+        else if (PyFloat_Check(py_entry))
+        {
+            // promote to float64
+            dtype_id = DataType::FLOAT64_ID;
+        }
+        else // general
+        {
+            homogenous_numeric = false;
+        }
+    }
+
+    if(homogenous_numeric)
+    {
+        node.set(DataType::DataType(dtype_id,(index_t)list_size));
+
+        if(dtype_id ==  DataType::INT64_ID)
+        {
+            int64 *vals_ptr = node.value();
+            for(Py_ssize_t idx=0; idx < list_size; idx++)
+            {
+                PyObject *py_entry = PyList_GET_ITEM(value, idx);
+                if (PyInt_Check(py_entry))
+                {
+                    vals_ptr[idx] = (int64)PyInt_AsLong(py_entry);
+                }
+                else // PyLong_Check(py_entry) == TRUE 
+                {
+                    vals_ptr[idx] = (int64)PyLong_AsLong(py_entry);
+                }
+            }
+        }
+        else
+        {
+            float64 *vals_ptr = node.value();
+            for(Py_ssize_t idx=0; idx < list_size; idx++)
+            {
+                PyObject *py_entry = PyList_GET_ITEM(value, idx);
+
+                if (PyInt_Check(py_entry))
+                {
+                    vals_ptr[idx] = (float64)PyInt_AsLong(py_entry);
+                }
+                else if( PyLong_Check(py_entry) )
+                {
+                    vals_ptr[idx] = (float64)PyLong_AsLong(py_entry);
+                }
+                else // float
+                {
+                    vals_ptr[idx] = (float64)PyFloat_AS_DOUBLE(py_entry);
+                }
+            }
+        }
+    }
+    else
+    {
+        // TODO: STILL BAD FOR NOW!
+        PyErr_SetString(PyExc_TypeError, "Value type not supported");
+        return -1;
+    }
+    
+    return 0;
+}
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Node_Set_From_Python_Tuple(Node &node,
+                                     PyObject *value)
+{
+    // like json and yaml cases, identify if we are 
+    // a numeric case, or a more general case
+    
+    
+    Py_ssize_t tuple_size = PyTuple_GET_SIZE(value);
+    
+    bool homogenous_numeric = true;
+
+    index_t  dtype_id = DataType::INT64_ID;
+    
+    for(Py_ssize_t idx=0; idx < tuple_size && homogenous_numeric; idx++)
+    {
+        PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+        if (PyInt_Check(py_entry) || PyLong_Check(py_entry))
+        {
+            // int64 still ok
+        }
+        else if (PyFloat_Check(py_entry))
+        {
+            // promote to float64
+            dtype_id = DataType::FLOAT64_ID;
+        }
+        else // general
+        {
+            homogenous_numeric = false;
+        }
+    }
+
+    if(homogenous_numeric)
+    {
+        node.set(DataType::DataType(dtype_id,(index_t)tuple_size));
+
+        if(dtype_id ==  DataType::INT64_ID)
+        {
+            int64 *vals_ptr = node.value();
+            for(Py_ssize_t idx=0; idx < tuple_size; idx++)
+            {
+                PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+                if (PyInt_Check(py_entry))
+                {
+                    vals_ptr[idx] = (int64)PyInt_AsLong(py_entry);
+                }
+                else // PyLong_Check(py_entry) == TRUE 
+                {
+                    vals_ptr[idx] = (int64)PyLong_AsLong(py_entry);
+                }
+            }
+        }
+        else
+        {
+            float64 *vals_ptr = node.value();
+            for(Py_ssize_t idx=0; idx < tuple_size; idx++)
+            {
+                PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+
+                if (PyInt_Check(py_entry))
+                {
+                    vals_ptr[idx] = (float64)PyInt_AsLong(py_entry);
+                }
+                else if( PyLong_Check(py_entry) )
+                {
+                    vals_ptr[idx] = (float64)PyLong_AsLong(py_entry);
+                }
+                else // float
+                {
+                    vals_ptr[idx] = (float64)PyFloat_AS_DOUBLE(py_entry);
+                }
+            }
+        }
+    }
+    else
+    {
+        // TODO: STILL BAD FOR NOW!
+        PyErr_SetString(PyExc_TypeError, "Value type not supported");
+        return -1;
+    }
+    
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+static int
 PyConduit_Node_Set_From_Python(Node &node,
                              PyObject *value)
 {
@@ -5110,7 +5278,17 @@ PyConduit_Node_Set_From_Python(Node &node,
             }
         }
 
-    } else {
+    }
+    else if( PyList_Check(value) )
+    {
+        return PyConduit_Node_Set_From_Python_List(node,value);
+    }
+    else if( PyTuple_Check(value) )
+    {
+        return PyConduit_Node_Set_From_Python_Tuple(node,value);
+    }
+    else
+    {
         PyErr_SetString(PyExc_TypeError, "Value type not supported");
         return (-1);
     }

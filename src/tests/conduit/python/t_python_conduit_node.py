@@ -371,6 +371,52 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertTrue(n['c'] == b_val)
 
 
+    def test_numeric_tuples(self):
+        n = Node()
+        n["tuple_0"].set((1, 2, 3, 4))
+        n["tuple_1"].set((1.0, 2.0, 3.0, 4.0))
+        n["tuple_2"].set((1, 2, 3, 4.0))
+        print(n)
+        self.assertEqual(n['tuple_0'][0], 1)
+        self.assertEqual(n['tuple_0'][1], 2)
+        self.assertEqual(n['tuple_0'][2], 3)
+        self.assertEqual(n['tuple_0'][3], 4)
+        
+        self.assertEqual(n['tuple_1'][0], 1.0)
+        self.assertEqual(n['tuple_1'][1], 2.0)
+        self.assertEqual(n['tuple_1'][2], 3.0)
+        self.assertEqual(n['tuple_1'][3], 4.0)
+        
+        self.assertEqual(n['tuple_2'][0], 1.0)
+        self.assertEqual(n['tuple_2'][1], 2.0)
+        self.assertEqual(n['tuple_2'][2], 3.0)
+        self.assertEqual(n['tuple_2'][3], 4.0)
+
+    def test_numeric_lists(self):
+        n = Node()
+        n["list_0"].set((1, 2, 3, 4))
+        n["list_1"].set((1.0, 2.0, 3.0, 4.0))
+        n["list_2"].set((1, 2, 3, 4.0))
+        #n["tuple_3"].set(("what", "where", "why", "how"))
+        #n["tuple_4"].set((1, 2, 3, "what"))
+        print(n)
+        self.assertEqual(n['list_0'][0], 1)
+        self.assertEqual(n['list_0'][1], 2)
+        self.assertEqual(n['list_0'][2], 3)
+        self.assertEqual(n['list_0'][3], 4)
+        
+        self.assertEqual(n['list_1'][0], 1.0)
+        self.assertEqual(n['list_1'][1], 2.0)
+        self.assertEqual(n['list_1'][2], 3.0)
+        self.assertEqual(n['list_1'][3], 4.0)
+        
+        self.assertEqual(n['list_2'][0], 1.0)
+        self.assertEqual(n['list_2'][1], 2.0)
+        self.assertEqual(n['list_2'][2], 3.0)
+        self.assertEqual(n['list_2'][3], 4.0)
+
+
+
 if __name__ == '__main__':
     unittest.main()
 
