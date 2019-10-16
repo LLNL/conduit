@@ -4972,10 +4972,9 @@ PyConduit_Node_Set_From_Python_List(Node &node,
 
     if(homogenous_numeric)
     {
-        node.set(DataType::DataType(dtype_id,(index_t)list_size));
-
         if(dtype_id ==  DataType::INT64_ID)
         {
+            node.set(DataType::int64((index_t)tuple_size));
             int64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < list_size; idx++)
             {
@@ -4992,6 +4991,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
         }
         else
         {
+            node.set(DataType::float64((index_t)tuple_size));
             float64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < list_size; idx++)
             {
