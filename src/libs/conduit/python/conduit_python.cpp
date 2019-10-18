@@ -152,6 +152,15 @@ PyString_AsString_Cleanup(char *bytes)
     free(bytes);
 }
 
+//-----------------------------------------------------------------------------
+PyObject *
+PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
+                                    int string_len)
+{
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                     unicode_buffer,
+                                     string_len);
+}
 
 //-----------------------------------------------------------------------------
 int
@@ -172,6 +181,18 @@ PyInt_AsLong(PyObject *o)
 //-----------------------------------------------------------------------------
 #define PyString_AsString_Cleanup(c) { /* noop */ }
 
+
+
+//-----------------------------------------------------------------------------
+PyObject *
+PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
+                                    int string_len)
+{
+    return PyUnicode_Decode(unicode_buffer,
+                             string_len,
+                             "utf-32",
+                             "strict");
+}
 #endif
 
 //-----------------------------------------------------------------------------
@@ -5174,18 +5195,18 @@ PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
     // get the number of strings, and create a conduit list of strings
     npy_intp num_strings = PyArray_SIZE(py_arr);
     npy_intp *dims = PyArray_DIMS(py_arr);
-    npy_intp string_len = dims[1];
+    npy_intp buffer_len = dims[1];
     for(npy_intp i=0; i < num_strings; i++)
     {
         // read each string into a child
         Node &cld = node.append();
 
         // get unicode data and construct a python unicode object from it
-        void *curr_ptr = PyArray_GETPTR1(py_arr,i);
-        // in this case, numpy strings are 32-bit per char
-        PyObject *py_temp_unicode = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                                              (const char*)curr_ptr,
-                                                              string_len/4);
+        void *unicode_buffer_ptr = PyArray_GETPTR1(py_arr,i);
+        
+        PyObject *py_temp_unicode = PyUnicode_From_UTF32_Unicode_Buffer((const char*)unicode_buffer_ptr,
+                                                                        buffer_len/4);
+            
         if(py_temp_unicode == NULL)
         {
             PyErr_SetString(PyExc_TypeError,
