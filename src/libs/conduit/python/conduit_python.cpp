@@ -5167,6 +5167,70 @@ PyConduit_Node_Set_From_Numpy_String_Array(Node &node,
 
 //---------------------------------------------------------------------------//
 static int
+PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
+                                            PyArrayObject *py_arr)
+{
+    node.reset();
+    // get the number of strings, and create a conduit list of strings
+    npy_intp num_strings = PyArray_SIZE(py_arr);
+    npy_intp *dims = PyArray_DIMS(py_arr);
+    npy_intp string_len = dims[1];
+    for(npy_intp i=0; i < num_strings; i++)
+    {
+        // read each string into a child
+        Node &cld = node.append();
+
+        // get unicode data and construct a python unicode object from it
+        void *curr_ptr = PyArray_GETPTR1(py_arr,i);
+        // in this case, numpy strings are 32-bit per char
+        PyObject *py_temp_unicode = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                                              (const char*)curr_ptr,
+                                                              string_len/4);
+        if(py_temp_unicode == NULL)
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Failed to construct PyUnicode from NPY_UNICODE Array entry.");
+            return -1;
+        }
+        
+        // convert our unicode string to ascii for conduit 
+        PyObject *py_temp_bytes = PyUnicode_AsEncodedString(py_temp_unicode,
+                                                          "ASCII",
+                                                          "strict"); // Owned reference
+        // cleanup unicode obj
+        Py_DECREF(py_temp_unicode);
+        if(py_temp_bytes == NULL)
+        {
+            // error
+            PyErr_SetString(PyExc_TypeError,
+                            "Failed to encode unicode string to ASCII for use in conduit");
+            return -1;
+        }
+
+        // copy data into conduit node
+        cld.set_char8_str(PyBytes_AS_STRING(py_temp_bytes));
+        // cleanup temp bytes
+        Py_DECREF(py_temp_bytes);
+    }
+
+    return 0;
+}
+
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Node_Set_From_Numpy_String(Node &node,
+                                     PyObject *value)
+{
+    char *cstr = PyString_AsString(value);
+    node.set_char8_str(cstr);
+    PyString_AsString_Cleanup(cstr);
+    return 0;
+}
+
+
+//---------------------------------------------------------------------------//
+static int
 PyConduit_Node_Set_From_Python(Node &node,
                                PyObject *value)
 {
@@ -5205,15 +5269,20 @@ PyConduit_Node_Set_From_Python(Node &node,
         PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
         PyArrayObject *py_arr = (PyArrayObject*)value;
 
-        if(desc->type_num == NPY_STRING)
-        {
-            return PyConduit_Node_Set_From_Numpy_String_Array(node,
-                                                              py_arr);
-        }
-
         npy_intp num_ele = PyArray_SIZE(py_arr);
         switch (desc->type_num) 
         {
+            case NPY_STRING:
+            {
+                return PyConduit_Node_Set_From_Numpy_String_Array(node,
+                                                                  py_arr);
+                break;
+            }
+            case NPY_UNICODE:
+            {
+                return PyConduit_Node_Set_From_Numpy_Unicode_Array(node,
+                                                                   py_arr);
+            }
             case NPY_UINT8 :
             {
                 node.set(DataType::uint8(num_ele));
@@ -5284,10 +5353,34 @@ PyConduit_Node_Set_From_Python(Node &node,
                 PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
+            default:
+            {
+                std::ostringstream err_msg;
+                err_msg << "PyArray Array Type not supported: "
+                        << desc->kind;
+                PyErr_SetString(PyExc_TypeError,
+                                err_msg.str().c_str());
+                return (-1);
+            }
         }
-    } else if (PyArray_CheckScalar(value)) {
+    }
+    else if (PyArray_CheckScalar(value))
+    {
         PyArray_Descr* desc = PyArray_DescrFromScalar(value);
-        switch (desc->type_num) {
+
+        switch (desc->type_num)
+        {
+            case NPY_STRING:
+            {
+                return PyConduit_Node_Set_From_Numpy_String(node,
+                                                            value);
+                break;
+            }
+            case NPY_UNICODE:
+            {
+                return PyConduit_Node_Set_From_Numpy_String(node,
+                                                            value);
+            }
             case NPY_INT8 : {
                 int8 val;
                 PyArray_ScalarAsCtype(value, &val);
@@ -5347,6 +5440,15 @@ PyConduit_Node_Set_From_Python(Node &node,
                 PyArray_ScalarAsCtype(value, &val);
                 node = val;
                 break;
+            }
+            default:
+            {
+                std::ostringstream err_msg;
+                err_msg << "PyArray Scalar Type not supported: "
+                        << desc->kind;
+                PyErr_SetString(PyExc_TypeError,
+                                err_msg.str().c_str());
+                return (-1);
             }
         }
 
