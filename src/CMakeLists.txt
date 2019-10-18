@@ -46,12 +46,15 @@ cmake_minimum_required(VERSION 3.0)
 ################################
 # cmake policy selections
 ################################
-
 # cmake var deref policy
 if(POLICY CMP0054)
   cmake_policy(SET CMP0054 OLD)
 endif()
 
+# allow find_packages to use ZZZ_ROOT vars
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 ################################
 # Conduit
