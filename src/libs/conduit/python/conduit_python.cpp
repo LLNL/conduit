@@ -152,6 +152,15 @@ PyString_AsString_Cleanup(char *bytes)
     free(bytes);
 }
 
+//-----------------------------------------------------------------------------
+PyObject *
+PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
+                                    int string_len)
+{
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                     unicode_buffer,
+                                     string_len);
+}
 
 //-----------------------------------------------------------------------------
 int
@@ -172,6 +181,18 @@ PyInt_AsLong(PyObject *o)
 //-----------------------------------------------------------------------------
 #define PyString_AsString_Cleanup(c) { /* noop */ }
 
+
+
+//-----------------------------------------------------------------------------
+PyObject *
+PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
+                                    int string_len)
+{
+    return PyUnicode_Decode(unicode_buffer,
+                             string_len,
+                             "utf-32",
+                             "strict");
+}
 #endif
 
 //-----------------------------------------------------------------------------
@@ -3247,14 +3268,13 @@ PyConduit_Fill_DataArray_From_PyArray(DataArray<T> &conduit_array,
                                       PyArrayObject *numpy_array)
 {
     npy_int num_ele = (npy_int)conduit_array.number_of_elements();
-    
+
     T *numpy_data = (T*)PyArray_BYTES(numpy_array);
-    
+
     for (npy_intp i = 0; i < num_ele; i++)
     {
         conduit_array[i] = numpy_data[i];
     }
-    
 }
 
 
@@ -4934,8 +4954,306 @@ PyConduit_Node_Python_Create()
 
 //---------------------------------------------------------------------------//
 static int
+PyConduit_Node_Set_From_Python_List(Node &node,
+                                    PyObject *value)
+{
+    // like json and yaml cases, identify if we are 
+    // a numeric case, or a more general case
+    
+    Py_ssize_t list_size = PyList_GET_SIZE(value);
+
+    if(list_size == 0)
+    {
+        node.reset();
+        return 0;
+    }
+
+    bool ok = true;
+    bool homogenous_numeric = true;
+
+    index_t  dtype_id = DataType::INT64_ID;
+    
+    for(Py_ssize_t idx=0; idx < list_size && homogenous_numeric; idx++)
+    {
+        PyObject *py_entry = PyList_GET_ITEM(value, idx);
+        if (PyInt_Check(py_entry) || PyLong_Check(py_entry))
+        {
+            // int64 still ok
+        }
+        else if (PyFloat_Check(py_entry))
+        {
+            // promote to float64
+            dtype_id = DataType::FLOAT64_ID;
+        }
+        else // general
+        {
+            homogenous_numeric = false;
+        }
+    }
+
+    if(homogenous_numeric)
+    {
+        if(dtype_id ==  DataType::INT64_ID)
+        {
+            node.set(DataType::int64((index_t)list_size));
+            int64 *vals_ptr = node.value();
+            for(Py_ssize_t idx=0; idx < list_size; idx++)
+            {
+                PyObject *py_entry = PyList_GET_ITEM(value, idx);
+                if (PyInt_Check(py_entry))
+                {
+                    vals_ptr[idx] = (int64)PyInt_AsLong(py_entry);
+                }
+                else // PyLong_Check(py_entry) == TRUE 
+                {
+                    vals_ptr[idx] = (int64)PyLong_AsLong(py_entry);
+                }
+            }
+        }
+        else
+        {
+            node.set(DataType::float64((index_t)list_size));
+            float64 *vals_ptr = node.value();
+            for(Py_ssize_t idx=0; idx < list_size; idx++)
+            {
+                PyObject *py_entry = PyList_GET_ITEM(value, idx);
+
+                if (PyInt_Check(py_entry))
+                {
+                    vals_ptr[idx] = (float64)PyInt_AsLong(py_entry);
+                }
+                else if( PyLong_Check(py_entry) )
+                {
+                    vals_ptr[idx] = (float64)PyLong_AsLong(py_entry);
+                }
+                else // float
+                {
+                    vals_ptr[idx] = (float64)PyFloat_AS_DOUBLE(py_entry);
+                }
+            }
+        }
+    }
+    else
+    {
+        // try general case as conduit list
+        node.reset();
+        bool ok = true;
+        for(Py_ssize_t idx=0; idx < list_size && ok; idx++)
+        {
+            PyObject *py_entry = PyList_GET_ITEM(value, idx);
+            Node &cld = node.append();
+            if( PyConduit_Node_Set_From_Python(cld,py_entry) != 0 )
+            {
+                ok = false;
+            }
+        }
+    }
+    
+    // if not ok, we assume py error was already set
+    if(!ok)
+        return -1;
+    else
+        return 0;
+}
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Node_Set_From_Python_Tuple(Node &node,
+                                     PyObject *value)
+{
+    // like json and yaml cases, identify if we are 
+    // a numeric case, or a more general case
+    
+    
+    Py_ssize_t tuple_size = PyTuple_GET_SIZE(value);
+    
+    if(tuple_size == 0)
+    {
+        node.reset();
+        return 0;
+    }
+
+    bool ok = true;    
+    bool homogenous_numeric = true;
+
+    index_t  dtype_id = DataType::INT64_ID;
+    
+    for(Py_ssize_t idx=0; idx < tuple_size && homogenous_numeric; idx++)
+    {
+        PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+        if (PyInt_Check(py_entry) || PyLong_Check(py_entry))
+        {
+            // int64 still ok
+        }
+        else if (PyFloat_Check(py_entry))
+        {
+            // promote to float64
+            dtype_id = DataType::FLOAT64_ID;
+        }
+        else // general
+        {
+            homogenous_numeric = false;
+        }
+    }
+
+    if(homogenous_numeric)
+    {
+
+
+        if(dtype_id ==  DataType::INT64_ID)
+        {
+            node.set(DataType::int64((index_t)tuple_size));
+            int64 *vals_ptr = node.value();
+            for(Py_ssize_t idx=0; idx < tuple_size; idx++)
+            {
+                PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+                if (PyInt_Check(py_entry))
+                {
+                    vals_ptr[idx] = (int64)PyInt_AsLong(py_entry);
+                }
+                else // PyLong_Check(py_entry) == TRUE 
+                {
+                    vals_ptr[idx] = (int64)PyLong_AsLong(py_entry);
+                }
+            }
+        }
+        else
+        {
+            node.set(DataType::float64((index_t)tuple_size));
+            float64 *vals_ptr = node.value();
+            for(Py_ssize_t idx=0; idx < tuple_size; idx++)
+            {
+                PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+
+                if (PyInt_Check(py_entry))
+                {
+                    vals_ptr[idx] = (float64)PyInt_AsLong(py_entry);
+                }
+                else if( PyLong_Check(py_entry) )
+                {
+                    vals_ptr[idx] = (float64)PyLong_AsLong(py_entry);
+                }
+                else // float
+                {
+                    vals_ptr[idx] = (float64)PyFloat_AS_DOUBLE(py_entry);
+                }
+            }
+        }
+    }
+    else
+    {
+        // try general case as conduit list
+        node.reset();
+        bool ok = true;
+        for(Py_ssize_t idx=0; idx < tuple_size && ok; idx++)
+        {
+            PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+            Node &cld = node.append();
+            if( PyConduit_Node_Set_From_Python(cld,py_entry) != 0 )
+            {
+                ok = false;
+            }
+        }
+    }
+    
+    // if not ok, we assume py error was already set
+    if(!ok)
+        return -1;
+    else
+        return 0;
+}
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Node_Set_From_Numpy_String_Array(Node &node,
+                                           PyArrayObject *py_arr)
+{
+    node.reset();
+    // get the number of strings, and create a conduit list of strings
+    npy_intp num_strings = PyArray_SIZE(py_arr);
+    npy_intp *dims = PyArray_DIMS(py_arr);
+    npy_intp string_len = dims[1];
+    for(npy_intp i=0; i < num_strings; i++)
+    {
+        // read each string into a child
+        Node &cld = node.append();
+        // numpy strings are fixed len + may not include
+        // NULL term.
+        cld.set(DataType::char8_str(string_len),
+                PyArray_GETPTR1(py_arr,i));
+    }
+
+    return 0;
+}
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
+                                            PyArrayObject *py_arr)
+{
+    node.reset();
+    // get the number of strings, and create a conduit list of strings
+    npy_intp num_strings = PyArray_SIZE(py_arr);
+    npy_intp *dims = PyArray_DIMS(py_arr);
+    npy_intp buffer_len = dims[1];
+    for(npy_intp i=0; i < num_strings; i++)
+    {
+        // read each string into a child
+        Node &cld = node.append();
+
+        // get unicode data and construct a python unicode object from it
+        void *unicode_buffer_ptr = PyArray_GETPTR1(py_arr,i);
+        
+        PyObject *py_temp_unicode = PyUnicode_From_UTF32_Unicode_Buffer((const char*)unicode_buffer_ptr,
+                                                                        buffer_len/4);
+            
+        if(py_temp_unicode == NULL)
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Failed to construct PyUnicode from NPY_UNICODE Array entry.");
+            return -1;
+        }
+        
+        // convert our unicode string to ascii for conduit 
+        PyObject *py_temp_bytes = PyUnicode_AsEncodedString(py_temp_unicode,
+                                                          "ASCII",
+                                                          "strict"); // Owned reference
+        // cleanup unicode obj
+        Py_DECREF(py_temp_unicode);
+        if(py_temp_bytes == NULL)
+        {
+            // error
+            PyErr_SetString(PyExc_TypeError,
+                            "Failed to encode unicode string to ASCII for use in conduit");
+            return -1;
+        }
+
+        // copy data into conduit node
+        cld.set_char8_str(PyBytes_AS_STRING(py_temp_bytes));
+        // cleanup temp bytes
+        Py_DECREF(py_temp_bytes);
+    }
+
+    return 0;
+}
+
+
+//---------------------------------------------------------------------------//
+static int
+PyConduit_Node_Set_From_Numpy_String(Node &node,
+                                     PyObject *value)
+{
+    char *cstr = PyString_AsString(value);
+    node.set_char8_str(cstr);
+    PyString_AsString_Cleanup(cstr);
+    return 0;
+}
+
+
+//---------------------------------------------------------------------------//
+static int
 PyConduit_Node_Set_From_Python(Node &node,
-                             PyObject *value)
+                               PyObject *value)
 {
     if (PyConduit_Node_Check(value))
     {
@@ -4971,9 +5289,21 @@ PyConduit_Node_Set_From_Python(Node &node,
     {
         PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
         PyArrayObject *py_arr = (PyArrayObject*)value;
+
         npy_intp num_ele = PyArray_SIZE(py_arr);
         switch (desc->type_num) 
         {
+            case NPY_STRING:
+            {
+                return PyConduit_Node_Set_From_Numpy_String_Array(node,
+                                                                  py_arr);
+                break;
+            }
+            case NPY_UNICODE:
+            {
+                return PyConduit_Node_Set_From_Numpy_Unicode_Array(node,
+                                                                   py_arr);
+            }
             case NPY_UINT8 :
             {
                 node.set(DataType::uint8(num_ele));
@@ -5044,10 +5374,34 @@ PyConduit_Node_Set_From_Python(Node &node,
                 PyConduit_Fill_DataArray_From_PyArray(c_arr, py_arr);
                 break;
             }
+            default:
+            {
+                std::ostringstream err_msg;
+                err_msg << "PyArray Array Type not supported: "
+                        << desc->kind;
+                PyErr_SetString(PyExc_TypeError,
+                                err_msg.str().c_str());
+                return (-1);
+            }
         }
-    } else if (PyArray_CheckScalar(value)) {
+    }
+    else if (PyArray_CheckScalar(value))
+    {
         PyArray_Descr* desc = PyArray_DescrFromScalar(value);
-        switch (desc->type_num) {
+
+        switch (desc->type_num)
+        {
+            case NPY_STRING:
+            {
+                return PyConduit_Node_Set_From_Numpy_String(node,
+                                                            value);
+                break;
+            }
+            case NPY_UNICODE:
+            {
+                return PyConduit_Node_Set_From_Numpy_String(node,
+                                                            value);
+            }
             case NPY_INT8 : {
                 int8 val;
                 PyArray_ScalarAsCtype(value, &val);
@@ -5108,9 +5462,28 @@ PyConduit_Node_Set_From_Python(Node &node,
                 node = val;
                 break;
             }
+            default:
+            {
+                std::ostringstream err_msg;
+                err_msg << "PyArray Scalar Type not supported: "
+                        << desc->kind;
+                PyErr_SetString(PyExc_TypeError,
+                                err_msg.str().c_str());
+                return (-1);
+            }
         }
 
-    } else {
+    }
+    else if( PyList_Check(value) )
+    {
+        return PyConduit_Node_Set_From_Python_List(node,value);
+    }
+    else if( PyTuple_Check(value) )
+    {
+        return PyConduit_Node_Set_From_Python_Tuple(node,value);
+    }
+    else
+    {
         PyErr_SetString(PyExc_TypeError, "Value type not supported");
         return (-1);
     }

@@ -52,14 +52,14 @@ import unittest
 
 from conduit import Node
 
-from numpy import *
+import numpy as np
 
 
 class Test_Conduit_Node(unittest.TestCase):
     def test_simple(self):
-        a_val = uint32(10)
-        b_val = uint32(20)
-        c_val = float64(30.0)
+        a_val = np.uint32(10)
+        b_val = np.uint32(20)
+        c_val = np.float64(30.0)
 
         n = Node()
         n['a'] = a_val
@@ -71,20 +71,20 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertTrue(n['c'] == c_val)
 
     def test_nested(self):
-        val = uint32(10)
+        val = np.uint32(10)
         n = Node()
         n['a']['b'] = val
         print(n['a']['b'])
         self.assertEqual(n['a']['b'],val)
 
     def test_vector(self):
-        vec = array(range(100), uint32)
+        vec = np.array(range(100), np.uint32)
         n = Node()
         n['a'] = vec
         self.assertEqual(n['a'][99], 99)
 
     def test_fetch(self):
-        vec = array(range(100), uint32)
+        vec = np.array(range(100), np.uint32)
         n = Node()
         n['a'] = vec
         na = n.fetch('a')
@@ -92,7 +92,7 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(na_val[99], 99)
         
     def test_child(self):
-        vec = array(range(100), uint32)
+        vec = np.array(range(100), np.uint32)
         n = Node()
         n['a'] = vec
         na = n.child(0)
@@ -104,7 +104,7 @@ class Test_Conduit_Node(unittest.TestCase):
     def test_save_load(self):
         # on windows, this breaks at 27 !?
         alen = 26
-        vec = array(range(alen), uint32)
+        vec = np.array(range(alen), np.uint32)
         n = Node()
         n['a'] = vec
         print(n)
@@ -133,7 +133,7 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(nl['a'][alen-1], alen-1)
 
     def test_parent(self):
-        vec = array(range(100), uint32)
+        vec = np.array(range(100), np.uint32)
         n = Node()
         n['a'] = vec
         na = n.fetch('a')
@@ -141,7 +141,7 @@ class Test_Conduit_Node(unittest.TestCase):
         # todo: test parent()
 
     def test_total_bytes(self):
-        vec = array(range(100), uint32)
+        vec = np.array(range(100), np.uint32)
         n = Node()
         n['a'] = vec
         self.assertEqual(n.total_strided_bytes(),4 * 100)
@@ -218,7 +218,7 @@ class Test_Conduit_Node(unittest.TestCase):
                   'uint8', 'uint16', 'uint32', 'uint64',
                   'float32', 'float64']
         for type in types:
-            data = array(range(10), dtype=type)
+            data = np.array(range(10), dtype=type)
             n = Node()
             n.set(data)
             for i in range(len(data)):
@@ -227,7 +227,7 @@ class Test_Conduit_Node(unittest.TestCase):
     def test_set_external(self):
         types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
         for type in types:
-            ext_data = array(range(10), dtype=type)
+            ext_data = np.array(range(10), dtype=type)
             n = Node()
             n.set_external(ext_data)
             for i in range(len(ext_data)):
@@ -241,7 +241,7 @@ class Test_Conduit_Node(unittest.TestCase):
     def test_set_external_basic_slice(self):
         types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
         for type in types:
-            base_data = array(range(20), dtype=type)
+            base_data = np.array(range(20), dtype=type)
             ext_data  = base_data[1:16]
             n = Node()
             n.set_external(ext_data)
@@ -256,7 +256,7 @@ class Test_Conduit_Node(unittest.TestCase):
     def test_set_external_basic_strides(self):
         types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
         for type in types:
-            base_data = array(range(20), dtype=type)
+            base_data = np.array(range(20), dtype=type)
             ext_data  = base_data[1:16:2]
             n = Node()
             n.set_external(ext_data)
@@ -290,7 +290,7 @@ class Test_Conduit_Node(unittest.TestCase):
         # but this was the reproducer for 
         #  https://github.com/LLNL/conduit/issues/281
         n = Node()
-        a = array(list((1,2,3)))
+        a = np.array(list((1,2,3)))
         n['a'] = a
         self.assertEqual(n['a'][0], 1)
         self.assertEqual(n['a'][1], 2)
@@ -312,7 +312,7 @@ class Test_Conduit_Node(unittest.TestCase):
 
     def test_update(self):
         n = Node()
-        data = array(range(10), dtype='float64')
+        data = np.array(range(10), dtype='float64')
         n["data"].set_external(data)
         
         print(n)
@@ -337,7 +337,7 @@ class Test_Conduit_Node(unittest.TestCase):
 
     def test_reset(self):
         n = Node()
-        data = array(range(10), dtype='float64')
+        data = np.array(range(10), dtype='float64')
         n["data"].set_external(data)
         
         print(n)
@@ -346,8 +346,8 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(n.number_of_children(), 0)
 
     def test_child_rename(self):
-        a_val = uint32(10)
-        b_val = uint32(20)
+        a_val = np.uint32(10)
+        b_val = np.uint32(20)
 
         n = Node()
         with self.assertRaises(Exception):
@@ -370,6 +370,84 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertTrue(n['a'] == a_val)
         self.assertTrue(n['c'] == b_val)
 
+    def test_string(self):
+        n = Node();
+        n.set("my string!")
+        print(n)
+        self.assertEqual(n.value(),"my string!")
+        # test numpy string
+        nps = np.string_("my numpy string!")
+        n.set(nps)
+        print(n)
+        print(repr(n))
+        self.assertEqual(n.value(),"my numpy string!")
+        aofstrs = np.array(["here","are","a","few","strings"])
+        print(aofstrs)
+        n.set(aofstrs)
+        print(n)
+        self.assertEqual(n[0],"here")
+        self.assertEqual(n[1],"are")
+        self.assertEqual(n[2],"a")
+        self.assertEqual(n[3],"few")
+        self.assertEqual(n[4],"strings")
+
+    def test_numeric_tuples(self):
+        n = Node()
+        n["tuple_0"].set((1, 2, 3, 4))
+        n["tuple_1"].set((1.0, 2.0, 3.0, 4.0))
+        n["tuple_2"].set((1, 2, 3, 4.0))
+        print(n)
+        self.assertEqual(n['tuple_0'][0], 1)
+        self.assertEqual(n['tuple_0'][1], 2)
+        self.assertEqual(n['tuple_0'][2], 3)
+        self.assertEqual(n['tuple_0'][3], 4)
+        
+        self.assertEqual(n['tuple_1'][0], 1.0)
+        self.assertEqual(n['tuple_1'][1], 2.0)
+        self.assertEqual(n['tuple_1'][2], 3.0)
+        self.assertEqual(n['tuple_1'][3], 4.0)
+        
+        self.assertEqual(n['tuple_2'][0], 1.0)
+        self.assertEqual(n['tuple_2'][1], 2.0)
+        self.assertEqual(n['tuple_2'][2], 3.0)
+        self.assertEqual(n['tuple_2'][3], 4.0)
+
+
+    def test_numeric_lists(self):
+        n = Node()
+        n["list_0"].set((1, 2, 3, 4))
+        n["list_1"].set((1.0, 2.0, 3.0, 4.0))
+        n["list_2"].set((1, 2, 3, 4.0))
+        print(n)
+        self.assertEqual(n['list_0'][0], 1)
+        self.assertEqual(n['list_0'][1], 2)
+        self.assertEqual(n['list_0'][2], 3)
+        self.assertEqual(n['list_0'][3], 4)
+        
+        self.assertEqual(n['list_1'][0], 1.0)
+        self.assertEqual(n['list_1'][1], 2.0)
+        self.assertEqual(n['list_1'][2], 3.0)
+        self.assertEqual(n['list_1'][3], 4.0)
+        
+        self.assertEqual(n['list_2'][0], 1.0)
+        self.assertEqual(n['list_2'][1], 2.0)
+        self.assertEqual(n['list_2'][2], 3.0)
+        self.assertEqual(n['list_2'][3], 4.0)
+
+    def test_general_tuples(self):
+        n = Node()
+        n.set((1, "here"))
+        print(n)
+        self.assertEqual(n[0], 1.0)
+        self.assertEqual(n[1], "here")
+
+    def test_general_lists(self):
+        n = Node()
+        n.set([1, "there"])
+        print(n)
+        self.assertEqual(n[0], 1.0)
+        self.assertEqual(n[1], "there")
+        
 
 if __name__ == '__main__':
     unittest.main()
