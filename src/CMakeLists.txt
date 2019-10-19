@@ -116,6 +116,11 @@ include(cmake/SetupFortran.cmake)
 include(cmake/BasicTypeChecks.cmake)
 
 ################################
+# Setup project wide includes
+################################
+include(cmake/SetupIncludes.cmake)
+
+################################
 # Setup 3rd Party Libs
 ################################
 include(cmake/Setup3rdParty.cmake)
@@ -124,11 +129,6 @@ include(cmake/Setup3rdParty.cmake)
 # Setup tests helpers
 ################################
 include(cmake/SetupTests.cmake)
-
-################################
-# Setup project wide includes
-################################
-include(cmake/SetupIncludes.cmake)
 
 ################################
 # Add our libs
