@@ -63,8 +63,10 @@ include_directories(${PROJECT_SOURCE_DIR}/libs/blueprint
                     ${PROJECT_BINARY_DIR}/libs/blueprint)
 
 
-
-if(PYTHON_FOUND)
+# Note: we use ENABLE_PYTHON instead of PYTHON_FOUND so this file 
+# (SetupIncludes.cmake) can establish these paths before TPLs (Setup3rdParty.cmake)
+# are setup. This shift solves a corner case constraining a conduit user.
+if(ENABLE_PYTHON)
     include_directories(${PROJECT_SOURCE_DIR}/libs/conduit/python
                         ${PROJECT_BINARY_DIR}/libs/conduit/python
                         ${PROJECT_BINARY_DIR}/libs/relay/python
