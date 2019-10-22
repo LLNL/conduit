@@ -60,6 +60,9 @@ class UberenvConduit(Conduit):
     depends_on("adios+mpi~hdf5", when="+adios+mpi")
     depends_on("adios~mpi~hdf5", when="+adios~mpi")
 
+    # build phases used by this package
+    phases = ["configure"]
+
     def cmake_args(self):
         args = super(UberenvConduit, self).cmake_args()
         return []
@@ -70,7 +73,7 @@ class UberenvConduit(Conduit):
         url      = "file://" + dummy_tar_path
         return url
 
-    def install(self, spec, prefix):
+    def configure(self, spec, prefix):
         """
         Create a host config for use in conduit
         """
