@@ -79,3 +79,9 @@ add_compiled_library(NAME conduit_libyaml
 # use cxx linker to avoid msvc static build issues
 set_target_properties(conduit_libyaml PROPERTIES LINKER_LANGUAGE CXX)
 
+if(WIN32)
+    blt_add_target_definitions(TO conduit_libyaml
+                               SCOPE PRIVATE
+                               TARGET_DEFINITIONS CONDUIT_PLATFORM_WINDOWS)
+endif()
+
