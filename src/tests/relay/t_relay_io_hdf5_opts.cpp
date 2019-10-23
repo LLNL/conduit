@@ -76,7 +76,7 @@ rand_float64()
 int
 rand_size(int smin, int smax)
 {
-    return smin + rand_float64() * (smax - smin + 1);
+    return (int)(smin + rand_float64() * (smax - smin + 1));
 }
 
 //-----------------------------------------------------------------------------

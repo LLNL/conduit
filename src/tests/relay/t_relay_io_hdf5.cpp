@@ -1120,8 +1120,8 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
 
     hid_t   h5_dtype_id = H5Tcopy(H5T_C_S1);
     // set size
-    size_t num_eles = 22;
-    H5Tset_size(h5_dtype_id,num_eles);
+    hsize_t num_eles = 22;
+    H5Tset_size(h5_dtype_id, (size_t)num_eles);
     H5Tset_strpad(h5_dtype_id, H5T_STR_NULLTERM);
     hid_t   h5_dspace_id = H5Screate(H5S_SCALAR);
 
@@ -1183,7 +1183,7 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
 
     h5_dtype_id = H5Tcopy(H5T_C_S1);
     num_eles = 30;
-    H5Tset_size(h5_dtype_id, num_eles);
+    H5Tset_size(h5_dtype_id, (size_t)num_eles);
     H5Tset_strpad(h5_dtype_id, H5T_STR_SPACEPAD);
     h5_dspace_id = H5Screate(H5S_SCALAR);
 
@@ -1228,7 +1228,7 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
 
     h5_dtype_id = H5Tcopy(H5T_C_S1);
     num_eles = 30;
-    H5Tset_size(h5_dtype_id, num_eles);
+    H5Tset_size(h5_dtype_id, (size_t)num_eles);
     H5Tset_strpad(h5_dtype_id, H5T_STR_NULLPAD);
     h5_dspace_id = H5Screate(H5S_SCALAR);
 
