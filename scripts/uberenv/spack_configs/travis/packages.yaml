@@ -42,3 +42,8 @@ packages:
       openssl: /usr
   conduit:
     version: [master]
+   # python 2 constraints
+   py-sphinx:
+     version: [1.8.4]
+   py-numpy:
+     version: [1.16.5]
