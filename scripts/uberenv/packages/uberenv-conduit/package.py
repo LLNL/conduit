@@ -77,7 +77,7 @@ class UberenvConduit(Conduit):
         """
         Create a host config for use in conduit
         """
-        print "UberenvConduit.install"
+        print("UberenvConduit.configure")
         with working_dir('spack-build', create=True):
             host_cfg_fname = self.create_host_config(spec, prefix)
             # place a copy in the spack install dir for the uberenv-conduit package 
