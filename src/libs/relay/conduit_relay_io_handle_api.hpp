@@ -60,7 +60,7 @@
 /// Contract: Changes to backing (file on disk, etc) aren't guaranteed to 
 //  be reflected until a call to close
 //-----------------------------------------------------------------------------
-class CONDUIT_API IOHandle
+class CONDUIT_RELAY_API IOHandle
 {
 
 public:
