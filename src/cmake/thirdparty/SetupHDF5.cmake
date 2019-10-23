@@ -260,7 +260,17 @@ message(STATUS "HDF5 is parallel  ${HDF5_IS_PARALLEL}")
 message(STATUS "HDF5 Thirdparty Include Flags: ${hdf5_tpl_inc_flags}")
 message(STATUS "HDF5 Thirdparty Link Flags: ${hdf5_tpl_lnk_flags}")
 
-
-blt_register_library(NAME hdf5
-                     INCLUDES ${HDF5_INCLUDE_DIRS}
-                     LIBRARIES ${HDF5_LIBRARIES} )
+# if newer style hdf5 imported targets exist, use those on windows
+if(WIN32 AND TARGET hdf5::hdf5-shared)
+    if(BUILD_SHARED_LIBS)
+        blt_register_library(NAME hdf5
+                             LIBRARIES hdf5::hdf5-shared)
+    else()
+        blt_register_library(NAME hdf5
+                             LIBRARIES hdf5::hdf5-static)
+    endif()
+else()
+    blt_register_library(NAME hdf5
+                         INCLUDES ${HDF5_INCLUDE_DIRS}
+                         LIBRARIES ${HDF5_LIBRARIES} )
+endif()
