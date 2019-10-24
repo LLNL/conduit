@@ -112,7 +112,7 @@ config:
   # of Spack.  For filesystems that don't support locking, you should set
   # this to false and run one Spack at a time, but otherwise we recommend
   # enabling locks.
-  locks: true
+  locks: false
 
 
   # The maximum number of jobs to use when running `make` in parallel,
