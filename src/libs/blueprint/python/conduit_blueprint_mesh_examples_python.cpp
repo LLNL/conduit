@@ -175,6 +175,30 @@ PyInt_AsLong(PyObject *o)
 //---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::examples::braid
 //---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_braid_doc_str =
+"braid(mesh_type, nx, ny, nz, dest)\n"
+"\n"
+"Creates a braid mesh blueprint example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#braid\n"
+"\n"
+"Arguments:\n"
+" mesh_type: string description of the type of mesh to generate\n"
+"  valid mesh_type values:\n"
+"    \"uniform\" 2d or 3d uniform grid (implicit coords, implicit topology)\n"
+"    \"rectilinear\" 2d or 3d rectilinear grid (implicit coords, implicit topology)\n"
+"    \"structured\" 2d or 3d structured grid (explicit coords, implicit topology)\n"
+"    \"point\" 2d or 3d unstructured mesh of point elements (explicit coords, explicit topology)\n"
+"    \"lines\" 2d or 3d unstructured mesh of line elements (explicit coords, explicit topology)\n"
+"    \"tris\" 2d unstructured mesh of triangle elements (explicit coords, explicit topology)\n"
+"    \"quads\" 2d unstructured mesh of quadrilateral elements (explicit coords, explicit topology)\n"
+"    \"tets\" 3d unstructured mesh of tetrahedral elements (explicit coords, explicit topology)\n"
+"    \"hexs\"  3d unstructured mesh of hexahedral elements (explicit coords, explicit topology)\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mesh_examples_braid(PyObject *, //self
                                 PyObject *args,
@@ -227,9 +251,29 @@ PyBlueprint_mesh_examples_braid(PyObject *, //self
     Py_RETURN_NONE;
 }
 
+
+
+
 //---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::examples::julia
 //---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_julia_doc_str =
+"julia(nx, ny, x_min, x_max, y_min, y_max, c_re, c_im, dest)\n"
+"\n"
+"Creates a julia set mesh blueprint example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#julia\n"
+"\n"
+"Arguments:\n"
+" nx, ny: x and y grid dimensions\n"
+" x_min, x_max: x extents\n"
+" y_min, y_max: y extents\n"
+" c_re, c_im: real and imaginary components of c\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mesh_examples_julia(PyObject *, //self
                                 PyObject *args,
@@ -296,6 +340,20 @@ PyBlueprint_mesh_examples_julia(PyObject *, //self
 //---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::examples::spiral
 //---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_spiral_doc_str =
+"spiral(ndoms, dest)\n"
+"\n"
+"Creates a multi-domain mesh blueprint spiral example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#spiral\n"
+"\n"
+"Arguments:\n"
+" ndoms: number of domains to generate\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mesh_examples_spiral(PyObject *, //self
                                  PyObject *args,
@@ -348,17 +406,17 @@ static PyMethodDef blueprint_mesh_examples_python_funcs[] =
     {"braid",
      (PyCFunction)PyBlueprint_mesh_examples_braid,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_examples_braid_doc_str},
     //-----------------------------------------------------------------------//
     {"julia",
      (PyCFunction)PyBlueprint_mesh_examples_julia,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_examples_julia_doc_str},
     //-----------------------------------------------------------------------//
     {"spiral",
      (PyCFunction)PyBlueprint_mesh_examples_spiral,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_examples_spiral_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//
