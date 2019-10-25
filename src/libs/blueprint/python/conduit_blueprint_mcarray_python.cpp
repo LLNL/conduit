@@ -173,8 +173,21 @@ PyInt_AsLong(PyObject *o)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-// conduit::blueprint::mesh::verify
+// conduit::blueprint::mcarray::verify
 //---------------------------------------------------------------------------//
+
+// doc str
+const char *PyBlueprint_mcarray_verify_doc_str =
+"verify(node, info, protocol)\n"
+"\n"
+"Returns True if passed node conforms to the mcarray blueprint.\n"
+"Populates info node with verification details.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n"
+"  info: node to hold verify info (conduit.Node instance)\n"
+"  protocol: optional string with sub-protocol name\n";
+// python func
 static PyObject * 
 PyBlueprint_mcarray_verify(PyObject *, //self
                            PyObject *args,
@@ -243,6 +256,18 @@ PyBlueprint_mcarray_verify(PyObject *, //self
 //-----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
+// doc str
+const char *PyBlueprint_mcarray_is_interleaved_doc_str =
+"is_interleaved(node)\n"
+"\n"
+"Assumes mcarray::verify() is True\n"
+"\n"
+"Returns True if passed node is interleaved in memory.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mcarray_is_interleaved(PyObject *, //self
                                    PyObject *args,
@@ -279,6 +304,20 @@ PyBlueprint_mcarray_is_interleaved(PyObject *, //self
 }
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// doc str
+const char *PyBlueprint_mcarray_to_contiguous_doc_str =
+"to_contiguous(node, dest)\n"
+"\n"
+"Assumes mcarray::verify() is True\n"
+"\n"
+"Converts any mcarray to a contiguous memory layout in output node dest.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n"
+"  dest: output node (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mcarray_to_contiguous(PyObject *, //self
                                   PyObject *args,
@@ -329,6 +368,19 @@ PyBlueprint_mcarray_to_contiguous(PyObject *, //self
 
 
 //----------------------------------------------------------------------------
+// doc str
+const char *PyBlueprint_mcarray_to_interleaved_doc_str =
+"to_interleaved(node, dest)\n"
+"\n"
+"Assumes mcarray::verify() is True\n"
+"\n"
+"Converts any mcarray to an interleaved memory layout in output node dest.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n"
+"  dest: output node (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mcarray_to_interleaved(PyObject *, //self
                                    PyObject *args,
@@ -384,19 +436,19 @@ static PyMethodDef blueprint_mcarray_python_funcs[] =
     {"verify",
      (PyCFunction)PyBlueprint_mcarray_verify,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_verify_doc_str},
     {"is_interleaved",
      (PyCFunction)PyBlueprint_mcarray_is_interleaved,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_is_interleaved_doc_str},
     {"to_interleaved",
      (PyCFunction)PyBlueprint_mcarray_to_interleaved,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_to_interleaved_doc_str},
     {"to_contiguous",
      (PyCFunction)PyBlueprint_mcarray_to_contiguous,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_to_contiguous_doc_str},
 
     //-----------------------------------------------------------------------//
     // end methods table
