@@ -54,6 +54,13 @@
 #define IS_PY3K
 #endif
 
+// use  proper strdup
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
@@ -103,7 +110,7 @@ PyString_AsString(PyObject *py_obj)
                                                           "strict"); // Owned reference
         if(temp_bytes != NULL)
         {
-            res = strdup(PyBytes_AS_STRING(temp_bytes));
+            res = _conduit_strdup(PyBytes_AS_STRING(temp_bytes));
             Py_DECREF(temp_bytes);
         }
         else
@@ -113,7 +120,7 @@ PyString_AsString(PyObject *py_obj)
     }
     else if(PyBytes_Check(py_obj))
     {
-        res = strdup(PyBytes_AS_STRING(py_obj));
+        res = _conduit_strdup(PyBytes_AS_STRING(py_obj));
     }
     else
     {
@@ -166,8 +173,26 @@ PyInt_AsLong(PyObject *o)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-// conduit::blueprint::mesh::examples::braid
+// conduit::blueprint::mcarray::examples::xyz
 //---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mcarray_examples_xyz_doc_str =
+"xyz(mcarray_type, npts, dest)\n"
+"\n"
+"Creates an xyz mcarray blueprint example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mcarray.html#examples\n"
+"\n"
+"Arguments:\n"
+" mcarray_type: string description of the type of mcarray to generate\n"
+"  valid mcarray_type values:\n"
+"    \"interleaved\"\n"
+"    \"separate\"\n"
+"    \"contiguous\"\n"
+"    \"interleaved_mixed\"\n"
+" dest: Output node (conduit.Node instance)\n";
+// python func
 static PyObject * 
 PyBlueprint_mcarray_examples_xyz(PyObject *, //self
                                  PyObject *args,
@@ -220,7 +245,7 @@ static PyMethodDef blueprint_mcarray_examples_python_funcs[] =
     {"xyz",
      (PyCFunction)PyBlueprint_mcarray_examples_xyz,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_examples_xyz_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//

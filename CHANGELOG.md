@@ -7,6 +7,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased 
 
+## [0.5.0] - Released 2019-10-25
+
 ### Added
 
 #### General 
@@ -22,6 +24,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
 - Added explicit topological data generation functions for points, lines, and faces
 - Added derived topology generation functions for element centroids, sides, and corners
+- Added the basic example function to the conduit.mesh.blueprint.examples module
 
 #### Relay
 - Added optional ZFP support to relay, that enables wrapping and unwraping zfp arrays into conduit Nodes. 
@@ -30,6 +33,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 #### General 
+- Conduit's automatic build process (uberenv + spack) now defaults to using Python 3
 - Improved CMake export logic to make it easier to find and use Conduit install in a CMake-based build system. (See using-with-cmake example for new recipe)
 
 #### Relay
@@ -46,6 +50,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 
 - Fixed crash with mpi broadcast_using_schema() when receiving tasks pass a non empty Node.
+- Fixed a few Windows API export issues for relay io
 
 ## [0.4.0] - Released 2019-03-01
 
@@ -281,7 +286,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/llnl/conduit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/llnl/conduit/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/llnl/conduit/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/llnl/conduit/compare/v0.2.1...v0.3.0

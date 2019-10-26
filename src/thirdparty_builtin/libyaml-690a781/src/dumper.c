@@ -244,6 +244,13 @@ yaml_emitter_anchor_node(yaml_emitter_t *emitter, int index)
 #define ANCHOR_TEMPLATE         "id%03d"
 #define ANCHOR_TEMPLATE_LENGTH  16
 
+
+/*
+ * -- 2019-10-22 --
+ * -- Conduit Change --
+ * -- Use snprint of sprintf_s --
+ */
+
 static yaml_char_t *
 yaml_emitter_generate_anchor(SHIM(yaml_emitter_t *emitter), int anchor_id)
 {
@@ -251,7 +258,18 @@ yaml_emitter_generate_anchor(SHIM(yaml_emitter_t *emitter), int anchor_id)
 
     if (!anchor) return NULL;
 
-    sprintf((char *)anchor, ANCHOR_TEMPLATE, anchor_id);
+    /* sprintf((char *)anchor, ANCHOR_TEMPLATE, anchor_id); */
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    sprintf_s((char *)anchor,
+              ANCHOR_TEMPLATE_LENGTH,
+              ANCHOR_TEMPLATE,
+              anchor_id);
+#else
+    snprintf((char *)anchor,
+             ANCHOR_TEMPLATE_LENGTH,
+             ANCHOR_TEMPLATE,
+             anchor_id);
+#endif
 
     return anchor;
 }

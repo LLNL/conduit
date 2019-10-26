@@ -54,6 +54,13 @@
 #define IS_PY3K
 #endif
 
+// use  proper strdup
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
@@ -100,7 +107,7 @@ PyString_AsString(PyObject *py_obj)
                                                           "strict"); // Owned reference
         if(temp_bytes != NULL)
         {
-            res = strdup(PyBytes_AS_STRING(temp_bytes));
+            res = _conduit_strdup(PyBytes_AS_STRING(temp_bytes));
             Py_DECREF(temp_bytes);
         }
         else
@@ -110,7 +117,7 @@ PyString_AsString(PyObject *py_obj)
     }
     else if(PyBytes_Check(py_obj))
     {
-        res = strdup(PyBytes_AS_STRING(py_obj));
+        res = _conduit_strdup(PyBytes_AS_STRING(py_obj));
     }
     else
     {
@@ -167,6 +174,13 @@ PyInt_AsLong(PyObject *o)
 //---------------------------------------------------------------------------//
 // conduit::blueprint::about
 //---------------------------------------------------------------------------//
+// doc str
+const char *PyBlueprint_about_doc_str =
+"about()\n"
+"\n"
+"Returns node with details about as built blueprint features.\n";
+
+// python func
 static PyObject *
 PyBlueprint_about()
 {
@@ -178,8 +192,21 @@ PyBlueprint_about()
 }
 
 //---------------------------------------------------------------------------//
-// conduit::blueprint::mesh::verify
+// conduit::blueprint::verify
 //---------------------------------------------------------------------------//
+// doc str
+const char *PyBlueprint_mesh_verify_doc_str =
+"verify(node, info, protocol)\n"
+"\n"
+"Returns True if passed node conforms to a blueprint protocol.\n"
+"Populates info node with verification details\n"
+"\n"
+"Arguments:\n"
+"  protocol: input string with protocol name\n"
+"  node: input node (conduit.Node instance)\n"
+"  info: node to hold verify info (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_verify(PyObject *, //self
                    PyObject *args,
@@ -243,11 +270,11 @@ static PyMethodDef blueprint_python_funcs[] =
     {"about",
      (PyCFunction)PyBlueprint_about,
       METH_NOARGS,
-      NULL},
+      PyBlueprint_about_doc_str},
     {"verify",
      (PyCFunction)PyBlueprint_verify,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_verify_doc_str},
     //-----------------------------------------------------------------------//
     // end realy methods table
     //-----------------------------------------------------------------------//

@@ -1455,8 +1455,10 @@ write_conduit_object_to_hdf5_group(const Node &node,
 
                 // set hints for meta data about link names
                 h5_status = H5Pset_est_link_info(h5_gc_plist,
-                                                 num_children, // number of children
-                                                 chld_names_avg_size); // est name size
+                                                 // number of children
+                                                 (unsigned int)num_children,
+                                                 // est name size
+                                                 (unsigned int)chld_names_avg_size);
 
                 CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
                                                                 hdf5_group_id,
@@ -2119,9 +2121,9 @@ create_hdf5_file_access_plist()
 
     if(major_num == 1 && minor_num == 8)
     {
-        herr_t h5_status = H5Pset_libver_bounds(h5_fa_props,
-                                                H5F_LIBVER_LATEST,
-                                                H5F_LIBVER_LATEST);
+        h5_status = H5Pset_libver_bounds(h5_fa_props,
+                                         H5F_LIBVER_LATEST,
+                                         H5F_LIBVER_LATEST);
 
         CONDUIT_CHECK_HDF5_ERROR(h5_status,
                                  "Failed to set libver options for "

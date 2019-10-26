@@ -1,0 +1,66 @@
+diff --git a/src/thirdparty_builtin/libyaml-690a781/src/api.c b/src/thirdparty_builtin/libyaml-690a781/src/api.c
+index e793b08..cc65e38 100644
+--- a/src/thirdparty_builtin/libyaml-690a781/src/api.c
++++ b/src/thirdparty_builtin/libyaml-690a781/src/api.c
+@@ -57,13 +57,23 @@ yaml_free(void *ptr)
+  * Duplicate a string.
+  */
+ 
++/*
++ * -- 2019-10-22 --
++ * -- Conduit Change for Windows --
++ * -- Use _strdup on Windows --
++ */
++
+ YAML_DECLARE(yaml_char_t *)
+ yaml_strdup(const yaml_char_t *str)
+ {
+     if (!str)
+         return NULL;
+ 
++#ifdef CONDUIT_PLATFORM_WINDOWS
++    return (yaml_char_t *)_strdup((char *)str);
++#else
+     return (yaml_char_t *)strdup((char *)str);
++#endif
+ }
+ 
+ /*
+diff --git a/src/thirdparty_builtin/libyaml-690a781/src/dumper.c b/src/thirdparty_builtin/libyaml-690a781/src/dumper.c
+index 1fe940b..605552c 100644
+--- a/src/thirdparty_builtin/libyaml-690a781/src/dumper.c
++++ b/src/thirdparty_builtin/libyaml-690a781/src/dumper.c
+@@ -244,6 +244,13 @@ yaml_emitter_anchor_node(yaml_emitter_t *emitter, int index)
+ #define ANCHOR_TEMPLATE         "id%03d"
+ #define ANCHOR_TEMPLATE_LENGTH  16
+ 
++
++/*
++ * -- 2019-10-22 --
++ * -- Conduit Change --
++ * -- Use snprint of sprintf_s --
++ */
++
+ static yaml_char_t *
+ yaml_emitter_generate_anchor(SHIM(yaml_emitter_t *emitter), int anchor_id)
+ {
+@@ -251,7 +258,18 @@ yaml_emitter_generate_anchor(SHIM(yaml_emitter_t *emitter), int anchor_id)
+ 
+     if (!anchor) return NULL;
+ 
+-    sprintf((char *)anchor, ANCHOR_TEMPLATE, anchor_id);
++    /* sprintf((char *)anchor, ANCHOR_TEMPLATE, anchor_id); */
++#ifdef CONDUIT_PLATFORM_WINDOWS
++    sprintf_s((char *)anchor,
++              ANCHOR_TEMPLATE_LENGTH,
++              ANCHOR_TEMPLATE,
++              anchor_id);
++#else
++    snprintf((char *)anchor,
++             ANCHOR_TEMPLATE_LENGTH,
++             ANCHOR_TEMPLATE,
++             anchor_id);
++#endif
+ 
+     return anchor;
+ }
