@@ -173,6 +173,85 @@ PyInt_AsLong(PyObject *o)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::basic
+//---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_basic_doc_str =
+"braid(mesh_type, nx, ny, nz, dest)\n"
+"\n"
+"Creates a basic mesh blueprint example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#basic\n"
+"\n"
+"Arguments:\n"
+" mesh_type: string description of the type of mesh to generate\n"
+"  valid mesh_type values:\n"
+"    \"uniform\"\n"
+"    \"rectilinear\"\n"
+"    \"structured\"\n"
+"    \"tris\"\n"
+"    \"quads\"\n"
+"    \"polygons\"\n"
+"    \"tets\"\n"
+"    \"hexs\"\n"
+"    \"polyhedra\"\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_basic(PyObject *, //self
+                                PyObject *args,
+                                PyObject *kwargs)
+{
+    const char *mesh_type = NULL;
+    
+    Py_ssize_t nx = 0;
+    Py_ssize_t ny = 0;
+    Py_ssize_t nz = 0;
+    
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"mesh_type",
+                                   "nx",
+                                   "ny",
+                                   "nz",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "snnnO",
+                                     const_cast<char**>(kwlist),
+                                     &mesh_type,
+                                     &nx,
+                                     &ny,
+                                     &nz,
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    blueprint::mesh::examples::basic(std::string(mesh_type),
+                                     nx,
+                                     ny,
+                                     nz,
+                                     node);
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::examples::braid
 //---------------------------------------------------------------------------//
 
@@ -187,15 +266,15 @@ const char *PyBlueprint_mesh_examples_braid_doc_str =
 "Arguments:\n"
 " mesh_type: string description of the type of mesh to generate\n"
 "  valid mesh_type values:\n"
-"    \"uniform\" 2d or 3d uniform grid (implicit coords, implicit topology)\n"
-"    \"rectilinear\" 2d or 3d rectilinear grid (implicit coords, implicit topology)\n"
-"    \"structured\" 2d or 3d structured grid (explicit coords, implicit topology)\n"
-"    \"point\" 2d or 3d unstructured mesh of point elements (explicit coords, explicit topology)\n"
-"    \"lines\" 2d or 3d unstructured mesh of line elements (explicit coords, explicit topology)\n"
-"    \"tris\" 2d unstructured mesh of triangle elements (explicit coords, explicit topology)\n"
-"    \"quads\" 2d unstructured mesh of quadrilateral elements (explicit coords, explicit topology)\n"
-"    \"tets\" 3d unstructured mesh of tetrahedral elements (explicit coords, explicit topology)\n"
-"    \"hexs\"  3d unstructured mesh of hexahedral elements (explicit coords, explicit topology)\n"
+"    \"uniform\"\n"
+"    \"rectilinear\"\n"
+"    \"structured\"\n"
+"    \"point\"\n"
+"    \"lines\"\n"
+"    \"tris\"\n"
+"    \"quads\"\n"
+"    \"tets\"\n"
+"    \"hexs\"\n"
 " dest: Mesh output (conduit.Node instance)\n";
 
 // python func
@@ -402,6 +481,11 @@ PyBlueprint_mesh_examples_spiral(PyObject *, //self
 //---------------------------------------------------------------------------//
 static PyMethodDef blueprint_mesh_examples_python_funcs[] =
 {
+    //-----------------------------------------------------------------------//
+    {"basic",
+     (PyCFunction)PyBlueprint_mesh_examples_basic,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_basic_doc_str},
     //-----------------------------------------------------------------------//
     {"braid",
      (PyCFunction)PyBlueprint_mesh_examples_braid,

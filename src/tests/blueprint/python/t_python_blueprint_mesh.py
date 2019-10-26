@@ -58,7 +58,19 @@ import conduit.blueprint.mesh.examples
 from conduit import Node
 
 class Test_Blueprint_Mesh(unittest.TestCase):
-        
+
+    def test_basic_and_verify(self):
+        n = Node()
+        info = Node()
+        self.assertFalse(blueprint.verify("mesh",n,info))
+        self.assertFalse(blueprint.mesh.verify(n,info))
+        blueprint.mesh.examples.basic("hexs",2,2,2,n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        n_idx = Node()
+        blueprint.mesh.generate_index(n,"",1,n_idx)
+        self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
+        self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
+
     def test_braid_and_verify(self):
         n = Node()
         info = Node()
