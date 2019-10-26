@@ -79,6 +79,7 @@ Added
  * Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
  * Added explicit topological data generation functions for points, lines, and faces
  * Added derived topology generation functions for element centroids, sides, and corners
+ * Added the basic example function to the conduit.mesh.blueprint.examples module
 
 * **Relay**
 

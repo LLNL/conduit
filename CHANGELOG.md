@@ -7,7 +7,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased 
 
-## [0.5.0] - Released 2019-10-ZZ
+## [0.5.0] - Released 2019-10-25
 
 ### Added
 
@@ -24,6 +24,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
 - Added explicit topological data generation functions for points, lines, and faces
 - Added derived topology generation functions for element centroids, sides, and corners
+- Added the basic example function to the conduit.mesh.blueprint.examples module
 
 #### Relay
 - Added optional ZFP support to relay, that enables wrapping and unwraping zfp arrays into conduit Nodes. 
