@@ -1,0 +1,55 @@
+##############################################################################
+# Copyright (c) 2016-19, Lawrence Livermore National Security, LLC and Serac
+# project contributors. See the COPYRIGHT file for details.
+##############################################################################
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  BUILD_QUARTZ_ALLOC_NAME: conduit_$CI_COMMIT_SHORT_SHA
+  BUILD_ROOT: $CI_BUILDS_DIR/conduit_$CI_COMMIT_REF_SLUG
+  INSTALL_ROOT: $CI_BUILDS_DIR/spack_uberenv
+  SPACK_UPSTREAM: /usr/workspace/radiuss/spack-chain-parent/opt/spack
+
+before_script:
+  - date
+
+after_script:
+  - date
+
+# There are no tests for now
+stages:
+  - allocate_resources
+  - build
+  - release_resources
+  - clean
+
+# This is not a job, but contains project specific build commands
+# If an allocation exist with the name defined in this pipeline, the job will use it
+.build_toss_3_x86_64_ib_script:
+  variables:
+  script:
+    - export PREFIX="${INSTALL_ROOT}_${SYS_TYPE}_${ID}"
+    - export SCRIPT="python scripts/uberenv/uberenv.py --install --run_tests --spec="${SPEC}" --prefix="${PREFIX}" --upstream="${SPACK_UPSTREAM}""
+    - export JOBID=$(squeue -h --name=${BUILD_QUARTZ_ALLOC_NAME} --format=%A)
+    - set -x; srun $( [[ -n "${JOBID}" ]] && echo "--jobid=${JOBID}" ) -N 1 -n 1 -c 4 ${SCRIPT}; set +x
+
+# Butte uses a very different job allocation system, building on login nodes is recommended
+.build_blueos_3_ppc64le_ib_script:
+  script:
+    - export PREFIX="${INSTALL_ROOT}_${SYS_TYPE}_${ID}"
+    - export SCRIPT="python scripts/uberenv/uberenv.py --install --run_tests --spec="${SPEC}" --prefix="${PREFIX}" --upstream="${SPACK_UPSTREAM}""
+    - set -x; lalloc 1 ${SCRIPT}; set +x
+
+.build_blueos_3_ppc64le_ib_p9_script:
+  extends: .build_blueos_3_ppc64le_ib_script
+
+.clean_toss_3_x86_64_ib_script:
+  script:
+    - rm -rf ${INSTALL_ROOT}_{ID}
+
+# This is where jobs are included
+include:
+  - local: .gitlab/ci/build_quartz.yml
+  - local: .gitlab/ci/build_lassen.yml
+
+
