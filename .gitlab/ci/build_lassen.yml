@@ -1,0 +1,37 @@
+##############################################################################
+# Copyright (c) 2016-19, Lawrence Livermore National Security, LLC and Umpire
+# project contributors. See the COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (MIT)
+##############################################################################
+
+####
+# This is the share configuration of jobs for lassen
+
+.build_lassen:
+  variables:
+  tags:
+    - shell
+    - lassen
+  stage: build
+  extends: .build_blueos_3_ppc64le_ib_p9_script
+  except:
+    refs:
+      - /_lnone/
+    variables:
+      - $CONDUIT_CI_LASSEN == "OFF"
+
+####
+# Here are all lassen build jobs
+
+build_lassen_clang:
+  variables:
+    ID: "clang"
+    SPEC: "%clang@coral~python~fortran"
+  extends: .build_lassen
+
+build_lassen_xl:
+  variables:
+    ID: "xl"
+    SPEC: "%xl@coral~shared~python~fortran"
+  extends: .build_lassen

@@ -72,8 +72,8 @@ option(ENABLE_FORTRAN     "Build Fortran Support"       OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 
-# Add another option that provides extra 
-# control over conduit tests for cases where 
+# Add another option that provides extra
+# control over conduit tests for cases where
 # conduit is brought in as a submodule
 option(CONDUIT_ENABLE_TESTS "Build conduit tests" ON)
 
@@ -91,7 +91,7 @@ set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 ################################
 # Init BLT
 ################################
-# This also includes 
+# This also includes
 # Conduit's BLT defaults
 include(cmake/SetupBLT.cmake)
 
