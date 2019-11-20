@@ -2910,6 +2910,8 @@ adjset_uniform(Node &res)
                 windows_node1[window_name]["origin/j"] = 20;
                 windows_node1[window_name]["dims/i"] = 21;
                 windows_node1[window_name]["dims/j"] = 1;
+                windows_node1[window_name]["ratio/i"] = 1;
+                windows_node1[window_name]["ratio/j"] = 1;
             }
             Node &windows_node2 = adjset_groups["group_000002/windows"];
             for(index_t w = 0; w <= 2; w += 2)
@@ -2921,6 +2923,8 @@ adjset_uniform(Node &res)
                 windows_node2[window_name]["origin/j"] = 20;
                 windows_node2[window_name]["dims/i"] = 21;
                 windows_node2[window_name]["dims/j"] = 1;
+                windows_node2[window_name]["ratio/i"] = 1;
+                windows_node2[window_name]["ratio/j"] = 1;
             }
             Node &windows_node3 = adjset_groups["group_000003/windows"];
             for(index_t w = 0; w <= 3; w += 3)
@@ -2932,6 +2936,8 @@ adjset_uniform(Node &res)
                 windows_node3[window_name]["origin/j"] = 20;
                 windows_node3[window_name]["dims/i"] = 1;
                 windows_node3[window_name]["dims/j"] = 1;
+                windows_node3[window_name]["ratio/i"] = 1;
+                windows_node3[window_name]["ratio/j"] = 1;
             }
         }
         else if (i == 1)
@@ -2955,6 +2961,8 @@ adjset_uniform(Node &res)
                 windows_node0[window_name]["origin/j"] = 20;
                 windows_node0[window_name]["dims/i"] = 21;
                 windows_node0[window_name]["dims/j"] = 1;
+                windows_node0[window_name]["ratio/i"] = 1;
+                windows_node0[window_name]["ratio/j"] = 1;
             }
             Node &windows_node2 = adjset_groups["group_000002/windows"];
             for(index_t w = 1; w <= 2; w++)
@@ -2966,6 +2974,8 @@ adjset_uniform(Node &res)
                 windows_node2[window_name]["origin/j"] = 20;
                 windows_node2[window_name]["dims/i"] = 1;
                 windows_node2[window_name]["dims/j"] = 1;
+                windows_node2[window_name]["ratio/i"] = 1;
+                windows_node2[window_name]["ratio/j"] = 1;
             }
             Node &windows_node3 = adjset_groups["group_000003/windows"];
             for(index_t w = 1; w <= 3; w += 2)
@@ -2977,6 +2987,8 @@ adjset_uniform(Node &res)
                 windows_node3[window_name]["origin/j"] = 20;
                 windows_node3[window_name]["dims/i"] = 1;
                 windows_node3[window_name]["dims/j"] = 21;
+                windows_node3[window_name]["ratio/i"] = 1;
+                windows_node3[window_name]["ratio/j"] = 1;
             }
         }
         else if (i == 2)
@@ -3006,6 +3018,8 @@ adjset_uniform(Node &res)
                 windows_node0[window_name]["origin/j"] = 0;
                 windows_node0[window_name]["dims/i"] = 1;
                 windows_node0[window_name]["dims/j"] = 21;
+                windows_node0[window_name]["ratio/i"] = 1;
+                windows_node0[window_name]["ratio/j"] = 1;
             }
             Node &windows_node1 = adjset_groups["group_000001/windows"];
             for(index_t w = 1; w <= 2; w++)
@@ -3017,6 +3031,8 @@ adjset_uniform(Node &res)
                 windows_node1[window_name]["origin/j"] = 20;
                 windows_node1[window_name]["dims/i"] = 1;
                 windows_node1[window_name]["dims/j"] = 1;
+                windows_node1[window_name]["ratio/i"] = 1;
+                windows_node1[window_name]["ratio/j"] = 1;
             }
             Node &windows_node3 = adjset_groups["group_000003/windows"];
             for(index_t w = 2; w <= 3; w++)
@@ -3028,6 +3044,8 @@ adjset_uniform(Node &res)
                 windows_node3[window_name]["origin/j"] = 20;
                 windows_node3[window_name]["dims/i"] = 21;
                 windows_node3[window_name]["dims/j"] = 1;
+                windows_node3[window_name]["ratio/i"] = 1;
+                windows_node3[window_name]["ratio/j"] = 1;
             }
             Node &windows_node4 = adjset_groups["group_000004/windows"];
             for(index_t w = 2; w <= 4; w += 2)
@@ -3039,6 +3057,8 @@ adjset_uniform(Node &res)
                 windows_node4[window_name]["origin/j"] = 0;
                 windows_node4[window_name]["dims/i"] = 1;
                 windows_node4[window_name]["dims/j"] = 21;
+                windows_node4[window_name]["ratio/i"] = 1;
+                windows_node4[window_name]["ratio/j"] = 1;
             }
             Node &windows_node5 = adjset_groups["group_000005/windows"];
             for(index_t w = 2; w <= 5; w += 3)
@@ -3050,6 +3070,8 @@ adjset_uniform(Node &res)
                 windows_node5[window_name]["origin/j"] = 20;
                 windows_node5[window_name]["dims/i"] = 1;
                 windows_node5[window_name]["dims/j"] = 1;
+                windows_node5[window_name]["ratio/i"] = 1;
+                windows_node5[window_name]["ratio/j"] = 1;
             }
         }
         else if (i == 3)
@@ -3079,6 +3101,8 @@ adjset_uniform(Node &res)
                 windows_node0[window_name]["origin/j"] = 20;
                 windows_node0[window_name]["dims/i"] = 1;
                 windows_node0[window_name]["dims/j"] = 1;
+                windows_node0[window_name]["ratio/i"] = 1;
+                windows_node0[window_name]["ratio/j"] = 1;
             }
             Node &windows_node1 = adjset_groups["group_000001/windows"];
             for(index_t w = 1; w <= 3; w += 2)
@@ -3090,6 +3114,8 @@ adjset_uniform(Node &res)
                 windows_node1[window_name]["origin/j"] = 20;
                 windows_node1[window_name]["dims/i"] = 1;
                 windows_node1[window_name]["dims/j"] = 21;
+                windows_node1[window_name]["ratio/i"] = 1;
+                windows_node1[window_name]["ratio/j"] = 1;
             }
             Node &windows_node2 = adjset_groups["group_000002/windows"];
             for(index_t w = 2; w <= 3; w++)
@@ -3101,6 +3127,8 @@ adjset_uniform(Node &res)
                 windows_node2[window_name]["origin/j"] = 20;
                 windows_node2[window_name]["dims/i"] = 21;
                 windows_node2[window_name]["dims/j"] = 1;
+                windows_node2[window_name]["ratio/i"] = 1;
+                windows_node2[window_name]["ratio/j"] = 1;
             }
             Node &windows_node4 = adjset_groups["group_000004/windows"];
             for(index_t w = 3; w <= 4; w++)
@@ -3112,6 +3140,8 @@ adjset_uniform(Node &res)
                 windows_node4[window_name]["origin/j"] = 20;
                 windows_node4[window_name]["dims/i"] = 1;
                 windows_node4[window_name]["dims/j"] = 1;
+                windows_node4[window_name]["ratio/i"] = 1;
+                windows_node4[window_name]["ratio/j"] = 1;
             }
             Node &windows_node5 = adjset_groups["group_000005/windows"];
             for(index_t w = 3; w <= 4; w += 2)
@@ -3123,6 +3153,8 @@ adjset_uniform(Node &res)
                 windows_node5[window_name]["origin/j"] = 20;
                 windows_node5[window_name]["dims/i"] = 1;
                 windows_node5[window_name]["dims/j"] = 21;
+                windows_node5[window_name]["ratio/i"] = 1;
+                windows_node5[window_name]["ratio/j"] = 1;
             }
         }
         else if (i == 4)
@@ -3152,6 +3184,8 @@ adjset_uniform(Node &res)
                 windows_node2[window_name]["origin/j"] = 0;
                 windows_node2[window_name]["dims/i"] = 1;
                 windows_node2[window_name]["dims/j"] = 21;
+                windows_node2[window_name]["ratio/i"] = 1;
+                windows_node2[window_name]["ratio/j"] = 1;
             }
             Node &windows_node3 = adjset_groups["group_000003/windows"];
             for(index_t w = 3; w <= 4; w++)
@@ -3163,6 +3197,8 @@ adjset_uniform(Node &res)
                 windows_node3[window_name]["origin/j"] = 20;
                 windows_node3[window_name]["dims/i"] = 1;
                 windows_node3[window_name]["dims/j"] = 1;
+                windows_node3[window_name]["ratio/i"] = 1;
+                windows_node3[window_name]["ratio/j"] = 1;
             }
             Node &windows_node5 = adjset_groups["group_000005/windows"];
             for(index_t w = 4; w <= 5; w++)
@@ -3174,6 +3210,8 @@ adjset_uniform(Node &res)
                 windows_node5[window_name]["origin/j"] = 20;
                 windows_node5[window_name]["dims/i"] = 21;
                 windows_node5[window_name]["dims/j"] = 1;
+                windows_node5[window_name]["ratio/i"] = 1;
+                windows_node5[window_name]["ratio/j"] = 1;
             }
             Node &windows_node6 = adjset_groups["group_000006/windows"];
             for(index_t w = 4; w <= 6; w += 2)
@@ -3185,6 +3223,8 @@ adjset_uniform(Node &res)
                 windows_node6[window_name]["origin/j"] = 0;
                 windows_node6[window_name]["dims/i"] = 1;
                 windows_node6[window_name]["dims/j"] = 21;
+                windows_node6[window_name]["ratio/i"] = 1;
+                windows_node6[window_name]["ratio/j"] = 1;
             }
             Node &windows_node7 = adjset_groups["group_000007/windows"];
             for(index_t w = 4; w <= 7; w += 3)
@@ -3196,6 +3236,8 @@ adjset_uniform(Node &res)
                 windows_node7[window_name]["origin/j"] = 20;
                 windows_node7[window_name]["dims/i"] = 1;
                 windows_node7[window_name]["dims/j"] = 1;
+                windows_node7[window_name]["ratio/i"] = 1;
+                windows_node7[window_name]["ratio/j"] = 1;
             }
         }
         else if (i == 5)
@@ -3225,6 +3267,8 @@ adjset_uniform(Node &res)
                 windows_node2[window_name]["origin/j"] = 20;
                 windows_node2[window_name]["dims/i"] = 1;
                 windows_node2[window_name]["dims/j"] = 1;
+                windows_node2[window_name]["ratio/i"] = 1;
+                windows_node2[window_name]["ratio/j"] = 1;
             }
             Node &windows_node3 = adjset_groups["group_000003/windows"];
             for(index_t w = 3; w <= 5; w += 2)
@@ -3236,6 +3280,8 @@ adjset_uniform(Node &res)
                 windows_node3[window_name]["origin/j"] = 20;
                 windows_node3[window_name]["dims/i"] = 1;
                 windows_node3[window_name]["dims/j"] = 21;
+                windows_node3[window_name]["ratio/i"] = 1;
+                windows_node3[window_name]["ratio/j"] = 1;
             }
             Node &windows_node4 = adjset_groups["group_000004/windows"];
             for(index_t w = 4; w <= 5; w++)
@@ -3247,6 +3293,8 @@ adjset_uniform(Node &res)
                 windows_node4[window_name]["origin/j"] = 20;
                 windows_node4[window_name]["dims/i"] = 1;
                 windows_node4[window_name]["dims/j"] = 21;
+                windows_node4[window_name]["ratio/i"] = 1;
+                windows_node4[window_name]["ratio/j"] = 1;
             }
             Node &windows_node6 = adjset_groups["group_000006/windows"];
             for(index_t w = 5; w <= 6; w++)
@@ -3258,6 +3306,8 @@ adjset_uniform(Node &res)
                 windows_node6[window_name]["origin/j"] = 20;
                 windows_node6[window_name]["dims/i"] = 1;
                 windows_node6[window_name]["dims/j"] = 1;
+                windows_node6[window_name]["ratio/i"] = 1;
+                windows_node6[window_name]["ratio/j"] = 1;
             }
             Node &windows_node7 = adjset_groups["group_000007/windows"];
             for(index_t w = 5; w <= 7; w++)
@@ -3269,6 +3319,8 @@ adjset_uniform(Node &res)
                 windows_node7[window_name]["origin/j"] = 20;
                 windows_node7[window_name]["dims/i"] = 1;
                 windows_node7[window_name]["dims/j"] = 21;
+                windows_node7[window_name]["ratio/i"] = 1;
+                windows_node7[window_name]["ratio/j"] = 1;
             }
         }
         else if (i == 6)
@@ -3292,6 +3344,8 @@ adjset_uniform(Node &res)
                 windows_node4[window_name]["origin/j"] = 0;
                 windows_node4[window_name]["dims/i"] = 1;
                 windows_node4[window_name]["dims/j"] = 21;
+                windows_node4[window_name]["ratio/i"] = 1;
+                windows_node4[window_name]["ratio/j"] = 1;
             }
             Node &windows_node5 = adjset_groups["group_000005/windows"];
             for(index_t w = 5; w <= 6; w++)
@@ -3303,6 +3357,8 @@ adjset_uniform(Node &res)
                 windows_node5[window_name]["origin/j"] = 20;
                 windows_node5[window_name]["dims/i"] = 1;
                 windows_node5[window_name]["dims/j"] = 1;
+                windows_node5[window_name]["ratio/i"] = 1;
+                windows_node5[window_name]["ratio/j"] = 1;
             }
             Node &windows_node7 = adjset_groups["group_000007/windows"];
             for(index_t w = 6; w <= 7; w++)
@@ -3314,6 +3370,8 @@ adjset_uniform(Node &res)
                 windows_node7[window_name]["origin/j"] = 20;
                 windows_node7[window_name]["dims/i"] = 21;
                 windows_node7[window_name]["dims/j"] = 1;
+                windows_node7[window_name]["ratio/i"] = 1;
+                windows_node7[window_name]["ratio/j"] = 1;
             }
         }
         else if (i == 7)
@@ -3337,6 +3395,8 @@ adjset_uniform(Node &res)
                 windows_node4[window_name]["origin/j"] = 20;
                 windows_node4[window_name]["dims/i"] = 1;
                 windows_node4[window_name]["dims/j"] = 1;
+                windows_node4[window_name]["ratio/i"] = 1;
+                windows_node4[window_name]["ratio/j"] = 1;
             }
             Node &windows_node5 = adjset_groups["group_000005/windows"];
             for(index_t w = 5; w <= 7; w += 2)
@@ -3348,6 +3408,8 @@ adjset_uniform(Node &res)
                 windows_node5[window_name]["origin/j"] = 20;
                 windows_node5[window_name]["dims/i"] = 1;
                 windows_node5[window_name]["dims/j"] = 21;
+                windows_node5[window_name]["ratio/i"] = 1;
+                windows_node5[window_name]["ratio/j"] = 1;
             }
             Node &windows_node6 = adjset_groups["group_000006/windows"];
             for(index_t w = 6; w <= 7; w++)
@@ -3359,6 +3421,8 @@ adjset_uniform(Node &res)
                 windows_node6[window_name]["origin/j"] = 20;
                 windows_node6[window_name]["dims/i"] = 21;
                 windows_node6[window_name]["dims/j"] = 1;
+                windows_node6[window_name]["ratio/i"] = 1;
+                windows_node6[window_name]["ratio/j"] = 1;
             }
         }
     }
