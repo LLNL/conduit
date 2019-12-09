@@ -69,7 +69,24 @@ if(PYTHONINTERP_FOUND)
                         OUTPUT_VARIABLE PYTHON_LIB_DIR
                         ERROR_VARIABLE ERROR_FINDING_LIB_DIR)
         MESSAGE(STATUS "PYTHON_LIB_DIR ${PYTHON_LIB_DIR}")
-        
+
+
+        # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+                                "import sys;import sysconfig;sys.stdout.write(sysconfig.get_config_var('LDSHARED'))"
+                        OUTPUT_VARIABLE PYTHON_LDSHARED_FLAGS
+                        ERROR_VARIABLE ERROR_FINDING_PYTHON_LDSHARED_FLAGS)
+
+        MESSAGE(STATUS "PYTHON_LDSHARED_FLAGS ${PYTHON_LDSHARED_FLAGS}")
+
+        if(PYTHON_LDSHARED_FLAGS MATCHES "-undefined dynamic_lookup")
+             MESSAGE(STATUS "PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG is ON")
+            set(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG ON)
+        else()
+             MESSAGE(STATUS "PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG is OFF")
+            set(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG OFF)
+        endif()
+
         # check for python libs differs for windows python installs
         if(NOT WIN32)
             # use shared python if we are using shared libs
@@ -238,7 +255,7 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
 
     # defer linking with python, let the final python interpreter
     # provide the proper symbols
-    if(NOT WIN32)
+    if(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG)
         set_target_properties(${target_name} PROPERTIES 
                               LINK_FLAGS "-undefined dynamic_lookup")
     endif()
