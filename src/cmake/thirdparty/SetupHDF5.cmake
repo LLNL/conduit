@@ -226,8 +226,18 @@ string(SUBSTRING "${hdf5_tpl_lnk_libs}" 0 ${hdf5_tpl_lnk_libs_end_pos} hdf5_tpl_
 if(${hdf5_tpl_lnk_libs})
     string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
 endif()
+
 # add -l to any libraries that are just their names (like "m" instead of "-lm")
-separate_arguments(_temp_link_libs NATIVE_COMMAND ${hdf5_tpl_lnk_libs})
+# ** Note **
+# The NATIVE_COMMAND arg to separate_arguments() was added in CMake 3.9
+# instead use strategy that allows older versions of CMake:
+#    an if to select WINDOWS_COMMAND or UNIX_COMMAND arg
+if(WIN32)
+    separate_arguments(_temp_link_libs WINDOWS_COMMAND ${hdf5_tpl_lnk_libs})
+else()
+    separate_arguments(_temp_link_libs UNIX_COMMAND ${hdf5_tpl_lnk_libs})
+endif()
+
 set(_fixed_link_libs)
 foreach(lib ${_temp_link_libs})
     if(NOT "${lib}" MATCHES ^[-/])
