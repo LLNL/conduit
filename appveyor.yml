@@ -39,7 +39,15 @@ install:
   #- 7z x hdf5.zip -y
   # setup python via mini conda
   #- ps: Start-Process -FilePath msiexec -ArgumentList /i, "hdf5\HDF5-1.8.18-win64.msi", /quiet -Wait
+  #
+  ####
+  # remove default python paths to avoid crossing with miniconda
+  ####
+  - set PATH=%PATH:C:\Python27;=%
+  - set PATH=%PATH:C:\Python27\Scripts;=%
+  # add built-in mini conda path
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  # check path
   - "echo %PATH%"
   - "echo %PYTHONPATH%"
   - conda update --yes conda
