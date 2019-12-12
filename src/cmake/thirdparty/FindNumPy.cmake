@@ -97,10 +97,6 @@ if(PYTHONINTERP_FOUND)
         ERROR_VARIABLE _NUMPY_ERROR_VALUE
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    message("_NUMPY_SEARCH_SUCCESS = ${_NUMPY_SEARCH_SUCCESS}")
-    message("_NUMPY_VALUES = ${_NUMPY_VALUES}")
-    message("_NUMPY_ERROR_VALUE = ${_NUMPY_ERROR_VALUE}")
-
     if(_NUMPY_SEARCH_SUCCESS MATCHES 0)
         set(NUMPY_FOUND TRUE)
 
@@ -123,6 +119,9 @@ if(PYTHONINTERP_FOUND)
     else()
         if(NumPy_FIND_REQUIRED)
             message(FATAL_ERROR
+                "NumPy import failure:\n${_NUMPY_ERROR_VALUE}")
+        else()
+            message(STATUS
                 "NumPy import failure:\n${_NUMPY_ERROR_VALUE}")
         endif()
         set(NUMPY_FOUND FALSE)

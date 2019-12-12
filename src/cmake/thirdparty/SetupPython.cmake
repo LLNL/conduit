@@ -253,11 +253,20 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
     MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
 
 
+    # macOS and linux
     # defer linking with python, let the final python interpreter
     # provide the proper symbols
+    #
+    # on osx we may need to use the following flag to 
+    # avoid linking errors
     if(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG)
         set_target_properties(${target_name} PROPERTIES 
                               LINK_FLAGS "-undefined dynamic_lookup")
+    endif()
+    
+    # win32, link to python
+    if(WIN32)
+        target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
     endif()
 
     # support installing the python module components to an

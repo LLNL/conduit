@@ -20,10 +20,10 @@ environment:
     MPI_HOME: "C:/Program Files (x86)/Microsoft SDKs/MPI"
   - CMAKE_GENERATOR: "Visual Studio 15 2017"
     CONFIG: Release
-    PYTHON_VERSION: 2.7
+    PYTHON_VERSION: 3.6
     BUILD_SHARED_LIBS: OFF
     ENABLE_PYTHON: OFF
-    MINICONDA: C:\Miniconda
+    MINICONDA: C:\Miniconda36
     ENABLE_MPI: ON
     MPI_HOME: "C:/Program Files (x86)/Microsoft SDKs/MPI"
 
