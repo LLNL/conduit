@@ -268,15 +268,6 @@ class Test_Conduit_Node(unittest.TestCase):
             for i in range(len(ext_data)):
                 self.assertEqual(n.value()[i], ext_data[i])
 
-
-    def test_set_external_node_tree(self):
-        n = Node()
-        n["path/to/value"] = np.array(range(20), dtype=np.float64)
-        print(n)
-        n2 = Node()
-        n2.set_external(n)
-        
-
     def test_diff(self):
         n1 = Node()
         n2 = Node()
