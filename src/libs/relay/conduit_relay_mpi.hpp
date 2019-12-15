@@ -222,6 +222,18 @@ namespace mpi
 /// Async MPI Send Recv
 //-----------------------------------------------------------------------------
 
+    int CONDUIT_RELAY_API isend_using_schema(const Node &node,
+                                int dest,
+                                int tag,
+                                MPI_Comm mpi_comm,
+                                Request *request);
+
+    int CONDUIT_RELAY_API irecv_using_schema(Node &node,
+                                int src,
+                                int tag,
+                                MPI_Comm comm,
+                                Request *request);
+
     int CONDUIT_RELAY_API isend(const Node &node,
                                 int dest,
                                 int tag,
