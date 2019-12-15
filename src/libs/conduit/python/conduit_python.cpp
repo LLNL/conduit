@@ -5873,7 +5873,7 @@ static struct PyModuleDef conduit_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_PYTHON_API PyInit_conduit_python(void)
+CONDUIT_PYTHON_API PyObject * PyInit_conduit_python(void)
 #else
 void CONDUIT_PYTHON_API initconduit_python(void)
 #endif

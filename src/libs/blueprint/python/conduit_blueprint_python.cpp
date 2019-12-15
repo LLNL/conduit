@@ -354,9 +354,9 @@ static struct PyModuleDef blueprint_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_BLUEPRINT_PYTHON_API PyInit_conduit_blueprint_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API PyObject * PyInit_conduit_blueprint_python(void)
 #else
-void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API void initconduit_blueprint_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    
