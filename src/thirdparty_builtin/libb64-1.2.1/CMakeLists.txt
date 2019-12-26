@@ -67,4 +67,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_compiled_library(NAME conduit_b64
                      OBJECT
                      SOURCES ${libb64_sources}
-                     HEADERS ${libb64_headers})
+                     HEADERS ${libb64_headers}
+                     FOLDER thirdparty_builtin)
+

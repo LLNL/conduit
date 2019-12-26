@@ -64,7 +64,9 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
 
 message(STATUS "Adding blueprint lib unit tests")
 foreach(TEST ${BLUEPRINT_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay)
+    add_cpp_test(TEST ${TEST}
+                 DEPENDS_ON conduit conduit_blueprint conduit_relay
+                 FOLDER tests/blueprint)
 endforeach()
 
 ################################
@@ -89,5 +91,7 @@ else()
 endif()
 
 message(STATUS "Adding blueprint lib Zfp unit tests")
-add_cpp_test(TEST t_blueprint_zfp DEPENDS_ON conduit conduit_blueprint)
+add_cpp_test(TEST t_blueprint_zfp
+             DEPENDS_ON conduit conduit_blueprint
+             FOLDER tests/blueprint)
 

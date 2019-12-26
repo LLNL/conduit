@@ -57,20 +57,27 @@ set(RELAY_C_MPI_IO_ADIOS_TESTS t_c_relay_mpi_io_adios)
 ################################
 message(STATUS "Adding conduit relay lib c interface unit tests")
 foreach(TEST ${RELAY_C_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
+    add_cpp_test(TEST ${TEST}
+                 DEPENDS_ON conduit conduit_relay
+                 FOLDER tests/relay/c)
 endforeach()
 
 
 if(ADIOS_FOUND)
     message(STATUS "ADIOS enabled: Adding conduit_relay c interface ADIOS unit tests")
     foreach(TEST ${RELAY_C_IO_ADIOS_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_relay)
+        add_cpp_test(TEST ${TEST}
+                     DEPENDS_ON conduit conduit_relay
+                     FOLDER tests/relay/c)
     endforeach()
 
     if(MPI_FOUND)
         message(STATUS "MPI enabled: Adding conduit_relay_mpi_adios unit tests")
         foreach(TEST ${RELAY_C_MPI_IO_ADIOS_TESTS})
-            add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit conduit_relay_mpi_io) 
+            add_cpp_mpi_test(TEST ${TEST
+                             NUM_MPI_TASKS 2
+                             DEPENDS_ON conduit conduit_relay_mpi_io
+                             FOLDER tests/relay/c)
         endforeach()
     endif()
 else()
