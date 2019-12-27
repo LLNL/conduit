@@ -72,6 +72,17 @@ void mesh_blueprint_save(const Node &data,
                          const std::string &path,
                          const std::string &file_protocol)
 {
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // only run this test if hdf5 is enabled
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("hdf5 is disabled, skipping hdf5 dependent test");
+        return;
+    }
+
     // For simplicity, this code assumes that all ranks have
     // data and that data is NOT multi-domain.
 
@@ -205,6 +216,17 @@ void mesh_blueprint_save(const Node &data,
 //-----------------------------------------------------------------------------
 TEST(blueprint_mpi_relay, basic_use)
 {
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // only run this test if hdf5 is enabled
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("hdf5 is disabled, skipping hdf5 dependent test");
+        return;
+    }
+
     int rank = mpi::rank(MPI_COMM_WORLD);
     int com_size = mpi::size(MPI_COMM_WORLD);
     std::cout<<"Rank "<<rank<<" of "<<com_size<<"\n";
