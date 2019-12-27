@@ -7,6 +7,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased 
 
+### Added
+
+#### General 
+- Added Node::parse() method, which supports common json and yaml parsing use cases without creating a generator instance.
+
+
 ## [0.5.0] - Released 2019-10-25
 
 ### Added
