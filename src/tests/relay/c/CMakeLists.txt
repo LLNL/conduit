@@ -74,7 +74,7 @@ if(ADIOS_FOUND)
     if(MPI_FOUND)
         message(STATUS "MPI enabled: Adding conduit_relay_mpi_adios unit tests")
         foreach(TEST ${RELAY_C_MPI_IO_ADIOS_TESTS})
-            add_cpp_mpi_test(TEST ${TEST
+            add_cpp_mpi_test(TEST ${TEST}
                              NUM_MPI_TASKS 2
                              DEPENDS_ON conduit conduit_relay_mpi_io
                              FOLDER tests/relay/c)
