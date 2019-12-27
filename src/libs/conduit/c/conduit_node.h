@@ -186,7 +186,7 @@ CONDUIT_API int conduit_node_compatible(const conduit_node *cnode,
                                         const conduit_node *cother);
 
 CONDUIT_API void conduit_node_info(const conduit_node *cnode,
-                                conduit_node *cnres);
+                                   conduit_node *cnres);
 //-----------------------------------------------------------------------------
 CONDUIT_API void conduit_node_print(conduit_node *cnode);
 CONDUIT_API void conduit_node_print_detailed(conduit_node *cnode);
@@ -208,7 +208,30 @@ CONDUIT_API void conduit_node_update_compatible(conduit_node *cnode,
 CONDUIT_API void conduit_node_update_external(conduit_node *cnode,
                                               conduit_node *cother);
 
+//-----------------------------------------------------------------------------
+// -- basic io, parsing, and generation ---
+//-----------------------------------------------------------------------------
+CONDUIT_API void conduit_node_parse(conduit_node *cnode,
+                                    const char* schema,
+                                    const char* protocol);
 
+CONDUIT_API void conduit_node_generate(conduit_node *cnode,
+                                       const char* schema,
+                                       const char* protocol,
+                                       void *data);
+
+CONDUIT_API void conduit_node_generate_external(conduit_node *cnode,
+                                                const char* schema,
+                                                const char* protocol,
+                                                void *data);
+
+CONDUIT_API void conduit_node_save(conduit_node *cnode,
+                                   const char* path,
+                                   const char* protocol);
+
+CONDUIT_API void conduit_node_load(conduit_node *cnode,
+                                   const char* path,
+                                   const char* protocol);
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

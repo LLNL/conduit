@@ -354,8 +354,80 @@ conduit_node_update_external(conduit_node *cnode,
     cpp_node(cnode)->update_external(cpp_node_ref(cother));
 }
 
+//-----------------------------------------------------------------------------
+// -- basic io, parsing, and generation ---
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+void
+conduit_node_parse(conduit_node *cnode,
+                   const char* schema,
+                   const char* protocol)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->parse(std::string(schema),proto_str);
+}
 
+//-----------------------------------------------------------------------------
+void
+conduit_node_generate(conduit_node *cnode,
+                      const char* schema,
+                      const char* protocol,
+                      void *data)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->generate(std::string(schema),proto_str,data);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_generate_external(conduit_node *cnode,
+                               const char* schema,
+                               const char* protocol,
+                               void *data)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->generate_external(std::string(schema),proto_str,data);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_save(conduit_node *cnode,
+                  const char* path,
+                  const char* protocol)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->save(std::string(path),proto_str);
+}
+//-----------------------------------------------------------------------------
+void
+conduit_node_load(conduit_node *cnode,
+                  const char* path,
+                  const char* protocol)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->load(std::string(path),proto_str);
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

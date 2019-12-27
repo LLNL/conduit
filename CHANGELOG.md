@@ -10,8 +10,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### General 
-- Added Node::parse() method, which supports common json and yaml parsing use cases without creating a generator instance.
+- Added Node::parse() method, (C++, Python and Fortran) which supports common json and yaml parsing use cases without creating a generator instance.
 - Use FOLDER target property to group targets for Visual Studio
+- Added Node load(), and save() support to the C and Fortran APIs
 
 ### Changed
 

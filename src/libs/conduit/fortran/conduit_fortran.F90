@@ -424,6 +424,40 @@ module conduit
            type(C_PTR), value, intent(IN) :: cdest
         end subroutine conduit_node_update_external
 
+    !--------------------------------------------------------------------------
+    ! -- basic io, parsing, and generation ---
+    !--------------------------------------------------------------------------
+    
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_parse(cnode, schema, protocol) &
+        bind(C, name="conduit_node_parse")
+    use iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(IN) :: cnode
+    character(kind=C_CHAR), intent(IN) :: schema(*)
+    character(kind=C_CHAR), intent(IN) :: protocol(*)
+    end subroutine conduit_node_parse
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_load(cnode, path, protocol) &
+        bind(C, name="conduit_node_load")
+    use iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(IN) :: cnode
+    character(kind=C_CHAR), intent(IN) :: path(*)
+    character(kind=C_CHAR), intent(IN) :: protocol(*)
+    end subroutine conduit_node_load
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_save(cnode, path, protocol) &
+        bind(C, name="conduit_node_save")
+    use iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(IN) :: cnode
+    character(kind=C_CHAR), intent(IN) :: path(*)
+    character(kind=C_CHAR), intent(IN) :: protocol(*)
+    end subroutine conduit_node_save
+
      !--------------------------------------------------------------------------
      ! node print helpers
      !--------------------------------------------------------------------------
