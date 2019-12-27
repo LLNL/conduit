@@ -238,6 +238,20 @@ class Test_Conduit_Node(unittest.TestCase):
             for i in range(len(ext_data)):
                 self.assertEqual(n.value()[i], ext_data[i])
 
+    def test_set_external_node(self):
+        n = Node()
+        n.set(np.array(range(10), np.int32))
+        n2 = Node()
+        # test set external with node
+        n2.set_external(n)
+        for i in range(10):
+            self.assertEqual(n.value()[i], n2.value()[i])
+        n.value()[2] = 8
+        n.value()[8] = 77
+        # set of n should reflect in n2 with set_external
+        self.assertEqual(8, n2.value()[2])
+        self.assertEqual(77, n2.value()[8])
+
     def test_set_external_basic_slice(self):
         types = ['uint8', 'uint16', 'uint32', 'uint64', 'float32', 'float64']
         for type in types:

@@ -7,6 +7,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased 
 
+### Fixed
+
+#### General 
+- python: Fixed Node.set_external() to accept conduit nodes as well as numpy arrays
+
+
 ## [0.5.0] - Released 2019-10-25
 
 ### Added
