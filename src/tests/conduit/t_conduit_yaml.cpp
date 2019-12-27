@@ -146,6 +146,42 @@ TEST(conduit_yaml, parse_yaml_3)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_yaml, parse_yaml_no_generator)
+{
+    std::string txt_1 = "{\"a\": [0,1,2,3,4], \"b\":[0.0,1.1,2.2,3.3] }";
+    Node n;
+    n.parse(txt_1, "yaml");
+    std::cout << n.to_yaml() << std::endl;
+
+    EXPECT_TRUE(n["a"].dtype().is_int64());
+    EXPECT_TRUE(n["b"].dtype().is_float64());
+
+    std::string txt_2 = "a: [0,-1,2,-3,4]\nb: [0.0,-1.1,2.2,-3.3]\n";
+    
+    Node n2;
+    n2.parse(txt_2, "yaml");
+    std::cout << n2.to_yaml() << std::endl;
+
+    EXPECT_TRUE(n["a"].dtype().is_int64());
+    EXPECT_TRUE(n["b"].dtype().is_float64());
+
+    int64_array a_val = n2["a"].value();
+    EXPECT_EQ(a_val[0], 0);
+    EXPECT_EQ(a_val[1], -1);
+    EXPECT_EQ(a_val[2], 2);
+    EXPECT_EQ(a_val[3], -3);
+    EXPECT_EQ(a_val[4], 4);
+
+    float64_array b_val = n2["b"].value();
+    EXPECT_EQ(b_val[0], 0);
+    EXPECT_EQ(b_val[1], -1.1);
+    EXPECT_EQ(b_val[2], 2.2);
+    EXPECT_EQ(b_val[3], -3.3);
+}
+
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_yaml, parse_yaml_4)
 {
     std::string yaml_txt ="{\"a\": [0,1,2,3,4], \"b\":[0.0,1.1,2.2,3.3] }";

@@ -180,11 +180,11 @@ public:
 // -- begin declaration of Node generate methods --
 //
 //-----------------------------------------------------------------------------
-///@name Generation from JSON Schemas
+///@name Generation from JSON or YAML Schemas
 ///@{
 //-----------------------------------------------------------------------------
 /// description:
-///  These methods use a Generator to parse a json schema into a Node hierarchy.
+///  These methods use a Generator to parse a schema into a Node hierarchy.
 ///
 /// * The non external variant with a NULL data parameter will allocate memory 
 ///   for the Node hierarchy and populate with inline values from the json schema 
@@ -193,6 +193,19 @@ public:
 /// * The `external' variants build a Node hierarchy that points to the input
 ///   data, they do not copy the data into the Node hierarchy.
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+/// Simplifed parsing w/o direct use of a generator instance
+///
+/// valid protocols:
+///   json
+///   conduit_json
+///   conduit_base64_json
+///   yaml
+///
+//-----------------------------------------------------------------------------
+    void parse(const std::string &text,
+               const std::string &protocol = "yaml");
 
 //-----------------------------------------------------------------------------
 // -- direct use of a generator --
@@ -205,11 +218,11 @@ public:
 //-----------------------------------------------------------------------------
 // -- json schema optionally coupled with in-core data -- 
 //-----------------------------------------------------------------------------
-    void generate(const std::string &json_schema,
+    void generate(const std::string &schema,
                   const std::string &protocol = std::string("conduit_json"),
                   void *data = NULL);
 
-    void generate_external(const std::string &json_schema,
+    void generate_external(const std::string &schema,
                            const std::string &protocol,
                            void *data);
 
@@ -227,7 +240,7 @@ public:
 // -- begin declaration of Node basic i/o methods --
 //
 //-----------------------------------------------------------------------------
-///@name Binary and Memory-Mapped I/O
+///@name Text, Binary and Memory-Mapped I/O
 ///@{
 //-----------------------------------------------------------------------------
 /// description:
@@ -246,8 +259,6 @@ public:
 
     void mmap(const std::string &stream_path,
               const Schema &schema);
-
-
 
 //-----------------------------------------------------------------------------
 ///@}

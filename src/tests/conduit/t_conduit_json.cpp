@@ -115,6 +115,97 @@ TEST(conduit_json, to_json_3)
     Generator g(pure_json,"json");
     Node n(g,true);
     n.print_detailed();
+
+    int64_array i_vs = n["a"].value();
+
+    for (int64 i = 0; i < 5; i++)
+    {
+        EXPECT_EQ(i_vs[i], i);
+    }
+
+    float64_array f_vs = n["b"].value();
+
+    EXPECT_NEAR(f_vs[0], 0.0, 1e-6);
+    EXPECT_NEAR(f_vs[1], 1.1, 1e-6);
+    EXPECT_NEAR(f_vs[2], 2.2, 1e-6);
+    EXPECT_NEAR(f_vs[3], 3.3, 1e-6);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, parse_json_1)
+{
+
+    uint32   a_val = 10;
+    uint32   b_val = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+
+    n.print_detailed();
+}
+//-----------------------------------------------------------------------------
+TEST(conduit_json, parse_json_2)
+{
+
+    uint32   a_val = 10;
+    uint32   b_val = 20;
+    uint32   arr[5];
+    for (uint32 i = 0; i < 5; i++)
+    {
+        arr[i] = i * i;
+    }
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["arr"].set_external(DataType::uint32(5), arr);
+
+
+    std::string pure_json = n.to_json();
+
+    n.print_detailed();
+    n.print();
+
+    Node n2;
+    // use parse helper method instead of a generator
+    n2.parse(pure_json, "json");
+    n2.print_detailed();
+    n2.print();
+
+    //
+    // JSON parsing will place values into an int64, 
+    // here we use "to_int64" to do a direct comparison
+    //
+    EXPECT_EQ(n["a"].to_int64(), n2["a"].to_int64());
+    EXPECT_EQ(n["b"].to_int64(), n2["b"].to_int64());
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, parse_json_3)
+{
+    std::string pure_json = "{a:[0,1,2,3,4],b:[0.0,1.1,2.2,3.3]}";
+    Node n;
+    // use parse helper method instead of a generator
+    n.parse(pure_json, "json");
+    n.print_detailed();
+
+    int64_array i_vs = n["a"].value();
+    
+    for (int64 i = 0; i < 5; i++)
+    {
+        EXPECT_EQ(i_vs[i], i);
+    }
+    
+    float64_array f_vs = n["b"].value();
+
+    EXPECT_NEAR(f_vs[0], 0.0, 1e-6);
+    EXPECT_NEAR(f_vs[1], 1.1, 1e-6);
+    EXPECT_NEAR(f_vs[2], 2.2, 1e-6);
+    EXPECT_NEAR(f_vs[3], 3.3, 1e-6);
 }
 
 //-----------------------------------------------------------------------------

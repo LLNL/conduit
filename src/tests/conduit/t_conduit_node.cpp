@@ -1068,3 +1068,34 @@ TEST(conduit_node, list_to_obj_cleanup)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, test_parse_all_protos)
+{ 
+    Node n;
+
+    n["a/b/c"] = (int64) 10;
+    n["a/b/d"] = (float64) 42.2;
+    n["a/b/e"] = " string !";
+
+    std::vector<std::string> txt_cases;
+    txt_cases.push_back(n.to_json("json"));
+    txt_cases.push_back(n.to_json("conduit_json"));
+    txt_cases.push_back(n.to_json("conduit_base64_json"));
+    txt_cases.push_back(n.to_yaml());
+
+    Node n2, info;
+    n2.parse(txt_cases[0],"json");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+    
+    n2.parse(txt_cases[1],"conduit_json");
+    EXPECT_FALSE(n.diff(n2,info));
+        
+    n2.parse(txt_cases[2],"conduit_base64_json");
+    EXPECT_FALSE(n.diff(n2,info));
+    
+    n2.parse(txt_cases[3],"yaml");
+    EXPECT_FALSE(n.diff(n2,info));
+
+}

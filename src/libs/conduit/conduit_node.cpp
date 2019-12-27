@@ -195,12 +195,12 @@ Node::Node(const Generator &gen,
 }
 
 //---------------------------------------------------------------------------//
-Node::Node(const std::string &json_schema,
+Node::Node(const std::string &schema,
            void *data,
            bool external)
 {
     init_defaults(); 
-    Generator g(json_schema,"conduit_json",data);
+    Generator g(schema,"conduit_json",data);
 
     if(external)
     {
@@ -270,6 +270,15 @@ Node::Node(const DataType &dtype,
 
 //---------------------------------------------------------------------------//
 void
+Node::parse(const std::string &text,
+            const std::string &protocol)
+{
+    Generator gen(text,protocol,NULL);
+    gen.walk(*this);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::generate(const Generator &gen)
 {
     gen.walk(*this);
@@ -284,23 +293,23 @@ Node::generate_external(const Generator &gen)
 
 //---------------------------------------------------------------------------//
 void
-Node::generate(const std::string &json_schema,
+Node::generate(const std::string &schema,
                const std::string &protocol,
                void *data)
                
 {
-    Generator g(json_schema,protocol,data);
+    Generator g(schema,protocol,data);
     generate(g);
 }
     
 //---------------------------------------------------------------------------//
 void
-Node::generate_external(const std::string &json_schema,
+Node::generate_external(const std::string &schema,
                         const std::string &protocol,
                         void *data)
                
 {
-    Generator g(json_schema,protocol,data);
+    Generator g(schema,protocol,data);
     generate_external(g);
 }
 
