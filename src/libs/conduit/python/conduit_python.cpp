@@ -4122,20 +4122,27 @@ PyConduit_Node_set(PyConduit_Node* self,
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_Node_set_external(PyConduit_Node* self,
-                   PyObject* args)
+                            PyObject* args)
 {
     PyObject* value = NULL;
 
-    if (!PyArg_ParseTuple(args, "O", &value))
+    if( !PyArg_ParseTuple(args, "O", &value) ||
+        ( !PyConduit_Node_Check(value) && !PyArray_Check(value) ) )
     {
-        return (NULL);
+        PyErr_SetString(PyExc_TypeError,
+                        "set_external requires a numpy array or conduit Node");
+        return NULL;
     }
 
-    if (!PyArray_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, "set_external requires a numpy array");
-        return (NULL);
+    // node case
+    if(PyConduit_Node_Check(value))
+    {
+        Node &n_other = *PyConduit_Node_Get_Node_Ptr(value);
+        self->node->update_external(n_other);
+        Py_RETURN_NONE;
     }
 
+    // numpy array case
     PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
     PyArrayObject *py_arr = (PyArrayObject*)value;
     npy_intp num_ele = PyArray_SIZE(py_arr);
@@ -4144,7 +4151,8 @@ PyConduit_Node_set_external(PyConduit_Node* self,
     int nd = PyArray_NDIM(py_arr);
 
     if (nd > 1) {
-        PyErr_SetString(PyExc_TypeError, "set_external does not handle multidimensional numpy arrays");
+        PyErr_SetString(PyExc_TypeError,
+                        "set_external does not handle multidimensional numpy arrays");
         return (NULL);
     }
 

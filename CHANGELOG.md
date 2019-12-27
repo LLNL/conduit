@@ -17,6 +17,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General 
 - Changed Python linking strategy to defer linking for our compiler modules
 
+
+### Fixed
+
+#### General 
+- python: Fixed Node.set_external() to accept conduit nodes as well as numpy arrays
+
+
 ## [0.5.0] - Released 2019-10-25
 
 ### Added
