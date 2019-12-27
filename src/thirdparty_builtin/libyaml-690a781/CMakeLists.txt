@@ -74,7 +74,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_compiled_library(NAME conduit_libyaml
                      OBJECT
                      SOURCES ${libyaml_sources}
-                     HEADERS ${libyaml_headers})
+                     HEADERS ${libyaml_headers}
+                     FOLDER thirdparty_builtin)
 
 # use cxx linker to avoid msvc static build issues
 set_target_properties(conduit_libyaml PROPERTIES LINKER_LANGUAGE CXX)

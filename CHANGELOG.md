@@ -7,6 +7,16 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased 
 
+### Added
+
+#### General 
+- Use FOLDER target property to group targets for Visual Studio
+
+### Changed
+
+#### General 
+- Changed Python linking strategy to defer linking for our compiler modules
+
 ## [0.5.0] - Released 2019-10-25
 
 ### Added

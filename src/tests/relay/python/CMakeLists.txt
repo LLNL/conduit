@@ -52,6 +52,7 @@ set(PYTHON_MODULE_TESTS t_python_relay_smoke
 
 
 foreach(TEST ${PYTHON_MODULE_TESTS})
-    add_python_test(${TEST})
+    add_python_test(TEST ${TEST}
+                    FOLDER tests/relay/python)
 endforeach()
 

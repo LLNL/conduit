@@ -77,7 +77,9 @@ set(DOCS_PYTHON_TESTS
 ################################
 message(STATUS "Adding docs related unit tests")
 foreach(TEST ${DOCS_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
+    add_cpp_test(TEST ${TEST}
+                 DEPENDS_ON conduit conduit_blueprint conduit_relay
+                 FOLDER tests/docs)
 endforeach()
 
 ################################
@@ -85,7 +87,9 @@ endforeach()
 ################################
 if(HDF5_FOUND)
     foreach(TEST ${DOCS_HDF5_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay )
+        add_cpp_test(TEST ${TEST}
+                     DEPENDS_ON conduit conduit_blueprint conduit_relay
+                     FOLDER tests/docs)
     endforeach()
 endif()
 
@@ -94,7 +98,8 @@ endif()
 ################################
 if(PYTHON_FOUND)
     foreach(TEST ${DOCS_PYTHON_TESTS})
-        add_python_test(${TEST})
+        add_python_test(TEST ${TEST}
+                        FOLDER tests/docs)
     endforeach()
 else()
     message(STATUS "Python disabled: Skipping conduit python tutorial examples")

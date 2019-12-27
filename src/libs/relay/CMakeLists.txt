@@ -220,7 +220,8 @@ add_compiled_library(NAME conduit_relay
                              ${conduit_relay_fortran_sources}
                              $<TARGET_OBJECTS:conduit_civetweb>
                      DEPENDS_ON ${conduit_relay_deps}
-                     HEADERS_DEST_DIR include/conduit)
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
 
 if(ENABLE_UTILS)
     ###################################
@@ -230,7 +231,8 @@ if(ENABLE_UTILS)
         NAME        conduit_relay_node_viewer
         SOURCES     conduit_relay_web_node_viewer_exe.cpp
         DEPENDS_ON  conduit_relay
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        FOLDER utils)
 
     # add install target for conduit_relay_node_viewer
     install(TARGETS conduit_relay_node_viewer
@@ -243,7 +245,8 @@ if(ENABLE_UTILS)
         NAME        conduit_relay_io_ls
         SOURCES     conduit_relay_io_ls_exe.cpp
         DEPENDS_ON  conduit_relay
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        FOLDER utils)
 
 
     # add install target
@@ -258,7 +261,8 @@ if(ENABLE_UTILS)
         NAME        conduit_relay_io_convert
         SOURCES     conduit_relay_io_convert_exe.cpp
         DEPENDS_ON  conduit_relay
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        FOLDER utils)
 
     # add install target for conduit_relay_io_convert
     install(TARGETS conduit_relay_io_convert
@@ -332,7 +336,8 @@ add_compiled_library(NAME conduit_relay_mpi
                      HEADERS ${conduit_relay_mpi_headers}
                      SOURCES ${conduit_relay_mpi_sources}
                      DEPENDS_ON ${conduit_relay_mpi_deps}
-                     HEADERS_DEST_DIR include/conduit)
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
 
 
 ################################################################
@@ -395,7 +400,8 @@ add_compiled_library(NAME conduit_relay_mpi_io
                      HEADERS ${conduit_relay_mpi_io_headers} ${conduit_relay_mpi_io_c_headers}
                      SOURCES ${conduit_relay_mpi_io_sources} ${conduit_relay_mpi_io_c_sources}
                      DEPENDS_ON ${conduit_relay_mpi_io_deps}
-                     HEADERS_DEST_DIR include/conduit)
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
 
 blt_add_target_compile_flags(TO conduit_relay_mpi_io FLAGS "-DCONDUIT_RELAY_IO_MPI_ENABLED")
 
