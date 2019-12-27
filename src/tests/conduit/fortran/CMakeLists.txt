@@ -63,7 +63,9 @@ endif()
 ################################
 message(STATUS "Adding conduit lib fortran interface unit tests")
 foreach(TEST ${FORTRAN_TESTS})
-    add_fortran_test(TEST ${TEST} DEPENDS_ON conduit)
+    add_fortran_test(TEST ${TEST}
+                     DEPENDS_ON conduit
+                     FOLDER tests/conduit/fortran)
 endforeach()
 
 

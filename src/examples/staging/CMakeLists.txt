@@ -56,7 +56,8 @@ if(MPI_FOUND AND ENABLE_EXAMPLES)
         NAME        conduit_staging
         SOURCES     conduit_staging.cpp
         DEPENDS_ON  conduit conduit_relay_mpi_io 
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        FOLDER utils)
 
     # Copy some helper files into the build directory.
     file(COPY ${conduit_staging_support_files}

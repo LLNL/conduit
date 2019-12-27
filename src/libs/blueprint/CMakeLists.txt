@@ -122,7 +122,8 @@ add_compiled_library(NAME conduit_blueprint
                      HEADERS ${blueprint_headers} ${blueprint_c_headers} 
                      SOURCES ${blueprint_sources} ${blueprint_c_sources} ${blueprint_fortran_sources}
                      DEPENDS_ON conduit
-                     HEADERS_DEST_DIR include/conduit)
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
 
 
 if(FORTRAN_FOUND)
@@ -152,7 +153,8 @@ if(ENABLE_UTILS)
         NAME        conduit_blueprint_verify
         SOURCES     conduit_blueprint_verify_exe.cpp
         DEPENDS_ON  conduit conduit_relay conduit_blueprint
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        FOLDER utils)
 
     # add install target
     install(TARGETS conduit_blueprint_verify
