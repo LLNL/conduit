@@ -54,8 +54,9 @@ set(FORTRAN_TESTS
 ################################
 message(STATUS "Adding conduit relay lib fortran interface unit tests")
 foreach(TEST ${FORTRAN_TESTS})
-    add_fortran_test(TEST ${TEST} DEPENDS_ON conduit 
-                                             conduit_relay)
+    add_fortran_test(TEST ${TEST}
+                     DEPENDS_ON conduit conduit_relay
+                     FOLDER tests/relay/fortran)
 endforeach()
 
 

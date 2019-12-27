@@ -81,13 +81,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_compiled_library(NAME   conduit_civetweb
                      OBJECT
                      HEADERS ${civetweb_headers}
-                     SOURCES ${civetweb_sources})
+                     SOURCES ${civetweb_sources}
+                     FOLDER thirdparty_builtin)
 
 #  avoid unknown pragma warnings when compiling civetweb with clang
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_target_compile_flags(TARGET conduit_civetweb
                              FLAGS -Wno-unknown-pragmas)
 endif()
-
 
 

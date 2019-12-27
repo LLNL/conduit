@@ -57,6 +57,42 @@ if(NOT BLT_CXX_STD)
 endif()
 
 ################################################################
+# if not set, prefer folder grouped targets
+################################################################
+if(NOT ENABLE_FOLDERS)
+    set(ENABLE_FOLDERS TRUE CACHE STRING "")
+endif()
+
+################################################################
 # init blt using BLT_SOURCE_DIR
 ################################################################
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+
+
+################################################################
+# apply folders to a few ungrouped blt targets
+################################################################
+
+###############################################
+# group main blt docs targets into docs folder
+###############################################
+blt_set_target_folder( TARGET docs FOLDER docs)
+
+if(TARGET sphinx_docs)
+    blt_set_target_folder( TARGET sphinx_docs FOLDER docs)
+endif()
+
+if(TARGET doxygen_docs)
+    blt_set_target_folder( TARGET  FOLDER docs)
+endif()
+
+####################################################
+# group top level blt health checks into blt folder
+####################################################
+if(TARGET check)
+    blt_set_target_folder( TARGET check FOLDER blt)
+endif()
+
+if(TARGET style)
+    blt_set_target_folder( TARGET style FOLDER blt)
+endif()
