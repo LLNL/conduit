@@ -464,23 +464,23 @@ contains
         cnode = conduit_node_create()
 
         ! json
-        call conduit_node_parse(cnode,"a","{\"a\": 42.0 }","json")
+        call conduit_node_parse(cnode,'{"a": 42.0 }',"json")
         ! float64 val = n["a"].value()
         r_val = conduit_node_fetch_path_as_float64(cnode,"a")
         call assert_equals(42.0d+0, r_val)
 
-        call conduit_node_parse(cnode,"a","{\"a\": 42 }","json")
+        call conduit_node_parse(cnode,'{"a": 42 }',"json")
         ! int64 val = n["a"].value()
         i_val = conduit_node_fetch_path_as_int64(cnode,"a")
         call assert_equals(42, i_val)
 
         ! yaml
-        call conduit_node_parse(cnode,"a","a: 42.0","yaml")
+        call conduit_node_parse(cnode,"a: 42.0","yaml")
         ! float64 val = n["a"].value()
         r_val = conduit_node_fetch_path_as_float64(cnode,"a")
         call assert_equals(42.0d+0, r_val)
 
-        call conduit_node_parse(cnode,"a","a: 42","yaml")
+        call conduit_node_parse(cnode,"a: 42","yaml")
         ! int64 val = n["a"].value()
         i_val = conduit_node_fetch_path_as_int64(cnode,"a")
         call assert_equals(42, i_val)
@@ -494,7 +494,6 @@ contains
         type(C_PTR) cnode1
         type(C_PTR) cnode2
         real(kind=8) r_val
-        integer      i_val
         
         !----------------------------------------------------------------------
         call set_case_name("t_node_save_load")
@@ -503,35 +502,31 @@ contains
         cnode2 = conduit_node_create()
 
         call conduit_node_set_path_float64(cnode1,"a",42d+0)
-        call conduit_node_set_path_int64(cnode1,"a",42)
 
         call conduit_node_print(cnode1)
 
-        conduit_node_save(cnode1,"tout_f_node_save.json","json")
-        conduit_node_load(cnode2,"tout_f_node_save.json","json")
+        call conduit_node_save(cnode1,"tout_f_node_save.json","json")
+        call conduit_node_load(cnode2,"tout_f_node_save.json","json")
 
         call conduit_node_print(cnode2)
 
         r_val = conduit_node_fetch_path_as_float64(cnode2,"a");
-        i_val = conduit_node_fetch_path_as_float64(cnode2,"b");
 
         call assert_equals(42.0d+0, r_val)
-        call assert_equals(42, i_val)
+        
 
-        conduit_node_save(cnode1,"tout_f_node_save.yaml","yaml")
-        conduit_node_load(cnode2,"tout_f_node_save.yaml","yaml")
+        call conduit_node_save(cnode1,"tout_f_node_save.yaml","yaml")
+        call conduit_node_load(cnode2,"tout_f_node_save.yaml","yaml")
 
         call conduit_node_print(cnode2)
 
         r_val = conduit_node_fetch_path_as_float64(cnode2,"a");
-        i_val = conduit_node_fetch_path_as_float64(cnode2,"b");
 
         call assert_equals(42.0d+0, r_val)
-        call assert_equals(42, i_val)
 
         call conduit_node_destroy(cnode1)
         call conduit_node_destroy(cnode2)
-    end subroutine t_node_parse
+    end subroutine t_node_save_load
 
 
 

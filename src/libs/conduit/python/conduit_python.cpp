@@ -3510,7 +3510,7 @@ PyConduit_Node_parse(PyConduit_Node *self,
                      PyObject *args,
                      PyObject *kwargs)
 {
-    const char *txt = NULL;
+    const char *text = NULL;
     const char *protocol  = NULL;
     
     // support:
@@ -3533,7 +3533,7 @@ PyConduit_Node_parse(PyConduit_Node *self,
 
     if(protocol != NULL)
     {
-        protocol_str = string(protocol);
+        protocol_str = std::string(protocol);
     }
 
     try

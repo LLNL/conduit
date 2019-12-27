@@ -804,7 +804,7 @@ contains
 
         n = conduit_node_obj_create()
 
-        call n%parse("{\"a\": 42.0}","json")
+        call n%parse('{"a": 42.0}',"json")
         val = n%fetch_path_as_float64("a");
 
         call assert_equals(42.0d+0, val)
@@ -827,6 +827,7 @@ contains
         !----------------------------------------------------------------------
 
         n1 = conduit_node_obj_create()
+        n2 = conduit_node_obj_create()
         call n1%set_path("a",42d+0)
 
         call n1%save("tout_f_node_obj_save.json","json")

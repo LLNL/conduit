@@ -429,34 +429,34 @@ module conduit
     !--------------------------------------------------------------------------
     
     !--------------------------------------------------------------------------
-    subroutine conduit_node_parse(cnode, schema, protocol) &
+    subroutine c_conduit_node_parse(cnode, schema, protocol) &
         bind(C, name="conduit_node_parse")
     use iso_c_binding
     implicit none
     type(C_PTR), value, intent(IN) :: cnode
     character(kind=C_CHAR), intent(IN) :: schema(*)
     character(kind=C_CHAR), intent(IN) :: protocol(*)
-    end subroutine conduit_node_parse
+    end subroutine c_conduit_node_parse
 
     !--------------------------------------------------------------------------
-    subroutine conduit_node_load(cnode, path, protocol) &
+    subroutine c_conduit_node_load(cnode, path, protocol) &
         bind(C, name="conduit_node_load")
     use iso_c_binding
     implicit none
     type(C_PTR), value, intent(IN) :: cnode
     character(kind=C_CHAR), intent(IN) :: path(*)
     character(kind=C_CHAR), intent(IN) :: protocol(*)
-    end subroutine conduit_node_load
+    end subroutine c_conduit_node_load
 
     !--------------------------------------------------------------------------
-    subroutine conduit_node_save(cnode, path, protocol) &
+    subroutine c_conduit_node_save(cnode, path, protocol) &
         bind(C, name="conduit_node_save")
     use iso_c_binding
     implicit none
     type(C_PTR), value, intent(IN) :: cnode
     character(kind=C_CHAR), intent(IN) :: path(*)
     character(kind=C_CHAR), intent(IN) :: protocol(*)
-    end subroutine conduit_node_save
+    end subroutine c_conduit_node_save
 
      !--------------------------------------------------------------------------
      ! node print helpers
@@ -1208,6 +1208,39 @@ contains
         !---
         call c_conduit_node_rename_child(cnode, trim(old_name) // C_NULL_CHAR, trim(new_name) // C_NULL_CHAR)
     end subroutine conduit_node_rename_child
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_parse(cnode, schema, protocol )
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: schema
+        character(*), intent(IN) :: protocol
+        !---
+        call c_conduit_node_parse(cnode, trim(schema) // C_NULL_CHAR, trim(protocol) // C_NULL_CHAR)
+    end subroutine conduit_node_parse
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_save(cnode, path, protocol )
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        character(*), intent(IN) :: protocol
+        !---
+        call c_conduit_node_save(cnode, trim(path) // C_NULL_CHAR, trim(protocol) // C_NULL_CHAR)
+    end subroutine conduit_node_save
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_load(cnode, path, protocol )
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        character(*), intent(IN) :: protocol
+        !---
+        call c_conduit_node_load(cnode, trim(path) // C_NULL_CHAR, trim(protocol) // C_NULL_CHAR)
+    end subroutine conduit_node_load
 
     !--------------------------------------------------------------------------
     function conduit_node_has_path(cnode, path) result(res)
