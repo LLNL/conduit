@@ -42,15 +42,65 @@
 .. # 
 .. ############################################################################
 
+==================================
+Reading YAML and JSON 
+==================================
+
+Parsing text with *Node::parse()*
+------------------------------------------------------
+
+*Node::parse()* parses YAML and JSON strings into a *Node* tree.
+
+.. # from t_conduit_docs_tutorial_parse: t_conduit_docs_tutorial_yaml
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_parse.cpp
+   :start-after: BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml")
+   :end-before: END_EXAMPLE("t_conduit_docs_tutorial_yaml")
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_parse_out.txt
+   :start-after: BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml")
+   :end-before: END_EXAMPLE("t_conduit_docs_tutorial_yaml")
+
+.. # from t_conduit_docs_tutorial_parse: t_conduit_docs_tutorial_json
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_parse.cpp
+   :start-after: BEGIN_EXAMPLE("t_conduit_docs_tutorial_json")
+   :end-before: END_EXAMPLE("t_conduit_docs_tutorial_json")
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_parse_out.txt
+   :start-after: BEGIN_EXAMPLE("t_conduit_docs_tutorial_json")
+   :end-before: END_EXAMPLE("t_conduit_docs_tutorial_json")
+
+For leaf nodes wide types such as *int64*, *uint64*, and *float64* are inferred.
+Homogeneous numeric lists are parsed as Conduit arrays.
+
+.. # from t_conduit_docs_tutorial_parse: t_conduit_docs_tutorial_yaml_inline_array
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_parse.cpp
+   :start-after: BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
+   :end-before: END_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_parse_out.txt
+   :start-after: BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
+   :end-before: END_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
+
+
 ======================
 Generators 
 ======================
 
 
-Using *Generator* instances to parse JSON schemas
+*Generator* instances to parse JSON schemas
 ---------------------------------------------------
-
-The *Generator* class is used to parse conduit JSON schemas into a *Node*.
+Node::parse() is sufficient for most use case, but you can also use a *Generator* c
+lass instance to parse JSON and YAML. Generators also allow you to parse a conduit JSON
+schema and bind to in-core data.
 
 
 .. # from t_conduit_docs_tutorial_json: json_generator_std

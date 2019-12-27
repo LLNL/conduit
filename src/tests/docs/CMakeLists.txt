@@ -52,6 +52,7 @@
 set(DOCS_TESTS  
     t_conduit_docs_tutorial_basics
     t_conduit_docs_tutorial_numeric
+    t_conduit_docs_tutorial_parse
     t_conduit_docs_tutorial_json
     t_conduit_docs_tutorial_ownership
     t_conduit_docs_tutorial_errors
