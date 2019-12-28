@@ -83,7 +83,7 @@ if(TARGET sphinx_docs)
 endif()
 
 if(TARGET doxygen_docs)
-    blt_set_target_folder( TARGET  FOLDER docs)
+    blt_set_target_folder( TARGET doxygen_docs FOLDER docs)
 endif()
 
 ####################################################
