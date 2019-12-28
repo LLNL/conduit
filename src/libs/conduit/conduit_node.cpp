@@ -354,23 +354,27 @@ Node::load(const std::string &stream_path,
     m_alloced = true;
 }
 
+
 //---------------------------------------------------------------------------//
 void
 Node::load(const std::string &ibase,
            const std::string &protocol)
 {
-    // TODO: auto detect protocol?
-
-    if(protocol == "conduit_bin")
+    std::string proto = protocol;
+    //auto detect protocol
+    if(proto == "")
     {
-        // TODO: use generator?
+        identify_protocol(ibase,proto);
+    }
+
+    if(proto == "conduit_bin")
+    {
         Schema s;
         std::string ifschema = ibase + "_json";
-
         s.load(ifschema);
         load(ibase,s);
     }
-    // single file json cases
+    // single file json and yaml cases
     else
     {
         std::ifstream ifile;
@@ -383,7 +387,6 @@ Node::load(const std::string &ibase,
         Generator g(json_data,protocol);
         g.walk(*this);
     }
-        
 }
 
 //---------------------------------------------------------------------------//
@@ -391,9 +394,14 @@ void
 Node::save(const std::string &obase,
            const std::string &protocol) const
 {
-    // TODO: auto detect protocol?
-    
-    if(protocol == "conduit_bin")
+    std::string proto = protocol;
+    //auto detect protocol
+    if(proto == "")
+    {
+        identify_protocol(obase,proto);
+    }
+
+    if(proto == "conduit_bin")
     {
         Node res;
         compact_to(res);
@@ -402,13 +410,13 @@ Node::save(const std::string &obase,
         res.schema().save(ofschema);
         res.serialize(obase);
     }
-    else if( protocol == "yaml")
+    else if( proto == "yaml")
     {
-        to_yaml_stream(obase,protocol);
+        to_yaml_stream(obase,proto);
     }
     else     // single file json cases
     {
-        to_json_stream(obase,protocol);
+        to_json_stream(obase,proto);
     }
 }
 
@@ -14667,6 +14675,58 @@ Node::init_defaults()
     m_owns_schema = true;
     
     m_parent = NULL;
+}
+
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with protocol detection for load and save  --
+//
+//-----------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------
+// This method is for Node::load() and Node::save() 
+// Since conudit does not link to relay, only basic (non-tpl dependent)
+// cases are supported here
+void
+Node::identify_protocol(const std::string &path,
+                        std::string &io_type)
+{
+    io_type = "conduit_bin";
+
+    std::string file_path;
+    std::string obj_base;
+
+    // check for ":" split
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    file_path,
+                                    obj_base);
+
+    std::string file_name_base;
+    std::string file_name_ext;
+
+    // find file extension to auto match
+    conduit::utils::rsplit_string(file_path,
+                                  std::string("."),
+                                  file_name_ext,
+                                  file_name_base);
+
+    if(file_name_ext == "json")
+    {
+        io_type = "json";
+    }
+    else if(file_name_ext == "conduit_json")
+    {
+        io_type = "conduit_json";
+    }
+    else if(file_name_ext == "conduit_base64_json")
+    {
+        io_type = "conduit_base64_json";
+    }
+    else if(file_name_ext == "yaml")
+    {
+        io_type = "yaml";
+    }
 }
 
 
