@@ -52,7 +52,7 @@
 set(DOCS_TESTS  
     t_conduit_docs_tutorial_basics
     t_conduit_docs_tutorial_numeric
-    t_conduit_docs_tutorial_json
+    t_conduit_docs_tutorial_parse
     t_conduit_docs_tutorial_ownership
     t_conduit_docs_tutorial_errors
     t_conduit_docs_relay_io_generic_examples
@@ -67,7 +67,7 @@ set(DOCS_HDF5_TESTS
 set(DOCS_PYTHON_TESTS  
     t_conduit_docs_tutorial_python_basics
     t_conduit_docs_tutorial_python_numeric
-    t_conduit_docs_tutorial_python_json
+    t_conduit_docs_tutorial_python_parse
     t_conduit_docs_tutorial_python_ownership
     t_conduit_docs_tutorial_python_relay_io_handle_examples)
 

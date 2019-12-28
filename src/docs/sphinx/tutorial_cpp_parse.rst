@@ -101,7 +101,7 @@ Homogeneous numeric lists are parsed as Conduit arrays.
 * ``conduit_json`` parses JSON with conduit data type information, allowing you
   to specify bitwidth style types, strides, etc. 
 
-* ``conduit_base64_json`` combies the *conduit_json* protocol with an embedded 
+* ``conduit_base64_json`` combines the *conduit_json* protocol with an embedded 
   base64-encoded data block
 
 ======================

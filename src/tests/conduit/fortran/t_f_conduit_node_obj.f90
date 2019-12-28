@@ -792,7 +792,60 @@ contains
         call conduit_node_obj_destroy(n)
 
     end subroutine t_node_obj_remove
-    
+
+   !--------------------------------------------------------------------------
+    subroutine t_node_obj_parse
+        type(node) n
+        real(kind=8) val
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_parse")
+        !----------------------------------------------------------------------
+
+        n = conduit_node_obj_create()
+
+        call n%parse('{"a": 42.0}',"json")
+        val = n%fetch_path_as_float64("a");
+
+        call assert_equals(42.0d+0, val)
+
+        call n%parse("a: 42.0","yaml")
+        val = n%fetch_path_as_float64("a");
+
+        call conduit_node_obj_destroy(n)
+
+    end subroutine t_node_obj_parse
+
+   !--------------------------------------------------------------------------
+    subroutine t_node_obj_save_load
+        type(node) n1
+        type(node) n2
+        real(kind=8) val
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_parse")
+        !----------------------------------------------------------------------
+
+        n1 = conduit_node_obj_create()
+        n2 = conduit_node_obj_create()
+        call n1%set_path("a",42d+0)
+
+        call n1%save("tout_f_node_obj_save.json","json")
+        call n2%load("tout_f_node_obj_save.json","json")
+        val = n2%fetch_path_as_float64("a");
+        call assert_equals(42.0d+0, val)
+
+        call n1%save("tout_f_node_obj_save.yaml","yaml")
+        call n2%load("tout_f_node_obj_save.yaml","yaml")
+        val = n2%fetch_path_as_float64("a");
+        call assert_equals(42.0d+0, val)
+
+        call conduit_node_obj_destroy(n1)
+        call conduit_node_obj_destroy(n2)
+
+    end subroutine t_node_obj_save_load
+
+
 !------------------------------------------------------------------------------
 end module f_conduit_node_obj
 !------------------------------------------------------------------------------
@@ -828,6 +881,8 @@ program fortran_test
   call t_node_obj_update
   call t_node_obj_compact_to
   call t_node_obj_remove
+  call t_node_obj_parse
+  call t_node_obj_save_load
 
   call fruit_summary
   call fruit_finalize

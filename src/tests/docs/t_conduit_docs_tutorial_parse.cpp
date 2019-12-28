@@ -44,22 +44,75 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_conduit_docs_tutorial_json.cpp
+/// file: t_conduit_docs_tutorial_parse.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "t_conduit_docs_tutorial_helpers.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
+
 using namespace conduit;
+
+//-----------------------------------------------------------------------------
+TEST(conduit_tutorial, t_conduit_docs_tutorial_yaml)
+{
+    BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml");
+
+    std::string yaml_txt("mykey: 42.0");
+
+    Node n;
+    n.parse(yaml_txt,"yaml");
+
+    std::cout << n["mykey"].as_float64() <<std::endl;
+
+    n.print_detailed();
+
+    END_EXAMPLE("t_conduit_docs_tutorial_yaml");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_tutorial, t_conduit_docs_tutorial_json)
+{
+    BEGIN_EXAMPLE("t_conduit_docs_tutorial_json");
+
+    std::string json_txt("{\"mykey\": 42.0}");
+
+    Node n;
+    n.parse(json_txt,"json");
+
+    std::cout << n["mykey"].as_float64() <<std::endl;
+
+    n.print_detailed();
+
+    END_EXAMPLE("t_conduit_docs_tutorial_json");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_tutorial, t_conduit_docs_tutorial_yaml_inline_array)
+{
+    BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array");
+
+    std::string yaml_txt("myarray: [0.0, 10.0, 20.0, 30.0]");
+
+    Node n;
+    n.parse(yaml_txt,"yaml");
+
+    n["myarray"].print();
+
+    n.print_detailed();
+
+    END_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array");
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, json_generator_std)
 {
-    CONDUIT_INFO("json_generator_std");
+    BEGIN_EXAMPLE("t_json_generator_std");
     
     Generator g("{test: {dtype: float64, value: 100.0}}","conduit_json");
     
@@ -70,13 +123,13 @@ TEST(conduit_tutorial, json_generator_std)
     n.print();
     n.print_detailed();
     
-    CONDUIT_INFO("json_generator_std");
+    END_EXAMPLE("t_json_generator_std");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, json_generator_pure_json)
 {
-    CONDUIT_INFO("json_generator_pure_json");
+    BEGIN_EXAMPLE("t_json_generator_pure_json");
     
     Generator g("{test: 100.0}","json");
 
@@ -87,14 +140,31 @@ TEST(conduit_tutorial, json_generator_pure_json)
     n.print_detailed();
     n.print();
 
-    CONDUIT_INFO("json_generator_pure_json");
+    END_EXAMPLE("t_json_generator_pure_json");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_tutorial, json_generator_pure_yaml)
+{
+    BEGIN_EXAMPLE("t_json_generator_pure_yaml");
+    
+    Generator g("test: 100.0","yaml");
+
+    Node n;
+    g.walk(n);
+        
+    std::cout << n["test"].as_float64() <<std::endl;
+    n.print_detailed();
+    n.print();
+
+    END_EXAMPLE("t_json_generator_pure_yaml");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, json_generator_bind_to_incore)
 {
-    CONDUIT_INFO("json_generator_bind_to_incore");
-    
+    BEGIN_EXAMPLE("t_json_generator_bind_to_incore");
+
     float64 vals[2];
     Generator g("{a: {dtype: float64, value: 100.0}, b: {dtype: float64, value: 200.0} }",
                 "conduit_json",
@@ -102,7 +172,7 @@ TEST(conduit_tutorial, json_generator_bind_to_incore)
 
     Node n;
     g.walk_external(n);
-    
+
     std::cout << n["a"].as_float64() << " vs " << vals[0] << std::endl;
     std::cout << n["b"].as_float64() << " vs " << vals[1] << std::endl;
 
@@ -111,15 +181,15 @@ TEST(conduit_tutorial, json_generator_bind_to_incore)
     Node ninfo;
     n.info(ninfo);
     ninfo.print();
-    
-    CONDUIT_INFO("json_generator_bind_to_incore");
+
+    END_EXAMPLE("t_json_generator_bind_to_incore");
 }
 
 //-----------------------------------------------------------------------------
 /// TODO: This doesn't need to be in the generator section.
 TEST(conduit_tutorial, json_generator_compact)
 {
-    CONDUIT_INFO("json_generator_compact");
+    BEGIN_EXAMPLE("t_json_generator_compact");
     
     float64 vals[] = { 100.0,-100.0,
                        200.0,-200.0,
@@ -170,5 +240,6 @@ TEST(conduit_tutorial, json_generator_compact)
     n2c.info(ninfo);
     ninfo.print();
 
-    CONDUIT_INFO("json_generator_compact");
+    END_EXAMPLE("t_json_generator_compact");
 }
+

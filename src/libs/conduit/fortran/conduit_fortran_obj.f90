@@ -93,6 +93,11 @@ module conduit_obj
         procedure :: update_external => conduit_node_obj_update_external
 
         !----------------------------------------------------------------------
+        procedure :: parse => conduit_node_obj_parse
+        procedure :: save  => conduit_node_obj_save
+        procedure :: load  => conduit_node_obj_load
+
+        !----------------------------------------------------------------------
         procedure :: has_child  => conduit_node_obj_has_child
         procedure :: has_path   => conduit_node_obj_has_path
         procedure :: rename_child => conduit_node_obj_rename_child
@@ -399,6 +404,41 @@ contains
         class(node) :: other
         call conduit_node_update_external(obj%cnode, other%cnode)
     end subroutine conduit_node_obj_update_external
+
+    !--------------------------------------------------------------------------
+    ! basic io, parsing, generation
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_parse(obj,schema,protocol)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: schema
+        character(*) :: protocol
+        call conduit_node_parse(obj%cnode, schema, protocol)
+    end subroutine conduit_node_obj_parse
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_save(obj,path,protocol)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        character(*) :: protocol
+        call conduit_node_save(obj%cnode, path, protocol)
+    end subroutine conduit_node_obj_save
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_load(obj,path,protocol)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        character(*) :: protocol
+        call conduit_node_load(obj%cnode, path, protocol)
+    end subroutine conduit_node_obj_load
+
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_fetch(obj, path) result(res)

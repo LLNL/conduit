@@ -3506,6 +3506,54 @@ PyConduit_Node_generate(PyConduit_Node* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_parse(PyConduit_Node *self,
+                     PyObject *args,
+                     PyObject *kwargs)
+{
+    const char *text = NULL;
+    const char *protocol  = NULL;
+    
+    // support:
+    // text
+    // text, protocol
+
+    static const char *kwlist[] = {"text","protocol", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s|s",
+                                     const_cast<char**>(kwlist),
+                                     &text,&protocol))
+    {
+        return NULL;
+    }
+
+    std::string text_str(text);
+    std::string protocol_str;
+
+    if(protocol != NULL)
+    {
+        protocol_str = std::string(protocol);
+    }
+
+    try
+    {
+        self->node->parse(text_str,
+                          protocol_str);
+    }
+    catch(conduit::Error e)
+    {
+            PyErr_SetString(PyExc_IOError,
+                            e.message().c_str());
+            return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_save(PyConduit_Node *self,
                     PyObject *args,
                     PyObject *kwargs)
@@ -4722,6 +4770,11 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_generate,
      METH_VARARGS,  // will become kwargs
      "Generate a node"},
+    //-----------------------------------------------------------------------//
+    {"parse",
+     (PyCFunction)PyConduit_Node_parse,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Creates a node tree by parsing a YAML or JSON string"},
     //-----------------------------------------------------------------------//
     {"save",
      (PyCFunction)PyConduit_Node_save,

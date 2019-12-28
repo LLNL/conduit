@@ -132,6 +132,13 @@ class Test_Conduit_Node(unittest.TestCase):
         print(nl)
         self.assertEqual(nl['a'][alen-1], alen-1)
 
+    def test_parse(self):
+        n = Node()
+        n.parse('{"a": 42.0}',"json")
+        self.assertTrue(n['a'] == np.float64(42.0))
+        n.parse('a: 52.0',"yaml")
+        self.assertTrue(n['a'] == np.float64(52.0))
+
     def test_parent(self):
         vec = np.array(range(100), np.uint32)
         n = Node()

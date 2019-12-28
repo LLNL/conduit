@@ -1,10 +1,36 @@
 Running main() from gtest_main.cc
-[==========] Running 4 tests from 1 test case.
+[==========] Running 8 tests from 1 test case.
 [----------] Global test environment set-up.
-[----------] 4 tests from conduit_tutorial
+[----------] 8 tests from conduit_tutorial
+[ RUN      ] conduit_tutorial.t_conduit_docs_tutorial_yaml
+BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml")
+42
+
+{
+  "mykey": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 42.0}
+}
+END_EXAMPLE("t_conduit_docs_tutorial_yaml")
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_yaml (1 ms)
+[ RUN      ] conduit_tutorial.t_conduit_docs_tutorial_json
+BEGIN_EXAMPLE("t_conduit_docs_tutorial_json")
+42
+
+{
+  "mykey": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 42.0}
+}
+END_EXAMPLE("t_conduit_docs_tutorial_json")
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_json (0 ms)
+[ RUN      ] conduit_tutorial.t_conduit_docs_tutorial_yaml_inline_array
+BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
+[0.0, 10.0, 20.0, 30.0]
+
+{
+  "myarray": {"dtype":"float64", "number_of_elements": 4, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": [0.0, 10.0, 20.0, 30.0]}
+}
+END_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_yaml_inline_array (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_std
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_json.cpp : 62]
- json_generator_std
+BEGIN_EXAMPLE("t_json_generator_std")
 100
 
 {
@@ -14,12 +40,10 @@ Running main() from gtest_main.cc
 {
   "test": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 100.0}
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_json.cpp : 73]
- json_generator_std
+END_EXAMPLE("t_json_generator_std")
 [       OK ] conduit_tutorial.json_generator_std (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_pure_json
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_json.cpp : 79]
- json_generator_pure_json
+BEGIN_EXAMPLE("t_json_generator_pure_json")
 100
 
 {
@@ -29,12 +53,23 @@ Running main() from gtest_main.cc
 {
   "test": 100.0
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_json.cpp : 90]
- json_generator_pure_json
+END_EXAMPLE("t_json_generator_pure_json")
 [       OK ] conduit_tutorial.json_generator_pure_json (0 ms)
+[ RUN      ] conduit_tutorial.json_generator_pure_yaml
+BEGIN_EXAMPLE("t_json_generator_pure_yaml")
+100
+
+{
+  "test": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 100.0}
+}
+
+{
+  "test": 100.0
+}
+END_EXAMPLE("t_json_generator_pure_yaml")
+[       OK ] conduit_tutorial.json_generator_pure_yaml (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_bind_to_incore
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_json.cpp : 96]
- json_generator_bind_to_incore
+BEGIN_EXAMPLE("t_json_generator_bind_to_incore")
 100 vs 100
 200 vs 200
 
@@ -46,7 +81,7 @@ Running main() from gtest_main.cc
 {
   "mem_spaces": 
   {
-    "0x7fff5b4da040": 
+    "0x7ffee1aafda0": 
     {
       "path": "a",
       "type": "external"
@@ -57,19 +92,17 @@ Running main() from gtest_main.cc
   "total_bytes_compact": 16,
   "total_strided_bytes": 16
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_json.cpp : 115]
- json_generator_bind_to_incore
+END_EXAMPLE("t_json_generator_bind_to_incore")
 [       OK ] conduit_tutorial.json_generator_bind_to_incore (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_compact
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_json.cpp : 122]
- json_generator_compact
+BEGIN_EXAMPLE("t_json_generator_compact")
 [100.0, 200.0, 300.0, 400.0, 500.0]
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 {
   "mem_spaces": 
   {
-    "0x7fff5b4da000": 
+    "0x7ffee1aafd60": 
     {
       "path": "",
       "type": "external"
@@ -84,7 +117,7 @@ Running main() from gtest_main.cc
 {
   "mem_spaces": 
   {
-    "0x7fff5b4da000": 
+    "0x7ffee1aafd60": 
     {
       "path": "",
       "type": "external"
@@ -101,7 +134,7 @@ Running main() from gtest_main.cc
 {
   "mem_spaces": 
   {
-    "0x7fe5e2c05540": 
+    "0x7f8324700680": 
     {
       "path": "",
       "type": "allocated",
@@ -118,7 +151,7 @@ Running main() from gtest_main.cc
 {
   "mem_spaces": 
   {
-    "0x7fe5e2c05d80": 
+    "0x7f8324700600": 
     {
       "path": "",
       "type": "allocated",
@@ -130,11 +163,10 @@ Running main() from gtest_main.cc
   "total_bytes_compact": 40,
   "total_strided_bytes": 40
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_json.cpp : 173]
- json_generator_compact
+END_EXAMPLE("t_json_generator_compact")
 [       OK ] conduit_tutorial.json_generator_compact (1 ms)
-[----------] 4 tests from conduit_tutorial (1 ms total)
+[----------] 8 tests from conduit_tutorial (2 ms total)
 
 [----------] Global test environment tear-down
-[==========] 4 tests from 1 test case ran. (1 ms total)
-[  PASSED  ] 4 tests.
+[==========] 8 tests from 1 test case ran. (2 ms total)
+[  PASSED  ] 8 tests.

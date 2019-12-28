@@ -10,7 +10,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### General 
+- Added Node::parse() method, (C++, Python and Fortran) which supports common json and yaml parsing use cases without creating a generator instance.
 - Use FOLDER target property to group targets for Visual Studio
+- Added Node load(), and save() support to the C and Fortran APIs
 
 ### Changed
 
@@ -18,7 +20,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Node::load() and Node::save() now auto detect which protocol to use when protocol argument is an empty string
 - Changed Node::load() and Node::save() default protocol value to empty (default now is to auto detect)
 - Changed Python linking strategy to defer linking for our compiler modules
-
 
 ### Fixed
 

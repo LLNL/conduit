@@ -377,3 +377,41 @@ TEST(c_conduit_node, c_remove)
     conduit_node_destroy(n);
 }
 
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_parse)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node_parse(n,"{\"a\": 42.0}","json");
+    conduit_node *a = conduit_node_fetch(n,"a");
+    EXPECT_EQ(conduit_node_as_double(a),42.0);
+
+    conduit_node_parse(n,"a: 42.0","yaml");
+    a = conduit_node_fetch(n,"a");
+    EXPECT_EQ(conduit_node_as_double(a),42.0);
+
+    conduit_node_destroy(n);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_save_load)
+{
+    conduit_node *n1 = conduit_node_create();
+    conduit_node *n2 = conduit_node_create();
+
+    conduit_node *a1 = conduit_node_fetch(n1,"a");
+    conduit_node_set_double(a1,42.0);
+
+    conduit_node_save(n1,"tout_c_node_save.json","json");
+    conduit_node_load(n2,"tout_c_node_save.json","json");
+    conduit_node *a2 = conduit_node_fetch(n2,"a");
+    EXPECT_EQ(conduit_node_as_double(a2),42.0);
+
+    conduit_node_save(n1,"tout_c_node_save.yaml","yaml");
+    conduit_node_load(n2,"tout_c_node_save.yaml","yaml");
+    a2 = conduit_node_fetch(n2,"a");
+    EXPECT_EQ(conduit_node_as_double(a2),42.0);
+
+    conduit_node_destroy(n1);
+    conduit_node_destroy(n2);
+}
