@@ -75,6 +75,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_node_info
                 t_conduit_node_iterator
                 t_conduit_schema
+                t_conduit_error
                 t_conduit_utils)
 
 
