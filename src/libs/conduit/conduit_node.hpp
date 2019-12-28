@@ -234,13 +234,13 @@ public:
 ///
 //-----------------------------------------------------------------------------
     void load(const std::string &stream_path,
-              const std::string &protocol="conduit_bin");
+              const std::string &protocol="");
 
     void load(const std::string &stream_path,
               const Schema &schema);
 
     void save(const std::string &stream_path,
-              const std::string &protocol="conduit_bin") const;
+              const std::string &protocol="") const;
 
     void mmap(const std::string &stream_path);
 
@@ -4037,6 +4037,16 @@ private:
     void              init_list();
     // setup node to act as an object
     void              init_object();
+
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with protocol detection for load and save  --
+//
+//-----------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
+    static void  identify_protocol(const std::string &path,
+                                   std::string &io_type);
 
 //-----------------------------------------------------------------------------
 //
