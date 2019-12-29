@@ -20,6 +20,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Node::load() and Node::save() now auto detect which protocol to use when protocol argument is an empty string
 - Changed Node::load() and Node::save() default protocol value to empty (default now is to auto detect)
 - Changed Python linking strategy to defer linking for our compiler modules
+- Conduit Error Exception message strings now print cleaner (avoiding nesting doll string escaping headaches)
 
 ### Fixed
 

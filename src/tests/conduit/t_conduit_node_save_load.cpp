@@ -437,7 +437,7 @@ TEST(conduit_node_save_load, load_save_with_childless_object)
     EXPECT_EQ(n["path/to/empty"].dtype().id(),
               n_load["path/to/empty"].dtype().id());
     
-    n_load.print_detailed();
+    n_load.print_detailed(); 
 }
 
 //-----------------------------------------------------------------------------
