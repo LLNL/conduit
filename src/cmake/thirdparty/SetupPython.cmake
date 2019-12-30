@@ -107,7 +107,7 @@ if(PYTHONINTERP_FOUND)
             set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*${CMAKE_SHARED_LIBRARY_SUFFIX}")
             FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
             # then for static if shared is not found
-            if(NOT EXISTS ${PYTHON_GLOB_RESULT})
+            if(NOT PYTHON_GLOB_RESULT)
                 set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*${CMAKE_STATIC_LIBRARY_SUFFIX}")
             endif()
         else()
@@ -120,15 +120,16 @@ if(PYTHONINTERP_FOUND)
             FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
         endif()
 
-        FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
-        if(NOT EXISTS ${PYTHON_GLOB_RESULT})
+        FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})            
+        get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
+
+        if(NOT EXISTS ${PYTHON_LIBRARY})
             message(FATAL_ERROR "Failed to find main python library using pattern: ${PYTHON_GLOB_TEST}")
         endif()
-            
-        get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
+
         MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
         find_package(PythonLibs)
-        
+
         if(NOT PYTHONLIBS_FOUND)
             MESSAGE(FATAL_ERROR "Failed to find Python Libraries using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
         endif()
@@ -264,7 +265,6 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
                                   py_module_dir
                                   setup_file
                                   py_sources)
-
     MESSAGE(STATUS "Configuring hybrid python module: ${target_name}")
 
     PYTHON_ADD_DISTUTILS_SETUP("${target_name}_py_setup"
