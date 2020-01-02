@@ -78,7 +78,9 @@ if(PYTHONINTERP_FOUND)
                         ERROR_VARIABLE ERROR_FINDING_LIB_DIR)
         MESSAGE(STATUS "PYTHON_LIB_DIR ${PYTHON_LIB_DIR}")
 
-        if(NOT EXISTS ${PYTHON_LIB_DIR})
+        # if we are on macOS or linux, expect PYTHON_LIB_DIR to exist
+        # windows logic does not need PYTHON_LIB_DIR
+        if(NOT WIN32 AND NOT EXISTS ${PYTHON_LIB_DIR})
             MESSAGE(FATAL_ERROR "Reported PYTHON_LIB_DIR ${PYTHON_LIB_DIR} does not exist!")
         endif()
 
@@ -117,7 +119,6 @@ if(PYTHONINTERP_FOUND)
                 get_filename_component(PYTHON_ROOT_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
                 set(PYTHON_GLOB_TEST "${PYTHON_ROOT_DIR}/libs/python*.lib")
             endif()
-            FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
         endif()
 
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
