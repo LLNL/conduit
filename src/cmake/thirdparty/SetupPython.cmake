@@ -123,10 +123,14 @@ if(PYTHONINTERP_FOUND)
 
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
 
-        #glob result might be a list, if so select the first entry as py lib
-        list(LENGTH PYTHON_GLOB_RESULT PYTHON_GLOB_RESULT_LEN)
-        if(${PYTHON_GLOB_RESULT_LEN} GREATER 1)
-            list(GET PYTHON_GLOB_RESULT 1 PYTHON_GLOB_RESULT)
+        if(NOT WIN32)
+            # life is ok on windows, but else where
+            # the glob result might be a list due to symlinks, etc
+            # if it is a list, select the first entry as py lib
+            list(LENGTH PYTHON_GLOB_RESULT PYTHON_GLOB_RESULT_LEN)
+            if(${PYTHON_GLOB_RESULT_LEN} GREATER 0)
+                list(GET PYTHON_GLOB_RESULT 1 PYTHON_GLOB_RESULT)
+            endif()
         endif()
 
         get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
