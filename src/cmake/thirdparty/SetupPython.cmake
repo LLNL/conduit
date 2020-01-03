@@ -123,8 +123,13 @@ if(PYTHONINTERP_FOUND)
 
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
 
+        # make sure we found something
+        if(NOT PYTHON_GLOB_RESULT)
+            message(FATAL_ERROR "Failed to find main python library using pattern: ${PYTHON_GLOB_TEST}")
+        endif()
+
         if(NOT WIN32)
-            # life is ok on windows, but else where
+            # life is ok on windows, but elsewhere
             # the glob result might be a list due to symlinks, etc
             # if it is a list, select the first entry as py lib
             list(LENGTH PYTHON_GLOB_RESULT PYTHON_GLOB_RESULT_LEN)
@@ -134,10 +139,6 @@ if(PYTHONINTERP_FOUND)
         endif()
 
         get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
-
-        if(NOT WIN32 AND NOT EXISTS ${PYTHON_LIBRARY})
-            message(FATAL_ERROR "Failed to find main python library using pattern: ${PYTHON_GLOB_TEST}")
-        endif()
 
         MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
         find_package(PythonLibs)
