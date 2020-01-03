@@ -60,7 +60,7 @@ PYTHON_ADD_HYBRID_MODULE(conduit_relay_python
                          ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
 
 # link with the proper libs
-target_link_libraries(conduit_relay_python conduit conduit_relay ${PYTHON_LIBRARIES})
+target_link_libraries(conduit_relay_python conduit conduit_relay)
 
 # add relay io submodule
 PYTHON_ADD_COMPILED_MODULE(conduit_relay_io_python

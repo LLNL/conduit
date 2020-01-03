@@ -57,6 +57,10 @@ if(PYTHONINTERP_FOUND)
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
+        
+        if(NOT EXISTS ${PYTHON_INCLUDE_DIR})
+            MESSAGE(FATAL_ERROR "Reported PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} does not exist!")
+        endif()
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                                 "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
@@ -64,12 +68,21 @@ if(PYTHONINTERP_FOUND)
                         ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
         MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
 
+        if(NOT EXISTS ${PYTHON_SITE_PACKAGES_DIR})
+            MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
+        endif()
+
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                                 "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
                         OUTPUT_VARIABLE PYTHON_LIB_DIR
                         ERROR_VARIABLE ERROR_FINDING_LIB_DIR)
         MESSAGE(STATUS "PYTHON_LIB_DIR ${PYTHON_LIB_DIR}")
 
+        # if we are on macOS or linux, expect PYTHON_LIB_DIR to exist
+        # windows logic does not need PYTHON_LIB_DIR
+        if(NOT WIN32 AND NOT EXISTS ${PYTHON_LIB_DIR})
+            MESSAGE(FATAL_ERROR "Reported PYTHON_LIB_DIR ${PYTHON_LIB_DIR} does not exist!")
+        endif()
 
         # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
@@ -89,10 +102,14 @@ if(PYTHONINTERP_FOUND)
 
         # check for python libs differs for windows python installs
         if(NOT WIN32)
-            # use shared python if we are using shared libs
-            if(BUILD_SHARED_LIBS)
-                set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*${CMAKE_SHARED_LIBRARY_SUFFIX}")
-            else()
+            # we may build a shared python module against a static python
+            # check for both shared and static libs cases
+
+            # check for shared first
+            set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*${CMAKE_SHARED_LIBRARY_SUFFIX}")
+            FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
+            # then for static if shared is not found
+            if(NOT PYTHON_GLOB_RESULT)
                 set(PYTHON_GLOB_TEST "${PYTHON_LIB_DIR}/libpython*${CMAKE_STATIC_LIBRARY_SUFFIX}")
             endif()
         else()
@@ -103,12 +120,29 @@ if(PYTHONINTERP_FOUND)
                 set(PYTHON_GLOB_TEST "${PYTHON_ROOT_DIR}/libs/python*.lib")
             endif()
         endif()
-            
+
         FILE(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
+
+        # make sure we found something
+        if(NOT PYTHON_GLOB_RESULT)
+            message(FATAL_ERROR "Failed to find main python library using pattern: ${PYTHON_GLOB_TEST}")
+        endif()
+
+        if(NOT WIN32)
+            # life is ok on windows, but elsewhere
+            # the glob result might be a list due to symlinks, etc
+            # if it is a list, select the first entry as py lib
+            list(LENGTH PYTHON_GLOB_RESULT PYTHON_GLOB_RESULT_LEN)
+            if(${PYTHON_GLOB_RESULT_LEN} GREATER 1)
+                list(GET PYTHON_GLOB_RESULT 0 PYTHON_GLOB_RESULT)
+            endif()
+        endif()
+
         get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
+
         MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
         find_package(PythonLibs)
-        
+
         if(NOT PYTHONLIBS_FOUND)
             MESSAGE(FATAL_ERROR "Failed to find Python Libraries using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
         endif()
@@ -204,8 +238,21 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
 
     MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
 
-    # link with python
-    target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
+    # macOS and linux
+    # defer linking with python, let the final python interpreter
+    # provide the proper symbols
+
+    # on osx we need to use the following flag to 
+    # avoid undefined linking errors
+    if(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG)
+        set_target_properties(${target_name} PROPERTIES 
+                              LINK_FLAGS "-undefined dynamic_lookup")
+    endif()
+    
+    # win32, link to python
+    if(WIN32)
+        target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
+    endif()
 
     # support installing the python module components to an
     # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
@@ -232,56 +279,17 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
                                   setup_file
                                   py_sources)
     MESSAGE(STATUS "Configuring hybrid python module: ${target_name}")
+
     PYTHON_ADD_DISTUTILS_SETUP("${target_name}_py_setup"
                                ${dest_dir}
                                ${py_module_dir}
                                ${setup_file}
                                ${py_sources})
-    PYTHON_ADD_MODULE(${target_name} ${ARGN})
 
-    set_target_properties(${target_name} PROPERTIES
-                                         LIBRARY_OUTPUT_DIRECTORY
-                                         ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
-
-    foreach(CFG_TYPE ${CMAKE_CONFIGURATION_TYPES})
-        string(TOUPPER ${CFG_TYPE} CFG_TYPE)
-        set_target_properties(${target_name} PROPERTIES
-                                             LIBRARY_OUTPUT_DIRECTORY_${CFG_TYPE}
-                                             ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
-    endforeach()
-
-    MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
-
-
-    # macOS and linux
-    # defer linking with python, let the final python interpreter
-    # provide the proper symbols
-    #
-    # on osx we may need to use the following flag to 
-    # avoid linking errors
-    if(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG)
-        set_target_properties(${target_name} PROPERTIES 
-                              LINK_FLAGS "-undefined dynamic_lookup")
-    endif()
-    
-    # win32, link to python
-    if(WIN32)
-        target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
-    endif()
-
-    # support installing the python module components to an
-    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
-    set(py_install_dir ${dest_dir})
-    if(PYTHON_MODULE_INSTALL_PREFIX)
-        set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
-    endif()
-
-    install(TARGETS ${target_name}
-            EXPORT  conduit
-            LIBRARY DESTINATION ${py_install_dir}/${py_module_dir}
-            ARCHIVE DESTINATION ${py_install_dir}/${py_module_dir}
-            RUNTIME DESTINATION ${py_install_dir}/${py_module_dir}
-    )
+    PYTHON_ADD_COMPILED_MODULE(${target_name}
+                               ${dest_dir}
+                               ${py_module_dir}
+                               ${ARGN})
 
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
