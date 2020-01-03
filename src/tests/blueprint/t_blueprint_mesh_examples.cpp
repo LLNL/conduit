@@ -331,7 +331,7 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
     
     Node mesh;
     
-    for(index_t i = 0; i < braid_type_strings.size(); i++)
+    for(size_t i = 0; i < braid_type_strings.size(); i++)
     {
         mesh.reset();
         EXPECT_THROW(blueprint::mesh::examples::braid(braid_type_strings[i],
@@ -345,7 +345,7 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
     braid_type_strings.push_back("points");
     braid_type_strings.push_back("points_implicit");
     
-    for(index_t i = 0; i < braid_type_strings.size(); i++)
+    for(size_t i = 0; i < braid_type_strings.size(); i++)
     {
         mesh.reset();
         blueprint::mesh::examples::braid(braid_type_strings[i],
@@ -441,7 +441,7 @@ TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
     braid_type_strings.push_back("tris");
     braid_type_strings.push_back("quads");
     
-    for(index_t i = 0; i < braid_type_strings.size(); i++)
+    for(size_t i = 0; i < braid_type_strings.size(); i++)
     {
         mesh.reset();
         blueprint::mesh::examples::braid(braid_type_strings[i],

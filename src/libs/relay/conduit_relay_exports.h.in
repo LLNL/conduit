@@ -62,7 +62,9 @@
 #if defined(CONDUIT_RELAY_EXPORTS) || \
     defined(conduit_relay_EXPORTS) || \
     defined(CONDUIT_RELAY_MPI_EXPORTS) || \
-    defined(conduit_relay_mpi_EXPORTS)
+    defined(conduit_relay_mpi_EXPORTS) || \
+    defined(CONDUIT_RELAY_MPI_IO_EXPORTS) || \
+    defined(conduit_relay_mpi_io_EXPORTS)
     /* define catch all def */
     #define CONDUIT_RELAY_EXPORTS_DEFINED 1
 #endif

@@ -1275,10 +1275,10 @@ struct TopologyMetadata
         {
             index_t entity_index = entity_index_bag.back();
             entity_index_bag.pop_back();
-            index_t entity_dim = entity_dim_bag.back();
+            index_t entity_dim_back = entity_dim_bag.back();
             entity_dim_bag.pop_back();
 
-            if(entity_dim == embed_dim)
+            if(entity_dim_back == embed_dim)
             {
                 bool embed_exists = embed_set.find(entity_index) == embed_set.end();
                 if(!unique || !embed_exists)
@@ -1290,12 +1290,12 @@ struct TopologyMetadata
             else
             {
                 const std::set<index_t> &embed_ids = get_entity_assocs(
-                    entity_index, entity_dim, entity_dim - 1);
+                    entity_index, entity_dim_back, entity_dim_back - 1);
                 for(std::set<index_t>::const_iterator embed_it = embed_ids.begin();
                     embed_it != embed_ids.end(); embed_it++)
                 {
                     entity_index_bag.push_back(*embed_it);
-                    entity_dim_bag.push_back(entity_dim - 1);
+                    entity_dim_bag.push_back(entity_dim_back - 1);
                 }
             }
         }
@@ -1616,7 +1616,7 @@ convert_topology_to_unstructured(const std::string &base_type,
         num_elems *= edims_axes[d];
         vdims_axes[d] = edims_axes[d] + 1;
     }
-    index_t indices_per_elem = pow(2, csys_axes.size());
+    index_t indices_per_elem = (index_t) pow(2, csys_axes.size());
 
     conduit::Node &conn_node = dest["elements/connectivity"];
     conn_node.set(DataType(int_dtype.id(), num_elems * indices_per_elem));
