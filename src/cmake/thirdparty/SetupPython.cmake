@@ -135,7 +135,7 @@ if(PYTHONINTERP_FOUND)
 
         get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
 
-        if(NOT EXISTS ${PYTHON_LIBRARY})
+        if(NOT WIN32 AND NOT EXISTS ${PYTHON_LIBRARY})
             message(FATAL_ERROR "Failed to find main python library using pattern: ${PYTHON_GLOB_TEST}")
         endif()
 
