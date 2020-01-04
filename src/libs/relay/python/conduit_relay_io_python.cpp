@@ -317,7 +317,6 @@ PyRelay_IOHandle_is_open(PyRelay_IOHandle *self)
     else
         Py_RETURN_FALSE;
 
-    Py_RETURN_NONE; 
 }
 
 

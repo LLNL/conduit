@@ -177,7 +177,7 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
         blueprint::mesh::coordset::rectilinear::verify,
         blueprint::mesh::coordset::_explicit::verify};
 
-    for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
+    for(size_t xi = 0; xi < COORD_TYPES.size(); xi++)
     {
         const std::string icoordset_type = COORD_TYPES[xi];
         const std::string icoordset_braid = get_braid_type(icoordset_type);
@@ -186,7 +186,7 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
         blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(index_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
         {
             const std::string jcoordset_type = COORD_TYPES[xj];
             const std::string jcoordset_braid = get_braid_type(jcoordset_type);
@@ -220,7 +220,7 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
         {NULL, NULL, blueprint::mesh::coordset::rectilinear::to_explicit},
         {NULL, NULL, NULL}};
 
-    for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
+    for(size_t xi = 0; xi < COORD_TYPES.size(); xi++)
     {
         const std::string icoordset_type = COORD_TYPES[xi];
         const std::string icoordset_braid = get_braid_type(icoordset_type);
@@ -229,15 +229,15 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
         blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(index_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
         {
             conduit::Node jcoordset;
             const std::string jcoordset_type = COORD_TYPES[xj];
             XformCoordsFun to_new_coordset = xform_funs[xi][xj];
 
-            for(index_t ii = 0; ii < INT_DTYPES.size(); ii++)
+            for(size_t ii = 0; ii < INT_DTYPES.size(); ii++)
             {
-                for(index_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
+                for(size_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
                 {
                     // NOTE: The following lines are for debugging purposes only.
                     std::cout << "Testing " <<
@@ -285,7 +285,7 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
 
     // NOTE(JRC): We skip the "points" topology during this general check
     // because its rules are peculiar and specific.
-    for(index_t xi = 1; xi < TOPO_TYPES.size(); xi++)
+    for(size_t xi = 1; xi < TOPO_TYPES.size(); xi++)
     {
         const std::string itopology_type = TOPO_TYPES[xi];
         const std::string itopology_braid = get_braid_type(itopology_type);
@@ -295,7 +295,7 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
         const conduit::Node &itopology = imesh["topologies"].child(0);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(index_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
         {
             const std::string jtopology_type = TOPO_TYPES[xj];
             const std::string jtopology_braid = get_braid_type(jtopology_type);
@@ -350,7 +350,7 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
 
     // NOTE(JRC): We skip the "points" topology during this general check
     // because its rules are peculiar and specific.
-    for(index_t xi = 1; xi < TOPO_TYPES.size(); xi++)
+    for(size_t xi = 1; xi < TOPO_TYPES.size(); xi++)
     {
         const std::string itopology_type = TOPO_TYPES[xi];
         const std::string itopology_braid = get_braid_type(itopology_type);
@@ -366,14 +366,14 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
             ibase.set(temp);
         }
 
-        for(index_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
         {
             const std::string jtopology_type = TOPO_TYPES[xj];
             XformTopoFun to_new_topology = xform_funs[xi][xj];
 
-            for(index_t ii = 0; ii < INT_DTYPES.size(); ii++)
+            for(size_t ii = 0; ii < INT_DTYPES.size(); ii++)
             {
-                for(index_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
+                for(size_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
                 {
                     // NOTE: The following lines are for debugging purposes only.
                     std::cout << "Testing " <<

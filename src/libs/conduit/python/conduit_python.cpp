@@ -5105,7 +5105,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
     {
         // try general case as conduit list
         node.reset();
-        bool ok = true;
+        ok = true;
         for(Py_ssize_t idx=0; idx < list_size && ok; idx++)
         {
             PyObject *py_entry = PyList_GET_ITEM(value, idx);
@@ -5212,7 +5212,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
     {
         // try general case as conduit list
         node.reset();
-        bool ok = true;
+        ok = true;
         for(Py_ssize_t idx=0; idx < tuple_size && ok; idx++)
         {
             PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
