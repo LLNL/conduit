@@ -61,11 +61,13 @@ using namespace conduit;
 TEST(conduit_tutorial, numeric_as_dtype)
 {
     CONDUIT_INFO("numeric_as_dtype");
-        
+    
+    // _conduit_tutorial_cpp_numeric_node_as_dtype_start
     Node n;
     int64 val = 100;
     n = val;
     std::cout << n.as_int64() << std::endl;
+    // _conduit_tutorial_cpp_numeric_node_as_dtype_end
 
     CONDUIT_INFO("numeric_as_dtype");
 }
@@ -75,11 +77,13 @@ TEST(conduit_tutorial, numeric_via_value)
 {
     CONDUIT_INFO("numeric_via_value");
     
+    // _conduit_tutorial_cpp_numeric_node_value_start
     Node n;
     int64 val = 100;
     n = val;
     int64 my_val = n.value();
     std::cout << my_val << std::endl;
+    // _conduit_tutorial_cpp_numeric_node_value_end
 
     CONDUIT_INFO("numeric_via_value");
 }
@@ -90,6 +94,7 @@ TEST(conduit_tutorial, numeric_ptr_as_dtype)
 {
     CONDUIT_INFO("numeric_ptr_as_dtype");
     
+    // _conduit_tutorial_cpp_numeric_array_node_value_start
     int64 vals[4] = {100,200,300,400};
 
     Node n;
@@ -101,6 +106,7 @@ TEST(conduit_tutorial, numeric_ptr_as_dtype)
     {
         std::cout << "my_vals[" << i << "] = " << my_vals[i] << std::endl;
     }
+    // _conduit_tutorial_cpp_numeric_array_node_value_end
 
     CONDUIT_INFO("numeric_ptr_as_dtype");
 }
@@ -110,6 +116,7 @@ TEST(conduit_tutorial, numeric_ptr_via_value)
 {
     CONDUIT_INFO("numeric_ptr_via_value");
      
+    // _conduit_tutorial_cpp_numeric_array_node_value_start
     int64 vals[4] = {100,200,300,400};
 
     Node n;
@@ -121,7 +128,8 @@ TEST(conduit_tutorial, numeric_ptr_via_value)
     {
         std::cout << "my_vals[" << i << "] = " << my_vals[i] << std::endl;
     }
-    
+    // _conduit_tutorial_cpp_numeric_array_node_value_end
+
     CONDUIT_INFO("numeric_ptr_via_value");
 }
 
@@ -130,6 +138,7 @@ TEST(conduit_tutorial, numeric_strided_data_array)
 { 
     CONDUIT_INFO("numeric_strided_data_array");
     
+    // _conduit_tutorial_cpp_numeric_non-contiguous_start
     int64 vals[4] = {100,200,300,400};
 
     Node n;
@@ -145,7 +154,8 @@ TEST(conduit_tutorial, numeric_strided_data_array)
     }
     
     my_vals.print();
-    
+    // _conduit_tutorial_cpp_numeric_non-contiguous_end
+
     CONDUIT_INFO("numeric_strided_data_array");
 }
 
@@ -155,6 +165,7 @@ TEST(conduit_tutorial, numeric_double_conversion_start)
     CONDUIT_INFO("numeric_double_conversion_start");
 }
 
+// _conduit_tutorial_cpp_numeric_introspection_start
 //-----------------------------------------------------------------------------
 void must_have_doubles_function(double *vals,index_t num_vals)
 {
@@ -214,6 +225,7 @@ TEST(conduit_tutorial, numeric_double_conversion)
 
     process_doubles(n["double_vals"]);
 }
+// _conduit_tutorial_cpp_numeric_introspection_end
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, numeric_double_conversion_end)
