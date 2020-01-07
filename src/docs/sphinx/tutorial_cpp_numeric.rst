@@ -56,12 +56,14 @@ methods.
 .. # from t_conduit_docs_tutorial_numeric: numeric_as_dtype
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :lines: 64-69
+   :start-after: _conduit_tutorial_cpp_numeric_node_as_dtype_start
+   :end-before:  _conduit_tutorial_cpp_numeric_node_as_dtype_end
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :lines: 8
+   :start-after: _conduit_tutorial_cpp_numeric_node_as_dtype_out_start
+   :end-before:  _conduit_tutorial_cpp_numeric_node_as_dtype_out_end
 
 Or you can use Node::value(), which can infer the correct return type via a
 cast.
@@ -69,12 +71,14 @@ cast.
 .. # from t_conduit_docs_tutorial_numeric: numeric_via_value
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :lines: 77-83
+   :start-after: _conduit_tutorial_cpp_numeric_node_value_start
+   :end-before:  _conduit_tutorial_cpp_numeric_node_value_end
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :lines: 15
+   :start-after: _conduit_tutorial_cpp_numeric_node_value_out_start
+   :end-before:  _conduit_tutorial_cpp_numeric_node_value_out_end
 
 
 Accessing array data via pointers works the same way, using Node's *as_{type}*
@@ -83,12 +87,14 @@ methods.
 .. # from t_conduit_docs_tutorial_numeric: numeric_ptr_as_dtype
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :lines: 92-103
+   :start-after: _conduit_tutorial_cpp_numeric_array_node_pointer_start
+   :end-before:  _conduit_tutorial_cpp_numeric_array_node_pointer_end
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :lines: 22-25
+   :start-after: _conduit_tutorial_cpp_numeric_array_node_pointer_out_start
+   :end-before:  _conduit_tutorial_cpp_numeric_array_node_pointer_out_end
 
 
 Or using Node::value():
@@ -96,12 +102,14 @@ Or using Node::value():
 .. # from t_conduit_docs_tutorial_numeric: numeric_ptr_via_value
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :lines: 112-124
+   :start-after: _conduit_tutorial_cpp_numeric_array_node_value_start
+   :end-before:  _conduit_tutorial_cpp_numeric_array_node_value_end
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :lines: 32-35
+   :start-after: _conduit_tutorial_cpp_numeric_array_node_value_out_start
+   :end-before:  _conduit_tutorial_cpp_numeric_array_node_value_out_end
 
 
 
@@ -112,12 +120,14 @@ indexing for all types of arrays.
 .. # from t_conduit_docs_tutorial_numeric: numeric_strided_data_array
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :lines: 132-148
+   :start-after: _conduit_tutorial_cpp_numeric_non-contiguous_start
+   :end-before:  _conduit_tutorial_cpp_numeric_non-contiguous_end
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :lines: 42-44
+   :start-after: _conduit_tutorial_cpp_numeric_non-contiguous_out_start
+   :end-before:  _conduit_tutorial_cpp_numeric_non-contiguous_out_end
 
 
 
@@ -125,7 +135,7 @@ Using Introspection and Conversion
 -----------------------------------
 
 In this example, we have an array in a node that we are interested in
-processing using an and existing function that only handles doubles. We ensure
+processing using an existing function that only handles doubles. We ensure
 the node is compatible with the function, or transform it to a contiguous
 double array. 
 
@@ -133,9 +143,11 @@ double array.
 .. # from t_conduit_docs_tutorial_numeric: numeric_double_conversion
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :lines: 157-218
+   :start-after: _conduit_tutorial_cpp_numeric_introspection_start
+   :end-before:  _conduit_tutorial_cpp_numeric_introspection_end
    :language: cpp
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :lines: 53-66
+   :start-after: _conduit_tutorial_cpp_numeric_introspection_out_start
+   :end-before:  _conduit_tutorial_cpp_numeric_introspection_out_end
 

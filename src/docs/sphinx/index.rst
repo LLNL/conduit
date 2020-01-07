@@ -93,7 +93,7 @@ Conduit was built around the concept that an intuitive in-core data description 
 Projects Using Conduit
 ------------------------
 Conduit is used in `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit/>`_, `ALPINE Ascent <https://github.com/Alpine-DAV/ascent>`_, `MFEM <http://mfem.org/>`_, 
-and LLNL's Axom Toolkit (to be released).
+and `Axom <https://github.com/LLNL/axom>`_.
 
 Conduit Project Resources
 --------------------------

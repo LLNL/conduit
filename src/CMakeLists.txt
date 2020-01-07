@@ -46,11 +46,6 @@ cmake_minimum_required(VERSION 3.0)
 ################################
 # cmake policy selections
 ################################
-# cmake var deref policy
-if(POLICY CMP0054)
-  cmake_policy(SET CMP0054 OLD)
-endif()
-
 # allow find_packages to use ZZZ_ROOT vars
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
@@ -73,7 +68,7 @@ option(ENABLE_DOCS        "Build conduit documentation" ON)
 option(ENABLE_COVERAGE    "Build with coverage flags"   OFF)
 
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
-option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
+option(ENABLE_FORTRAN     "Build Fortran Support"       OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 
