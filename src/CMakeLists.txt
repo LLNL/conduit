@@ -166,4 +166,9 @@ add_subdirectory(config)
 # Create CMake importable
 # exports for all of our targets
 ################################
+# install exports to comply with standard find_package search path expectations
+install(EXPORT conduit DESTINATION lib/cmake/conduit)
+# also install to support our old export directory layout 
+# (preserving for now to avoid issues with downstream packages using old layout)
 install(EXPORT conduit DESTINATION lib/cmake)
+

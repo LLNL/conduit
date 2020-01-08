@@ -25,6 +25,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 
 #### General 
+- Fixed install paths for CMake exported target files to follow standard CMake find_package() search conventions. Also perserved duplicate files to support old import path structure for this release.
 - python: Fixed Node.set_external() to accept conduit nodes as well as numpy arrays
 
 
