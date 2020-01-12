@@ -92,14 +92,14 @@ using namespace conduit;
 #if defined(IS_PY3K)
 
 //-----------------------------------------------------------------------------
-int
+static int
 PyString_Check(PyObject *o)
 {
     return PyUnicode_Check(o);
 }
 
 //-----------------------------------------------------------------------------
-char *
+static char *
 PyString_AsString(PyObject *py_obj)
 {
     char *res = NULL;
@@ -131,14 +131,14 @@ PyString_AsString(PyObject *py_obj)
 }
 
 //-----------------------------------------------------------------------------
-PyObject *
+static PyObject *
 PyString_FromString(const char *s)
 {
     return PyUnicode_FromString(s);
 }
 
 //-----------------------------------------------------------------------------
-void
+static void
 PyString_AsString_Cleanup(char *bytes)
 {
     free(bytes);
@@ -146,14 +146,14 @@ PyString_AsString_Cleanup(char *bytes)
 
 
 //-----------------------------------------------------------------------------
-int
+static int
 PyInt_Check(PyObject *o)
 {
     return PyLong_Check(o);
 }
 
 //-----------------------------------------------------------------------------
-long
+static long
 PyInt_AsLong(PyObject *o)
 {
     return PyLong_AsLong(o);
