@@ -52,6 +52,42 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.5.1
+-----------------
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.5.1/conduit-v0.5.1-src-with-blt.tar.gz>`__
+
+Highlights
++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+Added
+~~~~~~~~~
+
+* **General**
+
+ * Added Node::parse() method, (C++, Python and Fortran) which supports common json and yaml parsing use cases without creating a generator instance.
+ * Use FOLDER target property to group targets for Visual Studio
+ * Added Node load(), and save() support to the C and Fortran APIs
+
+Changed
+~~~~~~~~~
+
+* **General**
+
+ * Node::load() and Node::save() now auto detect which protocol to use when protocol argument is an empty string
+ * Changed Node::load() and Node::save() default protocol value to empty (default now is to auto detect)
+ * Changed Python linking strategy to defer linking for our compiler modules
+ * Conduit Error Exception message strings now print cleaner (avoiding nesting doll string escaping headaches)
+
+Fixed
+~~~~~~~~~
+
+* **General**
+
+ * Fixed install paths for CMake exported target files to follow standard CMake find_package() search conventions. Also perserved duplicate files to support old import path structure for this release.
+ * python: Fixed Node.set_external() to accept conduit nodes as well as numpy arrays
+
 
 v0.5.0
 -----------------
