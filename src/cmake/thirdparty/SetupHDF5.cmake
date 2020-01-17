@@ -259,6 +259,7 @@ set(CONDUIT_HDF5_TPL_LIB_FLAGS ${hdf5_tpl_lnk_flags})
 #
 message(STATUS "HDF5 Include Dirs: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 Libraries:    ${HDF5_LIBRARIES}")
+message(STATUS "HDF5 Definitions:  ${HDF5_DEFINITIONS}")
 message(STATUS "HDF5 is parallel:  ${HDF5_IS_PARALLEL}")
 
 message(STATUS "HDF5 Thirdparty Include Flags: ${hdf5_tpl_inc_flags}")
@@ -276,11 +277,13 @@ elseif(WIN32 AND TARGET hdf5::hdf5-static )
     blt_register_library(NAME hdf5
                          LIBRARIES hdf5::hdf5-static)
 else()
-    # reg includes and libs with btl
-    message(STATUS "HDF5 using HDF5_INCLUDE_DIRS + HDF5_LIBRARIES")
+    # reg includes and libs with blt
+    message(STATUS "HDF5 using HDF5_DEFINITIONS + HDF5_INCLUDE_DIRS + HDF5_LIBRARIES")
+    message(STATUS "HDF5_DEFINITIONS:  ${HDF5_DEFINITIONS}")
     message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
-    message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
+    message(STATUS "HDF5_LIBRARIES:    ${HDF5_LIBRARIES}")
     blt_register_library(NAME hdf5
+                         DEFINITIONS  ${HDF5_DEFINITIONS}
                          INCLUDES ${HDF5_INCLUDE_DIRS}
                          LIBRARIES ${HDF5_LIBRARIES})
 endif()
