@@ -63,23 +63,10 @@ if(NOT WIN32)
     if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
         set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
     endif()
-    # Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
-    # all the info about the hdf5 install
-    find_package(HDF5 REQUIRED)
-else()
-    find_package(HDF5 REQUIRED)
-    # In some cases: 
-    # CMake's FindHDF5 module is buggy on windows and will put the dll
-    # in HDF5_LIBRARY.  Instead, use the 'CONFIG' signature of find_package
-    # with appropriate hints for where cmake can find hdf5-config.cmake.
-    #find_package(HDF5 CONFIG 
-    #             REQUIRED
-    #             HINTS ${HDF5_DIR}/cmake/hdf5 
-    #                   ${HDF5_DIR}/lib/cmake/hdf5
-    #                   ${HDF5_DIR}/share/cmake/hdf5
-    #                   ${HDF5_DIR}/cmake)
 endif()
 
+# Use CMake's FindHDF5 module to locate hdf5 and setup hdf5
+find_package(HDF5 REQUIRED)
 
 # FindHDF5/find_package sets HDF5_DIR to it's installed CMake info if it exists
 # we want to keep HDF5_DIR as the root dir of the install to be 
@@ -278,17 +265,18 @@ message(STATUS "HDF5 Thirdparty Include Flags: ${hdf5_tpl_inc_flags}")
 message(STATUS "HDF5 Thirdparty Link Flags: ${hdf5_tpl_lnk_flags}")
 
 # if newer style hdf5 imported targets exist, use those on windows
-if(WIN32 AND TARGET hdf5::hdf5-shared)
-    if(BUILD_SHARED_LIBS)
-        message(STATUS "HDF5 using hdf5::hdf5-shared target")
-        blt_register_library(NAME hdf5
-                             LIBRARIES hdf5::hdf5-shared)
-    else()
-        message(STATUS "HDF5 using hdf5::hdf5-static target")
-        blt_register_library(NAME hdf5
-                             LIBRARIES hdf5::hdf5-static)
-    endif()
+if(WIN32 AND TARGET hdf5::hdf5-shared AND BUILD_SHARED_LIBS)
+    # reg shared ver of imported lib target
+    message(STATUS "HDF5 using hdf5::hdf5-shared target")
+    blt_register_library(NAME hdf5
+                         LIBRARIES hdf5::hdf5-shared)
+elseif(WIN32 AND TARGET hdf5::hdf5-static )
+    # reg static ver of imported lib target
+    message(STATUS "HDF5 using hdf5::hdf5-static target")
+    blt_register_library(NAME hdf5
+                         LIBRARIES hdf5::hdf5-static)
 else()
+    # reg includes and libs with btl
     message(STATUS "HDF5 using HDF5_INCLUDE_DIRS + HDF5_LIBRARIES")
     message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
     message(STATUS "HDF5_LIBRARIES: ${HDF5_LIBRARIES}")
