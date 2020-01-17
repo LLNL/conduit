@@ -186,12 +186,17 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
     # also use distutils for the install ...
     # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
     if(PYTHON_MODULE_INSTALL_PREFIX)
+        set(py_mod_inst_prefix ${PYTHON_MODULE_INSTALL_PREFIX})
+        # make sure windows style paths don't ruin our day (or night)
+        if(WIN32)
+            string(REGEX REPLACE "/" "\\\\" py_mod_inst_prefix  ${PYTHON_MODULE_INSTALL_PREFIX})
+        endif()
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
                     build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build_install
-                    install --install-purelib=${PYTHON_MODULE_INSTALL_PREFIX}
+                    install --install-purelib=${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")

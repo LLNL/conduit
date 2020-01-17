@@ -242,7 +242,7 @@ macro(add_compiled_library)
                     EXPORT ${args_EXPORT}
                     LIBRARY DESTINATION lib
                     ARCHIVE DESTINATION lib
-                    RUNTIME DESTINATION lib)
+                    RUNTIME DESTINATION bin)
         endif()
     endif()
 
