@@ -155,16 +155,11 @@ function(add_python_test )
                  PROPERTY
                  ENVIRONMENT "PYTHONPATH=${py_path}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
     if(WIN32)
-        # proper path for non config based gen (nmake, etc)
+        # proper path to dlls for vstudio and proper path for non config based gen (nmake, etc)
         set_property(TEST ${TEST}
                      APPEND
                      PROPERTY
-                     ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}$ENV{PATH}")
-        # proper path to dlls for vstudio
-        set_property(TEST ${TEST}
-                     APPEND
-                     PROPERTY
-                     ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
+                     ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
     endif()
 
     # set folder if passed
