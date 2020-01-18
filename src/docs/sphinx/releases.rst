@@ -79,6 +79,7 @@ Changed
  * Changed Node::load() and Node::save() default protocol value to empty (default now is to auto detect)
  * Changed Python linking strategy to defer linking for our compiler modules
  * Conduit Error Exception message strings now print cleaner (avoiding nesting doll string escaping headaches)
+ * Build system improvements to support conda-forge builds for Linux, macOS, and Windows
 
 Fixed
 ~~~~~~~~~
@@ -87,6 +88,7 @@ Fixed
 
  * Fixed install paths for CMake exported target files to follow standard CMake find_package() search conventions. Also perserved duplicate files to support old import path structure for this release.
  * python: Fixed Node.set_external() to accept conduit nodes as well as numpy arrays
+ * Fixed dll install locations for Windows
 
 
 v0.5.0
