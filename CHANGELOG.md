@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased 
+## [0.5.1] - Released 2020-01-18
 
 ### Added
 
@@ -21,12 +21,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Changed Node::load() and Node::save() default protocol value to empty (default now is to auto detect)
 - Changed Python linking strategy to defer linking for our compiler modules
 - Conduit Error Exception message strings now print cleaner (avoiding nesting doll string escaping headaches)
+- Build system improvements to support conda-forge builds for Linux, macOS, and Windows
 
 ### Fixed
 
 #### General 
 - Fixed install paths for CMake exported target files to follow standard CMake find_package() search conventions. Also perserved duplicate files to support old import path structure for this release.
 - python: Fixed Node.set_external() to accept conduit nodes as well as numpy arrays
+- Fixed dll install locations for Windows
 
 
 ## [0.5.0] - Released 2019-10-25
@@ -308,7 +310,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/llnl/conduit/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/llnl/conduit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/llnl/conduit/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/llnl/conduit/compare/v0.3.0...v0.3.1
