@@ -59,6 +59,7 @@ using namespace conduit::utils;
 /// Testing Constants ///
 
 typedef void (*LogFun)(Node&, const std::string&, const std::string&);
+typedef void (*FilerFun)(Node&);
 
 /// Testing Functions ///
 
@@ -128,7 +129,7 @@ TEST(conduit_log, validation_functions)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_log, filter_invalid_function)
+TEST(conduit_log, remove_valid_function)
 {
     { // Test: One-Level Filtered/Unfiltered //
         for(index_t ti = 0; ti < 2; ti++)
@@ -142,7 +143,7 @@ TEST(conduit_log, filter_invalid_function)
 
             Generator gen_info(trivial_schema, "json");
             Node info(gen_info, true);
-            log::filter_invalid(info);
+            log::remove_valid(info);
 
             ASSERT_EQ(info.dtype().is_empty(), test_valid);
         }
@@ -153,7 +154,7 @@ TEST(conduit_log, filter_invalid_function)
 
         Generator gen_info(basic_schema, "json");
         Node info(gen_info, true);
-        log::filter_invalid(info);
+        log::remove_valid(info);
 
         ASSERT_TRUE(info.dtype().is_empty());
     }
@@ -163,7 +164,7 @@ TEST(conduit_log, filter_invalid_function)
 
         Generator gen_info(nontrivial_schema, "json");
         Node info(gen_info, true);
-        log::filter_invalid(info);
+        log::remove_valid(info);
 
         ASSERT_TRUE(info.dtype().is_object());
         ASSERT_TRUE(info.has_child("valid"));
@@ -181,7 +182,60 @@ TEST(conduit_log, filter_invalid_function)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_log, filter_nonoptional_function)
+TEST(conduit_log, remove_invalid_function)
+{
+    { // Test: One-Level Filtered/Unfiltered //
+        for(index_t ti = 0; ti < 2; ti++)
+        {
+            const bool test_valid = ti == 0;
+            const std::string test_validity_str = test_valid ? "true" : "false";
+
+            std::ostringstream oss;
+            oss << "{\"valid\": \"" << test_validity_str << "\"}";
+            std::string trivial_schema = oss.str();
+
+            Generator gen_info(trivial_schema, "json");
+            Node info(gen_info, true);
+            log::remove_invalid(info);
+
+            ASSERT_EQ(info.dtype().is_empty(), !test_valid);
+        }
+    }
+
+    { // Test: Multi-Level, Top-Level Filtered //
+        std::string basic_schema = "{\"valid\": \"false\", \"a\": {\"valid\": \"false\"}, \"b\": {\"valid\": \"true\"}, \"c\": 4}";
+
+        Generator gen_info(basic_schema, "json");
+        Node info(gen_info, true);
+        log::remove_invalid(info);
+
+        ASSERT_TRUE(info.dtype().is_empty());
+    }
+
+    { // Test: Multi-Level, Top-Level Unfiltered //
+        std::string nontrivial_schema = "{\"valid\": \"true\", \"a\": {\"valid\": \"true\"}, \"b\": {\"valid\": \"false\"}, \"c\": 4}";
+
+        Generator gen_info(nontrivial_schema, "json");
+        Node info(gen_info, true);
+        log::remove_invalid(info);
+
+        ASSERT_TRUE(info.dtype().is_object());
+        ASSERT_TRUE(info.has_child("valid"));
+        ASSERT_EQ(info["valid"].as_string(), "true");
+
+        ASSERT_TRUE(info.has_child("a"));
+        ASSERT_TRUE(info["a"].has_child("valid"));
+        ASSERT_EQ(info["a/valid"].as_string(), "true");
+
+        ASSERT_FALSE(info.has_child("b"));
+
+        ASSERT_TRUE(info.has_child("c"));
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_log, remove_optional_function)
 {
     { // Test: One-Level Filtering //
         Node info;
@@ -189,7 +243,7 @@ TEST(conduit_log, filter_nonoptional_function)
         log::optional(info, "", ""),
         log::error(info, "", "");
         log::validation(info, true);
-        log::filter_nonoptional(info);
+        log::remove_optional(info);
 
         ASSERT_TRUE(info.dtype().is_object());
         ASSERT_EQ(info.number_of_children(), 3);
@@ -204,7 +258,7 @@ TEST(conduit_log, filter_nonoptional_function)
         log::info(info["a"], "", "");
         log::optional(info["a"], "", ""),
         log::info(info["b"], "", "");
-        log::filter_nonoptional(info);
+        log::remove_optional(info);
 
         ASSERT_TRUE(info.dtype().is_object());
         ASSERT_EQ(info.number_of_children(), 2);
