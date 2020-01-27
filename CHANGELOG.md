@@ -4,6 +4,13 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased 
+
+### Added
+
+#### General 
+- Added a set of conduit::utils::log::remove_* filtering functions, which process conduit log/info nodes and strip out the requested information (useful for focusing the often verbose output in log/info nodes).
+
 
 ## [0.5.1] - Released 2020-01-18
 
