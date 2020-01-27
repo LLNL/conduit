@@ -55,6 +55,8 @@
 
 using namespace conduit;
 
+typedef bool (*VerifyFun)(const Node&);
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -111,6 +113,84 @@ validation(Node &info,
     // invalid nodes aren't changed to valid by later updates
     bool info_res = info.has_child("valid") ? info["valid"].as_string() == "true" : true;
     info["valid"].set(res && info_res ? "true" : "false");
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+remove_tree(Node &info, const VerifyFun should_remove_fun)
+{
+    if(info.dtype().is_object() || info.dtype().is_list())
+    {
+        std::vector<index_t> removal_subtrees;
+
+        NodeIterator info_itr = info.children();
+        while(info_itr.has_next())
+        {
+            conduit::Node &info_child = info_itr.next();
+            if(remove_tree(info_child, should_remove_fun))
+            {
+                removal_subtrees.push_back(info_itr.index());
+            }
+        }
+
+        for(index_t ci = removal_subtrees.size(); ci-- > 0;)
+        {
+            info.remove(removal_subtrees[ci]);
+        }
+
+        // FIXME: This part of the solution makes it imperfect from a recursive
+        // standpoint, but it makes it well-suited to accomodate the child-informed
+        // removal criteria used for the 'log::remove_*' functions.
+        if(should_remove_fun(info))
+        {
+            info.set(DataType::empty());
+        }
+    }
+
+    return should_remove_fun(info);
+}
+
+
+//-----------------------------------------------------------------------------
+bool is_valid(const Node &n)
+{
+    return n.dtype().is_empty() || (n.has_child("valid") && n["valid"].dtype().is_string() && n["valid"].as_string() == "true");
+};
+
+//-----------------------------------------------------------------------------
+void
+remove_valid(Node &info)
+{
+    remove_tree(info, is_valid);
+}
+
+
+//-----------------------------------------------------------------------------
+bool is_invalid(const Node &n)
+{
+    return n.dtype().is_empty() || (n.has_child("valid") && n["valid"].dtype().is_string() && n["valid"].as_string() == "false");
+};
+
+//-----------------------------------------------------------------------------
+void
+remove_invalid(Node &info)
+{
+    remove_tree(info, is_invalid);
+}
+
+
+//-----------------------------------------------------------------------------
+bool is_optional(const Node &n)
+{
+    return n.dtype().is_empty() || (n.name() == "optional");
+};
+
+//-----------------------------------------------------------------------------
+void
+remove_optional(Node &info)
+{
+    remove_tree(info, is_optional);
 }
 
 

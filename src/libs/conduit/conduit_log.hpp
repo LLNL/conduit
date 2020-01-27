@@ -93,6 +93,15 @@ void CONDUIT_API error(conduit::Node &info,
 void CONDUIT_API validation(conduit::Node &info,
                             bool res);
 
+
+//-----------------------------------------------------------------------------
+void CONDUIT_API remove_valid(conduit::Node &info);
+//-----------------------------------------------------------------------------
+void CONDUIT_API remove_invalid(conduit::Node &info);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_API remove_optional(conduit::Node &info);
+
 //-----------------------------------------------------------------------------
 std::string CONDUIT_API quote(const std::string &str,
                               bool pad_before = false);
