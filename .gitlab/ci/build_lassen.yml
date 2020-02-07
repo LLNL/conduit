@@ -20,6 +20,7 @@
       - /_lnone/
     variables:
       - $CONDUIT_CI_LASSEN == "OFF"
+  allow_failure: true
 
 ####
 # Here are all lassen build jobs
