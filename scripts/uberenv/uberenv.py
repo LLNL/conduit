@@ -464,11 +464,12 @@ class SpackEnv(UberEnv):
         install_cmd = "spack/bin/spack "
         if self.opts["ignore_ssl_errors"]:
             install_cmd += "-k "
-        install_cmd += "dev-build -d {} ".format(self.pkg_src_dir)
         if not self.opts["install"]:
-            install_cmd += "-u {} ".format(self.pkg_final_phase)
-        if self.opts["run_tests"]:
-            install_cmd += "--test=root "
+            install_cmd += "dev-build -d {} -u {} ".format(self.pkg_src_dir,self.pkg_final_phase)
+        else:
+            install_cmd += "install "
+            if self.opts["run_tests"]:
+                install_cmd += "--test=root "
         install_cmd += self.pkg_name + self.opts["spec"]
         res = sexe(install_cmd, echo=True)
         if res != 0:
