@@ -432,9 +432,11 @@ class SpackEnv(UberEnv):
         else:
             # let spack try to auto find compilers
             sexe("spack/bin/spack compiler find", echo=True)
-        dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
-        # hot-copy our packages into spack
-        sexe("cp -Rf {} {}".format(self.pkgs,dest_spack_pkgs))
+
+        if not self.pkgs:
+            # hot-copy our packages into spack
+            dest_spack_pkgs = pjoin(spack_dir,"var","spack","repos","builtin","packages")
+            sexe("cp -Rf {} {}".format(self.pkgs,dest_spack_pkgs))
 
 
     def clean_build(self):
