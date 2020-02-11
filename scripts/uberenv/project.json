@@ -4,8 +4,8 @@
 "package_final_phase" : "configure",
 "package_source_dir" : "../..",
 "spack_url": "https://github.com/spack/spack",
-"spack_branch": "develop",
-"spack_activate" : {"py-numpy" : ["+python"], 
-                    "py-sphinx": ["+python","+doc"], 
+"spack_commit": "6d2e6e1f4",
+"spack_activate" : {"py-numpy" : ["+python"],
+                    "py-sphinx": ["+python","+doc"],
                     "py-sphinx-rtd-theme": ["+python","+doc"] }
 }
