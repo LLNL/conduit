@@ -5,8 +5,8 @@
 "package_source_dir" : "../..",
 "spack_url": "https://github.com/spack/spack",
 "spack_branch": "develop",
-"spack_activate" : {"py-numpy" : ["+python"], 
-                    "py-sphinx": ["+python","+doc"], 
+"spack_activate" : {"py-numpy" : ["+python"],
+                    "py-sphinx": ["+python","+doc"],
                     "py-mpi4py" : ["+python", "+mpi"],
                     "py-sphinx-rtd-theme": ["+python","+doc"] }
 }
