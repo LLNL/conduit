@@ -506,7 +506,7 @@ class SpackEnv(UberEnv):
                 if os.path.islink(pkg_lnk_dir):
                     os.unlink(pkg_lnk_dir)
                 print("")
-                print("[symlinking install to {}]").format(pjoin(self.dest_dir,pkg_lnk_dir))
+                print("[symlinking install to {}]".format(pjoin(self.dest_dir,pkg_lnk_dir)))
                 os.symlink(pkg_path["path"],os.path.abspath(pkg_lnk_dir))
                 hcfg_glob = glob.glob(pjoin(pkg_lnk_dir,"*.cmake"))
                 if len(hcfg_glob) > 0:
