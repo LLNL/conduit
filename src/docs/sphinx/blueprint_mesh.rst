@@ -153,6 +153,18 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
     * coordsets/coords/type: “explicit”
     * coordsets/coords/values/{r,theta,phi}
 
+.. note::
+   In all of the coordinate space definitions outlined above, spherical coordinates adhere to the definitions of
+   ``theta``/``phi`` used in the physics and engineering domains. Specifically, this means that ``theta`` refers to
+   the polar angle of the coordinate (i.e. the angle from the +Z cartesian axis) and ``phi`` refers to the azimuthal
+   angle of the coordinate (i.e. the angle from the +X cartesian axis). The figure below most succinctly describes
+   these conventions:
+
+   .. figure:: spherical_coordinates_render.png
+       :width: 400px
+       :align: center
+
+       Figure of ``spherical`` coordinate conventions (courtesy of `Wikipedia <https://en.wikipedia.org/wiki/Spherical_coordinate_system>`_)
 
 Toplogies
 ++++++++++++++++++++
