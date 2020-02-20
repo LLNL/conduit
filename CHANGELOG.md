@@ -11,6 +11,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General 
 - Added a set of conduit::utils::log::remove_* filtering functions, which process conduit log/info nodes and strip out the requested information (useful for focusing the often verbose output in log/info nodes).
 
+### Fixed
+
+#### General 
+- Updated to BLT v0.3.0 to resolve BLT/FindMPI issues with rpath linking commands when using OpenMPI.
+
 
 ## [0.5.1] - Released 2020-01-18
 
