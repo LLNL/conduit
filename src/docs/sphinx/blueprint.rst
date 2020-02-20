@@ -54,12 +54,16 @@ The flexibility of the Conduit Node allows it to be used to represent a wide ran
 
 The goal of Blueprint is to help facilite a set of shared higher-level conventions for using Conduit Nodes to hold common simulation data structures. The Blueprint library in Conduit provides methods to verify if a Conduit Node instance conforms to known conventions, which we call **protocols**. It also provides property and transform methods that can be used on conforming Nodes. 
 
-For now, Blueprint is focused on conventions for two important types of data:
+For now, Blueprint is focused on conventions for three important types of data:
 
 *  Multi-Component Arrays (protocol: ``mcarray``)
 
     A multi-component array is a collection of fixed-sized numeric tuples. 
     They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
+
+*  Index sets and Compressed Arrays (protocol: ``indexset`` and ``carray``)
+
+    An index set selects some members of a larger domain.  One example of an index set would be an array containing indices into a data array.  A compressed array stores non-zero elements and an index set specifying their positions.  For large arrays that are mostly zero, compressed storage can give significant space savings.
 
 *  Computational Meshes (protocol: ``mesh``)
 
@@ -70,6 +74,7 @@ Protocol Details
 
 .. toctree::
     blueprint_mcarray
+    blueprint_carray
     blueprint_mesh
 
 Blueprint Interface
