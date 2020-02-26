@@ -455,6 +455,32 @@ TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
     }
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, mesh_misc)
+{
+    // for each "misc" mesh example, generate a small 2d mesh and
+    // save to yaml
+    std::vector<std::string> misc_type_strings;
+    misc_type_strings.push_back("matsets");
+    misc_type_strings.push_back("specsets");
+    misc_type_strings.push_back("adjsets");
+    misc_type_strings.push_back("nestsets");
+
+    Node mesh;
+    int npts_x = 5;
+    int npts_y = 5;
+
+    for(size_t i = 0; i < misc_type_strings.size(); i++)
+    {
+        mesh.reset();
+        blueprint::mesh::examples::misc(misc_type_strings[i],
+                                        npts_x,
+                                        npts_y,
+                                        1,
+                                        mesh);
+        mesh.save("misc_example_" + misc_type_strings[i] + ".yaml");
+    }
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
