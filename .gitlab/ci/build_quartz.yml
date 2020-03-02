@@ -24,7 +24,7 @@
 #  extends: .quartz_common
 #  stage: allocate_resources
 #  script:
-#    - salloc -N 1 -c 36 --no-shell --job-name=${BUILD_QUARTZ_ALLOC_NAME}
+#    - salloc -N 1 -c 36 --no-shell --job-name=${CONDUIT_ALLOC_NAME}
 #
 #####
 ## In post-build phase, deallocate resources
@@ -33,7 +33,7 @@
 #  extends: .quartz_common
 #  stage: release_resources
 #  script:
-#    - export JOBID=$(squeue -h --name=${BUILD_QUARTZ_ALLOC_NAME} --format=%A)
+#    - export JOBID=$(squeue -h --name=${CONDUIT_ALLOC_NAME} --format=%A)
 #    - ([[ -n "${JOBID}" ]] && scancel ${JOBID})
 #  when: always
 
@@ -58,13 +58,13 @@
 
 build_quartz_gcc:
   variables:
-    ID: "gcc"
-    SPEC: ""
+    TOOLCHAIN: "gcc"
+    PKG_SPEC: ""
   extends: .build_quartz
 
 build_quartz_gcc_static:
   variables:
-    ID: "gcc_static"
-    SPEC: "%gcc~shared"
+    TOOLCHAIN: "gcc_static"
+    PKG_SPEC: "%gcc~shared"
   extends: .build_quartz
 

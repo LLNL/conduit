@@ -5,9 +5,9 @@
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  BUILD_QUARTZ_ALLOC_NAME: conduit_$CI_COMMIT_SHORT_SHA
-  BUILD_ROOT: $CI_BUILDS_DIR/conduit_$CI_COMMIT_REF_SLUG
-  INSTALL_ROOT: $CI_BUILDS_DIR/spack_uberenv
+  CONDUIT_ALLOC_NAME: conduit_${CI_PIPELINE_ID}
+  BUILD_ROOT: ${CI_BUILDS_DIR}/conduit_${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}
+  INSTALL_ROOT: ${CI_BUILDS_DIR}/spack_uberenv
   SPACK_UPSTREAM: /usr/workspace/radiuss/spack-chain-parent/opt/spack
 
 before_script:
@@ -23,21 +23,30 @@ stages:
   - release_resources
   - clean
 
+.srun_alloc: &srun_prefix |
+  JOB_ID=$(squeue -h --name=${CONDUIT_ALLOC_NAME} --format=%A)
+  [[ -n "${JOB_ID}" ]] && JOB_ID="--jobid=${JOB_ID}"
+  RESOURCES="-N 1 -n 1 -c 12"
+  export EXEC_PREFIX="srun ${JOB_ID} ${RESOURCES}"
+
 # This is not a job, but contains project specific build commands
-# If an allocation exist with the name defined in this pipeline, the job will use it
 .build_toss_3_x86_64_ib_script:
   variables:
   script:
-    - export PREFIX="${INSTALL_ROOT}_${SYS_TYPE}_${ID}"
-    - export SCRIPT="python scripts/uberenv/uberenv.py --install --run_tests --spec="${SPEC}" --prefix="${PREFIX}" --upstream="${SPACK_UPSTREAM}""
-    - export JOBID=$(squeue -h --name=${BUILD_QUARTZ_ALLOC_NAME} --format=%A)
-    - set -x; srun $( [[ -n "${JOBID}" ]] && echo "--jobid=${JOBID}" ) -N 1 -n 1 -c 4 ${SCRIPT}; set +x
+    - PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
+    - UPSTREAM="--upstream=${SPACK_UPSTREAM}"
+    - SPEC="--spec=${PKG_SPEC}"
+    - SCRIPT="scripts/uberenv/uberenv.py --install --run_tests ${SPEC} ${PREFIX} ${UPSTREAM}"
+    - *srun_prefix
+    - set -x; ${EXEC_PREFIX} ${SCRIPT}; set +x
 
-# Butte uses a very different job allocation system, building on login nodes is recommended
+# Butte uses a very different job allocation system
 .build_blueos_3_ppc64le_ib_script:
   script:
-    - export PREFIX="${INSTALL_ROOT}_${SYS_TYPE}_${ID}"
-    - export SCRIPT="python scripts/uberenv/uberenv.py --install --run_tests --spec="${SPEC}" --prefix="${PREFIX}" --upstream="${SPACK_UPSTREAM}""
+    - PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
+    - UPSTREAM="--upstream=${SPACK_UPSTREAM}"
+    - SPEC="--spec=${PKG_SPEC}"
+    - SCRIPT="scripts/uberenv/uberenv.py --install --run_tests ${SPEC} ${PREFIX} ${UPSTREAM}"
     - set -x; lalloc 1 ${SCRIPT}; set +x
 
 .build_blueos_3_ppc64le_ib_p9_script:
@@ -45,7 +54,7 @@ stages:
 
 .clean_toss_3_x86_64_ib_script:
   script:
-    - rm -rf ${INSTALL_ROOT}_{ID}
+    - rm -rf ${INSTALL_ROOT}_{TOOLCHAIN}
 
 # This is where jobs are included
 include:
