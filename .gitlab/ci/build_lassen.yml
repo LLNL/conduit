@@ -27,12 +27,12 @@
 
 build_lassen_clang:
   variables:
-    ID: "clang"
-    SPEC: "%clang@coral~python~fortran"
+    TOOLCHAIN: "clang"
+    PKG_SPEC: "%clang@coral~python~fortran"
   extends: .build_lassen
 
 build_lassen_xl:
   variables:
-    ID: "xl"
-    SPEC: "%xl@coral~shared~python~fortran"
+    TOOLCHAIN: "xl"
+    PKG_SPEC: "%xl@coral~shared~python~fortran"
   extends: .build_lassen
