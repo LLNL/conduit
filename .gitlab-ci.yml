@@ -20,26 +20,45 @@ after_script:
 stages:
   - allocate_resources
   - build
-  - update_and_build
+  - install
+  - update_uberenv_and_build
+  - update_uberenv_and_install
   - release_resources
   - clean
 
 .run_update_uberenv: &run_update_uberenv |
   [[ "${UPDATE_UBERENV}" == "ON" ]] && ./scripts/ci/update-uberenv.sh
 
-.inc_update_uberenv:
-  stage: update_and_build
-  variables:
-    UPDATE_UBERENV: "ON"
-#  rules:
-#    - if: '$CI_COMMIT_BRANCH == "master"'
-
 .def_uberenv_cmd: &def_uberenv_cmd |
+  [[ "${UBERENV_INSTALL}" == "ON" ]] && INSTALL="--install --run_tests"
   PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
   UPSTREAM="--upstream=${SPACK_UPSTREAM}"
   SPEC="--spec=${PKG_SPEC}"
-  UBERENV_CMD="scripts/uberenv/uberenv.py --install --run_tests ${SPEC} ${PREFIX} ${UPSTREAM}"
+  UBERENV_CMD="scripts/uberenv/uberenv.py ${INSTALL} ${SPEC} ${PREFIX} ${UPSTREAM}"
 
+.inc_build:
+  stage: build
+  variables:
+    UPDATE_UBERENV: "OFF"
+    UBERENV_INSTALL: "OFF"
+
+.inc_install:
+  stage: install
+  variables:
+    UPDATE_UBERENV: "OFF"
+    UBERENV_INSTALL: "ON"
+
+.inc_update_uberenv_and_build:
+  stage: update_uberenv_and_build
+  variables:
+    UPDATE_UBERENV: "ON"
+    UBERENV_INSTALL: "OFF"
+
+.inc_update_uberenv_and_install:
+  stage: update_uberenv_and_install
+  variables:
+    UPDATE_UBERENV: "ON"
+    UBERENV_INSTALL: "ON"
 
 ##################
 # QUARTZ TEMPLATES
@@ -73,12 +92,20 @@ stages:
 
 ####
 # Generic qwartz job, extending build script
-.build_quartz:
+.build_quartz_common:
   extends: [.quartz_common, .build_toss_3_x86_64_ib_script]
-  stage: build
+
+.build_quartz:
+  extends: [.build_quartz_common, .inc_build]
+
+.install_quartz:
+  extends: [.build_quartz_common, .inc_install]
 
 .update_uberenv_and_build_quartz:
-  extends: [.build_quartz, .inc_update_uberenv]
+  extends: [.build_quartz_common, .inc_update_uberenv_and_build]
+
+.update_uberenv_and_install_quartz:
+  extends: [.build_quartz_common, .inc_update_uberenv_and_install]
 
 ##################
 # LASSEN TEMPLATES
@@ -94,12 +121,11 @@ stages:
 .build_blueos_3_ppc64le_ib_p9_script:
   extends: .build_blueos_3_ppc64le_ib_script
 
-.build_lassen:
+.build_lassen_common:
   variables:
   tags:
     - shell
     - lassen
-  stage: build
   extends: .build_blueos_3_ppc64le_ib_p9_script
   rules:
     - if: '$CI_COMMIT_BRANCH =~/_lnone/ || $CONDUIT_CI_LASSEN == "OFF"'
@@ -107,8 +133,17 @@ stages:
     - when: on_success
   allow_failure: true
 
+.build_lassen:
+  extends: [.build_lassen_common, .inc_build]
+
+.install_lassen:
+  extends: [.build_lassen_common, .inc_install]
+
 .update_uberenv_and_build_lassen:
-  extends: [.build_lassen, .inc_update_uberenv]
+  extends: [.build_lassen_common, .inc_update_uberenv_and_build]
+
+.update_uberenv_and_install_lassen:
+  extends: [.build_lassen_common, .inc_update_uberenv_and_install]
 
 ################
 # JOBS INCLUSION
