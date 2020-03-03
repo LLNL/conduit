@@ -5,20 +5,6 @@
 # SPDX-License-Identifier: (MIT)
 ##############################################################################
 
-####
-# This is the share configuration of jobs for quartz
-.quartz_common:
-  tags:
-    - shell
-    - quartz
-  timeout: 3h
-  except:
-    refs:
-      - /_qnone/
-    variables:
-      - $CONDUIT_CI_QUARTZ == "OFF"
-
-#####
 ## In pre-build phase, allocate a node for builds
 #allocate_resources_build_quartz:
 #  extends: .quartz_common
@@ -26,7 +12,6 @@
 #  script:
 #    - salloc -N 1 -c 36 --no-shell --job-name=${CONDUIT_ALLOC_NAME}
 #
-#####
 ## In post-build phase, deallocate resources
 ## Note : make sure this is run even on build phase failure
 #release_resources_build_quartz:
@@ -37,25 +22,7 @@
 #    - ([[ -n "${JOBID}" ]] && scancel ${JOBID})
 #  when: always
 
-####
-# Generic qwartz job, extending build script
-.build_quartz:
-  extends:
-    - .quartz_common
-    - .build_toss_3_x86_64_ib_script
-  stage: build
-
-####
-# Generic qwartz job, extending clean script
-.clean_quartz:
-  extends:
-    - .quartz_common
-    - .clean_toss_3_x86_64_ib_script
-  stage: clean
-
-####
 # Here are all quartz build jobs
-
 build_quartz_gcc:
   variables:
     TOOLCHAIN: "gcc"

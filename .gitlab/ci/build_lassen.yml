@@ -5,26 +5,7 @@
 # SPDX-License-Identifier: (MIT)
 ##############################################################################
 
-####
-# This is the share configuration of jobs for lassen
-
-.build_lassen:
-  variables:
-  tags:
-    - shell
-    - lassen
-  stage: build
-  extends: .build_blueos_3_ppc64le_ib_p9_script
-  except:
-    refs:
-      - /_lnone/
-    variables:
-      - $CONDUIT_CI_LASSEN == "OFF"
-  allow_failure: true
-
-####
 # Here are all lassen build jobs
-
 build_lassen_clang:
   variables:
     TOOLCHAIN: "clang"
