@@ -17,3 +17,15 @@ build_lassen_xl:
     TOOLCHAIN: "xl"
     PKG_SPEC: "%xl@coral~shared~python~fortran"
   extends: .build_lassen
+
+update_uberenv_and_build_lassen_clang:
+  variables:
+    TOOLCHAIN: "clang"
+    PKG_SPEC: "%clang@coral~python~fortran"
+  extends: .update_uberenv_and_build_lassen
+
+update_uberenv_and_build_lassen_xl:
+  variables:
+    TOOLCHAIN: "xl"
+    PKG_SPEC: "%xl@coral~shared~python~fortran"
+  extends: .update_uberenv_and_build_lassen
