@@ -473,9 +473,27 @@ class SpackEnv(UberEnv):
             if self.opts["run_tests"]:
                 install_cmd += "--test=root "
         install_cmd += self.pkg_name + self.opts["spec"]
-        res = sexe(install_cmd, echo=True)
+        res, out = sexe(install_cmd, ret_output=True, echo=True)
         if res != 0:
-            return res
+            error_key="==> Error: Already installed in "
+            install_path=""
+            for line in out.split("\n"):
+                if line.startswith(error_key):
+                    install_path=line.replace(error_key,"")
+                else:
+                    print(line)
+
+            if install_path and os.path.isdir(install_path):
+                print("[Warning: {} has already been install in {}]".format(self.pkg_name,install_path))
+                print("[Warning: Uberenv will proceed using this directory]".format(self.pkg_name))
+                self.opts["use_install"] = True
+            elif not install_path:
+                return res
+            else:
+                print("[ERROR: not a directory {}".format(install_path))
+                return res
+        else:
+            print(out)
 
         if "spack_activate" in self.project_opts:
             print("[activating dependent packages]")
@@ -499,19 +517,14 @@ class SpackEnv(UberEnv):
             sexe(activate_cmd, echo=True)
         # if user opt'd for an install, we want to symlink the final
         # install to an easy place:
-        if self.opts["install"]:
+        if self.opts["install"] or "use_install" in self.opts:
             pkg_path = self.find_spack_pkg_path(self.pkg_name)
             if self.pkg_name != pkg_path["name"]:
                 print("[ERROR: Could not find install of {}]".format(self.pkg_name))
                 return -1
             else:
-                pkg_lnk_dir = "{}-install".format(self.pkg_name)
-                if os.path.islink(pkg_lnk_dir):
-                    os.unlink(pkg_lnk_dir)
-                print("")
-                print("[symlinking install to {}]".format(pjoin(self.dest_dir,pkg_lnk_dir)))
-                os.symlink(pkg_path["path"],os.path.abspath(pkg_lnk_dir))
-                hcfg_glob = glob.glob(pjoin(pkg_lnk_dir,"*.cmake"))
+                # Symlink host-config file
+                hcfg_glob = glob.glob(pjoin(pkg_path["path"],"*.cmake"))
                 if len(hcfg_glob) > 0:
                     hcfg_path  = hcfg_glob[0]
                     hcfg_fname = os.path.split(hcfg_path)[1]
@@ -521,8 +534,17 @@ class SpackEnv(UberEnv):
                         sexe("rm -f {}".format(hcfg_fname))
                     print("[symlinking host config file to {}]".format(pjoin(self.dest_dir,hcfg_fname)))
                     os.symlink(hcfg_path,hcfg_fname)
-                print("")
-                print("[install complete!]")
+
+                # Symlink install directory
+                if self.opts["install"]:
+                    pkg_lnk_dir = "{}-install".format(self.pkg_name)
+                    if os.path.islink(pkg_lnk_dir):
+                        os.unlink(pkg_lnk_dir)
+                    print("")
+                    print("[symlinking install to {}]".format(pjoin(self.dest_dir,pkg_lnk_dir)))
+                    os.symlink(pkg_path["path"],os.path.abspath(pkg_lnk_dir))
+                    print("")
+                    print("[install complete!]")
         else:
             pattern = "*{}.cmake".format(self.pkg_name)
             build_dir = pjoin(self.pkg_src_dir,"spack-build")
