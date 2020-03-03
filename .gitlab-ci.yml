@@ -20,6 +20,7 @@ after_script:
 stages:
   - allocate_resources
   - build
+  - update_and_build
   - release_resources
   - clean
 
@@ -27,6 +28,7 @@ stages:
   [[ "${UPDATE_UBERENV}" == "ON" ]] && ./scripts/ci/update-uberenv.sh
 
 .inc_update_uberenv:
+  stage: update_and_build
   variables:
     UPDATE_UBERENV: "ON"
 #  rules:
