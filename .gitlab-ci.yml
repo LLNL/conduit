@@ -23,7 +23,16 @@ stages:
   - release_resources
   - clean
 
-.uberenv_cmd: &uberenv_cmd |
+.run_update_uberenv: &run_update_uberenv |
+  [[ "${UPDATE_UBERENV}" == "ON" ]] && ./scripts/ci/update-uberenv.sh
+
+.inc_update_uberenv:
+  variables:
+    UPDATE_UBERENV: "ON"
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "master"'
+
+.def_uberenv_cmd: &def_uberenv_cmd |
   PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
   UPSTREAM="--upstream=${SPACK_UPSTREAM}"
   SPEC="--spec=${PKG_SPEC}"
@@ -46,7 +55,7 @@ stages:
     variables:
       - $CONDUIT_CI_QUARTZ == "OFF"
 
-.srun_alloc: &srun_prefix |
+.def_srun_prefix: &def_srun_prefix |
   JOB_ID=$(squeue -h --name=${CONDUIT_ALLOC_NAME} --format=%A)
   [[ -n "${JOB_ID}" ]] && JOB_ID="--jobid=${JOB_ID}"
   RESOURCES="-N 1 -n 1 -c 12"
@@ -54,20 +63,20 @@ stages:
 
 # This is not a job, but contains project specific build commands
 .build_toss_3_x86_64_ib_script:
-  variables:
   script:
-    - *srun_prefix
-    - *uberenv_cmd
+    - *run_update_uberenv
+    - *def_srun_prefix
+    - *def_uberenv_cmd
     - set -x; ${SRUN_PREFIX} ${UBERENV_CMD}; set +x
 
 ####
 # Generic qwartz job, extending build script
 .build_quartz:
-  extends:
-    - .quartz_common
-    - .build_toss_3_x86_64_ib_script
+  extends: [.quartz_common, .build_toss_3_x86_64_ib_script]
   stage: build
 
+.update_uberenv_and_build_quartz:
+  extends: [.build_quartz, .inc_update_uberenv]
 
 ##################
 # LASSEN TEMPLATES
@@ -76,7 +85,8 @@ stages:
 # Share configuration of jobs for butte and lassen
 .build_blueos_3_ppc64le_ib_script:
   script:
-    - *uberenv_cmd
+    - *run_update_uberenv
+    - *def_uberenv_cmd
     - set -x; lalloc 1 ${UBERENV_CMD}; set +x
 
 .build_blueos_3_ppc64le_ib_p9_script:
@@ -89,13 +99,14 @@ stages:
     - lassen
   stage: build
   extends: .build_blueos_3_ppc64le_ib_p9_script
-  except:
-    refs:
-      - /_lnone/
-    variables:
-      - $CONDUIT_CI_LASSEN == "OFF"
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~/_lnone/ || $CONDUIT_CI_LASSEN == "OFF"'
+      when: never
+    - when: on_success
   allow_failure: true
 
+.update_uberenv_and_build_lassen:
+  extends: [.build_lassen, .inc_update_uberenv]
 
 ################
 # JOBS INCLUSION
@@ -105,5 +116,3 @@ stages:
 include:
   - local: .gitlab/ci/build_quartz.yml
   - local: .gitlab/ci/build_lassen.yml
-
-

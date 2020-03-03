@@ -35,3 +35,14 @@ build_quartz_gcc_static:
     PKG_SPEC: "%gcc~shared"
   extends: .build_quartz
 
+update_uberenv_and_build_quartz_gcc:
+  variables:
+    TOOLCHAIN: "gcc"
+    PKG_SPEC: ""
+  extends: .update_uberenv_and_build_quartz
+
+update_uberenv_and_build_quartz_gcc_static:
+  variables:
+    TOOLCHAIN: "gcc_static"
+    PKG_SPEC: "%gcc~shared"
+  extends: .update_uberenv_and_build_quartz
