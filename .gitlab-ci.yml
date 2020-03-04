@@ -60,6 +60,27 @@ stages:
     UPDATE_UBERENV: "ON"
     UBERENV_INSTALL: "ON"
 
+.with_gcc:
+  variables:
+    TOOLCHAIN: "gcc"
+    PKG_SPEC: ""
+
+.with_gcc_static:
+  variables:
+    TOOLCHAIN: "gcc_static"
+    PKG_SPEC: "%gcc~shared"
+
+.with_clang:
+  variables:
+    TOOLCHAIN: "clang"
+    PKG_SPEC: "%clang@coral~python~fortran"
+
+.with_xl:
+  variables:
+    TOOLCHAIN: "xl"
+    PKG_SPEC: "%xl@coral~shared~python~fortran"
+
+
 ##################
 # QUARTZ TEMPLATES
 ##################

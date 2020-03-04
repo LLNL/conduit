@@ -24,25 +24,25 @@
 
 # Here are all quartz build jobs
 build_quartz_gcc:
-  variables:
-    TOOLCHAIN: "gcc"
-    PKG_SPEC: ""
-  extends: .build_quartz
+  extends: [.build_quartz, .with_gcc]
+
+install_quartz_gcc:
+  extends: [.install_quartz, .with_gcc]
 
 build_quartz_gcc_static:
-  variables:
-    TOOLCHAIN: "gcc_static"
-    PKG_SPEC: "%gcc~shared"
-  extends: .build_quartz
+  extends: [.build_quartz, .with_gcc_static]
+
+install_quartz_gcc_static:
+  extends: [.install_quartz, .with_gcc_static]
 
 update_uberenv_and_build_quartz_gcc:
-  variables:
-    TOOLCHAIN: "gcc"
-    PKG_SPEC: ""
-  extends: .update_uberenv_and_build_quartz
+  extends: [.update_uberenv_and_build_quartz, .with_gcc]
+
+update_uberenv_and_install_quartz_gcc:
+  extends: [.update_uberenv_and_install_quartz, .with_gcc]
 
 update_uberenv_and_build_quartz_gcc_static:
-  variables:
-    TOOLCHAIN: "gcc_static"
-    PKG_SPEC: "%gcc~shared"
-  extends: .update_uberenv_and_build_quartz
+  extends: [.update_uberenv_and_build_quartz, .with_gcc_static]
+
+update_uberenv_and_install_quartz_gcc_static:
+  extends: [.update_uberenv_and_install_quartz, .with_gcc_static]

@@ -7,25 +7,25 @@
 
 # Here are all lassen build jobs
 build_lassen_clang:
-  variables:
-    TOOLCHAIN: "clang"
-    PKG_SPEC: "%clang@coral~python~fortran"
-  extends: .build_lassen
+  extends: [.build_lassen, .with_clang]
+
+install_lassen_clang:
+  extends: [.install_lassen, .with_clang]
 
 build_lassen_xl:
-  variables:
-    TOOLCHAIN: "xl"
-    PKG_SPEC: "%xl@coral~shared~python~fortran"
-  extends: .build_lassen
+  extends: [.build_lassen, .with_xl]
+
+install_lassen_xl:
+  extends: [.install_lassen, .with_xl]
 
 update_uberenv_and_build_lassen_clang:
-  variables:
-    TOOLCHAIN: "clang"
-    PKG_SPEC: "%clang@coral~python~fortran"
-  extends: .update_uberenv_and_build_lassen
+  extends: [.update_uberenv_and_build_lassen, .with_clang]
+
+update_uberenv_and_install_lassen_clang:
+  extends: [.update_uberenv_and_install_lassen, .with_clang]
 
 update_uberenv_and_build_lassen_xl:
-  variables:
-    TOOLCHAIN: "xl"
-    PKG_SPEC: "%xl@coral~shared~python~fortran"
-  extends: .update_uberenv_and_build_lassen
+  extends: [.update_uberenv_and_build_lassen, .with_xl]
+
+update_uberenv_and_install_lassen_xl:
+  extends: [.update_uberenv_and_install_lassen, .with_xl]
