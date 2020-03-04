@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_carray.hpp
+/// file: conduit_blueprint_sarray.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_CA_HPP
-#define CONDUIT_BLUEPRINT_CA_HPP
+#ifndef CONDUIT_BLUEPRINT_SA_HPP
+#define CONDUIT_BLUEPRINT_SA_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -72,35 +72,9 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::indexset --
+// -- begin conduit::blueprint::sarray --
 //-----------------------------------------------------------------------------
-namespace indexset
-{
-
-//-----------------------------------------------------------------------------
-// blueprint protocol interface
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
-                                  conduit::Node &info);
-
-//-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
-                                  const conduit::Node &n,
-                                  conduit::Node &info);
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::indexset --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::carray --
-//-----------------------------------------------------------------------------
-namespace carray
+namespace sarray
 {
 
 //-----------------------------------------------------------------------------
@@ -118,27 +92,29 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
 
 
 //-----------------------------------------------------------------------------
-/// carray blueprint property and transform methods
+/// sarray blueprint property and transform methods
 /// 
-/// These methods can be called on any verified carray.
+/// These methods can be called on any verified sarray.
 //-----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API is_interleaved(const conduit::Node &n);
+int CONDUIT_BLUEPRINT_API nnz(const conduit::Node &n);
 
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API to_contiguous(const conduit::Node &src,
-                                         conduit::Node &dest);
+int CONDUIT_BLUEPRINT_API length(const conduit::Node &src);
 
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API to_interleaved(const conduit::Node &src,
+bool CONDUIT_BLUEPRINT_API compress(const conduit::Node &src,
                                           conduit::Node &dest);
 
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API expand(const conduit::Node &src,
+                                        conduit::Node &dest);
 
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::carray --
+// -- end conduit::blueprint::sarray --
 //-----------------------------------------------------------------------------
 
 

@@ -44,14 +44,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_carray.cpp
+/// file: conduit_blueprint_sarray.cpp
 ///
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit_blueprint_carray.hpp"
+#include "conduit_blueprint_sarray.hpp"
 #include "conduit_log.hpp"
 
 //-----------------------------------------------------------------------------
@@ -207,137 +207,85 @@ bool verify_object_field(const std::string &protocol,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::indexset --
+// -- begin conduit::blueprint::sarray --
 //-----------------------------------------------------------------------------
-namespace indexset
+namespace sarray
 {
 
 //-----------------------------------------------------------------------------
 bool
 verify(const std::string &/*protocol*/,
        const Node &/*n*/,
-       Node &info)
+       Node &/*info*/)
 {
-    // indexset doesn't provide any nested protocols
-
+    // sarray doesn't provide any nested protocols
+  
     info.reset();
     log::validation(info,false);
     return false;
 }
 
-
 //----------------------------------------------------------------------------
-bool verify(const conduit::Node &indexset,
-            Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    const std::string proto_name = "indexset";
-
-    // indexset needs to be an object
-    if( ! (indexset.dtype().is_object() ) )
-    {
-        log::error(info,proto_name,"Node has no children");
-        res = false;
-    }
-
-    res &= verify_integer_field(proto_name, indexset, info, "n");
-    res &= verify_integer_field(proto_name, indexset, info, "idx");
-    
-    log::validation(info,res);
-
-    return res;
-}
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::indexset --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::carray --
-//-----------------------------------------------------------------------------
-namespace carray
-{
-
-//-----------------------------------------------------------------------------
 bool
-verify(const std::string &protocol,
-       const Node &n,
+verify(const conduit::Node &sarray,
        Node &info)
 {
     info.reset();
-    bool res = false;
-
-    if(protocol == "indexset")
-    {
-        res = indexset::verify(n,info);
-    }
-
-    return res;
-}
-
-//----------------------------------------------------------------------------
-bool verify(const conduit::Node &carray,
-            Node &info)
-{
-    info.reset();
     bool res = true;
 
-    const std::string protocol = "carray";
+    const std::string protocol = "sarray";
 
-    // carray needs to be an object
-    if( ! (carray.dtype().is_object() ) )
+    // sarray needs to be an object
+    if( ! (sarray.dtype().is_object() ) )
     {
         log::error(info,protocol,"Node has no children");
         res = false;
     }
 
-    res &= verify_number_field(protocol, carray, info, "nz");
+    res &= verify_integer_field(protocol, sarray, info, "n");
 
-    res &= verify_field_exists(protocol, carray, info, "idx");
+    res &= verify_number_field(protocol, sarray, info, "nz");
+
+    res &= verify_field_exists(protocol, sarray, info, "idx");
     if(res)
     {
-        const Node &idx = carray["idx"];
-        int idxcount = -1;
-        if (!idx.dtype().is_string())
+        const Node &idx = sarray["idx"];
+        int elements = -1;
+
+        // idx can be an integer array
+        if (!idx.dtype().is_list())
         {
-            if (!idx.dtype().is_list())
+            res &= verify_integer_field(protocol, sarray, info, "idx");
+            elements = idx.dtype().number_of_elements();
+        }
+        // idx can also be a list of arrays
+        else
+        {
+            NodeIterator itr = idx.children();
+            while(itr.has_next())
             {
-                res &= verify("indexset", idx, info);
-                // TODO(AGC) store the number of index entries into idxcount
-            }
-            else
-            {
-                NodeConstIterator itr = idx.children();
-                while(itr.has_next())
+                Node& theidx = itr.next();
+                res &= verify_integer_field(protocol, theidx, info);
+                if (elements == -1)
                 {
-                    const Node &cidx = itr.next();
-                    res &= verify("indexset", cidx, info);
-                    if (idxcount < 0)
-                    {
-                        // TODO(AGC) store the number of index entries into idxcount
-                    }
+                    elements = theidx.dtype().number_of_elements();
                 }
             }
         }
-        else
-        {
-            // TODO(AGC) verify all referenced indexsets
-        }
 
-        res &= (idxcount == carray["nz"].dtype().number_of_elements());
-    }
+        // idx[0] must have the same number of elements as nz
+        if (elements != sarray["nz"].dtype().number_of_elements())
+        {
+            log::error(info, protocol, "different number of elements in idx and nz");
+            res = false;
+        }
+    }    
     
     return res;
 }
-
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::carray --
+// -- end conduit::blueprint::sarray --
 //-----------------------------------------------------------------------------
 
 

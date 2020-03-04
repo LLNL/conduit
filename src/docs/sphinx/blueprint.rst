@@ -61,9 +61,9 @@ For now, Blueprint is focused on conventions for three important types of data:
     A multi-component array is a collection of fixed-sized numeric tuples. 
     They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
 
-*  Index sets and Compressed Arrays (protocol: ``indexset`` and ``carray``)
+*  Sparse Arrays (protocol: ``sarray``)
 
-    An index set selects some members of a larger domain.  One example of an index set would be an array containing indices into a data array.  A compressed array stores non-zero elements and an index set specifying their positions.  For large arrays that are mostly zero, compressed storage can give significant space savings.
+    A sparse array stores the non-zero elements from a numerical array along with an array of the non-zeros' positions.  For arrays with zeros in more than half of the elements, sparse storage saves space.  Multi-component data can be stored in a list of sparse arrays, where each sparse array represents one component.  Blueprint provides transforms that convert between sparse and full one-dimensional data and between a list of sparse arrays and a full multi-component array in component-major storage.
 
 *  Computational Meshes (protocol: ``mesh``)
 
@@ -74,7 +74,7 @@ Protocol Details
 
 .. toctree::
     blueprint_mcarray
-    blueprint_carray
+    blueprint_sarray
     blueprint_mesh
 
 Blueprint Interface
