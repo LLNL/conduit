@@ -67,7 +67,7 @@ from os import environ as env
 from os.path import join as pjoin
 
 
-def sexe(cmd,ret_output=False,echo = False):
+def sexe(cmd, ret_output=False, print_output=True, echo=False):
     """ Helper for executing shell commands. """
     if echo:
         print("[exe: {}]".format(cmd))
@@ -75,10 +75,22 @@ def sexe(cmd,ret_output=False,echo = False):
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
-        res = p.communicate()[0]
-        res = res.decode('utf8')
-        return p.returncode,res
+                             stderr=subprocess.STDOUT,
+                             universal_newlines=True)
+        full_output = ""
+        if print_output:
+            while True:
+                output = p.stdout.readline()
+                full_output += output
+                if output == '' and p.poll() is not None:
+                    break
+                if output:
+                    print(output.strip('\n'))
+            rc = p.poll()
+        else:
+            full_output = p.communicate()[0]
+            rc = p.returncode
+        return rc, full_output
     else:
         return subprocess.call(cmd,shell=True)
 
@@ -341,7 +353,7 @@ class SpackEnv(UberEnv):
         sys.exit(-1)
 
     def read_spack_full_spec(self,pkg_name,spec):
-        rv, res = sexe("spack/bin/spack spec " + pkg_name + " " + spec, ret_output=True)
+        rv, res = sexe("spack/bin/spack spec " + pkg_name + " " + spec, ret_output=True, print_output=False)
         for l in res.split("\n"):
             if l.startswith(pkg_name) and l.count("@") > 0 and l.count("arch=") > 0:
                 return l.strip()
@@ -480,8 +492,6 @@ class SpackEnv(UberEnv):
             for line in out.split("\n"):
                 if line.startswith(error_key):
                     install_path=line.replace(error_key,"")
-                else:
-                    print(line)
 
             if install_path and os.path.isdir(install_path):
                 print("[Warning: {} has already been install in {}]".format(self.pkg_name,install_path))
@@ -492,8 +502,6 @@ class SpackEnv(UberEnv):
             else:
                 print("[ERROR: not a directory {}".format(install_path))
                 return res
-        else:
-            print(out)
 
         if "spack_activate" in self.project_opts:
             print("[activating dependent packages]")
