@@ -248,11 +248,11 @@ full_volfrac_matmajor(index_t x, // length of a side
       {
         if (lx < quarter_x)
         {
-          a_a[i] = 0.5;
+          a_a[ly*x + lx] = 0.5;
         }
         else
         {
-          a_a[i] = 1.0;
+          a_a[ly*x + lx] = 1.0;
         }
       }
     }
@@ -264,14 +264,14 @@ full_volfrac_matmajor(index_t x, // length of a side
     {
       for (index_t lx = 0; lx < quarter_x; ++lx)
       {
-          b_a[i] = 0.5;
+          b_a[ly*x + lx] = 0.5;
       }
     }
     for (index_t ly = half_y; ly < y; ++ly)
     {
       for (index_t lx = 0; lx < half_x; ++lx)
       {
-          b_a[i] = 1.0;
+          b_a[ly*x + lx] = 1.0;
       }
     }
 
@@ -281,7 +281,7 @@ full_volfrac_matmajor(index_t x, // length of a side
     {
       for (index_t lx = half_x; lx < x; ++lx)
       {
-          c_a[i] = 1.0;
+          c_a[ly*x + lx] = 1.0;
       }
     }
 }
@@ -297,8 +297,8 @@ sparse_eye(index_t x, // length of a side
     out["nz"].set(DataType::float64(x));
     out["idx"].set(DataType::int32(x));
 
-    float64_array nz_a = out["nz"];
-    int32_array idx_a = out["idx"];
+    float64_array nz_a = out["nz"].value();
+    int32_array idx_a = out["idx"].value();
 
     for (index_t i = 0; i < x; ++i)
     {

@@ -57,6 +57,21 @@
 #include "gtest/gtest.h"
 
 using namespace conduit;
+using namespace conduit::utils;
+
+/// Testing Constants ///
+
+std::vector<std::string> get_log_keywords()
+{
+	Node log_node;
+	log::info(log_node, "", "");
+	log::optional(log_node, "", "");
+	log::error(log_node, "", "");
+	log::validation(log_node, false);
+	return log_node.child_names();
+}
+
+const std::vector<std::string> LOG_KEYWORDS = get_log_keywords();
 
 typedef bool (*VerifyFun)(const Node&, Node&);
 

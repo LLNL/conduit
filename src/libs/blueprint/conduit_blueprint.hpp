@@ -64,6 +64,9 @@
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_mcarray_examples.hpp"
 
+#include "conduit_blueprint_sarray.hpp"
+#include "conduit_blueprint_sarray_examples.hpp"
+
 #include "conduit_blueprint_zfparray.hpp"
 
 //-----------------------------------------------------------------------------

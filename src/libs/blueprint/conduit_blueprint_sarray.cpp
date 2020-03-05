@@ -216,7 +216,7 @@ namespace sarray
 bool
 verify(const std::string &/*protocol*/,
        const Node &/*n*/,
-       Node &/*info*/)
+       Node &info)
 {
     // sarray doesn't provide any nested protocols
   
@@ -261,10 +261,10 @@ verify(const conduit::Node &sarray,
         // idx can also be a list of arrays
         else
         {
-            NodeIterator itr = idx.children();
+            NodeConstIterator itr = idx.children();
             while(itr.has_next())
             {
-                Node& theidx = itr.next();
+                const Node& theidx = itr.next();
                 res &= verify_integer_field(protocol, theidx, info);
                 if (elements == -1)
                 {
@@ -279,7 +279,9 @@ verify(const conduit::Node &sarray,
             log::error(info, protocol, "different number of elements in idx and nz");
             res = false;
         }
-    }    
+    }
+
+	log::validation(info, res);
     
     return res;
 }
@@ -293,7 +295,7 @@ nnz(const conduit::Node &n)
 }
 
 //-----------------------------------------------------------------------------
-int64
+int
 length(const conduit::Node &n)
 {
     return n["n"].as_int64();
@@ -301,16 +303,16 @@ length(const conduit::Node &n)
 
 //-----------------------------------------------------------------------------
 void
-make_sparse(const conduit::node &src,
-            conduit::node dst)
+make_sparse(const conduit::Node &src,
+            conduit::Node dst)
 {
     // TODO (AGC): make a sparse representation dst from src
 }
 
 //-----------------------------------------------------------------------------
 void
-make_full(const conduit::node &src,
-          conduit::node dst)
+make_full(const conduit::Node &src,
+          conduit::Node dst)
 {
     // TODO (AGC): make a full (zeros included) representation dst from src
 }
