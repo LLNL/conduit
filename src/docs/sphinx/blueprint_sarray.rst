@@ -52,7 +52,7 @@ Protocol
 To conform to the sarray blueprint protocol, a Node must have:
 
  * An integer child ``length``, the total number of elements (zero and nonzero) in the array.
- * A child ``nz``, the nonzero data in the compressed array.
+ * A child ``nz``, the nonzero data in the array.
  * A child ``idx``, the locations of the nonzero data.
 
 The common case is that ``idx`` will be a single integer array with a length equal to ``nz``.  To support codes that need multiple levels of indirection, ``idx`` can also be a list of integer arrays.
@@ -67,23 +67,23 @@ Properties and Transforms
 
  * **conduit::blueprint::sarray::length(const Node &sarray)**
 
-     Returns the uncompressed length of ``sarray``, that is, ``nnz(sarray)`` + number of zeros in ``sarray``.
+     Returns the full length of ``sarray``, that is, ``nnz(sarray)`` + number of zeros in ``sarray``.
 
- * **conduit::blueprint::sarray::compress(const Node &array, Node &out)**
+ * **conduit::blueprint::sarray::make_sparse(const Node &array, Node &out)**
 
      Copies the data from a numeric array into a new sarray.
 
- * **conduit::blueprint::sarray::compress(const Node &mcarray, Node &out)**
+ * **conduit::blueprint::sarray::make_sparse(const Node &mcarray, Node &out)**
 
      Copies the data from an mcarray into an object ``out``:
      - The child objects of ``out`` are sparse arrays representing the components in the mcarray tuples
-     - The (uncompressed) length of each sarray equals the number of tuples in mcarray
+     - The (full) length of each sarray equals the number of tuples in mcarray
 
- * **conduit::blueprint::sarray::expand(const Node &sarray, Node &out)**
+ * **conduit::blueprint::sarray::make_dense(const Node &sarray, Node &out)**
 
      Copies the data from a sparse array into a new numeric Node with the same length as the sarray.  (Restores the zeros.)
 
- * **conduit::blueprint::sarray::expand(const Node &object, Node &out)**
+ * **conduit::blueprint::sarray::make_dense(const Node &object, Node &out)**
 
      Given an object with ``k`` children that are all carrays of equal length ``l``, copies the data from each of the children to a new mcarray.  The new mcarray has ``l`` tuples, of ``k`` members.
 

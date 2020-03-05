@@ -101,15 +101,15 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
 int CONDUIT_BLUEPRINT_API nnz(const conduit::Node &n);
 
 //-----------------------------------------------------------------------------
-int CONDUIT_BLUEPRINT_API length(const conduit::Node &src);
+int CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
 
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API compress(const conduit::Node &src,
-                                          conduit::Node &dest);
+void CONDUIT_BLUEPRINT_API make_sparse(const conduit::Node &src,
+                                             conduit::Node &dest);
 
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API expand(const conduit::Node &src,
-                                        conduit::Node &dest);
+void CONDUIT_BLUEPRINT_API make_full(const conduit::Node &src,
+                                           conduit::Node &dest);
 
 //-----------------------------------------------------------------------------
 }

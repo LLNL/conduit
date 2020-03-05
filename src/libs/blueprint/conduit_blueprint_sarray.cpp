@@ -283,6 +283,37 @@ verify(const conduit::Node &sarray,
     
     return res;
 }
+
+
+//-----------------------------------------------------------------------------
+int
+nnz(const conduit::Node &n)
+{
+    return n["nz"].dtype().number_of_elements();
+}
+
+//-----------------------------------------------------------------------------
+int64
+length(const conduit::Node &n)
+{
+    return n["n"].as_int64();
+}
+
+//-----------------------------------------------------------------------------
+void
+make_sparse(const conduit::node &src,
+            conduit::node dst)
+{
+    // TODO (AGC): make a sparse representation dst from src
+}
+
+//-----------------------------------------------------------------------------
+void
+make_full(const conduit::node &src,
+          conduit::node dst)
+{
+    // TODO (AGC): make a full (zeros included) representation dst from src
+}
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::sarray --

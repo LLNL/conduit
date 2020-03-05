@@ -54,6 +54,7 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mesh_transform
                     t_blueprint_mesh_generate
                     t_blueprint_mcarray_verify
+                    t_blueprint_sarray_verify
                     t_blueprint_mesh_examples
                     t_blueprint_mcarray_examples)
 
