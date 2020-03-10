@@ -28,9 +28,11 @@ Q_build_deps_gcc:
 
 Q_install_gcc:
   extends: [.install_on_quartz, .with_gcc]
+  needs: [Q_build_deps_gcc]
 
 Q_build_deps_gcc_static:
   extends: [.build_deps_on_quartz, .with_gcc_static]
 
 Q_install_gcc_static:
   extends: [.install_on_quartz, .with_gcc_static]
+  needs: [Q_build_deps_gcc_static]

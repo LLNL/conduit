@@ -6,14 +6,16 @@
 ##############################################################################
 
 # Here are all lassen build jobs
-L_build_clang:
+L_build_deps_clang:
   extends: [.build_deps_on_lassen, .with_clang]
 
 L_install_clang:
   extends: [.install_on_lassen, .with_clang]
+  needs: [L_build_deps_clang]
 
-L_build_xl:
+L_build_deps_xl:
   extends: [.build_deps_on_lassen, .with_xl]
 
 L_install_xl:
   extends: [.install_on_lassen, .with_xl]
+  needs: [L_build_deps_xl]
