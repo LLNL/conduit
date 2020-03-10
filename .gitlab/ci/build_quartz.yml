@@ -23,26 +23,14 @@
 #  when: always
 
 # Here are all quartz build jobs
-build_quartz_gcc:
-  extends: [.build_quartz, .with_gcc]
+Q_build_deps_gcc:
+  extends: [.build_deps_on_quartz, .with_gcc]
 
-install_quartz_gcc:
-  extends: [.install_quartz, .with_gcc]
+Q_install_gcc:
+  extends: [.install_on_quartz, .with_gcc]
 
-build_quartz_gcc_static:
-  extends: [.build_quartz, .with_gcc_static]
+Q_build_deps_gcc_static:
+  extends: [.build_deps_on_quartz, .with_gcc_static]
 
-install_quartz_gcc_static:
-  extends: [.install_quartz, .with_gcc_static]
-
-update_uberenv_and_build_quartz_gcc:
-  extends: [.update_uberenv_and_build_quartz, .with_gcc]
-
-update_uberenv_and_install_quartz_gcc:
-  extends: [.update_uberenv_and_install_quartz, .with_gcc]
-
-update_uberenv_and_build_quartz_gcc_static:
-  extends: [.update_uberenv_and_build_quartz, .with_gcc_static]
-
-update_uberenv_and_install_quartz_gcc_static:
-  extends: [.update_uberenv_and_install_quartz, .with_gcc_static]
+Q_install_gcc_static:
+  extends: [.install_on_quartz, .with_gcc_static]

@@ -6,26 +6,14 @@
 ##############################################################################
 
 # Here are all lassen build jobs
-build_lassen_clang:
-  extends: [.build_lassen, .with_clang]
+L_build_clang:
+  extends: [.build_deps_on_lassen, .with_clang]
 
-install_lassen_clang:
-  extends: [.install_lassen, .with_clang]
+L_install_clang:
+  extends: [.install_on_lassen, .with_clang]
 
-build_lassen_xl:
-  extends: [.build_lassen, .with_xl]
+L_build_xl:
+  extends: [.build_deps_on_lassen, .with_xl]
 
-install_lassen_xl:
-  extends: [.install_lassen, .with_xl]
-
-update_uberenv_and_build_lassen_clang:
-  extends: [.update_uberenv_and_build_lassen, .with_clang]
-
-update_uberenv_and_install_lassen_clang:
-  extends: [.update_uberenv_and_install_lassen, .with_clang]
-
-update_uberenv_and_build_lassen_xl:
-  extends: [.update_uberenv_and_build_lassen, .with_xl]
-
-update_uberenv_and_install_lassen_xl:
-  extends: [.update_uberenv_and_install_lassen, .with_xl]
+L_install_xl:
+  extends: [.install_on_lassen, .with_xl]
