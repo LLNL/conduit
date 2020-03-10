@@ -2632,9 +2632,14 @@ is_hdf5_file(const std::string &file_path)
     HDF5ErrorStackSupressor supress_hdf5_errors;
     
     bool res = false;
-    // open the hdf5 file for read + write
+    // open the file for read to check if it is valid hdf5
+    //
+    // don't use H5F_ACC_RDWR, b/c if we already have a file handle open 
+    // that is RDONLY, the open will fail
+    //
+    // use H5F_ACC_RDONLY b/c it will work with open file handles
     hid_t h5_file_id = H5Fopen(file_path.c_str(),
-                               H5F_ACC_RDWR,
+                               H5F_ACC_RDONLY,
                                H5P_DEFAULT);
     
     if( h5_file_id >= 0)

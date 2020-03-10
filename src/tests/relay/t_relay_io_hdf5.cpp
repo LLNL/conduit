@@ -995,6 +995,15 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
     // this should be recoged as hdf5
     EXPECT_TRUE(io::is_hdf5_file(tout));
 
+    // check behavior with files that have open handles
+    hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
+    EXPECT_TRUE(io::is_hdf5_file(tout));
+    io::hdf5_close_file(h5_file_id);
+    
+    h5_file_id = io::hdf5_open_file_for_read(tout);
+    EXPECT_TRUE(io::is_hdf5_file(tout));
+    io::hdf5_close_file(h5_file_id);
+
     tout = "tout_hdf5_check_non_hdf5_file.json";
 
     if(utils::is_file(tout))
@@ -1010,6 +1019,7 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
     
     // check totally bad path
     EXPECT_FALSE(io::is_hdf5_file("/path/to/somewhere/that/cant/exist"));
+
 }
 
 
