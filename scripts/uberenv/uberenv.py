@@ -342,8 +342,8 @@ class SpackEnv(UberEnv):
             sys.exit(-1)
 
 
-    def find_spack_pkg_path(self,pkg_name):
-        r,rout = sexe("spack/bin/spack find -p " + pkg_name,ret_output = True)
+    def find_spack_pkg_path(self,pkg_name,spec):
+        r,rout = sexe("spack/bin/spack find -p " + pkg_name + spec,ret_output = True)
         for l in rout.split("\n"):
             # TODO: at least print a warning when several choices exist. This will
             # pick the first in the list.
@@ -464,7 +464,7 @@ class SpackEnv(UberEnv):
         if self.opts["spack_clean"]:
             if self.project_opts.has_key("spack_clean_packages"):
                 for cln_pkg in self.project_opts["spack_clean_packages"]:
-                    if not self.find_spack_pkg_path(cln_pkg) is None:
+                    if not self.find_spack_pkg_path(cln_pkg, self.opts["spec"]) is None:
                         unist_cmd = "spack/bin/spack uninstall -f -y --all --dependents " + cln_pkg
                         res = sexe(unist_cmd, echo=True)
 
@@ -521,12 +521,12 @@ class SpackEnv(UberEnv):
         # note: this assumes package extends python when +python
         # this may fail general cases
         if self.opts["install"] and "+python" in full_spec:
-            activate_cmd = "spack/bin/spack activate " + self.pkg_name
+            activate_cmd = "spack/bin/spack activate " + self.pkg_name + self.opts["spec"]
             sexe(activate_cmd, echo=True)
         # if user opt'd for an install, we want to symlink the final
         # install to an easy place:
         if self.opts["install"] or "use_install" in self.opts:
-            pkg_path = self.find_spack_pkg_path(self.pkg_name)
+            pkg_path = self.find_spack_pkg_path(self.pkg_name,self.opts["spec"])
             if self.pkg_name != pkg_path["name"]:
                 print("[ERROR: Could not find install of {}]".format(self.pkg_name))
                 return -1
