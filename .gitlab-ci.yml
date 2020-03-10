@@ -27,7 +27,7 @@ stages:
   - clean
 
 .run_update_uberenv: &run_update_uberenv |
-  [[ "${UPDATE_UBERENV}" == "ON" ]] && ./scripts/ci/update-uberenv.sh
+  [[ -n "${UPDATE_UBERENV}" ]] && ./scripts/ci/update-uberenv.sh "${UPDATE_UBERENV}"
 
 .def_uberenv_cmd: &def_uberenv_cmd |
   [[ "${UBERENV_INSTALL}" == "ON" ]] && INSTALL="--install --run_tests"
@@ -39,25 +39,25 @@ stages:
 .inc_build:
   stage: build
   variables:
-    UPDATE_UBERENV: "OFF"
+    UPDATE_UBERENV: ""
     UBERENV_INSTALL: "OFF"
 
 .inc_install:
   stage: install
   variables:
-    UPDATE_UBERENV: "OFF"
+    UPDATE_UBERENV: ""
     UBERENV_INSTALL: "ON"
 
 .inc_update_uberenv_and_build:
   stage: update_uberenv_and_build
   variables:
-    UPDATE_UBERENV: "ON"
+    UPDATE_UBERENV: "master"
     UBERENV_INSTALL: "OFF"
 
 .inc_update_uberenv_and_install:
   stage: update_uberenv_and_install
   variables:
-    UPDATE_UBERENV: "ON"
+    UPDATE_UBERENV: "master"
     UBERENV_INSTALL: "ON"
 
 .with_gcc:
