@@ -17,6 +17,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Updated to BLT v0.3.0 to resolve BLT/FindMPI issues with rpath linking commands when using OpenMPI.
 
 
+#### Relay
+- Use H5F_ACC_RDONLY in relay::io::is_hdf5_file to avoid errors when checking files that already have open HDF5 handles.
+
+
 ## [0.5.1] - Released 2020-01-18
 
 ### Added
