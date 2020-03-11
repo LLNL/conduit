@@ -1,0 +1,28 @@
+##############################################################################
+# Copyright (c) 2014-20, Lawrence Livermore National Security, LLC and Conduit
+# project contributors. See the COPYRIGHT file for details.
+##############################################################################
+
+############
+# TOOLCHAINS
+############
+
+.with_gcc:
+  variables:
+    TOOLCHAIN: "gcc"
+    PKG_SPEC: ""
+
+.with_gcc_static:
+  variables:
+    TOOLCHAIN: "gcc_static"
+    PKG_SPEC: "%gcc~shared"
+
+.with_clang:
+  variables:
+    TOOLCHAIN: "clang"
+    PKG_SPEC: "%clang@coral~python~fortran"
+
+.with_xl:
+  variables:
+    TOOLCHAIN: "xl"
+    PKG_SPEC: "%xl@coral~shared~python~fortran"

@@ -17,10 +17,15 @@ stages:
   - release_resources
   - clean
 
-# Some scripts
+#########
+# SCRIPTS
+#########
+
+# Whether and how to update uberenv
 .run_update_uberenv: &run_update_uberenv |
   [[ -n "${UPDATE_UBERENV}" ]] && ./scripts/ci/update-uberenv.sh "${UPDATE_UBERENV}"
 
+# How to build uberenv command
 .def_uberenv_cmd: &def_uberenv_cmd |
   INSTALL=""
   [[ "${UBERENV_INSTALL}" == "ON" ]] && INSTALL="--install --run_tests"
@@ -29,7 +34,30 @@ stages:
   SPEC="--spec=${PKG_SPEC}"
   UBERENV_CMD="scripts/uberenv/uberenv.py ${INSTALL} ${SPEC} ${PREFIX} ${UPSTREAM}"
 
-# Build modes
+# Allocation sequence
+.def_srun_prefix: &def_srun_prefix |
+  JOB_ID=$(squeue -h --name=${CONDUIT_ALLOC_NAME} --format=%A)
+  [[ -n "${JOB_ID}" ]] && JOB_ID="--jobid=${JOB_ID}"
+  RESOURCES="-N 1 -n 1 -c 12"
+  export SRUN_PREFIX="srun ${JOB_ID} ${RESOURCES}"
+
+# Define the generic script for quartz (template)
+.srun_build_script:
+  script:
+    - *run_update_uberenv
+    - *def_srun_prefix
+    - *def_uberenv_cmd
+    - set -x; ${SRUN_PREFIX} ${UBERENV_CMD}; set +x
+
+# Define the generic script for lassen (template)
+.lsf_build_script:
+  script:
+    - *run_update_uberenv
+    - *def_uberenv_cmd
+    - set -x; lalloc 1 ${UBERENV_CMD}; set +x
+
+# Build modes templates:
+# A job will have one on this template to pilot the behavior of def_uberenv_cmd
 .mode_deps:
   stage: deps
   variables:
@@ -40,105 +68,14 @@ stages:
   variables:
     UBERENV_INSTALL: "ON"
 
-##################
-# QUARTZ TEMPLATES
-##################
+##########
+# INCLUDES
+##########
 
-# Shared configuration of jobs for quartz
-.on_quartz:
-  tags:
-    - shell
-    - quartz
-  timeout: 3h
-  except:
-    refs:
-      - /_qnone/
-    variables:
-      - $CONDUIT_CI_QUARTZ == "OFF"
-
-# Allocation sequence
-.def_srun_prefix: &def_srun_prefix |
-  JOB_ID=$(squeue -h --name=${CONDUIT_ALLOC_NAME} --format=%A)
-  [[ -n "${JOB_ID}" ]] && JOB_ID="--jobid=${JOB_ID}"
-  RESOURCES="-N 1 -n 1 -c 12"
-  export SRUN_PREFIX="srun ${JOB_ID} ${RESOURCES}"
-
-# Template defining the generic script for quartz
-.srun_build_script:
-  script:
-    - *run_update_uberenv
-    - *def_srun_prefix
-    - *def_uberenv_cmd
-    - set -x; ${SRUN_PREFIX} ${UBERENV_CMD}; set +x
-
-####
-# Generic qwartz jobs
-.build_deps_on_quartz:
-  extends: [.srun_build_script, .mode_deps, .on_quartz]
-
-.install_on_quartz:
-  extends: [.srun_build_script, .mode_install, .on_quartz]
-
-##################
-# LASSEN TEMPLATES
-##################
-
-# Shared configuration of jobs for lassen
-.on_lassen:
-  variables:
-  tags:
-    - shell
-    - lassen
-  rules:
-    - if: '$CI_COMMIT_BRANCH =~/_lnone/ || $CONDUIT_CI_LASSEN == "OFF"'
-      when: never
-    - when: on_success
-  allow_failure: true
-
-# Template defining the generic script for lassen
-.lsf_build_script:
-  script:
-    - *run_update_uberenv
-    - *def_uberenv_cmd
-    - set -x; lalloc 1 ${UBERENV_CMD}; set +x
-
-####
-# Generic lassen jobs
-.build_deps_on_lassen:
-  extends: [.lsf_build_script, .mode_deps, .on_lassen]
-
-.install_on_lassen:
-  extends: [.lsf_build_script, .mode_install, .on_lassen]
-
-############
-# TOOLCHAINS
-############
-
-.with_gcc:
-  variables:
-    TOOLCHAIN: "gcc"
-    PKG_SPEC: ""
-
-.with_gcc_static:
-  variables:
-    TOOLCHAIN: "gcc_static"
-    PKG_SPEC: "%gcc~shared"
-
-.with_clang:
-  variables:
-    TOOLCHAIN: "clang"
-    PKG_SPEC: "%clang@coral~python~fortran"
-
-.with_xl:
-  variables:
-    TOOLCHAIN: "xl"
-    PKG_SPEC: "%xl@coral~shared~python~fortran"
-
-################
-# JOBS INCLUSION
-################
-
-# This is where jobs are included
+# This is where templates and jobs are included
 include:
-  - local: .gitlab/ci/build_quartz.yml
-  - local: .gitlab/ci/build_lassen.yml
+  - local: .gitlab/toolchains_templates.yml
+  - local: .gitlab/quartz_templates.yml
+  - local: .gitlab/quartz_jobs.yml
+  - local: .gitlab/lassen_templates.yml
+  - local: .gitlab/lassen_jobs.yml
