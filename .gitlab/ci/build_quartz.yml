@@ -23,16 +23,16 @@
 #  when: always
 
 # Here are all quartz build jobs
-Q_build_deps_gcc:
+gcc (build deps on quartz):
   extends: [.build_deps_on_quartz, .with_gcc]
 
-Q_install_gcc:
+gcc (install on quartz):
   extends: [.install_on_quartz, .with_gcc]
-  needs: [Q_build_deps_gcc]
+  needs: [gcc (build deps on quartz)]
 
-Q_build_deps_gcc_static:
+gcc_static (build deps on quartz):
   extends: [.build_deps_on_quartz, .with_gcc_static]
 
-Q_install_gcc_static:
+gcc_static (install on quartz):
   extends: [.install_on_quartz, .with_gcc_static]
-  needs: [Q_build_deps_gcc_static]
+  needs: [gcc_static (build deps on quartz)]
