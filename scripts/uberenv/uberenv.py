@@ -1,7 +1,7 @@
 #!/bin/sh
 "exec" "python" "-u" "-B" "$0" "$@"
 ###############################################################################
-# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2020, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -532,16 +532,16 @@ class SpackEnv(UberEnv):
                 return -1
             else:
                 # Symlink host-config file
-                hcfg_glob = glob.glob(pjoin(pkg_path["path"],"*.cmake"))
-                if len(hcfg_glob) > 0:
-                    hcfg_path  = hcfg_glob[0]
-                    hcfg_fname = os.path.split(hcfg_path)[1]
-                    if os.path.islink(hcfg_fname):
-                        os.unlink(hcfg_fname)
-                    elif os.path.isfile(hcfg_fname):
-                        sexe("rm -f {}".format(hcfg_fname))
-                    print("[symlinking host config file to {}]".format(pjoin(self.dest_dir,hcfg_fname)))
-                    os.symlink(hcfg_path,hcfg_fname)
+                hc_glob = glob.glob(pjoin(pkg_path["path"],"*.cmake"))
+                if len(hc_glob) > 0:
+                    hc_path  = hc_glob[0]
+                    hc_fname = os.path.split(hc_path)[1]
+                    if os.path.islink(hc_fname):
+                        os.unlink(hc_fname)
+                    elif os.path.isfile(hc_fname):
+                        sexe("rm -f {}".format(hc_fname))
+                    print("[symlinking host config file to {}]".format(pjoin(self.dest_dir,hc_fname)))
+                    os.symlink(hc_path,hc_fname)
 
                 # Symlink install directory
                 if self.opts["install"]:
@@ -556,14 +556,14 @@ class SpackEnv(UberEnv):
         else:
             pattern = "*{}.cmake".format(self.pkg_name)
             build_dir = pjoin(self.pkg_src_dir,"spack-build")
-            hcfg_glob = glob.glob(pjoin(build_dir,pattern))
-            if len(hcfg_glob) > 0:
-                hcfg_path  = hcfg_glob[0]
-                hcfg_fname = os.path.split(hcfg_path)[1]
-                if os.path.islink(hcfg_fname):
-                    os.unlink(hcfg_fname)
-                print("[copying host config file to {}]".format(pjoin(self.dest_dir,hcfg_fname)))
-                sexe("cp {} {}".format(hcfg_path,hcfg_fname))
+            hc_glob = glob.glob(pjoin(build_dir,pattern))
+            if len(hc_glob) > 0:
+                hc_path  = hc_glob[0]
+                hc_fname = os.path.split(hc_path)[1]
+                if os.path.islink(hc_fname):
+                    os.unlink(hc_fname)
+                print("[copying host config file to {}]".format(pjoin(self.dest_dir,hc_fname)))
+                sexe("cp {} {}".format(hc_path,hc_fname))
                 print("[removing project build directory {}]".format(pjoin(build_dir)))
                 sexe("rm -rf {}".format(build_dir))
 
