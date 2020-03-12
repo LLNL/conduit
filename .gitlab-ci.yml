@@ -6,8 +6,8 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   CONDUIT_ALLOC_NAME: conduit_${CI_PIPELINE_ID}
-  BUILD_ROOT: ${CI_BUILDS_DIR}/conduit_${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}
-  INSTALL_ROOT: ${CI_BUILDS_DIR}/spack_uberenv
+  BUILD_ROOT: ${CI_BUILDS_DIR}/conduit/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}
+  INSTALL_ROOT: ${CI_BUILDS_DIR}/conduit/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}/uberenv_libs
   SPACK_UPSTREAM: /usr/workspace/radiuss/spack-chain-parent/opt/spack
 
 stages:
@@ -29,6 +29,7 @@ stages:
 .def_uberenv_cmd: &def_uberenv_cmd |
   INSTALL=""
   [[ "${UBERENV_INSTALL}" == "ON" ]] && INSTALL="--install --run_tests"
+  mkdir -p ${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}
   PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
   UPSTREAM="--upstream=${SPACK_UPSTREAM}"
   SPEC="--spec=${PKG_SPEC}"
