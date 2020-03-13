@@ -722,6 +722,52 @@ Schema::operator[](index_t idx) const
 
 //---------------------------------------------------------------------------//
 Schema&
+Schema::add_child(const std::string &name)
+{
+    if(has_direct_child(name))
+    {
+        return get_child(name);
+    }
+
+    init_object();
+    Schema* child = new Schema();
+    child->m_parent = this;
+    children().push_back(child);
+    object_map()[name] = children().size()-1;
+    object_order().push_back(name);
+    return *children()[child_index(name)];
+}
+
+bool
+Schema::has_direct_child(const std::string &name) const
+{
+    // for the non-object case, false
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        return false;
+
+    const std::map<std::string,index_t> &ents = object_map();
+
+    if(ents.find(name) == ents.end())
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+//---------------------------------------------------------------------------//
+Schema&
+Schema::get_child(const std::string &name)
+{
+    // only objects can have named children
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    return *children()[child_index(name)];
+}
+
+//---------------------------------------------------------------------------//
+Schema&
 Schema::fetch_child(const std::string &path)
 {
     // fetch w/ path forces OBJECT_ID

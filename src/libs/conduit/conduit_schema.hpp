@@ -267,6 +267,16 @@ public:
     Schema           &fetch_child(const std::string &path);
     const Schema     &fetch_child(const std::string &path) const;
 
+    // the 'get_child' methods also don't modify map structure. Additionally,
+    // they do not search parent/child schemas, and thus allow getting children
+    // whose names contain slashes.
+    Schema           &get_child(const std::string &name);
+
+    // the 'add_child' method will not parse the name arg as a path, allowing
+    // for addition of literally-named children. Returns either the existing
+    // Schema with the name or a new Schema
+    Schema           &add_child(const std::string &name);
+
     /// non-const fetch with a path arg methods do modify map 
     // structure if a path doesn't exist
     Schema           &fetch(const std::string &path);
@@ -299,6 +309,8 @@ public:
     std::string       path() const;
     
     bool              has_child(const std::string &name) const;
+    /// has_direct_child will not try to parse the name as a path
+    bool              has_direct_child(const std::string &name) const;
     bool              has_path(const std::string &path) const;
     const std::vector<std::string> &child_names() const;
     void              remove(const std::string &path);

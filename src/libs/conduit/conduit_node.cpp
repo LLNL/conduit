@@ -11962,6 +11962,33 @@ Node::children() const
     return NodeConstIterator(this);
 }
 
+//---------------------------------------------------------------------------//
+Node&
+Node::add_child(const std::string &name)
+{
+    Schema &child_schema = m_schema->add_child(name);
+    Schema *child_ptr = &child_schema;
+    Node *child_node = new Node();
+    child_node->set_schema_ptr(child_ptr);
+    child_node->m_parent = this;
+    m_children.push_back(child_node);
+    return  *m_children[m_children.size() - 1];
+}
+
+//---------------------------------------------------------------------------//
+const Node&
+Node::get_child(const std::string &name) const
+{
+    if(!m_schema->has_direct_child(name))
+    {
+        CONDUIT_ERROR("Cannot fetch non-existent "
+                      << "child \"" << name << "\" from Node("
+                      << this->path()
+                      << ")");
+    }
+    size_t idx = (size_t)m_schema->child_index(name);
+    return *m_children[idx];
+}
 
 //---------------------------------------------------------------------------//
 const Node&
@@ -11997,26 +12024,18 @@ Node::fetch_child(const std::string &path) const
         }
     }
 
-    if(!m_schema->has_child(p_curr))
+    // check if descendant
+    if(m_schema->has_child(p_curr) && !p_next.empty())
     {
-        CONDUIT_ERROR("Cannot fetch non-existent " 
-                      << "child \"" << p_curr << "\" from Node("
-                      << this->path()
-                      << ")");
-    }
-
-    size_t idx = (size_t)m_schema->child_index(p_curr);
-
-    if(p_next.empty())
-    {
-        return *m_children[idx];
-    }
-    else
-    {
+        size_t idx = (size_t)m_schema->child_index(p_curr);
         return m_children[idx]->fetch_child(p_next);
     }
+    // is direct child
+    else
+    {
+        return this->get_child(p_curr);
+    }
 }
-
 
 //---------------------------------------------------------------------------//
 Node&
