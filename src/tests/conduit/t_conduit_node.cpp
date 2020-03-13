@@ -86,6 +86,20 @@ TEST(conduit_node, nested)
     EXPECT_EQ(n["a"]["b"].as_uint32(),val);
 }
 
+TEST(conduit_node, pathlike_child_name)
+{
+
+    uint32   path_val  = 10;
+    uint32   direct_val  = 20;
+
+    Node n;
+    n["a/b"] = path_val;
+    n.add_child("a/b") = direct_val;
+
+    EXPECT_EQ(n["a/b"].as_uint32(),path_val);
+    EXPECT_EQ(n.get_child("a/b").as_uint32(),direct_val);
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_node, vector)
 {

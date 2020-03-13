@@ -334,7 +334,32 @@ TEST(schema_basics, rename_child)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(schema_basics, pathlike_child_names)
+{
+    Schema s;
+    
+    std::string shared_name = "a/b";
+    std::string path_only = "c/d";
+    std::string direct_only = "e/f";
 
+    s[shared_name].set(DataType::int64());
+    s.add_child(shared_name).set(DataType::int64());
+
+    s[path_only].set(DataType::int64());
+    s.add_child(direct_only).set(DataType::int64());
+    
+    s.print();
+
+    EXPECT_TRUE(s.has_child(shared_name));
+    EXPECT_TRUE(s.has_path(shared_name));
+
+    EXPECT_TRUE(s.has_path(path_only));
+    EXPECT_FALSE(s.has_path(direct_only));
+
+    EXPECT_TRUE(s.has_child(direct_only));
+    EXPECT_FALSE(s.has_child(path_only));
+}
 
 
 //-----------------------------------------------------------------------------
