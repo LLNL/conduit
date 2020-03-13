@@ -44,60 +44,121 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_exports.h
+/// file: conduit_blueprint_mpi.cpp
 ///
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-#ifndef CONDUIT_BLUEPRINT_EXPORTS_H
-#define CONDUIT_BLUEPRINT_EXPORTS_H
+// std lib includes
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms --
-//-----------------------------------------------------------------------------
-
-#cmakedefine CONDUIT_WINDOWS_DLL_EXPORTS "${CONDUIT_WINDOWS_DLL_EXPORTS}"
-
-#if defined(CONDUIT_BLUEPRINT_EXPORTS) || \
-    defined(conduit_blueprint_EXPORTS) || \
-    defined(CONDUIT_BLUEPRINT_MPI_EXPORTS) || \
-    defined(conduit_blueprint_mpi_EXPORTS)
-    /* define catch all def */
-    #define CONDUIT_BLUEPRINT_EXPORTS_DEFINED 1
-#endif
-
-#if defined(_WIN32)
-    #if defined(CONDUIT_WINDOWS_DLL_EXPORTS)
-        #if defined(CONDUIT_BLUEPRINT_EXPORTS_DEFINED)
-            #define CONDUIT_BLUEPRINT_API __declspec(dllexport)
-        #else
-            #define CONDUIT_BLUEPRINT_API __declspec(dllimport)
-        #endif
-    #else
-        #define CONDUIT_BLUEPRINT_API /* empty for static builds */
-    #endif
-
-    #if defined(_MSC_VER)
-        /* Turn off warning about lack of DLL interface */
-        #pragma warning(disable:4251)
-        /* Turn off warning non-dll class is base for dll-interface class */
-        #pragma warning(disable:4275)
-        /* Turn off warning about identifier truncation */
-        #pragma warning(disable:4786)
-    #endif
-#else
-    #if __GNUC__ >= 4 && (defined(CONDUIT_BLUEPRINT_EXPORTS_DEFINED))
-        #define CONDUIT_BLUEPRINT_API __attribute__ ((visibility("default")))
-    #else
-        #define CONDUIT_BLUEPRINT_API /* hidden by default */
-    #endif
-#endif
+#include <string.h>
+#include <math.h>
 
 //-----------------------------------------------------------------------------
-// CONDUIT_BLUEPRINT_EXPORTS_H
+// conduit includes
 //-----------------------------------------------------------------------------
-#endif
+#include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mpi.hpp"
 
 
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint --
+//-----------------------------------------------------------------------------
+namespace blueprint
+{
+
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
+{
+
+
+
+//---------------------------------------------------------------------------//
+std::string
+about()
+{
+    Node n;
+    blueprint::about(n);
+    return n.to_json();
+}
+
+//---------------------------------------------------------------------------//
+void
+about(Node &n)
+{
+    n.reset();
+    n["protocols/mesh/coordset"] = "enabled";
+    n["protocols/mesh/topology"] = "enabled";
+    n["protocols/mesh/field"]    = "enabled";
+    n["protocols/mesh/index"]    = "enabled";
+
+    n["protocols/mcarray"]  = "enabled";
+    n["protocols/zfparray"] = "enabled";
+}
+
+//---------------------------------------------------------------------------//
+bool
+verify(const std::string &protocol,
+       const Node &n,
+       Node &info,
+       MPI_Comm /*comm*/)
+{
+    bool res = false;
+    info.reset();
+
+    std::string p_curr;
+    std::string p_next;
+    conduit::utils::split_path(protocol,p_curr,p_next);
+
+    if(!p_next.empty())
+    {
+        if(p_curr == "mesh")
+        {
+            res = conduit::blueprint::mesh::verify(p_next,n,info);
+        }
+        else if(p_curr == "mcarray")
+        {
+            res = conduit::blueprint::mcarray::verify(p_next,n,info);
+        }
+    }
+    else
+    {
+        if(p_curr == "mesh")
+        {
+            res = conduit::blueprint::mesh::verify(n,info);
+        }
+        else if(p_curr == "mcarray")
+        {
+            res = conduit::blueprint::mcarray::verify(n,info);
+        }
+    }
+
+    return res;
+}
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mpi --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint --
+//-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
 

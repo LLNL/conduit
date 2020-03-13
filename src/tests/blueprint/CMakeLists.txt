@@ -90,11 +90,19 @@ else()
     message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
-set(BLUEPRINT_MPI_TESTS t_blueprint_mpi_relay)
+set(BLUEPRINT_MPI_TESTS t_blueprint_mpi_smoke)
+set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_relay)
 
 if(MPI_FOUND)
-    message(STATUS "MPI enabled: Adding conduit_blueprint_mpi unit tests")
+    message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
     foreach(TEST ${BLUEPRINT_MPI_TESTS})
+        add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON mpi
+conduit
+                                                                 conduit_blueprint_mpi)
+    endforeach()
+
+    message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
+    foreach(TEST ${BLUEPRINT_RELAY_MPI_TESTS})
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON mpi
                                                                  conduit
                                                                  conduit_blueprint
@@ -102,7 +110,7 @@ if(MPI_FOUND)
                                                                  conduit_relay_mpi)
     endforeach()
 else()
-    message(STATUS "MPI disabled: Skipping conduit_relay_mpi tests")
+    message(STATUS "MPI disabled: Skipping conduit_blueprint_mpi tests")
 endif()
 
 message(STATUS "Adding blueprint lib Zfp unit tests")
