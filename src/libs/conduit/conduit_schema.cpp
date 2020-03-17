@@ -724,7 +724,7 @@ Schema::operator[](index_t idx) const
 Schema&
 Schema::add_child(const std::string &name)
 {
-    if(has_direct_child(name))
+    if(has_child(name))
     {
         return get_child(name);
     }
@@ -738,24 +738,6 @@ Schema::add_child(const std::string &name)
     return *children()[child_index(name)];
 }
 
-bool
-Schema::has_direct_child(const std::string &name) const
-{
-    // for the non-object case, false
-    if(m_dtype.id() != DataType::OBJECT_ID)
-        return false;
-
-    const std::map<std::string,index_t> &ents = object_map();
-
-    if(ents.find(name) == ents.end())
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
-}
 //---------------------------------------------------------------------------//
 Schema&
 Schema::get_child(const std::string &name)
@@ -764,7 +746,17 @@ Schema::get_child(const std::string &name)
     if(m_dtype.id() != DataType::OBJECT_ID)
         CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
     return *children()[child_index(name)];
-}
+}    
+
+//---------------------------------------------------------------------------//
+const Schema&
+Schema::get_child(const std::string &name) const
+{
+    // only objects can have named children
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    return *children()[child_index(name)];
+}    
 
 //---------------------------------------------------------------------------//
 Schema&
@@ -1142,25 +1134,37 @@ Schema::remove(const std::string &path)
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    size_t idx = (size_t)child_index(p_curr);
-    Schema *child = children()[idx];
 
     if(!p_next.empty())
     {
+        size_t idx = (size_t)child_index(p_curr);
+        Schema *child = children()[idx];
         child->remove(p_next);
     }
     else
     {
-        // any index above the current needs to shift down by one
-        for (size_t i = idx; i < object_order().size(); i++)
-        {
-            object_map()[object_order()[i]]--;
-        }
-        object_map().erase(p_curr);
-        object_order().erase(object_order().begin() + idx);
-        children().erase(children().begin() + idx);
-        delete child;
+        remove_child(p_curr);
     }    
+}
+
+//---------------------------------------------------------------------------//
+void
+Schema::remove_child(const std::string &name)
+{
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::remove_child[OBJECT_ID]> Schema is not OBJECT_ID");
+
+    size_t idx = (size_t)child_index(name);
+    Schema *child = children()[idx];
+    // any index above the current needs to shift down by one
+    for (size_t i = idx; i < object_order().size(); i++)
+    {
+        object_map()[object_order()[i]]--;
+    }
+    object_map().erase(name);
+    object_order().erase(object_order().begin() + idx);
+    children().erase(children().begin() + idx);
+    delete child;
 }
 
 //---------------------------------------------------------------------------//

@@ -11967,7 +11967,7 @@ Node&
 Node::add_child(const std::string &name)
 {
     Schema &child_schema = m_schema->add_child(name);
-    Schema *child_ptr = &child_schema;
+    Schema *child_ptr = &child_schema; 
     Node *child_node = new Node();
     child_node->set_schema_ptr(child_ptr);
     child_node->m_parent = this;
@@ -11979,7 +11979,22 @@ Node::add_child(const std::string &name)
 const Node&
 Node::get_child(const std::string &name) const
 {
-    if(!m_schema->has_direct_child(name))
+    if(!m_schema->has_child(name))
+    {
+        CONDUIT_ERROR("Cannot fetch non-existent "
+                      << "child \"" << name << "\" from Node("
+                      << this->path()
+                      << ")");
+    }
+    size_t idx = (size_t)m_schema->child_index(name);
+    return *m_children[idx];
+}
+
+//---------------------------------------------------------------------------//
+Node&
+Node::get_child(const std::string &name)
+{
+    if(!m_schema->has_child(name))
     {
         CONDUIT_ERROR("Cannot fetch non-existent "
                       << "child \"" << name << "\" from Node("
@@ -12013,13 +12028,13 @@ Node::fetch_child(const std::string &path) const
 
     // check for parent
     if(p_curr == "..")
-    {
+    {   
         if(m_parent == NULL)
-        {
+        {   
             CONDUIT_ERROR("Cannot fetch_child from NULL parent" << path);
         }
         else
-        {
+        {   
             return m_parent->fetch_child(p_next);
         }
     }
@@ -12339,22 +12354,28 @@ Node::remove(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    size_t idx= (size_t) m_schema->child_index(p_curr);
-    
     if(!p_next.empty())
     {
+        size_t idx= (size_t) m_schema->child_index(p_curr);
         m_children[idx]->remove(p_next);
     }
     else
     {
-        // note: we must remove the child pointer before the
-        // schema. b/c the child pointer uses the schema
-        // to cleanup
-        
-        delete m_children[idx];
-        m_schema->remove(p_curr);
-        m_children.erase(m_children.begin() + idx);
+        remove_child(p_curr);    
     }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::remove_child(const std::string &name)
+{
+   size_t idx= (size_t) m_schema->child_index(name);
+   // note: we must remove the child pointer before the
+   // schema. b/c the child pointer uses the schema
+   // to cleanup
+   delete m_children[idx];
+   m_schema->remove_child(name);
+   m_children.erase(m_children.begin() + idx);
 }
 
 //---------------------------------------------------------------------------//

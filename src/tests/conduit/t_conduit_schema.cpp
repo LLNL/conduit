@@ -325,8 +325,6 @@ TEST(schema_basics, rename_child)
 
     s.rename_child("c","d");
 
-    s.print();
-
     cnames = s.child_names();
     EXPECT_TRUE(s.has_child("d"));
     EXPECT_FALSE(s.has_child("c"));
@@ -359,6 +357,23 @@ TEST(schema_basics, pathlike_child_names)
 
     EXPECT_TRUE(s.has_child(direct_only));
     EXPECT_FALSE(s.has_child(path_only));
+
+    // Test that explicitly removing children doesn't remove 
+    // by path and vice-versa 
+    std::string second_shared_name = "foo/bar";
+    s[second_shared_name].set(DataType::int64());
+    s.add_child(second_shared_name).set(DataType::int64());
+
+    s.remove(shared_name);
+    s.remove_child(second_shared_name);
+
+    EXPECT_TRUE(s.has_child(shared_name));
+    EXPECT_FALSE(s.has_path(shared_name));
+
+    EXPECT_TRUE(s.has_path(second_shared_name));
+    EXPECT_FALSE(s.has_child(second_shared_name));
+
+    s.print();
 }
 
 

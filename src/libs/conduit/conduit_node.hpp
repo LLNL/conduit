@@ -3566,9 +3566,9 @@ public:
     const Node       &fetch_child(const std::string &path) const;
 
     /// the `get_child' methods don't modify map structure, and also
-    /// do not try to resolve names as paths
+    /// do not try to resolve names as paths 
     Node             &get_child(const std::string &name);
-    const Node       &get_child(const std::string &name) const;
+    const Node       &get_child(const std::string &name) const;    
 
     // add_child will not try to parse the name as a path. "foo/bar.png" is
     // a legal name.
@@ -3621,6 +3621,8 @@ public:
     void    remove(index_t idx);
     /// remove child at given path (object interface)
     void    remove(const std::string &path);
+    /// remove child with given name, will not parse name as path 
+    void    remove_child(const std::string &name);
     /// rename a child (object interface)
     void    rename_child(const std::string &current_name,
                          const std::string &new_name);
