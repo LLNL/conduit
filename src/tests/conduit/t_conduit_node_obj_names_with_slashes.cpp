@@ -62,17 +62,17 @@ TEST(conduit_node_paths, key_embedded_slashes)
 {
     Node n;
 
-    n["a/b/c/d/e/f"] = 10;
-    n.add_child("a/b/c/d/e/f") = 42;
+    n["normal/path"] = (int64)10;
+    n.add_child("child_with_/_inside") = (int64)42;
     std::cout << n.to_json() << std::endl;
     std::cout << n.to_yaml() << std::endl;
 
 
-    Node &n_sub = n["a/b/c/d/e/f"];
-    EXPECT_EQ(n_sub.to_int64(),10);
+    Node &n_sub = n["normal/path"];
+    EXPECT_EQ(n_sub.to_int64(),(int64)10);
 
-    Node &n_sub_2 = n.get_child("a/b/c/d/e/f");
-    EXPECT_EQ(n_sub_2.to_int64(),42);
+    Node &n_sub_2 = n.child("child_with_/_inside");
+    EXPECT_EQ(n_sub_2.to_int64(),(int64)42);
 
 
     Node info;
@@ -80,9 +80,7 @@ TEST(conduit_node_paths, key_embedded_slashes)
     EXPECT_FALSE(n.diff(n,info));
     EXPECT_FALSE(n.diff_compatible(n,info));
 
-    return;
     // check iters
-
     NodeIterator itr = n.children();
 
     int num_itr_children = 0;
@@ -94,11 +92,11 @@ TEST(conduit_node_paths, key_embedded_slashes)
                   << " name:" << curr_name << std::endl;
         if(num_itr_children == 0)
         {
-            EXPECT_EQ("a",curr_name);
+            EXPECT_EQ("normal",curr_name);
         }
         else if(num_itr_children == 1)
         {
-            EXPECT_EQ("a/b/c/d/e/f",curr_name);
+            EXPECT_EQ("child_with_/_inside",curr_name);
         }
 
         num_itr_children++;
@@ -127,84 +125,40 @@ TEST(conduit_node_paths, key_embedded_slashes)
     std::cout << info.to_yaml() << std::endl;
     EXPECT_FALSE(n.diff(n_other,info));
     std::cout << info.to_yaml() << std::endl;
-    //
-    // // all basic i/o protocols
-    // n_other.reset();
-    // n_other.load("tout_test_key_with_slashes.yaml","yaml");
-    // std::cout << n_other.to_yaml() << std::endl;
-    // EXPECT_FALSE(n.diff(n_other,info));
-    // std::cout << info.to_yaml() << std::endl;
-    //
-    // n_other.reset();
-    // n_other.load("tout_test_key_with_slashes.json","json");
-    // std::cout << n_other.to_yaml() << std::endl;
-    // EXPECT_FALSE(n.diff(n_other,info));
-    // std::cout << info.to_yaml() << std::endl;
-    //
-    // n_other.reset();
-    // n_other.load("tout_test_key_with_slashes.bin","conduit_bin");
-    // std::cout << n_other.to_yaml() << std::endl;
-    // EXPECT_FALSE(n.diff(n_other,info));
-    // std::cout << info.to_yaml() << std::endl;
-    //
-    // n_other.reset();
-    // n_other.load("tout_test_key_with_slashes.conduit_json","conduit_json");
-    // std::cout << n_other.to_yaml() << std::endl;
-    // EXPECT_FALSE(n.diff(n_other,info));
-    // std::cout << info.to_yaml() << std::endl;
-    //
-    // n_other.reset();
-    // n_other.load("tout_test_key_with_slashes.conduit_base64_json","conduit_base64_json");
-    // std::cout << n_other.to_yaml() << std::endl;
-    // EXPECT_FALSE(n.diff(n_other,info));
-    // std::cout << info.to_yaml() << std::endl;
 
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_node_paths, key_embedded_slashes_b)
-{
-    Node n;
-
-    n["normal_thing"] = 10;
-    n.add_child("thing_with_/_inside") = 42;
-    n["normal_thing"].add_child("thing_with_/_inside") = 43;
-    n.remove_child("thing_with_/_inside");
-    n.add_child("thing_with_/_inside") = 44;
-
-    std::cout << n.to_yaml() << std::endl;
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_node_paths, key_embedded_slashes_a)
-{
-    Node n;
-
-    n["normal_thing"] = 10;
-    n["normal_thing_2"] = 10;
-    // n.add_child("thing_with_/_inside") = 42;
-    //std::cout << n.to_json() << std::endl;
-    std::cout << n.to_yaml() << std::endl;
-
-    // Node &n_sub = n["normal_thing"];
-  //   EXPECT_EQ(n_sub.to_int64(),10);
-  //
-  //   Node &n_sub_2 = n.child("thing_with_/_inside");
-  //   EXPECT_EQ(n_sub_2.to_int64(),42);
-
-
-    Node n2,info;
-    n2.set(n);
-    // make sure no diff with self
-    EXPECT_FALSE(n.diff(n2,info));
-
+    // all basic i/o protocols
+    n_other.reset();
+    n_other.load("tout_test_key_with_slashes.yaml","yaml");
+    std::cout << n_other.to_yaml() << std::endl;
+    EXPECT_FALSE(n.diff(n_other,info));
     std::cout << info.to_yaml() << std::endl;
 
-    EXPECT_FALSE(n.diff_compatible(n,info));
-
+    n_other.reset();
+    n_other.load("tout_test_key_with_slashes.json","json");
+    std::cout << n_other.to_yaml() << std::endl;
+    EXPECT_FALSE(n.diff(n_other,info));
     std::cout << info.to_yaml() << std::endl;
+
+    n_other.reset();
+    n_other.load("tout_test_key_with_slashes.bin","conduit_bin");
+    std::cout << n_other.to_yaml() << std::endl;
+    EXPECT_FALSE(n.diff(n_other,info));
+    std::cout << info.to_yaml() << std::endl;
+
+    n_other.reset();
+    n_other.load("tout_test_key_with_slashes.conduit_json","conduit_json");
+    std::cout << n_other.to_yaml() << std::endl;
+    EXPECT_FALSE(n.diff(n_other,info));
+    std::cout << info.to_yaml() << std::endl;
+
+    n_other.reset();
+    n_other.load("tout_test_key_with_slashes.conduit_base64_json","conduit_base64_json");
+    std::cout << n_other.to_yaml() << std::endl;
+    EXPECT_FALSE(n.diff(n_other,info));
+    std::cout << info.to_yaml() << std::endl;
+
 }
+
 
 
 

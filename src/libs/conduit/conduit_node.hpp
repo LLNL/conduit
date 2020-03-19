@@ -3568,7 +3568,7 @@ public:
     /// the `get_child' methods don't modify map structure, and also
     /// do not try to resolve names as paths 
     Node             &get_child(const std::string &name);
-    const Node       &get_child(const std::string &name) const;    
+    const Node       &get_child(const std::string &name) const;
 
     // add_child will not try to parse the name as a path. "foo/bar.png" is
     // a legal name.
@@ -3577,6 +3577,13 @@ public:
     /// fetch the node at the given index
     Node             &child(index_t idx);
     const Node       &child(index_t idx) const;
+    
+    /// fetch direct child by name
+    /// the `child' methods don't modify map structure, and also
+    /// do not try to resolve names as paths 
+    Node             &child(const std::string &name);
+    const Node       &child(const std::string &name) const;
+
 
     /// fetch a pointer to the node  at the given path
     Node             *fetch_ptr(const std::string &path);

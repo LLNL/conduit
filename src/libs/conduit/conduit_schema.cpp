@@ -726,10 +726,11 @@ Schema::add_child(const std::string &name)
 {
     if(has_child(name))
     {
-        return get_child(name);
+        return child(name);
     }
 
     init_object();
+
     Schema* child = new Schema();
     child->m_parent = this;
     children().push_back(child);
@@ -756,7 +757,28 @@ Schema::get_child(const std::string &name) const
     if(m_dtype.id() != DataType::OBJECT_ID)
         CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
     return *children()[child_index(name)];
+}
+
+
+//---------------------------------------------------------------------------//
+Schema&
+Schema::child(const std::string &name)
+{
+    // only objects can have named children
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    return *children()[child_index(name)];
 }    
+
+//---------------------------------------------------------------------------//
+const Schema&
+Schema::child(const std::string &name) const
+{
+    // only objects can have named children
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    return *children()[child_index(name)];
+}
 
 //---------------------------------------------------------------------------//
 Schema&
@@ -829,22 +851,20 @@ Schema::fetch_child(const std::string &path) const
 
 //---------------------------------------------------------------------------//
 index_t
-Schema::child_index(const std::string &path) const
+Schema::child_index(const std::string &name) const
 {
     index_t res=0;
 
     // find p_curr with an iterator
     std::map<std::string, index_t>::const_iterator itr;
-    itr = object_map().find(path);
+    itr = object_map().find(name);
 
     // error if child does not exist. 
     if(itr == object_map().end())
     {
-        ///
-        /// TODO: Full path errors would be nice here. 
-        ///
         CONDUIT_ERROR("<Schema::child_index[OBJECT_ID]>"
-                    << "Attempt to access invalid child:" << path);
+                      << "Schema(" << path() << ") "
+                      << "Attempt to access invalid child:" << name);
     }
     else
     {

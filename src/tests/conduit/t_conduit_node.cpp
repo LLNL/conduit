@@ -1122,3 +1122,19 @@ TEST(conduit_node, test_parse_all_protos)
     EXPECT_FALSE(n.diff(n2,info));
 
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, add_child)
+{ 
+    Node n;
+    int64 val = 42;
+    Node &n_a = n.add_child("a");
+    n_a.set(val);
+    EXPECT_EQ(n.child("a").as_int64(),val);
+    std::cout << n.to_yaml() << std::endl;
+    Node *n_ptr = &n.add_child("a");
+    // if you add again, you should get the same ref bac.
+    EXPECT_EQ(&n_a,n_ptr);
+}
+
