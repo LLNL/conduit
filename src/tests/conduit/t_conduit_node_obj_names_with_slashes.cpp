@@ -57,6 +57,9 @@
 
 using namespace conduit;
 
+
+
+
 //-----------------------------------------------------------------------------
 TEST(conduit_node_obj_names_with_slashes, key_embedded_slashes_double_add_rm_child)
 {
@@ -283,7 +286,24 @@ TEST(conduit_node_obj_names_with_slashes, basic_io)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_obj_names_with_slashes, paths)
+{
+    Node n;
+    n["normal/path"].add_child("child_with_/_inside") = (int64)42;
 
+    std::string test_path = n["normal/path"].child("child_with_/_inside").path();
+    std::cout << test_path << std::endl;
+
+    EXPECT_EQ(test_path,"normal/path/{child_with_/_inside}");
+
+    n.reset();
+    n.add_child("child_with_/_inside") = (int64)42;
+
+    test_path = n.child(0).path();
+    std::cout << test_path << std::endl;
+    EXPECT_EQ(test_path,"{child_with_/_inside}");
+}
 
 
 

@@ -1017,7 +1017,26 @@ Schema::name() const
         if(p->dtype().is_object())
         {
             // use name
-            oss << p->child_name(idx);
+            std::string name = p->child_name(idx);
+            
+            // check if name() includes "/", if so we need to escape
+            bool escape = false;
+            if(name.find('/') != std::string::npos)
+            {
+                escape = true;
+            }
+
+            if(escape)
+            {
+                oss << "{";
+            }
+
+            oss << name;
+
+            if(escape)
+            {
+                oss << "}";
+            }
         }
         else if(p->dtype().is_list())
         {

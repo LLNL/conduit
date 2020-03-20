@@ -380,6 +380,8 @@ TEST(schema_basics, pathlike_child_names)
     s["a"].set(DataType::int64());
     s.add_child("key_with_/_ex").set(DataType::int64());
     
+    EXPECT_EQ(s.child("key_with_/_ex").path(),"{key_with_/_ex}");
+    
     Schema s3(s2);
     
     EXPECT_TRUE(s2.equals(s3));
