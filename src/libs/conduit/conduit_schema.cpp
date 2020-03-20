@@ -739,26 +739,6 @@ Schema::add_child(const std::string &name)
     return *children()[child_index(name)];
 }
 
-//---------------------------------------------------------------------------//
-Schema&
-Schema::get_child(const std::string &name)
-{
-    // only objects can have named children
-    if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
-    return *children()[child_index(name)];
-}    
-
-//---------------------------------------------------------------------------//
-const Schema&
-Schema::get_child(const std::string &name) const
-{
-    // only objects can have named children
-    if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
-    return *children()[child_index(name)];
-}
-
 
 //---------------------------------------------------------------------------//
 Schema&

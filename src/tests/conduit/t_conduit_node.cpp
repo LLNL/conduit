@@ -97,7 +97,7 @@ TEST(conduit_node, pathlike_child_name)
     n.add_child("a/b") = direct_val;
 
     EXPECT_EQ(n["a/b"].as_uint32(),path_val);
-    EXPECT_EQ(n.get_child("a/b").as_uint32(),direct_val);
+    EXPECT_EQ(n.child("a/b").as_uint32(),direct_val);
 
     uint32   deletion_test_val = 35;
     n["c/d"] = deletion_test_val;
@@ -105,7 +105,7 @@ TEST(conduit_node, pathlike_child_name)
     n.remove("a/b");
     n.remove_child("c/d");
 
-    EXPECT_EQ(n.get_child("a/b").as_uint32(),direct_val);
+    EXPECT_EQ(n.child("a/b").as_uint32(),direct_val);
     EXPECT_EQ(n["c/d"].as_uint32(),deletion_test_val);
 }
 

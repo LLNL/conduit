@@ -3565,11 +3565,6 @@ public:
     Node             &fetch_child(const std::string &path);
     const Node       &fetch_child(const std::string &path) const;
 
-    /// the `get_child' methods don't modify map structure, and also
-    /// do not try to resolve names as paths 
-    Node             &get_child(const std::string &name);
-    const Node       &get_child(const std::string &name) const;
-
     // add_child will not try to parse the name as a path. "foo/bar.png" is
     // a legal name.
     Node             &add_child(const std::string &name);

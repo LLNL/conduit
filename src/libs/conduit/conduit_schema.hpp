@@ -267,12 +267,6 @@ public:
     Schema           &fetch_child(const std::string &path);
     const Schema     &fetch_child(const std::string &path) const;
 
-    // the 'get_child' methods also don't modify map structure. Additionally,
-    // they do not search parent/child schemas, and thus allow getting children
-    // whose names contain slashes.
-    Schema           &get_child(const std::string &name);
-    const Schema     &get_child(const std::string &name) const;
-
     // the 'child' methods also don't modify map structure. Additionally,
     // they do not search parent/child schemas, and thus allow getting children
     // whose names contain slashes.

@@ -11987,36 +11987,6 @@ Node::add_child(const std::string &name)
 
 //---------------------------------------------------------------------------//
 const Node&
-Node::get_child(const std::string &name) const
-{
-    if(!m_schema->has_child(name))
-    {
-        CONDUIT_ERROR("Cannot fetch non-existent "
-                      << "child \"" << name << "\" from Node("
-                      << this->path()
-                      << ")");
-    }
-    size_t idx = (size_t)m_schema->child_index(name);
-    return *m_children[idx];
-}
-
-//---------------------------------------------------------------------------//
-Node&
-Node::get_child(const std::string &name)
-{
-    if(!m_schema->has_child(name))
-    {
-        CONDUIT_ERROR("Cannot fetch non-existent "
-                      << "child \"" << name << "\" from Node("
-                      << this->path()
-                      << ")");
-    }
-    size_t idx = (size_t)m_schema->child_index(name);
-    return *m_children[idx];
-}
-
-//---------------------------------------------------------------------------//
-const Node&
 Node::child(const std::string &name) const
 {
     if(!m_schema->has_child(name))
@@ -12089,7 +12059,7 @@ Node::fetch_child(const std::string &path) const
     // is direct child
     else
     {
-        return this->get_child(p_curr);
+        return this->child(p_curr);
     }
 }
 
