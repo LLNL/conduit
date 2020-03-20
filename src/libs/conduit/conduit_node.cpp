@@ -2192,7 +2192,7 @@ void
 Node::set_path_node(const std::string &path,
                     const Node& data) 
 {
-    fetch(path).set_node(data);    
+    fetch(path).set_node(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -7652,7 +7652,9 @@ Node::update(const Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            fetch(ent_name).update(n_src.fetch(ent_name));
+            // note: this (add_child) will add or access existing child
+            // ness b/c of keys with embedded slashes
+            add_child(ent_name).update(n_src.child(ent_name));
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -7721,10 +7723,10 @@ Node::update_compatible(const Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            if(has_path(ent_name))
+            if(has_child(ent_name))
             {
-                fetch(ent_name).update_compatible(n_src.fetch(ent_name));
-                }
+                child(ent_name).update_compatible(n_src.child(ent_name));
+            }
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -7781,7 +7783,9 @@ Node::update_external(Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            fetch(ent_name).update_external(n_src.fetch(ent_name));
+            // note: this (add_child) will add or access existing child
+            // ness b/c of keys with embedded slashes
+            add_child(ent_name).update_external(n_src.child(ent_name));
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -11659,6 +11663,7 @@ Node::to_base64_json(std::ostream &os,
     os.precision(15);
         
     // we need compact data
+    // TODO check if already compact + contig
     Node n;
     compact_to(n);
     
@@ -14836,7 +14841,7 @@ Node::walk_schema(Node   *node,
         {
     
             std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema   = schema->fetch_ptr(curr_name);
+            Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);

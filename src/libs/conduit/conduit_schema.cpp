@@ -367,7 +367,7 @@ Schema::compatible(const Schema &s) const
                 // use index to fetch the child from the other schema
                 const Schema &s_chld = s.child(itr->second);
                 // fetch our child by name
-                const Schema &chld = fetch_child(itr->first);
+                const Schema &chld = child(itr->first);
                 // do compat check
                 res = chld.compatible(s_chld);
             }
@@ -422,7 +422,7 @@ Schema::equals(const Schema &s) const
             if(has_path(itr->first))
             {
                 size_t s_idx = (size_t) itr->second;
-                res = s.children()[s_idx]->equals(fetch_child(itr->first));
+                res = s.children()[s_idx]->equals(child(itr->first));
             }
             else
             {
@@ -437,7 +437,7 @@ Schema::equals(const Schema &s) const
             if(s.has_path(itr->first))
             {
                 size_t idx = (size_t) itr->second;
-                res = children()[idx]->equals(s.fetch_child(itr->first));
+                res = children()[idx]->equals(s.child(itr->first));
             }
             else
             {
@@ -1300,7 +1300,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
         for(size_t i=0; i < nchildren;i++)
         {
             Schema  *cld_src = children()[i];
-            Schema &cld_dest = s_dest.fetch(object_order()[i]);
+            Schema &cld_dest = s_dest.add_child(object_order()[i]);
             cld_src->compact_to(cld_dest,curr_offset);
             curr_offset += cld_dest.total_bytes_compact();
         }
