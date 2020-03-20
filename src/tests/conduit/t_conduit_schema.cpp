@@ -358,7 +358,7 @@ TEST(schema_basics, pathlike_child_names)
     EXPECT_TRUE(s.has_child(direct_only));
     EXPECT_FALSE(s.has_child(path_only));
 
-    // Test that explicitly removing children doesn't remove 
+    // Test that explicitly removing children doesn't remove
     // by path and vice-versa 
     std::string second_shared_name = "foo/bar";
     s[second_shared_name].set(DataType::int64());
@@ -374,6 +374,22 @@ TEST(schema_basics, pathlike_child_names)
     EXPECT_FALSE(s.has_child(second_shared_name));
 
     s.print();
+
+    // check compact_to , equal and compatible
+    Schema s2;
+    s["a"].set(DataType::int64());
+    s.add_child("key_with_/_ex").set(DataType::int64());
+    
+    Schema s3(s2);
+    
+    EXPECT_TRUE(s2.equals(s3));
+    EXPECT_TRUE(s2.compatible(s3));
+    
+    Schema s2_compact;
+    s2.compact_to(s2_compact);
+    EXPECT_TRUE(s2_compact.is_compact());
+    EXPECT_TRUE(s2.compatible(s2_compact));
+
 }
 
 
