@@ -3579,7 +3579,6 @@ public:
     Node             &child(const std::string &name);
     const Node       &child(const std::string &name) const;
 
-
     /// fetch a pointer to the node  at the given path
     Node             *fetch_ptr(const std::string &path);
     const Node       *fetch_ptr(const std::string &path) const;

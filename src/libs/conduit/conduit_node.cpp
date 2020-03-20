@@ -12039,13 +12039,13 @@ Node::fetch_child(const std::string &path) const
 
     // check for parent
     if(p_curr == "..")
-    {   
+    {
         if(m_parent == NULL)
-        {   
+        {
             CONDUIT_ERROR("Cannot fetch_child from NULL parent" << path);
         }
         else
-        {   
+        {
             return m_parent->fetch_child(p_next);
         }
     }
@@ -12053,12 +12053,14 @@ Node::fetch_child(const std::string &path) const
     // check if descendant
     if(m_schema->has_child(p_curr) && !p_next.empty())
     {
+        // `child_index` will error if p_curr is invalid
         size_t idx = (size_t)m_schema->child_index(p_curr);
         return m_children[idx]->fetch_child(p_next);
     }
     // is direct child
     else
     {
+        // `child` will error if p_curr is invalid
         return this->child(p_curr);
     }
 }
