@@ -1037,7 +1037,7 @@ Generator::Parser::JSON::walk_json_schema(Schema *schema,
                  itr != jvalue.MemberEnd(); ++itr)
             {
                 std::string entry_name(itr->name.GetString());
-                Schema &curr_schema = schema->fetch(entry_name);
+                Schema &curr_schema = schema->add_child(entry_name);
                 curr_schema.set(DataType::object());
                 walk_json_schema(&curr_schema,itr->value, curr_offset);
                 curr_offset += curr_schema.total_strided_bytes();
@@ -1108,7 +1108,7 @@ Generator::Parser::JSON::walk_pure_json_schema(Node *node,
                               << utils::join_path(node->path(),entry_name));
             }
 
-            Schema *curr_schema = schema->fetch_ptr(entry_name);
+            Schema *curr_schema = &schema->add_child(entry_name);
 
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
@@ -1321,7 +1321,7 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                                   << utils::join_path(node->path(),entry_name));
                 }
 
-                Schema *curr_schema = schema->fetch_ptr(entry_name);
+                Schema *curr_schema = &schema->add_child(entry_name);
                 
                 Node *curr_node = new Node();
                 curr_node->set_schema_ptr(curr_schema);
@@ -1946,7 +1946,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
                               << utils::join_path(node->path(),entry_name));
             }
 
-            Schema *curr_schema = schema->fetch_ptr(entry_name);
+            Schema *curr_schema = &schema->add_child(entry_name);
 
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);

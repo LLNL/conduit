@@ -367,7 +367,7 @@ Schema::compatible(const Schema &s) const
                 // use index to fetch the child from the other schema
                 const Schema &s_chld = s.child(itr->second);
                 // fetch our child by name
-                const Schema &chld = fetch_child(itr->first);
+                const Schema &chld = child(itr->first);
                 // do compat check
                 res = chld.compatible(s_chld);
             }
@@ -422,7 +422,7 @@ Schema::equals(const Schema &s) const
             if(has_path(itr->first))
             {
                 size_t s_idx = (size_t) itr->second;
-                res = s.children()[s_idx]->equals(fetch_child(itr->first));
+                res = s.children()[s_idx]->equals(child(itr->first));
             }
             else
             {
@@ -437,7 +437,7 @@ Schema::equals(const Schema &s) const
             if(s.has_path(itr->first))
             {
                 size_t idx = (size_t) itr->second;
-                res = children()[idx]->equals(s.fetch_child(itr->first));
+                res = children()[idx]->equals(s.child(itr->first));
             }
             else
             {
@@ -722,6 +722,46 @@ Schema::operator[](index_t idx) const
 
 //---------------------------------------------------------------------------//
 Schema&
+Schema::add_child(const std::string &name)
+{
+    if(has_child(name))
+    {
+        return child(name);
+    }
+
+    init_object();
+
+    Schema* child = new Schema();
+    child->m_parent = this;
+    children().push_back(child);
+    object_map()[name] = children().size()-1;
+    object_order().push_back(name);
+    return *children()[child_index(name)];
+}
+
+
+//---------------------------------------------------------------------------//
+Schema&
+Schema::child(const std::string &name)
+{
+    // only objects can have named children
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    return *children()[child_index(name)];
+}    
+
+//---------------------------------------------------------------------------//
+const Schema&
+Schema::child(const std::string &name) const
+{
+    // only objects can have named children
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    return *children()[child_index(name)];
+}
+
+//---------------------------------------------------------------------------//
+Schema&
 Schema::fetch_child(const std::string &path)
 {
     // fetch w/ path forces OBJECT_ID
@@ -791,22 +831,20 @@ Schema::fetch_child(const std::string &path) const
 
 //---------------------------------------------------------------------------//
 index_t
-Schema::child_index(const std::string &path) const
+Schema::child_index(const std::string &name) const
 {
     index_t res=0;
 
     // find p_curr with an iterator
     std::map<std::string, index_t>::const_iterator itr;
-    itr = object_map().find(path);
+    itr = object_map().find(name);
 
     // error if child does not exist. 
     if(itr == object_map().end())
     {
-        ///
-        /// TODO: Full path errors would be nice here. 
-        ///
         CONDUIT_ERROR("<Schema::child_index[OBJECT_ID]>"
-                    << "Attempt to access invalid child:" << path);
+                      << "Schema(" << path() << ") "
+                      << "Attempt to access invalid child:" << name);
     }
     else
     {
@@ -979,7 +1017,26 @@ Schema::name() const
         if(p->dtype().is_object())
         {
             // use name
-            oss << p->child_name(idx);
+            std::string name = p->child_name(idx);
+            
+            // check if name() includes "/", if so we need to escape
+            bool escape = false;
+            if(name.find('/') != std::string::npos)
+            {
+                escape = true;
+            }
+
+            if(escape)
+            {
+                oss << "{";
+            }
+
+            oss << name;
+
+            if(escape)
+            {
+                oss << "}";
+            }
         }
         else if(p->dtype().is_list())
         {
@@ -1096,25 +1153,37 @@ Schema::remove(const std::string &path)
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    size_t idx = (size_t)child_index(p_curr);
-    Schema *child = children()[idx];
 
     if(!p_next.empty())
     {
+        size_t idx = (size_t)child_index(p_curr);
+        Schema *child = children()[idx];
         child->remove(p_next);
     }
     else
     {
-        // any index above the current needs to shift down by one
-        for (size_t i = idx; i < object_order().size(); i++)
-        {
-            object_map()[object_order()[i]]--;
-        }
-        object_map().erase(p_curr);
-        object_order().erase(object_order().begin() + idx);
-        children().erase(children().begin() + idx);
-        delete child;
+        remove_child(p_curr);
     }    
+}
+
+//---------------------------------------------------------------------------//
+void
+Schema::remove_child(const std::string &name)
+{
+    if(m_dtype.id() != DataType::OBJECT_ID)
+        CONDUIT_ERROR("<Schema::remove_child[OBJECT_ID]> Schema is not OBJECT_ID");
+
+    size_t idx = (size_t)child_index(name);
+    Schema *child = children()[idx];
+    // any index above the current needs to shift down by one
+    for (size_t i = idx; i < object_order().size(); i++)
+    {
+        object_map()[object_order()[i]]--;
+    }
+    object_map().erase(name);
+    object_order().erase(object_order().begin() + idx);
+    children().erase(children().begin() + idx);
+    delete child;
 }
 
 //---------------------------------------------------------------------------//
@@ -1230,7 +1299,7 @@ Schema::compact_to(Schema &s_dest, index_t curr_offset) const
         for(size_t i=0; i < nchildren;i++)
         {
             Schema  *cld_src = children()[i];
-            Schema &cld_dest = s_dest.fetch(object_order()[i]);
+            Schema &cld_dest = s_dest.add_child(object_order()[i]);
             cld_src->compact_to(cld_dest,curr_offset);
             curr_offset += cld_dest.total_bytes_compact();
         }

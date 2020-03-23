@@ -86,6 +86,29 @@ TEST(conduit_node, nested)
     EXPECT_EQ(n["a"]["b"].as_uint32(),val);
 }
 
+TEST(conduit_node, pathlike_child_name)
+{
+
+    uint32   path_val  = 10;
+    uint32   direct_val  = 20;
+
+    Node n;
+    n["a/b"] = path_val;
+    n.add_child("a/b") = direct_val;
+
+    EXPECT_EQ(n["a/b"].as_uint32(),path_val);
+    EXPECT_EQ(n.child("a/b").as_uint32(),direct_val);
+
+    uint32   deletion_test_val = 35;
+    n["c/d"] = deletion_test_val;
+    n.add_child("c/d") = direct_val;
+    n.remove("a/b");
+    n.remove_child("c/d");
+
+    EXPECT_EQ(n.child("a/b").as_uint32(),direct_val);
+    EXPECT_EQ(n["c/d"].as_uint32(),deletion_test_val);
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_node, vector)
 {
@@ -1099,3 +1122,19 @@ TEST(conduit_node, test_parse_all_protos)
     EXPECT_FALSE(n.diff(n2,info));
 
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, add_child)
+{ 
+    Node n;
+    int64 val = 42;
+    Node &n_a = n.add_child("a");
+    n_a.set(val);
+    EXPECT_EQ(n.child("a").as_int64(),val);
+    std::cout << n.to_yaml() << std::endl;
+    Node *n_ptr = &n.add_child("a");
+    // if you add again, you should get the same ref bac.
+    EXPECT_EQ(&n_a,n_ptr);
+}
+

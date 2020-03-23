@@ -499,7 +499,7 @@ Node::set_node(const Node &node)
         for (std::vector<std::string>::const_iterator itr = cld_names.begin();
              itr < cld_names.end(); ++itr)
         {
-            Schema *curr_schema = this->m_schema->fetch_ptr(*itr);
+            Schema *curr_schema = &this->m_schema->add_child(*itr);
             size_t idx = (size_t) this->m_schema->child_index(*itr);
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
@@ -2192,7 +2192,7 @@ void
 Node::set_path_node(const std::string &path,
                     const Node& data) 
 {
-    fetch(path).set_node(data);    
+    fetch(path).set_node(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -7652,7 +7652,9 @@ Node::update(const Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            fetch(ent_name).update(n_src.fetch(ent_name));
+            // note: this (add_child) will add or access existing child
+            // ness b/c of keys with embedded slashes
+            add_child(ent_name).update(n_src.child(ent_name));
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -7721,10 +7723,10 @@ Node::update_compatible(const Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            if(has_path(ent_name))
+            if(has_child(ent_name))
             {
-                fetch(ent_name).update_compatible(n_src.fetch(ent_name));
-                }
+                child(ent_name).update_compatible(n_src.child(ent_name));
+            }
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -7781,7 +7783,9 @@ Node::update_external(Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            fetch(ent_name).update_external(n_src.fetch(ent_name));
+            // note: this (add_child) will add or access existing child
+            // ness b/c of keys with embedded slashes
+            add_child(ent_name).update_external(n_src.child(ent_name));
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -11659,6 +11663,7 @@ Node::to_base64_json(std::ostream &os,
     os.precision(15);
         
     // we need compact data
+    // TODO check if already compact + contig
     Node n;
     compact_to(n);
     
@@ -11962,6 +11967,54 @@ Node::children() const
     return NodeConstIterator(this);
 }
 
+//---------------------------------------------------------------------------//
+Node&
+Node::add_child(const std::string &name)
+{
+    if(has_child(name))
+    {
+        return child(name);
+    }
+
+    Schema &child_schema = m_schema->add_child(name);
+    Schema *child_ptr = &child_schema; 
+    Node *child_node = new Node();
+    child_node->set_schema_ptr(child_ptr);
+    child_node->m_parent = this;
+    m_children.push_back(child_node);
+    return  *m_children[m_children.size() - 1];
+}
+
+//---------------------------------------------------------------------------//
+const Node&
+Node::child(const std::string &name) const
+{
+    if(!m_schema->has_child(name))
+    {
+        CONDUIT_ERROR("Cannot access non-existent "
+                      << "child \"" << name << "\" from Node("
+                      << this->path()
+                      << ")");
+    }
+    size_t idx = (size_t)m_schema->child_index(name);
+    return *m_children[idx];
+}
+
+//---------------------------------------------------------------------------//
+Node&
+Node::child(const std::string &name)
+{
+    if(!m_schema->has_child(name))
+    {
+        CONDUIT_ERROR("Cannot access non-existent "
+                      << "child \"" << name << "\" from Node("
+                      << this->path()
+                      << ")");
+    }
+    size_t idx = (size_t)m_schema->child_index(name);
+    return *m_children[idx];
+}
+
 
 //---------------------------------------------------------------------------//
 const Node&
@@ -11997,26 +12050,20 @@ Node::fetch_child(const std::string &path) const
         }
     }
 
-    if(!m_schema->has_child(p_curr))
+    // check if descendant
+    if(m_schema->has_child(p_curr) && !p_next.empty())
     {
-        CONDUIT_ERROR("Cannot fetch non-existent " 
-                      << "child \"" << p_curr << "\" from Node("
-                      << this->path()
-                      << ")");
-    }
-
-    size_t idx = (size_t)m_schema->child_index(p_curr);
-
-    if(p_next.empty())
-    {
-        return *m_children[idx];
-    }
-    else
-    {
+        // `child_index` will error if p_curr is invalid
+        size_t idx = (size_t)m_schema->child_index(p_curr);
         return m_children[idx]->fetch_child(p_next);
     }
+    // is direct child
+    else
+    {
+        // `child` will error if p_curr is invalid
+        return this->child(p_curr);
+    }
 }
-
 
 //---------------------------------------------------------------------------//
 Node&
@@ -12320,22 +12367,28 @@ Node::remove(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    size_t idx= (size_t) m_schema->child_index(p_curr);
-    
     if(!p_next.empty())
     {
+        size_t idx= (size_t) m_schema->child_index(p_curr);
         m_children[idx]->remove(p_next);
     }
     else
     {
-        // note: we must remove the child pointer before the
-        // schema. b/c the child pointer uses the schema
-        // to cleanup
-        
-        delete m_children[idx];
-        m_schema->remove(p_curr);
-        m_children.erase(m_children.begin() + idx);
+        remove_child(p_curr);    
     }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::remove_child(const std::string &name)
+{
+   size_t idx= (size_t) m_schema->child_index(name);
+   // note: we must remove the child pointer before the
+   // schema. b/c the child pointer uses the schema
+   // to cleanup
+   delete m_children[idx];
+   m_schema->remove_child(name);
+   m_children.erase(m_children.begin() + idx);
 }
 
 //---------------------------------------------------------------------------//
@@ -14760,7 +14813,7 @@ Node::walk_schema(Node   *node,
         {
     
             std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema   = schema->fetch_ptr(curr_name);
+            Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
@@ -14800,7 +14853,7 @@ Node::mirror_node(Node   *node,
         {
     
             std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema   = schema->fetch_ptr(curr_name);
+            Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
             const Node *curr_src = src->child_ptr(i);
             curr_node->set_schema_ptr(curr_schema);
@@ -15157,8 +15210,8 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             }
             else
             {
-                Node &info_child = info_children["diff"][child_path];
-                res |= t_child.diff(n.fetch(child_path), info_child, epsilon);
+                Node &info_child = info_children["diff"].add_child(child_path);
+                res |= t_child.diff(n.child(child_path), info_child, epsilon);
             }
         }
 
@@ -15175,8 +15228,8 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             }
             else
             {
-                Node &info_child = info_children["diff"][child_path];
-                res |= fetch(child_path).diff(n_child, info_child, epsilon);
+                Node &info_child = info_children["diff"].add_child(child_path);
+                res |= child(child_path).diff(n_child, info_child, epsilon);
             }
         }
     }
@@ -15326,8 +15379,8 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
             }
             else
             {
-                Node &info_child = info_children["diff"][child_path];
-                res |= t_child.diff_compatible(n.fetch(child_path), info_child, epsilon);
+                Node &info_child = info_children["diff"].add_child(child_path);
+                res |= t_child.diff_compatible(n.child(child_path), info_child, epsilon);
             }
         }
     }

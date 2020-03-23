@@ -9,6 +9,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### General 
+- Added support for children with names that include `/`. Since slashes are part of Conduit's hierarchal path mechanism, you must use explicit methods (add_child(), child(), etc) to create and access children with these types of names. These names are also supported in all basic i/o cases (JSON, YAML, Conduit Binary).
+- Added Node::child and Schema::child methods, which provide access to existing children by name.
+- Added Node::add_child() and Node::remove_child() to support direct operatrions and cases where names have `/`s.
 - Added a set of conduit::utils::log::remove_* filtering functions, which process conduit log/info nodes and strip out the requested information (useful for focusing the often verbose output in log/info nodes).
 
 ### Fixed
