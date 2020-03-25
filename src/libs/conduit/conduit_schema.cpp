@@ -762,7 +762,7 @@ Schema::child(const std::string &name) const
 
 //---------------------------------------------------------------------------//
 Schema&
-Schema::fetch_child(const std::string &path)
+Schema::fetch_existing(const std::string &path)
 {
     // fetch w/ path forces OBJECT_ID
     if(m_dtype.id() != DataType::OBJECT_ID)
@@ -783,7 +783,7 @@ Schema::fetch_child(const std::string &path)
         }
         else
         {
-            return m_parent->fetch_child(p_next);
+            return m_parent->fetch_existing(p_next);
         }
     }
     
@@ -793,14 +793,14 @@ Schema::fetch_child(const std::string &path)
     }
     else
     {
-        return children()[idx]->fetch_child(p_next);
+        return children()[idx]->fetch_existing(p_next);
     }
 }
 
 
 //---------------------------------------------------------------------------//
 const Schema &
-Schema::fetch_child(const std::string &path) const
+Schema::fetch_existing(const std::string &path) const
 {
     // fetch w/ path forces OBJECT_ID
     if(m_dtype.id() != DataType::OBJECT_ID)
@@ -814,7 +814,7 @@ Schema::fetch_child(const std::string &path) const
     if(p_curr == "..")
     {
         if(m_parent != NULL) // TODO: check for erro (no parent)
-           return m_parent->fetch_child(p_next);
+           return m_parent->fetch_existing(p_next);
     }
 
     size_t idx = (size_t) child_index(p_curr);
@@ -825,8 +825,22 @@ Schema::fetch_child(const std::string &path) const
     }
     else
     {
-        return children()[idx]->fetch_child(p_next);
+        return children()[idx]->fetch_existing(p_next);
     }
+}
+
+//---------------------------------------------------------------------------//
+Schema&
+Schema::fetch_child(const std::string &path)
+{
+    return fetch_existing(path);
+}
+
+//---------------------------------------------------------------------------//
+const Schema &
+Schema::fetch_child(const std::string &path) const
+{
+    return fetch_existing(path);
 }
 
 //---------------------------------------------------------------------------//
@@ -960,7 +974,7 @@ Schema::fetch(const std::string &path)
 const Schema &
 Schema::fetch(const std::string &path) const
 {
-    return fetch_child(path);
+    return fetch_existing(path);
 }
 
 //---------------------------------------------------------------------------//
@@ -982,7 +996,7 @@ Schema::fetch_ptr(const std::string &path) const
 const Schema &
 Schema::operator[](const std::string &path) const
 {
-    return fetch_child(path);
+    return fetch_existing(path);
 }
 
 //---------------------------------------------------------------------------//

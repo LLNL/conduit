@@ -74,7 +74,7 @@ TEST(schema_basics, construction)
     
     EXPECT_EQ(s2[1].parent(),&s2);
     
-    EXPECT_EQ(s2.fetch_child("a").dtype().id(),DataType::INT64_ID);
+    EXPECT_EQ(s2.fetch_existing("a").dtype().id(),DataType::INT64_ID);
     
 }
 
@@ -223,7 +223,7 @@ TEST(schema_basics, schema_name_by_index)
 }
 
 //-----------------------------------------------------------------------------
-TEST(schema_basics, schema_fetch_child)
+TEST(schema_basics, schema_fetch_existing)
 {
     Schema s;
     s["a"].set(DataType::int64());
@@ -237,8 +237,8 @@ TEST(schema_basics, schema_fetch_child)
     
     EXPECT_EQ(&s_c,&s_c_idx);
 
-    EXPECT_THROW(s.fetch_child("bad"),conduit::Error);
-    EXPECT_THROW(const Schema &s_bad = s_c.fetch_child("bad"),conduit::Error);
+    EXPECT_THROW(s.fetch_existing("bad"),conduit::Error);
+    EXPECT_THROW(const Schema &s_bad = s_c.fetch_existing("bad"),conduit::Error);
     
     const Schema *s_d_ptr = s.fetch_ptr("d");
 
@@ -293,9 +293,9 @@ TEST(schema_basics, schema_errors)
     
     s.reset();
     EXPECT_THROW(s.remove("a"),conduit::Error);
-    EXPECT_THROW(s.fetch_child("a"),conduit::Error);
+    EXPECT_THROW(s.fetch_existing("a"),conduit::Error);
     s = DataType::object();
-    EXPECT_THROW(s.fetch_child(".."),conduit::Error);
+    EXPECT_THROW(s.fetch_existing(".."),conduit::Error);
 }
 
 //-----------------------------------------------------------------------------

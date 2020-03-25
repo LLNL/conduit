@@ -90,6 +90,10 @@ CONDUIT_API conduit_node *conduit_node_fetch(conduit_node *cnode,
                                              const char *path);
 
 //-----------------------------------------------------------------------------
+CONDUIT_API conduit_node *conduit_node_fetch_existing(conduit_node *cnode,
+                                                      const char *path);
+
+//-----------------------------------------------------------------------------
 CONDUIT_API conduit_node *conduit_node_append(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------

@@ -103,6 +103,14 @@ conduit_node_fetch(conduit_node *cnode,
 
 //-----------------------------------------------------------------------------
 conduit_node *
+conduit_node_fetch_existing(conduit_node *cnode,
+                            const char *path)
+{
+    return c_node(&cpp_node(cnode)->fetch_existing(path));
+}
+
+//-----------------------------------------------------------------------------
+conduit_node *
 conduit_node_append(conduit_node *cnode)
 {
     return c_node(&cpp_node(cnode)->append());

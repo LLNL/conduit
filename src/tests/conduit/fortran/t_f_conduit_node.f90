@@ -579,6 +579,30 @@ contains
 
      end subroutine t_node_names_embedded_slashes
 
+     !--------------------------------------------------------------------------
+      subroutine t_node_fetch_existing
+          type(C_PTR)  cn
+          type(C_PTR)  cn_1
+          type(C_PTR)  cn_1_test
+          real(kind=8) val
+
+          !----------------------------------------------------------------------
+          call set_case_name("t_node_fetch_existing")
+          !----------------------------------------------------------------------
+
+          cn = conduit_node_create()
+
+          cn_1 = conduit_node_fetch(cn,"normal/path");
+          call conduit_node_set_float64(cn_1,10.0d+0)
+          cn_1_test = conduit_node_fetch_existing(cn,"normal/path");
+
+          val = conduit_node_as_float64(cn_1_test);
+          call assert_equals(10.0d+0, val)
+
+          call conduit_node_destroy(cn)
+
+      end subroutine t_node_fetch_existing
+
 
 
 
@@ -612,6 +636,7 @@ program fortran_test
   call t_node_parse
   call t_node_save_load
   call t_node_names_embedded_slashes
+  call t_node_fetch_existing
   
   call fruit_summary
   call fruit_finalize

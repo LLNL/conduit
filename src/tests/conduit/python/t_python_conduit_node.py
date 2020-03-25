@@ -482,6 +482,17 @@ class Test_Conduit_Node(unittest.TestCase):
         n["normal"].remove_child("path")
         self.assertFalse(n.has_path("normal/path"))
 
+    def test_fetch_existing(self):
+        n = Node()
+        n["my/path"] = 10
+        
+        n_sub = n.fetch_existing("my/path")
+
+        self.assertEqual(n_sub.value(),10);
+
+        with self.assertRaises(Exception):
+            n.fetch_existing('bad/path')
+
 
 
 if __name__ == '__main__':

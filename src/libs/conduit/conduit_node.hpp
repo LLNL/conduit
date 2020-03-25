@@ -3560,6 +3560,13 @@ public:
     Node             &fetch(const std::string &path);
     const Node       &fetch(const std::string &path) const;
 
+    /// the `fetch_existing' methods don't modify map structure, if a path
+    /// doesn't exist they will throw an exception
+    Node             &fetch_existing(const std::string &path);
+    const Node       &fetch_existing(const std::string &path) const;
+
+    /// DEPRECATED: `fetch_child` is deprecated in favor of `fetch_existing`
+    ///
     /// the `fetch_child' methods don't modify map structure, if a path
     /// doesn't exist they will throw an exception
     Node             &fetch_child(const std::string &path);

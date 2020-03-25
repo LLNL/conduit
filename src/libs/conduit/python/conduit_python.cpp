@@ -4022,17 +4022,56 @@ static PyObject *
 PyConduit_Node_fetch(PyConduit_Node* self,
                      PyObject* args)
 {
-     const char *key;
+     const char *path;
      PyObject* retval = NULL;
-     if (!PyArg_ParseTuple(args, "s", &key))
+     if (!PyArg_ParseTuple(args, "s", &path))
      {
-         PyErr_SetString(PyExc_TypeError, "Key must be a string");
+         PyErr_SetString(PyExc_TypeError, "path must be a string");
          return NULL;
      }
 
-    retval = PyConduit_Node_Python_Wrap(&(*self->node).fetch(key),0);
+    try
+    {
+        retval = PyConduit_Node_Python_Wrap(&(*self->node).fetch(path),
+                                            0); // node owns
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
     return (retval);
 }
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_fetch_existing(PyConduit_Node* self,
+                     PyObject* args)
+{
+     const char *path;
+     PyObject* retval = NULL;
+     if (!PyArg_ParseTuple(args, "s", &path))
+     {
+         PyErr_SetString(PyExc_TypeError, "path must be a string");
+         return NULL;
+     }
+
+    try
+    {
+        retval = PyConduit_Node_Python_Wrap(&(*self->node).fetch_existing(path),
+                                            0); // node owns
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (retval);
+}
+
 
 //---------------------------------------------------------------------------//
 static PyObject * 
@@ -5131,6 +5170,11 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_fetch,
      METH_VARARGS, 
      "Fetches the node at a given path"},
+    //-----------------------------------------------------------------------//
+    {"fetch_existing",
+     (PyCFunction)PyConduit_Node_fetch_existing,
+     METH_VARARGS, 
+     "Fetches an existing node at a given path, error on bad path"},
     //-----------------------------------------------------------------------//
     {"child",
      (PyCFunction)PyConduit_Node_child,

@@ -171,6 +171,16 @@ module conduit
      end function c_conduit_node_fetch
 
      !--------------------------------------------------------------------------
+     function c_conduit_node_fetch_existing(cnode, path) result(res) &
+              bind(C, name="conduit_node_fetch_existing")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: cnode
+          character(kind=C_CHAR), intent(IN) :: path(*)
+          type(C_PTR) :: res
+      end function c_conduit_node_fetch_existing
+
+     !--------------------------------------------------------------------------
      function conduit_node_append(cnode) result(res) &
               bind(C, name="conduit_node_append")
           use iso_c_binding
@@ -1204,6 +1214,17 @@ contains
         !---
         res = c_conduit_node_fetch(cnode, trim(path) // C_NULL_CHAR)
     end function conduit_node_fetch
+
+    !--------------------------------------------------------------------------
+    function conduit_node_fetch_existing(cnode, path) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        type(C_PTR) :: res
+        !---
+        res = c_conduit_node_fetch_existing(cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_fetch_existing
 
     !--------------------------------------------------------------------------
     function conduit_node_has_child(cnode, name) result(res)
