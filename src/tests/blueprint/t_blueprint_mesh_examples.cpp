@@ -70,7 +70,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
 
-    // we are using one node to hold group of example meshes purely out of convenience  
+    // we are using one node to hold group of example meshes purely out of convenience
     Node dsets;
     // can be overridden via command line
     index_t npts_x = OUTPUT_NUM_AXIS_POINTS;
@@ -197,7 +197,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
 
-    // we are using one node to hold group of example meshes purely out of convenience  
+    // we are using one node to hold group of example meshes purely out of convenience
     Node dsets;
     // can be overridden via command line
     index_t npts_x = OUTPUT_NUM_AXIS_POINTS;
@@ -328,9 +328,9 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
 
     braid_type_strings.push_back("tets");
     braid_type_strings.push_back("hexs");
-    
+
     Node mesh;
-    
+
     for(size_t i = 0; i < braid_type_strings.size(); i++)
     {
         mesh.reset();
@@ -344,7 +344,7 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
     braid_type_strings.clear();
     braid_type_strings.push_back("points");
     braid_type_strings.push_back("points_implicit");
-    
+
     for(size_t i = 0; i < braid_type_strings.size(); i++)
     {
         mesh.reset();
@@ -406,6 +406,7 @@ TEST(conduit_blueprint_mesh_examples, spiral)
 }
 
 
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, polytess)
 {
@@ -440,7 +441,7 @@ TEST(conduit_blueprint_mesh_examples, 2d_braid_zero_z_check)
     braid_type_strings.push_back("structured");
     braid_type_strings.push_back("tris");
     braid_type_strings.push_back("quads");
-    
+
     for(size_t i = 0; i < braid_type_strings.size(); i++)
     {
         mesh.reset();
@@ -485,7 +486,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_misc)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
 {
-    // braid provides cycle and time, make sure those make it into 
+    // braid provides cycle and time, make sure those make it into
     // an index created with generate_index
     Node mesh;
     blueprint::mesh::examples::braid("hexs",
@@ -503,6 +504,21 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
     EXPECT_TRUE(idx.has_path("state/cycle"));
     EXPECT_TRUE(idx.has_path("state/time"));
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, venn)
+{
+    Node res;
+    blueprint::mesh::examples::venn(500,   500, // nx, ny
+                                    0.25, // radius
+                                     res);
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_json());
+
+    relay::io_blueprint::save(res, "venn_example.blueprint_root");
+}
+
 
 
 //-----------------------------------------------------------------------------

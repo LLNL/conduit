@@ -2532,6 +2532,175 @@ void spiral(index_t ndoms,
     }
 }
 
+//---------------------------------------------------------------------------//
+void venn(index_t nx,
+          index_t ny,
+          float64 radius, 
+          Node &res)
+{
+    res.reset();
+    // create a rectilinear coordset 
+    res["coordsets/coords/type"] = "rectilinear";
+    res["coordsets/coords/values/x"] = DataType::float64(nx+1);
+    res["coordsets/coords/values/y"] = DataType::float64(ny+1);
+    
+    float64_array x_coords = res["coordsets/coords/values/x"].value();
+    float64_array y_coords = res["coordsets/coords/values/y"].value(); 
+    
+    // 0 <-> 1
+    float64 dx = 1.0/float64(nx+1);
+    float64 dy = 1.0/float64(ny+1);
+
+    float64 vx = 0;
+    for(index_t i =0; i< nx+1; i++)
+    {
+        x_coords[i] = vx;
+        vx+=dx;
+    }
+    
+    float64 vy = 0;
+    for(index_t i =0; i< ny+1; i++)
+    {
+        y_coords[i] = vy;
+        vy+=dy;
+    }
+    
+    // create the topology
+    
+    res["topologies/topo/type"] = "rectilinear";
+    res["topologies/topo/coordset"] = "coords";
+
+    // create the fields
+
+    // circle a distance field
+    res["fields/radius_a/association"] = "element";
+    res["fields/radius_a/topology"] = "topo";
+    res["fields/radius_a/values"] = DataType::float64(nx * ny);
+    // circle a vf
+    res["fields/circle_a/association"] = "element";
+    res["fields/circle_a/topology"] = "topo";
+    res["fields/circle_a/values"] = DataType::float64(nx * ny);
+
+    // circle b distance field
+    res["fields/radius_b/association"] = "element";
+    res["fields/radius_b/topology"] = "topo";
+    res["fields/radius_b/values"] = DataType::float64(nx * ny);
+    // circle b vf
+    res["fields/circle_b/association"] = "element";
+    res["fields/circle_b/topology"] = "topo";
+    res["fields/circle_b/values"] = DataType::float64(nx * ny);
+
+    // circle c distance field
+    res["fields/radius_c/association"] = "element";
+    res["fields/radius_c/topology"] = "topo";
+    res["fields/radius_c/values"] = DataType::float64(nx * ny);
+    // circle b vf
+    res["fields/circle_c/association"] = "element";
+    res["fields/circle_c/topology"] = "topo";
+    res["fields/circle_c/values"] = DataType::float64(nx * ny);
+
+    // per element how many circles overlap
+    res["fields/overlap/association"] = "element";
+    res["fields/overlap/topology"] = "topo";
+    res["fields/overlap/values"] = DataType::float64(nx * ny);
+
+
+    float64_array rad_a = res["fields/radius_a/values"].value();
+    float64_array cir_a = res["fields/circle_a/values"].value();
+    
+    float64_array rad_b = res["fields/radius_b/values"].value();
+    float64_array cir_b = res["fields/circle_b/values"].value();
+
+    float64_array rad_c = res["fields/radius_c/values"].value();
+    float64_array cir_c = res["fields/circle_c/values"].value();
+
+
+    float64_array olap  = res["fields/overlap/values"].value();
+        
+    // circle a
+    // centered at:
+    //   x = 2/3 of width
+    //   y = 2/3 of width
+    
+    float64 a_center_x = 0.3333333333;
+    float64 a_center_y = 0.6666666666;
+
+    // circle b
+    // centered at:
+    //   x = 2/3 of width
+    //   y = 2/3 of width
+
+    float64 b_center_x = 0.6666666666;
+    float64 b_center_y = 0.6666666666;
+
+    // circle c
+    // centered at:
+    //   x = 1/2 of width
+    //   y = 2/3 of width
+    float64 c_center_x = 0.5;
+    float64 c_center_y = 0.3333333333;
+
+
+    float64 y = 0;
+    
+    index_t idx = 0;
+    for(index_t j = 0; j < ny; j++)
+    {
+        float64 x = 0;
+        for(index_t i = 0; i < nx; i++)
+        {
+            // dist to circle a
+            rad_a[idx] = sqrt( (x - a_center_x)*(x - a_center_x) +
+                               (y - a_center_y)*(y - a_center_y));
+            if(rad_a[idx] > radius)
+                rad_a[idx] = 0.0; // clamp outside of radius
+
+            // dist to circle b
+            rad_b[idx] = sqrt( (x - b_center_x)*(x - b_center_x) +
+                               (y - b_center_y)*(y - b_center_y));
+            if(rad_b[idx] > radius)
+                rad_b[idx] = 0.0; // clamp outside of radius
+
+            // dist to circle c
+            rad_c[idx] = sqrt( (x - c_center_x)*(x - c_center_x) +
+                               (y - c_center_y)*(y - c_center_y));
+            if(rad_c[idx] > radius)
+                rad_c[idx] = 0.0; // clamp outside of radius
+
+            // populate overlap with count
+            if(rad_a[idx] > 0)
+                olap[idx]++;
+
+            if(rad_b[idx] > 0)
+                olap[idx]++;
+
+            if(rad_c[idx] > 0)
+                olap[idx]++;
+
+            // circle vfs
+            if(rad_a[idx] > 0)
+                cir_a[idx] = 1.0/olap[idx];
+            else
+                cir_a[idx] = 0.0;
+
+            if(rad_b[idx] > 0)
+                cir_b[idx] = 1.0/olap[idx];
+            else
+                cir_b[idx] = 0.0;
+
+            if(rad_c[idx] > 0)
+                cir_c[idx] = 1.0/olap[idx];
+            else
+                cir_c[idx] = 0.0;
+
+            x+=dx;
+            idx++;
+        }
+        y+=dy;
+    }
+}
+
+
 
 //---------------------------------------------------------------------------//
 point
