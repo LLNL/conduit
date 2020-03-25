@@ -61,7 +61,8 @@ module conduit_obj
         !----------------------------------------------------------------------
         procedure :: fetch  => conduit_node_obj_fetch
         procedure :: append => conduit_node_obj_append
-        procedure :: child  => conduit_node_obj_child
+        procedure :: child_by_index => conduit_node_obj_child
+        procedure :: child_by_name  => conduit_node_obj_child_by_name
         procedure :: parent => conduit_node_obj_parent
         procedure :: info   => conduit_node_obj_info
         !----------------------------------------------------------------------
@@ -98,13 +99,15 @@ module conduit_obj
         procedure :: load  => conduit_node_obj_load
 
         !----------------------------------------------------------------------
+        procedure :: add_child  => conduit_node_obj_add_child
         procedure :: has_child  => conduit_node_obj_has_child
         procedure :: has_path   => conduit_node_obj_has_path
         procedure :: rename_child => conduit_node_obj_rename_child
 
         !----------------------------------------------------------------------
         procedure :: remove_path  => conduit_node_obj_remove_path
-        procedure :: remove_child => conduit_node_obj_remove_child
+        procedure :: remove_child_by_index => conduit_node_obj_remove_child
+        procedure :: remove_child_by_name  => conduit_node_obj_remove_child_by_name
 
         !----------------------------------------------------------------------
         !----------------------------------------------------------------------
@@ -231,8 +234,11 @@ module conduit_obj
 
         !----------------------------------------------------------------------
         
-        generic :: remove  => remove_path, &
-                              remove_child
+        generic :: remove  => remove_path
+
+        generic :: remove_child  => remove_child_by_index, &
+                                    remove_child_by_name
+
 
         generic :: set  => set_node, &
                            set_int32, &
@@ -240,6 +246,9 @@ module conduit_obj
                            set_float32, &
                            set_float64, &
                            set_char8_str
+
+        generic :: child  => child_by_index, &
+                             child_by_name
 
         generic :: set_ptr  => set_int32_ptr, &
                                set_int64_ptr, &
@@ -460,6 +469,16 @@ contains
     end function conduit_node_obj_append
 
     !--------------------------------------------------------------------------
+    function conduit_node_obj_add_child(obj, name) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: name
+        type(node) :: res
+        res%cnode = conduit_node_add_child(obj%cnode, name)
+    end function conduit_node_obj_add_child
+
+    !--------------------------------------------------------------------------
     function conduit_node_obj_child(obj, idx) result(res)
         use iso_c_binding
         implicit none
@@ -468,6 +487,16 @@ contains
         type(node) :: res
         res%cnode = conduit_node_child(obj%cnode, idx)
     end function conduit_node_obj_child
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_child_by_name(obj, name) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: name
+        type(node) :: res
+        res%cnode = conduit_node_child_by_name(obj%cnode, name)
+    end function conduit_node_obj_child_by_name
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_has_child(obj, name) result(res)
@@ -506,6 +535,15 @@ contains
         integer(C_SIZE_T) :: idx
         call conduit_node_remove_child(obj%cnode, idx)
     end subroutine conduit_node_obj_remove_child
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_remove_child_by_name(obj, name)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: name
+        call conduit_node_remove_child_by_name(obj%cnode, name)
+    end subroutine conduit_node_obj_remove_child_by_name
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_rename_child(obj, old_name, new_name)
