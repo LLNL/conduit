@@ -871,9 +871,6 @@ contains
         val = n_2%as_float64();
         call assert_equals(42.0d+0, val)
 
-        call assert_true( n%has_path("a") .eqv. .false.)
-        call assert_true( n%has_path("b") .eqv. .true.)
-
         call assert_true( n%has_path("normal/path") .eqv. .true.)
         call assert_true( n%has_child("normal/path") .eqv. .false.)
 
