@@ -110,9 +110,26 @@ conduit_node_append(conduit_node *cnode)
 
 //-----------------------------------------------------------------------------
 conduit_node *
+conduit_node_add_child(conduit_node *cnode,
+                       const char *name)
+{
+    return c_node(&cpp_node(cnode)->add_child(name));
+}
+
+//-----------------------------------------------------------------------------
+conduit_node *
 conduit_node_child(conduit_node *cnode, conduit_index_t idx)
 {
     return c_node(cpp_node(cnode)->child_ptr(idx));
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_node *
+conduit_node_child_by_name(conduit_node *cnode,
+                           const char *name)
+{
+    return c_node(&cpp_node(cnode)->child(name));
 }
 
 //-----------------------------------------------------------------------------
@@ -159,6 +176,15 @@ conduit_node_remove_child(conduit_node *cnode,
                           conduit_index_t idx)
 {
     cpp_node(cnode)->remove(idx);
+}
+
+//-----------------------------------------------------------------------------
+/// remove child by name
+void
+conduit_node_remove_child_by_name(conduit_node *cnode,
+                                  const char *name)
+{
+    cpp_node(cnode)->remove_child(name);
 }
 
 //-----------------------------------------------------------------------------

@@ -193,8 +193,6 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertTrue(n4["here"][0],"a")
         self.assertTrue(n4["here"][1],"b")
 
-
-    
     def test_remove(self):
         n = Node()
         n['a'] = 1
@@ -468,7 +466,23 @@ class Test_Conduit_Node(unittest.TestCase):
         print(n)
         self.assertEqual(n[0], 1.0)
         self.assertEqual(n[1], "there")
-        
+
+    def test_key_with_slash(self):
+        n = Node()
+        n["normal/path"] = 10
+        n.add_child("child_with_/_inside").set(42)
+        print(n)
+        self.assertTrue(n.has_path("normal/path"))
+        self.assertFalse(n.has_child("normal/path"))
+        self.assertFalse(n.has_path("child_with_/_inside"))
+        self.assertTrue(n.has_child("child_with_/_inside"))
+        self.assertEqual(2,n.number_of_children())
+        self.assertEqual(n["normal/path"],10);
+        self.assertEqual(n.child(name="child_with_/_inside").value(),42);
+        n["normal"].remove_child("path")
+        self.assertFalse(n.has_path("normal/path"))
+
+
 
 if __name__ == '__main__':
     unittest.main()

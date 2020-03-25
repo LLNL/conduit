@@ -93,8 +93,16 @@ CONDUIT_API conduit_node *conduit_node_fetch(conduit_node *cnode,
 CONDUIT_API conduit_node *conduit_node_append(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
+CONDUIT_API conduit_node *conduit_node_add_child(conduit_node *cnode,
+                                                 const char *name);
+
+//-----------------------------------------------------------------------------
 CONDUIT_API conduit_node *conduit_node_child(conduit_node *cnode,
                                              conduit_index_t idx);
+
+//-----------------------------------------------------------------------------
+CONDUIT_API conduit_node *conduit_node_child_by_name(conduit_node *cnode,
+                                                     const char *name);
 
 //-----------------------------------------------------------------------------
 CONDUIT_API conduit_index_t conduit_node_number_of_children(conduit_node *cnode);
@@ -112,6 +120,10 @@ CONDUIT_API void conduit_node_remove_path(conduit_node *cnode,
 CONDUIT_API void conduit_node_remove_child(conduit_node *cnode,
                                            conduit_index_t idx);
 
+//-----------------------------------------------------------------------------
+/// remove child by name
+CONDUIT_API void conduit_node_remove_child_by_name(conduit_node *cnode,
+                                                   const char *name);
 
 //-----------------------------------------------------------------------------
 // TODO:  for Node::name() in c, the caller must free the result, 

@@ -528,6 +528,57 @@ contains
         call conduit_node_destroy(cnode2)
     end subroutine t_node_save_load
 
+    !--------------------------------------------------------------------------
+     subroutine t_node_names_embedded_slashes
+         type(C_PTR)  cn
+         type(C_PTR)  cn_1
+         type(C_PTR)  cn_2
+         type(C_PTR)  cn_2_test
+         real(kind=8) val
+         integer      nchld
+
+         !----------------------------------------------------------------------
+         call set_case_name("t_node_names_embedded_slashes")
+         !----------------------------------------------------------------------
+
+         cn = conduit_node_create()
+
+         cn_1 = conduit_node_fetch(cn,"normal/path");
+         cn_2 = conduit_node_add_child(cn,"child_with_/_inside");
+
+         call conduit_node_set_float64(cn_1,10.0d+0)
+         call conduit_node_set_float64(cn_2,42.0d+0)
+
+         val = conduit_node_as_float64(cn_1);
+         call assert_equals(10.0d+0, val)
+
+         val = conduit_node_as_float64(cn_2);
+         call assert_equals(42.0d+0, val)
+
+         call assert_true( conduit_node_has_path(cn,"normal/path") .eqv. .true. )
+         call assert_true( conduit_node_has_child(cn,"normal/path") .eqv. .false. )
+
+         call assert_true( conduit_node_has_path(cn,"child_with_/_inside") .eqv. .false. )
+         call assert_true( conduit_node_has_child(cn,"child_with_/_inside") .eqv. .true. )
+
+         nchld = conduit_node_number_of_children(cn)
+         call assert_equals( nchld , 2 )
+         ! by name, or just child ?
+         cn_2_test = conduit_node_child_by_name(cn,"child_with_/_inside")
+         val = conduit_node_as_float64(cn_2_test);
+         call assert_equals(42.0d+0, val)
+
+         ! by name or just remote_child
+         call conduit_node_remove_child_by_name(cn,"child_with_/_inside")
+
+         nchld = conduit_node_number_of_children(cn)
+         call assert_equals(nchld , 1 )
+         call assert_true( conduit_node_has_path(cn,"normal/path") .eqv. .true.)
+
+         call conduit_node_destroy(cn)
+
+     end subroutine t_node_names_embedded_slashes
+
 
 
 
@@ -560,7 +611,8 @@ program fortran_test
   call t_node_remove
   call t_node_parse
   call t_node_save_load
-
+  call t_node_names_embedded_slashes
+  
   call fruit_summary
   call fruit_finalize
   call is_all_successful(ok)
