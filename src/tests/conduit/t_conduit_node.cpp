@@ -936,8 +936,8 @@ TEST(conduit_node, check_const_access)
     const Node &n_a = n["a"];
     const int64 *c_vals_const = n_a["c"].as_int64_ptr();
 
-    EXPECT_THROW(n_a.fetch_child("bad");,conduit::Error);
-    EXPECT_THROW(const Node &n_a_bad = n_a.fetch_child("bad");,conduit::Error);
+    EXPECT_THROW(n_a.fetch_existing("bad");,conduit::Error);
+    EXPECT_THROW(const Node &n_a_bad = n_a.fetch_existing("bad");,conduit::Error);
 
     EXPECT_THROW(const Node &n_a_bad = n_a["bad"];,conduit::Error);
     

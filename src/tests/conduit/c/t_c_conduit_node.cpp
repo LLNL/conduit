@@ -450,3 +450,24 @@ TEST(c_conduit_node, c_child_with_embedded_slashes)
 
     conduit_node_destroy(n);
 }
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_fetch_existing)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node *n_1 = conduit_node_fetch(n,"normal/path");
+    conduit_node_set_int(n_1,10);
+
+    conduit_node *n_2 = conduit_node_fetch_existing(n,"normal/path");
+
+    EXPECT_EQ(n_1,n_2);
+    
+    EXPECT_EQ(conduit_node_as_int(n_2),10);
+    
+
+    conduit_node_destroy(n);
+}
+
+
+

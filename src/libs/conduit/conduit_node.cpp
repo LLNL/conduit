@@ -12018,12 +12018,12 @@ Node::child(const std::string &name)
 
 //---------------------------------------------------------------------------//
 const Node&
-Node::fetch_child(const std::string &path) const
+Node::fetch_existing(const std::string &path) const
 {
-    // const fetch_child w/ path requires object role
+    // const fetch_existing w/ path requires object role
     if(!dtype().is_object())
     {
-        CONDUIT_ERROR("Cannot fetch_child, Node(" << this->path()
+        CONDUIT_ERROR("Cannot fetch_existing, Node(" << this->path()
                       << ") is not an object");
     }
     
@@ -12034,7 +12034,7 @@ Node::fetch_child(const std::string &path) const
     // cull empty paths
     if(p_curr == "")
     {
-        return this->fetch_child(p_next);
+        return this->fetch_existing(p_next);
     }
 
     // check for parent
@@ -12042,11 +12042,11 @@ Node::fetch_child(const std::string &path) const
     {
         if(m_parent == NULL)
         {
-            CONDUIT_ERROR("Cannot fetch_child from NULL parent" << path);
+            CONDUIT_ERROR("Cannot fetch_existing from NULL parent" << path);
         }
         else
         {
-            return m_parent->fetch_child(p_next);
+            return m_parent->fetch_existing(p_next);
         }
     }
 
@@ -12055,7 +12055,7 @@ Node::fetch_child(const std::string &path) const
     {
         // `child_index` will error if p_curr is invalid
         size_t idx = (size_t)m_schema->child_index(p_curr);
-        return m_children[idx]->fetch_child(p_next);
+        return m_children[idx]->fetch_existing(p_next);
     }
     // is direct child
     else
@@ -12067,12 +12067,12 @@ Node::fetch_child(const std::string &path) const
 
 //---------------------------------------------------------------------------//
 Node&
-Node::fetch_child(const std::string &path)
+Node::fetch_existing(const std::string &path)
 {
-    // fetch_child w/ path requires object role
+    // fetch_existing w/ path requires object role
     if(!dtype().is_object())
     {
-        CONDUIT_ERROR("Cannot fetch_child, Node(" << this->path()
+        CONDUIT_ERROR("Cannot fetch_existing, Node(" << this->path()
                       << ") is not an object");
     }
     
@@ -12083,7 +12083,7 @@ Node::fetch_child(const std::string &path)
     // cull empty paths
     if(p_curr == "")
     {
-        return this->fetch_child(p_next);
+        return this->fetch_existing(p_next);
     }
 
     // check for parent
@@ -12091,11 +12091,11 @@ Node::fetch_child(const std::string &path)
     {
         if(m_parent == NULL)
         {
-            CONDUIT_ERROR("Cannot fetch_child from NULL parent" << path);
+            CONDUIT_ERROR("Cannot fetch_existing from NULL parent" << path);
         }
         else
         {
-            return m_parent->fetch_child(p_next);
+            return m_parent->fetch_existing(p_next);
         }
     }
 
@@ -12115,8 +12115,22 @@ Node::fetch_child(const std::string &path)
     }
     else
     {
-        return m_children[idx]->fetch_child(p_next);
+        return m_children[idx]->fetch_existing(p_next);
     }
+}
+
+
+//---------------------------------------------------------------------------//
+Node&
+Node::fetch_child(const std::string &path)
+{
+    return fetch_existing(path);
+}
+//---------------------------------------------------------------------------//
+const Node&
+Node::fetch_child(const std::string &path) const
+{
+    return fetch_existing(path);
 }
 
 //---------------------------------------------------------------------------//
@@ -12190,7 +12204,7 @@ Node::fetch(const std::string &path)
 const Node&
 Node::fetch(const std::string &path) const
 {
-    return fetch_child(path);
+    return fetch_existing(path);
 }
 
 

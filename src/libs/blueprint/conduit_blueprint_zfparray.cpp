@@ -114,7 +114,7 @@ bool verify(const conduit::Node &n,
     }
     else
     {
-        const Node &n_header = n.fetch_child(ZFP_HEADER_FIELD_NAME);
+        const Node &n_header = n.fetch_existing(ZFP_HEADER_FIELD_NAME);
 
         // compressed-array headers consist of uint8 words
         if(!n_header.dtype().is_uint8()) {
@@ -130,7 +130,7 @@ bool verify(const conduit::Node &n,
     }
     else
     {
-        const Node &compressed_data = n.fetch_child(ZFP_COMPRESSED_DATA_FIELD_NAME);
+        const Node &compressed_data = n.fetch_existing(ZFP_COMPRESSED_DATA_FIELD_NAME);
 
         if(!compressed_data.dtype().is_unsigned_integer()) {
             log::error(info, proto_name, "ZFP compressed-data node's dtype is incompatible with the compiled ZFP bitstream word size");

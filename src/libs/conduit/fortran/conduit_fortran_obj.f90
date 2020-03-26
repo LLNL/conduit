@@ -60,6 +60,7 @@ module conduit_obj
 
         !----------------------------------------------------------------------
         procedure :: fetch  => conduit_node_obj_fetch
+        procedure :: fetch_existing  => conduit_node_obj_fetch_existing
         procedure :: append => conduit_node_obj_append
         procedure :: child_by_index => conduit_node_obj_child
         procedure :: child_by_name  => conduit_node_obj_child_by_name
@@ -458,6 +459,16 @@ contains
         type(node) :: res
         res%cnode = conduit_node_fetch(obj%cnode, trim(path) // C_NULL_CHAR)
      end function conduit_node_obj_fetch
+
+    !--------------------------------------------------------------------------
+    function conduit_node_obj_fetch_existing(obj, path) result(res)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        character(*) :: path
+        type(node) :: res
+        res%cnode = conduit_node_fetch_existing(obj%cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_obj_fetch_existing
 
     !--------------------------------------------------------------------------
     function conduit_node_obj_append(obj) result(res)
