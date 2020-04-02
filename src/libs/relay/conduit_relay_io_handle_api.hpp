@@ -69,8 +69,12 @@ public:
 
     /// establish a handle
     void open(const std::string &path);
+
     void open(const std::string &path,
               const std::string &protocol);
+
+    void open(const std::string &path,
+              const Node &options);
 
     void open(const std::string &path,
               const std::string &protocol,

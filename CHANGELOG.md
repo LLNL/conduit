@@ -15,6 +15,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added Node::add_child() and Node::remove_child() to support direct operatrions and cases where names have `/`s.
 - Added a set of conduit::utils::log::remove_* filtering functions, which process conduit log/info nodes and strip out the requested information (useful for focusing the often verbose output in log/info nodes).
 
+#### Relay
+- Added an open mode option to RelayIOHandle. See RelayIOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
+
 ### Fixed
 
 #### General 
