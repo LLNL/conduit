@@ -506,14 +506,30 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_examples, venn)
+TEST(conduit_blueprint_mesh_examples, venn_full)
 {
     Node res;
-    blueprint::mesh::examples::venn(500,   500, // nx, ny
-                                    0.25, // radius
-                                     res);
+    blueprint::mesh::examples::venn("full",
+        500, 500, // nx, ny
+        0.25, // radius
+        res);
     Node info;
-    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_json());
+
+    relay::io_blueprint::save(res, "venn_example.blueprint_root");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, venn_sparse)
+{
+    Node res;
+    blueprint::mesh::examples::venn("sparse",
+        500, 500, // nx, ny
+        0.25, // radius
+        res);
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
     CONDUIT_INFO(info.to_json());
 
     relay::io_blueprint::save(res, "venn_example.blueprint_root");

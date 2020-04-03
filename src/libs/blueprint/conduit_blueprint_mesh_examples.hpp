@@ -119,7 +119,8 @@ namespace examples
 
     /// Generates a rectilinear grid with fields that
     /// are computed from 3 overlapping circles.
-    void CONDUIT_BLUEPRINT_API venn(index_t nx,
+    void CONDUIT_BLUEPRINT_API venn(const std::string &storage_type,
+                                    index_t nx,
                                     index_t ny,
                                     float64 radius,
                                     Node &res);
