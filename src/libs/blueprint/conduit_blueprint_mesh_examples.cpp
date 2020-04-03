@@ -2539,11 +2539,13 @@ void venn_full_matset(Node &res,
 {
     // create the material sets
 
+    index_t elements = nx * ny;
+
     res["matsets/matset/topology"] = "topo";
-    res["matsets/matset/volume_fractions/background"] = DataType::float64(nx * ny);
-    res["matsets/matset/volume_fractions/circle_a"] = DataType::float64(nx * ny);
-    res["matsets/matset/volume_fractions/circle_b"] = DataType::float64(nx * ny);
-    res["matsets/matset/volume_fractions/circle_c"] = DataType::float64(nx * ny);
+    res["matsets/matset/volume_fractions/background"] = DataType::float64(elements);
+    res["matsets/matset/volume_fractions/circle_a"] = DataType::float64(elements);
+    res["matsets/matset/volume_fractions/circle_b"] = DataType::float64(elements);
+    res["matsets/matset/volume_fractions/circle_c"] = DataType::float64(elements);
 
     float64_array cir_a = res["fields/circle_a/values"].value();
     float64_array cir_b = res["fields/circle_b/values"].value();
@@ -2554,25 +2556,18 @@ void venn_full_matset(Node &res,
     float64_array mat_cb = res["matsets/matset/volume_fractions/circle_b"].value();
     float64_array mat_cc = res["matsets/matset/volume_fractions/circle_c"].value();
     
-    index_t idx = 0;
-    for(index_t j = 0; j < ny; j++)
+    for(index_t idx = 0; idx < elements; idx++)
     {
-        for(index_t i = 0; i < nx; i++)
-        {
-            // dist to circle a
-            mat_ca[idx] = cir_a[idx];
-            mat_cb[idx] = cir_b[idx];
-            mat_cc[idx] = cir_c[idx];
-            mat_bg[idx] = 1. - (cir_a[idx] + cir_b[idx] + cir_c[idx]);
-
-            idx++;
-        }
+        mat_ca[idx] = cir_a[idx];
+        mat_cb[idx] = cir_b[idx];
+        mat_cc[idx] = cir_c[idx];
+        mat_bg[idx] = 1. - (cir_a[idx] + cir_b[idx] + cir_c[idx]);
     }
 }
 
 void make_sparse(Node & src, index_t len, Node & n)
 {
-    float64_array src_val = src["values"].value();
+    float64_array src_val = src.value();
 
     index_t nz = 0;
     for (index_t idx = 0; idx < len; ++idx)
@@ -2619,7 +2614,9 @@ void venn_sparse_matset(Node &res,
     index_t elements = nx * ny;
 
     make_sparse(res["fields/circle_a/values"], elements, ca);
+
     make_sparse(res["fields/circle_b/values"], elements, cb);
+
     make_sparse(res["fields/circle_c/values"], elements, cc);
 
     // The background material volume fraction depends on the other three
@@ -2633,7 +2630,7 @@ void venn_sparse_matset(Node &res,
     bg["values"].set(DataType::float64(bgcount));
     bg["element_ids"].set(DataType::int32(bgcount));
     float64_array bg_val = bg["values"].value();
-    int32_array bg_idx = bg["index_ids"].value();
+    int32_array bg_idx = bg["element_ids"].value();
 
     index_t nidx = 0;
     for (index_t idx = 0; idx < elements; ++idx)
