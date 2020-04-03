@@ -178,7 +178,20 @@ IOHandle has the following instance methods:
 
  * ``open``
    
-   * Opens a handle. The underlying I/O interface is selected using the extension of the destination path or an explicit protocol argument.
+   * Opens a handle. The underlying I/O interface is selected using the extension of the destination path or an explicit protocol argument. Supports reading and writing by default. Select a different mode by passing an options node that contains a ``mode`` child with one of the following strings:
+
+
+   .. list-table:: 
+      :widths: 10 20
+
+      * - ``rw`` read + write (default mode)
+        - Supports both read and write operations. Creates file if it does not exist.
+
+      * - ``r`` read only 
+        - Only supports read operations. Throws an Error if you open a non-existing file or on any attempt to write. 
+
+      * - ``w`` write only 
+        - Only supports write operations. Throws an Error on any attempt to read.
 
   .. DANGER::
     Note: While you can read from and write to subpaths using a handle, IOHandle *does not* yet support opening a file with a subpath (e.g. ``myhandle.open("file.hdf5:path/data")``).
