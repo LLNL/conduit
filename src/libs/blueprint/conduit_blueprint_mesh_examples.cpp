@@ -2595,9 +2595,9 @@ void make_sparse(Node & src, index_t len, Node & n)
     }
 }
 
-void venn_sparse_matset(Node &res,
-                        index_t nx,
-                        index_t ny)
+void venn_sparse_by_material_matset(Node &res,
+                                    index_t nx,
+                                    index_t ny)
 {
     // create the materials
 
@@ -2642,6 +2642,91 @@ void venn_sparse_matset(Node &res,
             bg_idx[nidx] = idx;
             nidx += 1;
         }
+    }
+}
+
+void venn_sparse_by_element_matset(Node &res,
+    index_t nx,
+    index_t ny)
+{
+    // create the materials
+
+    float64_array cir_a = res["fields/circle_a/values"].value();
+    float64_array cir_b = res["fields/circle_b/values"].value();
+    float64_array cir_c = res["fields/circle_c/values"].value();
+
+    index_t elements = nx * ny;
+    index_t vfcount = 0;
+
+    // Count up all the non-zero volume fragments
+    // (so we can allocate a correctly-sized buffer)
+    for (index_t idx = 0; idx < elements; ++idx)
+    {
+        if (cir_a[idx] > 0.) vfcount += 1;
+        if (cir_b[idx] > 0.) vfcount += 1;
+        if (cir_c[idx] > 0.) vfcount += 1;
+        if (cir_a[idx] + cir_b[idx] + cir_c[idx] < 1.) vfcount += 1;
+    }
+
+    // Build the rest of the single-buffer matset
+    res["matsets/matset/topology"] = "topo";
+    // This is the "key" that tells what material each volume fraction refers to
+    res["matsets/matset/material_map/cir_a"] = 1;
+    res["matsets/matset/material_map/cir_b"] = 2;
+    res["matsets/matset/material_map/cir_c"] = 3;
+    res["matsets/matset/material_map/bg"] = 0;
+
+    // All the volume fractions go here ("one big buffer")
+    res["matsets/matset/volume_fractions"].set(DataType::float64(vfcount));
+    // The material measured by each volume fraction
+    res["matsets/matset/material_ids"].set(DataType::int32(vfcount));
+    // The number of volume fractions in an element
+    res["matsets/matset/sizes"].set(DataType::int32(elements));
+    // The offset of the first vf in an element
+    res["matsets/matset/offsets"].set(DataType::int32(elements));
+
+    float64_array vf = res["matsets/matset/volume_fractions"].value();
+    int32_array id = res["matsets/matset/material_ids"].value();
+    int32_array sizes = res["matsets/matset/sizes"].value();
+    int32_array offsets = res["matsets/matset/offsets"].value();
+
+    // Build up the arrays!
+    index_t vfidx = 0;
+    for (index_t idx = 0; idx < elements; ++idx)
+    {
+        int size = 0;
+        float64 ca = cir_a[idx];
+        float64 cb = cir_b[idx];
+        float64 cc = cir_c[idx];
+
+        if (ca > 0.)
+        {
+            vf[vfidx + size] = ca;
+            id[vfidx + size] = 1;
+            size += 1;
+        }
+        if (cb > 0.)
+        {
+            vf[vfidx + size] = cb;
+            id[vfidx + size] = 2;
+            size += 1;
+        }
+        if (cc > 0.)
+        {
+            vf[vfidx + size] = cc;
+            id[vfidx + size] = 3;
+            size += 1;
+        }
+        if (ca + cb + cc < 1.)
+        {
+            vf[vfidx + size] = 1 - (ca + cb + cc);
+            id[vfidx + size] = 0;
+            size += 1;
+        }
+
+        sizes[idx] = size;
+        offsets[idx] = vfidx;
+        vfidx += size;
     }
 }
 
@@ -2819,9 +2904,13 @@ void venn(const std::string &storage_type,
     {
         venn_full_matset(res, nx, ny);
     }
-    else if (storage_type == "sparse")
+    else if (storage_type == "sparse_by_material")
     {
-        venn_sparse_matset(res, nx, ny);
+        venn_sparse_by_material_matset(res, nx, ny);
+    }
+    else if (storage_type == "sparse_by_element")
+    {
+        venn_sparse_by_element_matset(res, nx, ny);
     }
 }
 

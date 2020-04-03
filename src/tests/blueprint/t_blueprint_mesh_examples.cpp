@@ -521,10 +521,25 @@ TEST(conduit_blueprint_mesh_examples, venn_full)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_examples, venn_sparse)
+TEST(conduit_blueprint_mesh_examples, venn_sparse_by_material)
 {
     Node res;
-    blueprint::mesh::examples::venn("sparse",
+    blueprint::mesh::examples::venn("sparse_by_material",
+        500, 500, // nx, ny
+        0.25, // radius
+        res);
+    Node info;
+    // EXPECT_TRUE(blueprint::mesh::verify(res, info));  // verify() not ready yet
+    // CONDUIT_INFO(info.to_json());
+
+    // relay::io_blueprint::save(res, "venn_example.blueprint_root");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, venn_sparse_by_element)
+{
+    Node res;
+    blueprint::mesh::examples::venn("sparse_by_element",
         500, 500, // nx, ny
         0.25, // radius
         res);
