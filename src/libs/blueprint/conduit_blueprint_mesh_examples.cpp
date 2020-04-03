@@ -2730,7 +2730,7 @@ void venn_sparse_by_element_matset(Node &res,
     }
 }
 
-void venn(const std::string &storage_type,
+void venn(const std::string &matset_type,
           index_t nx,
           index_t ny,
           float64 radius, 
