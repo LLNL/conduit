@@ -2900,15 +2900,15 @@ void venn(const std::string &matset_type,
 
     // Shape in materials.
 
-    if (storage_type == "full")
+    if (matset_type == "full")
     {
         venn_full_matset(res, nx, ny);
     }
-    else if (storage_type == "sparse_by_material")
+    else if (matset_type == "sparse_by_material")
     {
         venn_sparse_by_material_matset(res, nx, ny);
     }
-    else if (storage_type == "sparse_by_element")
+    else if (matset_type == "sparse_by_element")
     {
         venn_sparse_by_element_matset(res, nx, ny);
     }
