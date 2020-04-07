@@ -394,20 +394,25 @@ void  hdf5_ref_path_with_filename(hid_t hdf5_id,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// if incompatible, incompat_details contains human readable details
+// about why
+//-----------------------------------------------------------------------------
 bool  check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
                                                   const std::string &ref_path,
-                                                                hid_t hdf5_id);
+                                                                hid_t hdf5_id,
+                                                std::string &incompat_details);
  
 //-----------------------------------------------------------------------------
 bool  check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
                                                 const std::string &ref_path,
-                                                             hid_t hdf5_id);
+                                                             hid_t hdf5_id,
+                                                std::string &incompat_details);
 
 //-----------------------------------------------------------------------------
 bool  check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
                                               const std::string &ref_path,
-                                                            hid_t hdf5_id);
-
+                                                            hid_t hdf5_id,
+                                                std::string &incompat_details);
 
 //-----------------------------------------------------------------------------
 // helpers for writing
@@ -833,7 +838,8 @@ hdf5_ref_path_with_filename(hid_t hdf5_id,
 bool
 check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
                                                   const std::string &ref_path,
-                                                  hid_t hdf5_id)
+                                                  hid_t hdf5_id,
+                                                  std::string &incompat_details)
 {
     bool res = true;
     H5O_info_t h5_obj_info;
@@ -851,6 +857,15 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
         if( H5Sget_simple_extent_type(h5_test_dspace) == H5S_NULL &&
             !dtype.is_empty())
         {
+            std::ostringstream oss;
+            oss << "Conduit Node (leaf) at path '" << ref_path << "'"
+                << " is not compatible with given HDF5 Dataset at path"
+                << " '" << ref_path << "'"
+                << "\nHDF5 dataset has a H5S_NULL Dataspace which"
+                << " only compatible with an empty Conduit Node";
+
+            incompat_details = oss.str();
+
             res = false;
         }
         else
@@ -878,12 +893,32 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
                  // note: both hdf5 and conduit dtypes include null term in string size
                  (dtype.number_of_elements() !=  (index_t)H5Tget_size(h5_test_dtype) ) )
             {
-                    res = false;
+                std::ostringstream oss;
+                oss << "Conduit Node (string leaf) at path '" << ref_path << "'"
+                    << " is not compatible with given HDF5 Dataset at path"
+                    << " '" << ref_path << "'"
+                    << "\nConduit leaf String Node length (" 
+                    << dtype.number_of_elements() << ")"
+                    << " != HDF5 Dataset size (" << H5Tget_size(h5_test_dtype) << ")";
+
+                incompat_details = oss.str();
+
+                res = false;
             }
             else if( ! ( (H5Tequal(h5_dtype, h5_test_dtype) > 0) && 
                          (dtype.number_of_elements() ==  h5_test_num_ele) ) )
             {
-                    res = false;
+                std::ostringstream oss;
+                oss << "Conduit Node (leaf) at path '" << ref_path << "'"
+                    << " is not compatible with given HDF5 Dataset at path"
+                    << " '" << ref_path << "'"
+                    << "\nConduit leaf Node number of elements (" 
+                    << dtype.number_of_elements() << ")"
+                    << " != HDF5 Dataset size (" << H5Tget_size(h5_test_dtype) << ")";
+
+                incompat_details = oss.str();
+
+                res = false;
             }
 
             CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(H5Tclose(h5_test_dtype),
@@ -903,15 +938,23 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
     else
     {
         // bad id, or not a dataset
+        std::ostringstream oss;
+        oss << "Conduit Node (leaf) at path '" << ref_path << "'"
+            << " is not compatible with given HDF5 Dataset at path"
+            << "'" << ref_path << "'"
+            << "\nConduit leaf vs HDF5 Dataset: Bad HDF5 Leaf ID"
+            << " or HDF5 ID is not a HDF5 Group";
+
+        incompat_details = oss.str();
         res = false;
     }
-    
-    if(res == false)
-    {
-        CONDUIT_INFO("leaf in Conduit Node at path " << ref_path <<
-                     " is not compatible with given HDF5 tree at path "
-                     << ref_path);
-    }
+    //
+    // if(res == false)
+    // {
+    //     CONDUIT_INFO("leaf in Conduit Node at path " << ref_path <<
+    //                  " is not compatible with given HDF5 tree at path "
+    //                  << ref_path);
+    // }
 
     return res;
 }
@@ -920,9 +963,11 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
 bool
 check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
                                                      const std::string &ref_path,
-                                                     hid_t hdf5_id)
+                                                     hid_t hdf5_id,
+                                                  std::string &incompat_details)
 {
     bool res = true;
+    
     // make sure we have a group ... 
     
     H5O_info_t h5_obj_info;
@@ -953,7 +998,8 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
                 // compatible with the conduit node
                 res = check_if_conduit_node_is_compatible_with_hdf5_tree(child,
                                                                   chld_ref_path,
-                                                                  h5_child_obj);
+                                                                  h5_child_obj,
+                                                                  incompat_details);
             
                 CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(H5Oclose(h5_child_obj),
                                                                 hdf5_id,
@@ -966,9 +1012,15 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
     }
     else // bad id or not a group
     {
-        CONDUIT_INFO("object in Conduit Node at path " << ref_path << 
-                     " is not compatible with given HDF5 tree at path "
-                     << ref_path );
+        std::ostringstream oss;
+        oss << "Conduit Node (object) at path '" << ref_path << "'"
+            << " is not compatible with given HDF5 tree at path"
+            << "'" << ref_path << "'"
+            << "\nConduit Object vs HDF5 Group: Bad HDF5 Group ID "
+            << "or HDF5 ID is not a HDF5 Group";
+
+        incompat_details = oss.str();
+
         res = false;
     }
     
@@ -980,29 +1032,46 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
 bool
 check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
                                                    const std::string &ref_path,
-                                                   hid_t hdf5_id)
+                                                   hid_t hdf5_id,
+                                                   std::string &incompat_details)
 {
     bool res = true;
-    
+
     DataType dt = node.dtype();
     // check for leaf or group
     if(dt.is_number() || dt.is_string())
     {
         res = check_if_conduit_leaf_is_compatible_with_hdf5_obj(dt,
                                                                 ref_path,
-                                                                hdf5_id);
+                                                                hdf5_id,
+                                                                incompat_details);
     }
     else if(dt.is_object())
     {
         res = check_if_conduit_object_is_compatible_with_hdf5_tree(node,
                                                                    ref_path,
-                                                                   hdf5_id);
+                                                                   hdf5_id,
+                                                                   incompat_details);
     }
     else // not supported
     {
+        std::ostringstream oss;
+        oss << "Conduit Node at path '" << ref_path << "'"
+            << " has an unsupported dtype (" << dt.name() << ")"
+            << " for HDF5 i/o and cannot be written to HDF5 path"
+            << " '" << ref_path  << "'";
+
+        if(dt.is_list()) // let them know there is hope for lists in the future
+        {
+            // we don't support lists yet, but provide helpful
+            // info when passed a list
+            oss << "\nA future conduit release will add"
+                << " list read/write support for HDF5.";
+        }
+        incompat_details = oss.str();
         res = false;
     }
-    
+
     return res;
 }
 
@@ -2262,10 +2331,12 @@ hdf5_write(const Node &node,
         n.set_external(const_cast<Node&>(node));
     }
 
+    std::string incompat_details;
     // check compat
     if(check_if_conduit_node_is_compatible_with_hdf5_tree(n,
                                                           "",
-                                                          hdf5_id))
+                                                          hdf5_id,
+                                                          incompat_details))
     {
         // write if we are compat
         write_conduit_node_to_hdf5_tree(n,"",hdf5_id);
@@ -2280,7 +2351,8 @@ hdf5_write(const Node &node,
         CONDUIT_ERROR("Failed to write node to " 
                       << "\"" << hdf5_error_ref_path << "\", "
                       << "existing HDF5 tree is "
-                      << "incompatible with the Conduit Node.");
+                      << "incompatible with the Conduit Node."
+                      << "\nDetails:\n" << incompat_details);
     }
 
     // restore hdf5 error stack
@@ -2297,10 +2369,13 @@ hdf5_write(const Node &node,
     // of check_if_conduit_node_is_compatible_with_hdf5_tree
     HDF5ErrorStackSupressor supress_hdf5_errors;
     
+    std::string incompat_details;
+    
     // check compat
     if(check_if_conduit_node_is_compatible_with_hdf5_tree(node,
                                                           "",
-                                                          hdf5_id))
+                                                          hdf5_id,
+                                                          incompat_details))
     {
         // write if we are compat
         write_conduit_node_to_hdf5_tree(node,
@@ -2315,7 +2390,8 @@ hdf5_write(const Node &node,
         CONDUIT_ERROR("Failed to write node to " 
                       << "\"" << hdf5_fname << "\", "
                       << "existing HDF5 tree is "
-                      << "incompatible with the Conduit Node.");
+                      << "incompatible with the Conduit Node."
+                      << " Details: " << incompat_details);
     }
     // restore hdf5 error stack
 }
