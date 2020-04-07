@@ -90,7 +90,7 @@ void mesh_blueprint_save(const Node &data,
     int par_size = mpi::size(MPI_COMM_WORLD);
 
     // setup the directory
-    char fmt_buff[64];
+    char fmt_buff[64] = {0};
     int cycle = data["state/cycle"].to_int32();
     snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
 

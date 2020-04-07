@@ -951,7 +951,7 @@ base64_decode(const void *src,
 std::string
 float64_to_string(float64 value)
 {
-    char buffer[64];
+    char buffer[64] = {0};
     snprintf(buffer,64,"%.15g",value);
 
     std::string res(buffer);
