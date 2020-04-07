@@ -32,6 +32,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General 
 - Node::fetch_child and Schema::fetch_child are deprecated in favor of the more clearly named Node::fetch_existing and Schema::fetch_existing. fetch_child variants still exist, but will be removed in a future release.
 
+#### Relay
+- Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.
+
+
 ## [0.5.1] - Released 2020-01-18
 
 ### Added
