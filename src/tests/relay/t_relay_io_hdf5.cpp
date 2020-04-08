@@ -1344,4 +1344,29 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string_compress)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_list_incompat_error_message)
+{
+    std::string tout_std = "tout_hdf5_w_list_error.hdf5";
+
+    Node n;
+    n.append() = "42";
+    n.append() = "42";
+    n.append() = "42";
+    n.append() = "42";
+    
+    bool excpt_occured = false;
+    try
+    {
+        io::save(n,tout_std, "hdf5");
+    }
+    catch(Error &e)
+    {
+        excpt_occured = true;
+        CONDUIT_INFO(e.message());
+    }
+    
+    EXPECT_TRUE(excpt_occured);
+}
+
 
