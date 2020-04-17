@@ -1369,4 +1369,24 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list_incompat_error_message)
     EXPECT_TRUE(excpt_occured);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
+{
+    std::string tout_std = "tout_hdf5_list.hdf5";
+
+    Node n;
+    n.append() = "42";
+    n.append() = "42";
+    n.append() = "42";
+    n.append() = "42";
+    io::save(n,tout_std, "hdf5");
+    
+    Node n_load, info;
+    io::load(tout_std,"hdf5",n_load);
+    
+    std::cout << n_load.to_yaml() << std::endl;
+    
+    EXPECT_FALSE(n.diff(n_load,info));
+}
+
 
