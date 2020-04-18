@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-666778
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
+//
+// This file is part of Conduit.
+//
 // For details, see: http://software.llnl.gov/conduit/.
-// 
+//
 // Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -129,6 +129,139 @@ struct point
     float64 x, y, z;
 };
 
+// 0000000000 -> 000|0|0|0|0|000
+// output is the count of 0s in each of 6 regions
+// which we can turn in to a simple nesting:
+// level 0:   000 00 00 000
+// level 1:      |11|11|
+// level 2:        2 2
+std::vector<index_t> nestsplits(index_t size)
+{
+  index_t div = size  / 3;
+  index_t splits[3] = {div,div,div};
+  index_t rem = size % 3;
+
+  if(rem > 0) splits[0]++;
+  if(rem > 1) splits[2]++;
+
+  // ensure we have a diviable by 4 middle segment
+  bool even = true;
+  while(splits[1] % 4 != 0)
+  {
+    if(even) splits[0]--;
+    else     splits[1]--;
+    splits[1]++;
+    even = !even;
+  }
+
+  std::vector<index_t> res;
+  index_t quarter = splits[1] / 4;
+  res.push_back(splits[0]);
+  res.push_back(quarter);
+  res.push_back(quarter);
+  res.push_back(quarter);
+  res.push_back(quarter);
+  res.push_back(splits[2]);
+
+  return res;
+}
+
+void paint_2d_nestsets(conduit::Node &domain,
+                       const std::string topo_name)
+{
+
+  if(!domain.has_path("topologies/"+topo_name))
+  {
+    CONDUIT_ERROR("Paint nestsets: no topology named: "<<topo_name);
+  }
+
+  const Node &topo = domain["topologies/"+topo_name];
+
+  if(topo["type"].as_string() == "unstructured")
+  {
+    CONDUIT_ERROR("Paint nestsets: cannot paint on unstructured topology");
+  }
+
+  int el_dims[2] = {1,1};
+  if(topo["type"].as_string() == "structured")
+  {
+    el_dims[0] = topo["elements/dims/i"].to_int32();
+    el_dims[1] = topo["elements/dims/j"].to_int32();
+  }
+  else
+  {
+    const std::string coord_name = topo["coordset"].as_string();
+    const Node &coords = domain["coordsets/"+coord_name];
+    if(coords["type"].as_string() == "uniform")
+    {
+      el_dims[0] = coords["dims/i"].as_int32() - 1;
+      el_dims[1] = coords["dims/j"].as_int32() - 1;
+    }
+    else if(coords["type"].as_string() == "rectilinear")
+    {
+      el_dims[0] = coords["values/x"].dtype().number_of_elements() - 1;
+      el_dims[1] = coords["values/y"].dtype().number_of_elements() - 1;
+    }
+    else
+    {
+      CONDUIT_ERROR("unknown coord type");
+    }
+  }
+
+  const int32 field_size = el_dims[0] * el_dims[1];
+
+  Node &levels_field = domain["fields/levels_below"];
+  levels_field["association"] = "element";
+  levels_field["topology"] = topo_name;
+  levels_field["values"] = DataType::int32(field_size);
+  int32_array levels = levels_field["values"].value();
+
+
+  for(int i = 0; i < field_size; ++i)
+  {
+    levels[i] = 0;
+  }
+
+  int nest_id = -1;
+  for(int i = 0; i < domain["nestsets"].number_of_children(); ++i)
+  {
+    const Node &nestset = domain["nestsets"].child(0);
+    if(nestset["topology"].as_string() == topo_name)
+    {
+      nest_id = i;
+      break;
+    }
+  }
+  if(nest_id == -1) return;
+
+  const Node &nestset = domain["nestsets"].child(nest_id);
+  const int windows = nestset["windows"].number_of_children();
+  for(int i = 0; i < windows; ++i)
+  {
+    const Node &window = nestset["windows"].child(i);
+    if(window["domain_type"].as_string() != "child")
+    {
+      continue;
+    }
+
+    int origin[2];
+    origin[0] = window["origin/i"].to_int32();
+    origin[1] = window["origin/j"].to_int32();
+
+    int dims[2];
+    dims[0] = window["dims/i"].to_int32();
+    dims[1] = window["dims/j"].to_int32();
+    // all the nesting relationship is local
+    for(int y = origin[1]; y < origin[1] + dims[1]; ++y)
+    {
+      const int32 y_offset = y * el_dims[0];
+      for(int x = origin[0]; x < origin[0] + dims[0]; ++x)
+      {
+        levels[y_offset + x] += 1;
+      }
+    }
+  }
+}
 
 //---------------------------------------------------------------------------//
 void basic_init_example_element_scalar_field(index_t nele_x,
@@ -172,24 +305,24 @@ void braid_init_example_point_scalar_field(index_t npts_x,
                                            Node &res)
 {
 
-    if(npts_z < 1) 
+    if(npts_z < 1)
     {
         npts_z = 1;
     }
 
     index_t npts = npts_x * npts_y * npts_z;
-    
+
     res["association"] = "vertex";
     res["type"] = "scalar";
     res["topology"] = "mesh";
     res["values"].set(DataType::float64(npts));
-    
+
     float64 *vals = res["values"].value();
 
     float64 dx = (float) (4.0 * PI_VALUE) / float64(npts_x - 1);
     float64 dy = (float) (2.0 * PI_VALUE) / float64(npts_y-1);
     float64 dz = (float) (3.0 * PI_VALUE) / float64(npts_z-1);
-    
+
     index_t idx = 0;
 
     for(index_t k = 0; k < npts_z ; k++)
@@ -201,20 +334,20 @@ void braid_init_example_point_scalar_field(index_t npts_x,
             float64 cy =  (j * dy) - ( PI_VALUE);
             for(index_t i = 0; i < npts_x ; i++)
             {
-            
+
                 float64 cx =  (i * dx) + (2.0 * PI_VALUE);
-                
-                float64 cv =  sin( cx ) + 
-                              sin( cy ) + 
+
+                float64 cv =  sin( cx ) +
+                              sin( cy ) +
                               2 * cos(sqrt( (cx*cx)/2.0 +cy*cy) / .75) +
                               4 * cos( cx*cy / 4.0);
-                                  
+
                 if(npts_z > 1)
                 {
-                    cv += sin( cz ) + 
+                    cv += sin( cz ) +
                           1.5 * cos(sqrt(cx*cx + cy*cy + cz*cz) / .75);
                 }
-                
+
                 vals[idx] = cv;
                 idx++;
             }
@@ -229,7 +362,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
                                            Node &res)
 {
     index_t npts = npts_x * npts_y * npts_z;
-    
+
     res["association"] = "vertex";
     res["type"] = "vector";
     res["topology"] = "mesh";
@@ -239,7 +372,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
     float64 *u_vals = res["values/u"].value();
     float64 *v_vals = res["values/v"].value();
     float64 *w_vals = NULL;
-    
+
     if(npts_z > 1)
     {
         res["values/w"].set(DataType::float64(npts));
@@ -249,7 +382,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
     // this logic is from the explicit coord set setup function
     // we are using the coords (distance from origin)
     // to create an example vector field
-    
+
     float64 dx = 20.0 / float64(npts_x - 1);
     float64 dy =  20.0 / float64(npts_y-1);
     float64 dz = 0.0;
@@ -263,11 +396,11 @@ void braid_init_example_point_vector_field(index_t npts_x,
     for(index_t k = 0; k < npts_z ; k++)
     {
         float64 cz = -10.0 + k * dz;
-        
+
         for(index_t j = 0; j < npts_y ; j++)
         {
             float64 cy =  -10.0 + j * dy;
-            
+
             for(index_t i = 0; i < npts_x ; i++)
             {
                 float64 cx =  -10.0 + i * dx;
@@ -279,10 +412,10 @@ void braid_init_example_point_vector_field(index_t npts_x,
                 {
                     w_vals[idx] = cz;
                 }
-                
+
                 idx++;
             }
-        
+
         }
     }
 }
@@ -296,7 +429,7 @@ void braid_init_example_element_scalar_field(index_t nele_x,
                                              index_t prims_per_ele=1)
 {
     index_t nele = nele_x * nele_y;
-    
+
     if(nele_z > 0)
     {
         nele = nele * nele_z;
@@ -305,9 +438,9 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     res["association"] = "element";
     res["type"] = "scalar";
     res["topology"] = "mesh";
-    
+
     index_t vals_size = nele * prims_per_ele;
-    
+
     res["values"].set(DataType::float64(vals_size));
 
     float64 *vals = res["values"].value();
@@ -315,12 +448,12 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     float64 dx = 20.0 / float64(nele_x);
     float64 dy = 20.0 / float64(nele_y);
     float64 dz = 0.0f;
-    
+
     if(nele_z > 0 )
     {
         dz = 20.0 / float64(nele_z);
     }
-    
+
     index_t idx = 0;
     for(index_t k = 0; (idx == 0 || k < nele_z); k++)
     {
@@ -329,13 +462,13 @@ void braid_init_example_element_scalar_field(index_t nele_x,
         for(index_t j = 0; (idx == 0 || j < nele_y) ; j++)
         {
             float64 cy =  (j * dy) + -10.0;
-            
+
             for(index_t i = 0; (idx == 0 || i < nele_x) ; i++)
             {
                 float64 cx =  (i * dx) + -10.0;
 
                 float64 cv = 10.0 * sqrt( cx*cx + cy*cy );
-                
+
                 if(nele_z != 0)
                 {
                     cv = 10.0 * sqrt( cx*cx + cy*cy +cz*cz );
@@ -438,17 +571,17 @@ void braid_init_uniform_coordset(index_t npts_x,
     {
         dims["k"] = npts_z;
     }
-        
-    // -10 to 10 in each dim, 
+
+    // -10 to 10 in each dim,
     Node &origin = coords["origin"];
     origin["x"] = -10.0;
     origin["y"] = -10.0;
-    
+
     if(npts_z > 1)
     {
         origin["z"] = -10.0;
     }
-    
+
     Node &spacing = coords["spacing"];
     spacing["dx"] = 20.0 / (float64)(npts_x-1);
     spacing["dy"] = 20.0 / (float64)(npts_y-1);
@@ -470,7 +603,7 @@ void braid_init_rectilinear_coordset(index_t npts_x,
     Node &coord_vals = coords["values"];
     coord_vals["x"].set(DataType::float64(npts_x));
     coord_vals["y"].set(DataType::float64(npts_y));
-    
+
     if(npts_z > 1)
     {
         coord_vals["z"].set(DataType::float64(npts_z));
@@ -489,7 +622,7 @@ void braid_init_rectilinear_coordset(index_t npts_x,
     float64 dx = 20.0 / (float64)(npts_x-1);
     float64 dy = 20.0 / (float64)(npts_y-1);
     float64 dz = 0.0;
-    
+
     if(npts_z > 1)
     {
         dz = 20.0 / (float64)(npts_z-1);
@@ -499,12 +632,12 @@ void braid_init_rectilinear_coordset(index_t npts_x,
     {
         x_vals[i] = -10.0 + i * dx;
     }
-    
+
     for(int j=0; j < npts_y; j++)
     {
         y_vals[j] = -10.0 + j * dy;
     }
-    
+
     if(npts_z > 1)
     {
         for(int k=0; k < npts_z; k++)
@@ -522,7 +655,7 @@ braid_init_explicit_coordset(index_t npts_x,
                              Node &coords)
 {
     coords["type"] = "explicit";
-    
+
     index_t npts = npts_x * npts_y;
 
     if(npts_z > 1)
@@ -543,7 +676,7 @@ braid_init_explicit_coordset(index_t npts_x,
     float64 *x_vals = coord_vals["x"].value();
     float64 *y_vals = coord_vals["y"].value();
     float64 *z_vals = NULL;
-    
+
     if(npts_z > 1)
     {
         z_vals = coord_vals["z"].value();
@@ -563,24 +696,24 @@ braid_init_explicit_coordset(index_t npts_x,
     for(index_t k = 0; k < npts_z ; k++)
     {
         float64 cz = -10.0 + k * dz;
-        
+
         for(index_t j = 0; j < npts_y ; j++)
         {
             float64 cy =  -10.0 + j * dy;
-            
+
             for(index_t i = 0; i < npts_x ; i++)
             {
                 x_vals[idx] = -10.0 + i * dx;
                 y_vals[idx] = cy;
-                
+
                 if(npts_z > 1)
                 {
                     z_vals[idx] = cz;
                 }
-                
+
                 idx++;
             }
-        
+
         }
     }
 }
@@ -874,7 +1007,7 @@ void braid_init_example_nestset(Node &mesh)
             {
                 std::ostringstream oss;
                 // window_{min_dom_id}_{max_dom_id}
-                oss << "window_" << std::min(dom_id, odom_id) 
+                oss << "window_" << std::min(dom_id, odom_id)
                                  << "_"
                                  << std::max(dom_id, odom_id);
                 window_name = oss.str();
@@ -964,11 +1097,11 @@ braid_uniform(index_t npts_x,
               Node &res)
 {
     res.reset();
-    
+
     index_t nele_x = npts_x -1;
     index_t nele_y = npts_y -1;
     index_t nele_z = npts_z -1;
-    
+
     braid_init_example_state(res);
     braid_init_uniform_coordset(npts_x,
                                 npts_y,
@@ -976,8 +1109,8 @@ braid_uniform(index_t npts_x,
                                 res["coordsets/coords"]);
 
     res["topologies/mesh/type"] = "uniform";
-    res["topologies/mesh/coordset"] = "coords"; 
-    
+    res["topologies/mesh/coordset"] = "coords";
+
     Node &fields = res["fields"];
 
 
@@ -1008,20 +1141,20 @@ braid_rectilinear(index_t npts_x,
                   Node &res)
 {
     res.reset();
-    
+
     index_t nele_x = npts_x -1;
     index_t nele_y = npts_y -1;
     index_t nele_z = npts_z -1;
-    
+
     braid_init_example_state(res);
     braid_init_rectilinear_coordset(npts_x,
                                     npts_y,
                                     npts_z,
                                     res["coordsets/coords"]);
-    
+
     res["topologies/mesh/type"] = "rectilinear";
-    res["topologies/mesh/coordset"] = "coords"; 
-    
+    res["topologies/mesh/coordset"] = "coords";
+
     Node &fields = res["fields"];
 
     braid_init_example_point_scalar_field(npts_x,
@@ -1049,25 +1182,25 @@ braid_structured(index_t npts_x,
                  Node &res)
 {
     res.reset();
-    
+
     index_t nele_x = npts_x -1;
     index_t nele_y = npts_y -1;
     index_t nele_z = npts_z -1;
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
     res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
-    
+
     if(nele_z > 0)
     {
-        res["topologies/mesh/elements/dims/k"] = (int32)nele_z; 
+        res["topologies/mesh/elements/dims/k"] = (int32)nele_z;
     }
 
     Node &fields = res["fields"];
@@ -1076,9 +1209,9 @@ braid_structured(index_t npts_x,
                                           npts_y,
                                           npts_z,
                                           fields["braid"]);
-                                          
+
     braid_init_example_element_scalar_field(nele_x,
-                                            nele_y, 
+                                            nele_y,
                                             nele_z,
                                             fields["radial"]);
 
@@ -1099,13 +1232,13 @@ braid_points_explicit(index_t npts_x,
 {
     res.reset();
     index_t npts_total = npts_x * npts_y * npts_z;
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-    
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "point";
@@ -1118,14 +1251,14 @@ braid_points_explicit(index_t npts_x,
     }
 
     Node &fields = res["fields"];
-    
+
     braid_init_example_point_scalar_field(npts_x,
                                           npts_y,
                                           npts_z,
                                           fields["braid"]);
-    
+
     braid_init_example_element_scalar_field(npts_x,
-                                            npts_y, 
+                                            npts_y,
                                             npts_z,
                                             fields["radial"]);
 
@@ -1145,25 +1278,25 @@ braid_points_implicit(index_t npts_x,
                       Node &res)
 {
     res.reset();
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-    
+
     res["topologies/mesh/type"] = "points";
     res["topologies/mesh/coordset"] = "coords";
 
     Node &fields = res["fields"];
-    
+
     braid_init_example_point_scalar_field(npts_x,
                                           npts_y,
                                           npts_z,
                                           fields["braid"]);
-    
+
     braid_init_example_element_scalar_field(npts_x,
-                                            npts_y, 
+                                            npts_y,
                                             npts_z,
                                             fields["radial"]);
 
@@ -1182,17 +1315,17 @@ braid_quads(index_t npts_x,
             Node &res)
 {
     res.reset();
-    
+
     int32 nele_x = (int32)(npts_x - 1);
     int32 nele_y = (int32)(npts_y - 1);
     int32 nele = nele_x * nele_y;
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "quad";
@@ -1240,16 +1373,16 @@ braid_quads_and_tris(index_t npts_x,
             Node &res)
 {
     res.reset();
-    
+
     int32 nele_x = (int32)(npts_x - 1);
     int32 nele_y = (int32)(npts_y - 1);
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
 
@@ -1378,7 +1511,7 @@ braid_quads_and_tris_offsets(index_t npts_x,
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    
+
     Node &elems = res["topologies/mesh/elements"];
     elems["element_types/quads/stream_id"] = 9; // VTK_QUAD
     elems["element_types/quads/shape"]     = "quad";
@@ -1492,19 +1625,19 @@ braid_lines_2d(index_t npts_x,
                Node &res)
 {
     res.reset();
-    
+
     // require npts_x > 0 && npts_y > 0
 
     int32 nele_quads_x = (int32)(npts_x-1);
     int32 nele_quads_y = (int32)(npts_y-1);
     int32 nele_quads = nele_quads_x * nele_quads_y;
-        
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "line";
@@ -1515,7 +1648,7 @@ braid_lines_2d(index_t npts_x,
     for(int32 j = 0; j < nele_quads_y ; j++)
     {
         int32 yoff = j * (nele_quads_x+1);
-        
+
         for(int32 i = 0; i < nele_quads_x; i++)
         {
             // 4 lines per quad.
@@ -1564,19 +1697,19 @@ braid_tris(index_t npts_x,
            Node &res)
 {
     res.reset();
-    
+
     // require npts_x > 0 && npts_y > 0
 
     int32 nele_quads_x = (int32) npts_x-1;
     int32 nele_quads_y = (int32) npts_y-1;
     int32 nele_quads = nele_quads_x * nele_quads_y;
-        
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "tri";
@@ -1587,10 +1720,10 @@ braid_tris(index_t npts_x,
     for(int32 j = 0; j < nele_quads_y ; j++)
     {
         int32 yoff = j * (nele_quads_x+1);
-        
+
         for(int32 i = 0; i < nele_quads_x; i++)
         {
-            // two tris per quad. 
+            // two tris per quad.
             conn[idx+0] = yoff + i;
             conn[idx+1] = yoff + i + (nele_quads_x+1);
             conn[idx+2] = yoff + i + 1 + (nele_quads_x+1);
@@ -1598,7 +1731,7 @@ braid_tris(index_t npts_x,
             conn[idx+3] = yoff + i;
             conn[idx+4] = yoff + i + 1;
             conn[idx+5] = yoff + i + 1 + (nele_quads_x+1);
-            
+
             idx+=6;
         }
     }
@@ -1632,18 +1765,18 @@ braid_hexs(index_t npts_x,
            Node &res)
 {
     res.reset();
-    
+
     int32 nele_x = (int32)(npts_x - 1);
     int32 nele_y = (int32)(npts_y - 1);
     int32 nele_z = (int32)(npts_z - 1);
     int32 nele = nele_x * nele_y * nele_z;
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "hex";
@@ -1655,7 +1788,7 @@ braid_hexs(index_t npts_x,
     {
         int32 zoff = k * (nele_x+1)*(nele_y+1);
         int32 zoff_n = (k+1) * (nele_x+1)*(nele_y+1);
-        
+
         for(int32 j = 0; j < nele_y ; j++)
         {
             int32 yoff = j * (nele_x+1);
@@ -1707,12 +1840,12 @@ braid_tets(index_t npts_x,
            Node &res)
 {
     res.reset();
-    
+
     int32 nele_hexs_x = (int32) (npts_x - 1);
     int32 nele_hexs_y = (int32) (npts_y - 1);
     int32 nele_hexs_z = (int32) (npts_z - 1);
     int32 nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
-    
+
     int32 tets_per_hex = 6;
     int32 verts_per_tet = 4;
     int32 n_tets_verts = nele_hexs * tets_per_hex * verts_per_tet;
@@ -1722,7 +1855,7 @@ braid_tets(index_t npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-  
+
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
@@ -1736,7 +1869,7 @@ braid_tets(index_t npts_x,
     {
         int32 zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
         int32 zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
-        
+
         for(int32 j = 0; j < nele_hexs_y ; j++)
         {
             int32 yoff = j * (nele_hexs_x+1);
@@ -1821,12 +1954,12 @@ braid_lines_3d(index_t npts_x,
                Node &res)
 {
     res.reset();
-    
+
     int32 nele_hexs_x = (int32)(npts_x - 1);
     int32 nele_hexs_y = (int32)(npts_y - 1);
     int32 nele_hexs_z = (int32)(npts_z - 1);
     int32 nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
-    
+
 
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -1845,7 +1978,7 @@ braid_lines_3d(index_t npts_x,
     {
         int32 zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
         int32 zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
-        
+
         for(int32 j = 0; j < nele_hexs_y ; j++)
         {
             int32 yoff = j * (nele_hexs_x+1);
@@ -1854,7 +1987,7 @@ braid_lines_3d(index_t npts_x,
 
             for(int32 i = 0; i < nele_hexs_z; i++)
             {
-                // 12 lines per hex 
+                // 12 lines per hex
                 // Note: this pattern allows for simple per-hex construction,
                 // but it creates spatially overlapping lines
 
@@ -1864,10 +1997,10 @@ braid_lines_3d(index_t npts_x,
 
                 conn[idx++] = zoff + yoff + i + 1;
                 conn[idx++] = zoff + yoff_n + i + 1;
-                
+
                 conn[idx++] = zoff + yoff_n + i + 1;
                 conn[idx++] = zoff + yoff_n + i;
-                
+
                 conn[idx++] = zoff + yoff_n + i;
                 conn[idx++] = zoff + yoff + i;
 
@@ -1877,23 +2010,23 @@ braid_lines_3d(index_t npts_x,
 
                 conn[idx++] = zoff_n + yoff + i + 1;
                 conn[idx++] = zoff_n + yoff_n + i + 1;
-                
+
                 conn[idx++] = zoff_n + yoff_n + i + 1;
                 conn[idx++] = zoff_n + yoff_n + i;
-                
+
                 conn[idx++] = zoff_n + yoff_n + i;
                 conn[idx++] = zoff_n + yoff + i;
 
-                // sides 
+                // sides
                 conn[idx++] = zoff   + yoff + i;
                 conn[idx++] = zoff_n + yoff + i;
 
                 conn[idx++] = zoff   + yoff + i + 1;
                 conn[idx++] = zoff_n + yoff + i + 1;
-                
+
                 conn[idx++] = zoff   + yoff_n + i + 1;
                 conn[idx++] = zoff_n + yoff_n + i + 1;
-                
+
                 conn[idx++] = zoff   + yoff_n + i;
                 conn[idx++] = zoff_n + yoff_n + i;
 
@@ -2215,7 +2348,7 @@ braid(const std::string &mesh_type,
     index_t nele_x = npts_x -1;
     index_t nele_y = npts_y -1;
 
-    if( (nele_x == 0 || nele_y == 0) && 
+    if( (nele_x == 0 || nele_y == 0) &&
         (mesh_type != "points" && mesh_type != "points_implicit") )
     {
         // error, not enough points to create the topo
@@ -2313,13 +2446,13 @@ void julia_fill_values(index_t nx,
         {
             float64 zx = float64(i) / float64(nx-1);
             float64 zy = float64(j) / float64(ny-1);
-            
+
             zx = x_min + (x_max - x_min) * zx;
             zy = y_min + (y_max - y_min) * zy;
 
             int32 iter = 0;
             int32 max_iter = 1000;
-            
+
             while( (zx * zx) + (zy * zy ) < 4.0 && iter < max_iter)
             {
                 float64 x_temp = zx*zx - zy*zy;
@@ -2335,7 +2468,7 @@ void julia_fill_values(index_t nx,
             {
                 out[idx] = iter;
             }
-    
+
             idx++;
         }
     }
@@ -2354,14 +2487,14 @@ void julia(index_t nx,
            Node &res)
 {
     res.reset();
-    // create a rectilinear coordset 
+    // create a rectilinear coordset
     res["coordsets/coords/type"] = "rectilinear";
     res["coordsets/coords/values/x"] = DataType::float64(nx+1);
     res["coordsets/coords/values/y"] = DataType::float64(ny+1);
-    
+
     float64_array x_coords = res["coordsets/coords/values/x"].value();
-    float64_array y_coords = res["coordsets/coords/values/y"].value(); 
-    
+    float64_array y_coords = res["coordsets/coords/values/y"].value();
+
     float64 dx = (x_max - x_min) / float64(nx);
     float64 dy = (y_max - y_min) / float64(ny);
 
@@ -2371,33 +2504,291 @@ void julia(index_t nx,
         x_coords[i] = vx;
         vx+=dx;
     }
-    
-    float64 vy = x_min;
+
+    float64 vy = y_min;
     for(index_t i =0; i< ny+1; i++)
     {
         y_coords[i] = vy;
         vy+=dy;
     }
-    
+
     // create the topology
-    
+
     res["topologies/topo/type"] = "rectilinear";
     res["topologies/topo/coordset"] = "coords";
-    
-    
+
+
     // create the fields
 
     res["fields/iters/association"] = "element";
     res["fields/iters/topology"] = "topo";
     res["fields/iters/values"] = DataType::int32(nx * ny);
-    
+
     int32_array out = res["fields/iters/values"].value();
-    
+
     julia_fill_values(nx,ny,
                       x_min, x_max,
                       y_min, y_max,
                       c_re, c_im,
                       out);
+}
+
+//---------------------------------------------------------------------------//
+void julia_nestsets(index_t nx,
+                    index_t ny,
+                    float64 x_min,
+                    float64 x_max,
+                    float64 y_min,
+                    float64 y_max,
+                    float64 c_re,
+                    float64 c_im,
+                    Node &res)
+{
+  if(nx < 9)
+  {
+    CONDUIT_ERROR("julia nestsets min nx is 9");
+  }
+  if(ny < 9)
+  {
+    CONDUIT_ERROR("julia nestsets min nx is 9");
+  }
+
+  res.reset();
+  // create the top level
+  //Node &parent = res.append();
+  Node &parent = res["domain_000000"];
+  julia(nx, ny, x_min, x_max, y_min, y_max, c_re, c_im, parent);
+
+  float64_array x_coords = parent["coordsets/coords/values/x"].value();
+  float64_array y_coords = parent["coordsets/coords/values/y"].value();
+
+  // splits in the for of number of cells in each bin:
+  // 00|0|0|0|0|000 -> {2,1,1,1,1,3} always size == 6
+  // level 0:    00 00 00 000
+  // level 1:      |11|11|
+  // level 2:        2 2
+  std::vector<index_t> x_splits = nestsplits(nx);
+  std::vector<index_t> y_splits = nestsplits(ny);
+
+
+  std::vector<index_t> x_offsets;
+  std::vector<index_t> y_offsets;
+  x_offsets.resize(6);
+  y_offsets.resize(6);
+  // prefix sum for offsets
+  x_offsets[0] = 0;
+  y_offsets[0] = 0;
+  for(int i = 1; i < 6; ++i)
+  {
+    x_offsets[i] = x_splits[i-1] + x_offsets[i-1];
+    y_offsets[i] = y_splits[i-1] + y_offsets[i-1];
+  }
+
+  parent["nestsets/nest/association"] = "element";
+  parent["nestsets/nest/topology"] = "topo";
+
+  // level 1:
+  // 00 00 00 000
+  // 00 00 00 000
+  //    -----
+  // 00|11|11|000
+  // 00|11|11|000
+  //    -----
+  // 00|11|11|000
+  // 00|11|11|000
+  //    -----
+  // 00 00 00 000
+  // 00 00 00 000
+  // 00 00 00 000
+
+  // level 1 splits
+  int level_1[4][2][2] = { { {1,2}, {1,2} },
+                           { {1,2}, {3,4} },
+                           { {3,4}, {1,2} },
+                           { {3,4}, {3,4} } };
+
+  const int level_1_ratio = 2;
+  for(int i = 0; i < 4; ++i)
+  {
+    int x[2] = {level_1[i][0][0], level_1[i][0][1]};
+    int y[2] = {level_1[i][1][0], level_1[i][1][1]};
+
+    int dom_id = i + 1;
+    // create the current domain
+    std::ostringstream oss;
+    oss << "domain_" << std::setw(6) << std::setfill('0') << dom_id;
+    std::string child_name = oss.str();
+
+    index_t cnx = x_splits[x[0]] + x_splits[x[1]];
+    index_t cny = y_splits[y[0]] + y_splits[y[1]];
+    float64 cx_min = x_coords[x_offsets[x[0]]];
+    float64 cx_max = x_coords[x_offsets[x[1] + 1]];
+
+    float64 cy_min = y_coords[y_offsets[y[0]]];
+    float64 cy_max = y_coords[y_offsets[y[1] + 1]];
+
+    Node &child= res[child_name];
+
+    julia(cnx * level_1_ratio,
+          cny * level_1_ratio,
+          cx_min,
+          cx_max,
+          cy_min,
+          cy_max,
+          c_re,
+          c_im,
+          child);
+
+    child["state/domain_id"] = dom_id;
+
+    // window name in the form window_level_num
+    std::stringstream window_name;
+    window_name<<"window_1_"<<i;
+
+    Node &pwindow = parent["nestsets/nest/windows/" + window_name.str()];
+    pwindow["domain_id"] = dom_id;
+    pwindow["domain_type"] = "child";
+    pwindow["origin/i"] = x_offsets[x[0]];
+    pwindow["origin/j"] = y_offsets[y[0]];
+    pwindow["dims/i"] = cnx;
+    pwindow["dims/j"] = cny;
+    pwindow["ratio/i"] = level_1_ratio;
+    pwindow["ratio/j"] = level_1_ratio;
+
+    child["nestsets/nest/association"] = "element";
+    child["nestsets/nest/topology"] = "topo";
+    Node &cwindow = child["nestsets/nest/windows/" + window_name.str()];
+    cwindow["domain_id"] = 0;
+    cwindow["domain_type"] = "parent";
+    cwindow["origin/i"] = 0;
+    cwindow["origin/j"] = 0;
+    cwindow["dims/i"] = cnx*2;
+    cwindow["dims/j"] = cny*2;
+    cwindow["ratio/i"] = level_1_ratio;
+    cwindow["ratio/j"] = level_1_ratio;
+  }
+
+  // create the last domain
+  // level 2:
+  // 00 0 00 0  000
+  // 00 0 00 0  000
+  //   -------
+  // 00|1 11 1| 000
+  //      --
+  // 00|1|22|1| 000
+  // 00|1|22|1| 000
+  //      --
+  // 00|1 11 1| 000
+  //   -------
+  // 00 0 00 0  000
+  // 00 0 00 0  000
+  // 00 0 00 0  000
+
+  {
+    const int level_2_ratio = 4;
+    //2-3, 2-3
+    index_t cnx = x_splits[2] + x_splits[3];
+    index_t cny = y_splits[2] + y_splits[3];
+    float64 cx_min = x_coords[x_offsets[2]];
+    float64 cx_max = x_coords[x_offsets[3 + 1]];
+
+    float64 cy_min = y_coords[y_offsets[2]];
+    float64 cy_max = y_coords[y_offsets[3+ 1]];
+
+    Node &child= res["domain_000005"];
+
+    julia(cnx * level_2_ratio,
+          cny * level_2_ratio,
+          cx_min,
+          cx_max,
+          cy_min,
+          cy_max,
+          c_re,
+          c_im,
+          child);
+
+    child["nestsets/nest/association"] = "element";
+    child["nestsets/nest/topology"] = "topo";
+
+    {
+      // grand parent
+      Node &pwindow = parent["nestsets/nest/windows/window_2_0"];
+      pwindow["domain_id"] = 5;
+      pwindow["domain_type"] = "child";
+      pwindow["origin/i"] = x_offsets[2];
+      pwindow["origin/j"] = y_offsets[2];
+      pwindow["dims/i"] = cnx;
+      pwindow["dims/j"] = cny;
+      pwindow["ratio/i"] = level_2_ratio;
+      pwindow["ratio/j"] = level_2_ratio;
+    }
+
+
+    // parents
+    for(int i = 0; i < 4; ++i)
+    {
+      int x[2] = {level_1[i][0][0], level_1[i][0][1]};
+      int y[2] = {level_1[i][1][0], level_1[i][1][1]};
+
+      int dom_id = i + 1;
+      Node &direct_parent = res.child(dom_id);
+      // create the current domain
+      std::ostringstream oss;
+      oss << "domain_" << std::setw(6) << std::setfill('0') << dom_id;
+      std::string parent_name = oss.str();
+      // window name in the form window_level_num
+      oss.str("");
+      oss<<"window_2_"<<"_"<<dom_id;
+      std::string window_name = oss.str();
+
+      Node &pwindow = direct_parent["nestsets/nest/windows/" + window_name];
+      pwindow["domain_id"] = 5;
+      pwindow["domain_type"] = "child";
+      // coarse level origin
+      int orig_x = std::max(x_offsets[2] - x_offsets[x[0]], index_t(0));
+      int orig_y = std::max(y_offsets[2] - y_offsets[y[0]], index_t(0));
+      pwindow["origin/i"] = orig_x * level_1_ratio;
+      pwindow["origin/j"] = orig_y * level_1_ratio;
+
+      // find the coarse_level overlap
+      index_t pend_x = x_splits[x[0]] + x_splits[x[1]] + x_offsets[x[0]];
+      index_t pend_y = y_splits[y[0]] + y_splits[y[1]] + y_offsets[y[0]];
+      index_t cend_x = cnx + x_offsets[2];
+      index_t cend_y = cny + y_offsets[2];
+      index_t end_x = std::max(pend_x, cend_y);
+      index_t end_y = std::max(pend_y, cend_y);
+      index_t start_x = std::min(pend_x, cend_y);
+      index_t start_y = std::min(pend_y, cend_y);
+
+      int dim_x = std::min(end_x - start_x, index_t(cnx));
+      int dim_y = std::min(end_y - start_y, index_t(cny));
+      pwindow["dims/i"] = dim_x * level_1_ratio;
+      pwindow["dims/j"] = dim_y * level_1_ratio;
+
+      pwindow["ratio/i"] = level_2_ratio / level_1_ratio;
+      pwindow["ratio/j"] = level_2_ratio / level_1_ratio;
+
+      Node &cwindow = child["nestsets/nest/windows/" + window_name];
+      cwindow["domain_id"] = dom_id;
+      cwindow["domain_type"] = "parent";
+
+      orig_x = std::max(x_offsets[x[0]] - x_offsets[2], index_t(0));
+      orig_y = std::max(y_offsets[y[0]] - y_offsets[2], index_t(0));
+
+      cwindow["origin/i"] = orig_x;
+      cwindow["origin/j"] = orig_y;
+      cwindow["dims/i"] = dim_x * level_2_ratio;
+      cwindow["dims/j"] = dim_y * level_2_ratio;
+      cwindow["ratio/i"] = level_2_ratio / level_1_ratio;
+      cwindow["ratio/j"] = level_2_ratio / level_1_ratio;
+    }
+  }
+
+  for(int i = 0; i < res.number_of_children(); ++i)
+  {
+    paint_2d_nestsets(res.child(i), "topo");
+  }
+
 }
 
 
@@ -2406,10 +2797,10 @@ void spiral(index_t ndoms,
             Node &res)
 {
     res.reset();
-    
+
     int f_1 = 1;
     int f = 1;
-    
+
     float64 x = 0.0;
     float64 y = 0.0;
 
@@ -2427,13 +2818,13 @@ void spiral(index_t ndoms,
 
         Node &dom = res[domain_name];
 
-        // create a rectilinear coordset 
+        // create a rectilinear coordset
         dom["coordsets/coords/type"] = "rectilinear";
         dom["coordsets/coords/values/x"] = DataType::float64(f+1);
         dom["coordsets/coords/values/y"] = DataType::float64(f+1);
-    
+
         float64_array x_coords = dom["coordsets/coords/values/x"].value();
-        float64_array y_coords = dom["coordsets/coords/values/y"].value(); 
+        float64_array y_coords = dom["coordsets/coords/values/y"].value();
 
         float64 xv = x;
         float64 yv = y;
@@ -2450,17 +2841,17 @@ void spiral(index_t ndoms,
         dom["topologies/topo/type"] = "rectilinear";
         dom["topologies/topo/coordset"] = "coords";
         // todo, add topo logical origin
-    
-    
+
+
         // create the fields
         dom["fields/dist/association"] = "vertex";
         dom["fields/dist/topology"] = "topo";
         dom["fields/dist/values"] = DataType::float64((f+1) * (f+1));
-    
+
         float64_array dist_vals = dom["fields/dist/values"].value();
 
         index_t idx = 0;
-        // fill the scalar with approx dist to spiral 
+        // fill the scalar with approx dist to spiral
         yv = y;
 
         for(int j=0; j < f+1; j++)
@@ -2476,8 +2867,8 @@ void spiral(index_t ndoms,
             }
             yv+=1;
         }
-    
-        // setup for next domain using one of 4 rotation cases 
+
+        // setup for next domain using one of 4 rotation cases
         switch(rot_case)
         {
             case 0:
@@ -2520,7 +2911,7 @@ void spiral(index_t ndoms,
         }
         // update the rotate case
         rot_case =  (rot_case +1) % 4;
-            
+
         // calc next fib #
         // domain id is one less than the fib #
         if( (d+1) > 1)
