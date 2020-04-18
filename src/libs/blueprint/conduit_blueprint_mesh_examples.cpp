@@ -2755,9 +2755,9 @@ void julia_nestsets(index_t nx,
       index_t pend_y = y_splits[y[0]] + y_splits[y[1]] + y_offsets[y[0]];
       index_t cend_x = cnx + x_offsets[2];
       index_t cend_y = cny + y_offsets[2];
-      index_t end_x = std::max(pend_x, cend_y);
+      index_t end_x = std::max(pend_x, cend_x);
       index_t end_y = std::max(pend_y, cend_y);
-      index_t start_x = std::min(pend_x, cend_y);
+      index_t start_x = std::min(pend_x, cend_x);
       index_t start_y = std::min(pend_y, cend_y);
 
       int dim_x = std::min(end_x - start_x, index_t(cnx));
@@ -2783,6 +2783,62 @@ void julia_nestsets(index_t nx,
       cwindow["ratio/j"] = level_2_ratio / level_1_ratio;
     }
   }
+
+  for(int i = 0; i < res.number_of_children(); ++i)
+  {
+    paint_2d_nestsets(res.child(i), "topo");
+  }
+
+}
+
+//---------------------------------------------------------------------------//
+void julia_nestsets(float64 x_min,
+                    float64 x_max,
+                    float64 y_min,
+                    float64 y_max,
+                    float64 c_re,
+                    float64 c_im,
+                    Node &res)
+{
+  res.reset();
+  // create the top level
+  Node &parent = res["domain_000000"];
+  julia(8, 8, x_min, x_max, y_min, y_max, c_re, c_im, parent);
+
+  float64_array x_coords = parent["coordsets/coords/values/x"].value();
+  float64_array y_coords = parent["coordsets/coords/values/y"].value();
+
+  float64 c_x_min= x_coords[2];
+  float64 c_x_max= x_coords[6];
+  float64 c_y_min= y_coords[2];
+  float64 c_y_max= y_coords[6];
+  Node &child = res["domain_000001"];
+  julia(8, 8, c_x_min, c_x_max, c_y_min, c_y_max, c_re, c_im, child);
+
+  parent["nestsets/nest/association"] = "element";
+  parent["nestsets/nest/topology"] = "topo";
+
+  Node &pwindow = parent["nestsets/nest/windows/window_0_1"];
+  pwindow["domain_id"] = 0;
+  pwindow["domain_type"] = "child";
+  pwindow["origin/i"] = 2;
+  pwindow["origin/j"] = 2;
+  pwindow["dims/i"] = 4;
+  pwindow["dims/j"] = 4;
+  pwindow["ratio/i"] = 2;
+  pwindow["ratio/j"] = 2;
+
+  child["nestsets/nest/association"] = "element";
+  child["nestsets/nest/topology"] = "topo";
+  Node &cwindow = child["nestsets/nest/windows/window_1_0"];
+  cwindow["domain_id"] = 0;
+  cwindow["domain_type"] = "parent";
+  cwindow["origin/i"] = 0;
+  cwindow["origin/j"] = 0;
+  cwindow["dims/i"] = 8;
+  cwindow["dims/j"] = 8;
+  cwindow["ratio/i"] = 2;
+  cwindow["ratio/j"] = 2;
 
   for(int i = 0; i < res.number_of_children(); ++i)
   {

@@ -506,6 +506,44 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
 
 #endif
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, mesh_julia_simple_nestset)
+{
+
+    Node mesh;
+
+    Node res;
+    blueprint::mesh::examples::julia_nestsets(-2.0,  2.0, // x range
+                                              -2.0,  2.0, // y range
+                                              0.285, 0.01, // c value
+                                              res["simple_nestset"]);
+
+    int ndoms = res["simple_nestset"].number_of_children();
+
+    Node info;
+    if(!blueprint::mesh::verify(res["simple_nestset"],info))
+    {
+      info.print();
+    }
+
+    blueprint::mesh::generate_index(res["simple_nestset/domain_000000"],
+                                    "",
+                                    ndoms,
+                                    res["blueprint_index/simple_nestset"]);
+
+    // save json
+    res["protocol/name"] = "json";
+    res["protocol/version"] = PROTOCOL_VER;
+
+    res["number_of_files"] = 1;
+    res["number_of_trees"] = ndoms;
+    res["file_pattern"] = "simple_nestset.blueprint_root";
+    res["tree_pattern"] = "simple_nestset/domain_%06d";
+
+    CONDUIT_INFO("Creating: simple_nestset.blueprint_root")
+    relay::io::save(res,"simple_nestset.blueprint_root","json");
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
 {
 
@@ -517,10 +555,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
                                               -2.0,  2.0, // y range
                                               0.285, 0.01, // c value
                                               res["matt"]);
-    //relay::io_blueprint::save(res, "matt.blueprint_root");
-    std::vector<std::string> names = res["matt"].child_names();
-    std::vector<std::string> root_names;
-    int ndoms = names.size();
+
+    int ndoms = res["matt"].number_of_children();
 
     Node info;
     if(!blueprint::mesh::verify(res["matt"],info))
