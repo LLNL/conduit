@@ -2819,7 +2819,7 @@ void julia_nestsets(float64 x_min,
   parent["nestsets/nest/topology"] = "topo";
 
   Node &pwindow = parent["nestsets/nest/windows/window_0_1"];
-  pwindow["domain_id"] = 0;
+  pwindow["domain_id"] = 1;
   pwindow["domain_type"] = "child";
   pwindow["origin/i"] = 2;
   pwindow["origin/j"] = 2;
