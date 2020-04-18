@@ -59,7 +59,9 @@ endforeach()
 
 if(MPI_FOUND)
     foreach(TEST ${PYTHON_MODULE_MPI_TESTS})
-        add_python_mpi_test(${TEST} NUM_MPI_TASKS 2)
+        add_python_mpi_test(TEST ${TEST}
+                            NUM_MPI_TASKS 2)
+                            # FOLDER tests/relay/python)
     endforeach()
 endif()
 

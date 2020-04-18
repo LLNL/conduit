@@ -123,6 +123,26 @@ For both point to point and collectives, here is the basic logic for how input N
 
 
 
+Python Relay MPI Module
+------------------------
+
+Relay MPI is supported in Python via the conduit.relay.mpi module.
+Methods take Fortran-style MPI communicator handles which are effectively integers.
+(We hope to also support direct use of `mpi4py` communicator objects in the future.)
+
+Use the following to get a handle from an `mpi4py` communicator:
+ 
+.. code-block:: python
+
+    comm_id   = MPI.COMM_WORLD.py2f()
+
+
+Here is a basic send/receive example:
+
+.. code-block:: python    
+
+
+
 ..  
 ..
 ..  ================== ====================================

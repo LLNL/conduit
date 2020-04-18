@@ -79,7 +79,6 @@ class Test_Relay_MPI_Module(unittest.TestCase):
         self.assertEqual(size,MPI.COMM_WORLD.size)
 
     def test_send_recv_using_schema(self):
-        return
         n = conduit.Node()
         comm_id = MPI.COMM_WORLD.py2f()
         rank    = relay.mpi.rank(comm_id)

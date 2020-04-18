@@ -223,6 +223,13 @@ PyRelay_MPI_Request_init(PyRelay_MPI_Request * /*self*/) // self unused
     return 0;
 }
 
+//---------------------------------------------------------------------------//
+static Request *
+PyRelay_MPI_Request_request_pointer(PyRelay_MPI_Request *py_req)
+{
+   return &py_req->request;
+}
+
 //----------------------------------------------------------------------------//
 // Request methods table
 //----------------------------------------------------------------------------//
@@ -288,13 +295,11 @@ static PyTypeObject PyRelay_MPI_Request_TYPE = {
 
 
 //---------------------------------------------------------------------------//
-// uncomment when we need to use
-//---------------------------------------------------------------------------//
-// static int
-// PyRelay_MPI_Request_Check(PyObject* obj)
-// {
-//     return (PyObject_TypeCheck(obj, &PyRelay_MPI_Request_TYPE));
-// }
+static int
+PyRelay_MPI_Request_Check(PyObject* obj)
+{
+    return (PyObject_TypeCheck(obj, &PyRelay_MPI_Request_TYPE));
+}
 
 
 //-----------------------------------------------------------------------------
@@ -636,7 +641,7 @@ std::cout << "PyRelay_MPI_recv_using_schema" << std::endl;
 
     try
     {
-        relay::mpi::recv(node, source, tag, comm);
+        relay::mpi::recv_using_schema(node, source, tag, comm);
     }
     catch(conduit::Error e)
     {
@@ -1283,22 +1288,176 @@ PyRelay_MPI_prod_all_reduce(PyObject *, //self
 // TODO: Async MPI Send Recv
 //-----------------------------------------------------------------------------
 //
-// //-----------------------------------------------------------------------------
-// /// Async MPI Send Recv
-// //-----------------------------------------------------------------------------
-//
-//     int CONDUIT_RELAY_API isend(const Node &node,
-//                                 int dest,
-//                                 int tag,
-//                                 MPI_Comm mpi_comm,
-//                                 Request *request);
-//
+
+//-----------------------------------------------------------------------------
+/// Async MPI Send Recv
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+// conduit::relay::mpi::isend
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyRelay_MPI_isend(PyObject *, //self
+                  PyObject *args,
+                  PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    Py_ssize_t  dest;
+    Py_ssize_t  tag;
+    Py_ssize_t  mpi_comm_id;
+    PyObject   *py_mpi_request = NULL;
+
+    // TODO: future also accept mpi4py comm
+
+    static const char *kwlist[] = {"node",
+                                   "dest",
+                                   "tag",
+                                   "comm",
+                                   "request",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "OnnnO",
+                                     const_cast<char**>(kwlist),
+                                     &py_node,
+                                     &dest,
+                                     &tag,
+                                     &mpi_comm_id,
+                                     &py_mpi_request))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'node' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    if(!PyRelay_MPI_Request_Check(py_mpi_request))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'request' argument must be a "
+                        "conduit.relay.mpi Request instance");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    Request *request = PyRelay_MPI_Request_request_pointer((PyRelay_MPI_Request*)py_mpi_request);
+
+    // get c mpi comm hnd
+    MPI_Comm comm = MPI_Comm_f2c(mpi_comm_id);
+
+    try
+    {
+        relay::mpi::isend(node,
+                          dest,
+                          tag,
+                          comm,
+                          request);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
+
+
 //     int CONDUIT_RELAY_API irecv(Node &node,
 //                                 int src,
 //                                 int tag,
 //                                 MPI_Comm comm,
 //                                 Request *request);
-//
+
+
+//---------------------------------------------------------------------------//
+// conduit::relay::mpi::irecv
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyRelay_MPI_irecv(PyObject *, //self
+                  PyObject *args,
+                  PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+    Py_ssize_t  source;
+    Py_ssize_t  tag;
+    Py_ssize_t  mpi_comm_id;
+    PyObject   *py_mpi_request = NULL;
+
+    // TODO: future also accept mpi4py comm
+
+    static const char *kwlist[] = {"node",
+                                   "source",
+                                   "tag",
+                                   "comm",
+                                   "request",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "OnnnO",
+                                     const_cast<char**>(kwlist),
+                                     &py_node,
+                                     &source,
+                                     &tag,
+                                     &mpi_comm_id,
+                                     &py_mpi_request))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'node' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    if(!PyRelay_MPI_Request_Check(py_mpi_request))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'request' argument must be a "
+                        "conduit.relay.mpi Request instance");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    Request *request = PyRelay_MPI_Request_request_pointer((PyRelay_MPI_Request*)py_mpi_request);
+
+    // get c mpi comm hnd
+    MPI_Comm comm = MPI_Comm_f2c(mpi_comm_id);
+
+    try
+    {
+        relay::mpi::irecv(node,
+                          source,
+                          tag,
+                          comm,
+                          request);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_Exception,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
+
 //     int CONDUIT_RELAY_API wait_send(Request *request,
 //                                     MPI_Status *status);
 //
@@ -1721,9 +1880,10 @@ PyRelay_MPI_broadcast_using_schema(PyObject *, //self
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
 
-// TODO: Future Support:
-// reduce
-// all_reduce
+// TODO: Future Support ?
+// reduce (generic, reduce op as arg)
+// all_reduce (generic, reduce op as arg)
+
 // isend
 // irecv
 // wait_send
@@ -1823,6 +1983,15 @@ static PyMethodDef relay_mpi_python_funcs[] =
      (PyCFunction)PyRelay_MPI_broadcast_using_schema,
       METH_VARARGS | METH_KEYWORDS,
       "MPI Broadcast a Conduit Node and its Schema"},
+     // -- isend + irecv ---
+    {"isend",
+     (PyCFunction)PyRelay_MPI_send,
+      METH_VARARGS | METH_KEYWORDS,
+      "Send Conduit Node via MPI ISend"},
+    {"irecv",
+     (PyCFunction)PyRelay_MPI_send,
+      METH_VARARGS | METH_KEYWORDS,
+      "Receive Conduit Node via MPI IRecv"},
     //-----------------------------------------------------------------------//
     // end relay mpi methods table
     //-----------------------------------------------------------------------//

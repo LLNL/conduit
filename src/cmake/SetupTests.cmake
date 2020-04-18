@@ -151,12 +151,12 @@ function(add_python_test )
     if(DEFINED ENV{PYTHONPATH})
         set(py_path "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
     endif()
-    set_property(TEST ${TEST}
+    set_property(TEST ${args_TEST}
                  PROPERTY
                  ENVIRONMENT "PYTHONPATH=${py_path}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
     if(WIN32)
         # proper path to dlls for vstudio and proper path for non config based gen (nmake, etc)
-        set_property(TEST ${TEST}
+        set_property(TEST ${args_TEST}
                      APPEND
                      PROPERTY
                      ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
@@ -174,58 +174,67 @@ endfunction(add_python_test)
 ##
 ## add_python_mpi_test( TEST test NUM_MPI_TASKS 2 )
 ##------------------------------------------------------------------------------
-function(add_python_mpi_test TEST)
+function(add_python_mpi_test)
 
     set(options)
-    set(singleValueArgs NUM_MPI_TASKS)
+    set(singleValueArgs TEST NUM_MPI_TASKS FOLDER)
 
     # parse our arguments
-    cmake_parse_arguments(arg
+    cmake_parse_arguments(args
                          "${options}"
                          "${singleValueArgs}"
                          "${multiValueArgs}" ${ARGN} )
 
-    message(STATUS " [*] Adding Python-based MPI Unit Test: ${TEST}")
-    set(test_command ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
+    message(STATUS " [*] Adding Python-based MPI Unit Test: ${args_TEST}")
+    set(test_command ${PYTHON_EXECUTABLE} -B -m unittest -v ${args_TEST})
 
     # Handle mpi
-    if ( ${arg_NUM_MPI_TASKS} )
-          set(test_command ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${arg_NUM_MPI_TASKS} ${test_command} )
+    if ( ${args_NUM_MPI_TASKS} )
+          set(test_command ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${args_NUM_MPI_TASKS} ${test_command} )
     endif()
 
-    add_test(NAME ${TEST}
+    add_test(NAME ${args_TEST}
              COMMAND ${test_command} )
 
-     # make sure python can pick up the modules we built
-     # use proper env var path sep for current platform
-     if(WIN32)
-         set(ENV_PATH_SEP "\\;")
-     else()
-         set(ENV_PATH_SEP ":")
-     endif()
+    # use proper env var path sep for current platform
+    if(WIN32)
+        set(ENV_PATH_SEP "\\;")
+    else()
+        set(ENV_PATH_SEP ":")
+    endif()
+    # make sure python can pick up the modules we built
+    # if python path is already set -- we need to append to it
+    # this is important for running in spack's build-env
+    set(py_path "")
+    if(DEFINED ENV{PYTHONPATH})
+        set(py_path "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
+    endif()
 
-     # if python path is already set -- we need to append to it
-     # this is important for running in spack's build-env
-     set(PYTHON_TEST_PATH "")
+    set_property(TEST ${args_TEST}
+                 PROPERTY
+                 ENVIRONMENT "PYTHONPATH=${py_path}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
+    if(WIN32)
+        # proper path to dlls for vstudio and proper path for non config based gen (nmake, etc)
+        set_property(TEST ${args_TEST}
+                     APPEND
+                     PROPERTY
+                     ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
+    endif()
 
-     if(DEFINED ENV{PYTHONPATH})
-       set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
-     endif()
+    ###########################################################################
+    # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
+    # to run with more tasks than actual cores
+    # Since this is an OpenMPI specific env var, it shouldn't interfere
+    # with other mpi implementations.
+    ###########################################################################
+    set_property(TEST ${args_TEST}
+                 APPEND
+                 PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
 
-     set(PYTHON_TEST_PATH "${PYTHON_TEST_PATH}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
-     if(EXTRA_PYTHON_MODULE_DIRS)
-         set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
-     endif()
-     set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
-
-     ###########################################################################
-     # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
-     # to run with more tasks than actual cores
-     # Since this is an OpenMPI specific env var, it shouldn't interfere
-     # with other mpi implementations.
-     ###########################################################################
-     set_property(TEST ${arg_TEST}
-                  PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
+    # set folder if passed
+    if( DEFINED args_FOLDER )
+        blt_set_target_folder(TARGET ${args_TEST} FOLDER ${args_FOLDER})
+    endif()
 
 endfunction()
 
