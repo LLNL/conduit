@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2014-2020, Lawrence Livermore National Security, LLC.
 # 
 # Produced at the Lawrence Livermore National Laboratory
 # 
@@ -42,24 +42,12 @@
 # 
 ###############################################################################
 
-####################################
-# Add Python Module Tests
-####################################
-set(PYTHON_MODULE_TESTS t_python_relay_smoke
-                        t_python_relay_io
-                        t_python_relay_io_handle
-                        t_python_relay_web)
+###############################################################################
+# file: __init__.py
+# Purpose: Main init for the conduit relay mpi module.
+###############################################################################
+from .conduit_relay_mpi_python import *
 
-set(PYTHON_MODULE_MPI_TESTS t_python_relay_mpi)
 
-foreach(TEST ${PYTHON_MODULE_TESTS})
-    add_python_test(TEST ${TEST}
-                    FOLDER tests/relay/python)
-endforeach()
 
-if(MPI_FOUND)
-    foreach(TEST ${PYTHON_MODULE_MPI_TESTS})
-        add_python_mpi_test(${TEST} NUM_MPI_TASKS 2)
-    endforeach()
-endif()
 

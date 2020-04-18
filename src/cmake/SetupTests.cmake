@@ -169,6 +169,65 @@ function(add_python_test )
 
 endfunction(add_python_test)
 
+##------------------------------------------------------------------------------
+## - Builds and adds a test that uses python and mpi
+##
+## add_python_mpi_test( TEST test NUM_MPI_TASKS 2 )
+##------------------------------------------------------------------------------
+function(add_python_mpi_test TEST)
+
+    set(options)
+    set(singleValueArgs NUM_MPI_TASKS)
+
+    # parse our arguments
+    cmake_parse_arguments(arg
+                         "${options}"
+                         "${singleValueArgs}"
+                         "${multiValueArgs}" ${ARGN} )
+
+    message(STATUS " [*] Adding Python-based MPI Unit Test: ${TEST}")
+    set(test_command ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
+
+    # Handle mpi
+    if ( ${arg_NUM_MPI_TASKS} )
+          set(test_command ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${arg_NUM_MPI_TASKS} ${test_command} )
+    endif()
+
+    add_test(NAME ${TEST}
+             COMMAND ${test_command} )
+
+     # make sure python can pick up the modules we built
+     # use proper env var path sep for current platform
+     if(WIN32)
+         set(ENV_PATH_SEP "\\;")
+     else()
+         set(ENV_PATH_SEP ":")
+     endif()
+
+     # if python path is already set -- we need to append to it
+     # this is important for running in spack's build-env
+     set(PYTHON_TEST_PATH "")
+
+     if(DEFINED ENV{PYTHONPATH})
+       set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
+     endif()
+
+     set(PYTHON_TEST_PATH "${PYTHON_TEST_PATH}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
+     if(EXTRA_PYTHON_MODULE_DIRS)
+         set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
+     endif()
+     set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+
+     ###########################################################################
+     # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
+     # to run with more tasks than actual cores
+     # Since this is an OpenMPI specific env var, it shouldn't interfere
+     # with other mpi implementations.
+     ###########################################################################
+     set_property(TEST ${arg_TEST}
+                  PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
+
+endfunction()
 
 ##------------------------------------------------------------------------------
 ## - Adds a fortran based unit test
