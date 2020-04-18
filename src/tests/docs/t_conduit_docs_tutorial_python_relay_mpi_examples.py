@@ -67,7 +67,7 @@ def END_EXAMPLE(tag):
 class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
 
     def test_001_mpi_send_and_recv_using_schema(self):
-        BEGIN_EXAMPLE('py_mpi_send_and_recv_using_schema')
+        BEGIN_EXAMPLE("py_mpi_send_and_recv_using_schema")
         import conduit
         import conduit.relay as relay
         import conduit.relay.mpi
@@ -102,11 +102,11 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         if comm_rank == 1:
             print("[rank: {}] received: {}".format(comm_rank,n.to_yaml()))
 
-        END_EXAMPLE('py_mpi_send_and_recv_using_schema')
+        END_EXAMPLE("py_mpi_send_and_recv_using_schema")
 
 
     def test_002_mpi_send_and_recv(self):
-        BEGIN_EXAMPLE('py_mpi_send_and_recv')
+        BEGIN_EXAMPLE("py_mpi_send_and_recv")
         import conduit
         import conduit.relay as relay
         import conduit.relay.mpi
@@ -142,10 +142,10 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         if comm_rank == 1:
             print("[rank: {}] received: {}".format(comm_rank,n.to_yaml()))
 
-        END_EXAMPLE('py_mpi_send_and_recv')
+        END_EXAMPLE("py_mpi_send_and_recv")
 
     def test_003_mpi_bcast_using_schema(self):
-        BEGIN_EXAMPLE('py_mpi_bcast_using_schema')
+        BEGIN_EXAMPLE("py_mpi_bcast_using_schema")
         import conduit
         import conduit.relay as relay
         import conduit.relay.mpi
@@ -177,10 +177,10 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         if comm_rank == 1:
             print("[rank: {}] received: {}".format(comm_rank,n.to_yaml()))
 
-        END_EXAMPLE('py_mpi_bcast_using_schema')
+        END_EXAMPLE("py_mpi_bcast_using_schema")
 
     def test_004_mpi_bcast_using_schema(self):
-        BEGIN_EXAMPLE('py_mpi_bcast')
+        BEGIN_EXAMPLE("py_mpi_bcast")
         import conduit
         import conduit.relay as relay
         import conduit.relay.mpi
@@ -213,16 +213,14 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         if comm_rank == 1:
             print("[rank: {}] received: {}".format(comm_rank,n.to_yaml()))
 
-        END_EXAMPLE('py_mpi_bcast')
+        END_EXAMPLE("py_mpi_bcast")
 
     def test_005_mpi_sum_all_reduce(self):
-        BEGIN_EXAMPLE('py_mpi_sum_all_reduce')
+        BEGIN_EXAMPLE("py_mpi_sum_all_reduce")
         import conduit
         import conduit.relay as relay
         import conduit.relay.mpi
         from mpi4py import MPI
-
-        # Note: example expects 2 mpi tasks
 
         # get a comm id from mpi4py world comm
         comm_id   = MPI.COMM_WORLD.py2f()
@@ -230,8 +228,8 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         comm_rank = relay.mpi.rank(comm_id)
         comm_size = relay.mpi.size(comm_id)
 
-        # send data from a node on rank 0 to rank 1
-        # (both ranks have nodes with compatible schemas)
+        # gather data all ranks
+        # (ranks have nodes with compatible schemas)
         n = conduit.Node(conduit.DataType.int64(4))
         n_res = conduit.Node(conduit.DataType.int64(4))
         # data to reduce
@@ -245,5 +243,31 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
         if comm_rank == 0:
             print("[rank: {}] sum reduce result: {}".format(comm_rank,n_res.to_yaml()))
 
-        END_EXAMPLE('py_mpi_sum_all_reduce')
+        END_EXAMPLE("py_mpi_sum_all_reduce")
 
+    def test_006_mpi_all_gather(self):
+        BEGIN_EXAMPLE("py_mpi_all_gather_using_schema")
+        import conduit
+        import conduit.relay as relay
+        import conduit.relay.mpi
+        from mpi4py import MPI
+
+        # get a comm id from mpi4py world comm
+        comm_id   = MPI.COMM_WORLD.py2f()
+        # get our rank and the comm's size
+        comm_rank = relay.mpi.rank(comm_id)
+        comm_size = relay.mpi.size(comm_id)
+
+        n = conduit.Node(conduit.DataType.int64(4))
+        n_res = conduit.Node()
+        # data to gather
+        vals = n.value()
+        for i in range(4):
+            vals[i] = comm_rank
+
+        relay.mpi.all_gather_using_schema(n,n_res,comm=comm_id)
+        # show result on rank 0
+        if comm_rank == 0:
+            print("[rank: {}] all gather using schema result: {}".format(comm_rank,n_res.to_yaml()))
+
+        END_EXAMPLE("py_mpi_all_gather_using_schema")
