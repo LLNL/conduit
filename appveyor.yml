@@ -56,15 +56,16 @@ install:
   - conda install numpy
   # try to import numpy to as conda gut-check
   - python -c "import numpy as n; print(n.__version__); print(n.get_include());"
+  # try to import numpy to as conda gut-check
   # Install MS-MPI
   - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
   - MSMpiSetup.exe -unattend
   - set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
-  # install mpi4py, compat with msmpi?
-  - conda install mpi4py
   # Install MS-MPI SDK
   - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
   - msmpisdk.msi /passive
+  # install mpi4py
+  - pip install mpi4py
   
   # Install CMake 3.9
   ############################################################################
