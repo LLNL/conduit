@@ -210,7 +210,7 @@ void paint_2d_nestsets(conduit::Node &domain,
 
   const int32 field_size = el_dims[0] * el_dims[1];
 
-  Node &levels_field = domain["fields/levels_below"];
+  Node &levels_field = domain["fields/mask"];
   levels_field["association"] = "element";
   levels_field["topology"] = topo_name;
   levels_field["values"] = DataType::int32(field_size);
@@ -2709,20 +2709,6 @@ void julia_nestsets(index_t nx,
 
     child["nestsets/nest/association"] = "element";
     child["nestsets/nest/topology"] = "topo";
-
-    {
-      // grand parent
-      Node &pwindow = parent["nestsets/nest/windows/window_2_0"];
-      pwindow["domain_id"] = 5;
-      pwindow["domain_type"] = "child";
-      pwindow["origin/i"] = x_offsets[2];
-      pwindow["origin/j"] = y_offsets[2];
-      pwindow["dims/i"] = cnx;
-      pwindow["dims/j"] = cny;
-      pwindow["ratio/i"] = level_2_ratio;
-      pwindow["ratio/j"] = level_2_ratio;
-    }
-
 
     // parents
     for(int i = 0; i < 4; ++i)
