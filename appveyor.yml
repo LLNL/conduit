@@ -60,7 +60,8 @@ install:
   - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
   - MSMpiSetup.exe -unattend
   - set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
-
+  # install mpi4py, compat with msmpi?
+  - conda install mpi4py
   # Install MS-MPI SDK
   - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
   - msmpisdk.msi /passive
