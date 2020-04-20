@@ -123,6 +123,153 @@ For both point to point and collectives, here is the basic logic for how input N
 
 
 
+Python Relay MPI Module
+------------------------
+
+Relay MPI is supported in Python via the conduit.relay.mpi module.
+Methods take Fortran-style MPI communicator handles which are effectively integers.
+(We hope to also support direct use of `mpi4py` communicator objects in the future.)
+
+Use the following to get a handle from the `mpi4py` world communicator:
+ 
+.. code-block:: python
+
+    from mpi4py import MPI
+    comm_id   = MPI.COMM_WORLD.py2f()
+
+
+Python Relay MPI Module Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Send and Receive Using Schema
+++++++++++++++++++++++++++++++
+
+* **Python Source:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
+   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv_using_schema")
+   :end-before: END_EXAMPLE("py_mpi_send_and_recv_using_schema")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv_using_schema")
+   :end-before: END_EXAMPLE("py_mpi_send_and_recv_using_schema")
+   :dedent: 4
+   
+
+Send and Receive
+++++++++++++++++++
+
+* **Python Source:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
+   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv"))
+   :end-before: END_EXAMPLE("py_mpi_send_and_recv")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv"))
+   :end-before: END_EXAMPLE("py_mpi_send_and_recv")
+   :dedent: 4
+
+Send and Receive
+++++++++++++++++++
+
+* **Python Source:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
+   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv")
+   :end-before: END_EXAMPLE("py_mpi_send_and_recv")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv")
+   :end-before: END_EXAMPLE("py_mpi_send_and_recv")
+   :dedent: 4
+
+Sum All Reduce
+++++++++++++++++++
+
+* **Python Source:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
+   :start-after: BEGIN_EXAMPLE("py_mpi_sum_all_reduce")
+   :end-before: END_EXAMPLE("py_mpi_sum_all_reduce")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_sum_all_reduce")
+   :end-before: END_EXAMPLE("py_mpi_sum_all_reduce")
+   :dedent: 4
+
+Broadcast Using Schema
++++++++++++++++++++++++
+
+* **Python Source:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
+   :start-after: BEGIN_EXAMPLE("py_mpi_bcast_using_schema")
+   :end-before: END_EXAMPLE("py_mpi_bcast_using_schema")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_bcast_using_schema")
+   :end-before: END_EXAMPLE("py_mpi_bcast_using_schema")
+   :dedent: 4
+
+
+Broadcast 
++++++++++++
+
+* **Python Source:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
+   :start-after: BEGIN_EXAMPLE("py_mpi_bcast"))
+   :end-before: END_EXAMPLE("py_mpi_bcast")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_bcast"))
+   :end-before: END_EXAMPLE("py_mpi_bcast")
+   :dedent: 4
+
+
+All Gather Using Schema 
+++++++++++++++++++++++++
+
+* **Python Source:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
+   :start-after: BEGIN_EXAMPLE("py_mpi_all_gather_using_schema")
+   :end-before: END_EXAMPLE("py_mpi_all_gather_using_schema")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_all_gather_using_schema")
+   :end-before: END_EXAMPLE("py_mpi_all_gather_using_schema")
+   :dedent: 4
+
 ..  
 ..
 ..  ================== ====================================

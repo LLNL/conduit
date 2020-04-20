@@ -50,6 +50,7 @@ from .conduit_relay_python import *
 
 from . import io
 from . import web
+from . import mpi
 
 
 

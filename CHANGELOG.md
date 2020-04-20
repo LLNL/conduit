@@ -17,6 +17,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Added an open mode option to RelayIOHandle. See RelayIOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
+- Added the conduit.relay.mpi Python module to support Relay MPI in Python.
 
 ### Fixed
 
