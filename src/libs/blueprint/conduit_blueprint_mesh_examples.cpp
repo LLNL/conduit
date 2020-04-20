@@ -2846,6 +2846,19 @@ void inflection_scanner(const std::vector<int32> &values,
 struct AABB
 {
   index_t box[4];
+
+  index_t size()
+  {
+    return (box[1] - box[0] + 1) * (box[3] - box[2] + 1);
+  }
+
+  void print()
+  {
+
+    std::cout<<"size "<<size()<<" "
+              <<"("<<box[0]<<","<<box[2]<<") - "
+              <<"("<<box[1]<<","<<box[3]<<")\n";
+  }
 };
 
 void
@@ -2901,13 +2914,15 @@ sub_boxs(const std::vector<int32> &flags,
     index_t subsize = (aabb[1] - aabb[0] + 1) *  (aabb[3] - aabb[2] + 1);
     float64 efficiency = float64(flag_count) / float64(subsize);
     std::cout<<"count "<<flag_count<<"\n";
-    std::cout<<"box "<<current_aabb.box[0]<<" "<<current_aabb.box[1]<<" "<<current_aabb.box[2]<<" "<<current_aabb.box[3]<<"\n";
+    std::cout<<"box "; current_aabb.print();
     std::cout<<"sub box "<<aabb[0]<<" "<<aabb[1]<<" "<<aabb[2]<<" "<<aabb[3]<<"\n";
     std::cout<<"sub size "<<subsize<<"\n";
     std::cout<<"efficiency "<<efficiency<<"\n";
-    if(efficiency > .80)
+    if(efficiency > .90)
     {
-      refined.push_back(current_aabb);
+      AABB final_box = {{aabb[0], aabb[1], aabb[2], aabb[3]}};
+      std::cout<<"### accepted "; final_box.print();
+      refined.push_back(final_box);
       aabbs.pop();
       continue;
     }
@@ -2951,8 +2966,8 @@ sub_boxs(const std::vector<int32> &flags,
         right.box[3] = aabb[3];
       }
       std::cout<<"GAP SPLIT\n";
-      std::cout<<"left "<<left.box[0]<<" "<<left.box[1]<<" "<<left.box[2]<<" "<<left.box[3]<<"\n";
-      std::cout<<"right "<<right.box[0]<<" "<<right.box[1]<<" "<<right.box[2]<<" "<<right.box[3]<<"\n";
+      std::cout<<"left "; left.print();
+      std::cout<<"right "; right.print();
       aabbs.pop();
       aabbs.push(left);
       aabbs.push(right);
@@ -3002,6 +3017,8 @@ sub_boxs(const std::vector<int32> &flags,
       }
 
       std::cout<<"INFLECTION SPLIT\n";
+      std::cout<<"left "; left.print();
+      std::cout<<"right "; right.print();
       aabbs.pop();
       aabbs.push(left);
       aabbs.push(right);
@@ -3042,8 +3059,8 @@ sub_boxs(const std::vector<int32> &flags,
       right.box[3] = aabb[3];
     }
     std::cout<<"Default_SPLIT\n";
-     std::cout<<"left "<<left.box[0]<<" "<<left.box[1]<<" "<<left.box[2]<<" "<<left.box[3]<<"\n";
-     std::cout<<"right "<<right.box[0]<<" "<<right.box[1]<<" "<<right.box[2]<<" "<<right.box[3]<<"\n";
+    std::cout<<"left "; left.print();
+    std::cout<<"right "; right.print();
     aabbs.pop();
     aabbs.push(left);
     aabbs.push(right);
@@ -3071,7 +3088,7 @@ void julia_nestsets2(index_t nx,
 
   int32_array iters = parent["fields/iters/values"].value();
 
-  const int32 threshold = 30;
+  const int32 threshold = 10;
   std::vector<int32> flags(nx*ny);
 
   for(index_t i = 0; i < nx*ny; ++i)
@@ -3091,23 +3108,26 @@ void julia_nestsets2(index_t nx,
   std::vector<AABB> boxs;
   sub_boxs(flags, nx, ny, boxs);
 
+  int domain_id = 1;
   for(index_t i = 0; i < boxs.size(); ++i)
   {
     // create the current domain
     std::ostringstream oss;
-    oss << "domain_" << std::setw(6) << std::setfill('0') << i + 1;
+    oss << "domain_" << std::setw(6) << std::setfill('0') << domain_id;
     std::string domain_name = oss.str();
+    domain_id++;
 
     Node &dom = res[domain_name];
     AABB aabb = boxs[i];
+    aabb.print();
 
     index_t cnx = aabb.box[1] - aabb.box[0] + 1;
     index_t cny = aabb.box[3] - aabb.box[2] + 1;
     float64 cx_min = x_coords[aabb.box[0]];
-    float64 cx_max = x_coords[aabb.box[1]];
+    float64 cx_max = x_coords[aabb.box[1]+1];
 
     float64 cy_min = y_coords[aabb.box[2]];
-    float64 cy_max = y_coords[aabb.box[3]];
+    float64 cy_max = y_coords[aabb.box[3]+1];
 
     julia(cnx * 2,
           cny * 2,
