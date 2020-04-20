@@ -2863,7 +2863,7 @@ adjset_uniform(Node &res)
     for(index_t i = 0; i < 8; i++)
     {
         std::ostringstream oss;
-        oss << "domain" << i;
+        oss << "domain_" << std::setfill('0') << std::setw(6) << i;
         const std::string domain_name = oss.str();
 
         Node &domain_node = res[domain_name];
@@ -2883,6 +2883,18 @@ adjset_uniform(Node &res)
         domain_topo["elements/origin/j0"].set_int32(20*(i%2));
         domain_topo["type"].set_string("uniform");
         domain_topo["coordset"].set_string("coords");
+
+        // add a simple field that has the domain id
+        Node &domain_field = domain_node["fields/id"];
+        domain_field["association"] = "element";
+        domain_field["topology"] = "topo";
+        domain_field["values"] = DataType::int32(20 * 20);
+
+        int32_array vals =  domain_field["values"].value();
+        for(int j=0;j<20*20;j++)
+        {
+            vals[j] = i;
+        }
 
         Node &domain_adjsets = domain_node["adjsets/adjset"];
         domain_adjsets["association"].set_string("vertex");
