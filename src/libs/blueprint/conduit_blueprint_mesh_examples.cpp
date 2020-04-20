@@ -66,6 +66,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <queue>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -2775,6 +2776,351 @@ void julia_nestsets(index_t nx,
     paint_2d_nestsets(res.child(i), "topo");
   }
 
+}
+
+void gap_scanner(const std::vector<int32> &values,
+                 const index_t start,
+                 const index_t end,
+                 const index_t offset,
+                 int32 gap[2])
+{
+  bool in_gap = false;
+  int32 gap_length = 0;
+  gap[0] = -1; // index of gap
+  gap[1] = 0;  // length of gap
+  for(index_t i = start - offset; i <= end - offset; ++i)
+  {
+    if(values[i] == 0)
+    {
+      std::cout<<"i "<<i+offset<<" "<<values[i]<<"\n";
+      if(in_gap) gap_length++;
+      else
+      {
+        gap_length = 1;
+        in_gap = true;
+      }
+    }
+    else
+    {
+      if(in_gap)
+      {
+        if(gap_length > gap[1])
+        {
+          gap[0] = i + offset;
+          gap[1] = gap_length;
+        }
+        in_gap = false;
+      }
+    }
+  }
+}
+
+void inflection_scanner(const std::vector<int32> &values,
+                        const index_t start,
+                        const index_t end,
+                        const index_t offset,
+                        int32 crit[2])
+{
+  crit[0] = -1;
+  crit[1] = 0;
+  int32 prev = 0;
+  for(index_t i = start + 1 - offset; i <= end - 1 - offset; ++i)
+  {
+    // second derivitive using finite differences
+    int32 deriv = values[i + 1] - 2 * values[i] + values[i-1];
+    // inflection point
+    std::cout<<i<<" "<<values[i]<<" "<<deriv<<"\n";
+    if((prev < 0 && deriv > 0) || (prev > 0 && deriv < 0))
+    {
+      int32 mag = abs(deriv - prev);
+      if(mag  > crit[1])
+      {
+        crit[0] = i + offset;
+        crit[1] = mag;
+      }
+    }
+    prev = deriv;
+  }
+}
+
+struct AABB
+{
+  index_t box[4];
+};
+
+void
+sub_boxs(const std::vector<int32> &flags,
+         const index_t nx,
+         const index_t ny,
+         std::vector<AABB> &refined)
+{
+  AABB mesh_box = {{0,nx-1,0,ny-1}};
+  std::queue<AABB> aabbs;
+  aabbs.push(mesh_box);
+
+  while(!aabbs.empty())
+  {
+    std::cout<<"***#*#*#*#*#*#*#*#\n";
+    std::cout<<"size "<< aabbs.size()<<"\n";
+    std::cout<<"e "<< aabbs.empty()<<"\n";
+    AABB current_aabb = aabbs.front();
+    index_t dx = current_aabb.box[1] - current_aabb.box[0] + 1;
+    index_t dy = current_aabb.box[3] - current_aabb.box[2] + 1;
+    std::cout<<"dx "<<dx<<" " <<dy<<"\n";
+    std::vector<int32> x_bins(dx, 0);
+    std::vector<int32> y_bins(dy, 0);
+
+    int32 flag_count = 0;
+    index_t aabb[4] = {nx,0, ny, 0}; // minx, maxx, miny, maxy
+    for(index_t y = current_aabb.box[2]; y <= current_aabb.box[3]; ++y)
+    {
+      for(index_t x = current_aabb.box[0]; x <= current_aabb.box[1]; ++x)
+      {
+        index_t offset = y * nx + x;
+        int32 flag = flags[offset];
+        //std::cout<<"x "<<x<<" y "<<y<<" offset "<<offset<<" flag "<<flag<<"\n";
+        if(flag == 1)
+        {
+          aabb[0] = std::min(x, aabb[0]);
+          aabb[1] = std::max(x, aabb[1]);
+          aabb[2] = std::min(y, aabb[2]);
+          aabb[3] = std::max(y, aabb[3]);
+        }
+        x_bins[x - current_aabb.box[0]] += flag;
+        y_bins[y - current_aabb.box[2]] += flag;
+        flag_count += flag;
+      }
+    }
+
+    if(flag_count == 0)
+    {
+      aabbs.pop();
+      continue;
+    }
+
+    index_t subsize = (aabb[1] - aabb[0] + 1) *  (aabb[3] - aabb[2] + 1);
+    float64 efficiency = float64(flag_count) / float64(subsize);
+    std::cout<<"count "<<flag_count<<"\n";
+    std::cout<<"box "<<current_aabb.box[0]<<" "<<current_aabb.box[1]<<" "<<current_aabb.box[2]<<" "<<current_aabb.box[3]<<"\n";
+    std::cout<<"sub box "<<aabb[0]<<" "<<aabb[1]<<" "<<aabb[2]<<" "<<aabb[3]<<"\n";
+    std::cout<<"sub size "<<subsize<<"\n";
+    std::cout<<"efficiency "<<efficiency<<"\n";
+    if(efficiency > .80)
+    {
+      refined.push_back(current_aabb);
+      aabbs.pop();
+      continue;
+    }
+
+
+    int32 x_gap[2];
+    int32 y_gap[2];
+    gap_scanner(x_bins, aabb[0], aabb[1], current_aabb.box[0], x_gap);
+    gap_scanner(y_bins, aabb[2], aabb[3], current_aabb.box[2], y_gap);
+    std::cout<<"x gap "<<x_gap[0]<<" "<<x_gap[1]<<"\n";
+    std::cout<<"y gap "<<y_gap[0]<<" "<<y_gap[1]<<"\n";
+    if((x_gap[0] != -1 || y_gap[0] != -1) &&
+        x_gap[0] != aabb[0] &&
+        x_gap[0] != aabb[1] &&
+        y_gap[0] != aabb[2] &&
+        y_gap[0] != aabb[3])
+    {
+      AABB left, right;
+      if(x_gap[1] > y_gap[1])
+      {
+        left.box[0] = aabb[0];
+        left.box[1] = x_gap[0];
+        left.box[2] = aabb[2];
+        left.box[3] = aabb[3];
+
+        right.box[0] = x_gap[0] + 1;
+        right.box[1] = aabb[1];
+        right.box[2] = aabb[2];
+        right.box[3] = aabb[3];
+      }
+      else
+      {
+        left.box[0] = aabb[0];
+        left.box[1] = aabb[1];
+        left.box[2] = aabb[2];
+        left.box[3] = y_gap[0];
+
+        right.box[0] = aabb[0];
+        right.box[1] = aabb[1];
+        right.box[2] = y_gap[0]+1;
+        right.box[3] = aabb[3];
+      }
+      std::cout<<"GAP SPLIT\n";
+      std::cout<<"left "<<left.box[0]<<" "<<left.box[1]<<" "<<left.box[2]<<" "<<left.box[3]<<"\n";
+      std::cout<<"right "<<right.box[0]<<" "<<right.box[1]<<" "<<right.box[2]<<" "<<right.box[3]<<"\n";
+      aabbs.pop();
+      aabbs.push(left);
+      aabbs.push(right);
+      continue;
+    }
+
+    int32 x_crit[2];
+    int32 y_crit[2];
+    std::cout<<"X inflection\n";
+    inflection_scanner(x_bins, aabb[0], aabb[1], current_aabb.box[0],x_crit);
+    std::cout<<"Y inflection\n";
+    inflection_scanner(y_bins, aabb[2], aabb[3], current_aabb.box[2],y_crit);
+
+    std::cout<<"x crit "<<x_crit[0]<<" "<<x_crit[1]<<"\n";
+    std::cout<<"y crit "<<y_crit[0]<<" "<<y_crit[1]<<"\n";
+
+    if((x_crit[0] != -1 || y_crit[0] != -1) &&
+        x_crit[0] != aabb[0] &&
+        x_crit[0] != aabb[1] &&
+        y_crit[0] != aabb[2] &&
+        y_crit[0] != aabb[3])
+    {
+      AABB left, right;
+      if(x_crit[1] > y_crit[1])
+      {
+        left.box[0] = aabb[0];
+        left.box[1] = x_crit[0];
+        left.box[2] = aabb[2];
+        left.box[3] = aabb[3];
+
+        right.box[0] = x_crit[0] + 1;
+        right.box[1] = aabb[1];
+        right.box[2] = aabb[2];
+        right.box[3] = aabb[3];
+      }
+      else
+      {
+        left.box[0] = aabb[0];
+        left.box[1] = aabb[1];
+        left.box[2] = aabb[2];
+        left.box[3] = y_crit[0];
+
+        right.box[0] = aabb[0];
+        right.box[1] = aabb[1];
+        right.box[2] = y_crit[0]+1;
+        right.box[3] = aabb[3];
+      }
+
+      std::cout<<"INFLECTION SPLIT\n";
+      aabbs.pop();
+      aabbs.push(left);
+      aabbs.push(right);
+      continue;
+    }
+    // if we are here then gaps and inflection failed
+    index_t x_len = aabb[1] - aabb[0] + 1;
+    index_t y_len = aabb[3] - aabb[2] + 1;
+
+    AABB left, right;
+    if(x_len > y_len)
+    {
+      std::cout<<"x split\n";
+      index_t p = x_len / 2;
+      left.box[0] = aabb[0];
+      left.box[1] = aabb[0] + p - 1;
+      left.box[2] = aabb[2];
+      left.box[3] = aabb[3];
+
+      right.box[0] = aabb[0] + p;
+      right.box[1] = aabb[1];
+      right.box[2] = aabb[2];
+      right.box[3] = aabb[3];
+    }
+    else
+    {
+      std::cout<<"y split\n";
+      index_t p = y_len / 2;
+      std::cout<<"P "<<p<<"\n";
+      left.box[0] = aabb[0];
+      left.box[1] = aabb[1];
+      left.box[2] = aabb[2];
+      left.box[3] = aabb[2] + p - 1;
+
+      right.box[0] = aabb[0];
+      right.box[1] = aabb[1];
+      right.box[2] = aabb[2] + p;
+      right.box[3] = aabb[3];
+    }
+    std::cout<<"Default_SPLIT\n";
+     std::cout<<"left "<<left.box[0]<<" "<<left.box[1]<<" "<<left.box[2]<<" "<<left.box[3]<<"\n";
+     std::cout<<"right "<<right.box[0]<<" "<<right.box[1]<<" "<<right.box[2]<<" "<<right.box[3]<<"\n";
+    aabbs.pop();
+    aabbs.push(left);
+    aabbs.push(right);
+  }
+}
+//---------------------------------------------------------------------------//
+void julia_nestsets2(index_t nx,
+                    index_t ny,
+                    float64 x_min,
+                    float64 x_max,
+                    float64 y_min,
+                    float64 y_max,
+                    float64 c_re,
+                    float64 c_im,
+                    Node &res)
+{
+
+  res.reset();
+  // create the top level
+  Node &parent = res["domain_000000"];
+  julia(nx, ny, x_min, x_max, y_min, y_max, c_re, c_im, parent);
+
+  float64_array x_coords = parent["coordsets/coords/values/x"].value();
+  float64_array y_coords = parent["coordsets/coords/values/y"].value();
+
+  int32_array iters = parent["fields/iters/values"].value();
+
+  const int32 threshold = 30;
+  std::vector<int32> flags(nx*ny);
+
+  for(index_t i = 0; i < nx*ny; ++i)
+  {
+    int32 flag = 0;
+    if(iters[i] > threshold)
+    {
+      flag = 1;
+    }
+    flags[i] = flag;
+  }
+
+  Node ffield = parent["fields/iters"];
+  ffield["values"].set(flags);
+  parent["fields/flags"] = ffield;
+
+  std::vector<AABB> boxs;
+  sub_boxs(flags, nx, ny, boxs);
+
+  for(index_t i = 0; i < boxs.size(); ++i)
+  {
+    // create the current domain
+    std::ostringstream oss;
+    oss << "domain_" << std::setw(6) << std::setfill('0') << i + 1;
+    std::string domain_name = oss.str();
+
+    Node &dom = res[domain_name];
+    AABB aabb = boxs[i];
+
+    index_t cnx = aabb.box[1] - aabb.box[0] + 1;
+    index_t cny = aabb.box[3] - aabb.box[2] + 1;
+    float64 cx_min = x_coords[aabb.box[0]];
+    float64 cx_max = x_coords[aabb.box[1]];
+
+    float64 cy_min = y_coords[aabb.box[2]];
+    float64 cy_max = y_coords[aabb.box[3]];
+
+    julia(cnx * 2,
+          cny * 2,
+          cx_min,
+          cx_max,
+          cy_min,
+          cy_max,
+          c_re,
+          c_im,
+          dom);
+  }
+  //int threshold = 200;
+  //refine(parent,threshold);
 }
 
 //---------------------------------------------------------------------------//

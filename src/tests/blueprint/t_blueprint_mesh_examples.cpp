@@ -550,7 +550,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
     Node mesh;
 
     Node res;
-    blueprint::mesh::examples::julia_nestsets(9,   9, // nx, ny
+    blueprint::mesh::examples::julia_nestsets2(20,   20, // nx, ny
                                               -2.0,  2.0, // x range
                                               -2.0,  2.0, // y range
                                               0.285, 0.01, // c value

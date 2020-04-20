@@ -123,6 +123,16 @@ namespace examples
                                               conduit::float64 c_im,
                                               conduit::Node &res);
 
+    void CONDUIT_BLUEPRINT_API julia_nestsets2(conduit::index_t nx,
+                                              conduit::index_t ny,
+                                              conduit::float64 x_min,
+                                              conduit::float64 x_max,
+                                              conduit::float64 y_min,
+                                              conduit::float64 y_max,
+                                              conduit::float64 c_re,
+                                              conduit::float64 c_im,
+                                              conduit::Node &res);
+
     /// Generates a simple 8x8 two level julia nestset with
     /// two domains
     void CONDUIT_BLUEPRINT_API julia_nestsets(conduit::float64 x_min,
