@@ -1122,7 +1122,7 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
 
             n["groups"].reset();
             n["groups"]["g1"]["neighbors"].set(DataType::int32(5));
-            CHECK_MESH(verify_adjset,n,info,false);
+            CHECK_MESH(verify_adjset,n,info,true);
             n["groups"]["g1"]["values"].set(DataType::float32(5));
             CHECK_MESH(verify_adjset,n,info,false);
             n["groups"]["g1"]["values"].set(DataType::int32(5));
@@ -1149,6 +1149,35 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
             CHECK_MESH(verify_adjset,n,info,false);
             n["association"].set("vertex");
             CHECK_MESH(verify_adjset,n,info,true);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, adjset_structured)
+{
+    VerifyFun verify_adjset_funs[] = {
+        blueprint::mesh::adjset::verify,
+        verify_adjset_protocol};
+
+    for(index_t fi = 0; fi < 2; fi++)
+    {
+        VerifyFun verify_adjset = verify_adjset_funs[fi];
+
+        Node mesh, info;
+        CHECK_MESH(verify_adjset,mesh,info,false);
+
+        blueprint::mesh::examples::adjset_uniform(mesh);
+
+        NodeConstIterator itr = mesh.children();
+        while(itr.has_next())
+        {
+           const Node &chld= itr.next();
+           const std::string chld_name = itr.name();
+
+           const Node& n = chld["adjsets/adjset"];
+           CHECK_MESH(verify_adjset,n,info[chld_name],true);
         }
     }
 }
@@ -2227,7 +2256,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
 
             Node &groups = domain["adjsets"]["mesh"]["groups"];
             groups["g1"]["neighbors"].set(DataType::int32(10));
-            CHECK_MESH(verify_mesh,mesh,info,false);
+            CHECK_MESH(verify_mesh,mesh,info,true);
             groups["g1"]["values"].set(DataType::float32(10));
             CHECK_MESH(verify_mesh,mesh,info,false);
             groups["g1"]["values"].set(DataType::int32(10));
