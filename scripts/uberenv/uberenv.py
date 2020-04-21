@@ -503,10 +503,10 @@ class SpackEnv(UberEnv):
                 print("[ERROR: not a directory {}".format(install_path))
                 return res
 
+        full_spec = self.read_spack_full_spec(self.pkg_name,self.opts["spec"])
         if "spack_activate" in self.project_opts:
             print("[activating dependent packages]")
             # get the full spack spec for our project
-            full_spec = self.read_spack_full_spec(self.pkg_name,self.opts["spec"])
             pkg_names = self.project_opts["spack_activate"].keys()
             for pkg_name in pkg_names:
                 pkg_spec_requirements = self.project_opts["spack_activate"][pkg_name]
