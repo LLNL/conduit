@@ -499,8 +499,7 @@ PyConduit_DataType_dealloc(PyConduit_DataType *self)
 static PyObject *
 PyConduit_DataType_str(PyConduit_DataType *self)
 {
-   std::string output = self->dtype.to_json();
-   return (Py_BuildValue("s", output.c_str()));
+   return (Py_BuildValue("s", self->dtype.to_string().c_str()));
 }
 
 //-----------------------------------------------------------------------------
@@ -2522,9 +2521,7 @@ PyConduit_Schema_dealloc(PyConduit_Schema* self)
 static PyObject *
 PyConduit_Schema_str(PyConduit_Schema *self)
 {
-   std::ostringstream oss;
-   self->schema->to_json_stream(oss);
-   return (Py_BuildValue("s", oss.str().c_str()));
+   return Py_BuildValue("s", self->schema->to_string().c_str());
 }
 
 
@@ -3269,9 +3266,7 @@ PyConduit_NodeIterator_str(PyConduit_NodeIterator *self)
 {
     Node n;
     self->itr.info(n);
-    std::ostringstream oss;
-    n.to_json_stream(oss);
-    return (Py_BuildValue("s", oss.str().c_str()));
+    return Py_BuildValue("s", n.to_string().c_str());
 }
 
 //---------------------------------------------------------------------------//
@@ -3676,9 +3671,7 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_str(PyConduit_Node* self)
 {
-   std::ostringstream oss;
-   self->node->to_json_stream(oss);
-   return (Py_BuildValue("s", oss.str().c_str()));
+   return (Py_BuildValue("s", self->node->to_string().c_str()));
 }
 
 //---------------------------------------------------------------------------//

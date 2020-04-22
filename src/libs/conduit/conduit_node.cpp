@@ -11218,6 +11218,38 @@ Node::ConstValue::operator const long_double_array() const
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// -- String construction methods ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_string(const std::string &protocol, 
+                index_t indent, 
+                index_t depth,
+                const std::string &pad,
+                const std::string &eoe) const
+{
+    if(protocol == "yaml")
+    {
+        return to_yaml(protocol,indent,depth,pad,eoe);
+    }
+    else // assume json
+    {
+        return to_json(protocol,indent,depth,pad,eoe);
+    }
+
+    return "";
+}
+
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_string_default() const
+{
+    return to_string();
+}
+
+//-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------
 
@@ -11243,7 +11275,11 @@ Node::to_json(const std::string &protocol,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " json\n"
+                      << " conduit_json\n"
+                      << " conduit_base64_json\n");
     }
 
     return "{}";
@@ -11272,7 +11308,11 @@ Node::to_json_stream(const std::string &stream_path,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " json\n"
+                      << " conduit_json\n"
+                      << " conduit_base64_json\n");
     }
 }
 
@@ -11299,7 +11339,11 @@ Node::to_json_stream(std::ostream &os,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " json\n"
+                      << " conduit_json\n"
+                      << " conduit_base64_json\n");
     }
 }
 
@@ -11328,7 +11372,9 @@ Node::to_yaml(const std::string &protocol,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " yaml\n");
     }
 
     return "{}";
@@ -11349,7 +11395,9 @@ Node::to_yaml_stream(const std::string &stream_path,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " yaml\n");
     }
 }
 //-----------------------------------------------------------------------------
@@ -11367,7 +11415,9 @@ Node::to_yaml_stream(std::ostream &os,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " yaml\n");
     }
 }
 
@@ -11408,7 +11458,7 @@ Node::to_json_generic(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_json> failed to open: " << stream_path);
+        CONDUIT_ERROR("Node::to_json failed to open: " << stream_path);
     to_json_generic(ofs,detailed,indent,depth,pad,eoe);
     ofs.close();
 }

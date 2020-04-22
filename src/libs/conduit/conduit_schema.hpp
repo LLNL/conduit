@@ -195,6 +195,20 @@ public:
 //-----------------------------------------------------------------------------
     void            compact_to(Schema &s_dest) const;
 
+    //-------------------------------------------------------------------------
+    // note: future support: protocol == "yaml"
+    std::string     to_string(const std::string &protocol="json",
+                              index_t indent=2, 
+                              index_t depth=0,
+                              const std::string &pad=" ",
+                              const std::string &eoe="\n") const;
+
+    // NOTE(cyrush): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string     to_string_default() const;
+
+    //-------------------------------------------------------------------------
     std::string     to_json(bool detailed=true, 
                             index_t indent=2, 
                             index_t depth=0,
@@ -219,6 +233,7 @@ public:
     // compatibility with debugging tools (e.g. totalview, gdb) that have
     // difficulty allocating default string parameters.
     std::string         to_json_default() const;
+
 
 //-----------------------------------------------------------------------------
 //

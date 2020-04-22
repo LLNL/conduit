@@ -486,13 +486,41 @@ Schema::compact_to(Schema &s_dest) const
     compact_to(s_dest,0);
 }
 
+
+//---------------------------------------------------------------------------//
+std::string
+Schema::to_string(const std::string &protocol,
+                  index_t indent,
+                  index_t depth,
+                  const std::string &pad,
+                  const std::string &eoe) const
+{
+    if(protocol != "json")
+    {
+        // unsupported
+        CONDUIT_ERROR("Unknown Schema::to_string protocol:" << protocol
+                     <<"\nSupported protocols:\n" 
+                     <<" json");
+    }
+
+   return to_json(true,indent,depth,pad,eoe);
+}
+
+
+//---------------------------------------------------------------------------//
+std::string
+Schema::to_string_default() const
+{
+    return to_string();
+}
+
 //---------------------------------------------------------------------------//
 std::string
 Schema::to_json(bool detailed,
-               index_t indent, 
-               index_t depth,
-               const std::string &pad,
-               const std::string &eoe) const
+                index_t indent,
+                index_t depth,
+                const std::string &pad,
+                const std::string &eoe) const
 {
    std::ostringstream oss;
    to_json_stream(oss,detailed,indent,depth,pad,eoe);
@@ -502,8 +530,8 @@ Schema::to_json(bool detailed,
 //---------------------------------------------------------------------------//
 void
 Schema::to_json_stream(std::ostream &os,
-                       bool detailed, 
-                       index_t indent, 
+                       bool detailed,
+                       index_t indent,
                        index_t depth,
                        const std::string &pad,
                        const std::string &eoe) const
@@ -592,7 +620,7 @@ Schema::save(const std::string &ofname,
 {
     // TODO: this is ineff, get base class rep correct?
     std::ostringstream oss;
-    to_json_stream(oss,detailed,indent,depth,pad,eoe);    
+    to_json_stream(oss,detailed,indent,depth,pad,eoe);
 
     std::ofstream ofile;
     ofile.open(ofname.c_str());

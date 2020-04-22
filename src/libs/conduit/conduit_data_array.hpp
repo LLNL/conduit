@@ -203,6 +203,9 @@ public:
 //-----------------------------------------------------------------------------
 // Transforms
 //-----------------------------------------------------------------------------
+    std::string     to_string(const std::string &protocol="json") const;
+    std::string     to_string_default() const;
+
     std::string     to_json() const;
     void            to_json(std::ostream &os) const;
     void            compact_elements_to(uint8 *data) const;

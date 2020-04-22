@@ -394,6 +394,24 @@ TEST(schema_basics, pathlike_child_names)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(schema_basics, schema_to_string)
+{
+    Schema s;
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::float64());
+    s["c"].set(DataType::float64());
+
+    std::string res_str  = s.to_string();
+    std::string res_json = s.to_json();
+
+    std::cout << res_str << std::endl;
+    std::cout << res_json << std::endl;
+
+    // we expect these to be the same
+    EXPECT_EQ(res_str, res_json);
+}
+
 
 //-----------------------------------------------------------------------------
 ///
