@@ -11229,18 +11229,46 @@ Node::to_string(const std::string &protocol,
                 const std::string &pad,
                 const std::string &eoe) const
 {
+    std::ostringstream oss;
+    to_string_stream(oss,protocol,indent,depth,pad,eoe);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_string_stream(std::ostream &os,
+                       const std::string &protocol,
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
     if(protocol == "yaml")
     {
-        return to_yaml(protocol,indent,depth,pad,eoe);
+        to_yaml_stream(os,protocol,indent,depth,pad,eoe);
     }
     else // assume json
     {
-        return to_json(protocol,indent,depth,pad,eoe);
+        to_json_stream(os,protocol,indent,depth,pad,eoe);
     }
-
-    return "";
 }
 
+//-----------------------------------------------------------------------------
+void
+Node::to_string_stream(const std::string &stream_path,
+                       const std::string &protocol,
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("Node::to_string_stream failed to open: " << stream_path);
+    to_string_stream(ofs,protocol,indent,depth,pad,eoe);
+    ofs.close();
+}
 
 //-----------------------------------------------------------------------------
 std::string
@@ -11400,6 +11428,7 @@ Node::to_yaml_stream(const std::string &stream_path,
                       << " yaml\n");
     }
 }
+
 //-----------------------------------------------------------------------------
 void
 Node::to_yaml_stream(std::ostream &os,
@@ -11543,36 +11572,36 @@ Node::to_json_generic(std::ostream &os,
         {
             // ints 
             case DataType::INT8_ID:
-                as_int8_array().to_json(os);
+                as_int8_array().to_json_stream(os);
                 break;
             case DataType::INT16_ID:
-                as_int16_array().to_json(os);
+                as_int16_array().to_json_stream(os);
                 break;
             case DataType::INT32_ID:
-                as_int32_array().to_json(os);
+                as_int32_array().to_json_stream(os);
                 break;
             case DataType::INT64_ID:
-                as_int64_array().to_json(os);
+                as_int64_array().to_json_stream(os);
                 break;
             // uints 
             case DataType::UINT8_ID:
-                as_uint8_array().to_json(os);
+                as_uint8_array().to_json_stream(os);
                 break;
             case DataType::UINT16_ID: 
-                as_uint16_array().to_json(os);
+                as_uint16_array().to_json_stream(os);
                 break;
             case DataType::UINT32_ID:
-                as_uint32_array().to_json(os);
+                as_uint32_array().to_json_stream(os);
                 break;
             case DataType::UINT64_ID:
-                as_uint64_array().to_json(os);
+                as_uint64_array().to_json_stream(os);
                 break;
             // floats 
             case DataType::FLOAT32_ID:
-                as_float32_array().to_json(os);
+                as_float32_array().to_json_stream(os);
                 break;
             case DataType::FLOAT64_ID:
-                as_float64_array().to_json(os);
+                as_float64_array().to_json_stream(os);
                 break;
             // char8_str
             case DataType::CHAR8_STR_ID: 
@@ -11819,6 +11848,7 @@ Node::to_yaml_generic(std::ostream &os,
                                            depth+1,
                                            pad,
                                            eoe);
+            os << eoe;
         }
     }
     else if(dtype().id() == DataType::LIST_ID)
@@ -11835,6 +11865,7 @@ Node::to_yaml_generic(std::ostream &os,
                                            depth+1,
                                            pad,
                                            eoe);
+            os << eoe;
         }
     }
     else // assume leaf data type
@@ -11843,36 +11874,36 @@ Node::to_yaml_generic(std::ostream &os,
         {
             // ints 
             case DataType::INT8_ID:
-                as_int8_array().to_json(os);
+                as_int8_array().to_json_stream(os);
                 break;
             case DataType::INT16_ID:
-                as_int16_array().to_json(os);
+                as_int16_array().to_json_stream(os);
                 break;
             case DataType::INT32_ID:
-                as_int32_array().to_json(os);
+                as_int32_array().to_json_stream(os);
                 break;
             case DataType::INT64_ID:
-                as_int64_array().to_json(os);
+                as_int64_array().to_json_stream(os);
                 break;
             // uints 
             case DataType::UINT8_ID:
-                as_uint8_array().to_json(os);
+                as_uint8_array().to_json_stream(os);
                 break;
             case DataType::UINT16_ID: 
-                as_uint16_array().to_json(os);
+                as_uint16_array().to_json_stream(os);
                 break;
             case DataType::UINT32_ID:
-                as_uint32_array().to_json(os);
+                as_uint32_array().to_json_stream(os);
                 break;
             case DataType::UINT64_ID:
-                as_uint64_array().to_json(os);
+                as_uint64_array().to_json_stream(os);
                 break;
             // floats 
             case DataType::FLOAT32_ID:
-                as_float32_array().to_json(os);
+                as_float32_array().to_json_stream(os);
                 break;
             case DataType::FLOAT64_ID:
-                as_float64_array().to_json(os);
+                as_float64_array().to_json_stream(os);
                 break;
             // char8_str
             case DataType::CHAR8_STR_ID: 
@@ -11883,10 +11914,7 @@ Node::to_yaml_generic(std::ostream &os,
             // empty
             case DataType::EMPTY_ID: 
                 break;
-
         }
-
-        os << eoe;
     }
 
     os.flags(prev_stream_flags);

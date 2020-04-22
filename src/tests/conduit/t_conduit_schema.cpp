@@ -404,12 +404,46 @@ TEST(schema_basics, schema_to_string)
 
     std::string res_str  = s.to_string();
     std::string res_json = s.to_json();
+    
+    std::ostringstream oss;
+    
+    s.to_string_stream(oss);
+    std::string res_str_from_oss = oss.str();
+    
+    oss.str("");
+    s.to_json_stream(oss);    
+    std::string res_json_from_oss = oss.str();
+
+    // save files
+    std::string tf_t_str_file ="tout_schema_to_string_stream_file.json";
+    // remove if exists
+    if(utils::is_file(tf_t_str_file))
+    {
+        utils::remove_file(tf_t_str_file);
+    }
+    s.to_string_stream(tf_t_str_file);
+    EXPECT_TRUE(utils::is_file(tf_t_str_file));
+
+    std::string tf_t_json_file ="tout_schema_to_string_stream_file.json";
+    // remove if exists
+    if(utils::is_file(tf_t_json_file))
+    {
+        utils::remove_file(tf_t_str_file);
+    }
+
+    s.to_json_stream(tf_t_json_file);
+
+    EXPECT_TRUE(utils::is_file(tf_t_json_file));
 
     std::cout << res_str << std::endl;
     std::cout << res_json << std::endl;
+    std::cout << res_str_from_oss << std::endl;
+    std::cout << res_json_from_oss << std::endl;
 
     // we expect these to be the same
     EXPECT_EQ(res_str, res_json);
+    EXPECT_EQ(res_str, res_str_from_oss);
+    EXPECT_EQ(res_str, res_json_from_oss);
 }
 
 

@@ -100,6 +100,10 @@ TEST(conduit_array, basic_construction)
     da_3[0] = -16;
 
     std::cout << da_3.to_string() << std::endl;
+    
+    // test other variants of to_string and to stream, etc
+    da_3.to_string_stream(std::cout);
+    da_3.to_json_stream(std::cout);
 
     EXPECT_EQ(16,data1[0]);
     EXPECT_EQ(-16,data2[0]);

@@ -38,6 +38,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General 
 - Node::fetch_child and Schema::fetch_child are deprecated in favor of the more clearly named Node::fetch_existing and Schema::fetch_existing. fetch_child variants still exist, but will be removed in a future release.
 - Python str() methods for Node, Schema, and DataType now use their new to_string() methods.
+- DataArray<T>::to_json(std::ostring &) is deprecated in favor DataArray<T>::to_json_stream. to_json(std::ostring &) will be removed in a future release.
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.

@@ -495,17 +495,48 @@ Schema::to_string(const std::string &protocol,
                   const std::string &pad,
                   const std::string &eoe) const
 {
-    if(protocol != "json")
-    {
-        // unsupported
-        CONDUIT_ERROR("Unknown Schema::to_string protocol:" << protocol
-                     <<"\nSupported protocols:\n" 
-                     <<" json");
-    }
-
-   return to_json(true,indent,depth,pad,eoe);
+    std::ostringstream oss;
+    to_string_stream(oss,protocol,indent,depth,pad,eoe);
+    return oss.str();
 }
 
+//---------------------------------------------------------------------------//
+void
+Schema::to_string_stream(std::ostream &os,
+                         const std::string &protocol,
+                         index_t indent,
+                         index_t depth,
+                         const std::string &pad,
+                         const std::string &eoe) const
+{
+     if(protocol != "json")
+     {
+         // unsupported
+         CONDUIT_ERROR("Unknown Schema::to_string protocol:" << protocol
+                      <<"\nSupported protocols:\n" 
+                      <<" json");
+     }
+
+    return to_json_stream(os,true,indent,depth,pad,eoe);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Schema::to_string_stream(const std::string &stream_path,
+                         const std::string &protocol,
+                         index_t indent,
+                         index_t depth,
+                         const std::string &pad,
+                         const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("Schema::to_string_stream failed to open: " << stream_path);
+    to_string_stream(ofs,protocol,indent,depth,pad,eoe);
+    ofs.close();
+}
 
 //---------------------------------------------------------------------------//
 std::string
@@ -571,7 +602,7 @@ Schema::to_json_stream(std::ostream &os,
             os << eoe;
         }
         utils::indent(os,indent,depth,pad);
-        os << "]";      
+        os << "]";
     }
     else // assume leaf data type
     {
@@ -591,7 +622,7 @@ Schema::to_json_stream(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Schema::to_json_stream> failed to open: " << stream_path);
+        CONDUIT_ERROR("Schema::to_json_stream failed to open: " << stream_path);
     to_json_stream(ofs,detailed,indent,depth,pad,eoe);
     ofs.close();
 }

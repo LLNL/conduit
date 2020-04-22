@@ -1133,9 +1133,19 @@ TEST(conduit_node, to_string_and_parse_all_protos)
     n["a/b/d"] = (float64) 42.2;
     n["a/b/e"] = " string !";
 
+    std::ostringstream oss;
+    
     std::vector<std::string> txt_cases;
     txt_cases.push_back(n.to_string()); // yaml
     txt_cases.push_back(n.to_string_default()); // yaml
+
+    n.to_string_stream(oss); 
+    txt_cases.push_back(oss.str()); // yaml
+
+    oss.str("");
+    n.to_string_stream(oss,"json"); 
+    txt_cases.push_back(oss.str()); // json
+
     txt_cases.push_back(n.to_string("yaml"));
     txt_cases.push_back(n.to_string("json"));
     txt_cases.push_back(n.to_string("conduit_json"));
@@ -1155,14 +1165,22 @@ TEST(conduit_node, to_string_and_parse_all_protos)
     EXPECT_FALSE(n.diff(n2,info));
     info.print();
 
-    n2.parse(txt_cases[3],"json");
+    n2.parse(txt_cases[3],"yaml");
     EXPECT_FALSE(n.diff(n2,info));
     info.print();
 
-    n2.parse(txt_cases[4],"conduit_json");
+    n2.parse(txt_cases[4],"json");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+
+    n2.parse(txt_cases[5],"json");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+
+    n2.parse(txt_cases[6],"conduit_json");
     EXPECT_FALSE(n.diff(n2,info));
 
-    n2.parse(txt_cases[5],"conduit_base64_json");
+    n2.parse(txt_cases[7],"conduit_base64_json");
     EXPECT_FALSE(n.diff(n2,info));
 }
 

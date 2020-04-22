@@ -1247,6 +1247,16 @@ DataType::default_bytes(const std::string &name)
 std::string 
 DataType::to_string(const std::string &protocol) const
 {
+    std::ostringstream oss;
+    to_string_stream(oss,protocol);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------// 
+void
+DataType::to_string_stream(std::ostream &os, 
+                           const std::string &protocol) const
+{
     if(protocol != "json")
     {
         // unsupported
@@ -1255,7 +1265,7 @@ DataType::to_string(const std::string &protocol) const
                      <<" json");
     }
 
-    return to_json();
+    to_json_stream(os);
 }
 
 //---------------------------------------------------------------------------// 

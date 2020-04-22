@@ -319,22 +319,32 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
     return res;
 }
 
-//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------// 
 template <typename T>
-std::string
+std::string 
 DataArray<T>::to_string(const std::string &protocol) const
+{
+    std::ostringstream oss;
+    to_string_stream(oss,protocol);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+void
+DataArray<T>::to_string_stream(std::ostream &os, 
+                               const std::string &protocol) const
 {
     if(protocol != "json")
     {
         // unsupported
-        CONDUIT_ERROR("Unknown DataArray::to_string protocol:" << protocol
+        CONDUIT_ERROR("Unknown DataType::to_string protocol:" << protocol
                      <<"\nSupported protocols:\n" 
                      <<" json");
     }
 
-    return to_json(); 
+    to_json_stream(os);
 }
-
 
 //---------------------------------------------------------------------------//
 template <typename T>
@@ -351,7 +361,7 @@ std::string
 DataArray<T>::to_json() const 
 { 
     std::ostringstream oss;
-    to_json(oss);
+    to_json_stream(oss);
     return oss.str(); 
 }
 
@@ -359,6 +369,13 @@ DataArray<T>::to_json() const
 template <typename T> 
 void            
 DataArray<T>::to_json(std::ostream &os) const 
+{ 
+    to_json_stream(os);
+}
+//---------------------------------------------------------------------------//
+template <typename T> 
+void            
+DataArray<T>::to_json_stream(std::ostream &os) const 
 { 
     index_t nele = number_of_elements();
     if(nele > 1)

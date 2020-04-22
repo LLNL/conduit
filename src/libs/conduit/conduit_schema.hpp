@@ -203,6 +203,20 @@ public:
                               const std::string &pad=" ",
                               const std::string &eoe="\n") const;
 
+    void            to_string_stream(std::ostream &os,
+                                     const std::string &protocol="json", 
+                                     index_t indent=2, 
+                                     index_t depth=0,
+                                     const std::string &pad=" ",
+                                     const std::string &eoe="\n") const;
+
+    void            to_string_stream(const std::string &stream_path,
+                                     const std::string &protocol="json",
+                                     index_t indent=2, 
+                                     index_t depth=0,
+                                     const std::string &pad=" ",
+                                     const std::string &eoe="\n") const;
+
     // NOTE(cyrush): The primary reason this function exists is to enable easier
     // compatibility with debugging tools (e.g. totalview, gdb) that have
     // difficulty allocating default string parameters.
