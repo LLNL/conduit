@@ -1142,11 +1142,12 @@ TEST(conduit_node, to_string_and_parse_all_protos)
     n.to_string_stream(oss); 
     txt_cases.push_back(oss.str()); // yaml
 
+    txt_cases.push_back(n.to_string("yaml"));
+
     oss.str("");
     n.to_string_stream(oss,"json"); 
     txt_cases.push_back(oss.str()); // json
 
-    txt_cases.push_back(n.to_string("yaml"));
     txt_cases.push_back(n.to_string("json"));
     txt_cases.push_back(n.to_string("conduit_json"));
     txt_cases.push_back(n.to_string("conduit_base64_json"));

@@ -11766,7 +11766,7 @@ Node::to_base64_json(std::ostream &os,
     utils::indent(os,indent,depth+1,pad);
     os << "\"schema\": ";
 
-    n.schema().to_json_stream(os,true,indent,depth+1,pad,eoe);
+    n.schema().to_json_stream(os,indent,depth+1,pad,eoe);
 
     os  << "," << eoe;
     
