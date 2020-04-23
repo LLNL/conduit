@@ -1,211 +1,161 @@
-Running main() from gtest_main.cc
-[==========] Running 6 tests from 1 test case.
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 1 test suite.
 [----------] Global test environment set-up.
 [----------] 6 tests from conduit_docs
 [ RUN      ] conduit_docs.relay_io_example_1_json
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 63]
- relay_io_example_1_json
+BEGIN_EXAMPLE("relay_io_example_1_json")
 
 Node to write:
 
-{
-  "a": 
-  {
-    "my_data": 1.0,
-    "b": 
-    {
-      "my_string": "value"
-    }
-  }
-}
+a: 
+  my_data: 1.0
+  b: 
+    my_string: "value"
+
+
+
 
 Load result:
 
-{
-  "a": 
-  {
-    "my_data": 1.0,
-    "b": 
-    {
-      "my_string": "value"
-    }
-  }
-}
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 81]
- relay_io_example_1_json
+a: 
+  my_data: 1.0
+  b: 
+    my_string: "value"
+
+
+
+END_EXAMPLE("relay_io_example_1_json")
 [       OK ] conduit_docs.relay_io_example_1_json (1 ms)
 [ RUN      ] conduit_docs.relay_io_example_1_hdf5
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 90]
- relay_io_example_1_hdf5
+BEGIN_EXAMPLE("relay_io_example_1_hdf5")
 
 Node to write:
 
-{
-  "a": 
-  {
-    "my_data": 1.0,
-    "b": 
-    {
-      "my_string": "value"
-    }
-  }
-}
+a: 
+  my_data: 1.0
+  b: 
+    my_string: "value"
+
+
+
 
 Load result:
 
-{
-  "a": 
-  {
-    "my_data": 1.0,
-    "b": 
-    {
-      "my_string": "value"
-    }
-  }
-}
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 108]
- relay_io_example_1_hdf5
-[       OK ] conduit_docs.relay_io_example_1_hdf5 (5 ms)
+a: 
+  my_data: 1.0
+  b: 
+    my_string: "value"
+
+
+
+END_EXAMPLE("relay_io_example_1_hdf5")
+[       OK ] conduit_docs.relay_io_example_1_hdf5 (3 ms)
 [ RUN      ] conduit_docs.relay_io_example_2_hdf5
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 116]
- relay_io_example_2_hdf5
+BEGIN_EXAMPLE("relay_io_example_2_hdf5")
 
 Node to write:
 
-{
-  "a": 
-  {
-    "my_data": 1.0,
-    "b": 
-    {
-      "my_string": "value"
-    }
-  }
-}
+a: 
+  my_data: 1.0
+  b: 
+    my_string: "value"
+
+
+
 
 Node to append:
 
-{
-  "a": 
-  {
-    "b": 
-    {
-      "new_data": 42.0
-    }
-  }
-}
+a: 
+  b: 
+    new_data: 42.0
+
+
+
 
 Load result:
 
-{
-  "a": 
-  {
-    "my_data": 1.0,
-    "b": 
-    {
-      "my_string": "value",
-      "new_data": 42.0
-    }
-  }
-}
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 141]
- relay_io_example_2_hdf5
+a: 
+  my_data: 1.0
+  b: 
+    my_string: "value"
+    new_data: 42.0
+
+
+
+END_EXAMPLE("relay_io_example_2_hdf5")
 [       OK ] conduit_docs.relay_io_example_2_hdf5 (3 ms)
 [ RUN      ] conduit_docs.relay_io_example_3_hdf5
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 148]
- relay_io_example_3_hdf5
+BEGIN_EXAMPLE("relay_io_example_3_hdf5")
 
 Node to write:
 
-{
-  "a": 
-  {
-    "my_data": 1.0,
-    "b": 
-    {
-      "my_string": "value"
-    }
-  }
-}
+a: 
+  my_data: 1.0
+  b: 
+    my_string: "value"
+
+
+
 
 Node to load into:
 
-{
-  "a": 
-  {
-    "b": 
-    {
-      "new_data": 42.0
-    }
-  }
-}
+a: 
+  b: 
+    new_data: 42.0
+
+
+
 
 Load result:
 
-{
-  "a": 
-  {
-    "b": 
-    {
-      "new_data": 42.0,
-      "my_string": "value"
-    },
-    "my_data": 1.0
-  }
-}
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 169]
- relay_io_example_3_hdf5
-[       OK ] conduit_docs.relay_io_example_3_hdf5 (2 ms)
+a: 
+  b: 
+    new_data: 42.0
+    my_string: "value"
+
+  my_data: 1.0
+
+
+END_EXAMPLE("relay_io_example_3_hdf5")
+[       OK ] conduit_docs.relay_io_example_3_hdf5 (1 ms)
 [ RUN      ] conduit_docs.relay_io_example_4_hdf5
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 177]
- relay_io_example_4_hdf5
+BEGIN_EXAMPLE("relay_io_example_4_hdf5")
 
 Node to write:
 
-{
-  "path": 
-  {
-    "to": 
-    {
-      "my_data": 1.0
-    }
-  }
-}
+path: 
+  to: 
+    my_data: 1.0
+
+
+
 
 Load result from 'path/to'
 
-{
-  "my_data": 1.0
-}
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 194]
- relay_io_example_4_hdf5
+my_data: 1.0
+
+END_EXAMPLE("relay_io_example_4_hdf5")
 [       OK ] conduit_docs.relay_io_example_4_hdf5 (2 ms)
 [ RUN      ] conduit_docs.relay_io_example_5_hdf5
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 201]
- relay_io_example_5_hdf5
+BEGIN_EXAMPLE("relay_io_example_5_hdf5")
 
 Node to write to 'path/to':
 
-{
-  "my_data": 1.0
-}
+my_data: 1.0
+
 
 Load result:
 
-{
-  "path": 
-  {
-    "to": 
-    {
-      "my_data": 1.0
-    }
-  }
-}
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_examples.cpp : 218]
- relay_io_example_4_hdf5
-[       OK ] conduit_docs.relay_io_example_5_hdf5 (2 ms)
-[----------] 6 tests from conduit_docs (16 ms total)
+path: 
+  to: 
+    my_data: 1.0
+
+
+
+END_EXAMPLE("relay_io_example_5_hdf5")
+[       OK ] conduit_docs.relay_io_example_5_hdf5 (1 ms)
+[----------] 6 tests from conduit_docs (11 ms total)
 
 [----------] Global test environment tear-down
-[==========] 6 tests from 1 test case ran. (16 ms total)
+[==========] 6 tests from 1 test suite ran. (11 ms total)
 [  PASSED  ] 6 tests.

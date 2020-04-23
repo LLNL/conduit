@@ -154,7 +154,7 @@ Send and Receive Using Schema
 
 * **Output:**
 
-.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_mpi_examples_out.txt
    :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv_using_schema")
    :end-before: END_EXAMPLE("py_mpi_send_and_recv_using_schema")
    :dedent: 4
@@ -166,15 +166,15 @@ Send and Receive
 * **Python Source:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
-   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv"))
+   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv")
    :end-before: END_EXAMPLE("py_mpi_send_and_recv")
    :language: python
    :dedent: 8
 
 * **Output:**
 
-.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
-   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv"))
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv")
    :end-before: END_EXAMPLE("py_mpi_send_and_recv")
    :dedent: 4
 
@@ -191,7 +191,7 @@ Send and Receive
 
 * **Output:**
 
-.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_mpi_examples_out.txt
    :start-after: BEGIN_EXAMPLE("py_mpi_send_and_recv")
    :end-before: END_EXAMPLE("py_mpi_send_and_recv")
    :dedent: 4
@@ -209,7 +209,7 @@ Sum All Reduce
 
 * **Output:**
 
-.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_mpi_examples_out.txt
    :start-after: BEGIN_EXAMPLE("py_mpi_sum_all_reduce")
    :end-before: END_EXAMPLE("py_mpi_sum_all_reduce")
    :dedent: 4
@@ -227,7 +227,7 @@ Broadcast Using Schema
 
 * **Output:**
 
-.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_mpi_examples_out.txt
    :start-after: BEGIN_EXAMPLE("py_mpi_bcast_using_schema")
    :end-before: END_EXAMPLE("py_mpi_bcast_using_schema")
    :dedent: 4
@@ -239,15 +239,15 @@ Broadcast
 * **Python Source:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_mpi_examples.py
-   :start-after: BEGIN_EXAMPLE("py_mpi_bcast"))
+   :start-after: BEGIN_EXAMPLE("py_mpi_bcast")
    :end-before: END_EXAMPLE("py_mpi_bcast")
    :language: python
    :dedent: 8
 
 * **Output:**
 
-.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
-   :start-after: BEGIN_EXAMPLE("py_mpi_bcast"))
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_mpi_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_mpi_bcast")
    :end-before: END_EXAMPLE("py_mpi_bcast")
    :dedent: 4
 
@@ -265,7 +265,7 @@ All Gather Using Schema
 
 * **Output:**
 
-.. literalinclude:: t_conduit_docs_python_tutorial_relay_mpi_examples_out.txt
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_mpi_examples_out.txt
    :start-after: BEGIN_EXAMPLE("py_mpi_all_gather_using_schema")
    :end-before: END_EXAMPLE("py_mpi_all_gather_using_schema")
    :dedent: 4

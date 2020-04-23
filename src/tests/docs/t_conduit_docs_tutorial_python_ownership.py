@@ -51,13 +51,15 @@ import inspect
 import numpy
 import conduit
 
-def echo_src(s,fname,lineno):
-    print("\n{}: {},{}".format(s,fname,lineno))
+def BEGIN_EXAMPLE(tag):
+    print('BEGIN_EXAMPLE("' + tag + '")')
+
+def END_EXAMPLE(tag):
+    print('END_EXAMPLE("' + tag + '")')
 
 class Conduit_Tutorial_Python_Ownership(unittest.TestCase):
     def test_001_mem_ownership_external(self):
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-        
+        BEGIN_EXAMPLE("py_mem_ownership_external")
         vals = numpy.zeros((5,),dtype=numpy.float64)
         n = conduit.Node()
         n["v_owned"].set(vals)
@@ -68,7 +70,5 @@ class Conduit_Tutorial_Python_Ownership(unittest.TestCase):
         vals[0] = 3.1415
         print(n)
         print(vals)
-        
-        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-
+        END_EXAMPLE("py_mem_ownership_external")
 
