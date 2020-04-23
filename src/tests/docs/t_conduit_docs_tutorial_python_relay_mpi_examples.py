@@ -51,7 +51,6 @@ import inspect
 import numpy
 
 
-
 def BEGIN_EXAMPLE(tag):
     from mpi4py import MPI
     MPI.COMM_WORLD.Barrier()

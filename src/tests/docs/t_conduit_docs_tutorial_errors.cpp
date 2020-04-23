@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "t_conduit_docs_tutorial_helpers.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -60,8 +61,10 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, error_handlers_funcs_start)
 {
-    CONDUIT_INFO("error_handlers_funcs");
+    BEGIN_EXAMPLE("error_handlers_funcs");
 }
+
+// _conduit_error_handlers_funcs_start
 
 //-----------------------------------------------------------------------------
 void my_info_handler(const std::string &msg,
@@ -88,26 +91,27 @@ void my_error_handler(const std::string &msg,
     throw conduit::Error(msg,file,line);
 }
 
+// _conduit_error_handlers_funcs_end
+
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, error_handlers_funcs_end)
 {
-    CONDUIT_INFO("error_handlers_funcs");
+    END_EXAMPLE("error_handlers_funcs");
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, error_handlers)
 {
-     CONDUIT_INFO("error_handlers");
-
+    BEGIN_EXAMPLE("error_handlers_rewire");
     // rewire error handlers
     conduit::utils::set_info_handler(my_info_handler);
     conduit::utils::set_warning_handler(my_warning_handler);
     conduit::utils::set_error_handler(my_error_handler);
-    
+
     // emit an example info message
     CONDUIT_INFO("An info message");
-    
+
     Node n;
     n["my_value"].set_float64(42.0);
     
@@ -128,13 +132,14 @@ TEST(conduit_tutorial, error_handlers)
     {
         // pass
     }
-    
+    END_EXAMPLE("error_handlers_rewire");
+
+    BEGIN_EXAMPLE("error_handlers_reset");
     // restore default handlers
     conduit::utils::set_info_handler(conduit::utils::default_info_handler);
     conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
     conduit::utils::set_error_handler(conduit::utils::default_error_handler);
-
-    CONDUIT_INFO("error_handlers");
+    END_EXAMPLE("error_handlers_reset");
 }
 
 

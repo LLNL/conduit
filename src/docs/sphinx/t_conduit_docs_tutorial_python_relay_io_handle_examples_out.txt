@@ -1,0 +1,64 @@
+UpdateCTestConfiguration  from :/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Parse Config file:/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Parse Config file:/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Test project /Users/harrison37/Work/github/llnl/conduit/build-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 110
+    Start 110: t_conduit_docs_tutorial_python_relay_io_handle_examples
+
+110: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.4-tuamu4qn6msg6bqa5hd7glbv5uxm5lup/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_relay_io_handle_examples"
+110: Environment variables: 
+110:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+110: Test timeout computed to be: 1500
+110: test_001_io_handle (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+110: 
+110: ----------------------------------------------------------------------
+110: Ran 1 test in 0.006s
+110: 
+110: OK
+110: 
+110: BEGIN_EXAMPLE("py_relay_io_handle")
+110: 
+110: Node to write:
+110: 
+110: a: 
+110:   data: 1.0
+110:   more_data: 2.0
+110:   b: 
+110:     my_string: "value"
+110: 
+110: 
+110: Value at "a/data" = 1.0
+110: 
+110: Removed "a/more_data"
+110: 
+110: Path "a/more_data" is no more
+110: 
+110: Writing to "a/c"
+110: 
+110: Children of "a": ['data', 'b', 'c']
+110: 
+110: Read Result:
+110: 
+110: a: 
+110:   data: 1.0
+110:   b: 
+110:     my_string: "value"
+110:   c: 42.0
+110: 
+110: 
+110: END_EXAMPLE("py_relay_io_handle")
+1/1 Test #110: t_conduit_docs_tutorial_python_relay_io_handle_examples ...   Passed    0.21 sec
+
+The following tests passed:
+	t_conduit_docs_tutorial_python_relay_io_handle_examples
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.23 sec

@@ -486,24 +486,120 @@ Schema::compact_to(Schema &s_dest) const
     compact_to(s_dest,0);
 }
 
+
 //---------------------------------------------------------------------------//
 std::string
-Schema::to_json(bool detailed,
-               index_t indent, 
-               index_t depth,
-               const std::string &pad,
-               const std::string &eoe) const
+Schema::to_string(const std::string &protocol,
+                  index_t indent,
+                  index_t depth,
+                  const std::string &pad,
+                  const std::string &eoe) const
+{
+    std::ostringstream oss;
+    to_string_stream(oss,protocol,indent,depth,pad,eoe);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+void
+Schema::to_string_stream(std::ostream &os,
+                         const std::string &protocol,
+                         index_t indent,
+                         index_t depth,
+                         const std::string &pad,
+                         const std::string &eoe) const
+{
+     if(protocol != "json")
+     {
+         // unsupported
+         CONDUIT_ERROR("Unknown Schema::to_string protocol:" << protocol
+                      <<"\nSupported protocols:\n" 
+                      <<" json");
+     }
+
+    return to_json_stream(os,indent,depth,pad,eoe);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Schema::to_string_stream(const std::string &stream_path,
+                         const std::string &protocol,
+                         index_t indent,
+                         index_t depth,
+                         const std::string &pad,
+                         const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+        CONDUIT_ERROR("Schema::to_string_stream failed to open: " << stream_path);
+    to_string_stream(ofs,protocol,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+//---------------------------------------------------------------------------//
+std::string
+Schema::to_string_default() const
+{
+    return to_string();
+}
+
+//---------------------------------------------------------------------------//
+// note: variants with detailed arg (which hasn't been used) are deprecated
+std::string
+Schema::to_json(bool /* detailed */, // unused
+                index_t indent,
+                index_t depth,
+                const std::string &pad,
+                const std::string &eoe) const
+{
+    return to_json(indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+// note: variants with detailed arg (which hasn't been used) are deprecated
+void
+Schema::to_json_stream(std::ostream &os,
+                       bool /* detailed */, // unused
+                       index_t indent,
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    to_json_stream(os,indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+// note: variants with detailed arg (which hasn't been used) are deprecated
+void
+Schema::to_json_stream(const std::string &stream_path,
+                       bool /* detailed */, // unused
+                       index_t indent,
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    to_json_stream(stream_path,indent,depth,pad,eoe);
+}
+
+
+//---------------------------------------------------------------------------//
+std::string
+Schema::to_json(index_t indent,
+                index_t depth,
+                const std::string &pad,
+                const std::string &eoe) const
 {
    std::ostringstream oss;
-   to_json_stream(oss,detailed,indent,depth,pad,eoe);
+   to_json_stream(oss,indent,depth,pad,eoe);
    return oss.str();
 }
 
 //---------------------------------------------------------------------------//
 void
 Schema::to_json_stream(std::ostream &os,
-                       bool detailed, 
-                       index_t indent, 
+                       index_t indent,
                        index_t depth,
                        const std::string &pad,
                        const std::string &eoe) const
@@ -519,7 +615,7 @@ Schema::to_json_stream(std::ostream &os,
         {
             utils::indent(os,indent,depth+1,pad);
             os << "\""<< object_order()[i] << "\": ";
-            children()[i]->to_json_stream(os,detailed,indent,depth+1,pad,eoe);
+            children()[i]->to_json_stream(os,indent,depth+1,pad,eoe);
             if(i < nchildren-1)
                 os << ",";
             os << eoe;
@@ -537,13 +633,13 @@ Schema::to_json_stream(std::ostream &os,
         for(size_t i=0; i < nchildren;i++)
         {
             utils::indent(os,indent,depth+1,pad);
-            children()[i]->to_json_stream(os,detailed,indent,depth+1,pad,eoe);
+            children()[i]->to_json_stream(os,indent,depth+1,pad,eoe);
             if(i < nchildren-1)
                 os << ",";
             os << eoe;
         }
         utils::indent(os,indent,depth,pad);
-        os << "]";      
+        os << "]";
     }
     else // assume leaf data type
     {
@@ -554,7 +650,6 @@ Schema::to_json_stream(std::ostream &os,
 //---------------------------------------------------------------------------//
 void
 Schema::to_json_stream(const std::string &stream_path,
-                       bool detailed, 
                        index_t indent, 
                        index_t depth,
                        const std::string &pad,
@@ -563,8 +658,8 @@ Schema::to_json_stream(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Schema::to_json_stream> failed to open: " << stream_path);
-    to_json_stream(ofs,detailed,indent,depth,pad,eoe);
+        CONDUIT_ERROR("Schema::to_json_stream failed to open: " << stream_path);
+    to_json_stream(ofs,indent,depth,pad,eoe);
     ofs.close();
 }
 
@@ -582,17 +677,30 @@ Schema::to_json_default() const
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void            
+// 
+// note: variants with detailed arg (which hasn't been used) are deprecated
+void
 Schema::save(const std::string &ofname,
-             bool detailed, 
-             index_t indent, 
+             bool  /* detailed*/, // unused
+             index_t indent,
+             index_t depth,
+             const std::string &pad,
+             const std::string &eoe) const
+{
+    save(ofname,indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+void
+Schema::save(const std::string &ofname,
+             index_t indent,
              index_t depth,
              const std::string &pad,
              const std::string &eoe) const
 {
     // TODO: this is ineff, get base class rep correct?
     std::ostringstream oss;
-    to_json_stream(oss,detailed,indent,depth,pad,eoe);    
+    to_json_stream(oss,indent,depth,pad,eoe);
 
     std::ofstream ofile;
     ofile.open(ofname.c_str());
@@ -601,6 +709,7 @@ Schema::save(const std::string &ofname,
     ofile << oss.str();
     ofile.close();
 }
+
 
 //---------------------------------------------------------------------------//
 void

@@ -86,12 +86,15 @@ Blueprint provides a generic top level ``verify()`` method, which exposes the ve
 ``verify()`` returns true if the passed Node *node* conforms to the named protocol. It also provides details about the verification, including specific errors in the passed *info* Node.
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_examples.cpp
-   :lines: 65-79
+   :start-after: BEGIN_EXAMPLE("blueprint_example_1")
+   :end-before:  END_EXAMPLE("blueprint_example_1")
    :language: cpp
    :dedent: 4
 
+
 .. literalinclude:: t_conduit_docs_blueprint_examples_out.txt
-   :lines: 10-19
+   :start-after: BEGIN_EXAMPLE("blueprint_example_1")
+   :end-before:  END_EXAMPLE("blueprint_example_1")
 
 
 
@@ -99,13 +102,14 @@ Methods for specific protocols are grouped in namespaces:
 
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_examples.cpp
-   :lines: 90-116
+   :start-after: BEGIN_EXAMPLE("blueprint_example_2")
+   :end-before:  END_EXAMPLE("blueprint_example_2")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_blueprint_examples_out.txt
-   :lines: 26-83
-
+   :start-after: BEGIN_EXAMPLE("blueprint_example_2")
+   :end-before:  END_EXAMPLE("blueprint_example_2")
 
 
 

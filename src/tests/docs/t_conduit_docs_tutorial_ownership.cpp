@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "t_conduit_docs_tutorial_helpers.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -60,8 +61,7 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, mem_ownership_external)
 {
-    CONDUIT_INFO("mem_ownership_external");
-     
+    BEGIN_EXAMPLE("mem_ownership_external");
     int vsize = 5;
     std::vector<float64> vals(vsize,0.0);
     for(int i=0;i<vsize;i++)
@@ -79,8 +79,7 @@ TEST(conduit_tutorial, mem_ownership_external)
 
     vals[1] = -1 * vals[1];
     n.print();
-
-    CONDUIT_INFO("mem_ownership_external");
+    END_EXAMPLE("mem_ownership_external");
 }
 
 

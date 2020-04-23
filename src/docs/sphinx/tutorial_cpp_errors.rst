@@ -92,16 +92,20 @@ Here is an example that re-wires all three error handlers to print to standard o
 .. # from t_conduit_docs_tutorial_errors: custom range
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_errors.cpp
-   :lines:  65-90
+   :start-after: _conduit_error_handlers_funcs_start
+   :end-before:  _conduit_error_handlers_funcs_end
    :language: cpp
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_errors.cpp
-   :lines:  103-130
+   :start-after: BEGIN_EXAMPLE("error_handlers_rewire")
+   :end-before:  END_EXAMPLE("error_handlers_rewire")
    :language: cpp
+   :dedent: 4
+
 
 .. literalinclude:: t_conduit_docs_tutorial_errors_out.txt
-   :lines: 16-18
-
+   :start-after: BEGIN_EXAMPLE("error_handlers_rewire")
+   :end-before:  END_EXAMPLE("error_handlers_rewire")
 
 
 Using Restoring Default Handlers
@@ -111,7 +115,8 @@ The default handlers are part of the conduit::utils interface, so you can restor
 
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_errors.cpp
-   :lines: 132-135
+   :start-after: BEGIN_EXAMPLE("error_handlers_reset")
+   :end-before:  END_EXAMPLE("error_handlers_reset")
    :language: cpp
    :dedent: 4
 

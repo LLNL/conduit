@@ -611,8 +611,6 @@ PyRelay_MPI_recv_using_schema(PyObject *, //self
                                    "comm",
                                    NULL};
 
-std::cout << "PyRelay_MPI_recv_using_schema" << std::endl;
-
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
                                      "Onnn",
@@ -622,7 +620,6 @@ std::cout << "PyRelay_MPI_recv_using_schema" << std::endl;
                                      &tag,
                                      &mpi_comm_id))
     {
-        std::cout << "PyRelay_MPI_recv_using_schema ansdsadiosnisaniods" << std::endl;
         return (NULL);
     }
 

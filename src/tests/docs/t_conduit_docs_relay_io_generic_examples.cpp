@@ -51,17 +51,16 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "t_conduit_docs_tutorial_helpers.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// 65-78
 TEST(conduit_docs, relay_io_example_1_json)
 {
-    CONDUIT_INFO("relay_io_example_1_json");
-
+    BEGIN_EXAMPLE("relay_io_example_1_json");
     // setup node to save
     Node n;
     n["a/my_data"] = 1.0;
@@ -77,54 +76,48 @@ TEST(conduit_docs, relay_io_example_1_json)
     conduit::relay::io::load("my_output.json",n_load);
     std::cout << "\nLoad result:" << std::endl;
     n_load.print();
-    
-    CONDUIT_INFO("relay_io_example_1_json");
+    END_EXAMPLE("relay_io_example_1_json");
 }
 
 
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
 //-----------------------------------------------------------------------------
-// 91-107
 TEST(conduit_docs, relay_io_example_1_hdf5)
 {
-    CONDUIT_INFO("relay_io_example_1_hdf5");
-
+    BEGIN_EXAMPLE("relay_io_example_1_hdf5");
     // setup node to save
     Node n;
     n["a/my_data"] = 1.0;
     n["a/b/my_string"] = "value";
     std::cout << "\nNode to write:" << std::endl;
     n.print();
-    
+
     //save to hdf5 using save
     conduit::relay::io::save(n,"my_output.hdf5");
-    
+
     //load back from hdf5 using load
     Node n_load;
     conduit::relay::io::load("my_output.hdf5",n_load);
     std::cout << "\nLoad result:" << std::endl;
     n_load.print();
-    
-    CONDUIT_INFO("relay_io_example_1_hdf5");
+    END_EXAMPLE("relay_io_example_1_hdf5");
 }
 
 
 //-----------------------------------------------------------------------------
-// 118-140
 TEST(conduit_docs, relay_io_example_2_hdf5)
 {
-    CONDUIT_INFO("relay_io_example_2_hdf5");
-
+    BEGIN_EXAMPLE("relay_io_example_2_hdf5");
     // setup node to save
     Node n;
     n["a/my_data"] = 1.0;
     n["a/b/my_string"] = "value";
     std::cout << "\nNode to write:" << std::endl;
     n.print();
-    
+
     //save to hdf5 using save
     conduit::relay::io::save(n,"my_output.hdf5");
-    
+
     // append a new path to the hdf5 file using save_merged
     Node n2;
     n2["a/b/new_data"] = 42.0;
@@ -137,26 +130,23 @@ TEST(conduit_docs, relay_io_example_2_hdf5)
     conduit::relay::io::load("my_output.hdf5",n_load);
     std::cout << "\nLoad result:" << std::endl;
     n_load.print();
-
-    CONDUIT_INFO("relay_io_example_2_hdf5");
+    END_EXAMPLE("relay_io_example_2_hdf5");
 }
 
 //-----------------------------------------------------------------------------
-// 150-168
 TEST(conduit_docs, relay_io_example_3_hdf5)
 {
-    CONDUIT_INFO("relay_io_example_3_hdf5");
-
+    BEGIN_EXAMPLE("relay_io_example_3_hdf5");
     // setup node to save
     Node n;
     n["a/my_data"] = 1.0;
     n["a/b/my_string"] = "value";
     std::cout << "\nNode to write:" << std::endl;
     n.print();
-    
+
     //save to hdf5 using generic i/o save
     conduit::relay::io::save(n,"my_output.hdf5");
-    
+
     // append to existing node with data from hdf5 file using load_merged
     Node n_load;
     n_load["a/b/new_data"] = 42.0;
@@ -165,57 +155,49 @@ TEST(conduit_docs, relay_io_example_3_hdf5)
     conduit::relay::io::load_merged("my_output.hdf5",n_load);
     std::cout << "\nLoad result:" << std::endl;
     n_load.print();
-    
-    CONDUIT_INFO("relay_io_example_3_hdf5");
+    END_EXAMPLE("relay_io_example_3_hdf5");
 }
 
-
 //-----------------------------------------------------------------------------
-// 179-193
 TEST(conduit_docs, relay_io_example_4_hdf5)
 {
-    CONDUIT_INFO("relay_io_example_4_hdf5");
-
+    BEGIN_EXAMPLE("relay_io_example_4_hdf5");
     // setup node to save
     Node n;
     n["path/to/my_data"] = 1.0;
     std::cout << "\nNode to write:" << std::endl;
     n.print();
-    
+
     //save to hdf5 using generic i/o save
     conduit::relay::io::save(n,"my_output.hdf5");
-    
+
     // load only a subset of the tree
     Node n_load;
     conduit::relay::io::load("my_output.hdf5:path/to",n_load);
     std::cout << "\nLoad result from 'path/to'" << std::endl;
     n_load.print();
-    
-    CONDUIT_INFO("relay_io_example_4_hdf5");
+    END_EXAMPLE("relay_io_example_4_hdf5");
 }
 
 //-----------------------------------------------------------------------------
-// 203-217
 TEST(conduit_docs, relay_io_example_5_hdf5)
 {
-    CONDUIT_INFO("relay_io_example_5_hdf5");
-
+    BEGIN_EXAMPLE("relay_io_example_5_hdf5");
     // setup node to save
     Node n;
     n["my_data"] = 1.0;
     std::cout << "\nNode to write to 'path/to':" << std::endl;
     n.print();
-    
+
     //save to hdf5 using generic i/o save
     conduit::relay::io::save(n,"my_output.hdf5:path/to");
-    
+
     // load only a subset of the tree
     Node n_load;
     conduit::relay::io::load("my_output.hdf5",n_load);
     std::cout << "\nLoad result:" << std::endl;
     n_load.print();
-    
-    CONDUIT_INFO("relay_io_example_4_hdf5");
+    END_EXAMPLE("relay_io_example_5_hdf5");
 }
 
 
