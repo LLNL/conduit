@@ -4565,7 +4565,13 @@ PyConduit_Node_info(PyConduit_Node *self)
 static PyObject * 
 PyConduit_Node_print_detailed(PyConduit_Node *self)
 {
-    self->node->print_detailed();
+    std::ostringstream oss;
+    self->node->to_string_stream(oss,"conduit_json");
+    // create python string from our c++ stream and call std print
+    PyObject *py_str = Py_BuildValue("s", oss.str().c_str());
+    PyObject_Print(py_str, stdout, Py_PRINT_RAW);
+    // dec ref for python string
+    Py_DECREF(py_str);
     Py_RETURN_NONE;
 }
 
@@ -4903,6 +4909,80 @@ PyConduit_Node_update_external(PyConduit_Node* self,
     Py_RETURN_NONE;
 }
 
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_to_string(PyConduit_Node* self,
+                         PyObject* args,
+                         PyObject* kwargs)
+{
+    
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+
+    std::string protocol = "yaml";
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    char *protocol_c_str = NULL;
+    char *pad_c_str = NULL;
+    char *eoe_c_str = NULL;
+    
+    static const char *kwlist[] = {"protocol",
+                                   "indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|snnss",
+                                     const_cast<char**>(kwlist),
+                                     &protocol_c_str,
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+    
+    if(protocol_c_str != NULL)
+    {
+        protocol = std::string(protocol_c_str);
+    }
+    
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    std::ostringstream oss;
+    
+    try
+    {
+        self->node->to_string_stream(oss,
+                                     protocol,
+                                     indent,
+                                     depth,
+                                     pad,
+                                     eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -5314,15 +5394,24 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_NOARGS,
      "Returns if this node's data is in compact form"}, 
      //-----------------------------------------------------------------------//
+     {"to_string",
+      (PyCFunction)PyConduit_Node_to_string, 
+      METH_VARARGS| METH_KEYWORDS,
+      "Returns a string representation of the node. "
+      "Optionally takes protocol and spacing options. "
+      "(Default protocol='yaml'.)"},
+     //-----------------------------------------------------------------------//
      {"to_json",
       (PyCFunction)PyConduit_Node_to_json, 
       METH_VARARGS| METH_KEYWORDS,
-      "Returns a JSON string representation of the node."},
+      "Returns a JSON string representation of the node. "
+      "Optionally takes protocol and spacing options."},
      //-----------------------------------------------------------------------//
      {"to_yaml",
       (PyCFunction)PyConduit_Node_to_yaml, 
       METH_VARARGS| METH_KEYWORDS,
-      "Returns a YAML string representation of the node."},
+      "Returns a YAML string representation of the node. "
+      "Optionally takes protocol and spacing options."},
      //-----------------------------------------------------------------------//
      {"children",
       (PyCFunction)PyConduit_Node_iter, 
