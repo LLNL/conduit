@@ -40,6 +40,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Python str() methods for Node, Schema, and DataType now use their new to_string() methods.
 - DataArray<T>::to_json(std::ostring &) is deprecated in favor DataArray<T>::to_json_stream. to_json(std::ostring &) will be removed in a future release.
 - Schema::to_json and Schema::save variants with detailed (bool) arg are deprecated. The detailed arg was never used. These methods will be removed in a future release.
+- Node::print() now prints yaml instead of json. 
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.
