@@ -14,8 +14,6 @@ a:
     my_string: "value"
 
 
-
-
 Value at "a/data" = 1
 
 Removed "a/more_data"
@@ -32,14 +30,12 @@ a:
   data: 1.0
   b: 
     my_string: "value"
-
   c: 42.0
 
-
 END_EXAMPLE("relay_io_handle_example_1")
-[       OK ] conduit_docs.relay_io_handle_1 (4 ms)
-[----------] 1 test from conduit_docs (4 ms total)
+[       OK ] conduit_docs.relay_io_handle_1 (5 ms)
+[----------] 1 test from conduit_docs (5 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (4 ms total)
+[==========] 1 test from 1 test suite ran. (5 ms total)
 [  PASSED  ] 1 test.

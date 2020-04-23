@@ -13,16 +13,12 @@ a:
     my_string: "value"
 
 
-
-
 Load result:
 
 a: 
   my_data: 1.0
   b: 
     my_string: "value"
-
-
 
 END_EXAMPLE("relay_io_example_1_json")
 [       OK ] conduit_docs.relay_io_example_1_json (1 ms)
@@ -37,16 +33,12 @@ a:
     my_string: "value"
 
 
-
-
 Load result:
 
 a: 
   my_data: 1.0
   b: 
     my_string: "value"
-
-
 
 END_EXAMPLE("relay_io_example_1_hdf5")
 [       OK ] conduit_docs.relay_io_example_1_hdf5 (3 ms)
@@ -61,15 +53,11 @@ a:
     my_string: "value"
 
 
-
-
 Node to append:
 
 a: 
   b: 
     new_data: 42.0
-
-
 
 
 Load result:
@@ -79,8 +67,6 @@ a:
   b: 
     my_string: "value"
     new_data: 42.0
-
-
 
 END_EXAMPLE("relay_io_example_2_hdf5")
 [       OK ] conduit_docs.relay_io_example_2_hdf5 (3 ms)
@@ -95,15 +81,11 @@ a:
     my_string: "value"
 
 
-
-
 Node to load into:
 
 a: 
   b: 
     new_data: 42.0
-
-
 
 
 Load result:
@@ -112,9 +94,7 @@ a:
   b: 
     new_data: 42.0
     my_string: "value"
-
   my_data: 1.0
-
 
 END_EXAMPLE("relay_io_example_3_hdf5")
 [       OK ] conduit_docs.relay_io_example_3_hdf5 (1 ms)
@@ -126,8 +106,6 @@ Node to write:
 path: 
   to: 
     my_data: 1.0
-
-
 
 
 Load result from 'path/to'
@@ -149,8 +127,6 @@ Load result:
 path: 
   to: 
     my_data: 1.0
-
-
 
 END_EXAMPLE("relay_io_example_5_hdf5")
 [       OK ] conduit_docs.relay_io_example_5_hdf5 (1 ms)

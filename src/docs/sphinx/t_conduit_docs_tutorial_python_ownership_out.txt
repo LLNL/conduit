@@ -25,16 +25,13 @@ test 109
 109: BEGIN_EXAMPLE("py_mem_ownership_external")
 109: 
 109: mem_spaces: 
-109:   0x7ff10299bb30: 
+109:   0x7fe138e8b760: 
 109:     path: "v_owned"
 109:     type: "allocated"
 109:     bytes: 40
-109: 
-109:   0x7ff1029ccc60: 
+109:   0x7fe138e8d3f0: 
 109:     path: "v_external"
 109:     type: "external"
-109: 
-109: 
 109: total_bytes_allocated: 40
 109: total_bytes_mmaped: 0
 109: total_bytes_compact: 80
@@ -57,4 +54,4 @@ The following tests passed:
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.18 sec
+Total Test time (real) =   0.17 sec

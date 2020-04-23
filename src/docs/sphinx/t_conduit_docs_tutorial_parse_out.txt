@@ -64,7 +64,7 @@ BEGIN_EXAMPLE("t_json_generator_pure_yaml")
 test: 100.0
 
 END_EXAMPLE("t_json_generator_pure_yaml")
-[       OK ] conduit_tutorial.json_generator_pure_yaml (1 ms)
+[       OK ] conduit_tutorial.json_generator_pure_yaml (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_bind_to_incore
 BEGIN_EXAMPLE("t_json_generator_bind_to_incore")
 100 vs 100
@@ -75,29 +75,25 @@ b: 200.0
 
 
 mem_spaces: 
-  0x7ffeeefaf030: 
+  0x7ffeea50a030: 
     path: "a"
     type: "external"
-
-
 total_bytes_allocated: 0
 total_bytes_mmaped: 0
 total_bytes_compact: 16
 total_strided_bytes: 16
 
 END_EXAMPLE("t_json_generator_bind_to_incore")
-[       OK ] conduit_tutorial.json_generator_bind_to_incore (0 ms)
+[       OK ] conduit_tutorial.json_generator_bind_to_incore (1 ms)
 [ RUN      ] conduit_tutorial.json_generator_compact
 BEGIN_EXAMPLE("t_json_generator_compact")
 [100.0, 200.0, 300.0, 400.0, 500.0]
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 mem_spaces: 
-  0x7ffeeefaeff0: 
+  0x7ffeea509ff0: 
     path: ""
     type: "external"
-
-
 total_bytes_allocated: 0
 total_bytes_mmaped: 0
 total_bytes_compact: 40
@@ -105,11 +101,9 @@ total_strided_bytes: 72
 
 
 mem_spaces: 
-  0x7ffeeefaeff0: 
+  0x7ffeea509ff0: 
     path: ""
     type: "external"
-
-
 total_bytes_allocated: 0
 total_bytes_mmaped: 0
 total_bytes_compact: 40
@@ -119,12 +113,10 @@ total_strided_bytes: 72
 {"dtype":"float64", "number_of_elements": 5, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
 
 mem_spaces: 
-  0x7fabf9405700: 
+  0x7fa1db4056e0: 
     path: ""
     type: "allocated"
     bytes: 40
-
-
 total_bytes_allocated: 40
 total_bytes_mmaped: 0
 total_bytes_compact: 40
@@ -133,12 +125,10 @@ total_strided_bytes: 40
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 mem_spaces: 
-  0x7fabf9406370: 
+  0x7fa1db406350: 
     path: ""
     type: "allocated"
     bytes: 40
-
-
 total_bytes_allocated: 40
 total_bytes_mmaped: 0
 total_bytes_compact: 40

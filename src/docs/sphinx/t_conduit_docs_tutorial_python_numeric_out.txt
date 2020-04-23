@@ -25,11 +25,11 @@ test 107
 107: BEGIN_EXAMPLE("py_numeric_via_value")
 107: 10
 107: END_EXAMPLE("py_numeric_via_value")
-1/1 Test #107: t_conduit_docs_tutorial_python_numeric ...   Passed    0.16 sec
+1/1 Test #107: t_conduit_docs_tutorial_python_numeric ...   Passed    0.14 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_numeric
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.18 sec
+Total Test time (real) =   0.17 sec

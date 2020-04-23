@@ -847,7 +847,7 @@ Polyhedra
 .. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
    :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
    :end-before:  END_EXAMPLE("blueprint_demo_basic_polyhedra")
-
+   :language: yaml
 
 * **Visual**
 

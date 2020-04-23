@@ -18,8 +18,6 @@ a:
     c: "d"
     e: 64.0
 
-
-
 total bytes: 15
 END_EXAMPLE("basics_hierarchial")
 [       OK ] conduit_tutorial.basics_hierarchial (0 ms)
@@ -30,14 +28,12 @@ object_example:
   val1: "data"
   val2: 10
   val3: 3.1415
-
 list_example: 
   - 0
   - 1
   - 2
   - 3
   - 4
-
 
 END_EXAMPLE("basics_object_and_list")
 [       OK ] conduit_tutorial.basics_object_and_list (0 ms)
@@ -48,14 +44,12 @@ object_example:
   val1: "data"
   val2: 10
   val3: 3.1415
-
 list_example: 
   - 0
   - 1
   - 2
   - 3
   - 4
-
 
 val1: "data"
 val2: 10
@@ -72,29 +66,25 @@ END_EXAMPLE("basics_object_and_list_itr")
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7fa07e404e60: 
+  0x7f9239c04e40: 
     path: "my"
     type: "allocated"
     bytes: 5
-
-  0x7fa07e405440: 
+  0x7f9239c05420: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
-
-  0x7fa07e405e70: 
+  0x7f9239c05e50: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8
-
-
 total_bytes_allocated: 15
 total_bytes_mmaped: 0
 total_bytes_compact: 15
 total_strided_bytes: 15
 
 END_EXAMPLE("basics_mem_spaces")
-[       OK ] conduit_tutorial.basics_mem_spaces (1 ms)
+[       OK ] conduit_tutorial.basics_mem_spaces (0 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style
 BEGIN_EXAMPLE("basics_bw_style")
 
@@ -114,7 +104,7 @@ BEGIN_EXAMPLE("basics_bw_style_from_native")
 }
 END_EXAMPLE("basics_bw_style_from_native")
 [       OK ] conduit_tutorial.basics_bw_style_from_native (0 ms)
-[----------] 7 tests from conduit_tutorial (1 ms total)
+[----------] 7 tests from conduit_tutorial (0 ms total)
 
 [----------] Global test environment tear-down
 [==========] 7 tests from 1 test suite ran. (1 ms total)

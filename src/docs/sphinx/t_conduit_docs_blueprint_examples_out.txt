@@ -10,16 +10,12 @@ valid: "true"
 coords: 
   type: 
     valid: "true"
-
   info: 
     - "mesh::coordset::explicit: 'type' has valid value 'explicit'"
     - "mesh::coordset::explicit: 'values' is an mcarray"
-
   values: 
     valid: "true"
-
   valid: "true"
-
 
 END_EXAMPLE("blueprint_example_1")
 [       OK ] conduit_docs.blueprint_example_1 (1 ms)
@@ -33,22 +29,18 @@ z: [3.0, 3.0, 3.0, 3.0, 3.0]
 
 
 mem_spaces: 
-  0x7fc758c04e40: 
+  0x7fc12cc04e20: 
     path: "x"
     type: "allocated"
     bytes: 40
-
-  0x7fc758c04f40: 
+  0x7fc12cc04f20: 
     path: "y"
     type: "allocated"
     bytes: 40
-
-  0x7fc758c050a0: 
+  0x7fc12cc05080: 
     path: "z"
     type: "allocated"
     bytes: 40
-
-
 total_bytes_allocated: 120
 total_bytes_mmaped: 0
 total_bytes_compact: 120
@@ -63,20 +55,18 @@ transformed to 'interleaved' mcarray
 }
 
 mem_spaces: 
-  0x7fc758c06b90: 
+  0x7fc12cc06b70: 
     path: ""
     type: "allocated"
     bytes: 120
-
-
 total_bytes_allocated: 120
 total_bytes_mmaped: 0
 total_bytes_compact: 120
 total_strided_bytes: 312
 
 END_EXAMPLE("blueprint_example_2")
-[       OK ] conduit_docs.blueprint_example_2 (0 ms)
-[----------] 2 tests from conduit_docs (1 ms total)
+[       OK ] conduit_docs.blueprint_example_2 (1 ms)
+[----------] 2 tests from conduit_docs (2 ms total)
 
 [----------] Global test environment tear-down
 [==========] 2 tests from 1 test suite ran. (2 ms total)

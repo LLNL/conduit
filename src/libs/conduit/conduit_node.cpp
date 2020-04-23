@@ -11848,7 +11848,10 @@ Node::to_yaml_generic(std::ostream &os,
                                            depth+1,
                                            pad,
                                            eoe);
-            os << eoe;
+
+            // if the child is a leaf, we need eoe
+            if(m_children[i]->number_of_children() == 0)
+                os << eoe;
         }
     }
     else if(dtype().id() == DataType::LIST_ID)
@@ -11865,7 +11868,10 @@ Node::to_yaml_generic(std::ostream &os,
                                            depth+1,
                                            pad,
                                            eoe);
-            os << eoe;
+
+            // if the child is a leaf, we need eoe
+            if(m_children[i]->number_of_children() == 0)
+                os << eoe;
         }
     }
     else // assume leaf data type

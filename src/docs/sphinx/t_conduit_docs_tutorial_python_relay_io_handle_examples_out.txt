@@ -19,7 +19,7 @@ test 110
 110: test_001_io_handle (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
 110: 
 110: ----------------------------------------------------------------------
-110: Ran 1 test in 0.005s
+110: Ran 1 test in 0.006s
 110: 
 110: OK
 110: 
@@ -32,8 +32,6 @@ test 110
 110:   more_data: 2.0
 110:   b: 
 110:     my_string: "value"
-110: 
-110: 
 110: 
 110: 
 110: Value at "a/data" = 1.0
@@ -52,9 +50,7 @@ test 110
 110:   data: 1.0
 110:   b: 
 110:     my_string: "value"
-110: 
 110:   c: 42.0
-110: 
 110: 
 110: 
 110: END_EXAMPLE("py_relay_io_handle")
@@ -65,4 +61,4 @@ The following tests passed:
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.24 sec
+Total Test time (real) =   0.23 sec

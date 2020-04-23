@@ -41,8 +41,6 @@ test 106
 106:     c: "d"
 106:     e: 64.0
 106: 
-106: 
-106: 
 106: total bytes: 15
 106: 
 106: END_EXAMPLE("py_basics_hierarchial")
@@ -52,14 +50,12 @@ test 106
 106:   val1: "data"
 106:   val2: 10
 106:   val3: 3.1415
-106: 
 106: list_example: 
 106:   - 0
 106:   - 1
 106:   - 2
 106:   - 3
 106:   - 4
-106: 
 106: 
 106: END_EXAMPLE("py_basics_object_and_list")
 106: BEGIN_EXAMPLE("py_basics_object_and_list_itr")
@@ -68,14 +64,12 @@ test 106
 106:   val1: "data"
 106:   val2: 10
 106:   val3: 3.1415
-106: 
 106: list_example: 
 106:   - 0
 106:   - 1
 106:   - 2
 106:   - 3
 106:   - 4
-106: 
 106: 
 106: val1: "data"
 106: val2: 10
@@ -90,22 +84,18 @@ test 106
 106: BEGIN_EXAMPLE("py_basics_mem_spaces")
 106: 
 106: mem_spaces: 
-106:   0x7f8d0cf136e0: 
+106:   0x7ff41ae58e90: 
 106:     path: "my"
 106:     type: "allocated"
 106:     bytes: 5
-106: 
-106:   0x7f8d0cf31a10: 
+106:   0x7ff41ae84120: 
 106:     path: "a/b/c"
 106:     type: "allocated"
 106:     bytes: 2
-106: 
-106:   0x7f8d0cf2d2d0: 
+106:   0x7ff41ae7d8a0: 
 106:     path: "a/b/e"
 106:     type: "allocated"
 106:     bytes: 8
-106: 
-106: 
 106: total_bytes_allocated: 15
 106: total_bytes_mmaped: 0
 106: total_bytes_compact: 15
@@ -123,11 +113,11 @@ test 106
 106:   "test": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
 106: }
 106: END_EXAMPLE("py_basics_bw_style_from_native")
-1/1 Test #106: t_conduit_docs_tutorial_python_basics ...   Passed    0.16 sec
+1/1 Test #106: t_conduit_docs_tutorial_python_basics ...   Passed    0.15 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_basics
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.20 sec
+Total Test time (real) =   0.17 sec

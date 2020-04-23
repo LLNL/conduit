@@ -13,8 +13,6 @@ a:
     my_string: "value"
 
 
-
-
 Path 'myoutput.hdf5:a/my_data' exists
 
 Data loaded:
@@ -27,8 +25,6 @@ a:
   b: 
     my_string: "value"
     c: 144
-
-
 
 File 
 'myoutput.hdf5' is a hdf5 file
@@ -49,13 +45,11 @@ protocols:
   conduit_silo: "disabled"
   conduit_silo_mesh: "disabled"
   adios: "disabled"
-
 options: 
   hdf5: 
     compact_storage: 
       enabled: "true"
       threshold: 1024
-
     chunking: 
       enabled: "true"
       threshold: 2000000
@@ -65,16 +59,11 @@ options:
         level: 5
 
 
-
-
-
-
 New HDF5 I/O Options:
 
 compact_storage: 
   enabled: "true"
   threshold: 1024
-
 chunking: 
   enabled: "true"
   threshold: 2000
@@ -82,8 +71,6 @@ chunking:
   compression: 
     method: "gzip"
     level: 5
-
-
 
 
 saving data to 'myoutput_chunked.hdf5' 
