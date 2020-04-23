@@ -67,6 +67,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mcarray.hpp"
+#include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
 
@@ -582,6 +583,35 @@ bool verify_mlarray_field(const std::string &protocol,
         else
         {
             log::error(info, protocol, log::quote(field_name) + "is not an mlarray");
+        }
+    }
+
+    log::validation(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_o2mrelation_field(const std::string &protocol,
+                              const conduit::Node &node,
+                              conduit::Node &info,
+                              const std::string &field_name)
+{
+    Node &field_info = info[field_name];
+
+    bool res = verify_field_exists(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = node[field_name];
+        res = blueprint::o2mrelation::verify(field_node,field_info);
+        if(res)
+        {
+            log::info(info, protocol, log::quote(field_name) + "describes a one-to-many relation");
+        }
+        else
+        {
+            log::error(info, protocol, log::quote(field_name) + "doesn't describe a one-to-many relation");
         }
     }
 
@@ -3104,6 +3134,7 @@ mesh::topology::unstructured::verify(const Node &topo,
         // single shape case
         if(topo_elems.has_child("shape"))
         {
+            // TODO(JRC): Add in o2m validation for polygonal/polyhedral.
             elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
             elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
@@ -3867,11 +3898,56 @@ mesh::matset::verify(const Node &matset,
                      Node &info)
 {
     const std::string protocol = "mesh::matset";
-    bool res = true;
+    bool res = true, vfs_res = true;
     info.reset();
 
     res &= verify_string_field(protocol, matset, info, "topology");
-    res &= verify_mcarray_field(protocol, matset, info, "volume_fractions");
+    res &= vfs_res &= verify_field_exists(protocol, matset, info, "volume_fractions");
+
+    if(vfs_res)
+    {
+        // TODO(JRC): Maybe add a verifier for 'number' or 'object' at the top
+        // here so as to make the validation as explicit as possible.
+
+        if(!matset["volume_fractions"].dtype().is_object())
+        {
+            log::info(info, protocol, "detected uni-buffer matset");
+
+            res &= verify_number_field(protocol, matset, info, "volume_fractions");
+            res &= verify_integer_field(protocol, matset, info, "material_ids");
+            res &= verify_object_field(protocol, matset, info, "material_map");
+
+            res &= blueprint::o2mrelation::verify(matset, info);
+        }
+        else
+        {
+            log::info(info, protocol, "detected multi-buffer matset");
+
+            res &= verify_object_field(protocol, matset, info, "volume_fractions");
+
+            const Node &vfs = matset["volume_fractions"];
+            Node &vfs_info = info["volume_fractions"];
+
+            NodeConstIterator mat_it = vfs.children();
+            while(mat_it.has_next())
+            {
+                const Node &mat = mat_it.next();
+                const std::string &mat_name = mat_it.name();
+
+                if(mat.dtype().is_object())
+                {
+                    vfs_res &= verify_o2mrelation_field(protocol, vfs, vfs_info, mat_name);
+                }
+                else
+                {
+                    vfs_res &= verify_number_field(protocol, vfs, vfs_info, mat_name);
+                }
+            }
+
+            res &= vfs_res;
+            log::validation(vfs_info, vfs_res);
+        }
+    }
 
     log::validation(info, res);
 
