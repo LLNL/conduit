@@ -1442,7 +1442,6 @@ create_hdf5_group_for_conduit_node(const Node &node,
     {
         chld_itr.next();
         chld_names_avg_size +=chld_itr.name().size();
-        // TODO: if list, pad a bit more?
     }
 
     if(chld_names_avg_size > 0 && num_children > 0 )
@@ -1481,9 +1480,6 @@ create_hdf5_group_for_conduit_node(const Node &node,
                          "Failed to close HDF5 H5P_GROUP_CREATE "
                          << "property list: " 
                          << h5_gc_plist);
-
-    // TODO: If list add the attribue "__conduit_list"
-
 
     return h5_child_id;
 }
@@ -1650,6 +1646,30 @@ write_conduit_empty_to_hdf5_group(hid_t hdf5_group_id,
 }
 
 //---------------------------------------------------------------------------//
+void
+setup_hdf5_group_atts_for_conduit_node(const Node &node,
+                                       const std::string &ref_path,
+                                       hid_t hdf5_group_id)
+{
+    bool has_list_attr = check_if_hdf5_group_has_conduit_list_attribute(hdf5_group_id,
+                                                                        ref_path);
+
+    if( !has_list_attr && node.dtype().is_list() )
+    {
+        write_conduit_hdf5_list_attribute(hdf5_group_id,
+                                          ref_path);
+    }
+
+    if( has_list_attr && node.dtype().is_object() )
+    {
+        std::cout << " remove_conduit_hdf5_list_attribute " << std::endl;
+        // remove_conduit_hdf5_list_attribute(hdf5_group_id,
+        //                                   ref_path);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
 // assume this is called only if we know the hdf5 state is compatible 
 //---------------------------------------------------------------------------//
 void
@@ -1657,6 +1677,10 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
                                           const std::string &ref_path,
                                           hid_t hdf5_group_id)
 {
+    setup_hdf5_group_atts_for_conduit_node(node,
+                                           ref_path,
+                                           hdf5_group_id);
+
     NodeConstIterator itr = node.children();
 
     // call on each child with expanded path
@@ -1809,18 +1833,6 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
             // (if we created a new group, or we are at the root group 
             //  of the hdf5 file, the att won't be set)
 
-            // first check if the attribute exists
-            if( child.dtype().is_list() && 
-                !check_if_hdf5_group_has_conduit_list_attribute(h5_child_id,
-                                                                ref_path))
-            {
-                write_conduit_hdf5_list_attribute(h5_child_id,
-                                                  ref_path);
-            }
-
-            // TODO: if object?
-            // remove_conduit_hdf5_list_attribute(h5_child_id);
-            
             // traverse 
             write_conduit_node_children_to_hdf5_group(child,
                                                       ref_path,
@@ -1879,12 +1891,25 @@ void
 write_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
                                   const std::string &ref_path)
 {
-    hid_t h5_dtype_id  = H5Tcreate(H5T_OPAQUE, 1);
-    hid_t h5_dspace_id = H5Screate(H5S_NULL);
+    // Note (cyrush):
+    //  We really just use the presence of the attribute, we don't need
+    //  data associated with it. 
+    //
+    //  I tried to write a null att (null hdf5 dt, etc) but that didn't work.
+    //  H5Awrite fails with message about null data. I could't find any 
+    //  examples that demoed this either -- it may not be supported.
+    //
+    //  So, we write a single meaningless int as the attribute data.
+    //  Perhaps someone could breath meaning into this int in the future
+    //  or find a way to eliminate it.
+
+    int att_value = 1;
+    
+    hid_t h5_dspace_id = H5Screate(H5S_SCALAR);
     
     hid_t h5_attr_id  = H5Acreate(hdf5_group_id,
                                   conduit_hdf5_list_attr_name.c_str(),
-                                  h5_dtype_id,
+                                  H5T_NATIVE_INT,
                                   h5_dspace_id,
                                   H5P_DEFAULT,
                                   H5P_DEFAULT);
@@ -1899,8 +1924,8 @@ write_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
 
     
     hid_t h5_status = H5Awrite(h5_attr_id,
-                               h5_dtype_id,
-                               NULL);
+                               H5T_NATIVE_INT,
+                               &att_value);
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
                                                     hdf5_group_id,
                                                     ref_path,
@@ -1909,11 +1934,6 @@ write_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
                                            << " "
                                            << conduit_hdf5_list_attr_name.c_str());
 
-    // close our datatype
-    CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(H5Tclose(h5_dtype_id),
-                                                    hdf5_group_id,
-                                                    ref_path,
-                                           "Failed to close HDF5 Datatype");
     // close our dataspace
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(H5Sclose(h5_dspace_id),
                                                     hdf5_group_id,
@@ -2017,6 +2037,51 @@ h5_group_check(h5_read_opdata *od,
     }
 }
 
+
+//---------------------------------------------------------------------------//
+Node *
+h5l_iterate_traverse_op_func_get_child(Node &node,
+                                       const std::string &hdf5_path)
+{
+    Node *chld_node_ptr = NULL;
+    // if( h5_od->node->dtype().is_object() )
+    if( node.dtype().is_object() )
+    {
+        // execute traversal for this group
+        chld_node_ptr = &node.fetch(hdf5_path);
+    }
+    else if( node.dtype().is_list() )
+    {
+        // we need the child index, use name to index for now
+        // not sure if it is possible to get iteration index
+        // from h5literate
+        
+        // Either the child already exists in conduit 
+        // (compat case), or we need to append to add
+        // a new child
+
+        // parse index for this list entry
+        std::istringstream iss(hdf5_path);
+        int child_idx = -1;
+        iss >> child_idx;
+
+        if(node.number_of_children() <= child_idx )
+        {
+            node.append();             
+        }
+
+        chld_node_ptr = &node.child(child_idx);
+    }
+    else
+    {
+        // TODO Error: We should not land here, H5Literate should
+        // only be called on groups, which will correspond
+        // to either objects or lists
+    }
+    
+    return chld_node_ptr;
+}
+
 //---------------------------------------------------------------------------//
 /// Our main callback for H5Literate.
 /// (adapted from: h5ex_g_traverse)
@@ -2096,30 +2161,36 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
                                                        << hdf5_id 
                                                        << " path:"
                                                        << hdf5_path);
-                
-                Node *chld_node_ptr = NULL;
-                
-                if( h5_od->node->dtype().is_object() )
-                {
-                    // execute traversal for this group
-                    chld_node_ptr = &h5_od->node->fetch(hdf5_path);
-                }
-                else if( h5_od->node->dtype().is_list() )
-                {
-                    // we need the child index, name to index for now?
-                    
-                    // Either the child already exists in conduit 
-                    // (compat case), or we need to append to add
-                    // a new child
-                    chld_node_ptr = &h5_od->node->fetch(hdf5_path);
 
-                }
-                else
-                {
-                    // TODO Error: We should not land here, H5Literate should
-                    // only be called on groups, which will correspond
-                    // to either objects or lists
-                }
+                Node *chld_node_ptr = h5l_iterate_traverse_op_func_get_child(
+                                                   *h5_od->node,
+                                                   std::string(hdf5_path));                
+                // Node *chld_node_ptr = NULL;
+                //
+                // if( h5_od->node->dtype().is_object() )
+                // {
+                //     std::cout << "h5l_iterate_traverse_op_func " << "node is obj"  <<std::endl;
+                //     // execute traversal for this group
+                //     chld_node_ptr = &h5_od->node->fetch(hdf5_path);
+                // }
+                // else if( h5_od->node->dtype().is_list() )
+                // {
+                //     std::cout << "h5l_iterate_traverse_op_func " << "node is list"  <<std::endl;
+                //     // we need the child index, name to index for now?
+                //     std::cout << "hdf5_path: " <<  hdf5_path << std::endl;
+                //     // Either the child already exists in conduit
+                //     // (compat case), or we need to append to add
+                //     // a new child
+                //     chld_node_ptr = &h5_od->node->fetch(hdf5_path);
+                //
+                // }
+                // else
+                // {
+                //     std::cout << "h5l_iterate_traverse_op_func " << "node is ????"  <<std::endl;
+                //     // TODO Error: We should not land here, H5Literate should
+                //     // only be called on groups, which will correspond
+                //     // to either objects or lists
+                // }
 
                 read_hdf5_group_into_conduit_node(h5_group_id,
                                                   chld_ref_path,
@@ -2137,28 +2208,40 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
         }
         case H5O_TYPE_DATASET:
         {
-            Node *chld_node_ptr = NULL;
-            
-            if( h5_od->node->dtype().is_object() )
-            {
-                // execute traversal for this group
-                chld_node_ptr = &h5_od->node->fetch(hdf5_path);
-            }
-            else if( h5_od->node->dtype().is_list() )
-            {
-                // we need the child index, name to index for now?
-                
-                // Either the child already exists in conduit 
-                // (compat case), or we need to append to add
-                // a new child
-                chld_node_ptr = &h5_od->node->fetch(hdf5_path);
-            }
-            else
-            {
-                // TODO Error: We should not land here, H5Literate should
-                // only be called on groups, which will correspond
-                // to either objects or lists
-            }
+            Node *chld_node_ptr = h5l_iterate_traverse_op_func_get_child(
+                                                   *h5_od->node,
+                                                   std::string(hdf5_path));
+            // if( h5_od->node->dtype().is_object() )
+            // {
+            //     // execute traversal for this group
+            //     chld_node_ptr = &h5_od->node->fetch(hdf5_path);
+            // }
+            // else if( h5_od->node->dtype().is_list() )
+            // {
+            //     // we need the child index, name to index for now?
+            //
+            //     // Either the child already exists in conduit
+            //     // (compat case), or we need to append to add
+            //     // a new child
+            //     std::cout << "list entry " << hdf5_path << std::endl;
+            //     std::string hdf5_path_str(hdf5_path);
+            //     std::istringstream iss(hdf5_path_str);
+            //     int list_entry_id = -1;
+            //     iss >> list_entry_id;
+            //     std::cout << "llist_entry_id " << list_entry_id << std::endl;
+            //     if(h5_od->node->number_of_children() <= list_entry_id )
+            //     {
+            //         h5_od->node->append();
+            //     }
+            //
+            //     chld_node_ptr = &h5_od->node->child(list_entry_id);
+            // }
+            // else
+            // {
+            //     // TODO Error: We should not land here, H5Literate should
+            //     // only be called on groups, which will correspond
+            //     // to either objects or lists
+            // }
 
             // open hdf5 dataset at path
             hid_t h5_dset_id = H5Dopen(hdf5_id,
@@ -2226,7 +2309,6 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
     if(check_if_hdf5_group_has_conduit_list_attribute(hdf5_group_id,
                                                       ref_path))
     {
-        std::cout << "FOUND A LIST!" << std::endl;
         // special att: we have a list
         dest.set(DataType::list());
     }

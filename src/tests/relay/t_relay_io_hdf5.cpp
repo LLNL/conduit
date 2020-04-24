@@ -65,7 +65,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_name)
     uint32 b_val = 8;
     uint32 c_val = 13;
     uint32 d_val = 121;
-    
+
     Node n;
     n["a"] = a_val;
     n["b"] = b_val;
@@ -91,7 +91,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_name)
     Node n_load_2;
     // read from root of hdf5 file
     io::hdf5_read("tout_hdf5_wr.hdf5",n_load_2);
-    
+
     EXPECT_EQ(n_load_2["myobj/a"].as_uint32(), a_val);
     EXPECT_EQ(n_load_2["myobj/b"].as_uint32(), b_val);
     EXPECT_EQ(n_load_2["myobj/c"].as_uint32(), c_val);
@@ -100,26 +100,26 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_name)
     Node n_load_generic;
     // read from root of hdf5 file
     io::load("tout_hdf5_wr.hdf5",n_load_generic);
-    
+
     EXPECT_EQ(n_load_generic["myobj/a"].as_uint32(), a_val);
     EXPECT_EQ(n_load_generic["myobj/b"].as_uint32(), b_val);
     EXPECT_EQ(n_load_generic["myobj/c"].as_uint32(), c_val);
-    
-    
 
-    
-    // save load from generic io interface 
+
+
+
+    // save load from generic io interface
     io::save(n_load_generic["myobj"],"tout_hdf5_wr_generic.hdf5:myobj");
 
     n_load_generic["myobj/d"] = d_val;
-    
+
     io::load_merged("tout_hdf5_wr_generic.hdf5",n_load_generic);
-    
+
     EXPECT_EQ(n_load_generic["myobj/a"].as_uint32(), a_val);
     EXPECT_EQ(n_load_generic["myobj/b"].as_uint32(), b_val);
     EXPECT_EQ(n_load_generic["myobj/c"].as_uint32(), c_val);
     EXPECT_EQ(n_load_generic["myobj/d"].as_uint32(), d_val);
-    
+
 
 }
 
@@ -142,10 +142,10 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_special_paths)
     // write our node as a group @ "/"
     // make sure "/" works
     io::hdf5_write(n,"tout_hdf5_wr_special_paths_2.hdf5:/");
-    
+
     // make sure empty after ":" this works
     io::hdf5_write(n,"tout_hdf5_wr_special_paths_3.hdf5:");
-    
+
 
     Node n_load;
     io::hdf5_read("tout_hdf5_wr_special_paths_2.hdf5:/",n_load);
@@ -153,7 +153,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_special_paths)
     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
 
     n_load.reset();
-    
+
     io::hdf5_read("tout_hdf5_wr_special_paths_2.hdf5:/",n_load);
     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
@@ -170,7 +170,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_special_paths)
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string)
 {
     uint32 a_val = 20;
-    
+
     std::string s_val = "{string value!}";
 
     Node n;
@@ -184,12 +184,12 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string)
     io::hdf5_write(n,"tout_hdf5_wr_string.hdf5:myobj");
 
     Node n_out;
-    
+
     io::hdf5_read("tout_hdf5_wr_string.hdf5:myobj",n_out);
-    
+
     EXPECT_EQ(n_out["a"].as_uint32(), a_val);
     EXPECT_EQ(n_out["s"].as_string(), s_val);
-    
+
 
 }
 
@@ -198,9 +198,9 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string)
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
 {
     Node n_in(DataType::float64(10));
-    
+
     float64_array val_in = n_in.value();
-    
+
     for(index_t i=0;i<10;i++)
     {
         val_in[i] = 3.1415 * i;
@@ -210,12 +210,12 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
     io::hdf5_write(n_in,"tout_hdf5_wr_array.hdf5:myobj");
 
     Node n_out;
-    
+
     io::hdf5_read("tout_hdf5_wr_array.hdf5:myobj",n_out);
-    
+
     float64_array val_out = n_out.value();
-    
-    
+
+
     for(index_t i=0;i<10;i++)
     {
         EXPECT_EQ(val_in[i],val_out[i]);
@@ -240,7 +240,7 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
     hid_t h5_dtype = H5T_NATIVE_SHORT;
 
     hsize_t num_eles = 2;
-    
+
     hid_t   h5_dspace_id = H5Screate_simple(1,
                                             &num_eles,
                                             NULL);
@@ -261,15 +261,15 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
     vals[0] = -16;
     vals[1] = -16;
 
-    // this should succeed 
+    // this should succeed
     io::hdf5_write(n,h5_dset_id);
-    
 
-    // this should also succeed 
+
+    // this should also succeed
     vals[1] = 16;
-    
+
     io::hdf5_write(n,h5_dset_id);
-    
+
     n.set(DataType::uint16(10));
     // this should fail
     EXPECT_THROW(io::hdf5_write(n,h5_dset_id),Error);
@@ -304,24 +304,24 @@ TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle)
                                   H5P_DEFAULT,
                                   H5P_DEFAULT,
                                   H5P_DEFAULT);
-    
-    
+
+
     Node n;
     n["a/b"].set(DataType::int16(2));
     int16_array vals = n["a/b"].value();
     vals[0] =-16;
     vals[1] =-16;
-    
-    // this should succeed 
+
+    // this should succeed
     io::hdf5_write(n,h5_group_id);
-    
+
     n["a/c"] = "mystring";
-    
-    // this should also succeed 
+
+    // this should also succeed
     vals[1] = 16;
-    
+
     io::hdf5_write(n,h5_group_id);
-    
+
     n["a/b"].set(DataType::uint16(10));
     // this should fail
     EXPECT_THROW(io::hdf5_write(n,h5_group_id),Error);
@@ -334,7 +334,7 @@ TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle)
     EXPECT_EQ(-16,read_vals[0]);
     EXPECT_EQ(16,read_vals[1]);
     EXPECT_EQ("mystring",n_read["a/c"].as_string());
-    
+
     H5Gclose(h5_group_id);
     H5Fclose(h5_file_id);
 }
@@ -399,18 +399,18 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_handle)
     // specify group name for conduit to read out via hdf5_path arg to read
     // call)
     h5_group_id = H5Gopen(h5_file_id, "sample_group_name", 0);
-                          
+
     Node n_load;
 
     io::hdf5_read(h5_group_id, n_load);
-    
+
     status = H5Gclose(h5_group_id);
     status = H5Fclose(h5_file_id);
 
     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
-    
+
 }
 
 
@@ -418,24 +418,24 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_handle)
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_to_existing_dset)
 {
     Node n_in(DataType::uint32(2));
-    
-    
+
+
     uint32_array val_in = n_in.value();
-    
+
     val_in[0] = 1;
     val_in[1] = 2;
-    
-    
+
+
     // Set up hdf5 file and group that caller code would already have.
     hid_t  h5_file_id = H5Fcreate("tout_hdf5_wr_existing_dset.hdf5",
                                   H5F_ACC_TRUNC,
                                   H5P_DEFAULT,
                                   H5P_DEFAULT);
-    
-    
+
+
     io::hdf5_write(n_in,h5_file_id,"myarray");
-    
-    
+
+
     val_in[0] = 3;
     val_in[1] = 4;
 
@@ -447,64 +447,64 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_to_existing_dset)
     EXPECT_THROW(io::hdf5_write(n_incompat,h5_file_id,"myarray"),
                  conduit::Error);
 
-    
+
     H5Fclose(h5_file_id);
-    
+
     // check that the second set of values are the ones we get back
-    
+
     Node n_read;
-    
+
     io::hdf5_read("tout_hdf5_wr_existing_dset.hdf5:myarray",n_read);
-    
+
     uint32_array val = n_read.value();
-    
+
     EXPECT_EQ(val[0],3);
     EXPECT_EQ(val[1],4);
-    
+
     Node n_w2;
     n_w2["myarray"].set_external(n_read);
     n_w2["a/b/c"].set_uint64(123);
-    
-    // this should be compatible 
+
+    // this should be compatible
     io::hdf5_write(n_w2,"tout_hdf5_wr_existing_dset.hdf5");
-    
+
     n_read.reset();
-    
+
     io::hdf5_read("tout_hdf5_wr_existing_dset.hdf5",n_read);
-    
-    
+
+
     uint32_array myarray_val = n_read["myarray"].value();
-    
+
     uint64 a_b_c_val = n_read["a/b/c"].value();
-    
+
     EXPECT_EQ(myarray_val[0],3);
     EXPECT_EQ(myarray_val[1],4);
     EXPECT_EQ(a_b_c_val,123);
-    
-    
+
+
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
 {
     Node n;
-    
+
     n["v_int8"].set(DataType::int8(5));
     n["v_int16"].set(DataType::int16(5));
     n["v_int32"].set(DataType::int32(5));
     n["v_int64"].set(DataType::int64(5));
-    
+
     n["v_uint8"].set(DataType::uint8(5));
     n["v_uint16"].set(DataType::uint16(5));
     n["v_uint32"].set(DataType::uint32(5));
     n["v_uint64"].set(DataType::uint64(5));
-    
+
     n["v_float32"].set(DataType::float32(5));
     n["v_float64"].set(DataType::float64(5));
-    
+
     n["v_string"].set("my_string");
-    
-    
+
+
     int8  *v_int8_ptr  = n["v_int8"].value();
     int16 *v_int16_ptr = n["v_int16"].value();
     int32 *v_int32_ptr = n["v_int32"].value();
@@ -533,26 +533,26 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
         v_float32_ptr[i] = 32.0;
         v_float64_ptr[i] = 64.0;
     }
-    
+
     n.print_detailed();
-    
+
     io::hdf5_write(n,"tout_hdf5_wr_leaf_arrays.hdf5");
-    
-    
-    
+
+
+
     Node n_load;
-    
+
     io::hdf5_read("tout_hdf5_wr_leaf_arrays.hdf5",n_load);
-    
+
     n_load.print_detailed();
-    
-    
+
+
 
     int8_array  v_int8_out  = n_load["v_int8"].value();
     int16_array v_int16_out = n_load["v_int16"].value();
     int32_array v_int32_out = n_load["v_int32"].value();
     int64_array v_int64_out = n_load["v_int64"].value();
-    
+
     EXPECT_EQ(v_int8_out.number_of_elements(),5);
     EXPECT_EQ(v_int16_out.number_of_elements(),5);
     EXPECT_EQ(v_int32_out.number_of_elements(),5);
@@ -577,7 +577,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
 
 
     std::string v_string_out = n_load["v_string"].as_string();
-    
+
     EXPECT_EQ(v_string_out,"my_string");
 }
 
@@ -588,13 +588,13 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_empty)
     Node n;
     n["path/to/empty"];
     n.print_detailed();
-    
+
     io::hdf5_write(n,"tout_hdf5_wr_empty.hdf5");
-    
+
     Node n_load;
     io::hdf5_read("tout_hdf5_wr_empty.hdf5",n_load);
     n_load.print_detailed();
-    
+
     EXPECT_EQ(n["path/to/empty"].dtype().id(),
               n_load["path/to/empty"].dtype().id());
 }
@@ -615,7 +615,7 @@ TEST(conduit_relay_io_hdf5, hdf5_write_zero_sized_leaf)
     Node n_load;
     io::hdf5_read("tout_hdf5_w_0.hdf5",n_load);
     n_load.print_detailed();
-    
+
     EXPECT_EQ(n_load["a"].dtype().number_of_elements(),0);
     EXPECT_EQ(n_load["a"].dtype().id(),DataType::FLOAT64_ID);
 }
@@ -627,13 +627,13 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_childless_object)
     Node n;
     n["path/to/empty"].set(DataType::object());
     n.print_detailed();
-    
+
     io::hdf5_write(n,"tout_hdf5_wr_cl_obj.hdf5");
-    
+
     Node n_load;
     io::hdf5_read("tout_hdf5_wr_cl_obj.hdf5",n_load);
     n_load.print_detailed();
-    
+
     EXPECT_EQ(n["path/to/empty"].dtype().id(),
               n_load["path/to/empty"].dtype().id());
 }
@@ -643,16 +643,16 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_childless_object)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_test_write_incompat)
 {
-    
+
     Node n;
     n["a/b/leaf"] = DataType::uint32(2);
     n["a/b/grp/leaf"].set_uint32(10);
-    
+
     uint32_array vals =  n["a/b/leaf"].value();
-    
+
     vals[0] = 1;
     vals[1] = 2;
-    
+
     io::hdf5_write(n,"tout_hdf5_test_write_incompat.hdf5");
 
     n.print();
@@ -660,7 +660,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_test_write_incompat)
     Node n2;
     n2["a/b/leaf/v"] = DataType::float64(2);
     n2["a/b/grp/leaf/v"].set_float64(10.0);
-    
+
     n2.print();
 
     hid_t h5_file_id = H5Fopen("tout_hdf5_test_write_incompat.hdf5",
@@ -675,7 +675,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_test_write_incompat)
     {
         CONDUIT_INFO(e.message());
     }
-    
+
     H5Fclose(h5_file_id);
 
 }
@@ -687,7 +687,7 @@ TEST(conduit_relay_io_hdf5, auto_endian)
     Node n;
     n["a"].set_int64(12345689);
     n["b"].set_int64(-12345689);
-    
+
     if(Endianness::machine_is_big_endian())
     {
         n.endian_swap_to_little();
@@ -698,7 +698,7 @@ TEST(conduit_relay_io_hdf5, auto_endian)
     }
 
     io::hdf5_write(n,"tout_hdf5_wr_opp_endian.hdf5");
-    
+
     Node n_load;
     io::hdf5_read("tout_hdf5_wr_opp_endian.hdf5",n_load);
 
@@ -718,14 +718,14 @@ TEST(conduit_relay_io_hdf5, hdf5_path_exists)
     n["a/b/c/f"] = 20;
 
     io::hdf5_write(n,test_file_name);
-    
-    
+
+
     hid_t h5_file_id = H5Fopen(test_file_name.c_str(),
                                H5F_ACC_RDONLY,
                                H5P_DEFAULT);
 
     hid_t h5_grp_a = H5Gopen(h5_file_id, "a", 0);
-    
+
 
     EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a"));
     EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a/b"));
@@ -750,7 +750,7 @@ TEST(conduit_relay_io_hdf5, hdf5_path_exists)
     EXPECT_FALSE(io::hdf5_has_path(h5_grp_a,"b/c/BAD"));
     EXPECT_FALSE(io::hdf5_has_path(h5_grp_a,"b/c/d/e/f/g"));
 
-        
+
     H5Gclose(h5_grp_a);
     H5Fclose(h5_file_id);
 }
@@ -758,7 +758,7 @@ TEST(conduit_relay_io_hdf5, hdf5_path_exists)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, hdf5_create_append_methods)
-{    
+{
     std::string test_file_name = "tout_hdf5_open_append.hdf5";
     if(utils::is_file(test_file_name))
     {
@@ -768,79 +768,79 @@ TEST(conduit_relay_io_hdf5, hdf5_create_append_methods)
 
     Node n;
     n["a/b/c/d"] = 10;
-    
+
     io::hdf5_write(n,test_file_name,true);
-    
+
     n.reset();
     n["a/b/c/e"] = 20;
-    
+
     io::hdf5_write(n,test_file_name,true);
-    
-    
+
+
     Node n_load;
     io::hdf5_read(test_file_name,n_load);
-    
+
     EXPECT_TRUE(n_load.has_path("a"));
     EXPECT_TRUE(n_load.has_path("a/b"));
     EXPECT_TRUE(n_load.has_path("a/b/c"));
     EXPECT_TRUE(n_load.has_path("a/b/c/d"));
     EXPECT_TRUE(n_load.has_path("a/b/c/e"));
-    
+
     EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
     EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);
-    
-    
+
+
     io::hdf5_write(n,test_file_name,false);
-    
+
     n_load.reset();
     io::hdf5_read(test_file_name,n_load);
-    
+
     EXPECT_FALSE(n_load.has_path("a/b/c/d"));
     EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);
-    
+
     n.reset();
     n["a/b/c/d"] = 10;
     io::hdf5_save(n,test_file_name);
-    
+
     n_load.reset();
     io::hdf5_read(test_file_name,n_load);
-    
+
     EXPECT_FALSE(n_load.has_path("a/b/c/e"));
     EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
-    
+
     n.reset();
     n["a/b/c/e"] = 20;
-    
+
     io::hdf5_write(n,test_file_name,true);
-    
+
     n.reset();
     n["a/b/c/e"] = 20;
-    
+
     io::hdf5_append(n,test_file_name);
     n_load.reset();
     io::hdf5_read(test_file_name,n_load);
 
-    EXPECT_TRUE(n_load.has_path("a/b/c/d"));    
+    EXPECT_TRUE(n_load.has_path("a/b/c/d"));
     EXPECT_TRUE(n_load.has_path("a/b/c/e"));
     EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
-    EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);    
-    
+    EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);
+
 }
 
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, hdf5_create_open_methods)
-{    
+{
     std::string test_file_name = "tout_hdf5_open_and_create.hdf5";
 
     Node n;
     n["a/b/c/d"] = 10;
-    
+
     hid_t h5_file_id = io::hdf5_create_file(test_file_name);
     io::hdf5_write(n,h5_file_id);
     io::hdf5_close_file(h5_file_id);
-    
+
     h5_file_id = io::hdf5_open_file_for_read(test_file_name);
 
     EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a"));
@@ -849,20 +849,20 @@ TEST(conduit_relay_io_hdf5, hdf5_create_open_methods)
     EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a/b/c/d"));
     Node n_read;
     io::hdf5_read(h5_file_id,"a/b/c/d",n_read);
-    
+
     EXPECT_EQ(10,n_read.to_int());
-    
+
     io::hdf5_close_file(h5_file_id);
-    
+
     h5_file_id = io::hdf5_open_file_for_read_write(test_file_name);
-    
+
     Node n2;
     n2 = 12;
     io::hdf5_write(n2,h5_file_id,"a/b/c/e");
     EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"a/b/c/e"));
     io::hdf5_read(h5_file_id,"a/b/c/e",n_read);
     EXPECT_EQ(12,n_read.to_int());
-    
+
     io::hdf5_close_file(h5_file_id);
 
 }
@@ -873,14 +873,14 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
 {
     // 5k zeros, should compress well, but under default
     // threshold size
-    
+
     Node n;
-    n["value"] = DataType::float64(5000); 
-    
+    n["value"] = DataType::float64(5000);
+
     Node opts;
     opts["hdf5/chunking/threshold"]  = 2000;
     opts["hdf5/chunking/chunk_size"] = 2000;
-    
+
     std::string tout_std = "tout_hdf5_save_generic_default_options.hdf5";
     std::string tout_cmp = "tout_hdf5_save_generic_test_options.hdf5";
 
@@ -899,12 +899,12 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
 
     EXPECT_TRUE(utils::is_file(tout_std));
     EXPECT_TRUE(utils::is_file(tout_cmp));
-    
+
     int64 tout_std_fs = utils::file_size(tout_std);
     int64 tout_cmp_fs = utils::file_size(tout_cmp);
-    CONDUIT_INFO("fs test: std = " 
-                 << tout_std_fs 
-                 << ", cmp =" 
+    CONDUIT_INFO("fs test: std = "
+                 << tout_std_fs
+                 << ", cmp ="
                  << tout_cmp_fs);
     EXPECT_TRUE(tout_cmp_fs < tout_std_fs);
 }
@@ -915,31 +915,31 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
 TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
 {
     Node n;
-    
+
     n["path/sub1/a"];
     n["path/sub1/b"];
     n["path/sub1/c"];
-    
+
     n["path/sub2/d"];
     n["path/sub2/e"];
     n["path/sub2/f"];
-    
+
     std::string tout = "tout_hdf5_grp_chld_names.hdf5";
 
     if(utils::is_file(tout))
     {
         utils::remove_file(tout);
     }
-    
+
     io::save(n,tout, "hdf5");
 
     EXPECT_TRUE(utils::is_file(tout));
 
     hid_t h5_file_id = io::hdf5_open_file_for_read(tout);
     std::vector<std::string> cnames;
-    
+
     io::hdf5_group_list_child_names(h5_file_id,"/",cnames);
-    
+
     EXPECT_EQ(cnames.size(),1);
     EXPECT_EQ(cnames[0],"path");
 
@@ -949,16 +949,16 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
     EXPECT_EQ(cnames[0],"sub1");
     EXPECT_EQ(cnames[1],"sub2");
 
-    
+
     io::hdf5_group_list_child_names(h5_file_id,"path/sub1",cnames);
-    
+
     EXPECT_EQ(cnames.size(),3);
     EXPECT_EQ(cnames[0],"a");
     EXPECT_EQ(cnames[1],"b");
     EXPECT_EQ(cnames[2],"c");
-  
+
     io::hdf5_group_list_child_names(h5_file_id,"path/sub2",cnames);
-        
+
     EXPECT_EQ(cnames.size(),3);
     EXPECT_EQ(cnames[0],"d");
     EXPECT_EQ(cnames[1],"e");
@@ -971,11 +971,11 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
 
     // totally bogus paths will trigger an error
     EXPECT_THROW(io::hdf5_group_list_child_names(h5_file_id,"this/isnt/right",cnames),Error);
-    
+
     // empty string won't work in this case
     EXPECT_THROW(io::hdf5_group_list_child_names(h5_file_id,"",cnames),Error);
-   
-    
+
+
 }
 
 //-----------------------------------------------------------------------------
@@ -989,9 +989,9 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
     {
         utils::remove_file(tout);
     }
-    
+
     io::save(n,tout, "hdf5");
-    
+
     // this should be recoged as hdf5
     EXPECT_TRUE(io::is_hdf5_file(tout));
 
@@ -999,7 +999,7 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
     hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
     EXPECT_TRUE(io::is_hdf5_file(tout));
     io::hdf5_close_file(h5_file_id);
-    
+
     h5_file_id = io::hdf5_open_file_for_read(tout);
     EXPECT_TRUE(io::is_hdf5_file(tout));
     io::hdf5_close_file(h5_file_id);
@@ -1013,10 +1013,10 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
 
 
     io::save(n,tout,"json");
-    
+
     // this should *not* be recoged as hdf5
     EXPECT_FALSE(io::is_hdf5_file(tout));
-    
+
     // check totally bad path
     EXPECT_FALSE(io::is_hdf5_file("/path/to/somewhere/that/cant/exist"));
 
@@ -1035,30 +1035,30 @@ TEST(conduit_relay_io_hdf5, test_remove_path)
     {
         utils::remove_file(tout);
     }
-    
+
     io::save(n,tout, "hdf5");
-    
+
     hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
     io::hdf5_remove_path(h5_file_id,"path/otherdata/leaf");
     io::hdf5_close_file(h5_file_id);
-    
+
     n.reset();
     io::load(tout,n);
     EXPECT_FALSE(n.has_path("path/otherdata/leaf"));
     EXPECT_TRUE(n.has_path("path/otherdata"));
     n.print();
-    
-    
+
+
     h5_file_id = io::hdf5_open_file_for_read_write(tout);
     io::hdf5_remove_path(h5_file_id,"path/otherdata");
     io::hdf5_close_file(h5_file_id);
-    
+
     n.reset();
     io::load(tout,n);
     EXPECT_FALSE(n.has_path("path/otherdata"));
     EXPECT_TRUE(n.has_path("path"));
     n.print();
-    
+
 }
 
 
@@ -1074,11 +1074,11 @@ TEST(conduit_relay_io_hdf5, file_name_in_error)
     {
         utils::remove_file(tout);
     }
-    
+
     io::save(n,tout, "hdf5");
-    
+
     hid_t h5_file_id = io::hdf5_open_file_for_read_write(tout);
-    
+
     Node n_read;
     bool had_error = false;
     try
@@ -1112,11 +1112,11 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
                                  H5P_DEFAULT,
                                  H5P_DEFAULT);
 
-    // write this string several ways and make sure relay 
+    // write this string several ways and make sure relay
     // can reads them all as we expect
 
     // 21 chars + null term (22 total)
-                                 
+
     std::string my_string = "this is my {} string!";
 
 
@@ -1188,7 +1188,7 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
 
 
      std::string my_string3 = "this is my {} string!        ";
-    
+
     // len w/o null = 30
 
     h5_dtype_id = H5Tcopy(H5T_C_S1);
@@ -1217,11 +1217,11 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
     H5Sclose(h5_dspace_id);
     H5Dclose(h5_dset_id);
 
-    // temp buffer to create a null padded string as 
+    // temp buffer to create a null padded string as
     // input to write to hdf5
     Node n_tmp;
     n_tmp.set(DataType::uint8(30));
-    
+
     uint8 *mystring4_char_ptr = n_tmp.value();
     // null out entire string (leave no doubt for test)
     for(int i=0; i < 30; i++)
@@ -1268,12 +1268,12 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
     h5_dtype_id  = H5Tcreate(H5T_STRING, H5T_VARIABLE);
     h5_dspace_id = H5Screate(H5S_SCALAR);
 
-    
-    
+
+
     const char *mystr_char_ptr = my_string.c_str();
-    
+
     // create new dataset
-    
+
     h5_dset_id  = H5Dcreate(h5_file_id,
                             "case_5",
                             h5_dtype_id,
@@ -1294,13 +1294,13 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
     H5Dclose(h5_dset_id);
 
     H5Fclose(h5_file_id);
-    
+
     // load back in and make sure we get the correct string for each case
     Node n_load;
     io::load(tout,n_load);
     n_load.print();
 
-    EXPECT_EQ(n_load["case_0"].as_string(), my_string ); 
+    EXPECT_EQ(n_load["case_0"].as_string(), my_string );
     EXPECT_EQ(n_load["case_1"].as_string(), my_string );
     EXPECT_EQ(n_load["case_2"].as_string(), my_string );
     EXPECT_EQ(n_load["case_3"].as_string(), my_string3 );
@@ -1344,30 +1344,6 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string_compress)
 
 }
 
-//-----------------------------------------------------------------------------
-TEST(conduit_relay_io_hdf5, conduit_hdf5_list_incompat_error_message)
-{
-    std::string tout_std = "tout_hdf5_w_list_error.hdf5";
-
-    Node n;
-    n.append() = "42";
-    n.append() = "42";
-    n.append() = "42";
-    n.append() = "42";
-    
-    bool excpt_occured = false;
-    try
-    {
-        io::save(n,tout_std, "hdf5");
-    }
-    catch(Error &e)
-    {
-        excpt_occured = true;
-        CONDUIT_INFO(e.message());
-    }
-    
-    EXPECT_TRUE(excpt_occured);
-}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
@@ -1379,6 +1355,14 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
     n.append() = "42";
     n.append() = "42";
     n.append() = "42";
+    
+    Node &n_sub = n.append();
+    n_sub.append() = 42;
+    n_sub.append() = 42;
+    n_sub.append() = 42;
+    n_sub.append() = 42;
+    n_sub.append() = 42;
+    
     io::save(n,tout_std, "hdf5");
     
     Node n_load, info;
