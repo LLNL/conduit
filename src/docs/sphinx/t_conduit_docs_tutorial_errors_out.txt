@@ -1,26 +1,24 @@
-Running main() from gtest_main.cc
-[==========] Running 3 tests from 1 test case.
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 3 tests from 1 test suite.
 [----------] Global test environment set-up.
 [----------] 3 tests from conduit_tutorial
 [ RUN      ] conduit_tutorial.error_handlers_funcs_start
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_errors.cpp : 63]
- error_handlers_funcs
+BEGIN_EXAMPLE("error_handlers_funcs")
 [       OK ] conduit_tutorial.error_handlers_funcs_start (0 ms)
 [ RUN      ] conduit_tutorial.error_handlers_funcs_end
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_errors.cpp : 94]
- error_handlers_funcs
+END_EXAMPLE("error_handlers_funcs")
 [       OK ] conduit_tutorial.error_handlers_funcs_end (0 ms)
 [ RUN      ] conduit_tutorial.error_handlers
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_errors.cpp : 101]
- error_handlers
+BEGIN_EXAMPLE("error_handlers_rewire")
 [INFO] An info message
 [WARNING!] Node::as_float32() const -- DataType float64 at path my_value does not equal expected DataType float32
-[ERROR!] Cannot const fetch_existing, Node(my_value) is not an object
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_errors.cpp : 137]
- error_handlers
-[       OK ] conduit_tutorial.error_handlers (1 ms)
-[----------] 3 tests from conduit_tutorial (1 ms total)
+[ERROR!] Cannot fetch_existing, Node(my_value) is not an object
+END_EXAMPLE("error_handlers_rewire")
+BEGIN_EXAMPLE("error_handlers_reset")
+END_EXAMPLE("error_handlers_reset")
+[       OK ] conduit_tutorial.error_handlers (0 ms)
+[----------] 3 tests from conduit_tutorial (0 ms total)
 
 [----------] Global test environment tear-down
-[==========] 3 tests from 1 test case ran. (1 ms total)
+[==========] 3 tests from 1 test suite ran. (0 ms total)
 [  PASSED  ] 3 tests.

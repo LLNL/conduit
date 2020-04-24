@@ -1,0 +1,123 @@
+UpdateCTestConfiguration  from :/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Parse Config file:/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Parse Config file:/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Test project /Users/harrison37/Work/github/llnl/conduit/build-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 106
+    Start 106: t_conduit_docs_tutorial_python_basics
+
+106: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.4-tuamu4qn6msg6bqa5hd7glbv5uxm5lup/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_basics"
+106: Environment variables: 
+106:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+106: Test timeout computed to be: 1500
+106: test_001_basics_very_basic (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+106: test_002_basics_hierarchial (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+106: test_003_basics_object_and_list (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+106: test_004_basics_object_and_list_itr (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+106: test_005_basics_mem_spaces (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+106: test_006_basics_bw_style (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+106: test_007_basics_bw_style_from_native (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+106: 
+106: ----------------------------------------------------------------------
+106: Ran 7 tests in 0.001s
+106: 
+106: OK
+106: BEGIN_EXAMPLE("py_basics_very_basic")
+106: 
+106: my: "data"
+106: 
+106: END_EXAMPLE("py_basics_very_basic")
+106: BEGIN_EXAMPLE("py_basics_hierarchial")
+106: 
+106: my: "data"
+106: a: 
+106:   b: 
+106:     c: "d"
+106:     e: 64.0
+106: 
+106: total bytes: 15
+106: 
+106: END_EXAMPLE("py_basics_hierarchial")
+106: BEGIN_EXAMPLE("py_basics_object_and_list")
+106: 
+106: object_example: 
+106:   val1: "data"
+106:   val2: 10
+106:   val3: 3.1415
+106: list_example: 
+106:   - 0
+106:   - 1
+106:   - 2
+106:   - 3
+106:   - 4
+106: 
+106: END_EXAMPLE("py_basics_object_and_list")
+106: BEGIN_EXAMPLE("py_basics_object_and_list_itr")
+106: 
+106: object_example: 
+106:   val1: "data"
+106:   val2: 10
+106:   val3: 3.1415
+106: list_example: 
+106:   - 0
+106:   - 1
+106:   - 2
+106:   - 3
+106:   - 4
+106: 
+106: val1: "data"
+106: val2: 10
+106: val3: 3.1415
+106: 
+106: 0
+106: 1
+106: 2
+106: 3
+106: 4
+106: END_EXAMPLE("py_basics_object_and_list_itr")
+106: BEGIN_EXAMPLE("py_basics_mem_spaces")
+106: 
+106: mem_spaces: 
+106:   0x7ff41ae58e90: 
+106:     path: "my"
+106:     type: "allocated"
+106:     bytes: 5
+106:   0x7ff41ae84120: 
+106:     path: "a/b/c"
+106:     type: "allocated"
+106:     bytes: 2
+106:   0x7ff41ae7d8a0: 
+106:     path: "a/b/e"
+106:     type: "allocated"
+106:     bytes: 8
+106: total_bytes_allocated: 15
+106: total_bytes_mmaped: 0
+106: total_bytes_compact: 15
+106: total_strided_bytes: 15
+106: 
+106: END_EXAMPLE("py_basics_mem_spaces")
+106: BEGIN_EXAMPLE("py_basics_bw_style")
+106: 
+106: test: 100
+106: 
+106: END_EXAMPLE("py_basics_bw_style")
+106: BEGIN_EXAMPLE("py_basics_bw_style_from_native")
+106: 
+106: {
+106:   "test": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
+106: }
+106: END_EXAMPLE("py_basics_bw_style_from_native")
+1/1 Test #106: t_conduit_docs_tutorial_python_basics ...   Passed    0.15 sec
+
+The following tests passed:
+	t_conduit_docs_tutorial_python_basics
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.17 sec

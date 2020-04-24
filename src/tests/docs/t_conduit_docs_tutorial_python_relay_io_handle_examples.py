@@ -52,16 +52,19 @@ import numpy
 import conduit
 import conduit.relay
 
-def echo_src(s,fname,lineno):
-    print("\n{}: {},{}".format(s,fname,lineno))
+def BEGIN_EXAMPLE(tag):
+    print('\nBEGIN_EXAMPLE("' + tag + '")')
+
+def END_EXAMPLE(tag):
+    print('\nEND_EXAMPLE("' + tag + '")')
 
 class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
 
     def test_001_io_handle(self):
+        BEGIN_EXAMPLE("py_relay_io_handle")
         import conduit.relay
         if conduit.relay.io.about()["protocols/hdf5"] != "enabled":
             return
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
         import conduit
         import conduit.relay.io
 
@@ -109,5 +112,5 @@ class Conduit_Tutorial_Python_Relay_IO_Handle(unittest.TestCase):
 
         print("\nRead Result:")
         print(nread)
-        echo_src("end",inspect.stack()[0][3],inspect.currentframe().f_lineno)
+        END_EXAMPLE("py_relay_io_handle")
 

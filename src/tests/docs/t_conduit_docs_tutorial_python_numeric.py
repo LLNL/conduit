@@ -51,16 +51,17 @@ import inspect
 import numpy
 import conduit
 
-def echo_src(s,fname,lineno):
-    print("\n{}: {},{}".format(s,fname,lineno))
+def BEGIN_EXAMPLE(tag):
+    print('BEGIN_EXAMPLE("' + tag + '")')
+
+def END_EXAMPLE(tag):
+    print('END_EXAMPLE("' + tag + '")')
 
 class Conduit_Tutorial_Python_Numeric(unittest.TestCase):
     
     def test_001_numeric_via_value(self):
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
-        
+        BEGIN_EXAMPLE("py_numeric_via_value")
         n = conduit.Node()
         n["test"] = 10 
         print(n.fetch("test").value())
-        
-        echo_src("begin",inspect.stack()[0][3],inspect.currentframe().f_lineno)
+        END_EXAMPLE("py_numeric_via_value")

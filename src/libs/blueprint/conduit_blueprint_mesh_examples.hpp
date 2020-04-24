@@ -129,6 +129,9 @@ namespace examples
                                     conduit::index_t ny,
                                     conduit::index_t nz,
                                     conduit::Node &res);
+
+    /// Generates a mesh that uses uniform adjsets
+    void CONDUIT_BLUEPRINT_API adjset_uniform(conduit::Node &res);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --

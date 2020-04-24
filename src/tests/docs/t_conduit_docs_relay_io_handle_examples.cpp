@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "t_conduit_docs_tutorial_helpers.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -60,8 +61,7 @@ using namespace conduit;
 // 65-114
 TEST(conduit_docs, relay_io_handle_1)
 {
-    CONDUIT_INFO("relay_io_handle_example_1");
-
+    BEGIN_EXAMPLE("relay_io_handle_example_1");
     // setup node with example data to save
     Node n;
     n["a/data"]   = 1.0;
@@ -130,7 +130,6 @@ TEST(conduit_docs, relay_io_handle_1)
 
     std::cout << "\nRead Result:" << std::endl;
     nread.print();
-
-    CONDUIT_INFO("relay_io_handle_example_1");
+    END_EXAMPLE("relay_io_handle_example_1");
 }
 

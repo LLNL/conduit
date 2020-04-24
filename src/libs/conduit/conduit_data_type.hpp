@@ -525,7 +525,16 @@ public:
 //-----------------------------------------------------------------------------
 // Transforms
 //-----------------------------------------------------------------------------
-    std::string         to_json() const;  
+    std::string         to_string(const std::string &protocol="json") const;
+    void                to_string_stream(std::ostream &os, 
+                                         const std::string &protocol="json") const;
+
+    // NOTE(cyrush): The primary reason this function exists is to enable 
+    // easier compatibility with debugging tools (e.g. totalview, gdb) that
+    // have difficulty allocating default string parameters.
+    std::string         to_string_default() const;
+    
+    std::string         to_json() const;
     void                to_json_stream(std::ostream &os) const;
 
     void                compact_to(DataType &dtype) const;

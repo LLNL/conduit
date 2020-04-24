@@ -65,7 +65,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n['a'] = a_val
         n['b'] = b_val
         n['c'] = c_val
-  
+
         self.assertTrue(n['a'] == a_val)
         self.assertTrue(n['b'] == b_val)
         self.assertTrue(n['c'] == c_val)
@@ -90,7 +90,7 @@ class Test_Conduit_Node(unittest.TestCase):
         na = n.fetch('a')
         na_val = na.value()
         self.assertEqual(na_val[99], 99)
-        
+
     def test_child(self):
         vec = np.array(range(100), np.uint32)
         n = Node()
@@ -100,7 +100,7 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(na_val[99], 99)
         n['b'] = vec
         self.assertEqual(n.number_of_children(),2)
-      
+
     def test_save_load(self):
         # on windows, this breaks at 27 !?
         alen = 26
@@ -113,13 +113,13 @@ class Test_Conduit_Node(unittest.TestCase):
         nl.load("test_pyconduit_node_save_load.conduit_bin")
         print(nl)
         self.assertEqual(nl['a'][alen-1], alen-1)
-        
+
         n.save("test_pyconduit_node_json_save_load.json",protocol="json")
         nl = Node()
         nl.load("test_pyconduit_node_json_save_load.json", protocol="json")
         print(nl)
         self.assertEqual(nl['a'][alen-1], alen-1)
-        
+
         n.save("test_pyconduit_node_base64_json_save_load.conduit_base64_json", protocol="conduit_base64_json")
         nl = Node()
         nl.load("test_pyconduit_node_base64_json_save_load.conduit_base64_json", protocol="conduit_base64_json")
@@ -297,7 +297,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n2['a'] = 1
         self.assertFalse(n1.diff(n2,info))
 
-        
+
         n2['b'] = 2.0
         self.assertTrue(n1.diff(n2,info))
         self.assertFalse(n1.diff_compatible(n2,info))
@@ -306,7 +306,7 @@ class Test_Conduit_Node(unittest.TestCase):
 
     def test_list_of_ints(self):
         # also covered by test_set_all_types
-        # but this was the reproducer for 
+        # but this was the reproducer for
         #  https://github.com/LLNL/conduit/issues/281
         n = Node()
         a = np.array(list((1,2,3)))
@@ -322,7 +322,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n['c'] = 3
         ni = n.info()
         self.assertEqual(ni["mem_spaces"].number_of_children(), 3)
-        
+
         n2 = Node()
         n.compact_to(n2)
         ni = n2.info()
@@ -333,20 +333,20 @@ class Test_Conduit_Node(unittest.TestCase):
         n = Node()
         data = np.array(range(10), dtype='float64')
         n["data"].set_external(data)
-        
+
         print(n)
-        
+
         n2 = Node()
         n2.update(n)
         print(n2)
         self.assertEqual(n2["data"][0],0)
-        
+
         n3 = Node()
         n3.update_external(n)
         data[0] = 10
         print(n3)
         self.assertEqual(n3["data"][0],10)
-        
+
         n4 = Node()
         n4["data"] = 10
         n4.update_compatible(n)
@@ -358,9 +358,9 @@ class Test_Conduit_Node(unittest.TestCase):
         n = Node()
         data = np.array(range(10), dtype='float64')
         n["data"].set_external(data)
-        
+
         print(n)
-        
+
         n.reset()
         self.assertEqual(n.number_of_children(), 0)
 
@@ -383,9 +383,9 @@ class Test_Conduit_Node(unittest.TestCase):
 
         self.assertTrue(n['a'] == a_val)
         self.assertTrue(n['b'] == b_val)
-        
+
         n.rename_child('b','c')
-        
+
         self.assertTrue(n['a'] == a_val)
         self.assertTrue(n['c'] == b_val)
 
@@ -420,12 +420,12 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(n['tuple_0'][1], 2)
         self.assertEqual(n['tuple_0'][2], 3)
         self.assertEqual(n['tuple_0'][3], 4)
-        
+
         self.assertEqual(n['tuple_1'][0], 1.0)
         self.assertEqual(n['tuple_1'][1], 2.0)
         self.assertEqual(n['tuple_1'][2], 3.0)
         self.assertEqual(n['tuple_1'][3], 4.0)
-        
+
         self.assertEqual(n['tuple_2'][0], 1.0)
         self.assertEqual(n['tuple_2'][1], 2.0)
         self.assertEqual(n['tuple_2'][2], 3.0)
@@ -442,12 +442,12 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(n['list_0'][1], 2)
         self.assertEqual(n['list_0'][2], 3)
         self.assertEqual(n['list_0'][3], 4)
-        
+
         self.assertEqual(n['list_1'][0], 1.0)
         self.assertEqual(n['list_1'][1], 2.0)
         self.assertEqual(n['list_1'][2], 3.0)
         self.assertEqual(n['list_1'][3], 4.0)
-        
+
         self.assertEqual(n['list_2'][0], 1.0)
         self.assertEqual(n['list_2'][1], 2.0)
         self.assertEqual(n['list_2'][2], 3.0)
@@ -485,7 +485,7 @@ class Test_Conduit_Node(unittest.TestCase):
     def test_fetch_existing(self):
         n = Node()
         n["my/path"] = 10
-        
+
         n_sub = n.fetch_existing("my/path")
 
         self.assertEqual(n_sub.value(),10);
@@ -493,7 +493,29 @@ class Test_Conduit_Node(unittest.TestCase):
         with self.assertRaises(Exception):
             n.fetch_existing('bad/path')
 
+    def test_to_string(self):
+        a_val = np.uint32(10)
+        b_val = np.uint32(20)
+        c_val = np.float64(30.0)
 
+        n = Node()
+        n['a'] = a_val
+        n['b'] = b_val
+        n['c'] = c_val
+
+        res_to_str_def  = n.to_string()
+        res_to_str_yaml = n.to_string(protocol="yaml")
+        res_to_str_json = n.to_string(protocol="json")
+
+        res_to_yaml = n.to_yaml()  
+        res_to_json = n.to_json()
+  
+        self.assertEqual(res_to_str_def,  res_to_yaml);
+        self.assertEqual(res_to_str_yaml, res_to_yaml);
+  
+        self.assertEqual(res_to_str_json,  res_to_json);
+
+        n.print_detailed()
 
 if __name__ == '__main__':
     unittest.main()
