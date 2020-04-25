@@ -52,6 +52,7 @@
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
 
+#include <tgmath.h>
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -516,7 +517,7 @@ void find_mismatch_values(const conduit::float64_array & to_check,
     for (int i = 0; i < size; ++i)
     {
         float64 rel_error = to_check[i] / element_area - 1.;
-        if (std::abs(rel_error) > eps)
+        if (fabs(rel_error) > eps)
         {
             mismatch_indices.push_back(i);
             mismatch_error.push_back(rel_error);
