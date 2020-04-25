@@ -54,8 +54,6 @@ test 111
 111:   b: 
 111:     my_string: "value"
 111: 
-111: 
-111: END_EXAMPLE("py_mpi_bcast_using_schema")
 111: [rank: 1] received: 
 111: a: 
 111:   data: 1.0
@@ -63,6 +61,8 @@ test 111
 111:   b: 
 111:     my_string: "value"
 111: 
+111: 
+111: END_EXAMPLE("py_mpi_bcast_using_schema")
 111: ok
 111: test_004_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
 111: test_004_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
@@ -91,20 +91,20 @@ test 111
 111: ok
 111: 
 111: ----------------------------------------------------------------------
-111: Ran 6 tests in 0.083s
+111: Ran 6 tests in 0.126s
 111: 
 111: OK
 111: ok
 111: 
 111: ----------------------------------------------------------------------
-111: Ran 6 tests in 0.084s
+111: Ran 6 tests in 0.135s
 111: 
 111: OK
-1/1 Test #111: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.26 sec
+1/1 Test #111: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.39 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_relay_mpi_examples
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.28 sec
+Total Test time (real) =   0.42 sec

@@ -98,8 +98,16 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_1)
     // hdf5 state, adding new paths is always fine.  
     n["a/my_data"] = 3.1415;
     n["a/b/c"] = 144;
-    conduit::relay::io::hdf5_write(n,h5_id);
+    // lists are also supported
+    n["a/my_list"].append() = 42.0;
+    n["a/my_list"].append() = 42;
     
+    conduit::relay::io::hdf5_write(n,h5_id);
+
+    // check if a subpath of a list exists
+    if(conduit::relay::io::hdf5_has_path(h5_id,"a/my_list/0"))
+        std::cout << "\nPath 'myoutput.hdf5:a/my_list/0' exists" << std::endl;
+
     // Read the entire tree:
     n_read.reset();
     conduit::relay::io::hdf5_read(h5_id,n_read);
@@ -110,8 +118,7 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_1)
     
     // check if a path is a hdf5 file:
     if(conduit::relay::io::is_hdf5_file("myoutput.hdf5"))
-        std::cout << "File \n'myoutput.hdf5' is a hdf5 file" << std::endl;
-
+        std::cout << "\nFile 'myoutput.hdf5' is a hdf5 file" << std::endl;
     END_EXAMPLE("relay_io_example_hdf5_interface_1");
 }
 

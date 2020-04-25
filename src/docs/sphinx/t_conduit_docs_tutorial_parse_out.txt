@@ -19,7 +19,7 @@ BEGIN_EXAMPLE("t_conduit_docs_tutorial_json")
   "mykey": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 42.0}
 }
 END_EXAMPLE("t_conduit_docs_tutorial_json")
-[       OK ] conduit_tutorial.t_conduit_docs_tutorial_json (0 ms)
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_json (1 ms)
 [ RUN      ] conduit_tutorial.t_conduit_docs_tutorial_yaml_inline_array
 BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
 [0.0, 10.0, 20.0, 30.0]
@@ -75,7 +75,7 @@ b: 200.0
 
 
 mem_spaces: 
-  0x7ffeea50a030: 
+  0x7ffee952f030: 
     path: "a"
     type: "external"
 total_bytes_allocated: 0
@@ -84,14 +84,14 @@ total_bytes_compact: 16
 total_strided_bytes: 16
 
 END_EXAMPLE("t_json_generator_bind_to_incore")
-[       OK ] conduit_tutorial.json_generator_bind_to_incore (1 ms)
+[       OK ] conduit_tutorial.json_generator_bind_to_incore (0 ms)
 [ RUN      ] conduit_tutorial.json_generator_compact
 BEGIN_EXAMPLE("t_json_generator_compact")
 [100.0, 200.0, 300.0, 400.0, 500.0]
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 mem_spaces: 
-  0x7ffeea509ff0: 
+  0x7ffee952eff0: 
     path: ""
     type: "external"
 total_bytes_allocated: 0
@@ -101,7 +101,7 @@ total_strided_bytes: 72
 
 
 mem_spaces: 
-  0x7ffeea509ff0: 
+  0x7ffee952eff0: 
     path: ""
     type: "external"
 total_bytes_allocated: 0
@@ -113,7 +113,7 @@ total_strided_bytes: 72
 {"dtype":"float64", "number_of_elements": 5, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
 
 mem_spaces: 
-  0x7fa1db4056e0: 
+  0x7feb244056e0: 
     path: ""
     type: "allocated"
     bytes: 40
@@ -125,7 +125,7 @@ total_strided_bytes: 40
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 mem_spaces: 
-  0x7fa1db406350: 
+  0x7feb24406350: 
     path: ""
     type: "allocated"
     bytes: 40
@@ -135,9 +135,9 @@ total_bytes_compact: 40
 total_strided_bytes: 40
 
 END_EXAMPLE("t_json_generator_compact")
-[       OK ] conduit_tutorial.json_generator_compact (0 ms)
-[----------] 8 tests from conduit_tutorial (1 ms total)
+[       OK ] conduit_tutorial.json_generator_compact (1 ms)
+[----------] 8 tests from conduit_tutorial (2 ms total)
 
 [----------] Global test environment tear-down
-[==========] 8 tests from 1 test suite ran. (1 ms total)
+[==========] 8 tests from 1 test suite ran. (2 ms total)
 [  PASSED  ] 8 tests.

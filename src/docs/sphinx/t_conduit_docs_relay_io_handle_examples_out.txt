@@ -33,9 +33,9 @@ a:
   c: 42.0
 
 END_EXAMPLE("relay_io_handle_example_1")
-[       OK ] conduit_docs.relay_io_handle_1 (5 ms)
-[----------] 1 test from conduit_docs (5 ms total)
+[       OK ] conduit_docs.relay_io_handle_1 (6 ms)
+[----------] 1 test from conduit_docs (6 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (5 ms total)
+[==========] 1 test from 1 test suite ran. (7 ms total)
 [  PASSED  ] 1 test.

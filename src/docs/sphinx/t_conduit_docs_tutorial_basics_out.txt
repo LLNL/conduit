@@ -36,7 +36,7 @@ list_example:
   - 4
 
 END_EXAMPLE("basics_object_and_list")
-[       OK ] conduit_tutorial.basics_object_and_list (0 ms)
+[       OK ] conduit_tutorial.basics_object_and_list (1 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list_itr
 BEGIN_EXAMPLE("basics_object_and_list_itr")
 
@@ -66,15 +66,15 @@ END_EXAMPLE("basics_object_and_list_itr")
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7f9239c04e40: 
+  0x7fa457501230: 
     path: "my"
     type: "allocated"
     bytes: 5
-  0x7f9239c05420: 
+  0x7fa457501810: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
-  0x7f9239c05e50: 
+  0x7fa457502240: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8
@@ -104,7 +104,7 @@ BEGIN_EXAMPLE("basics_bw_style_from_native")
 }
 END_EXAMPLE("basics_bw_style_from_native")
 [       OK ] conduit_tutorial.basics_bw_style_from_native (0 ms)
-[----------] 7 tests from conduit_tutorial (0 ms total)
+[----------] 7 tests from conduit_tutorial (1 ms total)
 
 [----------] Global test environment tear-down
 [==========] 7 tests from 1 test suite ran. (1 ms total)

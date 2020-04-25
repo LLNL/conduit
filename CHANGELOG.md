@@ -20,6 +20,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Added an open mode option to RelayIOHandle. See RelayIOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
 - Added the conduit.relay.mpi Python module to support Relay MPI in Python.
+- Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
 
 #### Blueprint
 - Added support for Adjacency sets for Structured Mesh Topologies. See the `blueprint::mesh::examples::adjset_uniform` example.
