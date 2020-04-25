@@ -1368,10 +1368,10 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
     Node n_load, info;
     io::load(tout_std,"hdf5",n_load);
 
-    std::cout << n_load.to_yaml() << std::endl;
+    n_load.print();
 
     EXPECT_FALSE(n.diff(n_load,info));
-    
+
     hid_t h5_file_id = io::hdf5_open_file_for_read(tout_std);
     /// check subpath of written list
     EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"0"));
@@ -1388,6 +1388,26 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
 
     io::hdf5_close_file(h5_file_id);
 
+    // simple compat check (could be expanded)
+    Node n_check;
+    n_check = 42.0;
+    // this isn't compat with the existing file
+
+    h5_file_id = io::hdf5_open_file_for_read_write(tout_std);
+    EXPECT_THROW(io::hdf5_write(n_check,h5_file_id),Error);
+
+    // orig should be compat
+    n_check.set(n);
+    io::hdf5_write(n_check,h5_file_id);
+    // lets change the value of one of the list entries
+    n_check[4][4] = 3.1415;
+    io::hdf5_write(n_check,h5_file_id);
+    io::hdf5_close_file(h5_file_id);
+
+    io::load(tout_std,"hdf5",n_load);
+
+    n_load.print();
+    EXPECT_FALSE(n_check.diff(n_load,info));
 }
 
 
