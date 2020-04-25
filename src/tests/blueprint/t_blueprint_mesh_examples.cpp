@@ -52,7 +52,7 @@
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
 
-#include <tgmath.h>
+#include <math.h>
 #include <iostream>
 #include "gtest/gtest.h"
 
