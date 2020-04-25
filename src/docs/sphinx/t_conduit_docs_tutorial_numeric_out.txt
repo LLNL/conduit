@@ -53,12 +53,12 @@ vals[0] = 1000
 vals[1] = 2000
 vals[2] = 3000
 vals[3] = 4000
-[       OK ] conduit_tutorial.numeric_double_conversion (1 ms)
+[       OK ] conduit_tutorial.numeric_double_conversion (0 ms)
 [ RUN      ] conduit_tutorial.numeric_double_conversion_end
 END_EXAMPLE("numeric_double_conversion")
 [       OK ] conduit_tutorial.numeric_double_conversion_end (0 ms)
-[----------] 8 tests from conduit_tutorial (1 ms total)
+[----------] 8 tests from conduit_tutorial (0 ms total)
 
 [----------] Global test environment tear-down
-[==========] 8 tests from 1 test suite ran. (1 ms total)
+[==========] 8 tests from 1 test suite ran. (0 ms total)
 [  PASSED  ] 8 tests.

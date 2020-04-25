@@ -464,6 +464,10 @@ void write_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
                                        const std::string &ref_path);
 
 //-----------------------------------------------------------------------------
+void remove_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
+                                        const std::string &ref_path);
+
+//-----------------------------------------------------------------------------
 // helpers for reading
 //-----------------------------------------------------------------------------
 
@@ -970,13 +974,6 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
         incompat_details = oss.str();
         res = false;
     }
-    //
-    // if(res == false)
-    // {
-    //     CONDUIT_INFO("leaf in Conduit Node at path " << ref_path <<
-    //                  " is not compatible with given HDF5 tree at path "
-    //                  << ref_path);
-    // }
 
     return res;
 }
@@ -1067,7 +1064,8 @@ check_if_conduit_list_is_compatible_with_hdf5_tree(const Node &node,
     if( CONDUIT_HDF5_STATUS_OK(h5_status) &&
         (h5_obj_info.type == H5O_TYPE_GROUP) )
     {
-        // // the group should have our att that signals a list
+        // TODO: should we force the group should have our att that signals a 
+        //       list ?
         
         // if(!check_if_hdf5_group_has_conduit_list_attribute(hdf5_id,ref_path))
         // {
@@ -1179,13 +1177,6 @@ check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
             << " for HDF5 i/o and cannot be written to HDF5 path"
             << " '" << ref_path  << "'";
 
-            // if(dt.is_list()) // let them know there is hope for lists in the future
-            // {
-            //     // we don't support lists yet, but provide helpful
-            //     // info when passed a list
-            //     oss << "\nA future conduit release will add"
-            //         << " list read/write support for HDF5.";
-            // }
         incompat_details = oss.str();
         res = false;
     }
@@ -1663,8 +1654,8 @@ setup_hdf5_group_atts_for_conduit_node(const Node &node,
     if( has_list_attr && node.dtype().is_object() )
     {
         std::cout << " remove_conduit_hdf5_list_attribute " << std::endl;
-        // remove_conduit_hdf5_list_attribute(hdf5_group_id,
-        //                                   ref_path);
+        remove_conduit_hdf5_list_attribute(hdf5_group_id,
+                                           ref_path);
     }
 }
 
@@ -1677,6 +1668,7 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
                                           const std::string &ref_path,
                                           hid_t hdf5_group_id)
 {
+    // make sure our special atts are setup correctly
     setup_hdf5_group_atts_for_conduit_node(node,
                                            ref_path,
                                            hdf5_group_id);
@@ -1739,99 +1731,7 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
                                                                  hdf5_group_id,
                                                                  child_name);
 
-                // if( dt.is_object() )
-                // {
-                //     h5_child_id = create_hdf5_group_for_conduit_object(ref_path,
-                //                                                        hdf5_group_id,
-                //                                                        child_name);
-                // }
-                // else if( dt.is_list() )
-                // {
-                //     h5_child_id = create_hdf5_group_for_conduit_list(ref_path,
-                //                                                      hdf5_group_id,
-                //                                                      child_name);
-                // }
-                // hid_t h5_gc_plist = H5Pcreate(H5P_GROUP_CREATE);
-        
-                // CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_gc_plist,
-                //                                                 hdf5_group_id,
-                //                                                 ref_path,
-                //                  "Failed to create H5P_GROUP_CREATE property "
-                //                  << " list");
-                //
-                // // track creation order
-                // herr_t h5_status = H5Pset_link_creation_order(h5_gc_plist,
-                //         ( H5P_CRT_ORDER_TRACKED |  H5P_CRT_ORDER_INDEXED) );
-                //
-                // CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                //                                                 hdf5_group_id,
-                //                                                 ref_path,
-                //                  "Failed to set group link creation property");
-                //
-                // // prefer compact group storage
-                // // https://support.hdfgroup.org/HDF5/doc/RM/RM_H5G.html#Group-GroupStyles
-                // h5_status = H5Pset_link_phase_change(h5_gc_plist,
-                //                                      32,  // max for compact storage
-                //                                      32); // min for dense storage
-                //
-                // CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                //                                                 hdf5_group_id,
-                //                                                 ref_path,
-                //             "Failed to set group link phase change property ");
-                //
-                // // calc hints for meta data about link names
-                // NodeConstIterator chld_itr = itr.node().children();
-                //
-                // index_t chld_names_avg_size = 0;
-                // index_t num_children = itr.node().number_of_children();
-                //
-                // while(chld_itr.has_next())
-                // {
-                //     chld_itr.next();
-                //     chld_names_avg_size +=chld_itr.name().size();
-                // }
-                //
-                // if(chld_names_avg_size > 0 && num_children > 0 )
-                // {
-                //     chld_names_avg_size = chld_names_avg_size / num_children;
-                // }
-                //
-                // // set hints for meta data about link names
-                // h5_status = H5Pset_est_link_info(h5_gc_plist,
-                //                                  // number of children
-                //                                  (unsigned int)num_children,
-                //                                  // est name size
-                //                                  (unsigned int)chld_names_avg_size);
-                //
-                // CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                //                                                 hdf5_group_id,
-                //                                                 ref_path,
-                //             "Failed to set group est link info property ");
-                //
-                // h5_child_id = H5Gcreate(hdf5_group_id,
-                //                         itr.name().c_str(),
-                //                         H5P_DEFAULT,
-                //                         h5_gc_plist,
-                //                         H5P_DEFAULT);
-                //
-                // CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_child_id,
-                //                                                 hdf5_group_id,
-                //                                                 ref_path,
-                //                       "Failed to create HDF5 Group "
-                //                       << " parent: " << hdf5_group_id
-                //                       << " name: "   << itr.name());
-                //
-                // CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(H5Pclose(h5_gc_plist),
-                //                                                 hdf5_group_id,
-                //                                                 ref_path,
-                //                      "Failed to close HDF5 H5P_GROUP_CREATE "
-                //                      << "property list: "
-                //                      << h5_gc_plist);
             }
-
-            // if we have a list, we may need to add our special attribute
-            // (if we created a new group, or we are at the root group 
-            //  of the hdf5 file, the att won't be set)
 
             // traverse 
             write_conduit_node_children_to_hdf5_group(child,
@@ -1891,7 +1791,6 @@ void
 write_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
                                   const std::string &ref_path)
 {
-    // Note (cyrush):
     //  We really just use the presence of the attribute, we don't need
     //  data associated with it. 
     //
@@ -1948,6 +1847,27 @@ write_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
                                            "Failed to close HDF5 Attribute " 
                                            << h5_attr_id);
 }
+
+//---------------------------------------------------------------------------//
+void
+remove_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
+                                   const std::string &ref_path)
+{
+    // cleanup group attached att, just in case a group changes roles
+    // and is still compatible otherwise
+    herr_t h5_status = H5Adelete(hdf5_group_id,
+                                 conduit_hdf5_list_attr_name.c_str());
+
+    CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
+                                                    hdf5_group_id,
+                                                    ref_path,
+                                           "Failed to remove HDF5 Attribute " 
+                                           << hdf5_group_id 
+                                           << " "
+                                           << conduit_hdf5_list_attr_name.c_str());
+}
+
+
 
 //---------------------------------------------------------------------------//
 // Read Helpers
@@ -2164,33 +2084,7 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
 
                 Node *chld_node_ptr = h5l_iterate_traverse_op_func_get_child(
                                                    *h5_od->node,
-                                                   std::string(hdf5_path));                
-                // Node *chld_node_ptr = NULL;
-                //
-                // if( h5_od->node->dtype().is_object() )
-                // {
-                //     std::cout << "h5l_iterate_traverse_op_func " << "node is obj"  <<std::endl;
-                //     // execute traversal for this group
-                //     chld_node_ptr = &h5_od->node->fetch(hdf5_path);
-                // }
-                // else if( h5_od->node->dtype().is_list() )
-                // {
-                //     std::cout << "h5l_iterate_traverse_op_func " << "node is list"  <<std::endl;
-                //     // we need the child index, name to index for now?
-                //     std::cout << "hdf5_path: " <<  hdf5_path << std::endl;
-                //     // Either the child already exists in conduit
-                //     // (compat case), or we need to append to add
-                //     // a new child
-                //     chld_node_ptr = &h5_od->node->fetch(hdf5_path);
-                //
-                // }
-                // else
-                // {
-                //     std::cout << "h5l_iterate_traverse_op_func " << "node is ????"  <<std::endl;
-                //     // TODO Error: We should not land here, H5Literate should
-                //     // only be called on groups, which will correspond
-                //     // to either objects or lists
-                // }
+                                                   std::string(hdf5_path));
 
                 read_hdf5_group_into_conduit_node(h5_group_id,
                                                   chld_ref_path,
@@ -2211,37 +2105,6 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
             Node *chld_node_ptr = h5l_iterate_traverse_op_func_get_child(
                                                    *h5_od->node,
                                                    std::string(hdf5_path));
-            // if( h5_od->node->dtype().is_object() )
-            // {
-            //     // execute traversal for this group
-            //     chld_node_ptr = &h5_od->node->fetch(hdf5_path);
-            // }
-            // else if( h5_od->node->dtype().is_list() )
-            // {
-            //     // we need the child index, name to index for now?
-            //
-            //     // Either the child already exists in conduit
-            //     // (compat case), or we need to append to add
-            //     // a new child
-            //     std::cout << "list entry " << hdf5_path << std::endl;
-            //     std::string hdf5_path_str(hdf5_path);
-            //     std::istringstream iss(hdf5_path_str);
-            //     int list_entry_id = -1;
-            //     iss >> list_entry_id;
-            //     std::cout << "llist_entry_id " << list_entry_id << std::endl;
-            //     if(h5_od->node->number_of_children() <= list_entry_id )
-            //     {
-            //         h5_od->node->append();
-            //     }
-            //
-            //     chld_node_ptr = &h5_od->node->child(list_entry_id);
-            // }
-            // else
-            // {
-            //     // TODO Error: We should not land here, H5Literate should
-            //     // only be called on groups, which will correspond
-            //     // to either objects or lists
-            // }
 
             // open hdf5 dataset at path
             hid_t h5_dset_id = H5Dopen(hdf5_id,
@@ -2291,19 +2154,6 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
     H5O_info_t h5_info_buf;
     herr_t h5_status = H5Oget_info(hdf5_group_id,
                                    &h5_info_buf);
-
-    // check for object vs list
-    // // if list:
-    // // the group should have our att that signals a list
-    //
-    // htri_t h5_list_att_status = H5Aexists_by_name(hdf5_group_id, ".",
-    //                                               conduit_hdf5_list_attr_name.c_str(),
-    //                                               H5P_DEFAULT);
-
-    //
-    // https://support.hdfgroup.org/HDF5/doc/RM/RM_H5A.html#Annot-ExistsByName
-    // > 0 exists, 0 doesn't exist, < 0 error
-    //
 
     // Check if this is a list or an object case
     if(check_if_hdf5_group_has_conduit_list_attribute(hdf5_group_id,

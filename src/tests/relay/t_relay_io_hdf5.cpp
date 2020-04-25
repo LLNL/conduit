@@ -1355,22 +1355,39 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
     n.append() = "42";
     n.append() = "42";
     n.append() = "42";
-    
+
     Node &n_sub = n.append();
     n_sub.append() = 42;
     n_sub.append() = 42;
     n_sub.append() = 42;
     n_sub.append() = 42;
-    n_sub.append() = 42;
-    
+    n_sub.append() = 42.0;
+
     io::save(n,tout_std, "hdf5");
-    
+
     Node n_load, info;
     io::load(tout_std,"hdf5",n_load);
-    
+
     std::cout << n_load.to_yaml() << std::endl;
-    
+
     EXPECT_FALSE(n.diff(n_load,info));
+    
+    hid_t h5_file_id = io::hdf5_open_file_for_read(tout_std);
+    /// check subpath of written list
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"0"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"4"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_file_id,"5"));
+
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"4/0"));
+    EXPECT_TRUE(io::hdf5_has_path(h5_file_id,"4/4"));
+    EXPECT_FALSE(io::hdf5_has_path(h5_file_id,"4/5"));
+
+    n_load.reset();
+    io::hdf5_read(h5_file_id,"4/4",n_load);
+    EXPECT_EQ(n_load.to_float64(),42.0);
+
+    io::hdf5_close_file(h5_file_id);
+
 }
 
 

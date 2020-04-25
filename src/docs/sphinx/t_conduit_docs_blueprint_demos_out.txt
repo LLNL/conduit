@@ -31,7 +31,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_uniform")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
  Testing Basic Example 'uniform'
-[       OK ] conduit_docs.blueprint_demo_basic_uniform (8 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_uniform (9 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_rectilinear
 BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
 
@@ -55,7 +55,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_rectilinear")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
  Testing Basic Example 'rectilinear'
-[       OK ] conduit_docs.blueprint_demo_basic_rectilinear (5 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_rectilinear (6 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_structured
 BEGIN_EXAMPLE("blueprint_demo_basic_structured")
 
@@ -110,7 +110,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_tris")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
  Testing Basic Example 'tris'
-[       OK ] conduit_docs.blueprint_demo_basic_tris (6 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_tris (7 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_quads
 BEGIN_EXAMPLE("blueprint_demo_basic_quads")
 
@@ -193,7 +193,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_hexs")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
  Testing Basic Example 'hexs'
-[       OK ] conduit_docs.blueprint_demo_basic_hexs (6 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_hexs (7 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_polygons
 BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
 
@@ -220,7 +220,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_polygons")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
  Testing Basic Example 'polygons'
-[       OK ] conduit_docs.blueprint_demo_basic_polygons (6 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_polygons (7 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_polyhedra
 BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
 
@@ -279,9 +279,9 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
 
 END_EXAMPLE("blueprint_demo_basic_uniform_detailed")
-[       OK ] conduit_docs.blueprint_demo_basic_uniform_detailed (2 ms)
-[----------] 10 tests from conduit_docs (62 ms total)
+[       OK ] conduit_docs.blueprint_demo_basic_uniform_detailed (3 ms)
+[----------] 10 tests from conduit_docs (68 ms total)
 
 [----------] Global test environment tear-down
-[==========] 10 tests from 1 test suite ran. (62 ms total)
+[==========] 10 tests from 1 test suite ran. (68 ms total)
 [  PASSED  ] 10 tests.

@@ -18,6 +18,8 @@ Path 'myoutput.hdf5:a/my_data' exists
 Data loaded:
 1.0
 
+Path 'myoutput.hdf5:a/my_list/0' exists
+
 Data loaded:
 
 a: 
@@ -25,6 +27,9 @@ a:
   b: 
     my_string: "value"
     c: 144
+  my_list: 
+    - 42.0
+    - 42
 
 File 
 'myoutput.hdf5' is a hdf5 file
@@ -75,7 +80,7 @@ chunking:
 
 saving data to 'myoutput_chunked.hdf5' 
 END_EXAMPLE("relay_io_example_hdf5_interface_opts")
-[       OK ] conduit_docs.relay_io_example_hdf5_interface_2 (3 ms)
+[       OK ] conduit_docs.relay_io_example_hdf5_interface_2 (2 ms)
 [----------] 2 tests from conduit_docs (7 ms total)
 
 [----------] Global test environment tear-down
