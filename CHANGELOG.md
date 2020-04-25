@@ -25,7 +25,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Added support for Adjacency sets for Structured Mesh Topologies. See the `blueprint::mesh::examples::adjset_uniform` example.
 
->>>>>>> master
 
 ### Fixed
 
