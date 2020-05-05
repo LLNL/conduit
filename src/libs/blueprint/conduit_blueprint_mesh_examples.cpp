@@ -130,43 +130,6 @@ struct point
     float64 x, y, z;
 };
 
-// 0000000000 -> 000|0|0|0|0|000
-// output is the count of 0s in each of 6 regions
-// which we can turn in to a simple nesting:
-// level 0:   000 00 00 000
-// level 1:      |11|11|
-// level 2:        2 2
-std::vector<index_t> nestsplits(index_t size)
-{
-  index_t div = size  / 3;
-  index_t splits[3] = {div,div,div};
-  index_t rem = size % 3;
-
-  if(rem > 0) splits[0]++;
-  if(rem > 1) splits[2]++;
-
-  // ensure we have a diviable by 4 middle segment
-  bool even = true;
-  while(splits[1] % 4 != 0)
-  {
-    if(even) splits[0]--;
-    else     splits[1]--;
-    splits[1]++;
-    even = !even;
-  }
-
-  std::vector<index_t> res;
-  index_t quarter = splits[1] / 4;
-  res.push_back(splits[0]);
-  res.push_back(quarter);
-  res.push_back(quarter);
-  res.push_back(quarter);
-  res.push_back(quarter);
-  res.push_back(splits[2]);
-
-  return res;
-}
-
 void paint_2d_nestsets(conduit::Node &domain,
                        const std::string topo_name)
 {
@@ -264,6 +227,307 @@ void paint_2d_nestsets(conduit::Node &domain,
   }
 }
 
+void gap_scanner(const std::vector<int32> &values,
+                 const index_t start,
+                 const index_t end,
+                 const index_t offset,
+                 int32 gap[2])
+{
+  bool in_gap = false;
+  int32 gap_length = 0;
+  gap[0] = -1; // index of gap
+  gap[1] = 0;  // length of gap
+  for(index_t i = start - offset; i <= end - offset; ++i)
+  {
+    if(values[i] == 0)
+    {
+      if(in_gap) gap_length++;
+      else
+      {
+        gap_length = 1;
+        in_gap = true;
+      }
+    }
+    else
+    {
+      if(in_gap)
+      {
+        if(gap_length > gap[1])
+        {
+          gap[0] = i + offset;
+          gap[1] = gap_length;
+        }
+        in_gap = false;
+      }
+    }
+  }
+}
+
+void inflection_scanner(const std::vector<int32> &values,
+                        const index_t start,
+                        const index_t end,
+                        const index_t offset,
+                        int32 crit[2])
+{
+  crit[0] = -1;
+  crit[1] = 0;
+  int32 prev = 0;
+  for(index_t i = start + 1 - offset; i <= end - 1 - offset; ++i)
+  {
+    // second derivitive using finite differences
+    int32 deriv = values[i + 1] - 2 * values[i] + values[i-1];
+    // inflection point
+    if((prev < 0 && deriv > 0) || (prev > 0 && deriv < 0))
+    {
+      int32 mag = abs(deriv - prev);
+      if(mag  > crit[1])
+      {
+        crit[0] = i + offset;
+        crit[1] = mag;
+      }
+    }
+    prev = deriv;
+  }
+}
+
+struct AABB
+{
+  index_t box[3][2];
+
+  AABB()
+  {
+    box[0][0] = std::numeric_limits<index_t>::max();
+    box[0][1] = std::numeric_limits<index_t>::min();
+    box[1][0] = std::numeric_limits<index_t>::max();
+    box[1][1] = std::numeric_limits<index_t>::min();
+    box[2][0] = std::numeric_limits<index_t>::max();
+    box[2][1] = std::numeric_limits<index_t>::min();
+  }
+
+  bool valid(int axis)
+  {
+    return box[axis][0] <= box[axis][1];
+  }
+
+  index_t size()
+  {
+    index_t res = 0;
+    res = (box[0][1] - box[0][0] + 1) * (box[1][1] - box[1][0] + 1);
+    if(valid(2))
+    {
+      res *= box[2][1] - box[2][0] + 1;
+    }
+    return res;
+  }
+
+  void print()
+  {
+
+    std::cout<<"size "<<size()<<" "
+              <<"("<<box[0][0]<<","<<box[0][1]<<") - "
+              <<"("<<box[1][0]<<","<<box[1][0]<<")\n";
+  }
+
+  int length(int axis)
+  {
+    return (box[axis][1] - box[axis][0] + 1);
+  }
+
+  int min(int axis)
+  {
+    return box[axis][0];
+  }
+
+  int max(int axis)
+  {
+    return box[axis][1];
+  }
+
+  void split(const int axis,
+             const int index,
+             AABB &left,
+             AABB &right)
+  {
+    for(int i = 0; i < 3; ++i)
+    {
+      if(i == axis)
+      {
+        left.box[i][0] = box[i][0];
+        left.box[i][1] = index;
+        right.box[i][0] = index + 1;
+        right.box[i][1] = box[i][1];
+      }
+      else
+      {
+        left.box[i][0] = box[i][0];
+        left.box[i][1] = box[i][1];
+        right.box[i][0] = box[i][0];
+        right.box[i][1] = box[i][1];
+      }
+    }
+  }
+
+  void include(int axis, index_t pos)
+  {
+    box[axis][0] = std::min(pos, box[axis][0]);
+    box[axis][1] = std::max(pos, box[axis][1]);
+  }
+
+  void mid_split(AABB &left, AABB &right)
+  {
+    int axis = 0;
+    int len = 0;
+    for(int i = 0; i < 3; i++)
+    {
+      if(valid(i))
+      {
+        int size = length(i);
+        if(size > len)
+        {
+          axis  = i;
+          len = size;
+        }
+      }
+    }
+
+    int pos = len/2 + box[axis][0] - 1;
+    split(axis, pos, left, right);
+  }
+
+};
+
+// creates a vector of sub boxs using a list of
+// flags that marks 'interesting' zones
+void
+sub_boxs(const std::vector<int32> &flags,
+         const index_t nx,
+         const index_t ny,
+         const float64 efficiency,
+         const int32 min_size,
+         std::vector<AABB> &refined)
+{
+  AABB mesh_box;
+  mesh_box.include(0,0);
+  mesh_box.include(0,nx-1);
+  mesh_box.include(1,0);
+  mesh_box.include(1,ny-1);
+
+  std::queue<AABB> aabbs;
+  aabbs.push(mesh_box);
+
+  while(!aabbs.empty())
+  {
+    AABB current = aabbs.front();
+    index_t dx = current.length(0);
+    index_t dy = current.length(1);
+    std::vector<int32> x_bins(dx, 0);
+    std::vector<int32> y_bins(dy, 0);
+
+    int32 flag_count = 0;
+    AABB aabb;
+    // find the tight AABB containing flags
+    for(index_t y = current.min(1); y <= current.max(1); ++y)
+    {
+      for(index_t x = current.min(0); x <= current.max(0); ++x)
+      {
+        index_t offset = y * nx + x;
+        int32 flag = flags[offset];
+        if(flag == 1)
+        {
+          aabb.include(0, x);
+          aabb.include(1, y);
+        }
+        x_bins[x - current.min(0)] += flag;
+        y_bins[y - current.min(1)] += flag;
+        flag_count += flag;
+      }
+    }
+
+    // terminating conditions
+    if(flag_count == 0)
+    {
+      aabbs.pop();
+      continue;
+    }
+
+    index_t subsize = aabb.size();
+    float64 ratio = float64(flag_count) / float64(subsize);
+
+    if(ratio > efficiency || subsize < min_size)
+    {
+      refined.push_back(aabb);
+      aabbs.pop();
+      continue;
+    }
+
+    // find a split
+
+    // look for the longest gap that divides two 'clusters' of flags
+    // this is the best kind of split
+    int32 x_gap[2];
+    int32 y_gap[2];
+    gap_scanner(x_bins, aabb.min(0), aabb.max(0), current.min(0), x_gap);
+    gap_scanner(y_bins, aabb.min(1), aabb.max(1), current.min(1), y_gap);
+    if((x_gap[0] != -1 || y_gap[0] != -1) &&
+        x_gap[0] != aabb.min(0) &&
+        x_gap[0] != aabb.max(0) &&
+        y_gap[0] != aabb.min(1) &&
+        y_gap[0] != aabb.max(1))
+    {
+      AABB left, right;
+      if(x_gap[1] > y_gap[1])
+      {
+        aabb.split(0, x_gap[0], left, right);
+      }
+      else
+      {
+        aabb.split(1, y_gap[0], left, right);
+      }
+      aabbs.pop();
+      aabbs.push(left);
+      aabbs.push(right);
+      continue;
+    }
+
+    // look for splits defined by zero crossovers of the
+    // second derivitive.
+    int32 x_crit[2];
+    int32 y_crit[2];
+    inflection_scanner(x_bins, aabb.min(0), aabb.max(0), current.min(0),x_crit);
+    inflection_scanner(y_bins, aabb.min(1), aabb.max(1), current.min(1),y_crit);
+
+    if((x_crit[0] != -1 || y_crit[0] != -1) &&
+        x_crit[0] != aabb.min(0) &&
+        x_crit[0] != aabb.max(0) &&
+        y_crit[0] != aabb.min(1) &&
+        y_crit[0] != aabb.max(1))
+    {
+      AABB left, right;
+      if(x_crit[1] > y_crit[1])
+      {
+        aabb.split(0, x_crit[0], left, right);
+      }
+      else
+      {
+        aabb.split(1, y_crit[0], left, right);
+      }
+
+      aabbs.pop();
+      aabbs.push(left);
+      aabbs.push(right);
+      continue;
+    }
+
+    // if we are here then gaps and inflection failed
+    // so split on the longest axis
+    AABB left, right;
+    aabb.mid_split(left, right);
+
+    aabbs.pop();
+    aabbs.push(left);
+    aabbs.push(right);
+  }
+}
 //---------------------------------------------------------------------------//
 void basic_init_example_element_scalar_field(index_t nele_x,
                                              index_t nele_y,
@@ -2535,555 +2799,10 @@ void julia(index_t nx,
 }
 
 //---------------------------------------------------------------------------//
-void julia_nestsets(index_t nx,
-                    index_t ny,
-                    float64 x_min,
-                    float64 x_max,
-                    float64 y_min,
-                    float64 y_max,
-                    float64 c_re,
-                    float64 c_im,
-                    Node &res)
-{
-  if(nx < 9)
-  {
-    CONDUIT_ERROR("julia nestsets min nx is 9");
-  }
-  if(ny < 9)
-  {
-    CONDUIT_ERROR("julia nestsets min nx is 9");
-  }
-
-  res.reset();
-  // create the top level
-  //Node &parent = res.append();
-  Node &parent = res["domain_000000"];
-  julia(nx, ny, x_min, x_max, y_min, y_max, c_re, c_im, parent);
-
-  float64_array x_coords = parent["coordsets/coords/values/x"].value();
-  float64_array y_coords = parent["coordsets/coords/values/y"].value();
-
-  // splits in the for of number of cells in each bin:
-  // 00|0|0|0|0|000 -> {2,1,1,1,1,3} always size == 6
-  // level 0:    00 00 00 000
-  // level 1:      |11|11|
-  // level 2:        2 2
-  std::vector<index_t> x_splits = nestsplits(nx);
-  std::vector<index_t> y_splits = nestsplits(ny);
-
-
-  std::vector<index_t> x_offsets;
-  std::vector<index_t> y_offsets;
-  x_offsets.resize(6);
-  y_offsets.resize(6);
-  // prefix sum for offsets
-  x_offsets[0] = 0;
-  y_offsets[0] = 0;
-  for(int i = 1; i < 6; ++i)
-  {
-    x_offsets[i] = x_splits[i-1] + x_offsets[i-1];
-    y_offsets[i] = y_splits[i-1] + y_offsets[i-1];
-  }
-
-  parent["nestsets/nest/association"] = "element";
-  parent["nestsets/nest/topology"] = "topo";
-
-  // level 1:
-  // 00 00 00 000
-  // 00 00 00 000
-  //    -----
-  // 00|11|11|000
-  // 00|11|11|000
-  //    -----
-  // 00|11|11|000
-  // 00|11|11|000
-  //    -----
-  // 00 00 00 000
-  // 00 00 00 000
-  // 00 00 00 000
-
-  // level 1 splits
-  int level_1[4][2][2] = { { {1,2}, {1,2} },
-                           { {1,2}, {3,4} },
-                           { {3,4}, {1,2} },
-                           { {3,4}, {3,4} } };
-
-  const int level_1_ratio = 2;
-  for(int i = 0; i < 4; ++i)
-  {
-    int x[2] = {level_1[i][0][0], level_1[i][0][1]};
-    int y[2] = {level_1[i][1][0], level_1[i][1][1]};
-
-    int dom_id = i + 1;
-    // create the current domain
-    std::ostringstream oss;
-    oss << "domain_" << std::setw(6) << std::setfill('0') << dom_id;
-    std::string child_name = oss.str();
-
-    index_t cnx = x_splits[x[0]] + x_splits[x[1]];
-    index_t cny = y_splits[y[0]] + y_splits[y[1]];
-    float64 cx_min = x_coords[x_offsets[x[0]]];
-    float64 cx_max = x_coords[x_offsets[x[1] + 1]];
-
-    float64 cy_min = y_coords[y_offsets[y[0]]];
-    float64 cy_max = y_coords[y_offsets[y[1] + 1]];
-
-    Node &child= res[child_name];
-
-    julia(cnx * level_1_ratio,
-          cny * level_1_ratio,
-          cx_min,
-          cx_max,
-          cy_min,
-          cy_max,
-          c_re,
-          c_im,
-          child);
-
-    child["state/domain_id"] = dom_id;
-
-    // window name in the form window_level_num
-    std::stringstream window_name;
-    window_name<<"window_1_"<<i;
-
-    Node &pwindow = parent["nestsets/nest/windows/" + window_name.str()];
-    pwindow["domain_id"] = dom_id;
-    pwindow["domain_type"] = "child";
-    pwindow["origin/i"] = x_offsets[x[0]];
-    pwindow["origin/j"] = y_offsets[y[0]];
-    pwindow["dims/i"] = cnx;
-    pwindow["dims/j"] = cny;
-    pwindow["ratio/i"] = level_1_ratio;
-    pwindow["ratio/j"] = level_1_ratio;
-
-    child["nestsets/nest/association"] = "element";
-    child["nestsets/nest/topology"] = "topo";
-    Node &cwindow = child["nestsets/nest/windows/" + window_name.str()];
-    cwindow["domain_id"] = 0;
-    cwindow["domain_type"] = "parent";
-    cwindow["origin/i"] = 0;
-    cwindow["origin/j"] = 0;
-    cwindow["dims/i"] = cnx*2;
-    cwindow["dims/j"] = cny*2;
-    cwindow["ratio/i"] = level_1_ratio;
-    cwindow["ratio/j"] = level_1_ratio;
-  }
-
-  // create the last domain
-  // level 2:
-  // 00 0 00 0  000
-  // 00 0 00 0  000
-  //   -------
-  // 00|1 11 1| 000
-  //      --
-  // 00|1|22|1| 000
-  // 00|1|22|1| 000
-  //      --
-  // 00|1 11 1| 000
-  //   -------
-  // 00 0 00 0  000
-  // 00 0 00 0  000
-  // 00 0 00 0  000
-
-  {
-    const int level_2_ratio = 4;
-    //2-3, 2-3
-    index_t cnx = x_splits[2] + x_splits[3];
-    index_t cny = y_splits[2] + y_splits[3];
-    float64 cx_min = x_coords[x_offsets[2]];
-    float64 cx_max = x_coords[x_offsets[3 + 1]];
-
-    float64 cy_min = y_coords[y_offsets[2]];
-    float64 cy_max = y_coords[y_offsets[3+ 1]];
-
-    Node &child= res["domain_000005"];
-
-    julia(cnx * level_2_ratio,
-          cny * level_2_ratio,
-          cx_min,
-          cx_max,
-          cy_min,
-          cy_max,
-          c_re,
-          c_im,
-          child);
-
-    child["nestsets/nest/association"] = "element";
-    child["nestsets/nest/topology"] = "topo";
-
-    // parents
-    for(int i = 0; i < 4; ++i)
-    {
-      int x[2] = {level_1[i][0][0], level_1[i][0][1]};
-      int y[2] = {level_1[i][1][0], level_1[i][1][1]};
-
-      int dom_id = i + 1;
-      Node &direct_parent = res.child(dom_id);
-      // create the current domain
-      std::ostringstream oss;
-      oss << "domain_" << std::setw(6) << std::setfill('0') << dom_id;
-      std::string parent_name = oss.str();
-      // window name in the form window_level_num
-      oss.str("");
-      oss<<"window_2_"<<"_"<<dom_id;
-      std::string window_name = oss.str();
-
-      Node &pwindow = direct_parent["nestsets/nest/windows/" + window_name];
-      pwindow["domain_id"] = 5;
-      pwindow["domain_type"] = "child";
-      // coarse level origin
-      int orig_x = std::max(x_offsets[2] - x_offsets[x[0]], index_t(0));
-      int orig_y = std::max(y_offsets[2] - y_offsets[y[0]], index_t(0));
-      pwindow["origin/i"] = orig_x * level_1_ratio;
-      pwindow["origin/j"] = orig_y * level_1_ratio;
-
-      // find the coarse_level overlap
-      index_t pend_x = x_splits[x[0]] + x_splits[x[1]] + x_offsets[x[0]];
-      index_t pend_y = y_splits[y[0]] + y_splits[y[1]] + y_offsets[y[0]];
-      index_t cend_x = cnx + x_offsets[2];
-      index_t cend_y = cny + y_offsets[2];
-      index_t end_x = std::max(pend_x, cend_x);
-      index_t end_y = std::max(pend_y, cend_y);
-      index_t start_x = std::min(pend_x, cend_x);
-      index_t start_y = std::min(pend_y, cend_y);
-
-      int dim_x = std::min(end_x - start_x, index_t(cnx));
-      int dim_y = std::min(end_y - start_y, index_t(cny));
-      pwindow["dims/i"] = dim_x * level_1_ratio;
-      pwindow["dims/j"] = dim_y * level_1_ratio;
-
-      pwindow["ratio/i"] = level_2_ratio / level_1_ratio;
-      pwindow["ratio/j"] = level_2_ratio / level_1_ratio;
-
-      Node &cwindow = child["nestsets/nest/windows/" + window_name];
-      cwindow["domain_id"] = dom_id;
-      cwindow["domain_type"] = "parent";
-
-      orig_x = std::max(x_offsets[x[0]] - x_offsets[2], index_t(0));
-      orig_y = std::max(y_offsets[y[0]] - y_offsets[2], index_t(0));
-
-      cwindow["origin/i"] = orig_x;
-      cwindow["origin/j"] = orig_y;
-      cwindow["dims/i"] = dim_x * level_2_ratio;
-      cwindow["dims/j"] = dim_y * level_2_ratio;
-      cwindow["ratio/i"] = level_2_ratio / level_1_ratio;
-      cwindow["ratio/j"] = level_2_ratio / level_1_ratio;
-    }
-  }
-
-  for(int i = 0; i < res.number_of_children(); ++i)
-  {
-    paint_2d_nestsets(res.child(i), "topo");
-  }
-
-}
-
-void gap_scanner(const std::vector<int32> &values,
-                 const index_t start,
-                 const index_t end,
-                 const index_t offset,
-                 int32 gap[2])
-{
-  bool in_gap = false;
-  int32 gap_length = 0;
-  gap[0] = -1; // index of gap
-  gap[1] = 0;  // length of gap
-  for(index_t i = start - offset; i <= end - offset; ++i)
-  {
-    if(values[i] == 0)
-    {
-      if(in_gap) gap_length++;
-      else
-      {
-        gap_length = 1;
-        in_gap = true;
-      }
-    }
-    else
-    {
-      if(in_gap)
-      {
-        if(gap_length > gap[1])
-        {
-          gap[0] = i + offset;
-          gap[1] = gap_length;
-        }
-        in_gap = false;
-      }
-    }
-  }
-}
-
-void inflection_scanner(const std::vector<int32> &values,
-                        const index_t start,
-                        const index_t end,
-                        const index_t offset,
-                        int32 crit[2])
-{
-  crit[0] = -1;
-  crit[1] = 0;
-  int32 prev = 0;
-  for(index_t i = start + 1 - offset; i <= end - 1 - offset; ++i)
-  {
-    // second derivitive using finite differences
-    int32 deriv = values[i + 1] - 2 * values[i] + values[i-1];
-    // inflection point
-    if((prev < 0 && deriv > 0) || (prev > 0 && deriv < 0))
-    {
-      int32 mag = abs(deriv - prev);
-      if(mag  > crit[1])
-      {
-        crit[0] = i + offset;
-        crit[1] = mag;
-      }
-    }
-    prev = deriv;
-  }
-}
-
-struct AABB
-{
-  index_t box[3][2];
-
-  AABB()
-  {
-    box[0][0] = std::numeric_limits<index_t>::max();
-    box[0][1] = std::numeric_limits<index_t>::min();
-    box[1][0] = std::numeric_limits<index_t>::max();
-    box[1][1] = std::numeric_limits<index_t>::min();
-    box[2][0] = std::numeric_limits<index_t>::max();
-    box[2][1] = std::numeric_limits<index_t>::min();
-  }
-
-  bool valid(int axis)
-  {
-    return box[axis][0] <= box[axis][1];
-  }
-
-  index_t size()
-  {
-    index_t res = 0;
-    res = (box[0][1] - box[0][0] + 1) * (box[1][1] - box[1][0] + 1);
-    if(valid(2))
-    {
-      res *= box[2][1] - box[2][0] + 1;
-    }
-    return res;
-  }
-
-  void print()
-  {
-
-    std::cout<<"size "<<size()<<" "
-              <<"("<<box[0][0]<<","<<box[0][1]<<") - "
-              <<"("<<box[1][0]<<","<<box[1][0]<<")\n";
-  }
-
-  int length(int axis)
-  {
-    return (box[axis][1] - box[axis][0] + 1);
-  }
-
-  int min(int axis)
-  {
-    return box[axis][0];
-  }
-
-  int max(int axis)
-  {
-    return box[axis][1];
-  }
-
-  void split(const int axis,
-             const int index,
-             AABB &left,
-             AABB &right)
-  {
-    for(int i = 0; i < 3; ++i)
-    {
-      if(i == axis)
-      {
-        left.box[i][0] = box[i][0];
-        left.box[i][1] = index;
-        right.box[i][0] = index + 1;
-        right.box[i][1] = box[i][1];
-      }
-      else
-      {
-        left.box[i][0] = box[i][0];
-        left.box[i][1] = box[i][1];
-        right.box[i][0] = box[i][0];
-        right.box[i][1] = box[i][1];
-      }
-    }
-  }
-
-  void include(int axis, index_t pos)
-  {
-    box[axis][0] = std::min(pos, box[axis][0]);
-    box[axis][1] = std::max(pos, box[axis][1]);
-  }
-
-  void mid_split(AABB &left, AABB &right)
-  {
-    int axis = 0;
-    int len = 0;
-    for(int i = 0; i < 3; i++)
-    {
-      if(valid(i))
-      {
-        int size = length(i);
-        if(size > len)
-        {
-          axis  = i;
-          len = size;
-        }
-      }
-    }
-
-    int pos = len/2 + box[axis][0] - 1;
-    split(axis, pos, left, right);
-  }
-
-};
-
-// creates a vector of sub boxs using a list of
-// flags that marks 'interesting' zones
-void
-sub_boxs(const std::vector<int32> &flags,
-         const index_t nx,
-         const index_t ny,
-         const float64 efficiency,
-         const int32 min_size,
-         std::vector<AABB> &refined)
-{
-  AABB mesh_box;
-  mesh_box.include(0,0);
-  mesh_box.include(0,nx-1);
-  mesh_box.include(1,0);
-  mesh_box.include(1,ny-1);
-
-  std::queue<AABB> aabbs;
-  aabbs.push(mesh_box);
-
-  while(!aabbs.empty())
-  {
-    AABB current = aabbs.front();
-    index_t dx = current.length(0);
-    index_t dy = current.length(1);
-    std::vector<int32> x_bins(dx, 0);
-    std::vector<int32> y_bins(dy, 0);
-
-    int32 flag_count = 0;
-    AABB aabb;
-    // find the tight AABB containing flags
-    for(index_t y = current.min(1); y <= current.max(1); ++y)
-    {
-      for(index_t x = current.min(0); x <= current.max(0); ++x)
-      {
-        index_t offset = y * nx + x;
-        int32 flag = flags[offset];
-        if(flag == 1)
-        {
-          aabb.include(0, x);
-          aabb.include(1, y);
-        }
-        x_bins[x - current.min(0)] += flag;
-        y_bins[y - current.min(1)] += flag;
-        flag_count += flag;
-      }
-    }
-
-    // terminating conditions
-    if(flag_count == 0)
-    {
-      aabbs.pop();
-      continue;
-    }
-
-    index_t subsize = aabb.size();
-    float64 ratio = float64(flag_count) / float64(subsize);
-
-    if(ratio > efficiency || subsize < min_size)
-    {
-      refined.push_back(aabb);
-      aabbs.pop();
-      continue;
-    }
-
-    // find a split
-
-    // look for the longest gap that divides two 'clusters' of flags
-    // this is the best kind of split
-    int32 x_gap[2];
-    int32 y_gap[2];
-    gap_scanner(x_bins, aabb.min(0), aabb.max(0), current.min(0), x_gap);
-    gap_scanner(y_bins, aabb.min(1), aabb.max(1), current.min(1), y_gap);
-    if((x_gap[0] != -1 || y_gap[0] != -1) &&
-        x_gap[0] != aabb.min(0) &&
-        x_gap[0] != aabb.max(0) &&
-        y_gap[0] != aabb.min(1) &&
-        y_gap[0] != aabb.max(1))
-    {
-      AABB left, right;
-      if(x_gap[1] > y_gap[1])
-      {
-        aabb.split(0, x_gap[0], left, right);
-      }
-      else
-      {
-        aabb.split(1, y_gap[0], left, right);
-      }
-      aabbs.pop();
-      aabbs.push(left);
-      aabbs.push(right);
-      continue;
-    }
-
-    // look for splits defined by zero crossovers of the
-    // second derivitive.
-    int32 x_crit[2];
-    int32 y_crit[2];
-    inflection_scanner(x_bins, aabb.min(0), aabb.max(0), current.min(0),x_crit);
-    inflection_scanner(y_bins, aabb.min(1), aabb.max(1), current.min(1),y_crit);
-
-    if((x_crit[0] != -1 || y_crit[0] != -1) &&
-        x_crit[0] != aabb.min(0) &&
-        x_crit[0] != aabb.max(0) &&
-        y_crit[0] != aabb.min(1) &&
-        y_crit[0] != aabb.max(1))
-    {
-      AABB left, right;
-      if(x_crit[1] > y_crit[1])
-      {
-        aabb.split(0, x_crit[0], left, right);
-      }
-      else
-      {
-        aabb.split(1, y_crit[0], left, right);
-      }
-
-      aabbs.pop();
-      aabbs.push(left);
-      aabbs.push(right);
-      continue;
-    }
-
-    // if we are here then gaps and inflection failed
-    // so split on the longest axis
-    AABB left, right;
-    aabb.mid_split(left, right);
-
-    aabbs.pop();
-    aabbs.push(left);
-    aabbs.push(right);
-  }
-}
-//---------------------------------------------------------------------------//
 
 int32 refine(int32 domain_index,
              int32 domain_id_start,
-             int32 threshold,
+             float32 threshold,
              float64 efficiency,
              int32 min_size,
              float64 c_re,
@@ -3102,24 +2821,42 @@ int32 refine(int32 domain_index,
   int32_array iters = domain["fields/iters/values"].value();
 
   std::vector<int32> flags(nx*ny);
+  std::vector<int32> der(nx*ny);
 
+  // perform a 2d stencil and calculate the mag
+  // of the second derivitive of iters using
+  // central differences
   for(index_t i = 0; i < nx*ny; ++i)
   {
     int32 flag = 0;
-    if(iters[i] > threshold)
+    index_t x = i % nx;
+    index_t y = i / nx;
+    float32 x_vals[3];
+    float32 y_vals[3];
+    for(index_t o = 0; o < 3; ++o)
+    {
+      index_t x_o = std::min(std::max(x+o-1,index_t(0)),nx-1);
+      index_t y_o = std::min(std::max(y+o-1,index_t(0)),ny-1);
+      x_vals[o] = float32(iters[y * nx + x_o]);
+      y_vals[o] = float32(iters[y_o * nx + x]);
+    }
+    float32 ddx = std::abs(x_vals[0] - 2.f * x_vals[1] + x_vals[2]);
+    float32 ddy = std::abs(y_vals[0] - 2.f * y_vals[1] + y_vals[2]);
+    float32 eps = sqrt(ddx*ddx + ddy*ddy);
+    der[i] = eps;
+    if(eps > threshold)
     {
       flag = 1;
     }
     flags[i] = flag;
   }
 
-  Node ffield = domain["fields/iters"];
-  ffield["values"].set(flags);
-  domain["fields/flags"] = ffield;
-
+  // split the current domain based on the
+  // flags
   std::vector<AABB> boxs;
   sub_boxs(flags, nx, ny, efficiency, min_size, boxs);
 
+  // create, fill and update nestsets of refined domains
   int domain_id = domain_id_start;
   for(size_t i = 0; i < boxs.size(); ++i)
   {
@@ -3186,8 +2923,6 @@ int32 refine(int32 domain_index,
   return boxs.size();
 }
 
-
-
 void julia_nestsets_complex(index_t nx,
                             index_t ny,
                             float64 x_min,
@@ -3204,30 +2939,30 @@ void julia_nestsets_complex(index_t nx,
   julia(nx, ny, x_min, x_max, y_min, y_max, c_re, c_im, parent);
 
   // AMR knobs
-  int threshold = 10;       // 2nd derivitive flag threshold
-  int min_size = 4;         // min num zones for refine
+  float64 threshold = 10.;   // 2nd derivitive flag threshold
+  int32 min_size = 4;       // min num zones for refine
   float64 efficiency = .80; // target boxs count(flags)/size > effeciency
-  int levels = 4;           // number of levels to generate
+  int32 levels = 4;         // number of levels to generate
 
-  int curr_domain = 0;
-  int domain_count = 1;
-  int children = 1;
+  int32 curr_domain = 0;
+  int32 domain_count = 1;
+  int32 children = 1;
 
-  for(int i = 0; i < levels; ++i)
+  for(int32 i = 0; i < levels; ++i)
   {
 
-    int level_count = 0;
-    int offset = domain_count - children;
-    for(int d = 0; d < children; ++d)
+    int32 level_count = 0;
+    int32 offset = domain_count - children;
+    for(int32 d = 0; d < children; ++d)
     {
-      int count = refine(d + offset,
-                         domain_count,
-                         threshold,
-                         efficiency,
-                         min_size,
-                         c_re,
-                         c_im,
-                         res);
+      int32 count = refine(d + offset,
+                           domain_count,
+                           threshold,
+                           efficiency,
+                           min_size,
+                           c_re,
+                           c_im,
+                           res);
 
       domain_count += count;
       level_count += count;
@@ -3241,7 +2976,7 @@ void julia_nestsets_complex(index_t nx,
 
   // create a field on the mesh that flags zones that
   // are covered by a lower level of refinement
-  for(int i = 0; i < res.number_of_children(); ++i)
+  for(int32 i = 0; i < res.number_of_children(); ++i)
   {
     paint_2d_nestsets(res.child(i), "topo");
   }
