@@ -132,6 +132,7 @@ namespace examples
                                                       conduit::float64 y_max,
                                                       conduit::float64 c_re,
                                                       conduit::float64 c_im,
+                                                      conduit::index_t levels,
                                                       conduit::Node &res);
 
 

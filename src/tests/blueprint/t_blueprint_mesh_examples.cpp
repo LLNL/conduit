@@ -552,6 +552,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
                                                       -2.0,  2.0, // x range
                                                       -2.0,  2.0, // y range
                                                       0.285, 0.01, // c value
+                                                      3, // amr levels
                                                       res["julia_complex"]);
 
     int ndoms = res["julia_complex"].number_of_children();

@@ -2931,6 +2931,7 @@ void julia_nestsets_complex(index_t nx,
                             float64 y_max,
                             float64 c_re,
                             float64 c_im,
+                            index_t levels,
                             Node &res)
 {
   res.reset();
@@ -2942,7 +2943,6 @@ void julia_nestsets_complex(index_t nx,
   float64 threshold = 10.;   // 2nd derivitive flag threshold
   int32 min_size = 4;       // min num zones for refine
   float64 efficiency = .80; // target boxs count(flags)/size > effeciency
-  int32 levels = 4;         // number of levels to generate
 
   int32 curr_domain = 0;
   int32 domain_count = 1;
