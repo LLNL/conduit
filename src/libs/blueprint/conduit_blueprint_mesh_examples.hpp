@@ -113,35 +113,35 @@ namespace examples
                                      conduit::float64 c_im,
                                      conduit::Node &res);
 
-    void CONDUIT_BLUEPRINT_API julia_nestsets(conduit::index_t nx,
-                                              conduit::index_t ny,
-                                              conduit::float64 x_min,
-                                              conduit::float64 x_max,
-                                              conduit::float64 y_min,
-                                              conduit::float64 y_max,
-                                              conduit::float64 c_re,
-                                              conduit::float64 c_im,
-                                              conduit::Node &res);
+    //void CONDUIT_BLUEPRINT_API julia_nestsets_simple(conduit::index_t nx,
+    //                                                 conduit::index_t ny,
+    //                                                 conduit::float64 x_min,
+    //                                                 conduit::float64 x_max,
+    //                                                 conduit::float64 y_min,
+    //                                                 conduit::float64 y_max,
+    //                                                 conduit::float64 c_re,
+    //                                                 conduit::float64 c_im,
+    //                                                 conduit::Node &res);
 
-    void CONDUIT_BLUEPRINT_API julia_nestsets2(conduit::index_t nx,
-                                              conduit::index_t ny,
-                                              conduit::float64 x_min,
-                                              conduit::float64 x_max,
-                                              conduit::float64 y_min,
-                                              conduit::float64 y_max,
-                                              conduit::float64 c_re,
-                                              conduit::float64 c_im,
-                                              conduit::Node &res);
+    void CONDUIT_BLUEPRINT_API julia_nestsets_complex(conduit::index_t nx,
+                                                      conduit::index_t ny,
+                                                      conduit::float64 x_min,
+                                                      conduit::float64 x_max,
+                                                      conduit::float64 y_min,
+                                                      conduit::float64 y_max,
+                                                      conduit::float64 c_re,
+                                                      conduit::float64 c_im,
+                                                      conduit::Node &res);
 
     /// Generates a simple 8x8 two level julia nestset with
     /// two domains
-    void CONDUIT_BLUEPRINT_API julia_nestsets(conduit::float64 x_min,
-                                              conduit::float64 x_max,
-                                              conduit::float64 y_min,
-                                              conduit::float64 y_max,
-                                              conduit::float64 c_re,
-                                              conduit::float64 c_im,
-                                              conduit::Node &res);
+    void CONDUIT_BLUEPRINT_API julia_nestsets_simple(conduit::float64 x_min,
+                                                     conduit::float64 x_max,
+                                                     conduit::float64 y_min,
+                                                     conduit::float64 y_max,
+                                                     conduit::float64 c_re,
+                                                     conduit::float64 c_im,
+                                                     conduit::Node &res);
 
     /// Generates a multi-domain fibonacci estimation of a golden spiral.
     void CONDUIT_BLUEPRINT_API spiral(conduit::index_t ndomains,

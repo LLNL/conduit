@@ -512,10 +512,10 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_simple_nestset)
     Node mesh;
 
     Node res;
-    blueprint::mesh::examples::julia_nestsets(-2.0,  2.0, // x range
-                                              -2.0,  2.0, // y range
-                                              0.285, 0.01, // c value
-                                              res["simple_nestset"]);
+    blueprint::mesh::examples::julia_nestsets_simple(-2.0,  2.0, // x range
+                                                     -2.0,  2.0, // y range
+                                                     0.285, 0.01, // c value
+                                                     res["simple_nestset"]);
 
     int ndoms = res["simple_nestset"].number_of_children();
 
@@ -550,24 +550,24 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
     Node mesh;
 
     Node res;
-    blueprint::mesh::examples::julia_nestsets2(20,   20, // nx, ny
-                                              -2.0,  2.0, // x range
-                                              -2.0,  2.0, // y range
-                                              0.285, 0.01, // c value
-                                              res["matt"]);
+    blueprint::mesh::examples::julia_nestsets_complex(20,   20, // nx, ny
+                                                      -2.0,  2.0, // x range
+                                                      -2.0,  2.0, // y range
+                                                      0.285, 0.01, // c value
+                                                      res["julia_complex"]);
 
-    int ndoms = res["matt"].number_of_children();
+    int ndoms = res["julia_complex"].number_of_children();
 
     Node info;
-    if(!blueprint::mesh::verify(res["matt"],info))
+    if(!blueprint::mesh::verify(res["julia_complex"],info))
     {
       info.print();
     }
 
-    blueprint::mesh::generate_index(res["matt/domain_000000"],
+    blueprint::mesh::generate_index(res["julia_complex/domain_000000"],
                                     "",
                                     ndoms,
-                                    res["blueprint_index/matt"]);
+                                    res["blueprint_index/julia_complex"]);
 
     // save json
     res["protocol/name"] = "json";
@@ -575,11 +575,11 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
 
     res["number_of_files"] = 1;
     res["number_of_trees"] = ndoms;
-    res["file_pattern"] = "matt_example.blueprint_root";
-    res["tree_pattern"] = "matt/domain_%06d";
+    res["file_pattern"] = "julia_complex_example.blueprint_root";
+    res["tree_pattern"] = "julia_complex/domain_%06d";
 
-    CONDUIT_INFO("Creating: matt_example.blueprint_root")
-    relay::io::save(res,"matt_example.blueprint_root","json");
+    CONDUIT_INFO("Creating: julia_complex_example.blueprint_root")
+    relay::io::save(res,"julia_complex_example.blueprint_root","json");
 }
 
 

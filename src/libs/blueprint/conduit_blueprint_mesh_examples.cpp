@@ -2792,7 +2792,6 @@ void gap_scanner(const std::vector<int32> &values,
   {
     if(values[i] == 0)
     {
-      std::cout<<"i "<<i+offset<<" "<<values[i]<<"\n";
       if(in_gap) gap_length++;
       else
       {
@@ -2829,7 +2828,6 @@ void inflection_scanner(const std::vector<int32> &values,
     // second derivitive using finite differences
     int32 deriv = values[i + 1] - 2 * values[i] + values[i-1];
     // inflection point
-    std::cout<<i<<" "<<values[i]<<" "<<deriv<<"\n";
     if((prev < 0 && deriv > 0) || (prev > 0 && deriv < 0))
     {
       int32 mag = abs(deriv - prev);
@@ -2949,6 +2947,8 @@ struct AABB
 
 };
 
+// creates a vector of sub boxs using a list of
+// flags that marks 'interesting' zones
 void
 sub_boxs(const std::vector<int32> &flags,
          const index_t nx,
@@ -2968,25 +2968,21 @@ sub_boxs(const std::vector<int32> &flags,
 
   while(!aabbs.empty())
   {
-    std::cout<<"***#*#*#*#*#*#*#*#\n";
-    std::cout<<"size "<< aabbs.size()<<"\n";
-    std::cout<<"e "<< aabbs.empty()<<"\n";
     AABB current = aabbs.front();
     index_t dx = current.length(0);
     index_t dy = current.length(1);
-    std::cout<<"dx "<<dx<<" " <<dy<<"\n";
     std::vector<int32> x_bins(dx, 0);
     std::vector<int32> y_bins(dy, 0);
 
     int32 flag_count = 0;
     AABB aabb;
+    // find the tight AABB containing flags
     for(index_t y = current.min(1); y <= current.max(1); ++y)
     {
       for(index_t x = current.min(0); x <= current.max(0); ++x)
       {
         index_t offset = y * nx + x;
         int32 flag = flags[offset];
-        //std::cout<<"x "<<x<<" y "<<y<<" offset "<<offset<<" flag "<<flag<<"\n";
         if(flag == 1)
         {
           aabb.include(0, x);
@@ -2998,6 +2994,7 @@ sub_boxs(const std::vector<int32> &flags,
       }
     }
 
+    // terminating conditions
     if(flag_count == 0)
     {
       aabbs.pop();
@@ -3006,26 +3003,22 @@ sub_boxs(const std::vector<int32> &flags,
 
     index_t subsize = aabb.size();
     float64 ratio = float64(flag_count) / float64(subsize);
-    std::cout<<"count "<<flag_count<<"\n";
-    std::cout<<"box "; current.print();
-    std::cout<<"sub box "; aabb.print();
-    std::cout<<"sub size "<<subsize<<"\n";
-    std::cout<<"efficiency "<<ratio<<"\n";
+
     if(ratio > efficiency || subsize < min_size)
     {
-      std::cout<<"### accepted "; aabb.print();
       refined.push_back(aabb);
       aabbs.pop();
       continue;
     }
 
+    // find a split
 
+    // look for the longest gap that divides two 'clusters' of flags
+    // this is the best kind of split
     int32 x_gap[2];
     int32 y_gap[2];
     gap_scanner(x_bins, aabb.min(0), aabb.max(0), current.min(0), x_gap);
     gap_scanner(y_bins, aabb.min(1), aabb.max(1), current.min(1), y_gap);
-    std::cout<<"x gap "<<x_gap[0]<<" "<<x_gap[1]<<"\n";
-    std::cout<<"y gap "<<y_gap[0]<<" "<<y_gap[1]<<"\n";
     if((x_gap[0] != -1 || y_gap[0] != -1) &&
         x_gap[0] != aabb.min(0) &&
         x_gap[0] != aabb.max(0) &&
@@ -3041,24 +3034,18 @@ sub_boxs(const std::vector<int32> &flags,
       {
         aabb.split(1, y_gap[0], left, right);
       }
-      std::cout<<"GAP SPLIT\n";
-      std::cout<<"left "; left.print();
-      std::cout<<"right "; right.print();
       aabbs.pop();
       aabbs.push(left);
       aabbs.push(right);
       continue;
     }
 
+    // look for splits defined by zero crossovers of the
+    // second derivitive.
     int32 x_crit[2];
     int32 y_crit[2];
-    std::cout<<"X inflection\n";
     inflection_scanner(x_bins, aabb.min(0), aabb.max(0), current.min(0),x_crit);
-    std::cout<<"Y inflection\n";
     inflection_scanner(y_bins, aabb.min(1), aabb.max(1), current.min(1),y_crit);
-
-    std::cout<<"x crit "<<x_crit[0]<<" "<<x_crit[1]<<"\n";
-    std::cout<<"y crit "<<y_crit[0]<<" "<<y_crit[1]<<"\n";
 
     if((x_crit[0] != -1 || y_crit[0] != -1) &&
         x_crit[0] != aabb.min(0) &&
@@ -3076,21 +3063,17 @@ sub_boxs(const std::vector<int32> &flags,
         aabb.split(1, y_crit[0], left, right);
       }
 
-      std::cout<<"INFLECTION SPLIT\n";
-      std::cout<<"left "; left.print();
-      std::cout<<"right "; right.print();
       aabbs.pop();
       aabbs.push(left);
       aabbs.push(right);
       continue;
     }
+
     // if we are here then gaps and inflection failed
+    // so split on the longest axis
     AABB left, right;
     aabb.mid_split(left, right);
 
-    std::cout<<"Default_SPLIT\n";
-    std::cout<<"left "; left.print();
-    std::cout<<"right "; right.print();
     aabbs.pop();
     aabbs.push(left);
     aabbs.push(right);
@@ -3138,7 +3121,7 @@ int32 refine(int32 domain_index,
   sub_boxs(flags, nx, ny, efficiency, min_size, boxs);
 
   int domain_id = domain_id_start;
-  for(index_t i = 0; i < boxs.size(); ++i)
+  for(size_t i = 0; i < boxs.size(); ++i)
   {
     // create the current domain
     std::ostringstream oss;
@@ -3148,7 +3131,6 @@ int32 refine(int32 domain_index,
 
     Node &child = res[domain_name];
     AABB aabb = boxs[i];
-    aabb.print();
 
     index_t cnx = aabb.length(0);
     index_t cny = aabb.length(1);
@@ -3206,26 +3188,26 @@ int32 refine(int32 domain_index,
 
 
 
-void julia_nestsets2(index_t nx,
-                    index_t ny,
-                    float64 x_min,
-                    float64 x_max,
-                    float64 y_min,
-                    float64 y_max,
-                    float64 c_re,
-                    float64 c_im,
-                    Node &res)
+void julia_nestsets_complex(index_t nx,
+                            index_t ny,
+                            float64 x_min,
+                            float64 x_max,
+                            float64 y_min,
+                            float64 y_max,
+                            float64 c_re,
+                            float64 c_im,
+                            Node &res)
 {
   res.reset();
   // create the top level
   Node &parent = res["domain_000000"];
   julia(nx, ny, x_min, x_max, y_min, y_max, c_re, c_im, parent);
 
-
-  int threshold = 10;
-  int min_size = 4; // min box size
-  float64 efficiency = .80; // target boxs count(flags)/size >
-  int levels = 4;
+  // AMR knobs
+  int threshold = 10;       // 2nd derivitive flag threshold
+  int min_size = 4;         // min num zones for refine
+  float64 efficiency = .80; // target boxs count(flags)/size > effeciency
+  int levels = 4;           // number of levels to generate
 
   int curr_domain = 0;
   int domain_count = 1;
@@ -3233,15 +3215,11 @@ void julia_nestsets2(index_t nx,
 
   for(int i = 0; i < levels; ++i)
   {
-    std::cout<<"@@ Current domain "<<curr_domain
-              <<" domain_count "<<domain_count
-              <<" children "<<children<<"\n";
+
     int level_count = 0;
     int offset = domain_count - children;
     for(int d = 0; d < children; ++d)
     {
-      std::cout<<"@@ refine domain "<<d+offset<<"\n";
-
       int count = refine(d + offset,
                          domain_count,
                          threshold,
@@ -3256,10 +3234,13 @@ void julia_nestsets2(index_t nx,
     }
     curr_domain += level_count;
     children = level_count;
+    // for each level refinement threshold and min size
     threshold += 20;
     min_size *= 2;
   }
 
+  // create a field on the mesh that flags zones that
+  // are covered by a lower level of refinement
   for(int i = 0; i < res.number_of_children(); ++i)
   {
     paint_2d_nestsets(res.child(i), "topo");
@@ -3268,13 +3249,13 @@ void julia_nestsets2(index_t nx,
 }
 
 //---------------------------------------------------------------------------//
-void julia_nestsets(float64 x_min,
-                    float64 x_max,
-                    float64 y_min,
-                    float64 y_max,
-                    float64 c_re,
-                    float64 c_im,
-                    Node &res)
+void julia_nestsets_simple(float64 x_min,
+                           float64 x_max,
+                           float64 y_min,
+                           float64 y_max,
+                           float64 c_re,
+                           float64 c_im,
+                           Node &res)
 {
   res.reset();
   // create the top level
