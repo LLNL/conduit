@@ -56,29 +56,29 @@ methods.
 .. # from t_conduit_docs_tutorial_numeric: numeric_as_dtype
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :start-after: _conduit_tutorial_cpp_numeric_node_as_dtype_start
-   :end-before:  _conduit_tutorial_cpp_numeric_node_as_dtype_end
+   :start-after: BEGIN_EXAMPLE("numeric_as_dtype")
+   :end-before:  END_EXAMPLE("numeric_as_dtype")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :start-after: _conduit_tutorial_cpp_numeric_node_as_dtype_out_start
-   :end-before:  _conduit_tutorial_cpp_numeric_node_as_dtype_out_end
-
+   :start-after: BEGIN_EXAMPLE("numeric_as_dtype")
+   :end-before:  END_EXAMPLE("numeric_as_dtype")
+   
 Or you can use Node::value(), which can infer the correct return type via a
 cast.
 
 .. # from t_conduit_docs_tutorial_numeric: numeric_via_value
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :start-after: _conduit_tutorial_cpp_numeric_node_value_start
-   :end-before:  _conduit_tutorial_cpp_numeric_node_value_end
+   :start-after: BEGIN_EXAMPLE("numeric_via_value")
+   :end-before:  END_EXAMPLE("numeric_via_value")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :start-after: _conduit_tutorial_cpp_numeric_node_value_out_start
-   :end-before:  _conduit_tutorial_cpp_numeric_node_value_out_end
+   :start-after: BEGIN_EXAMPLE("numeric_via_value")
+   :end-before:  END_EXAMPLE("numeric_via_value")
 
 
 Accessing array data via pointers works the same way, using Node's *as_{type}*
@@ -87,14 +87,14 @@ methods.
 .. # from t_conduit_docs_tutorial_numeric: numeric_ptr_as_dtype
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :start-after: _conduit_tutorial_cpp_numeric_array_node_pointer_start
-   :end-before:  _conduit_tutorial_cpp_numeric_array_node_pointer_end
+   :start-after: BEGIN_EXAMPLE("numeric_ptr_as_dtype")
+   :end-before:  END_EXAMPLE("numeric_ptr_as_dtype")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :start-after: _conduit_tutorial_cpp_numeric_array_node_pointer_out_start
-   :end-before:  _conduit_tutorial_cpp_numeric_array_node_pointer_out_end
+   :start-after: BEGIN_EXAMPLE("numeric_ptr_as_dtype")
+   :end-before:  END_EXAMPLE("numeric_ptr_as_dtype")
 
 
 Or using Node::value():
@@ -102,14 +102,14 @@ Or using Node::value():
 .. # from t_conduit_docs_tutorial_numeric: numeric_ptr_via_value
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :start-after: _conduit_tutorial_cpp_numeric_array_node_value_start
-   :end-before:  _conduit_tutorial_cpp_numeric_array_node_value_end
+   :start-after: BEGIN_EXAMPLE("numeric_ptr_via_value")
+   :end-before:  END_EXAMPLE("numeric_ptr_via_value")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :start-after: _conduit_tutorial_cpp_numeric_array_node_value_out_start
-   :end-before:  _conduit_tutorial_cpp_numeric_array_node_value_out_end
+   :start-after: BEGIN_EXAMPLE("numeric_ptr_via_value")
+   :end-before:  END_EXAMPLE("numeric_ptr_via_value")
 
 
 
@@ -120,15 +120,14 @@ indexing for all types of arrays.
 .. # from t_conduit_docs_tutorial_numeric: numeric_strided_data_array
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
-   :start-after: _conduit_tutorial_cpp_numeric_non-contiguous_start
-   :end-before:  _conduit_tutorial_cpp_numeric_non-contiguous_end
+   :start-after: BEGIN_EXAMPLE("numeric_strided_data_array")
+   :end-before:  END_EXAMPLE("numeric_strided_data_array")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :start-after: _conduit_tutorial_cpp_numeric_non-contiguous_out_start
-   :end-before:  _conduit_tutorial_cpp_numeric_non-contiguous_out_end
-
+   :start-after: BEGIN_EXAMPLE("numeric_strided_data_array")
+   :end-before:  END_EXAMPLE("numeric_strided_data_array")
 
 
 Using Introspection and Conversion
@@ -147,7 +146,8 @@ double array.
    :end-before:  _conduit_tutorial_cpp_numeric_introspection_end
    :language: cpp
 
+
 .. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
-   :start-after: _conduit_tutorial_cpp_numeric_introspection_out_start
-   :end-before:  _conduit_tutorial_cpp_numeric_introspection_out_end
+   :start-after: BEGIN_EXAMPLE("numeric_double_conversion")
+   :end-before:  END_EXAMPLE("numeric_double_conversion")
 

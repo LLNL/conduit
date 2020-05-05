@@ -51,17 +51,16 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "t_conduit_docs_tutorial_helpers.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
-// 65-79
 TEST(conduit_docs, blueprint_example_1)
 {
-    CONDUIT_INFO("blueprint_example_1");
-
+    BEGIN_EXAMPLE("blueprint_example_1");
     // setup our candidate and info nodes
     Node n, info;
 
@@ -74,25 +73,22 @@ TEST(conduit_docs, blueprint_example_1)
         std::cout << "mesh verify succeeded." << std::endl;
     else
         std::cout << "mesh verify failed!" << std::endl;
-   
+
     // show some of the verify details
     info["coordsets"].print();
-    
-    CONDUIT_INFO("blueprint_example_1");
+    END_EXAMPLE("blueprint_example_1");
 }
 
 //-----------------------------------------------------------------------------
-// 90-110
 TEST(conduit_docs, blueprint_example_2)
 {
-    CONDUIT_INFO("blueprint_example_2");
-
+    BEGIN_EXAMPLE("blueprint_example_2");
     // setup our candidate and info nodes
     Node n, verify_info, mem_info;
 
     // create an example mcarray
     conduit::blueprint::mcarray::examples::xyz("separate",5,n);
-    
+
     std::cout << "example 'separate' mcarray " << std::endl;
     n.print();
     n.info(mem_info);
@@ -113,6 +109,5 @@ TEST(conduit_docs, blueprint_example_2)
             mem_info.print();
         }
     }
-
-    CONDUIT_INFO("blueprint_example_2");
+    END_EXAMPLE("blueprint_example_2");
 }

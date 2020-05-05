@@ -62,7 +62,6 @@ using namespace conduit;
 TEST(conduit_tutorial, t_conduit_docs_tutorial_yaml)
 {
     BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml");
-
     std::string yaml_txt("mykey: 42.0");
 
     Node n;
@@ -71,7 +70,6 @@ TEST(conduit_tutorial, t_conduit_docs_tutorial_yaml)
     std::cout << n["mykey"].as_float64() <<std::endl;
 
     n.print_detailed();
-
     END_EXAMPLE("t_conduit_docs_tutorial_yaml");
 }
 
@@ -79,7 +77,6 @@ TEST(conduit_tutorial, t_conduit_docs_tutorial_yaml)
 TEST(conduit_tutorial, t_conduit_docs_tutorial_json)
 {
     BEGIN_EXAMPLE("t_conduit_docs_tutorial_json");
-
     std::string json_txt("{\"mykey\": 42.0}");
 
     Node n;
@@ -88,7 +85,6 @@ TEST(conduit_tutorial, t_conduit_docs_tutorial_json)
     std::cout << n["mykey"].as_float64() <<std::endl;
 
     n.print_detailed();
-
     END_EXAMPLE("t_conduit_docs_tutorial_json");
 }
 
@@ -96,7 +92,6 @@ TEST(conduit_tutorial, t_conduit_docs_tutorial_json)
 TEST(conduit_tutorial, t_conduit_docs_tutorial_yaml_inline_array)
 {
     BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array");
-
     std::string yaml_txt("myarray: [0.0, 10.0, 20.0, 30.0]");
 
     Node n;
@@ -105,7 +100,6 @@ TEST(conduit_tutorial, t_conduit_docs_tutorial_yaml_inline_array)
     n["myarray"].print();
 
     n.print_detailed();
-
     END_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array");
 }
 
@@ -113,16 +107,14 @@ TEST(conduit_tutorial, t_conduit_docs_tutorial_yaml_inline_array)
 TEST(conduit_tutorial, json_generator_std)
 {
     BEGIN_EXAMPLE("t_json_generator_std");
-    
     Generator g("{test: {dtype: float64, value: 100.0}}","conduit_json");
-    
+
     Node n;
     g.walk(n);
-    
+
     std::cout << n["test"].as_float64() <<std::endl;
     n.print();
     n.print_detailed();
-    
     END_EXAMPLE("t_json_generator_std");
 }
 
@@ -147,7 +139,6 @@ TEST(conduit_tutorial, json_generator_pure_json)
 TEST(conduit_tutorial, json_generator_pure_yaml)
 {
     BEGIN_EXAMPLE("t_json_generator_pure_yaml");
-    
     Generator g("test: 100.0","yaml");
 
     Node n;
@@ -156,7 +147,6 @@ TEST(conduit_tutorial, json_generator_pure_yaml)
     std::cout << n["test"].as_float64() <<std::endl;
     n.print_detailed();
     n.print();
-
     END_EXAMPLE("t_json_generator_pure_yaml");
 }
 
@@ -164,7 +154,6 @@ TEST(conduit_tutorial, json_generator_pure_yaml)
 TEST(conduit_tutorial, json_generator_bind_to_incore)
 {
     BEGIN_EXAMPLE("t_json_generator_bind_to_incore");
-
     float64 vals[2];
     Generator g("{a: {dtype: float64, value: 100.0}, b: {dtype: float64, value: 200.0} }",
                 "conduit_json",
@@ -181,7 +170,6 @@ TEST(conduit_tutorial, json_generator_bind_to_incore)
     Node ninfo;
     n.info(ninfo);
     ninfo.print();
-
     END_EXAMPLE("t_json_generator_bind_to_incore");
 }
 
@@ -190,7 +178,6 @@ TEST(conduit_tutorial, json_generator_bind_to_incore)
 TEST(conduit_tutorial, json_generator_compact)
 {
     BEGIN_EXAMPLE("t_json_generator_compact");
-    
     float64 vals[] = { 100.0,-100.0,
                        200.0,-200.0,
                        300.0,-300.0,
@@ -239,7 +226,6 @@ TEST(conduit_tutorial, json_generator_compact)
     n2c.print();
     n2c.info(ninfo);
     ninfo.print();
-
     END_EXAMPLE("t_json_generator_compact");
 }
 

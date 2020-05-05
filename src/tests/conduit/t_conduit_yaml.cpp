@@ -628,3 +628,21 @@ TEST(conduit_yaml, dup_object_name_error)
     ASSERT_THROW(g3.walk(n),conduit::Error);
     EXPECT_TRUE(n3.dtype().is_empty());
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, to_yaml_leaf_nl)
+{
+    uint32   a_val  = 10;
+
+    Node n;
+    n = a_val;
+
+    std::string res = n.to_yaml();
+    std::cout << res << std::endl;
+    // we don't want leaf to end with nl
+    // this check probes that
+    EXPECT_NE(res[2],std::string("\n")[0]);
+
+}
+

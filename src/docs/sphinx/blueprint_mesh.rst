@@ -629,16 +629,17 @@ Uniform
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 138-143
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 146-187
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform")
+   :language: yaml
 
 * **Visual**
 
@@ -654,16 +655,17 @@ Rectilinear
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 197-201
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_rectilinear")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 204-235
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :language: yaml
 
 * **Visual**
 
@@ -679,16 +681,17 @@ Structured
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 244-249
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_structured")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_structured")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 252-291
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_structured")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_structured")
+   :language: yaml
 
 * **Visual**
 
@@ -704,16 +707,17 @@ Tris
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 300-305
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tris")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tris")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 308-344
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tris")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tris")
+   :language: yaml
 
 * **Visual**
 
@@ -729,16 +733,17 @@ Quads
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 353-358
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_quads")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_quads")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 361-397
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_quads")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_quads")
+   :language: yaml
 
 * **Visual**
 
@@ -754,16 +759,17 @@ Polygons
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 514-519
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polygons")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 522-558
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polygons")
+   :language: yaml
 
 * **Visual**
 
@@ -779,16 +785,17 @@ Tets
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 406-411
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tets")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tets")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 414-451
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tets")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tets")
+   :language: yaml
 
 * **Visual**
 
@@ -804,16 +811,17 @@ Hexs
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 460-465
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 468-505
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :language: yaml
 
 * **Visual**
 
@@ -829,16 +837,17 @@ Polyhedra
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 567-572
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polyhedra")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 575-612
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :language: yaml
 
 * **Visual**
 
@@ -1062,7 +1071,8 @@ This snippet provides a complete C++ example that demonstrates:
   * Saving the result to a JSON file that VisIt can open
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 621-680
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform_detailed")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform_detailed")
    :language: cpp
    :dedent: 4
    

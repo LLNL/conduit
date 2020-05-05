@@ -60,7 +60,6 @@ using namespace conduit;
 index_t OUTPUT_NUM_AXIS_POINTS = 5;
 
 std::string PROTOCOL_VER = CONDUIT_VERSION;
-#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
@@ -504,7 +503,6 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
     EXPECT_TRUE(idx.has_path("state/time"));
 }
 
-#endif
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_julia_simple_nestset)
 {
@@ -580,6 +578,37 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
 
     CONDUIT_INFO("Creating: julia_complex_example.blueprint_root")
     relay::io::save(res,"julia_complex_example.blueprint_root","json");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, save_adjset_uniform)
+{
+
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled =io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // skip if we don't have hdf5 since this example has several domains
+    if(!hdf5_enabled)
+        return;
+
+    Node mesh,idx;
+    blueprint::mesh::examples::adjset_uniform(mesh);
+    blueprint::mesh::generate_index(mesh[0],
+                                    "",
+                                    8,
+                                    mesh["blueprint_index/adj_uniform"]);
+
+    mesh["protocol/name"] = "hdf5";
+    mesh["protocol/version"] = PROTOCOL_VER;
+
+    mesh["number_of_files"] = 1;
+    mesh["number_of_trees"] = 8;
+    mesh["file_pattern"] = "adj_uniform_example.blueprint_root";
+    mesh["tree_pattern"] = "domain_%06d";
+
+    CONDUIT_INFO("Creating: adj_uniform_example.blueprint_root")
+    relay::io::save(mesh,"adj_uniform_example.blueprint_root","json");
 }
 
 

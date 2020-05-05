@@ -1,150 +1,111 @@
-Running main() from gtest_main.cc
-[==========] Running 7 tests from 1 test case.
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 7 tests from 1 test suite.
 [----------] Global test environment set-up.
 [----------] 7 tests from conduit_tutorial
 [ RUN      ] conduit_tutorial.basics_very_basic
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 63]
- basics_very_basic
+BEGIN_EXAMPLE("basics_very_basic")
 
-{
-  "my": "data"
-}
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 69]
- basics_very_basic
+my: "data"
+
+END_EXAMPLE("basics_very_basic")
 [       OK ] conduit_tutorial.basics_very_basic (0 ms)
 [ RUN      ] conduit_tutorial.basics_hierarchial
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 75]
- basics_hierarchial
+BEGIN_EXAMPLE("basics_hierarchial")
 
-{
-  "my": "data",
-  "a": 
-  {
-    "b": 
-    {
-      "c": "d",
-      "e": 64.0
-    }
-  }
-}
+my: "data"
+a: 
+  b: 
+    c: "d"
+    e: 64.0
+
 total bytes: 15
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 85]
- basics_hierarchial
+END_EXAMPLE("basics_hierarchial")
 [       OK ] conduit_tutorial.basics_hierarchial (0 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 91]
- basics_object_and_list
+BEGIN_EXAMPLE("basics_object_and_list")
 
-{
-  "object_example": 
-  {
-    "val1": "data",
-    "val2": 10,
-    "val3": 3.1415
-  },
-  "list_example": 
-  [
-    0,
-    1,
-    2,
-    3,
-    4
-  ]
-}
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 106]
- basics_object_and_list
-[       OK ] conduit_tutorial.basics_object_and_list (0 ms)
+object_example: 
+  val1: "data"
+  val2: 10
+  val3: 3.1415
+list_example: 
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+
+END_EXAMPLE("basics_object_and_list")
+[       OK ] conduit_tutorial.basics_object_and_list (1 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list_itr
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 112]
- basics_object_and_list_itr
+BEGIN_EXAMPLE("basics_object_and_list_itr")
 
-{
-  "object_example": 
-  {
-    "val1": "data",
-    "val2": 10,
-    "val3": 3.1415
-  },
-  "list_example": 
-  [
-    0,
-    1,
-    2,
-    3,
-    4
-  ]
-}
+object_example: 
+  val1: "data"
+  val2: 10
+  val3: 3.1415
+list_example: 
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+
 val1: "data"
 val2: 10
 val3: 3.1415
+
 0
 1
 2
 3
 4
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 143]
- basics_object_and_list_itr
+END_EXAMPLE("basics_object_and_list_itr")
 [       OK ] conduit_tutorial.basics_object_and_list_itr (0 ms)
 [ RUN      ] conduit_tutorial.basics_mem_spaces
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 150]
- basics_mem_spaces
+BEGIN_EXAMPLE("basics_mem_spaces")
 
-{
-  "mem_spaces": 
-  {
-    "0x7fcc834044e0": 
-    {
-      "path": "my",
-      "type": "allocated",
-      "bytes": 5
-    },
-    "0x7fcc83405f20": 
-    {
-      "path": "a/b/c",
-      "type": "allocated",
-      "bytes": 2
-    },
-    "0x7fcc83405f10": 
-    {
-      "path": "a/b/e",
-      "type": "allocated",
-      "bytes": 8
-    }
-  },
-  "total_bytes_allocated": 15,
-  "total_bytes_mmaped": 0,
-  "total_bytes_compact": 15,
-  "total_strided_bytes": 15
-}
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 161]
- basics_mem_spaces
+mem_spaces: 
+  0x7fa457501230: 
+    path: "my"
+    type: "allocated"
+    bytes: 5
+  0x7fa457501810: 
+    path: "a/b/c"
+    type: "allocated"
+    bytes: 2
+  0x7fa457502240: 
+    path: "a/b/e"
+    type: "allocated"
+    bytes: 8
+total_bytes_allocated: 15
+total_bytes_mmaped: 0
+total_bytes_compact: 15
+total_strided_bytes: 15
+
+END_EXAMPLE("basics_mem_spaces")
 [       OK ] conduit_tutorial.basics_mem_spaces (0 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 167]
- basics_bw_style
+BEGIN_EXAMPLE("basics_bw_style")
 
-{
-  "test": 100
-}
+test: 100
+
 
 {
   "test": {"dtype":"uint32", "number_of_elements": 1, "offset": 0, "stride": 4, "element_bytes": 4, "endianness": "little", "value": 100}
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 175]
- basics_bw_style
+END_EXAMPLE("basics_bw_style")
 [       OK ] conduit_tutorial.basics_bw_style (0 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style_from_native
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 181]
- basics_bw_style_from_native
+BEGIN_EXAMPLE("basics_bw_style_from_native")
 
 {
   "test": {"dtype":"int32", "number_of_elements": 1, "offset": 0, "stride": 4, "element_bytes": 4, "endianness": "little", "value": 100}
 }
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_basics.cpp : 188]
- basics_bw_style_from_native
-[       OK ] conduit_tutorial.basics_bw_style_from_native (1 ms)
+END_EXAMPLE("basics_bw_style_from_native")
+[       OK ] conduit_tutorial.basics_bw_style_from_native (0 ms)
 [----------] 7 tests from conduit_tutorial (1 ms total)
 
 [----------] Global test environment tear-down
-[==========] 7 tests from 1 test case ran. (1 ms total)
+[==========] 7 tests from 1 test suite ran. (1 ms total)
 [  PASSED  ] 7 tests.

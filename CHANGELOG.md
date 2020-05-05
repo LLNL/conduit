@@ -14,9 +14,17 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added Node::fetch_existing and Schema::fetch_existing methods, which provide access to existing paths or error when given a bad path.
 - Added Node::add_child() and Node::remove_child() to support direct operatrions and cases where names have `/`s.
 - Added a set of conduit::utils::log::remove_* filtering functions, which process conduit log/info nodes and strip out the requested information (useful for focusing the often verbose output in log/info nodes).
+- Added to_string() and to_string_default() methods to Node, Schema, DataType, and DataArray. These methods alias either to_yaml() or to_json(). Long term yaml will be preferred over json, but Schema does not support yaml yet.
+- Added helper script (scripts/regen_docs_outputs.py) that regenerates all example outputs used Conduit's Sphinx docs.
 
 #### Relay
 - Added an open mode option to RelayIOHandle. See RelayIOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
+- Added the conduit.relay.mpi Python module to support Relay MPI in Python.
+- Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
+
+#### Blueprint
+- Added support for Adjacency sets for Structured Mesh Topologies. See the `blueprint::mesh::examples::adjset_uniform` example.
+
 
 ### Fixed
 
@@ -31,6 +39,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### General 
 - Node::fetch_child and Schema::fetch_child are deprecated in favor of the more clearly named Node::fetch_existing and Schema::fetch_existing. fetch_child variants still exist, but will be removed in a future release.
+- Python str() methods for Node, Schema, and DataType now use their new to_string() methods.
+- DataArray<T>::to_json(std::ostring &) is deprecated in favor DataArray<T>::to_json_stream. to_json(std::ostring &) will be removed in a future release.
+- Schema::to_json and Schema::save variants with detailed (bool) arg are deprecated. The detailed arg was never used. These methods will be removed in a future release.
+- Node::print() now prints yaml instead of json.
+- Sphinx Docs code examples and outputs are now included using start-after and end-before style includes.
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.

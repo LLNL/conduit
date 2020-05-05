@@ -195,22 +195,71 @@ public:
 //-----------------------------------------------------------------------------
     void            compact_to(Schema &s_dest) const;
 
-    std::string     to_json(bool detailed=true, 
-                            index_t indent=2, 
+    //-------------------------------------------------------------------------
+    // note: future support: protocol == "yaml"
+    std::string     to_string(const std::string &protocol="json",
+                              index_t indent=2, 
+                              index_t depth=0,
+                              const std::string &pad=" ",
+                              const std::string &eoe="\n") const;
+
+    void            to_string_stream(std::ostream &os,
+                                     const std::string &protocol="json", 
+                                     index_t indent=2, 
+                                     index_t depth=0,
+                                     const std::string &pad=" ",
+                                     const std::string &eoe="\n") const;
+
+    void            to_string_stream(const std::string &stream_path,
+                                     const std::string &protocol="json",
+                                     index_t indent=2, 
+                                     index_t depth=0,
+                                     const std::string &pad=" ",
+                                     const std::string &eoe="\n") const;
+
+    // NOTE(cyrush): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string     to_string_default() const;
+
+    //-------------------------------------------------------------------------
+    std::string     to_json(index_t indent=2,
                             index_t depth=0,
                             const std::string &pad=" ",
                             const std::string &eoe="\n") const;
 
     void            to_json_stream(std::ostream &os,
-                                   bool detailed=true, 
-                                   index_t indent=2, 
+                                   index_t indent=2,
+                                   index_t depth=0,
+                                   const std::string &pad=" ",
+                                   const std::string &eoe="\n") const;
+
+    void            to_json_stream(const std::string &stream_path, 
+                                   index_t indent=2,
+                                   index_t depth=0,
+                                   const std::string &pad=" ",
+                                   const std::string &eoe="\n") const;
+
+    //-------------------------------------------------------------------------
+    ///DEPRECATED: Schema::to_json variants with detailed (bool) arg are 
+    ///            deprecated. The detailed arg was never used. These methods 
+    ///            will be removed in a future release.
+    std::string     to_json(bool detailed,
+                            index_t indent=2,
+                            index_t depth=0,
+                            const std::string &pad=" ",
+                            const std::string &eoe="\n") const;
+
+    void            to_json_stream(std::ostream &os,
+                                   bool detailed,
+                                   index_t indent=2,
                                    index_t depth=0,
                                    const std::string &pad=" ",
                                    const std::string &eoe="\n") const;
 
     void            to_json_stream(const std::string &stream_path,
-                                   bool detailed=true, 
-                                   index_t indent=2, 
+                                   bool detailed,
+                                   index_t indent=2,
                                    index_t depth=0,
                                    const std::string &pad=" ",
                                    const std::string &eoe="\n") const;
@@ -220,14 +269,25 @@ public:
     // difficulty allocating default string parameters.
     std::string         to_json_default() const;
 
+
 //-----------------------------------------------------------------------------
 //
 /// Basic I/O methods
 //
 //-----------------------------------------------------------------------------
+
+    ///DEPRECATED: Schema::save variant with detailed (bool) arg is 
+    ///            deprecated. The detailed arg was never used. This method
+    ///            will be removed in a future release.
     void            save(const std::string &ofname,
-                         bool detailed=true, 
-                         index_t indent=2, 
+                         bool detailed,
+                         index_t indent=2,
+                         index_t depth=0,
+                         const std::string &pad=" ",
+                         const std::string &eoe="\n") const;
+
+    void            save(const std::string &ofname,
+                         index_t indent=2,
                          index_t depth=0,
                          const std::string &pad=" ",
                          const std::string &eoe="\n") const;
