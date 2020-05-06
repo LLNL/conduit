@@ -44,12 +44,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_examples.hpp
+/// file: conduit_blueprint_mesh_examples_julia.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_MESH_EXAMPLES_HPP
-#define CONDUIT_BLUEPRINT_MESH_EXAMPLES_HPP
+#ifndef CONDUIT_BLUEPRINT_MESH_EXAMPLES_JULIA_HPP
+#define CONDUIT_BLUEPRINT_MESH_EXAMPLES_JULIA_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -82,44 +82,40 @@ namespace mesh
 //-----------------------------------------------------------------------------
 namespace examples
 {
-    /// Generates a uniform grid with a scalar field that assigns a unique,
-    /// monotonically increasing value to each element.
-    void CONDUIT_BLUEPRINT_API basic(const std::string &mesh_type,
-                                     conduit::index_t nx,
+    /// Generates a rectilinear grid with a scalar field that
+    /// visualizes the julia set (https://en.wikipedia.org/wiki/Julia_set)
+    void CONDUIT_BLUEPRINT_API julia(conduit::index_t nx,
                                      conduit::index_t ny,
-                                     conduit::index_t nz,
+                                     conduit::float64 x_min,
+                                     conduit::float64 x_max,
+                                     conduit::float64 y_min,
+                                     conduit::float64 y_max,
+                                     conduit::float64 c_re,
+                                     conduit::float64 c_im,
                                      conduit::Node &res);
 
-    /// Generates a braid-like example mesh that covers elements defined in a
-    /// rectilinear grid. The element type (e.g. triangles, quads, their 3D
-    /// counterparts, or a mixture) and the coordinate set/topology
-    /// types can be configured by specifying different "mesh_type" values
-    /// (see the Conduit documentation for details).
-    void CONDUIT_BLUEPRINT_API braid(const std::string &mesh_type,
-                                     conduit::index_t nx,
-                                     conduit::index_t ny,
-                                     conduit::index_t nz,
-                                     conduit::Node &res);
+    /// Generates a simple 8x8 two level julia nestset with
+    /// two domains
+    void CONDUIT_BLUEPRINT_API julia_nestsets_simple(conduit::float64 x_min,
+                                                     conduit::float64 x_max,
+                                                     conduit::float64 y_min,
+                                                     conduit::float64 y_max,
+                                                     conduit::float64 c_re,
+                                                     conduit::float64 c_im,
+                                                     conduit::Node &res);
 
-    /// Generates a multi-domain fibonacci estimation of a golden spiral.
-    void CONDUIT_BLUEPRINT_API spiral(conduit::index_t ndomains,
-                                      conduit::Node &res);
 
-    /// Generates a tessellated heterogeneous polygonal mesh consisting of
-    /// packed octogons and rectangles.
-    void CONDUIT_BLUEPRINT_API polytess(conduit::index_t nlevels,
-                                        conduit::Node &res);
+    void CONDUIT_BLUEPRINT_API julia_nestsets_complex(conduit::index_t nx,
+                                                      conduit::index_t ny,
+                                                      conduit::float64 x_min,
+                                                      conduit::float64 x_max,
+                                                      conduit::float64 y_min,
+                                                      conduit::float64 y_max,
+                                                      conduit::float64 c_re,
+                                                      conduit::float64 c_im,
+                                                      conduit::index_t levels,
+                                                      conduit::Node &res);
 
-    /// Generates an assortment of extra meshes that demonstrate the use of
-    /// less common concepts (e.g. adjacency sets, amr blocks, etc.).
-    void CONDUIT_BLUEPRINT_API misc(const std::string &mesh_type,
-                                    conduit::index_t nx,
-                                    conduit::index_t ny,
-                                    conduit::index_t nz,
-                                    conduit::Node &res);
-
-    /// Generates a mesh that uses uniform adjsets
-    void CONDUIT_BLUEPRINT_API adjset_uniform(conduit::Node &res);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --
