@@ -513,20 +513,20 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset_simple)
     blueprint::mesh::examples::julia_nestsets_simple(-2.0,  2.0, // x range
                                                      -2.0,  2.0, // y range
                                                      0.285, 0.01, // c value
-                                                     res["nestset_simple"]);
+                                                     res["julia_nestset_simple"]);
 
-    int ndoms = res["nestset_simple"].number_of_children();
+    int ndoms = res["julia_nestset_simple"].number_of_children();
 
     Node info;
-    if(!blueprint::mesh::verify(res["nestset_simple"],info))
+    if(!blueprint::mesh::verify(res["julia_nestset_simple"],info))
     {
       info.print();
     }
 
-    blueprint::mesh::generate_index(res["nestset_simple/domain_000000"],
+    blueprint::mesh::generate_index(res["julia_nestset_simple/domain_000000"],
                                     "",
                                     ndoms,
-                                    res["blueprint_index/nestset_simple"]);
+                                    res["blueprint_index/julia_nestset_simple"]);
 
     // save json
     res["protocol/name"] = "json";
@@ -534,11 +534,11 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset_simple)
 
     res["number_of_files"] = 1;
     res["number_of_trees"] = ndoms;
-    res["file_pattern"] = "nestset_simple.blueprint_root";
-    res["tree_pattern"] = "nestset_simple/domain_%06d";
+    res["file_pattern"] = "julia_nestset_simple.blueprint_root";
+    res["tree_pattern"] = "julia_nestset_simple/domain_%06d";
 
-    CONDUIT_INFO("Creating: nestset_simple.blueprint_root")
-    relay::io::save(res,"nestset_simple.blueprint_root","json");
+    CONDUIT_INFO("Creating: julia_nestset_simple.blueprint_root")
+    relay::io::save(res,"julia_nestset_simple.blueprint_root","json");
 }
 
 //-----------------------------------------------------------------------------
