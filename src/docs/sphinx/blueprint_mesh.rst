@@ -499,9 +499,9 @@ other field expressions. Field expressions are specified in the ``expressions`` 
 protocol. The ``expressions`` section is optional. When it exists, it is a peer to the ``fields`` section.
 It is a list of *Objects* of the form:
 
-* expressions/expression/definition
 * expressions/expression/number_of_components
 * expressions/expression/topology
+* expressions/expression/definition
 
 The ``number_of_components`` and ``topology`` entries are identical to their meaning as
 entries in the ``fields`` section.
