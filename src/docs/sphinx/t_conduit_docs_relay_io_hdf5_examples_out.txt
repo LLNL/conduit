@@ -1,115 +1,88 @@
-Running main() from gtest_main.cc
-[==========] Running 2 tests from 1 test case.
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 2 tests from 1 test suite.
 [----------] Global test environment set-up.
 [----------] 2 tests from conduit_docs
 [ RUN      ] conduit_docs.relay_io_example_hdf5_interface_1
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 64]
- relay_io_example_hdf5_interface_1
+BEGIN_EXAMPLE("relay_io_example_hdf5_interface_1")
 
 Node to write:
 
-{
-  "a": 
-  {
-    "my_data": 1.0,
-    "b": 
-    {
-      "my_string": "value"
-    }
-  }
-}
+a: 
+  my_data: 1.0
+  b: 
+    my_string: "value"
+
 
 Path 'myoutput.hdf5:a/my_data' exists
 
 Data loaded:
 1.0
 
+Path 'myoutput.hdf5:a/my_list/0' exists
+
 Data loaded:
 
-{
-  "a": 
-  {
-    "my_data": 3.1415,
-    "b": 
-    {
-      "my_string": "value",
-      "c": 144
-    }
-  }
-}
+a: 
+  my_data: 3.1415
+  b: 
+    my_string: "value"
+    c: 144
+  my_list: 
+    - 42.0
+    - 42
+
 File 
 'myoutput.hdf5' is a hdf5 file
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 116]
- relay_io_example_hdf5_interface_1
-[       OK ] conduit_docs.relay_io_example_hdf5_interface_1 (5 ms)
+END_EXAMPLE("relay_io_example_hdf5_interface_1")
+[       OK ] conduit_docs.relay_io_example_hdf5_interface_1 (4 ms)
 [ RUN      ] conduit_docs.relay_io_example_hdf5_interface_2
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 126]
- relay_io_example_hdf5_interface_opts
+BEGIN_EXAMPLE("relay_io_example_hdf5_interface_opts")
 
 Relay I/O Info and Default Options:
 
-{
-  "protocols": 
-  {
-    "json": "enabled",
-    "conduit_json": "enabled",
-    "conduit_bin": "enabled",
-    "hdf5": "enabled",
-    "conduit_silo": "disabled",
-    "conduit_silo_mesh": "disabled",
-    "adios": "disabled"
-  },
-  "options": 
-  {
-    "hdf5": 
-    {
-      "compact_storage": 
-      {
-        "enabled": "true",
-        "threshold": 1024
-      },
-      "chunking": 
-      {
-        "enabled": "true",
-        "threshold": 2000000,
-        "chunk_size": 1000000,
-        "compression": 
-        {
-          "method": "gzip",
-          "level": 5
-        }
-      }
-    }
-  }
-}
+protocols: 
+  json: "enabled"
+  conduit_json: "enabled"
+  conduit_base64_json: "enabled"
+  yaml: "enabled"
+  conduit_bin: "enabled"
+  hdf5: "enabled"
+  conduit_silo: "disabled"
+  conduit_silo_mesh: "disabled"
+  adios: "disabled"
+options: 
+  hdf5: 
+    compact_storage: 
+      enabled: "true"
+      threshold: 1024
+    chunking: 
+      enabled: "true"
+      threshold: 2000000
+      chunk_size: 1000000
+      compression: 
+        method: "gzip"
+        level: 5
+
 
 New HDF5 I/O Options:
 
-{
-  "compact_storage": 
-  {
-    "enabled": "true",
-    "threshold": 1024
-  },
-  "chunking": 
-  {
-    "enabled": "true",
-    "threshold": 2000,
-    "chunk_size": 2000,
-    "compression": 
-    {
-      "method": "gzip",
-      "level": 5
-    }
-  }
-}
+compact_storage: 
+  enabled: "true"
+  threshold: 1024
+chunking: 
+  enabled: "true"
+  threshold: 2000
+  chunk_size: 2000
+  compression: 
+    method: "gzip"
+    level: 5
+
 
 saving data to 'myoutput_chunked.hdf5' 
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp : 161]
- relay_io_example_hdf5_interface_opts
+END_EXAMPLE("relay_io_example_hdf5_interface_opts")
 [       OK ] conduit_docs.relay_io_example_hdf5_interface_2 (2 ms)
 [----------] 2 tests from conduit_docs (7 ms total)
 
 [----------] Global test environment tear-down
-[==========] 2 tests from 1 test case ran. (7 ms total)
+[==========] 2 tests from 1 test suite ran. (7 ms total)
 [  PASSED  ] 2 tests.

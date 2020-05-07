@@ -508,6 +508,35 @@ To put it in short, each entry in the ``specsets`` section of the Blueprint hier
 
 
 
+Nesting Sets
+++++++++++++++++++++
+
+Nesting Sets are used to represent the nesting relationships between different domains in multi-domain mesh environments. Most commonly, this subset of the Blueprint specification is used for AMR (adaptive mesh refinement) meshes.
+
+Each entry in the Nesting Sets section contains an independent set of nesting relationships between domains in the described mesh.
+On an individual basis, a nesting set contains a source topology, an element association, and a list of nesting windows.
+The windows for a particular nesting set describe the topological nesting pattern for a paired set of domains, which includes the ID of the partnered domain, the type of the partnered domain (parent or child), and the self-relative origin and dimensions of the nesting relationship.
+The Blueprint schema for each entry in the ``nestsets`` section matches the following template:
+
+   * nestsets/nestset/association: "vertex" | "element"
+   * nestsets/nestset/topology: "topo"
+   * nestsets/nestset/windows/window/domain_id: (integer)
+   * nestsets/nestset/windows/window/domain_type: "parent" | "child"
+   * nestsets/nestset/windows/window/ratio/{i, j, k}
+   * nestsets/nestset/windows/window/origin/{i, j, k}
+   * nestsets/nestset/windows/window/dims/{i, j, k}
+
+Each domain that contains a Nesting Sets section must also update its State section to include the domain's global nesting level.
+This additional requirement adds the follow constraint to the ``state`` section:
+
+   * state/level_id: (integer)
+
+.. note::
+   The Nesting Sets section currently only supports nesting specifications for
+   structured topologies. There are plans to extend this feature to support
+   unstructured topologies in future versions of Conduit.
+
+
 Adjacency Sets
 ++++++++++++++++++++
 
@@ -600,16 +629,17 @@ Uniform
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 138-143
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 146-187
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform")
+   :language: yaml
 
 * **Visual**
 
@@ -625,16 +655,17 @@ Rectilinear
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 197-201
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_rectilinear")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 204-235
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :language: yaml
 
 * **Visual**
 
@@ -650,16 +681,17 @@ Structured
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 244-249
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_structured")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_structured")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 252-291
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_structured")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_structured")
+   :language: yaml
 
 * **Visual**
 
@@ -675,16 +707,17 @@ Tris
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 300-305
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tris")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tris")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 308-344
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tris")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tris")
+   :language: yaml
 
 * **Visual**
 
@@ -700,16 +733,17 @@ Quads
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 353-358
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_quads")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_quads")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 361-397
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_quads")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_quads")
+   :language: yaml
 
 * **Visual**
 
@@ -725,16 +759,17 @@ Polygons
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 514-519
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polygons")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 522-558
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polygons")
+   :language: yaml
 
 * **Visual**
 
@@ -750,16 +785,17 @@ Tets
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 406-411
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tets")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tets")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 414-451
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tets")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tets")
+   :language: yaml
 
 * **Visual**
 
@@ -775,16 +811,17 @@ Hexs
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 460-465
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 468-505
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :language: yaml
 
 * **Visual**
 
@@ -800,16 +837,17 @@ Polyhedra
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 567-572
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polyhedra")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 575-612
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :language: yaml
 
 * **Visual**
 
@@ -948,6 +986,76 @@ for each point tested or zero if not found in the set.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
+
+julia amr examples
+++++++++++++++++++++
+
+We also provide examples that represent the julia set using AMR meshes. These functions provide concrete examples of the Mesh Blueprint `nestset` protocol for patch-based AMR meshes.
+
+
+.. figure:: julia_nestsets_simple.png
+    :width: 350px
+    :align: center
+
+    Pseudocolor, Mesh, and Domain Boundary plots of the julia_nestsets_simple example.
+
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::julia_nestsets_simple(float64 x_min,
+                                                              float64 x_max,
+                                                              float64 y_min,
+                                                              float64 y_max,
+                                                              float64 c_re,
+                                                              float64 c_im,
+                                                              Node &res);
+
+`julia_nestsets_simple` provides a basic AMR example with two levels and one
+parent/child nesting relationship.
+
+``x_min``, ``x_max``, ``y_min``, ``y_max`` specify the x and y extents.
+
+``c_re``, ``c_im`` specify real and complex parts of the constant used.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
+.. figure:: julia_nestsets_complex.png
+    :width: 350px
+    :align: center
+
+    Pseudocolor, Mesh, and Domain Boundary plots of the julia_nestsets_complex example.
+
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::julia_nestsets_complex(index_t nx,
+                                                               index_t ny,
+                                                               float64 x_min,
+                                                               float64 x_max,
+                                                               float64 y_min,
+                                                               float64 y_max,
+                                                               float64 c_re,
+                                                               float64 c_im,
+                                                               index_t levels,
+                                                               Node &res);
+
+`julia_nestsets_complex` provides an AMR example that refines the mesh
+using more resolution in complex areas.
+
+
+``nx``, ``ny`` specify the number of elements in the x and y directions.
+
+``x_min``, ``x_max``, ``y_min``, ``y_max`` specify the x and y extents.
+
+``c_re``, ``c_im`` specify real and complex parts of the constant used.
+
+``levels`` specifies the number of refinement levels to use.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
+
 polytess
 ++++++++++
 
@@ -1033,7 +1141,8 @@ This snippet provides a complete C++ example that demonstrates:
   * Saving the result to a JSON file that VisIt can open
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 621-680
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform_detailed")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform_detailed")
    :language: cpp
    :dedent: 4
    

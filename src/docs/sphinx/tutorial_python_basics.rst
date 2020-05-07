@@ -56,12 +56,14 @@ Think of it as a hierarchical variant object.
 .. # from t_conduit_docs_tutorial_python_basics: basics_very_basic
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_basics.py
-   :lines: 61-64
+   :start-after: BEGIN_EXAMPLE("py_basics_very_basic")
+   :end-before: END_EXAMPLE("py_basics_very_basic")
    :language: python
    :dedent: 8
 
-.. literalinclude:: t_conduit_docs_python_tutorial_basics_out.txt 
-   :lines: 28-30
+.. literalinclude:: t_conduit_docs_tutorial_python_basics_out.txt 
+   :start-after: BEGIN_EXAMPLE("py_basics_very_basic")
+   :end-before: END_EXAMPLE("py_basics_very_basic")
    :dedent: 4
 
 .. # from t_conduit_docs_tutorial_python_basics: basics_hierarchial
@@ -69,13 +71,15 @@ Think of it as a hierarchical variant object.
 The *Node* class supports hierarchical construction.
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_basics.py
-   :lines: 72-77
+   :start-after: BEGIN_EXAMPLE("py_basics_hierarchial")
+   :end-before: END_EXAMPLE("py_basics_hierarchial")
    :language: python
    :dedent: 8
 
 
-.. literalinclude:: t_conduit_docs_python_tutorial_basics_out.txt 
-   :lines: 36-47
+.. literalinclude:: t_conduit_docs_tutorial_python_basics_out.txt
+   :start-after: BEGIN_EXAMPLE("py_basics_hierarchial")
+   :end-before: END_EXAMPLE("py_basics_hierarchial")
    :dedent: 4
 
 Borrowing form JSON (and other similar notations), collections of named nodes are
@@ -85,12 +89,14 @@ are leaves that represent concrete data.
 .. # from t_conduit_docs_tutorial_python_basics: basics_object_and_list
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_basics.py
-   :lines: 84-92
+   :start-after: BEGIN_EXAMPLE("py_basics_object_and_list")
+   :end-before: END_EXAMPLE("py_basics_object_and_list")
    :language: python
    :dedent: 8
 
-.. literalinclude:: t_conduit_docs_python_tutorial_basics_out.txt 
-   :lines: 54-69
+.. literalinclude:: t_conduit_docs_tutorial_python_basics_out.txt
+   :start-after: BEGIN_EXAMPLE("py_basics_object_and_list")
+   :end-before: END_EXAMPLE("py_basics_object_and_list")
    :dedent: 4
 
 You can iterate through a Node's children.
@@ -98,12 +104,14 @@ You can iterate through a Node's children.
 .. # from t_conduit_docs_tutorial_python_basics: basics_object_and_list_itr
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_basics.py
-   :lines: 99-113
+   :start-after: BEGIN_EXAMPLE("py_basics_object_and_list_itr")
+   :end-before: END_EXAMPLE("py_basics_object_and_list_itr")
    :language: python
    :dedent: 8
 
-.. literalinclude:: t_conduit_docs_python_tutorial_basics_out.txt 
-   :lines: 75-98
+.. literalinclude:: t_conduit_docs_tutorial_python_basics_out.txt 
+   :start-after: BEGIN_EXAMPLE("py_basics_object_and_list_itr")
+   :end-before: END_EXAMPLE("py_basics_object_and_list_itr")
    :dedent: 4
 
 
@@ -112,12 +120,14 @@ Behind the scenes, *Node* instances manage a collection of memory spaces.
 .. # from t_conduit_docs_tutorial_python_basics: basics_mem_spaces
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_basics.py
-   :lines: 120-124
+   :start-after: BEGIN_EXAMPLE("py_basics_mem_spaces")
+   :end-before: END_EXAMPLE("py_basics_mem_spaces")
    :language: python
    :dedent: 8
 
-.. literalinclude:: t_conduit_docs_python_tutorial_basics_out.txt 
-   :lines: 104-130
+.. literalinclude:: t_conduit_docs_tutorial_python_basics_out.txt 
+   :start-after: BEGIN_EXAMPLE("py_basics_mem_spaces")
+   :end-before: END_EXAMPLE("py_basics_mem_spaces")
    :dedent: 4
 
 .. # we could add an example here
@@ -139,12 +149,14 @@ are provided as NumPy ndarrays.
 .. # from t_conduit_docs_tutorial_python_basics: basics_bw_style
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_basics.py
-   :lines: 131-133
+   :start-after: BEGIN_EXAMPLE("py_basics_bw_style")
+   :end-before: END_EXAMPLE("py_basics_bw_style")
    :language: python
    :dedent: 8
 
-.. literalinclude:: t_conduit_docs_python_tutorial_basics_out.txt 
-   :lines: 136-139
+.. literalinclude:: t_conduit_docs_tutorial_python_basics_out.txt 
+   :start-after: BEGIN_EXAMPLE("py_basics_bw_style")
+   :end-before: END_EXAMPLE("py_basics_bw_style")
    :dedent: 4
    
 Standard Python numeric types will be mapped to bitwidth style types.
@@ -152,12 +164,14 @@ Standard Python numeric types will be mapped to bitwidth style types.
 .. # from t_conduit_docs_tutorial_python_basics: basics_bw_style_from_native
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_basics.py
-   :lines: 141-143
+   :start-after: BEGIN_EXAMPLE("py_basics_bw_style_from_native")
+   :end-before: END_EXAMPLE("py_basics_bw_style_from_native")
    :language: python
    :dedent: 8
 
-.. literalinclude:: t_conduit_docs_python_tutorial_basics_out.txt 
-   :lines: 144-146
+.. literalinclude:: t_conduit_docs_tutorial_python_basics_out.txt 
+   :start-after: BEGIN_EXAMPLE("py_basics_bw_style_from_native")
+   :end-before: END_EXAMPLE("py_basics_bw_style_from_native")
    :dedent: 4
 
 Supported Bitwidth Style Types:

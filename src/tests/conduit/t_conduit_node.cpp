@@ -73,7 +73,7 @@ TEST(conduit_node, simple)
     EXPECT_EQ(n["c"].as_float64(),c_val);
     // data should be owned by the conduit Node
     EXPECT_FALSE(n["a"].is_data_external());
-    
+
 }
 
 TEST(conduit_node, nested)
@@ -351,7 +351,7 @@ TEST(conduit_node, remove_by_index)
     EXPECT_FALSE(n.has_path("a"));
     EXPECT_FALSE(n.has_path("b"));
     EXPECT_FALSE(n.has_path("c"));
-    
+
     conduit::Generator g2("[{dtype:int64, value: 10},{dtype:int64, value: 20},{dtype:int64, value: 30}]");
     conduit::Node n2(g2,true);
     n2.print();
@@ -360,7 +360,7 @@ TEST(conduit_node, remove_by_index)
     EXPECT_EQ(n2[0].to_uint64(), 10);
     EXPECT_EQ(n2[1].to_uint64(), 30);
     n2.remove(0);
-    n2.print();    
+    n2.print();
     EXPECT_EQ(n2[0].to_uint64(), 30);
 }
 
@@ -379,7 +379,7 @@ TEST(conduit_node, check_leaf_assert)
 TEST(conduit_node, check_value_implict_c_type_cast)
 {
     conduit::Node n;
-    
+
     char  cv = 1;
     short sv = 2;
     int   iv = 3;
@@ -407,24 +407,24 @@ TEST(conduit_node, check_value_implict_c_type_cast)
     n["ssv"] = ssv;
     n["siv"] = siv;
     n["slv"] = slv;
-    
+
     n["ucv"] = ucv;
     n["usv"] = usv;
     n["uiv"] = uiv;
     n["ulv"] = ulv;
-    
+
     n["fv"] = fv;
     n["dv"] = dv;
-    
-     
+
+
     n.print();
-    
+
     char  cv_r = n["cv"].value();
     short sv_r = n["sv"].value();
     int   iv_r = n["iv"].value();
     long  lv_r = n["lv"].value();
-    
-    
+
+
     EXPECT_EQ(cv,cv_r);
     EXPECT_EQ(sv,sv_r);
     EXPECT_EQ(iv,iv_r);
@@ -456,13 +456,13 @@ TEST(conduit_node, check_value_implict_c_type_cast)
 
     EXPECT_NEAR(fv,fv_r,0.001);
     EXPECT_NEAR(dv,dv_r,0.001);
-    
-    
+
+
     char  *cv_p_r = n["cv"].value();
     short *sv_p_r = n["sv"].value();
     int   *iv_p_r = n["iv"].value();
     long  *lv_p_r = n["lv"].value();
-    
+
     EXPECT_EQ(cv,cv_p_r[0]);
     EXPECT_EQ(sv,sv_p_r[0]);
     EXPECT_EQ(iv,iv_p_r[0]);
@@ -495,18 +495,18 @@ TEST(conduit_node, check_value_implict_c_type_cast)
 
     EXPECT_NEAR(fv,fv_p_r[0],0.001);
     EXPECT_NEAR(dv,dv_p_r[0],0.001);
-    
-    
+
+
     char_array  cv_a_r = n["cv"].value();
     short_array sv_a_r = n["sv"].value();
     int_array   iv_a_r = n["iv"].value();
     long_array  lv_a_r = n["lv"].value();
-    
+
     EXPECT_EQ(cv_a_r.number_of_elements(),1);
     EXPECT_EQ(sv_a_r.number_of_elements(),1);
     EXPECT_EQ(iv_a_r.number_of_elements(),1);
     EXPECT_EQ(lv_a_r.number_of_elements(),1);
-    
+
     EXPECT_EQ(cv,cv_a_r[0]);
     EXPECT_EQ(sv,sv_a_r[0]);
     EXPECT_EQ(iv,iv_a_r[0]);
@@ -560,12 +560,12 @@ TEST(conduit_node, check_value_implict_c_type_cast)
 TEST(conduit_node, check_value_implict_bitwidth_type_cast)
 {
     conduit::Node n;
-    
+
     int8  i8v  = -1;
     int16 i16v = -2;
     int32 i32v = -3;
     int64 i64v = -4;
-     
+
     uint8  ui8v  = 1;
     uint16 ui16v = 2;
     uint32 ui32v = 3;
@@ -573,28 +573,28 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
 
     float32 f32v = 1.2f;
     float64 f64v = 2.4;
-    
+
     n["i8v"]  = i8v;
     n["i16v"] = i16v;
     n["i32v"] = i32v;
     n["i64v"] = i64v;
-    
+
     n["ui8v"]  = ui8v;
     n["ui16v"] = ui16v;
     n["ui32v"] = ui32v;
     n["ui64v"] = ui64v;
-    
+
     n["f32v"] = f32v;
     n["f64v"] = f64v;
-    
-     
+
+
     n.print();
-    
+
     int8  i8v_r  = n["i8v"].value();
     int16 i16v_r = n["i16v"].value();
     int32 i32v_r = n["i32v"].value();
     int64 i64v_r = n["i64v"].value();
-    
+
     EXPECT_EQ(i8v,i8v_r);
     EXPECT_EQ(i16v,i16v_r);
     EXPECT_EQ(i32v,i32v_r);
@@ -604,7 +604,7 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
     uint16 ui16v_r = n["ui16v"].value();
     uint32 ui32v_r = n["ui32v"].value();
     uint64 ui64v_r = n["ui64v"].value();
-    
+
     EXPECT_EQ(ui8v,ui8v_r);
     EXPECT_EQ(ui16v,ui16v_r);
     EXPECT_EQ(ui32v,ui32v_r);
@@ -616,13 +616,13 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
 
     EXPECT_NEAR(f32v,f32v_r,0.001);
     EXPECT_NEAR(f64v,f64v_r,0.001);
-    
-    
+
+
     int8  *i8v_p_r  = n["i8v"].value();
     int16 *i16v_p_r = n["i16v"].value();
     int32 *i32v_p_r = n["i32v"].value();
     int64 *i64v_p_r = n["i64v"].value();
-    
+
     EXPECT_EQ(i8v,i8v_p_r[0]);
     EXPECT_EQ(i16v,i16v_p_r[0]);
     EXPECT_EQ(i32v,i32v_p_r[0]);
@@ -632,7 +632,7 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
     uint16 *ui16v_p_r = n["ui16v"].value();
     uint32 *ui32v_p_r = n["ui32v"].value();
     uint64 *ui64v_p_r = n["ui64v"].value();
-    
+
     EXPECT_EQ(ui8v,ui8v_p_r[0]);
     EXPECT_EQ(ui16v,ui16v_p_r[0]);
     EXPECT_EQ(ui32v,ui32v_p_r[0]);
@@ -644,7 +644,7 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
 
     EXPECT_NEAR(f32v,f32v_p_r[0],0.001);
     EXPECT_NEAR(f64v,f64v_p_r[0],0.001);
-    
+
     int8_array  i8v_a_r  = n["i8v"].value();
     int16_array i16v_a_r = n["i16v"].value();
     int32_array i32v_a_r = n["i32v"].value();
@@ -654,7 +654,7 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
     EXPECT_EQ(i16v_a_r.number_of_elements(),1);
     EXPECT_EQ(i32v_a_r.number_of_elements(),1);
     EXPECT_EQ(i64v_a_r.number_of_elements(),1);
-    
+
     EXPECT_EQ(i8v,i8v_a_r[0]);
     EXPECT_EQ(i16v,i16v_a_r[0]);
     EXPECT_EQ(i32v,i32v_a_r[0]);
@@ -664,12 +664,12 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
     uint16_array ui16v_a_r = n["ui16v"].value();
     uint32_array ui32v_a_r = n["ui32v"].value();
     uint64_array ui64v_a_r = n["ui64v"].value();
-    
+
     EXPECT_EQ(ui8v_a_r.number_of_elements(),1);
     EXPECT_EQ(ui16v_a_r.number_of_elements(),1);
     EXPECT_EQ(ui32v_a_r.number_of_elements(),1);
     EXPECT_EQ(ui64v_a_r.number_of_elements(),1);
-    
+
     EXPECT_EQ(ui8v,ui8v_a_r[0]);
     EXPECT_EQ(ui16v,ui16v_a_r[0]);
     EXPECT_EQ(ui32v,ui32v_a_r[0]);
@@ -684,13 +684,13 @@ TEST(conduit_node, check_value_implict_bitwidth_type_cast)
 
     EXPECT_NEAR(f32v,f32v_a_r[0],0.001);
     EXPECT_NEAR(f64v,f64v_a_r[0],0.001);
-    
-    
+
+
 }
 
 
 //-----------------------------------------------------------------------------
-void 
+void
 print_warning(const std::string &msg,
               const std::string &file,
               int line)
@@ -708,31 +708,31 @@ TEST(conduit_node, check_as_value_default_after_warning)
     uint64 val = 10;
     Node n;
     n.set(val);
-    
+
     EXPECT_EQ(n.as_uint8(),0);
     EXPECT_EQ(n.as_uint8_ptr(),(void*)NULL);
-    
+
     float32_array arr = n.value();
 
-    EXPECT_TRUE(arr.dtype().is_empty());        
+    EXPECT_TRUE(arr.dtype().is_empty());
     EXPECT_EQ(arr.data_ptr(),(void*)NULL);
-    
+
     conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, check_contiguous)
-{   
+{
     uint8    u8av[6] = {2,4,8,16,32,64};
     uint16  u16av[6] = {2,4,8,16,32,64};
     uint32  u32av[6] = {2,4,8,16,32,64};
     uint64  u64av[6] = {2,4,8,16,32,64};
-    
+
     uint8_array  u8av_a(u8av,DataType::uint8(6));
     uint16_array u16av_a(u16av,DataType::uint16(6));
     uint32_array u32av_a(u32av,DataType::uint32(6));
     uint64_array u64av_a(u64av,DataType::uint64(6));
-    
+
     Node n;
     n["a"] = u8av_a;
     n["b"] = u16av_a;
@@ -743,21 +743,21 @@ TEST(conduit_node, check_contiguous)
     EXPECT_TRUE(n.is_compact());
     // but not contig
     EXPECT_FALSE(n.is_contiguous());
-    // contig dptr should be null if not contig 
+    // contig dptr should be null if not contig
     EXPECT_FALSE(n.contiguous_data_ptr() != NULL);
-    
+
     // compact to create compact + contig
     Node n2;
     n.compact_to(n2);
     EXPECT_TRUE(n2.is_compact());
     EXPECT_TRUE(n2.is_contiguous());
-    // contig dptr should not be null if contig 
+    // contig dptr should not be null if contig
     EXPECT_TRUE(n2.contiguous_data_ptr() != NULL);
 
     // no longer contig
     n2["e"] = 10;
     EXPECT_FALSE(n2.is_contiguous());
-    // contig dptr should be null if not contig 
+    // contig dptr should be null if not contig
     EXPECT_FALSE(n2.contiguous_data_ptr() != NULL);
     // still compact
     EXPECT_TRUE(n2.is_compact());
@@ -767,37 +767,37 @@ TEST(conduit_node, check_contiguous)
     n3["a"].set_external(u64av,2);
     n3["b"].set_external(u64av,4,sizeof(uint64)*2);
     EXPECT_TRUE(n3.is_contiguous());
-    // contig dptr should not be null if contig 
+    // contig dptr should not be null if contig
     EXPECT_TRUE(n3.contiguous_data_ptr() != NULL);
-    
-    
+
+
     // make non contig
     n3["c"].set_external(u64av,3,sizeof(uint64)*3);
     EXPECT_FALSE(n3.is_contiguous());
-    // contig dptr should be null if not contig 
+    // contig dptr should be null if not contig
     EXPECT_TRUE(n3.contiguous_data_ptr() == NULL);
-    
-    
+
+
     // contig but not compact
     Node n4;
     n4["a"].set_external(u64av,2);
     n4["b"].set_external(u64av,2,sizeof(uint64)*2,sizeof(uint64)*2);
     EXPECT_FALSE(n4.is_compact());
     EXPECT_TRUE(n4.is_contiguous());
-    
-    
+
+
     // nested contig and compact
     Node n5;
     n5["a/b/c/d/e/f"].set_int64(10);
-    
+
     EXPECT_TRUE(n5.is_compact());
     EXPECT_TRUE(n5.is_contiguous());
-    
+
     void *n5_contg_ptr = n5.contiguous_data_ptr();
-    
-    // contig dptr should be null if not contig 
+
+    // contig dptr should be null if not contig
     EXPECT_TRUE(n5_contg_ptr != NULL);
-   
+
     // check loc and value of contig dptr
 
     EXPECT_EQ(n5_contg_ptr,
@@ -814,9 +814,9 @@ TEST(conduit_node, check_contiguous)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, check_contiguous_with)
-{   
+{
     uint64  u64av[10] = {2,4,8,16,32,64,128,256,512,1024};
-    
+
     Node n1;
     n1["a"].set_external(u64av,5);
     n1["b"].set_external(u64av,5,5 * sizeof(uint64));
@@ -831,42 +831,42 @@ TEST(conduit_node, check_contiguous_with)
     // we don't expect things to be contig with NULL
     EXPECT_FALSE(n1["a"].contiguous_with(NULL));
     EXPECT_FALSE(n1["b"].contiguous_with(NULL));
-    
+
     // b should be contig with a
     EXPECT_TRUE(n1["b"].contiguous_with(n1["a"]));
-    
+
     // but the reverse is not the case (b comes after a ...)
     EXPECT_FALSE(n1["a"].contiguous_with(n1["b"]));
-    
+
     // b it should be contig with address at the end of a
     // a.ele_ptr(5) should land us right at start of b
     EXPECT_EQ(n1["b"].element_ptr(0),n1["a"].element_ptr(5));
-        
+
     // b it should be contig with address at the end of a
     EXPECT_TRUE(n1["b"].contiguous_with(n1["a"].element_ptr(5)));
-    
-    
+
+
     Node n2;
     n2["a"].set_external(u64av,5);
     n2["b"].set_external(DataType::uint8(),NULL);
     n2["c"].set_external(u64av,5,5 * sizeof(uint64));
-    
+
     // we expect c to be contig with a
     EXPECT_TRUE(n1["c"].contiguous_with(n1["a"]));
-    
+
     // null leaf type in middle should break contig
     EXPECT_FALSE(n2.is_contiguous());
-    
+
     // should be contig if we removed the null leaf
     n2.remove("b");
     EXPECT_TRUE(n2.is_contiguous());
-    
+
 
     // but an empy leaf type in middle shouldn't break contig
     n2["a"].set_external(u64av,5);
     n2["b"].set(DataType::empty());
     n2["c"].set_external(u64av,5,5 * sizeof(uint64));
-    
+
     EXPECT_TRUE(n2.is_contiguous());
 
 }
@@ -874,18 +874,18 @@ TEST(conduit_node, check_contiguous_with)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, check_path)
-{   
+{
 
     Node n;
-    
+
     n["a/b/c/d/e/f"] = 10;
 
     EXPECT_EQ(n.path(),"");
     EXPECT_EQ(n["a/b/c/d/e/f"].path(), "a/b/c/d/e/f");
-    
+
     // check roundtrip -- using path() to fetch from root node
     EXPECT_EQ(n.fetch_ptr(n["a/b/c/d/e/f"].path()),&n["a/b/c/d/e/f"]);
-    
+
     // list cases
     EXPECT_EQ(n["a/b/c/list"].append().path(), "a/b/c/list/[0]");
     EXPECT_EQ(n["a/b/c/list"].append().path(), "a/b/c/list/[1]");
@@ -898,14 +898,14 @@ TEST(conduit_node, check_path)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, check_path_in_bad_access)
-{   
+{
     // test if the path string appears in the exception thrown
     // for a bad dtype access
-    
+
     Node n;
-    
+
     n["a/b/c/d/e/f"] = 10;
-    
+
     try
     {
         std::string s = n["a/b/c/d/e/f"].as_string();
@@ -919,12 +919,12 @@ TEST(conduit_node, check_path_in_bad_access)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, check_const_access)
-{   
+{
     Node n;
-    
+
     n["a/b"].set_int32(10);
     n["a/c"].set(DataType::int64(2));
-    
+
     int64_array c_vals = n["a/c"].value();
     c_vals[0]= 1;
     c_vals[1]= 2;
@@ -932,31 +932,31 @@ TEST(conduit_node, check_const_access)
     // Note: this won't throw b/c n is not const, so the const fetch
     // will not bind
     //const Node &n_bad = n["bad"];
-    
+
     const Node &n_a = n["a"];
     const int64 *c_vals_const = n_a["c"].as_int64_ptr();
 
-    EXPECT_THROW(n_a.fetch_child("bad");,conduit::Error);
-    EXPECT_THROW(const Node &n_a_bad = n_a.fetch_child("bad");,conduit::Error);
+    EXPECT_THROW(n_a.fetch_existing("bad");,conduit::Error);
+    EXPECT_THROW(const Node &n_a_bad = n_a.fetch_existing("bad");,conduit::Error);
 
     EXPECT_THROW(const Node &n_a_bad = n_a["bad"];,conduit::Error);
-    
+
     EXPECT_EQ(n_a["b"].as_int32(),10);
     EXPECT_EQ(c_vals_const[0],1);
     EXPECT_EQ(c_vals_const[1],2);
-    
+
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, node_more_set_cases)
-{   
+{
     // construct from data type
     Node n(DataType::object());
-    
+
     // create complex tree
     n["a/b/c/d"].append().set(DataType::int64(2));
-    
+
     int64_array cvals = n["a/b/c/d"][0].value();
     cvals[0]= 1;
     cvals[1]= 2;
@@ -974,10 +974,10 @@ TEST(conduit_node, node_more_set_cases)
 
     EXPECT_EQ(n2_vals_ptr[0],1);
     EXPECT_EQ(n2_vals_ptr[1],2);
-    
+
     EXPECT_EQ(n3_vals_ptr[0],1);
     EXPECT_EQ(n3_vals_ptr[1],2);
-    
+
 
     float64 fval[1] = { 3.1415 };
 
@@ -996,7 +996,7 @@ TEST(conduit_node, node_more_set_cases)
 
     EXPECT_EQ(n5["a"].as_float64(),fval[0]);
     EXPECT_EQ(n5["b"].as_float64(),fval[0]);
-    
+
     n5.print();
 
 
@@ -1005,19 +1005,19 @@ TEST(conduit_node, node_more_set_cases)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, check_invalid_index_error)
-{ 
+{
     Node n;
-    
+
     EXPECT_THROW(n.child(0),conduit::Error);
     EXPECT_THROW(n[0],conduit::Error);
     EXPECT_THROW(n.child(1),conduit::Error);
     EXPECT_THROW(n[1],conduit::Error);
-    
+
     n.append();
-    
+
     Node &n_0 = n[0];
-    
-    
+
+
 }
 
 
@@ -1032,20 +1032,20 @@ TEST(conduit_node, check_empty_path_fetch_error)
 TEST(conduit_node, rename_child)
 {
     Node n;
-    
+
     // error, can't rename non object
     EXPECT_THROW(n.rename_child("a","b"),conduit::Error);
-    
+
     n["a"].set(DataType::int64());
     n["b"].set(DataType::float64());
     n["c"].set(DataType::float32(10));
-    
+
     float32_array c_vals = n["c"].value();
     for(index_t i=0;i<10;i++)
     {
         c_vals[i] = i;
     }
-    
+
     n.print();
 
     // error, can't rename to existing child name
@@ -1094,7 +1094,7 @@ TEST(conduit_node, list_to_obj_cleanup)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, test_parse_all_protos)
-{ 
+{
     Node n;
 
     n["a/b/c"] = (int64) 10;
@@ -1111,13 +1111,13 @@ TEST(conduit_node, test_parse_all_protos)
     n2.parse(txt_cases[0],"json");
     EXPECT_FALSE(n.diff(n2,info));
     info.print();
-    
+
     n2.parse(txt_cases[1],"conduit_json");
     EXPECT_FALSE(n.diff(n2,info));
-        
+
     n2.parse(txt_cases[2],"conduit_base64_json");
     EXPECT_FALSE(n.diff(n2,info));
-    
+
     n2.parse(txt_cases[3],"yaml");
     EXPECT_FALSE(n.diff(n2,info));
 
@@ -1125,8 +1125,70 @@ TEST(conduit_node, test_parse_all_protos)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_node, add_child)
+TEST(conduit_node, to_string_and_parse_all_protos)
 { 
+    Node n;
+
+    n["a/b/c"] = (int64) 10;
+    n["a/b/d"] = (float64) 42.2;
+    n["a/b/e"] = " string !";
+
+    std::ostringstream oss;
+    
+    std::vector<std::string> txt_cases;
+    txt_cases.push_back(n.to_string()); // yaml
+    txt_cases.push_back(n.to_string_default()); // yaml
+
+    n.to_string_stream(oss); 
+    txt_cases.push_back(oss.str()); // yaml
+
+    txt_cases.push_back(n.to_string("yaml"));
+
+    oss.str("");
+    n.to_string_stream(oss,"json"); 
+    txt_cases.push_back(oss.str()); // json
+
+    txt_cases.push_back(n.to_string("json"));
+    txt_cases.push_back(n.to_string("conduit_json"));
+    txt_cases.push_back(n.to_string("conduit_base64_json"));
+
+    Node n2, info;
+
+    n2.parse(txt_cases[0],"yaml");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+
+    n2.parse(txt_cases[1],"yaml");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+
+    n2.parse(txt_cases[2],"yaml");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+
+    n2.parse(txt_cases[3],"yaml");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+
+    n2.parse(txt_cases[4],"json");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+
+    n2.parse(txt_cases[5],"json");
+    EXPECT_FALSE(n.diff(n2,info));
+    info.print();
+
+    n2.parse(txt_cases[6],"conduit_json");
+    EXPECT_FALSE(n.diff(n2,info));
+
+    n2.parse(txt_cases[7],"conduit_base64_json");
+    EXPECT_FALSE(n.diff(n2,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, add_child)
+{
     Node n;
     int64 val = 42;
     Node &n_a = n.add_child("a");
@@ -1137,4 +1199,6 @@ TEST(conduit_node, add_child)
     // if you add again, you should get the same ref bac.
     EXPECT_EQ(&n_a,n_ptr);
 }
+
+
 

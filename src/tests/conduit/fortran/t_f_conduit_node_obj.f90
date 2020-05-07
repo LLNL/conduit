@@ -815,8 +815,8 @@ contains
         call conduit_node_obj_destroy(n)
 
     end subroutine t_node_obj_parse
-
-   !--------------------------------------------------------------------------
+ 
+    !--------------------------------------------------------------------------
     subroutine t_node_obj_save_load
         type(node) n1
         type(node) n2
@@ -844,6 +844,83 @@ contains
         call conduit_node_obj_destroy(n2)
 
     end subroutine t_node_obj_save_load
+   !--------------------------------------------------------------------------
+    subroutine t_node_obj_names_embedded_slashes
+        type(node) n
+        type(node) n_1
+        type(node) n_2
+        type(node) n_2_test
+        real(kind=8) val
+        integer      nchld
+
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_names_embedded_slashes")
+        !----------------------------------------------------------------------
+
+        n = conduit_node_obj_create()
+
+        n_1 = n%fetch("normal/path")
+        n_2 = n%add_child("child_with_/_inside")
+
+        call n_1%set(10.0d+0)
+        call n_2%set(42.0d+0)
+
+        val = n_1%as_float64();
+        call assert_equals(10.0d+0, val)
+
+        val = n_2%as_float64();
+        call assert_equals(42.0d+0, val)
+
+        call assert_true( n%has_path("normal/path") .eqv. .true.)
+        call assert_true( n%has_child("normal/path") .eqv. .false.)
+
+        call assert_true( n%has_path("child_with_/_inside") .eqv. .false.)
+        call assert_true( n%has_child("child_with_/_inside") .eqv. .true.)
+
+        nchld = n%number_of_children()
+        call assert_equals( nchld, 2 )
+
+        n_2_test = n%child("child_with_/_inside")
+        val = n_2_test%as_float64()
+        call assert_equals(42.0d+0, val)
+
+        call n%remove_child("child_with_/_inside")
+
+        nchld = n%number_of_children()
+        call assert_equals( nchld, 1 )
+        call assert_true( n%has_path("normal/path") .eqv. .true.)
+
+        call conduit_node_obj_destroy(n)
+
+    end subroutine t_node_obj_names_embedded_slashes
+    
+    !--------------------------------------------------------------------------
+     subroutine t_node_obj_fetch_existing
+         type(node) n
+         type(node) n_1
+         type(node) n_1_test
+         real(kind=8) val
+
+
+         !----------------------------------------------------------------------
+         call set_case_name("t_node_obj_fetch_existing")
+         !----------------------------------------------------------------------
+
+         n = conduit_node_obj_create()
+
+         n_1 = n%fetch("normal/path")
+         call n_1%set(10.0d+0)
+         val = n_1%as_float64();
+         call assert_equals(10.0d+0, val)
+
+         n_1_test = n%fetch_existing("normal/path")
+
+         val = n_1_test%as_float64();
+         call assert_equals(10.0d+0, val)
+    
+         call conduit_node_obj_destroy(n)
+
+     end subroutine t_node_obj_fetch_existing
 
 
 !------------------------------------------------------------------------------
@@ -883,6 +960,8 @@ program fortran_test
   call t_node_obj_remove
   call t_node_obj_parse
   call t_node_obj_save_load
+  call t_node_obj_names_embedded_slashes
+  call t_node_obj_fetch_existing
 
   call fruit_summary
   call fruit_finalize

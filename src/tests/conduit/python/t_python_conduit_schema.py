@@ -90,7 +90,23 @@ class Test_Conduit_Schema(unittest.TestCase):
         self.assertEqual(sr.total_strided_bytes(), 8 * 10 + 4 * 10)
         self.assertEqual(sr["a"].total_strided_bytes(),8 * 10)
         self.assertEqual(sr["b"].total_strided_bytes(),4 * 10)
-        
+
+    def test_schema_remove(self):
+        s = Schema()
+        s['a'] = DataType.float64(1)
+        s['b'] = DataType.float64(1)
+        s['c'] = DataType.float64(1)
+        self.assertEqual(s.number_of_children(),3)
+        s.remove(path='c')
+        self.assertEqual(s.number_of_children(),2)
+        paths = s.child_names()
+        for v in ['a','b']:
+            self.assertTrue(v in paths)
+        s.remove(index=0)
+        paths = s.child_names()
+        for v in ['b']:
+            self.assertTrue(v in paths)
+
     def test_schema_child_rename(self):
         s = Schema()
         with self.assertRaises(Exception):
@@ -112,7 +128,21 @@ class Test_Conduit_Schema(unittest.TestCase):
         self.assertEqual(sr["a"].total_strided_bytes(),8 * 10)
         self.assertEqual(sr["c"].total_strided_bytes(),4 * 10)
 
-
+    def test_key_with_slash(self):
+        s = Schema()
+        s["normal/path"] = DataType.float64(1)
+        s.add_child("child_with_/_inside").set(DataType.float64(1))
+        print(s)
+        self.assertTrue(s.has_path("normal/path"))
+        self.assertFalse(s.has_child("normal/path"))
+        self.assertFalse(s.has_path("child_with_/_inside"))
+        self.assertTrue(s.has_child("child_with_/_inside"))
+        self.assertEqual(2,s.number_of_children())
+        self.assertEqual(s.child(1).dtype().id(),DataType.float64().id())
+        self.assertEqual(s.child(name="child_with_/_inside").dtype().id(),DataType.float64().id())
+        s["normal"].remove_child("path")
+        self.assertFalse(s.has_path("normal/path"))
+        
 
 if __name__ == '__main__':
     unittest.main()
