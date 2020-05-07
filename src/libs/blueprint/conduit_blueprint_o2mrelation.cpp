@@ -145,11 +145,13 @@ bool verify(const conduit::Node &n,
         if(!(sizes_node != NULL && offsets_node != NULL))
         {
             log::error(info,proto_name,"requires both 'sizes' and 'offsets' specs");
+            res = false;
         }
         else if(sizes_node->dtype().number_of_elements() !=
                 offsets_node->dtype().number_of_elements())
         {
             log::error(info,proto_name,"requires equal length 'sizes' and 'offsets' specs");
+            res = false;
         }
     }
 
