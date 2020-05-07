@@ -986,6 +986,76 @@ for each point tested or zero if not found in the set.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
+
+julia amr examples
+++++++++++++++++++++
+
+We also provide examples that represent the julia set using AMR meshes. These functions provide concrete examples of the Mesh Blueprint `nestset` protocol for patch-based AMR meshes.
+
+
+.. figure:: julia_nestsets_simple.png
+    :width: 350px
+    :align: center
+
+    Pseudocolor, Mesh, and Domain Boundary plots of the julia_nestsets_simple example.
+
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::julia_nestsets_simple(float64 x_min,
+                                                              float64 x_max,
+                                                              float64 y_min,
+                                                              float64 y_max,
+                                                              float64 c_re,
+                                                              float64 c_im,
+                                                              Node &res);
+
+`julia_nestsets_simple` provides a basic AMR example with two levels and one
+parent/child nesting relationship.
+
+``x_min``, ``x_max``, ``y_min``, ``y_max`` specify the x and y extents.
+
+``c_re``, ``c_im`` specify real and complex parts of the constant used.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
+.. figure:: julia_nestsets_complex.png
+    :width: 350px
+    :align: center
+
+    Pseudocolor, Mesh, and Domain Boundary plots of the julia_nestsets_complex example.
+
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::julia_nestsets_complex(index_t nx,
+                                                               index_t ny,
+                                                               float64 x_min,
+                                                               float64 x_max,
+                                                               float64 y_min,
+                                                               float64 y_max,
+                                                               float64 c_re,
+                                                               float64 c_im,
+                                                               index_t levels,
+                                                               Node &res);
+
+`julia_nestsets_complex` provides an AMR example that refines the mesh
+using more resolution in complex areas.
+
+
+``nx``, ``ny`` specify the number of elements in the x and y directions.
+
+``x_min``, ``x_max``, ``y_min``, ``y_max`` specify the x and y extents.
+
+``c_re``, ``c_im`` specify real and complex parts of the constant used.
+
+``levels`` specifies the number of refinement levels to use.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
+
 polytess
 ++++++++++
 
