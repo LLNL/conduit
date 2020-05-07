@@ -506,147 +506,68 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
     EXPECT_TRUE(idx.has_path("state/time"));
 }
 
-void find_mismatch_values(const conduit::float64_array & to_check,
-    float64 element_area,
-    std::vector<int> &mismatch_indices,
-    std::vector<float64> & mismatch_error,
-    float64 eps = 1.e-6)
+//-----------------------------------------------------------------------------
+void venn_test(const std::string &venn_type)
 {
-    int size = to_check.number_of_elements();
+    const int nx = 500, ny = 500;
+    const double radius = 0.25;
 
-    for (int i = 0; i < size; ++i)
+    Node res, info;
+    blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+
+    // TODO(JRC): Remove the conditional once sparse materials are supported by
+    // the Blueprint verify function.
+    if(venn_type == "full")
     {
-        float64 rel_error = to_check[i] / element_area - 1.;
-        if (fabs(rel_error) > eps)
-        {
-            mismatch_indices.push_back(i);
-            mismatch_error.push_back(rel_error);
-        }
+        EXPECT_TRUE(blueprint::mesh::verify(res, info));
+        CONDUIT_INFO(info.to_json());
     }
-}
 
-void report_indices_and_values(std::vector<int> &nonmatching_indices,
-    std::vector<float64> &nonmatching_errors)
-{
-    int length = nonmatching_indices.size();
+    CONDUIT_INFO(res.schema().to_json());
 
-    std::cout << length << " elements do not match the specified value." << std::endl;
-    std::cout << "First few non-matching indices and relative errors:\nIndex\tValue" << std::endl;
-
-    for (int i = 0; i < length && i < 10; ++i)
+    // TODO(JRC): Remove the conditional once sparse materials are supported by
+    // the Blueprint verify function.
+    if(venn_type == "full")
     {
-        std::cout << "\t" << nonmatching_indices[i] << "\t" << nonmatching_errors[i] << std::endl;
+        std::cout << "[Saving venn_" << venn_type << " example]" << std::endl;
+
+        relay::io_blueprint::save(res, "venn_example.blueprint_root");
+    }
+
+    {
+        std::cout << "[Verifying field area is correct]" << std::endl;
+
+        Node &area_actual = res["fields/area/values"];
+
+        Node area_expected;
+        area_expected.set(std::vector<double>(
+            area_actual.dtype().number_of_elements(), 1.0 / (nx * ny)));
+
+        bool actual_matches_expected = !area_expected.diff(area_actual, info);
+        EXPECT_TRUE(actual_matches_expected);
+        if(!actual_matches_expected)
+        {
+            CONDUIT_INFO(info.to_json());
+        }
     }
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, venn_full)
 {
-    const int nx = 500;
-    const int ny = 500;
-
-    Node res;
-    blueprint::mesh::examples::venn("full",
-        nx, ny, // nx, ny
-        0.25, // radius
-        res);
-    Node info;
-    EXPECT_TRUE(blueprint::mesh::verify(res, info));
-    CONDUIT_INFO(info.to_json());
-
-    std::cout << "[Saving venn_full example]" << std::endl;
-
-    relay::io_blueprint::save(res, "venn_example.blueprint_root");
-
-    std::cout << "[Verifying field area is correct]" << std::endl;
-
-    std::vector<int> mismatch_indices;
-    std::vector<double> mismatch_errors;
-    Node &area_field = res["fields/area/values"];
-
-    const float64 element_area = 1. / (nx * ny);
-
-    find_mismatch_values(area_field.value(), element_area, mismatch_indices, mismatch_errors);
-
-    int elements_different_than_expected = mismatch_indices.size();
-
-    if (elements_different_than_expected > 0)
-    {
-        report_indices_and_values(mismatch_indices, mismatch_errors);
-    }
-    EXPECT_TRUE(elements_different_than_expected == 0);
+    venn_test("full");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, venn_sparse_by_material)
 {
-    const int nx = 500;
-    const int ny = 500;
-
-    Node res;
-    blueprint::mesh::examples::venn("sparse_by_material",
-        nx, ny,
-        0.25, // radius
-        res);
-    Node info;
-    // EXPECT_TRUE(blueprint::mesh::verify(res, info));  // verify() not ready yet
-    // CONDUIT_INFO(info.to_json());
-
-    // relay::io_blueprint::save(res, "venn_example.blueprint_root");
-
-    std::cout << "[Verifying field area is correct]" << std::endl;
-
-    std::vector<int> mismatch_indices;
-    std::vector<double> mismatch_errors;
-    Node &area_field = res["fields/area/values"];
-
-    const float64 element_area = 1. / (nx * ny);
-
-    find_mismatch_values(area_field.value(), element_area, mismatch_indices, mismatch_errors);
-
-    int elements_different_than_one = mismatch_indices.size();
-
-    if (elements_different_than_one > 0)
-    {
-        report_indices_and_values(mismatch_indices, mismatch_errors);
-    }
-    EXPECT_TRUE(elements_different_than_one == 0);
+    venn_test("sparse_by_material");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, venn_sparse_by_element)
 {
-    const int nx = 500;
-    const int ny = 500;
-
-    Node res;
-    blueprint::mesh::examples::venn("sparse_by_element",
-        nx, ny,
-        0.25, // radius
-        res);
-    Node info;
-    // EXPECT_TRUE(blueprint::mesh::verify(res, info));  // verify() not ready yet
-    // CONDUIT_INFO(info.to_json());
-
-    // relay::io_blueprint::save(res, "venn_example.blueprint_root");
-
-    std::cout << "[Verifying field area is correct]" << std::endl;
-
-    std::vector<int> mismatch_indices;
-    std::vector<double> mismatch_errors;
-    Node &area_field = res["fields/area/values"];
-
-    const float64 element_area = 1. / (nx * ny);
-
-    find_mismatch_values(area_field.value(), element_area, mismatch_indices, mismatch_errors);
-
-    int elements_different_than_one = mismatch_indices.size();
-
-    if (elements_different_than_one > 0)
-    {
-        report_indices_and_values(mismatch_indices, mismatch_errors);
-    }
-    EXPECT_TRUE(elements_different_than_one == 0);
+    venn_test("sparse_by_element");
 }
 
 

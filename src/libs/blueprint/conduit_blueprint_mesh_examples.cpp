@@ -2533,8 +2533,7 @@ void spiral(index_t ndoms,
 }
 
 //---------------------------------------------------------------------------//
-void venn_full_matset(Node &res,
-                      float64 mat_importance[4])
+void venn_full_matset(Node &res)
 {
     // create the material sets
     index_t nx = res["coordsets/coords/params/nx"].value();
@@ -2546,6 +2545,9 @@ void venn_full_matset(Node &res,
     float64 dx = 1.0 / float64(nx);
     float64 dy = 1.0 / float64(ny);
     float64 element_area = dx * dy;
+
+    // create importance reference
+    Node &mat_importance = res["meta/importance"];
 
     res["matsets/matset/topology"] = "topo";
     res["matsets/matset/volume_fractions/background"] = DataType::float64(elements);
@@ -2601,9 +2603,9 @@ void venn_full_matset(Node &res,
             mat_cc[idx] * matset_area_cir_c[idx] +
             mat_bg[idx] * matset_area_bg[idx];
 
-        if (mat_ca[idx] > 0.) { matset_importance_cir_a[idx] = mat_importance[1]; }
-        if (mat_cb[idx] > 0.) { matset_importance_cir_b[idx] = mat_importance[2]; }
-        if (mat_cc[idx] > 0.) { matset_importance_cir_c[idx] = mat_importance[3]; }
+        if (mat_ca[idx] > 0.) { matset_importance_cir_a[idx] = mat_importance["a"].value(); }
+        if (mat_cb[idx] > 0.) { matset_importance_cir_b[idx] = mat_importance["b"].value(); }
+        if (mat_cc[idx] > 0.) { matset_importance_cir_c[idx] = mat_importance["c"].value(); }
         float64 x_pos = ((float64)(idx % nx)) / nx;
         float64 y_pos = ((float64)(idx / nx)) / ny;
         if (mat_bg[idx] > 0.) { matset_importance_bg[idx] = x_pos + y_pos; }
@@ -2692,8 +2694,7 @@ void compute_material_sparse_matset_field(Node &res,
     }
 }
 
-void venn_sparse_by_material_matset(Node &res,
-                                    float64 mat_importance[4])
+void venn_sparse_by_material_matset(Node &res)
 {    
     // create the materials
     index_t nx = res["coordsets/coords/params/nx"].value();
@@ -2711,11 +2712,14 @@ void venn_sparse_by_material_matset(Node &res,
     float64 element_area = dx * dy;
     index_t elements = nx * ny;
 
+    // create importance reference
+    Node &mat_importance = res["meta/importance"];
+
     build_material_sparse(res["fields/circle_a/values"],
         elements,
         "circle_a",
         element_area,
-        mat_importance[1],
+        mat_importance["a"].value(),
         res["fields/area/matset_values/circle_a"], 
         res["fields/importance/matset_values/circle_a"],
         res["matsets/matset"]);
@@ -2724,7 +2728,7 @@ void venn_sparse_by_material_matset(Node &res,
         elements,
         "circle_b",
         element_area,
-        mat_importance[2],
+        mat_importance["b"].value(),
         res["fields/area/matset_values/circle_b"],
         res["fields/importance/matset_values/circle_b"],
         res["matsets/matset"]);
@@ -2733,7 +2737,7 @@ void venn_sparse_by_material_matset(Node &res,
         elements,
         "circle_c",
         element_area,
-        mat_importance[3],
+        mat_importance["c"].value(),
         res["fields/area/matset_values/circle_c"],
         res["fields/importance/matset_values/circle_c"],
         res["matsets/matset"]);
@@ -2787,8 +2791,7 @@ void venn_sparse_by_material_matset(Node &res,
     compute_material_sparse_matset_field(res, "importance");
 }
 
-void venn_sparse_by_element_matset(Node &res,
-                                   float64 mat_importance[4])
+void venn_sparse_by_element_matset(Node &res)
 {
     // create the materials
     index_t nx = res["coordsets/coords/params/nx"].value();
@@ -2804,6 +2807,9 @@ void venn_sparse_by_element_matset(Node &res,
     float64 element_area = dx * dy;
     index_t elements = nx * ny;
     index_t vfcount = 0;
+
+    // create importance reference
+    Node &mat_importance = res["meta/importance"];
 
     // Count up all the non-zero volume fragments
     // (so we can allocate a correctly-sized buffer)
@@ -2877,25 +2883,21 @@ void venn_sparse_by_element_matset(Node &res,
 
         if (ca > 0.)
         {
-            int mat_id = 1;
-            fill_in(ca, mat_importance[mat_id], mat_id);
+            fill_in(ca, mat_importance["a"].value(), 1);
         }
         if (cb > 0.)
         {
-            int mat_id = 2;
-            fill_in(cb, mat_importance[mat_id], mat_id);
+            fill_in(cb, mat_importance["b"].value(), 2);
         }
         if (cc > 0.)
         {
-            int mat_id = 3;
-            fill_in(cc, mat_importance[mat_id], mat_id);
+            fill_in(cc, mat_importance["c"].value(), 3);
         }
         if (ca + cb + cc < 1.)
         {
-            int mat_id = 0;
             float64 x_pos = ((float64)(idx % nx)) / nx;
             float64 y_pos = ((float64)(idx / nx)) / ny;
-            fill_in(1 - (ca + cb + cc), x_pos + y_pos, mat_id);
+            fill_in(1 - (ca + cb + cc), x_pos + y_pos, 0);
         }
 
         sizes[idx] = size;
@@ -3110,21 +3112,26 @@ void venn(const std::string &matset_type,
         y+=dy;
     }
 
+    // Fill in metadata (used by helper functions)
+
+    res["meta/importance/a"] = a_importance;
+    res["meta/importance/b"] = b_importance;
+    res["meta/importance/c"] = c_importance;
+
     // Shape in materials; compute fields with matset values.
     std::cout << "[Shaping in materials]" << std::endl;
 
-    float64 mat_importance[4] = { 0., a_importance, b_importance, c_importance };
     if (matset_type == "full")
     {
-        venn_full_matset(res, mat_importance);
+        venn_full_matset(res);
     }
     else if (matset_type == "sparse_by_material")
     {
-        venn_sparse_by_material_matset(res, mat_importance);
+        venn_sparse_by_material_matset(res);
     }
     else if (matset_type == "sparse_by_element")
     {
-        venn_sparse_by_element_matset(res, mat_importance);
+        venn_sparse_by_element_matset(res);
     }
     else
     {
