@@ -518,6 +518,16 @@ them in ``<`` and ``>`` characters. An example expressions entry
 
   .. code:: json
 
+      "fields":
+      {
+        "braid":
+        {
+          ...
+        },
+        "radial":
+        {
+          ...
+        },
       "expressions":
       {
         "scalar_expr":
