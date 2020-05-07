@@ -491,6 +491,49 @@ For implicit topologies, the field values are associated with the topology by fa
 For explicit topologies, the field values are associated with the topology by assuming the order of the field values matches the order the elements are defined in the topology.
 
 
+Field Expressions (Derived Fields)
+==================================
+
+A *field expression* is a mathemtical formula which defines a new field in terms of other fields or
+other field expressions. Field expressions are specified in the ``expressions`` section of the Blueprint
+protocol. The ``expressions`` section is optional. When it exists, it is a peer to the ``fields`` section.
+It is a list of *Objects* of the form:
+
+* expressions/expression/definition
+* expressions/expression/number_of_components
+* expressions/expression/topology
+
+The ``number_of_components`` and ``topology`` entries are identical to their meaning as
+entries in the ``fields`` section.
+
+The ``definition`` entry is string valued and holds the expression (e.g. *mathemtical formula*) defining
+how the new field is computed. Blueprint does not interpret this string. It simply passes it along for
+downstream consumers that have the ability to interpret the string and perform the associated operations
+to compute the derived field.
+
+If the expected consumer is `VisIt <https://visit.llnl.gov>`_, data producers may wish to consult the
+`Expressions chapter of the VisIt user's manual <https://visit-sphinx-github-user-manual.readthedocs.io/en/develop/gui_manual/Quantitative/Expressions.html#built-in-expressions>`_.
+In addition, data producers should *escape* all names of fields or field expressions by bracketing
+them in ``<`` and ``>`` characters. An example expressions entry
+
+  .. code:: json
+
+      "expressions":
+      {
+        "scalar_expr":
+        {
+          "number_of_components": 1,
+          "topology": "mesh",
+          "definition": "<vector_expr>[1]"
+        },
+        "vector_expr":
+        {
+          "number_of_components": 2,
+          "topology": "mesh",
+          "definition": "{<braid>,recenter(<radial>,\"nodal\")}"
+        }
+      }
+
 
 Species Sets
 ++++++++++++++++++++
