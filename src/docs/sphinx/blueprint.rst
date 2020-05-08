@@ -56,24 +56,23 @@ The goal of Blueprint is to help facilite a set of shared higher-level conventio
 
 For now, Blueprint is focused on conventions for two important types of data:
 
-*  Multi-Component Arrays (protocol: ``mcarray``)
-
-    A multi-component array is a collection of fixed-sized numeric tuples. 
-    They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
-
 *  Computational Meshes (protocol: ``mesh``)
 
     Many taxonomies and concrete mesh data models have been developed to allow computational meshes to be used in software. Blueprint's conventions for representing mesh data were formed by negotiating with simulation application teams at LLNL and from a survey of existing projects that provide scientific mesh-related APIs including: ADIOS,  Damaris, EAVL, MFEM, Silo, VTK, VTKm, and Xdmf. Blueprint's mesh conventions are not a replacement for existing mesh data models or APIs. Our explicit goal is to outline a comprehensive, but small set of options for describing meshes in-core that simplifies the process of adapting data to several existing mesh-aware APIs.
 
-Protocol Details
------------------
+
+*  Multi-Component Arrays (protocol: ``mcarray``)
+
+    A multi-component array is a collection of fixed-sized numeric tuples.
+    They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
 
 .. toctree::
-    blueprint_mcarray
     blueprint_mesh
+    blueprint_mcarray
 
-Blueprint Interface
----------------------
+
+Top Level Blueprint Interface
+-------------------------------
 
 Blueprint provides a generic top level ``verify()`` method, which exposes the verify checks for all supported protocols. 
 

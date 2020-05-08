@@ -24,9 +24,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 - Added support for Adjacency sets for Structured Mesh Topologies. See the `blueprint::mesh::examples::adjset_uniform` example.
-- Added `blueprint::mesh::examples::julia_nestsets_simple` and `blueprint::mesh::examples::julia_nestsets_complex` examples represent Julia set fractals using patch-based AMR meshes and the Mesh Blueprint Nesting Set protocol. See Blueprint docs
+- Added `blueprint::mesh::examples::julia_nestsets_simple` and `blueprint::mesh::examples::julia_nestsets_complex` examples represent Julia set fractals using patch-based AMR meshes and the Mesh Blueprint Nesting Set protocol. See the Julia AMR Blueprint docs
 (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#julia-amr-examples) for more details.
-
+- Added `blueprint::mesh::examples::venn` example that demonstrates different ways to encode volume fraction based multi-material fields.  See the Venn Blueprint docs
+(https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#venn) for more details.
 
 
 ### Fixed
