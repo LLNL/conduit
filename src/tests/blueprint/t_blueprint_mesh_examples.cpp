@@ -506,6 +506,18 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
 }
 
 //-----------------------------------------------------------------------------
+void venn_test_small_yaml(const std::string &venn_type)
+{
+    // provide small example save to yaml for folks to look at
+    const int nx = 25, ny = 25;
+    const double radius = 0.25;
+
+    Node res;
+    blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+    res.save("venn_small_example_" + venn_type + ".yaml");
+}
+
+//-----------------------------------------------------------------------------
 void venn_test(const std::string &venn_type)
 {
     const int nx = 100, ny = 100;
@@ -519,7 +531,7 @@ void venn_test(const std::string &venn_type)
     if(venn_type == "full")
     {
         EXPECT_TRUE(blueprint::mesh::verify(res, info));
-        CONDUIT_INFO(info.to_json());
+        CONDUIT_INFO(info.to_yaml());
     }
 
     CONDUIT_INFO(res.schema().to_json());
@@ -528,9 +540,10 @@ void venn_test(const std::string &venn_type)
     // the Blueprint verify function.
     if(venn_type == "full")
     {
-        std::cout << "[Saving venn_" << venn_type << " example]" << std::endl;
+        std::string ofbase = "venn_example_" + venn_type;
+        std::cout << "[Saving " << ofbase << "]" << std::endl;
 
-        relay::io_blueprint::save(res, "venn_example.blueprint_root");
+        relay::io_blueprint::save(res, ofbase + ".blueprint_root");
     }
 
     {
@@ -555,18 +568,21 @@ void venn_test(const std::string &venn_type)
 TEST(conduit_blueprint_mesh_examples, venn_full)
 {
     venn_test("full");
+    venn_test_small_yaml("full");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, venn_sparse_by_material)
 {
     venn_test("sparse_by_material");
+    venn_test_small_yaml("sparse_by_material");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, venn_sparse_by_element)
 {
     venn_test("sparse_by_element");
+    venn_test_small_yaml("sparse_by_element");
 }
 
 

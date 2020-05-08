@@ -718,6 +718,9 @@ void venn(const std::string &matset_type,
     {
         CONDUIT_ERROR("unknown matset_type = " << matset_type);
     }
+    
+    // remove temp tree used during construction
+    res.remove("meta");
 }
 
 }
