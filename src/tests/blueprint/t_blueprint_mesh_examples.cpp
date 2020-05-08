@@ -508,7 +508,7 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
 //-----------------------------------------------------------------------------
 void venn_test(const std::string &venn_type)
 {
-    const int nx = 500, ny = 500;
+    const int nx = 100, ny = 100;
     const double radius = 0.25;
 
     Node res, info;

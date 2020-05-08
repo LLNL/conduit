@@ -138,6 +138,7 @@ void venn_full_matset(Node &res)
     float64_array cir_a = res["fields/circle_a/values"].value();
     float64_array cir_b = res["fields/circle_b/values"].value();
     float64_array cir_c = res["fields/circle_c/values"].value();
+    float64_array bg    = res["fields/background/values"].value();
 
     float64_array area = res["fields/area/values"].value();
     float64_array matset_area_bg = res["fields/area/matset_values/background"].value();
@@ -161,7 +162,7 @@ void venn_full_matset(Node &res)
         mat_ca[idx] = cir_a[idx];
         mat_cb[idx] = cir_b[idx];
         mat_cc[idx] = cir_c[idx];
-        mat_bg[idx] = 1. - (cir_a[idx] + cir_b[idx] + cir_c[idx]);
+        mat_bg[idx] = bg[idx];
 
         if (mat_ca[idx] > 0.) { matset_area_cir_a[idx] = element_area; }
         if (mat_cb[idx] > 0.) { matset_area_cir_b[idx] = element_area; }
@@ -552,6 +553,11 @@ void venn(const std::string &matset_type,
     res["fields/overlap/topology"] = "topo";
     res["fields/overlap/values"] = DataType::float64(nx * ny);
 
+    // per element background
+    res["fields/background/association"] = "element";
+    res["fields/background/topology"] = "topo";
+    res["fields/background/values"] = DataType::float64(nx * ny);
+
     // per element field with matset values.
     //
     // For a field with matset values, each element will have a value equal
@@ -584,6 +590,8 @@ void venn(const std::string &matset_type,
 
     float64_array rad_c = res["fields/radius_c/values"].value();
     float64_array cir_c = res["fields/circle_c/values"].value();
+
+    float64_array bg = res["fields/background/values"].value();
 
     float64_array area = res["fields/area/values"].value();
     float64_array importance = res["fields/importance/values"].value();
@@ -671,6 +679,9 @@ void venn(const std::string &matset_type,
                 cir_c[idx] = 1.0/olap[idx];
             else
                 cir_c[idx] = 0.0;
+
+            // bg vf
+            bg[idx] = 1. - (cir_a[idx] + cir_b[idx] + cir_c[idx]);
 
             // initialize area and importance to 0.
             area[idx] = 0.;
