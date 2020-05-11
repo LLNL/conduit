@@ -4039,17 +4039,56 @@ mesh::field::index::verify(const Node &field_idx,
 //-----------------------------------------------------------------------------
 bool
 mesh::specset::verify(const Node &specset,
-                    Node &info)
+                      Node &info)
 {
     const std::string protocol = "mesh::specset";
     bool res = true;
     info.reset();
 
-    res &= verify_string_field(protocol, specset, info, "matset");
-    res &= verify_mlarray_field(protocol, specset, info, "matset_values", 2, 2);
     // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
     // entry for specsets.
     // res &= verify_enum_field(protocol, specset, info, "volume_dependent", mesh::booleans);
+    res &= verify_string_field(protocol, specset, info, "matset");
+    if(!verify_object_field(protocol, specset, info, "matset_values"))
+    {
+        res &= false;
+    }
+    else
+    {
+        bool specmats_res = true;
+        index_t specmats_len = 0;
+
+        const Node &specmats = specset["matset_values"];
+        Node &specmats_info = info["matset_values"];
+        NodeConstIterator specmats_it = specmats.children();
+        while(specmats_it.has_next())
+        {
+            const Node &specmat = specmats_it.next();
+            const std::string specmat_name = specmat.name();
+            if(!verify_mcarray_field(protocol, specmats, specmats_info, specmat_name))
+            {
+                specmats_res &= false;
+            }
+            else
+            {
+                const index_t specmat_len = specmat.child(0).dtype().number_of_elements();
+                if(specmats_len == 0)
+                {
+                    specmats_len = specmat_len;
+                }
+                else if(specmats_len != specmat_len)
+                {
+                    log::error(specmats_info, protocol,
+                        log::quote(specmat_name) + " has mismatched length " +
+                        "relative to other material mcarrays in this specset");
+                    specmats_res &= false;
+                }
+            }
+        }
+
+        log::validation(specmats_info, specmats_res);
+        res &= specmats_res;
+    }
 
     log::validation(info, res);
 
@@ -4063,7 +4102,7 @@ mesh::specset::verify(const Node &specset,
 //-----------------------------------------------------------------------------
 bool
 mesh::specset::index::verify(const Node &specset_idx,
-                           Node &info)
+                             Node &info)
 {
     const std::string protocol = "mesh::specset::index";
     bool res = true;
