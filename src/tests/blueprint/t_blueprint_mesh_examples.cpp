@@ -52,6 +52,7 @@
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
 
+#include <math.h>
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -405,6 +406,7 @@ TEST(conduit_blueprint_mesh_examples, spiral)
 }
 
 
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, polytess)
 {
@@ -504,6 +506,86 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
 }
 
 //-----------------------------------------------------------------------------
+void venn_test_small_yaml(const std::string &venn_type)
+{
+    // provide small example save to yaml for folks to look at
+    const int nx = 25, ny = 25;
+    const double radius = 0.25;
+
+    Node res;
+    blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+    res.save("venn_small_example_" + venn_type + ".yaml");
+}
+
+//-----------------------------------------------------------------------------
+void venn_test(const std::string &venn_type)
+{
+    const int nx = 100, ny = 100;
+    const double radius = 0.25;
+
+    Node res, info;
+    blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+
+    // TODO(JRC): Remove the conditional once sparse materials are supported by
+    // the Blueprint verify function.
+    if(venn_type == "full")
+    {
+        EXPECT_TRUE(blueprint::mesh::verify(res, info));
+        CONDUIT_INFO(info.to_yaml());
+    }
+
+    CONDUIT_INFO(res.schema().to_json());
+
+    // TODO(JRC): Remove the conditional once sparse materials are supported by
+    // the Blueprint verify function.
+    if(venn_type == "full")
+    {
+        std::string ofbase = "venn_example_" + venn_type;
+        std::cout << "[Saving " << ofbase << "]" << std::endl;
+
+        relay::io_blueprint::save(res, ofbase + ".blueprint_root");
+    }
+
+    {
+        std::cout << "[Verifying field area is correct]" << std::endl;
+
+        Node &area_actual = res["fields/area/values"];
+
+        Node area_expected;
+        area_expected.set(std::vector<double>(
+            area_actual.dtype().number_of_elements(), 1.0 / (nx * ny)));
+
+        bool actual_matches_expected = !area_expected.diff(area_actual, info);
+        EXPECT_TRUE(actual_matches_expected);
+        if(!actual_matches_expected)
+        {
+            CONDUIT_INFO(info.to_json());
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, venn_full)
+{
+    venn_test("full");
+    venn_test_small_yaml("full");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, venn_sparse_by_material)
+{
+    venn_test("sparse_by_material");
+    venn_test_small_yaml("sparse_by_material");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, venn_sparse_by_element)
+{
+    venn_test("sparse_by_element");
+    venn_test_small_yaml("sparse_by_element");
+}
+
+
 TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset_simple)
 {
 

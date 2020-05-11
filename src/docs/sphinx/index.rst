@@ -152,6 +152,8 @@ Contributors
 - Matt Larsen (LLNL)
 - Markus Salasoo (LLNL)
 - Rebecca Haluska (LLNL)
+- Arlie Capps (LLNL)
+- Mark Miller (LLNL)
 - Todd Gamblin (LLNL)
 - Brad Whitlock (Intelligent Light)
 - George Aspesi (Harvey Mudd)

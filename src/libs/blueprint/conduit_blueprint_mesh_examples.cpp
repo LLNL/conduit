@@ -2425,7 +2425,6 @@ void spiral(index_t ndoms,
     }
 }
 
-
 //---------------------------------------------------------------------------//
 point
 polytess_calc_polygon_center(const std::vector<index_t> polygon,

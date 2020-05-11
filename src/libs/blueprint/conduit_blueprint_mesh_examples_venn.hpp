@@ -44,35 +44,26 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint.hpp
+/// file: conduit_blueprint_mesh_examples_venn.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_HPP
-#define CONDUIT_BLUEPRINT_HPP
+#ifndef CONDUIT_BLUEPRINT_MESH_EXAMPLES_VENN_HPP
+#define CONDUIT_BLUEPRINT_MESH_EXAMPLES_VENN_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
+#include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
 
-#include "conduit_blueprint_mesh.hpp"
-#include "conduit_blueprint_mesh_examples.hpp"
-#include "conduit_blueprint_mesh_examples_julia.hpp"
-#include "conduit_blueprint_mesh_examples_venn.hpp"
-
-#include "conduit_blueprint_mcarray.hpp"
-#include "conduit_blueprint_mcarray_examples.hpp"
-
-#include "conduit_blueprint_zfparray.hpp"
-
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin conduit::--
 //-----------------------------------------------------------------------------
 namespace conduit
 {
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint --
@@ -81,34 +72,52 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
+// -- begin conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
-std::string CONDUIT_BLUEPRINT_API about();
-void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
+namespace mesh
+{
 
 //-----------------------------------------------------------------------------
-/// blueprint verify interface
+/// Methods that generate example meshes.
+//-----------------------------------------------------------------------------
+namespace examples
+{
+    /// Generates a rectilinear grid with fields that
+    /// are computed from 3 overlapping circles.
+    ///
+    /// matset_type options:
+    ///   full -> non sparse volume fractions and matset values
+    ///   sparse_by_material ->  sparse (material dominant) volume fractions
+    ///                          and matset values
+    ///   sparse_by_element  ->  sparse (element dominant)
+    ///                          volume fractions and matset values
+    void CONDUIT_BLUEPRINT_API venn(const std::string &matset_type,
+                                    index_t nx,
+                                    index_t ny,
+                                    float64 radius,
+                                    Node &res);
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::examples --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
-//-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
-                                  const conduit::Node &n,
-                                  conduit::Node &info);
 
 //-----------------------------------------------------------------------------
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh --
+//-----------------------------------------------------------------------------
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
 
-
 }
 //-----------------------------------------------------------------------------
-// -- end conduit:: --
+// -- end conduit --
 //-----------------------------------------------------------------------------
 
 

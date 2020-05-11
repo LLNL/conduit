@@ -43,7 +43,7 @@
 .. ############################################################################
 
 ===================
-mcarray
+MCArray Blueprint
 ===================
 
 Protocol
@@ -83,8 +83,8 @@ Properties and Transforms
 
      * Example: {x0, y0, z0, x1, y1, z1, ... , xN, yN, zN}
 
-Examples
-~~~~~~~~~~~~~~~~~~~~~
+MCArray Examples
+~~~~~~~~~~~~~~~~~~~
 
 The mcarray blueprint namespace includes a function *xyz()*, that generates examples 
 that cover a range of mcarray memory layout use cases.
