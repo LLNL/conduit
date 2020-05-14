@@ -60,6 +60,30 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_verify)
 {
-    // TODO(JRC)
-    EXPECT_TRUE(false);
+    Node n, info;
+
+    n.reset();
+    blueprint::o2mrelation::examples::uniform(n, 10);
+    std::cout << n.to_yaml_default() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+
+    n.reset();
+    blueprint::o2mrelation::examples::uniform(n, 5, 2);
+    std::cout << n.to_yaml_default() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+
+    n.reset();
+    blueprint::o2mrelation::examples::uniform(n, 5, 2, 4);
+    std::cout << n.to_yaml_default() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+
+    n.reset();
+    blueprint::o2mrelation::examples::uniform(n, 5, 0, 0, "reversed");
+    std::cout << n.to_yaml_default() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+
+    n.reset();
+    blueprint::o2mrelation::examples::uniform(n, 5, 3, 4, "default");
+    std::cout << n.to_yaml_default() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
 }

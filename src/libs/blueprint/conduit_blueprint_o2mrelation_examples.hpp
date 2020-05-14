@@ -83,16 +83,17 @@ namespace o2mrelation
 namespace examples
 {
     //-------------------------------------------------------------------------
-    /// creates o2mrelation with num pts * 3 components. 
-    /// with the following layout options (passed via o2mrelation_type)
-    ///  interleaved
-    ///  separate
-    ///  contiguous
-    ///  interleaved_mixed
+    /// creates a one-to-many relation with a given uniform relationship size,
+    /// a given uniform offset, and an index specification, which can be one of:
+    ///  unspecified
+    ///  default
+    ///  reversed
     //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API todo(const std::string &o2mrelation_type,
-                                   conduit::index_t npts, // total # of points
-                                   conduit::Node &res);
+    void CONDUIT_BLUEPRINT_API uniform(conduit::Node &res,
+                                       conduit::index_t nones,
+                                       conduit::index_t nmany = 0,
+                                       conduit::index_t noffset = 0,
+                                       const std::string &index_type = "unspecified");
 
 //-----------------------------------------------------------------------------
 }
