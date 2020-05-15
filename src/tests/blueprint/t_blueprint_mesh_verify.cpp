@@ -929,7 +929,55 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
             n["volume_fractions"]["m2"].set(DataType::float64(5));
             CHECK_MESH(verify_matset,n,info,true);
 
-            n["volume_fractions"].reset();
+            { // Uni-Buffer Tests //
+                n.reset();
+                n["topology"].set("mesh");
+
+                n["volume_fractions"].set(DataType::float64(5));
+                CHECK_MESH(verify_matset,n,info,false);
+
+                n["material_ids"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                n.remove("material_ids");
+                n["material_map"]["m1"].set(1);
+                CHECK_MESH(verify_matset,n,info,false);
+                n["material_ids"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+
+                n["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+                n["sizes"].set(DataType::uint32(5));
+                n["offsets"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+            }
+
+            { // Multi-Buffer Tests //
+                n.reset();
+                n["topology"].set("mesh");
+
+                n["volume_fractions"]["m1"]["values"].set(DataType::float64(8));
+                n["volume_fractions"]["m1"]["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+
+                n["volume_fractions"]["m2"]["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["volume_fractions"]["m2"]["values"].set(DataType::float64(10));
+                CHECK_MESH(verify_matset,n,info,true);
+
+                n["volume_fractions"]["m3"]["sizes"].set(DataType::uint32(3));
+                n["volume_fractions"]["m3"]["values"].set(DataType::float64(30));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["volume_fractions"]["m3"]["offsets"].set(DataType::uint32(3));
+                CHECK_MESH(verify_matset,n,info,true);
+
+                n["volume_fractions"]["m4"]["test"]["values"].set(DataType::uint32(3));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["volume_fractions"]["m4"]["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,false);
+            }
+
+            n.reset();
+            n["topology"].set("mesh");
             n["volume_fractions"].set(vfs);
             CHECK_MESH(verify_matset,n,info,true);
         }

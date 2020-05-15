@@ -436,12 +436,80 @@ Material Sets
 
 Materials Sets contain material name and volume fraction information defined over a specified mesh topology.
 
-A material set contains an **mcarray** that houses per-material, per-element volume fractions and a source topology over which these volume fractions are defined.
-To conform to protocol, each entry in the ``matsets`` section must be an *Object* that contains the following information:
+A material set is a type of **o2mrelation** that houses per-material, per-element volume fractions that are defined over a referenced source topology.
+Each material set conforms to one of two variants based on the presented structure of its volume fraction information.
+Both of these variants and their corresponding schemas are outlined in the subsections below.
+
+
+Uni-Buffer Material Sets
+=================================
+
+A **uni-buffer** material set is one that presents all of its volume fraction data in a single data buffer.
+In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associated each volume with a material identifier, and an *Object* mapping of human-readable material names to each unique material identifier.
+Additionally, the top-level of this schema is an **o2mrelation** that sources from the volume fraction and material identifier buffers and targets the material topology.
+To conform to protocol, each ``matsets`` entry of this type must be an *Object* that contains the following information:
 
    * matsets/matset/topology: "topo"
-   * matsets/matset/volume_fractions: (mcarray)
+   * matsets/matset/material_map: (integer object)
+   * matsets/matset/material_ids: (integer array)
+   * matsets/matset/volume_fractions: (floating-point array)
 
+The following diagram illustrates a simple **uni-buffer** material set example:
+
+  .. code:: yaml
+
+      #     z0       z1       z2
+      # +--------+--------+--------+
+      # | a0     | a1 ___/|        |
+      # |___-----|----    |   b2   |
+      # |     b0 |     b1 |        |
+      # +--------+--------+--------+
+      #
+
+      matsets:
+        matset:
+          topology: topology
+          volume_fractions:
+            values: [0, a0, b2, b1, b0, 0, a1, 0]
+            material_ids: [0, 1, 2, 2, 2, 0, 1, 0]
+            material_map:
+              a: 1
+              b: 2
+              c: 0
+            sizes: [2, 2, 1]
+            offsets: [0, 2, 4]
+            indices: [1, 4, 6, 3, 2]
+
+
+Multi-Buffer Material Sets
+=================================
+
+A **multi-buffer** material set is a material set variant wherein the volume fraction data is split such that one buffer exists per material.
+The schema for this variant dictates that each material be presented as an *Object* entry of the ``volume_fractions`` field with the material name as the entry key and the material volume fractions as the entry value.
+Optionally, the value for each such entry can be specified as an **o2mrelation** instead of a flat array to enable greater specification flexibility.
+To conform to protocol, each ``matsets`` entry of this type must be an *Object* that contains the following information:
+
+   * matsets/matset/topology: "topo"
+   * matsets/matset/volume_fractions: (object)
+
+The following diagram illustrates a simple **multi-buffer** material set example:
+
+  .. code:: yaml
+
+      #     z0       z1       z2
+      # +--------+--------+--------+
+      # | a0     | a1 ___/|        |
+      # |___-----|----    |   b2   |
+      # |     b0 |     b1 |        |
+      # +--------+--------+--------+
+      #
+
+      matsets:
+        matset:
+          topology: topology
+          volume_fractions:
+            a: [a0, a1, 0]
+            b: [b0, b1, b2]
 
 
 Fields

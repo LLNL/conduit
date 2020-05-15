@@ -3908,13 +3908,15 @@ mesh::matset::verify(const Node &matset,
     {
         // TODO(JRC): Maybe add a verifier for 'number' or 'object' at the top
         // here so as to make the validation as explicit as possible.
-
         if(!matset["volume_fractions"].dtype().is_object())
         {
             log::info(info, protocol, "detected uni-buffer matset");
 
             res &= verify_number_field(protocol, matset, info, "volume_fractions");
             res &= verify_integer_field(protocol, matset, info, "material_ids");
+            // TODO(JRC): Add a more in-depth verifier for 'material_map' that
+            // verifies that it's one level deep and that each child child houses
+            // an integer-style array.
             res &= verify_object_field(protocol, matset, info, "material_map");
 
             res &= blueprint::o2mrelation::verify(matset, info);
