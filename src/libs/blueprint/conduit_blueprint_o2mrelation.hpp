@@ -89,8 +89,18 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
                                   const conduit::Node &n,
                                   conduit::Node &info);
 
-std::vector<const conduit::Node*> CONDUIT_BLUEPRINT_API
-find(const conduit::Node &n, conduit::Node &info);
+//-----------------------------------------------------------------------------
+/// o2mrelation blueprint property/query/transform methods
+///
+/// These methods can be called on any verified o2mrelation
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API query_paths(const conduit::Node &o2mrelation,
+                                        conduit::Node &res);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API to_compact(conduit::Node &o2mrelation);
 
 //-----------------------------------------------------------------------------
 }

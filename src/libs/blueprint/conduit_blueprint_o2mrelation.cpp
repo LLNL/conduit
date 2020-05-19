@@ -164,15 +164,12 @@ bool verify(const conduit::Node &n,
     {
         const Node &nchld = niter.next();
         const std::string &nchld_name = niter.name();
-        if(o2m_nodeset.find(&nchld) == o2m_nodeset.end())
+        if(o2m_nodeset.find(&nchld) == o2m_nodeset.end() && nchld.dtype().is_number())
         {
-            if(nchld.dtype().is_number())
-            {
-                std::ostringstream oss;
-                oss << "applying relation to path '" << nchld_name << "'";
-                log::info(info,proto_name,oss.str());
-                data_nodeset.insert(&nchld);
-            }
+            std::ostringstream oss;
+            oss << "applying relation to path '" << nchld_name << "'";
+            log::info(info,proto_name,oss.str());
+            data_nodeset.insert(&nchld);
         }
     }
 
@@ -194,58 +191,49 @@ bool verify(const conduit::Node &n,
 
 
 //----------------------------------------------------------------------------
-std::vector<const conduit::Node*>
-find(const conduit::Node &n, Node &info)
+void query_paths(const conduit::Node &n, Node &res)
 {
-    std::vector<const conduit::Node*> o2m_roots;
+    res.reset();
 
-    const std::string proto_name = "o2mrelation";
+    res.set(DataType::object());
 
-    std::vector<const conduit::Node*> node_bag( 1, &n );
-    while(!node_bag.empty())
+    NodeConstIterator niter = n.children();
+    while(niter.has_next())
     {
-        const conduit::Node *curr_node = node_bag.back();
-        node_bag.pop_back();
-
-        if(curr_node->dtype().is_object())
+        const Node &nchld = niter.next();
+        const std::string &nchld_name = niter.name();
+        if(std::find(o2m_paths.begin(), o2m_paths.end(), nchld_name) == o2m_paths.end() &&
+            nchld.dtype().is_number())
         {
-            bool is_o2m_candidate = false;
-            for(index_t path_idx = 0; path_idx < (index_t)o2m_paths.size(); path_idx++)
-            {
-                const std::string &o2m_path = o2m_paths[path_idx];
-                const conduit::Node *o2m_node = curr_node->fetch_ptr(o2m_path);
-                is_o2m_candidate |= o2m_node != NULL &&
-                   !o2m_node->dtype().is_object() &&
-                   !o2m_node->dtype().is_list();
-            }
-
-            if(is_o2m_candidate)
-            {
-                std::ostringstream oss;
-                oss << "found viable relation at path '" << curr_node->path() << "'";
-                log::info(info,proto_name,oss.str());
-                o2m_roots.push_back(curr_node);
-            }
-            else
-            {
-                NodeConstIterator child_it = curr_node->children();
-                while(child_it.has_next())
-                {
-                    node_bag.push_back(&child_it.next());
-                }
-            }
-        }
-        else if(curr_node->dtype().is_list())
-        {
-            NodeConstIterator child_it = curr_node->children();
-            while(child_it.has_next())
-            {
-                node_bag.push_back(&child_it.next());
-            }
+            res[nchld_name];
         }
     }
+}
 
-    return o2m_roots;
+
+//----------------------------------------------------------------------------
+void to_compact(conduit::Node &o2mrelation)
+{
+    // NOTE(JRC): Compaction only occurs in the case where sizes/offsets exist
+    // because otherwise the data must already be compact due to the default
+    // values of sizes and offsets.
+    if(o2mrelation.has_child("sizes"))
+    {
+        conduit::Node &offsets = o2mrelation["offsets"];
+        conduit::Node &sizes = o2mrelation["sizes"];
+
+        std::vector<int64> offset_array(sizes.dtype().number_of_elements());
+        for(index_t o = 0; o < (index_t)offset_array.size(); o++)
+        {
+            const Node size_node(conduit::DataType(sizes.dtype().id(), 1),
+                const_cast<void*>(sizes.element_ptr(o)), true);
+            offset_array[o] = (o > 0) ? offset_array[o-1] + size_node.to_int64() : 0;
+        }
+
+        Node offset_node;
+        offset_node.set_external(offset_array);
+        offset_node.to_data_type(offsets.dtype().id(), offsets);
+    }
 }
 
 //-----------------------------------------------------------------------------
