@@ -1,0 +1,19 @@
+##############################################################################
+# Copyright (c) 2014-20, Lawrence Livermore National Security, LLC and Conduit
+# project contributors. See the COPYRIGHT file for details.
+##############################################################################
+
+# All quartz build jobs
+gcc deps on quartz:
+  extends: [.build_deps_on_quartz, .with_gcc]
+
+gcc install on quartz:
+  extends: [.install_on_quartz, .with_gcc]
+  needs: [gcc deps on quartz]
+
+gcc_static deps on quartz:
+  extends: [.build_deps_on_quartz, .with_gcc_static]
+
+gcc_static install on quartz:
+  extends: [.install_on_quartz, .with_gcc_static]
+  needs: [gcc_static deps on quartz]

@@ -1,0 +1,22 @@
+##############################################################################
+# Copyright (c) 2014-20, Lawrence Livermore National Security, LLC and Conduit
+# project contributors. See the COPYRIGHT file for details.
+##############################################################################
+
+# All lassen build jobs
+clang deps on lassen:
+  extends: [.build_deps_on_lassen, .with_clang]
+
+clang install on lassen:
+  extends: [.install_on_lassen, .with_clang]
+  needs: [clang deps on lassen]
+  allow_failure: true
+
+xl deps on lassen:
+  extends: [.build_deps_on_lassen, .with_xl]
+  allow_failure: true
+
+xl install on lassen:
+  extends: [.install_on_lassen, .with_xl]
+  needs: [xl deps on lassen]
+  allow_failure: true

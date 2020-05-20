@@ -1,0 +1,64 @@
+##############################################################################
+# Copyright (c) 2014-20, Lawrence Livermore National Security, LLC and Conduit
+# project contributors. See the COPYRIGHT file for details.
+##############################################################################
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  INSTALL_ROOT: ${CI_BUILDS_DIR}/conduit/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}/uberenv_libs
+  SPACK_UPSTREAM: /usr/workspace/radiuss/spack-chain-parent/opt/spack
+
+stages:
+  - deps
+  - install
+  - release_resources
+  - clean
+
+#########
+# SCRIPTS
+#########
+
+# How to build uberenv command
+.def_uberenv_cmd: &def_uberenv_cmd |
+  INSTALL=""
+  [[ "${UBERENV_INSTALL}" == "ON" ]] && INSTALL="--install --run_tests"
+  mkdir -p ${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}
+  PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
+  SPEC="--spec=${PKG_SPEC}"
+  UBERENV_CMD="scripts/uberenv/uberenv.py ${INSTALL} ${SPEC} ${PREFIX}"
+
+# Define the generic script for quartz (template)
+.srun_build_script:
+  script:
+    - *def_uberenv_cmd
+    - ${UBERENV_CMD}
+
+# Define the generic script for lassen (template)
+.lsf_build_script:
+  script:
+    - *def_uberenv_cmd
+    - set -x; lalloc ${RESOURCES} ${UBERENV_CMD}; set +x
+
+# Build modes templates:
+# A job will have one on this template to pilot the behavior of def_uberenv_cmd
+.mode_deps:
+  stage: deps
+  variables:
+    UBERENV_INSTALL: "OFF"
+
+.mode_install:
+  stage: install
+  variables:
+    UBERENV_INSTALL: "ON"
+
+##########
+# INCLUDES
+##########
+
+# This is where templates and jobs are included
+include:
+  - local: .gitlab/toolchains_templates.yml
+  - local: .gitlab/quartz_templates.yml
+  - local: .gitlab/quartz_jobs.yml
+  - local: .gitlab/lassen_templates.yml
+  - local: .gitlab/lassen_jobs.yml
