@@ -445,9 +445,9 @@ Uni-Buffer Material Sets
 =================================
 
 A **uni-buffer** material set is one that presents all of its volume fraction data in a single data buffer.
-In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associated each volume with a material identifier, and an *Object* mapping of human-readable material names to each unique material identifier.
-Additionally, the top-level of this schema is an **o2mrelation** that sources from the volume fraction and material identifier buffers and targets the material topology.
-To conform to protocol, each ``matsets`` entry of this type must be an *Object* that contains the following information:
+In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associating each volume with a material identifier, and an *Object* mapping of human-readable material names to each unique material identifier.
+Additionally, the top-level of this schema is an **o2mrelation** that sources from the volume fraction/material identifier buffers and targets the material topology.
+To conform to protocol, each ``matsets`` child of this type must be an *Object* that contains the following information:
 
    * matsets/matset/topology: "topo"
    * matsets/matset/material_map: (integer object)
@@ -487,7 +487,7 @@ Multi-Buffer Material Sets
 A **multi-buffer** material set is a material set variant wherein the volume fraction data is split such that one buffer exists per material.
 The schema for this variant dictates that each material be presented as an *Object* entry of the ``volume_fractions`` field with the material name as the entry key and the material volume fractions as the entry value.
 Optionally, the value for each such entry can be specified as an **o2mrelation** instead of a flat array to enable greater specification flexibility.
-To conform to protocol, each ``matsets`` entry of this type must be an *Object* that contains the following information:
+To conform to protocol, each ``matsets`` child of this type must be an *Object* that contains the following information:
 
    * matsets/matset/topology: "topo"
    * matsets/matset/volume_fractions: (object)

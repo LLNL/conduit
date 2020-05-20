@@ -54,7 +54,7 @@ To conform to the **o2mrelation** protocol, a *Node* must have the following cha
  * Be of an *Object* type (*List* types are not allowed)
  * Contain at least one child that is a numeric leaf
 
-The numeric leaf/leaves of the *Node* must not be under any of the following paths, which all have special meanings and particular requirements when specified as part of an **o2mrelation**:
+The numeric leaf/leaves of the *Node* must not be under any of the following "meta component" paths, which all have special meanings and particular requirements when specified as part of an **o2mrelation**:
 
  * ``sizes``: An integer leaf that specifies the number "many" items associated with each "one" in the relationship.
  * ``offsets``: An integer leaf that denotes the start index of the "many" sequence for each "one" in the relationship.
@@ -63,18 +63,18 @@ The numeric leaf/leaves of the *Node* must not be under any of the following pat
 All of the above paths are optional and will resolve to simple defaults if left unspecified. These defaults are outlined below:
 
  * ``sizes``: An array of ones (i.e. ``[1, 1, 1, ...]``) to indicate that the values have one-to-one correspondance.
- * ``offsets``: An array of monotonitcally increasing index values (i.e. ``[0, 1, 2, ...]``) to indicate that the values are compacted.
- * ``indices``: An array of monotonitcally increasing index values (i.e. ``[0, 1, 2, ...]``) to indicate that the values are ordered sequentially.
+ * ``offsets``: An array of monotonically increasing index values (i.e. ``[0, 1, 2, ...]``) to indicate that the values are compacted.
+ * ``indices``: An array of monotonically increasing index values (i.e. ``[0, 1, 2, ...]``) to indicate that the values are ordered sequentially.
 
 Taken in sum, the consituents of the **o2mrelation** schema describe how data (contained in numeric leaves and indexed through ``indices``) maps in grouped clusters (defined by ``sizes`` and ``offsets``) from a source space (the "one" space) to a destination space (the "many" space).
 
 .. note::
-   While the ``sizes``, ``offsets``, and ``indices`` meta-components of the **o2mrelation** definition are
+   While the ``sizes``, ``offsets``, and ``indices`` meta components of the **o2mrelation** definition are
    independently defined, they interplay in ways that aren't immediately obvious. The most commonly missed
    of these "gotcha" behaviors are defined below:
 
    * Every **o2mrelation** must define both or neither of ``sizes`` and ``offsets``.
-   * If none of the meta-component paths are specified, their defaults set the **o2mrelation** to be a compacted, one-to-one relationship.
+   * If none of the meta component paths are specified, their defaults set the **o2mrelation** to be a compacted, one-to-one relationship.
    * The ``sizes`` and ``offsets`` values always refer to entries in ``indices``. If ``indices`` isn't present, it defaults to a "pass through" index, so in this case ``sizes`` and ``offsets`` can be thought of as indexing directly into the numeric leaves.
 
 Properties, Queries, and Transforms
@@ -82,9 +82,9 @@ Properties, Queries, and Transforms
 
  * **conduit::blueprint::o2mrelation::query_paths(const Node &o2mrelation, Node &res)**
 
-     Fills in the ``res`` node with detected value paths found in ``o2mrelation``.
+     Makes the ``res`` node an object with keys being the detected value paths found in ``o2mrelation`` and values being empty nodes.
 
-     * Example: {values: [int64], sizes: [int64], offsets: [int32], meta: [char8]} => [values]
+     * Example: {values: [int64], sizes: [int64], offsets: [int32], other: [char8]} => {values: (empty)}
 
  * **conduit::blueprint::o2mrelation::to_compact(Node &o2mrelation)**
 
@@ -117,7 +117,7 @@ This function's arguments have the following precise meanings:
    * ``"default"``: The default value for index indirection will be supplied in the output.
    * ``"reversed"``: The index indirection will be specified such that the data is reversed relative to its default order.
 
-The ``nmany`` and ``noffset`` parameters can both be set to zero to omit the ``sizes`` and ``offsets`` meta-components from the output.
+The ``nmany`` and ``noffset`` parameters can both be set to zero to omit the ``sizes`` and ``offsets`` meta components from the output.
 Similarly, the ``index_type`` parameter can be omitted or set to ``"unspecified"`` in order to remove the ``indices`` section from the output.
 
 For more details, see the unit tests that exercise these examples in ``src/tests/blueprint/t_blueprint_o2mrelation_examples.cpp``.
