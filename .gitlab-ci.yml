@@ -18,6 +18,10 @@ stages:
 # SCRIPTS
 #########
 
+# Whether and how to update uberenv
+.run_update_uberenv: &run_update_uberenv |
+  [[ -n "${UPDATE_UBERENV}" ]] && ./scripts/ci/update-uberenv.sh "${UPDATE_UBERENV}"
+
 # How to build uberenv command
 .def_uberenv_cmd: &def_uberenv_cmd |
   INSTALL=""
@@ -30,12 +34,14 @@ stages:
 # Define the generic script for quartz (template)
 .srun_build_script:
   script:
+    - *run_update_uberenv
     - *def_uberenv_cmd
     - ${UBERENV_CMD}
 
 # Define the generic script for lassen (template)
 .lsf_build_script:
   script:
+    - *run_update_uberenv
     - *def_uberenv_cmd
     - set -x; lalloc ${RESOURCES} ${UBERENV_CMD}; set +x
 
