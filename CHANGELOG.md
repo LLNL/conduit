@@ -23,6 +23,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
 
 #### Blueprint
+- Added support for sparse one-to-many relationships with the new `blueprint::o2mrelation` protocol. See the `blueprint::o2mrelation::examples::uniform` example for details.
+- Added sparse one-to-many and uni-buffer specification support to Material sets. See the Material sets documentation
+(https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#material-sets) for more details.
 - Added support for Adjacency sets for Structured Mesh Topologies. See the `blueprint::mesh::examples::adjset_uniform` example.
 - Added `blueprint::mesh::examples::julia_nestsets_simple` and `blueprint::mesh::examples::julia_nestsets_complex` examples represent Julia set fractals using patch-based AMR meshes and the Mesh Blueprint Nesting Set protocol. See the Julia AMR Blueprint docs
 (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#julia-amr-examples) for more details.
