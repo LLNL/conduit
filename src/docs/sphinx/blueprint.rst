@@ -60,6 +60,10 @@ For now, Blueprint is focused on conventions for two important types of data:
 
     Many taxonomies and concrete mesh data models have been developed to allow computational meshes to be used in software. Blueprint's conventions for representing mesh data were formed by negotiating with simulation application teams at LLNL and from a survey of existing projects that provide scientific mesh-related APIs including: ADIOS,  Damaris, EAVL, MFEM, Silo, VTK, VTKm, and Xdmf. Blueprint's mesh conventions are not a replacement for existing mesh data models or APIs. Our explicit goal is to outline a comprehensive, but small set of options for describing meshes in-core that simplifies the process of adapting data to several existing mesh-aware APIs.
 
+*  One-to-Many Relations (protocol: ``o2mrelation``)
+
+    A one-to-many relation is a collection of arbitrarily grouped values that encode element associations from a source ("one"s) to a destination ("many"s) space.
+    These constructs are used in computational meshes to represent sparse material data, polygonal/polyhedral topologies, and other non-uniform mappings.
 
 *  Multi-Component Arrays (protocol: ``mcarray``)
 
@@ -68,6 +72,7 @@ For now, Blueprint is focused on conventions for two important types of data:
 
 .. toctree::
     blueprint_mesh
+    blueprint_o2mrelation
     blueprint_mcarray
 
 
