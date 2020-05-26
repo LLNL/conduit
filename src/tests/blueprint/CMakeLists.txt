@@ -90,7 +90,7 @@ else()
     message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
-set(BLUEPRINT_MPI_TESTS t_blueprint_mpi_smoke)
+set(BLUEPRINT_MPI_TESTS t_blueprint_mpi_smoke t_blueprint_mpi_verify)
 set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_relay)
 
 if(MPI_FOUND)

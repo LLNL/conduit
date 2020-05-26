@@ -44,7 +44,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_blueprint_mpi_smoke.cpp
+/// file: t_blueprint_mpi_verify.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -55,9 +55,20 @@
 #include "gtest/gtest.h"
 
 //-----------------------------------------------------------------------------
-TEST(blueprint_mpi_smoke, basic_use)
+TEST(blueprint_mpi_smoke, basic_verify)
 {
-    std::cout << conduit::blueprint::mpi::about() << std::endl;
+    conduit::Node mesh, info;
+
+    // empty on all domains should return false ... 
+    EXPECT_FALSE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+        
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                      10,
+                                      10,
+                                      10,
+                                      mesh);
+
+    EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
 }
 
 //-----------------------------------------------------------------------------
