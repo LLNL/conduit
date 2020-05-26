@@ -526,31 +526,18 @@ void venn_test(const std::string &venn_type)
     Node res, info;
     blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
 
-    // TODO(JRC): Remove the conditional once sparse materials are supported by
-    // the Blueprint verify function.
-    if(venn_type == "full")
-    {
-        EXPECT_TRUE(blueprint::mesh::verify(res, info));
-        CONDUIT_INFO(info.to_yaml());
-    }
-
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
     CONDUIT_INFO(res.schema().to_json());
 
-    // TODO(JRC): Remove the conditional once sparse materials are supported by
-    // the Blueprint verify function.
-    if(venn_type == "full")
-    {
-        std::string ofbase = "venn_example_" + venn_type;
-        std::cout << "[Saving " << ofbase << "]" << std::endl;
-
-        relay::io_blueprint::save(res, ofbase + ".blueprint_root");
-    }
+    std::string ofbase = "venn_example_" + venn_type;
+    std::cout << "[Saving " << ofbase << "]" << std::endl;
+    relay::io_blueprint::save(res, ofbase + ".blueprint_root");
 
     {
         std::cout << "[Verifying field area is correct]" << std::endl;
 
         Node &area_actual = res["fields/area/values"];
-
         Node area_expected;
         area_expected.set(std::vector<double>(
             area_actual.dtype().number_of_elements(), 1.0 / (nx * ny)));

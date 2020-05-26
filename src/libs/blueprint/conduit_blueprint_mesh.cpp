@@ -3906,13 +3906,17 @@ mesh::matset::verify(const Node &matset,
 
     if(vfs_res)
     {
-        // TODO(JRC): Maybe add a verifier for 'number' or 'object' at the top
-        // here so as to make the validation as explicit as possible.
-        if(!matset["volume_fractions"].dtype().is_object())
+        if(!matset["volume_fractions"].dtype().is_number() &&
+            !matset["volume_fractions"].dtype().is_object())
+        {
+            log::error(info, protocol, "'volume_fractions' isn't the correct type");
+            res &= vfs_res &= false;
+        }
+        else if(matset["volume_fractions"].dtype().is_number() &&
+            verify_number_field(protocol, matset, info, "volume_fractions"))
         {
             log::info(info, protocol, "detected uni-buffer matset");
 
-            res &= verify_number_field(protocol, matset, info, "volume_fractions");
             res &= verify_integer_field(protocol, matset, info, "material_ids");
             // TODO(JRC): Add a more in-depth verifier for 'material_map' that
             // verifies that it's one level deep and that each child child houses
@@ -3921,11 +3925,10 @@ mesh::matset::verify(const Node &matset,
 
             res &= blueprint::o2mrelation::verify(matset, info);
         }
-        else
+        else if(matset["volume_fractions"].dtype().is_object() &&
+            verify_object_field(protocol, matset, info, "volume_fractions"))
         {
             log::info(info, protocol, "detected multi-buffer matset");
-
-            res &= verify_object_field(protocol, matset, info, "volume_fractions");
 
             const Node &vfs = matset["volume_fractions"];
             Node &vfs_info = info["volume_fractions"];
@@ -3948,6 +3951,57 @@ mesh::matset::verify(const Node &matset,
 
             res &= vfs_res;
             log::validation(vfs_info, vfs_res);
+        }
+    }
+
+    if(matset.has_child("element_ids"))
+    {
+        bool eids_res = true;
+
+        if(vfs_res)
+        {
+            if(!matset["element_ids"].dtype().is_integer() &&
+                !matset["element_ids"].dtype().is_object())
+            {
+                log::error(info, protocol, "'element_ids' isn't the correct type");
+                res &= eids_res &= false;
+            }
+            else if(matset["element_ids"].dtype().is_object() &&
+                matset["volume_fractions"].dtype().is_object())
+            {
+                const std::vector<std::string> &vf_mats = matset["volume_fractions"].child_names();
+                const std::vector<std::string> &eid_mats = matset["element_ids"].child_names();
+                const std::set<std::string> vf_matset(vf_mats.begin(), vf_mats.end());
+                const std::set<std::string> eid_matset(eid_mats.begin(), eid_mats.end());
+                if(vf_matset != eid_matset)
+                {
+                    log::error(info, protocol, "'element_ids' hierarchy must match 'volume_fractions'");
+                    eids_res &= false;
+                }
+
+                const Node &eids = matset["element_ids"];
+                Node &eids_info = info["element_ids"];
+
+                NodeConstIterator mat_it = eids.children();
+                while(mat_it.has_next())
+                {
+                    const std::string &mat_name = mat_it.next().name();
+                    eids_res &= verify_integer_field(protocol, eids, eids_info, mat_name);
+                }
+
+                res &= eids_res;
+                log::validation(eids_info, eids_res);
+            }
+            else if(matset["element_ids"].dtype().is_integer() &&
+                matset["volume_fractions"].dtype().is_number())
+            {
+                res &= verify_integer_field(protocol, matset, info, "element_ids");
+            }
+            else
+            {
+                log::error(info, protocol, "'element_ids' hierarchy must match 'volume_fractions'");
+                res &= eids_res &= false;
+            }
         }
     }
 
