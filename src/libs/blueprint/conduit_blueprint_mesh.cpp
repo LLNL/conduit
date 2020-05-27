@@ -3917,13 +3917,14 @@ mesh::matset::verify(const Node &matset,
         {
             log::info(info, protocol, "detected uni-buffer matset");
 
-            res &= verify_integer_field(protocol, matset, info, "material_ids");
+            vfs_res &= verify_integer_field(protocol, matset, info, "material_ids");
             // TODO(JRC): Add a more in-depth verifier for 'material_map' that
             // verifies that it's one level deep and that each child child houses
             // an integer-style array.
-            res &= verify_object_field(protocol, matset, info, "material_map");
+            vfs_res &= verify_object_field(protocol, matset, info, "material_map");
+            vfs_res &= blueprint::o2mrelation::verify(matset, info);
 
-            res &= blueprint::o2mrelation::verify(matset, info);
+            res &= vfs_res;
         }
         else if(matset["volume_fractions"].dtype().is_object() &&
             verify_object_field(protocol, matset, info, "volume_fractions"))
@@ -3995,7 +3996,7 @@ mesh::matset::verify(const Node &matset,
             else if(matset["element_ids"].dtype().is_integer() &&
                 matset["volume_fractions"].dtype().is_number())
             {
-                res &= verify_integer_field(protocol, matset, info, "element_ids");
+                res &= eids_res &= verify_integer_field(protocol, matset, info, "element_ids");
             }
             else
             {
