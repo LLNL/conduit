@@ -437,12 +437,24 @@ Material Sets
 Materials Sets contain material name and volume fraction information defined over a specified mesh topology.
 
 A material set is a type of **o2mrelation** that houses per-material, per-element volume fractions that are defined over a referenced source topology.
-Each material set conforms to one of two variants based on the presented structure of its volume fraction information.
+Each material set conforms to a schema variant based on:
+
+ * The layout of its per-material buffers.
+ * The indexing scheme used to associate volume fractions with topological elements.
+
+The options for each of these variants are detailed in the following sections.
+
+
+Material Set Buffer Variants
+=================================
+
+Each material set follows one of two variants based on the presented structure of its volume fractions.
+These variants cover volume fractions presented in a single, unified buffer (called **uni-buffer** presentation) and in multiple, per-material buffers (called **multi-buffer** presentation).
 Both of these variants and their corresponding schemas are outlined in the subsections below.
 
 
 Uni-Buffer Material Sets
-=================================
+*********************************
 
 A **uni-buffer** material set is one that presents all of its volume fraction data in a single data buffer.
 In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associating each volume with a material identifier, and an *Object* mapping of human-readable material names to each unique material identifier.
@@ -482,7 +494,7 @@ The following diagram illustrates a simple **uni-buffer** material set example:
 
 
 Multi-Buffer Material Sets
-=================================
+*********************************
 
 A **multi-buffer** material set is a material set variant wherein the volume fraction data is split such that one buffer exists per material.
 The schema for this variant dictates that each material be presented as an *Object* entry of the ``volume_fractions`` field with the material name as the entry key and the material volume fractions as the entry value.
@@ -508,8 +520,81 @@ The following diagram illustrates a simple **multi-buffer** material set example
         matset:
           topology: topology
           volume_fractions:
+            a:
+              values: [0, 0, 0, a1, 0, a0]
+              indices: [5, 3]
+            b:
+              values: [0, b0, b2, b1, 0]
+              indices: [1, 3, 2]
+
+
+Material Set Indexing Variants
+=================================
+
+Another dimension along which material sets can vary is in how their volume fractions/topological element association is established.
+This dimension produces two additional material set variants: **element-dominant** association (element indices control volume fraction order) and **material-dominant** association (material indices control volume fraction order).
+Both of these variants and their corresponding schemas are outlined in the subsections below.
+
+
+Element-Dominant Material Sets
+*********************************
+
+An **element-dominant** material set is one that orders its volume fraction data so that it matches the topological element ordering.
+In other words, the volume fraction group at ``i`` (e.g. ``matset/volume_fractions/mat[i]``) contains the volume fraction data for topological element ``i``.
+This variant is assumed in all material sets that don't have an ``element_ids`` child.
+
+The following diagram illustrates a simple **element-dominant** material set example:
+
+  .. code:: yaml
+
+      #     z0       z1       z2
+      # +--------+--------+--------+
+      # | a0     | a1 ___/|\___ c2 |
+      # |___-----|----    |    ----|
+      # |     b0 |     b1 | b2     |
+      # +--------+--------+--------+
+      #
+
+      matsets:
+        matset:
+          topology: topology
+          volume_fractions:
             a: [a0, a1, 0]
             b: [b0, b1, b2]
+            c: [0, 0, c2]
+
+
+Material-Dominant Material Sets
+*********************************
+
+A **material-dominant** material set is one that uses independent material/element orderings and associates these orderings via indirection arrays.
+For these schemas, the ``element_ids`` field hosts these indirection arrays per material (with just one indirection array for uni-buffer material sets).
+In explicit terms, the **material-dominant** volume fraction group at ``i`` (e.g. ``matset/volume_fractions/mat[i]``) contains the volume fraction data for the indirected topological element ``i`` (e.g. ``matset/element_ids/mat[i]``).
+Complementary to the **element-dominant** variant, the **material-dominant** variant applies to all material sets that have an ``element_ids`` child.
+
+The following diagram illustrates a simple **material-dominant** material set example:
+
+  .. code:: yaml
+
+      #     z0       z1       z2
+      # +--------+--------+--------+
+      # | a0     | a1 ___/|\___ c2 |
+      # |___-----|----    |    ----|
+      # |     b0 |     b1 | b2     |
+      # +--------+--------+--------+
+      #
+
+      matsets:
+        matset:
+          topology: topology
+          volume_fractions:
+            a: [a0, a1]
+            b: [b0, b1, b2]
+            c: [c2]
+          element_ids:
+            a: [0, 1]
+            b: [0, 1, 2]
+            c: [2]
 
 
 Fields
