@@ -531,15 +531,15 @@ The following diagram illustrates a simple **multi-buffer** material set example
 Material Set Indexing Variants
 =================================
 
-Another dimension along which material sets can vary is in how their volume fractions/topological element association is established.
-This dimension produces two additional material set variants: **element-dominant** association (element indices control volume fraction order) and **material-dominant** association (material indices control volume fraction order).
+Material sets can also vary in how volume fractions are associated with topological elements.
+This associative variance leads to two additional schema variants: **element-dominant** (elements/volumes have the same ordering) and **material-dominant** (elements/volumes have independent orderings).
 Both of these variants and their corresponding schemas are outlined in the subsections below.
 
 
 Element-Dominant Material Sets
 *********************************
 
-An **element-dominant** material set is one that orders its volume fraction data so that it matches the topological element ordering.
+In an **element-dominant** material set, the volume fraction data order matches the topological element order.
 In other words, the volume fraction group at ``i`` (e.g. ``matset/volume_fractions/mat[i]``) contains the volume fraction data for topological element ``i``.
 This variant is assumed in all material sets that don't have an ``element_ids`` child.
 
@@ -567,7 +567,7 @@ The following diagram illustrates a simple **element-dominant** material set exa
 Material-Dominant Material Sets
 *********************************
 
-A **material-dominant** material set is one that uses independent material/element orderings and associates these orderings via indirection arrays.
+In a **material-dominant** material set, the orders for the volume fractions and topological elements are mismatched and need to be bridged via indirection arrays.
 For these schemas, the ``element_ids`` field hosts these indirection arrays per material (with just one indirection array for uni-buffer material sets).
 In explicit terms, the **material-dominant** volume fraction group at ``i`` (e.g. ``matset/volume_fractions/mat[i]``) contains the volume fraction data for the indirected topological element ``i`` (e.g. ``matset/element_ids/mat[i]``).
 Complementary to the **element-dominant** variant, the **material-dominant** variant applies to all material sets that have an ``element_ids`` child.
