@@ -3145,6 +3145,12 @@ mesh::topology::unstructured::verify(const Node &topo,
             {
                 elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");
             }
+            if(topo_elems["shape"].dtype().is_string() && topo_elems["shape"].as_string() == "polygonal")
+            {
+                elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "sizes");
+                elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");   
+            }
+            // BHAN This is only for polygonal so far; another "subelement" check needed for polyhedral 
         }
         // shape stream case
         else if(topo_elems.has_child("element_types"))
@@ -3236,37 +3242,55 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
         dest.set(topo_templ);
         dest["elements/shape"].set(is_topo_3d ? "polyhedral" : "polygonal");
 
-        Node data_node;
-        std::vector<int64> poly_conn_data(topo_elems *
-            (is_topo_3d + topo_shape.embed_count * (1 + embed_shape.indices)));
-        for(index_t ei = 0; ei < topo_elems; ei++)
+        if (!is_topo_3d)
         {
-            index_t data_off = topo_shape.indices * ei;
-            index_t poly_off = (is_topo_3d + topo_shape.embed_count *
-                (1 + embed_shape.indices)) * ei;
+            // BHAN : Note - This hackiness only works for polygonal
+            Node poly_size;
+            std::vector<int64> poly_size_data(topo_elems, topo_shape.indices);
+            poly_size.set_external(poly_size_data);
+            poly_size.to_data_type(int_dtype.id(), dest["elements/sizes"]);
 
-            poly_conn_data[poly_off] = topo_shape.embed_count;
-            for(index_t oi = 0; oi < topo_shape.embed_count; oi++)
-            {
-                index_t outer_off = poly_off + (is_topo_3d +
-                    oi * (1 + embed_shape.indices));
+            Node poly_conn;
+            poly_conn.set_external(topo_conn);
+            poly_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
 
-                poly_conn_data[outer_off] = embed_shape.indices;
-                for(index_t ii = 0; ii < embed_shape.indices; ii++)
-                {
-                    index_t inner_off = outer_off + 1 + ii;
-                    index_t inner_data_off = data_off + (is_topo_3d ?
-                        topo_shape.embedding[oi * embed_shape.indices + ii] : ii);
-
-                    data_node.set_external(topo_dtype, topo_conn.element_ptr(inner_data_off));
-                    poly_conn_data[inner_off] = data_node.to_int64();
-                }
-            }
+            generate_offsets(dest, dest["elements/offsets"]);
         }
 
-        Node poly_conn;
-        poly_conn.set_external(poly_conn_data);
-        poly_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
+        else
+        {
+            Node data_node;
+            std::vector<int64> poly_conn_data(topo_elems *
+                (is_topo_3d + topo_shape.embed_count * (1 + embed_shape.indices)));
+            for(index_t ei = 0; ei < topo_elems; ei++)
+            {
+                index_t data_off = topo_shape.indices * ei;
+                index_t poly_off = (is_topo_3d + topo_shape.embed_count *
+                    (1 + embed_shape.indices)) * ei;
+
+                poly_conn_data[poly_off] = topo_shape.embed_count;
+                for(index_t oi = 0; oi < topo_shape.embed_count; oi++)
+                {
+                    index_t outer_off = poly_off + (is_topo_3d +
+                        oi * (1 + embed_shape.indices));
+
+                    poly_conn_data[outer_off] = embed_shape.indices;
+                    for(index_t ii = 0; ii < embed_shape.indices; ii++)
+                    {
+                        index_t inner_off = outer_off + 1 + ii;
+                        index_t inner_data_off = data_off + (is_topo_3d ?
+                            topo_shape.embedding[oi * embed_shape.indices + ii] : ii);
+
+                        data_node.set_external(topo_dtype, topo_conn.element_ptr(inner_data_off));
+                        poly_conn_data[inner_off] = data_node.to_int64();
+                    }
+                }
+            }
+
+            Node poly_conn;
+            poly_conn.set_external(poly_conn_data);
+            poly_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);            
+        }
     }
 }
 
@@ -3781,14 +3805,17 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polygonal")
     {
+        const Node &topo_size = topo["elements/sizes"];
         std::vector<int64> shape_array;
+        index_t i = 0;
         index_t s = 0;
-        while(s < topo_conn.dtype().number_of_elements())
+        while(i < topo_size.dtype().number_of_elements())
         {
-            const Node index_node(topo_dtype,
-                const_cast<void*>(topo_conn.element_ptr(s)), true);
+            const Node index_node(int_dtype,
+                const_cast<void*>(topo_size.element_ptr(i)), true);
             shape_array.push_back(s);
-            s += index_node.to_int64() + 1;
+            s += index_node.to_int64();
+            i++;
         }
 
         Node shape_node;

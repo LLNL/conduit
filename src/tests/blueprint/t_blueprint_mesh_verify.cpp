@@ -726,6 +726,42 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         CHECK_MESH(verify_unstructured_topology,n,info,true);
     }
 
+    { // Single Shape Unstructured Polygon Tests //
+        n["elements"].reset();
+        n["elements"]["shape"].set("undefined");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["elements"]["shape"].set("polygonal");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        n["elements"]["offsets"].set(DataType::int32(10));
+        n["elements"]["sizes"].set(DataType::int32(10));     
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["connectivity"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["offsets"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"].remove("offsets");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["sizes"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["sizes"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["type"].set("structured");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["type"].set("unstructured");
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+    }
+
     { // Mixed Shape Topology List Tests //
         n["elements"].reset();
 

@@ -2137,7 +2137,7 @@ braid_to_poly(Node &res)
 
         conduit::Node &poly_node = poly_topos[topo_index];
         blueprint::mesh::topology::unstructured::to_polygonal(topo_node, poly_node);
-        blueprint::mesh::topology::unstructured::generate_offsets(poly_node, poly_node["elements/offsets"]);
+        //BHAN : generate_sizes???
         topo_names[topo_index] = topo_name;
     }
 
