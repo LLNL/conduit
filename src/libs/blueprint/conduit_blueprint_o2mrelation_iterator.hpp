@@ -44,17 +44,19 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_node_iterator.hpp
+/// file: conduit_blueprint_o2miterator.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_NODE_ITERATOR_HPP
-#define CONDUIT_NODE_ITERATOR_HPP
+#ifndef CONDUIT_BLUEPRINT_O2MITERATOR_HPP
+#define CONDUIT_BLUEPRINT_O2MITERATOR_HPP
 
 //-----------------------------------------------------------------------------
-// -- conduit includes -- 
+// conduit lib includes
 //-----------------------------------------------------------------------------
-#include "conduit_node.hpp"
+#include "conduit.hpp"
+#include "conduit_blueprint_exports.h"
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -62,189 +64,146 @@
 namespace conduit
 {
 
-// forward declare NodeConstIterator so it can be a used as a friend
-// to NodeIterator
-class NodeConstIterator;
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint --
+//-----------------------------------------------------------------------------
+namespace blueprint
+{
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::NodeIterator --
+// -- begin conduit::blueprint::o2mrelation --
+//-----------------------------------------------------------------------------
+namespace o2mrelation
+{
+
+typedef enum
+{
+    DATA = 0,     // empty (default type)
+    ONE  = 1,     // empty (default type)
+    MANY = 2      // char8 string (incore c-string)
+} IndexType;
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::O2MIterator --
 //-----------------------------------------------------------------------------
 ///
-/// class: conduit::NodeIterator
+/// class: conduit::O2MIterator
 ///
 /// description:
-///  General purpose iterator for Nodes.
+///  General purpose iterator for 'o2mrelation' Nodes.
 ///
 //-----------------------------------------------------------------------------
-class CONDUIT_API NodeIterator
+class CONDUIT_API O2MIterator
 {
 public:
 //-----------------------------------------------------------------------------
 //
-// -- conduit::NodeIterator public members --
+// -- conduit::O2MIterator public members --
 //
 //-----------------------------------------------------------------------------
-    friend class NodeConstIterator;
+
 //-----------------------------------------------------------------------------
-/// NodeIterator Construction and Destruction
+/// O2MIterator Construction and Destruction
 //-----------------------------------------------------------------------------
     /// Default constructor.
-    NodeIterator();
+    O2MIterator();
     /// Copy constructor.
-    NodeIterator(const NodeIterator &itr);
-    
+    O2MIterator(const O2MIterator &itr);
+
     /// Primary iterator constructor.
-    NodeIterator(Node *node,index_t idx=0);
-    
+    O2MIterator(Node *node);
+
     /// Primary iterator constructor.
     /// this will use the pointer to the passed Node ref.
-    NodeIterator(Node &node,index_t idx=0);
-    
-    /// Destructor 
-    ~NodeIterator();
- 
+    O2MIterator(Node &node);
+
+    /// Destructor
+    ~O2MIterator();
+
     /// Assignment operator.
-    NodeIterator &operator=(const NodeIterator &itr);
- 
+    O2MIterator &operator=(const O2MIterator &itr);
+
 //-----------------------------------------------------------------------------
 /// Iterator value and property access.
 //-----------------------------------------------------------------------------
-    std::string name()  const;
-    index_t     index() const;
-    Node       &node();
+    index_t     index(IndexType itype = IndexType::DATA) const;
+    index_t     elements(IndexType itype = IndexType::DATA) const;
 
 //-----------------------------------------------------------------------------
 /// Iterator forward control.
 //-----------------------------------------------------------------------------
-    bool        has_next() const;
-    Node       &next();
-    Node       &peek_next();
-    void        to_front();
+    bool        has_next(IndexType itype = IndexType::DATA) const;
+    index_t     next(IndexType itype = IndexType::DATA);
+    index_t     peek_next(IndexType itype = IndexType::DATA) const;
+    void        to_front(IndexType itype = IndexType::DATA);
 
 //-----------------------------------------------------------------------------
 /// Iterator reverse control.
 //-----------------------------------------------------------------------------
-    bool        has_previous() const;
-    Node       &previous();
-    Node       &peek_previous();
-    void        to_back();
+    bool        has_previous(IndexType itype = IndexType::DATA) const;
+    index_t     previous(IndexType itype = IndexType::DATA);
+    index_t     peek_previous(IndexType itype = IndexType::DATA) const;
+    void        to_back(IndexType itype = IndexType::DATA);
 
 //-----------------------------------------------------------------------------
 /// Human readable info about this iterator
 //-----------------------------------------------------------------------------
     void        info(Node &res) const;
-    
+
 private:
+
 //-----------------------------------------------------------------------------
 //
-// -- conduit::NodeIterator private data members --
+// -- conduit::O2MIterator private members --
 //
 //-----------------------------------------------------------------------------
-    /// pointer to the Node wrapped by this iterator 
-    Node    *m_node;
-    /// current child index
-    index_t  m_index;
-    /// total number of children 
-    index_t  m_num_children; 
-};
-//-----------------------------------------------------------------------------
-// -- end conduit::NodeIterator --
-//-----------------------------------------------------------------------------
-
-
-    
-//-----------------------------------------------------------------------------
-// -- begin conduit::NodeIterator --
-//-----------------------------------------------------------------------------
-///
-/// class: conduit::NodeConstIterator
-///
-/// description:
-///  General purpose const iterator for Nodes.
-///
-//-----------------------------------------------------------------------------
-class CONDUIT_API NodeConstIterator
-{
-public:
-//-----------------------------------------------------------------------------
-//
-// -- conduit::NodeConstIterator public members --
-//
-//-----------------------------------------------------------------------------
-    
-//-----------------------------------------------------------------------------
-/// NodeConstIterator Construction and Destruction
-//-----------------------------------------------------------------------------
-    /// Default constructor.
-    NodeConstIterator();
-    /// Copy constructor.
-    NodeConstIterator(const NodeConstIterator &itr);
-    /// Primary iterator constructor.
-    NodeConstIterator(const Node *node,index_t idx=0);
-    /// Primary iterator constructor.
-    /// this will use the pointer to the passed Node ref.
-    NodeConstIterator(const Node &node,index_t idx=0);
-    /// Destructor 
-    ~NodeConstIterator();
-
-    /// Construct from non const
-    NodeConstIterator(const NodeIterator &itr);
- 
-    /// Assignment operator.
-    NodeConstIterator &operator=(const NodeConstIterator &itr);
-
-    /// Assignment operator from non const
-    NodeConstIterator &operator=(const NodeIterator &itr);
- 
-//-----------------------------------------------------------------------------
-/// Iterator value and property access.
-//-----------------------------------------------------------------------------
-    std::string name()  const;
-    index_t     index() const;
-    const Node &node();
-    void        to_front();
 
 //-----------------------------------------------------------------------------
-/// Iterator forward control.
+/// Iterator property helper functions.
 //-----------------------------------------------------------------------------
-    bool        has_next() const;
-    const Node &next();
-    const Node &peek_next();
+    index_t index(index_t one_index, index_t many_index, IndexType itype) const;
+    index_t elements(index_t one_index, IndexType itype) const;
 
 //-----------------------------------------------------------------------------
-/// Iterator reverse control.
-//-----------------------------------------------------------------------------
-    bool        has_previous() const;
-    const Node &previous();
-    const Node &peek_previous();
-    void        to_back();
-
-//-----------------------------------------------------------------------------
-/// Human readable info about this iterator
-//-----------------------------------------------------------------------------
-    void        info(Node &res) const;
-    
-private:
-//-----------------------------------------------------------------------------
-//
-// -- conduit::NodeIterator private data members --
-//
+/// Iterator state/fields.
 //-----------------------------------------------------------------------------
     /// pointer to the Node wrapped by this iterator
-    const Node  *m_node;
-    /// current child index
-    index_t      m_index;
-    /// total number of children 
-    index_t      m_num_children; 
+    Node    *m_node;
+    /// pointer to an internal data Node for the 'o2mrelation'
+    Node    *m_data_node;
+
+    /// current 'one' index in 'o2mrelation' space
+    index_t  m_one_index;
+    /// current 'many' index in 'one' space
+    index_t  m_many_index;
+
+    // /// current 'one' count for 'o2mrelation' (constant)
+    // index_t m_num_ones;
+    // /// current 'many' count for 'o2mrelation' (depends on 'one')
+    // index_t m_num_manys;
 };
 //-----------------------------------------------------------------------------
-// -- end conduit::NodeIterator --
+// -- end conduit::O2MIterator --
 //-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::o2mrelation --
+//-----------------------------------------------------------------------------
+
+typedef o2mrelation::IndexType O2MIndexType;
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint --
+//-----------------------------------------------------------------------------
+
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
-#endif
 
+#endif

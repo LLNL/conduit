@@ -51,11 +51,52 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "conduit_log.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include "gtest/gtest.h"
 
 using namespace conduit;
+
+/// Testing Helpers ///
+
+std::vector<float> get_o2m_raw(Node &o2m, bool forward)
+{
+    float* o2m_ptr = (float*)o2m["data"].data_ptr();
+    std::vector<float> o2m_data(o2m_ptr, o2m_ptr + o2m["data"].dtype().number_of_elements());
+
+    if(!forward)
+    {
+        std::reverse(o2m_data.begin(), o2m_data.end());
+    }
+
+    return o2m_data;
+}
+
+std::vector<float> get_o2m_iter(Node &o2m, bool forward)
+{
+    blueprint::o2mrelation::O2MIterator iter(o2m);
+    if(forward)
+    {
+        iter.to_front();
+    }
+    else
+    {
+        iter.to_back();
+    }
+
+    float32_array o2m_array = o2m["data"].value();
+    std::vector<float> o2m_data;
+    while(forward ? iter.has_next() : iter.has_previous())
+    {
+        o2m_data.push_back(o2m_array[forward ? iter.next() : iter.previous()]);
+    }
+
+    return o2m_data;
+}
+
+/// Test Cases ///
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_verify)
@@ -135,4 +176,67 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_to_compact)
     blueprint::o2mrelation::examples::uniform(ref, 5, 3, 3);
     EXPECT_FALSE(ref["sizes"].diff(n["sizes"], info));
     EXPECT_FALSE(ref["offsets"].diff(n["offsets"], info));
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator)
+{
+    Node n, ref, info;
+
+    { // Basic Tests //
+        blueprint::o2mrelation::examples::uniform(n, 3, 2, 4);
+        blueprint::o2mrelation::examples::uniform(ref, 3, 2);
+        std::cout << n.to_yaml() << std::endl;
+        EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+
+        blueprint::o2mrelation::O2MIterator niter(n);
+
+        { // Trivial Tests //
+            EXPECT_TRUE(niter.has_next());
+            EXPECT_FALSE(niter.has_previous());
+
+            niter.to_back();
+            EXPECT_FALSE(niter.has_next());
+            EXPECT_TRUE(niter.has_previous());
+
+            niter.to_front();
+            EXPECT_TRUE(niter.has_next());
+            EXPECT_FALSE(niter.has_previous());
+        }
+
+        { // Query Tests //
+            niter.next();
+            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::ONE), 3);
+            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::MANY), 2);
+            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::DATA), 6);
+        }
+
+        { // Iteration Tests //
+            std::vector<float> ref_data = get_o2m_raw(ref, true);
+            std::vector<float> n_data = get_o2m_iter(n, true);
+            EXPECT_EQ(ref_data, n_data);
+        }
+    }
+
+    { // Complex Tests //
+        blueprint::o2mrelation::examples::uniform(n, 2, 3, 4, "default");
+        blueprint::o2mrelation::examples::uniform(ref, 2, 3);
+        std::cout << n.to_yaml() << std::endl;
+        EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+
+        blueprint::o2mrelation::O2MIterator niter(n);
+
+        { // Query Tests //
+            niter.next();
+            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::ONE), 2);
+            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::MANY), 3);
+            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::DATA), 6);
+        }
+
+        { // Iteration Tests //
+            std::vector<float> ref_data = get_o2m_raw(ref, false);
+            std::vector<float> n_data = get_o2m_iter(n, false);
+            EXPECT_EQ(ref_data, n_data);
+        }
+    }
 }
