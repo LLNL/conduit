@@ -2649,8 +2649,8 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
             const std::string chld_name = itr.name();
             if(!chld.dtype().is_number())
             {
-                log::error(info, protocol, "value child \"" + chld_name + "\" " +
-                                           "is not a number array");
+                log::error(info, protocol, "value child " + log::quote(chld_name) +
+                                           " is not a number array");
                 res = false;
             }
         }
@@ -3179,7 +3179,7 @@ mesh::topology::unstructured::verify(const Node &topo,
         }
         else
         {
-            log::error(info,protocol,"invalid child \"elements\"");
+            log::error(info,protocol,"invalid child 'elements'");
             res = false;
         }
 
@@ -4053,7 +4053,7 @@ mesh::field::verify(const Node &field,
     bool has_basis = field.has_child("basis");
     if(!has_assoc && !has_basis)
     {
-        log::error(info, protocol, "missing child \"association\" or \"basis\"");
+        log::error(info, protocol, "missing child 'association' or 'basis'");
         res = false;
     }
     if(has_assoc)
@@ -4067,17 +4067,41 @@ mesh::field::verify(const Node &field,
 
     bool has_topo = field.has_child("topology");
     bool has_matset = field.has_child("matset");
+    bool has_topo_values = field.has_child("values");
+    bool has_matset_values = field.has_child("matset_values");
     if(!has_topo && !has_matset)
     {
-        log::error(info, protocol, "missing child \"topology\" or \"matset\"");
+        log::error(info, protocol, "missing child 'topology' or 'matset'");
         res = false;
     }
-    if(has_topo)
+
+    if(has_topo ^ has_topo_values)
+    {
+        std::ostringstream oss;
+        oss << "'" << (has_topo ? "topology" : "values") <<"'"
+            << " is present, but its companion "
+            << "'" << (has_topo ? "values" : "topology") << "'"
+            << " is missing";
+        log::error(info, protocol, oss.str());
+        res = false;
+    }
+    else if(has_topo && has_topo_values)
     {
         res &= verify_string_field(protocol, field, info, "topology");
         res &= verify_mlarray_field(protocol, field, info, "values", 0, 1);
     }
-    if(has_matset)
+
+    if(has_matset ^ has_matset_values)
+    {
+        std::ostringstream oss;
+        oss << "'" << (has_matset ? "matset" : "matset_values") <<"'"
+            << " is present, but its companion "
+            << "'" << (has_matset ? "matset_values" : "matset") << "'"
+            << " is missing";
+        log::error(info, protocol, oss.str());
+        res = false;
+    }
+    else if(has_matset && has_matset_values)
     {
         res &= verify_string_field(protocol, field, info, "matset");
         res &= verify_mlarray_field(protocol, field, info, "matset_values", 1, 2);
@@ -4129,7 +4153,7 @@ mesh::field::index::verify(const Node &field_idx,
     bool has_basis = field_idx.has_child("basis");
     if(!has_assoc && !has_basis)
     {
-        log::error(info, protocol, "missing child \"association\" or \"basis\"");
+        log::error(info, protocol, "missing child 'association' or 'basis'");
         res = false;
     }
     if(has_assoc)
@@ -4145,7 +4169,7 @@ mesh::field::index::verify(const Node &field_idx,
     bool has_matset = field_idx.has_child("matset");
     if(!has_topo && !has_matset)
     {
-        log::error(info, protocol, "missing child \"topology\" or \"matset\"");
+        log::error(info, protocol, "missing child 'topology' or 'matset'");
         res = false;
     }
     if(has_topo)

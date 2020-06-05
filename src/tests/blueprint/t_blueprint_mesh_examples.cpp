@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "conduit_log.hpp"
 
 #include <math.h>
 #include <iostream>
@@ -527,6 +528,7 @@ void venn_test(const std::string &venn_type)
     blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
 
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    utils::log::remove_valid(info);
     CONDUIT_INFO(info.to_yaml());
     CONDUIT_INFO(res.schema().to_json());
 
