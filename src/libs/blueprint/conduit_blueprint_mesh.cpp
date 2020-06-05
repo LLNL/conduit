@@ -567,7 +567,8 @@ bool verify_mlarray_field(const std::string &protocol,
                           conduit::Node &info,
                           const std::string &field_name,
                           const index_t min_depth,
-                          const index_t max_depth)
+                          const index_t max_depth,
+                          const bool leaf_uniformity)
 {
     Node &field_info = info[field_name];
 
@@ -575,7 +576,7 @@ bool verify_mlarray_field(const std::string &protocol,
     if(res)
     {
         const Node &field_node = node[field_name];
-        res = blueprint::mlarray::verify(field_node,field_info,min_depth,max_depth);
+        res = blueprint::mlarray::verify(field_node,field_info,min_depth,max_depth,leaf_uniformity);
         if(res)
         {
             log::info(info, protocol, log::quote(field_name) + "is an mlarray");
@@ -4088,7 +4089,7 @@ mesh::field::verify(const Node &field,
     else if(has_topo && has_topo_values)
     {
         res &= verify_string_field(protocol, field, info, "topology");
-        res &= verify_mlarray_field(protocol, field, info, "values", 0, 1);
+        res &= verify_mlarray_field(protocol, field, info, "values", 0, 1, false);
     }
 
     if(has_matset ^ has_matset_values)
@@ -4104,7 +4105,7 @@ mesh::field::verify(const Node &field,
     else if(has_matset && has_matset_values)
     {
         res &= verify_string_field(protocol, field, info, "matset");
-        res &= verify_mlarray_field(protocol, field, info, "matset_values", 1, 2);
+        res &= verify_mlarray_field(protocol, field, info, "matset_values", 1, 2, false);
     }
 
     // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
