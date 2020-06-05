@@ -211,11 +211,19 @@ O2MIterator::next(IndexType itype)
     }
     else if(itype == IndexType::ONE)
     {
-        nindex = ++m_one_index;
+        if(m_many_index < 1)
+        {
+            m_many_index++;
+            nindex = m_one_index;
+        }
+        else
+        {
+            nindex = ++m_one_index;
+        }
     }
     else // if(itype == IndexType::MANY)
     {
-        nindex = ++m_many_index;
+        nindex = m_many_index++;
     }
 
     return nindex;
@@ -241,11 +249,11 @@ O2MIterator::peek_next(IndexType itype) const
     }
     else if(itype == IndexType::ONE)
     {
-        nindex = m_one_index + 1;
+        nindex = m_one_index + ((m_many_index < 1) ? 0 : 1);
     }
     else // if(itype == IndexType::MANY)
     {
-        nindex = m_many_index + 1;
+        nindex = m_many_index;
     }
 
     return nindex;
@@ -267,7 +275,7 @@ O2MIterator::to_front(IndexType itype)
     }
     else // if(itype == IndexType::MANY)
     {
-        m_many_index = 1;
+        m_many_index = 0;
     }
 }
 
@@ -324,7 +332,7 @@ O2MIterator::previous(IndexType itype)
     }
     else // if(itype == IndexType::MANY)
     {
-        pindex = --m_many_index;
+        pindex = --m_many_index - 1;
     }
 
     return pindex;
@@ -353,7 +361,7 @@ O2MIterator::peek_previous(IndexType itype) const
     }
     else // if(itype == IndexType::MANY)
     {
-        pindex = m_many_index - 1;
+        pindex = m_many_index - 2;
     }
 
     return pindex;
@@ -391,7 +399,7 @@ O2MIterator::info(Node &res) const
     res["o2m_ref"] = utils::to_hex_string(m_node);
     res["data_ref"] = utils::to_hex_string(m_data_node);
     res["one_index"] = m_one_index;
-    res["many_index"] = m_many_index;
+    res["many_index"] = m_many_index - 1;
 }
 
 //-----------------------------------------------------------------------------

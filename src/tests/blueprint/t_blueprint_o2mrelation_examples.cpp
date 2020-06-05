@@ -179,64 +179,112 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_to_compact)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator)
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator_properties)
+{
+    Node n, info;
+
+    // o2m:
+    //   data: [1.0, 2.0, -1.0, -1.0, 3.0, 4.0, -1.0, -1.0, 5.0, 6.0, -1.0, -1.0]
+    //   sizes: [2, 2, 2]
+    //   offsets: [0, 4, 8]
+    blueprint::o2mrelation::examples::uniform(n, 3, 2, 4);
+    std::cout << n.to_yaml() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+
+    { // Index Tests //
+        blueprint::o2mrelation::O2MIterator niter(n);
+        niter.next(blueprint::O2MIndexType::DATA);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::ONE), 0);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::MANY), 0);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::DATA), 0);
+
+        niter.next(blueprint::O2MIndexType::MANY);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::ONE), 0);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::MANY), 1);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::DATA), 1);
+
+        niter.next(blueprint::O2MIndexType::ONE);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::ONE), 1);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::MANY), 1);
+        EXPECT_EQ(niter.index(blueprint::O2MIndexType::DATA), 5);
+    }
+
+    { // Elements Tests //
+        blueprint::o2mrelation::O2MIterator niter(n);
+        niter.next(blueprint::O2MIndexType::DATA);
+        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::ONE), 3);
+        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::MANY), 2);
+        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::DATA), 6);
+
+        niter.next(blueprint::O2MIndexType::ONE);
+        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::ONE), 3);
+        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::MANY), 2);
+        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::DATA), 6);
+    }
+
+    { // Next/Previous Tests //
+        blueprint::o2mrelation::O2MIterator niter(n);
+
+        EXPECT_EQ(niter.next(blueprint::O2MIndexType::ONE), 0);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 1);
+
+        EXPECT_EQ(niter.next(blueprint::O2MIndexType::ONE), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 2);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 1);
+        EXPECT_EQ(niter.next(blueprint::O2MIndexType::MANY), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 2);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 2);
+        EXPECT_EQ(niter.peek_previous(blueprint::O2MIndexType::ONE), 0);
+        EXPECT_EQ(niter.peek_previous(blueprint::O2MIndexType::MANY), 0);
+
+        EXPECT_EQ(niter.previous(blueprint::O2MIndexType::ONE), 0);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 2);
+        EXPECT_EQ(niter.previous(blueprint::O2MIndexType::MANY), 0);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 1);
+    }
+
+    { // Next/Previous Edge Case Tests //
+        blueprint::o2mrelation::O2MIterator niter(n);
+        EXPECT_TRUE(niter.has_next());
+        EXPECT_FALSE(niter.has_previous());
+
+        niter.to_back();
+        EXPECT_FALSE(niter.has_next());
+        EXPECT_TRUE(niter.has_previous());
+
+        niter.to_front();
+        EXPECT_TRUE(niter.has_next());
+        EXPECT_FALSE(niter.has_previous());
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator_iteration)
 {
     Node n, ref, info;
 
-    { // Basic Tests //
+    { // Forward/Offsets Tests //
         blueprint::o2mrelation::examples::uniform(n, 3, 2, 4);
         blueprint::o2mrelation::examples::uniform(ref, 3, 2);
         std::cout << n.to_yaml() << std::endl;
         EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
 
-        blueprint::o2mrelation::O2MIterator niter(n);
-
-        { // Trivial Tests //
-            EXPECT_TRUE(niter.has_next());
-            EXPECT_FALSE(niter.has_previous());
-
-            niter.to_back();
-            EXPECT_FALSE(niter.has_next());
-            EXPECT_TRUE(niter.has_previous());
-
-            niter.to_front();
-            EXPECT_TRUE(niter.has_next());
-            EXPECT_FALSE(niter.has_previous());
-        }
-
-        { // Query Tests //
-            niter.next();
-            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::ONE), 3);
-            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::MANY), 2);
-            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::DATA), 6);
-        }
-
-        { // Iteration Tests //
-            std::vector<float> ref_data = get_o2m_raw(ref, true);
-            std::vector<float> n_data = get_o2m_iter(n, true);
-            EXPECT_EQ(ref_data, n_data);
-        }
+        std::vector<float> ref_data = get_o2m_raw(ref, true);
+        std::vector<float> n_data = get_o2m_iter(n, true);
+        EXPECT_EQ(ref_data, n_data);
     }
 
-    { // Complex Tests //
+    { // Backward/Indices Tests //
         blueprint::o2mrelation::examples::uniform(n, 2, 3, 4, "default");
         blueprint::o2mrelation::examples::uniform(ref, 2, 3);
         std::cout << n.to_yaml() << std::endl;
         EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
 
-        blueprint::o2mrelation::O2MIterator niter(n);
-
-        { // Query Tests //
-            niter.next();
-            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::ONE), 2);
-            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::MANY), 3);
-            EXPECT_EQ(niter.elements(blueprint::O2MIndexType::DATA), 6);
-        }
-
-        { // Iteration Tests //
-            std::vector<float> ref_data = get_o2m_raw(ref, false);
-            std::vector<float> n_data = get_o2m_iter(n, false);
-            EXPECT_EQ(ref_data, n_data);
-        }
+        std::vector<float> ref_data = get_o2m_raw(ref, false);
+        std::vector<float> n_data = get_o2m_iter(n, false);
+        EXPECT_EQ(ref_data, n_data);
     }
 }
