@@ -558,7 +558,9 @@ TEST(conduit_docs, blueprint_demo_basic_polygons)
           "elements": 
           {
             "shape": "polygonal",
-            "connectivity": [4, 0, 3, 4, 1, 4, 1, 4, 5, 2, 4, 3, 6, 7, 4, 4, 4, 7, 8, 5]
+            "connectivity": [0, 3, 4, 1, 1, 4, 5, 2, 3, 6, 7, 4, 4, 7, 8, 5],
+            "sizes": [4, 4, 4, 4],
+            "offsets": [0, 4, 8, 12]
           }
         }
       },
