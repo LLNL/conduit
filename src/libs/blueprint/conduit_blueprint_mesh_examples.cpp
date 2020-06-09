@@ -2590,7 +2590,7 @@ void polytess(index_t nlevels,
 
     polytess_recursive(nlevels, point_map, point_rmap, polygons, levels);
 
-    index_t conn_size = polygons.size();
+    index_t conn_size = 0;
     for(index_t p = 0; p < (index_t)polygons.size(); p++)
     {
         conn_size += polygons[p].size();
@@ -2619,13 +2619,15 @@ void polytess(index_t nlevels,
     topology["type"].set("unstructured");
     topology["elements/shape"].set("polygonal");
     topology["elements/connectivity"].set(DataType::uint64(conn_size));
+    topology["elements/sizes"].set(DataType::uint64(polygons.size()));
 
     uint64_array conn_array = topology["elements/connectivity"].value();
+    uint64_array size_array = topology["elements/sizes"].value();  
     for(index_t pi = 0, ci = 0; pi < (index_t)polygons.size(); pi++)
     {
         const std::vector<index_t> &p = polygons[pi];
 
-        conn_array[ci++] = p.size();
+        size_array[pi] = p.size();
         for(index_t ii = 0; ii < (index_t)p.size(); ii++)
         {
             conn_array[ci++] = p[ii];
