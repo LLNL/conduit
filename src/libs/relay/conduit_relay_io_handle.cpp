@@ -57,6 +57,8 @@
 
 #include "conduit_relay_io.hpp"
 
+#include "conduit_relay_io_handle_sidre.hpp"
+
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
     #include "conduit_relay_io_hdf5.hpp"
 #endif
@@ -93,63 +95,7 @@ namespace io
 {
 
 
-//-----------------------------------------------------------------------------
-// HandleInterface -- base class for all concrete IO Handle Implementations
-//-----------------------------------------------------------------------------
-class IOHandle::HandleInterface
-{
-public:
-    
-    HandleInterface(const std::string &path,
-                    const std::string &protocol,
-                    const Node &options);
-    virtual ~HandleInterface();
 
-    // main interface methods
-
-    // note: make sure to call HandleInterface::open in derived class 
-    //       open() overrides
-    virtual void open();
-    virtual bool is_open() const = 0;
-    virtual void read(Node &node) = 0;
-    virtual void read(const std::string &path,
-                      Node &node) = 0;
-    virtual void write(const Node &node) = 0;
-    virtual void write(const Node &node,
-               const std::string &path) = 0;
-    virtual void list_child_names(std::vector<std::string> &res) const = 0;
-    virtual void list_child_names(const std::string &path,
-                          std::vector<std::string> &res) const = 0;
-    virtual void remove(const std::string &path) = 0;
-    virtual bool has_path(const std::string &path) const = 0;
-    virtual void close() = 0;
-
-    // factory helper methods used by interface class 
-    static HandleInterface *create(const std::string &path);
-
-    static HandleInterface *create(const std::string &path,
-                                   const std::string &protocol);
-
-    static HandleInterface *create(const std::string &path,
-                                   const Node &options);
-
-    static HandleInterface *create(const std::string &path,
-                                   const std::string &protocol,
-                                   const Node &options);
-protected:
-    // access to common state
-    const std::string &path()      const;
-    const std::string &protocol()  const;
-    const std::string &open_mode() const;
-    const Node        &options()   const;
-
-private:
-
-    std::string m_path;
-    std::string m_protocol;
-    std::string m_open_mode;
-    Node        m_options;
-};
 
 
 //-----------------------------------------------------------------------------
@@ -236,7 +182,7 @@ private:
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
-    
+
 
 //-----------------------------------------------------------------------------
 // HandleInterface Implementation 
@@ -357,6 +303,12 @@ IOHandle::HandleInterface::create(const std::string &path,
        protocol == "yaml" )
     {
         res = new BasicHandle(path, protocol, options);
+    }
+    else if( protocol == "sidre_hdf5" )
+    {
+        // magic interface
+        // path is the path to the root file
+        res = new SidreHandle(path,protocol,options);
     }
     else if( protocol == "hdf5" )
     {
@@ -813,8 +765,6 @@ HDF5Handle::close()
 #endif
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-
-
 
 
 //-----------------------------------------------------------------------------

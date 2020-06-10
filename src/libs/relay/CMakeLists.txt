@@ -89,6 +89,8 @@ set(conduit_relay_headers
     conduit_relay_io.hpp
     conduit_relay_io_handle.hpp
     conduit_relay_io_handle_api.hpp
+    conduit_relay_io_handle_sidre.hpp
+    conduit_relay_io_handle_sidre_api.hpp
     conduit_relay_io_identify_protocol.hpp
     conduit_relay_io_identify_protocol_api.hpp
     conduit_relay_io_blueprint.hpp
@@ -112,6 +114,7 @@ set(conduit_relay_sources
     conduit_relay.cpp
     conduit_relay_io.cpp
     conduit_relay_io_handle.cpp
+    conduit_relay_io_handle_sidre.cpp
     conduit_relay_io_identify_protocol.cpp
     conduit_relay_io_blueprint.cpp
     conduit_relay_web.cpp
