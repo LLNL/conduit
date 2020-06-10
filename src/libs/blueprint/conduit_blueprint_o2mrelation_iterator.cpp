@@ -172,17 +172,17 @@ O2MIterator::has_next(IndexType itype) const
 {
     bool is_next = false;
 
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
-        is_next = has_next(IndexType::ONE) || has_next(IndexType::MANY);
+        is_next = has_next(ONE) || has_next(MANY);
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
-        is_next = m_one_index < elements(0, IndexType::ONE) - 1;
+        is_next = m_one_index < elements(0, ONE) - 1;
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
-        is_next = m_many_index < elements(m_one_index, IndexType::MANY);
+        is_next = m_many_index < elements(m_one_index, MANY);
     }
 
     return is_next;
@@ -195,9 +195,9 @@ O2MIterator::next(IndexType itype)
 {
     index_t nindex = 0;
 
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
-        if(m_many_index < elements(m_one_index, IndexType::MANY))
+        if(m_many_index < elements(m_one_index, MANY))
         {
             m_many_index++;
         }
@@ -207,9 +207,9 @@ O2MIterator::next(IndexType itype)
             m_one_index++;
         }
 
-        nindex = index(m_one_index, m_many_index, IndexType::DATA);
+        nindex = index(m_one_index, m_many_index, DATA);
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
         if(m_many_index < 1)
         {
@@ -221,7 +221,7 @@ O2MIterator::next(IndexType itype)
             nindex = ++m_one_index;
         }
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
         nindex = m_many_index++;
     }
@@ -236,22 +236,22 @@ O2MIterator::peek_next(IndexType itype) const
 {
     index_t nindex = 0;
 
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
-        if(m_many_index < elements(m_one_index, IndexType::MANY))
+        if(m_many_index < elements(m_one_index, MANY))
         {
-            nindex = index(m_one_index, m_many_index + 1, IndexType::DATA);
+            nindex = index(m_one_index, m_many_index + 1, DATA);
         }
         else
         {
-            nindex = index(m_one_index + 1, 1, IndexType::DATA);
+            nindex = index(m_one_index + 1, 1, DATA);
         }
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
         nindex = m_one_index + ((m_many_index < 1) ? 0 : 1);
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
         nindex = m_many_index;
     }
@@ -264,16 +264,16 @@ O2MIterator::peek_next(IndexType itype) const
 void
 O2MIterator::to_front(IndexType itype)
 {
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
         m_one_index = 0;
         m_many_index = 0;
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
         m_one_index = 0;
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
         m_many_index = 0;
     }
@@ -289,15 +289,15 @@ O2MIterator::has_previous(IndexType itype) const
 {
     bool is_prev = false;
 
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
-        is_prev = has_previous(IndexType::ONE) || has_previous(IndexType::MANY);
+        is_prev = has_previous(ONE) || has_previous(MANY);
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
         is_prev = m_one_index > 0;
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
         is_prev = m_many_index > 1;
     }
@@ -312,7 +312,7 @@ O2MIterator::previous(IndexType itype)
 {
     index_t pindex = 0;
 
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
         if(m_many_index > 1)
         {
@@ -320,17 +320,17 @@ O2MIterator::previous(IndexType itype)
         }
         else
         {
-            m_many_index = elements(m_one_index - 1, IndexType::MANY);
+            m_many_index = elements(m_one_index - 1, MANY);
             m_one_index--;
         }
 
-        pindex = index(m_one_index, m_many_index, IndexType::DATA);
+        pindex = index(m_one_index, m_many_index, DATA);
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
         pindex = --m_one_index;
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
         pindex = --m_many_index - 1;
     }
@@ -344,22 +344,22 @@ O2MIterator::peek_previous(IndexType itype) const
 {
     index_t pindex = 0;
 
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
         if(m_many_index > 1)
         {
-            pindex = index(m_one_index, m_many_index - 1, IndexType::DATA);
+            pindex = index(m_one_index, m_many_index - 1, DATA);
         }
         else
         {
-            pindex = index(m_one_index - 1, elements(m_one_index - 1, IndexType::MANY), IndexType::DATA);
+            pindex = index(m_one_index - 1, elements(m_one_index - 1, MANY), DATA);
         }
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
         pindex = m_one_index - 1;
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
         pindex = m_many_index - 2;
     }
@@ -372,18 +372,18 @@ O2MIterator::peek_previous(IndexType itype) const
 void
 O2MIterator::to_back(IndexType itype)
 {
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
-        m_one_index = elements(0, IndexType::ONE);
+        m_one_index = elements(0, ONE);
         m_many_index = 1;
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
-        m_one_index = elements(0, IndexType::ONE);
+        m_one_index = elements(0, ONE);
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
-        m_many_index = elements(m_one_index, IndexType::MANY);
+        m_many_index = elements(m_one_index, MANY);
     }
 }
 
@@ -412,7 +412,7 @@ O2MIterator::index(index_t one_index, index_t many_index, IndexType itype) const
 {
     index_t index = 0;
 
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
         index_t offset = one_index;
         if(m_node->has_child("offsets"))
@@ -436,11 +436,11 @@ O2MIterator::index(index_t one_index, index_t many_index, IndexType itype) const
 
         index += (many_index - 1);
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
         index = one_index;
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
         index = (many_index - 1);
     }
@@ -455,14 +455,14 @@ O2MIterator::elements(index_t one_index, IndexType itype) const
 {
     index_t nelements = 0;
 
-    if(itype == IndexType::DATA)
+    if(itype == DATA)
     {
-        for(index_t oi = 0; oi < elements(0, IndexType::ONE); oi++)
+        for(index_t oi = 0; oi < elements(0, ONE); oi++)
         {
-            nelements += elements(oi, IndexType::MANY);
+            nelements += elements(oi, MANY);
         }
     }
-    else if(itype == IndexType::ONE)
+    else if(itype == ONE)
     {
         if(m_node->has_child("sizes"))
         {
@@ -479,10 +479,10 @@ O2MIterator::elements(index_t one_index, IndexType itype) const
             nelements = m_data_node->dtype().number_of_elements();
         }
     }
-    else // if(itype == IndexType::MANY)
+    else // if(itype == MANY)
     {
         // if the one index is too high, we return 0
-        if(one_index < elements(0, IndexType::ONE))
+        if(one_index < elements(0, ONE))
         {
             if(m_node->has_child("sizes"))
             {

@@ -126,24 +126,24 @@ public:
 //-----------------------------------------------------------------------------
 /// Iterator value and property access.
 //-----------------------------------------------------------------------------
-    index_t     index(IndexType itype = IndexType::DATA) const;
-    index_t     elements(IndexType itype = IndexType::DATA) const;
+    index_t     index(IndexType itype = DATA) const;
+    index_t     elements(IndexType itype = DATA) const;
 
 //-----------------------------------------------------------------------------
 /// Iterator forward control.
 //-----------------------------------------------------------------------------
-    bool        has_next(IndexType itype = IndexType::DATA) const;
-    index_t     next(IndexType itype = IndexType::DATA);
-    index_t     peek_next(IndexType itype = IndexType::DATA) const;
-    void        to_front(IndexType itype = IndexType::DATA);
+    bool        has_next(IndexType itype = DATA) const;
+    index_t     next(IndexType itype = DATA);
+    index_t     peek_next(IndexType itype = DATA) const;
+    void        to_front(IndexType itype = DATA);
 
 //-----------------------------------------------------------------------------
 /// Iterator reverse control.
 //-----------------------------------------------------------------------------
-    bool        has_previous(IndexType itype = IndexType::DATA) const;
-    index_t     previous(IndexType itype = IndexType::DATA);
-    index_t     peek_previous(IndexType itype = IndexType::DATA) const;
-    void        to_back(IndexType itype = IndexType::DATA);
+    bool        has_previous(IndexType itype = DATA) const;
+    index_t     previous(IndexType itype = DATA);
+    index_t     peek_previous(IndexType itype = DATA) const;
+    void        to_back(IndexType itype = DATA);
 
 //-----------------------------------------------------------------------------
 /// Human readable info about this iterator
@@ -191,8 +191,6 @@ private:
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::o2mrelation --
 //-----------------------------------------------------------------------------
-
-typedef o2mrelation::IndexType O2MIndexType;
 
 }
 //-----------------------------------------------------------------------------

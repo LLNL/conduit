@@ -193,57 +193,57 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator_properties)
 
     { // Index Tests //
         blueprint::o2mrelation::O2MIterator niter(n);
-        niter.next(blueprint::O2MIndexType::DATA);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::ONE), 0);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::MANY), 0);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::DATA), 0);
+        niter.next(blueprint::o2mrelation::DATA);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::ONE), 0);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::MANY), 0);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 0);
 
-        niter.next(blueprint::O2MIndexType::MANY);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::ONE), 0);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::MANY), 1);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::DATA), 1);
+        niter.next(blueprint::o2mrelation::MANY);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::ONE), 0);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::MANY), 1);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 1);
 
-        niter.next(blueprint::O2MIndexType::ONE);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::ONE), 1);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::MANY), 1);
-        EXPECT_EQ(niter.index(blueprint::O2MIndexType::DATA), 5);
+        niter.next(blueprint::o2mrelation::ONE);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::ONE), 1);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::MANY), 1);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 5);
     }
 
     { // Elements Tests //
         blueprint::o2mrelation::O2MIterator niter(n);
-        niter.next(blueprint::O2MIndexType::DATA);
-        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::ONE), 3);
-        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::MANY), 2);
-        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::DATA), 6);
+        niter.next(blueprint::o2mrelation::DATA);
+        EXPECT_EQ(niter.elements(blueprint::o2mrelation::ONE), 3);
+        EXPECT_EQ(niter.elements(blueprint::o2mrelation::MANY), 2);
+        EXPECT_EQ(niter.elements(blueprint::o2mrelation::DATA), 6);
 
-        niter.next(blueprint::O2MIndexType::ONE);
-        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::ONE), 3);
-        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::MANY), 2);
-        EXPECT_EQ(niter.elements(blueprint::O2MIndexType::DATA), 6);
+        niter.next(blueprint::o2mrelation::ONE);
+        EXPECT_EQ(niter.elements(blueprint::o2mrelation::ONE), 3);
+        EXPECT_EQ(niter.elements(blueprint::o2mrelation::MANY), 2);
+        EXPECT_EQ(niter.elements(blueprint::o2mrelation::DATA), 6);
     }
 
     { // Next/Previous Tests //
         blueprint::o2mrelation::O2MIterator niter(n);
 
-        EXPECT_EQ(niter.next(blueprint::O2MIndexType::ONE), 0);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 1);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 1);
+        EXPECT_EQ(niter.next(blueprint::o2mrelation::ONE), 0);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::ONE), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::MANY), 1);
 
-        EXPECT_EQ(niter.next(blueprint::O2MIndexType::ONE), 1);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 2);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 1);
-        EXPECT_EQ(niter.next(blueprint::O2MIndexType::MANY), 1);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 2);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 2);
-        EXPECT_EQ(niter.peek_previous(blueprint::O2MIndexType::ONE), 0);
-        EXPECT_EQ(niter.peek_previous(blueprint::O2MIndexType::MANY), 0);
+        EXPECT_EQ(niter.next(blueprint::o2mrelation::ONE), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::ONE), 2);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::MANY), 1);
+        EXPECT_EQ(niter.next(blueprint::o2mrelation::MANY), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::ONE), 2);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::MANY), 2);
+        EXPECT_EQ(niter.peek_previous(blueprint::o2mrelation::ONE), 0);
+        EXPECT_EQ(niter.peek_previous(blueprint::o2mrelation::MANY), 0);
 
-        EXPECT_EQ(niter.previous(blueprint::O2MIndexType::ONE), 0);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 1);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 2);
-        EXPECT_EQ(niter.previous(blueprint::O2MIndexType::MANY), 0);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::ONE), 1);
-        EXPECT_EQ(niter.peek_next(blueprint::O2MIndexType::MANY), 1);
+        EXPECT_EQ(niter.previous(blueprint::o2mrelation::ONE), 0);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::ONE), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::MANY), 2);
+        EXPECT_EQ(niter.previous(blueprint::o2mrelation::MANY), 0);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::ONE), 1);
+        EXPECT_EQ(niter.peek_next(blueprint::o2mrelation::MANY), 1);
     }
 
     { // Next/Previous Edge Case Tests //
