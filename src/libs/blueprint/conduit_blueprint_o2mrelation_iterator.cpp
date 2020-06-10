@@ -375,7 +375,7 @@ O2MIterator::to_back(IndexType itype)
     if(itype == IndexType::DATA)
     {
         m_one_index = elements(0, IndexType::ONE);
-        m_many_index = elements(m_one_index, IndexType::MANY);
+        m_many_index = 1;
     }
     else if(itype == IndexType::ONE)
     {
@@ -481,17 +481,25 @@ O2MIterator::elements(index_t one_index, IndexType itype) const
     }
     else // if(itype == IndexType::MANY)
     {
-        if(m_node->has_child("sizes"))
+        // if the one index is too high, we return 0
+        if(one_index < elements(0, IndexType::ONE))
         {
-            const conduit::Node &sizes_node = m_node->fetch_existing("sizes");
-            const conduit::Node size_node(
-                conduit::DataType(sizes_node.dtype().id(), 1),
-                (void*)sizes_node.element_ptr(one_index), true);
-            nelements = size_node.to_index_t();
+            if(m_node->has_child("sizes"))
+            {
+                const conduit::Node &sizes_node = m_node->fetch_existing("sizes");
+                const conduit::Node size_node(
+                    conduit::DataType(sizes_node.dtype().id(), 1),
+                    (void*)sizes_node.element_ptr(one_index), true);
+                nelements = size_node.to_index_t();
+            }
+            else
+            {
+                nelements = 1;
+            }
         }
         else
         {
-            nelements = 1;
+            nelements = 0;
         }
     }
 
