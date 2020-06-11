@@ -96,11 +96,22 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API query_paths(const conduit::Node &o2mrelation,
-                                        conduit::Node &res);
+std::vector<std::string> CONDUIT_BLUEPRINT_API data_paths(const conduit::Node &o2mrelation);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API to_compact(conduit::Node &o2mrelation);
+void CONDUIT_BLUEPRINT_API compact_to(const conduit::Node &o2mrelation,
+                                      conduit::Node &res);
+
+//-----------------------------------------------------------------------------
+/// o2mrelation blueprint miscellaneous methods
+///
+/// These methods can be called on unverified o2mrelation to bring them
+/// into compliance.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API generate_offsets(conduit::Node &n,
+                                            conduit::Node &info);
 
 //-----------------------------------------------------------------------------
 }

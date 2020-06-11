@@ -95,18 +95,17 @@ O2MIterator::O2MIterator()
 }
 
 //---------------------------------------------------------------------------//
-O2MIterator::O2MIterator(Node *node)
+O2MIterator::O2MIterator(const Node *node)
 : m_node(node),
   m_one_index(0),
   m_many_index(0)
 {
-    Node paths;
-    conduit::blueprint::o2mrelation::query_paths(*node, paths);
-    m_data_node = &node->fetch_existing(paths.child_names()[0]);
+    std::vector<std::string> paths = conduit::blueprint::o2mrelation::data_paths(*node);
+    m_data_node = &node->fetch_existing(paths.front());
 }
 
 //---------------------------------------------------------------------------//
-O2MIterator::O2MIterator(Node &node)
+O2MIterator::O2MIterator(const Node &node)
 : O2MIterator(&node)
 {
     

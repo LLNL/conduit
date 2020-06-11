@@ -52,6 +52,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_o2mrelation.hpp"
+#include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_log.hpp"
 
 //-----------------------------------------------------------------------------
@@ -65,6 +66,8 @@
 using namespace conduit;
 // Easier access to the Conduit logging functions
 using namespace conduit::utils;
+
+typedef conduit::blueprint::o2mrelation::O2MIterator O2MIterator;
 
 static const std::string o2m_path_list[] = {"sizes", "offsets", "indices"};
 static const std::vector<std::string> o2m_paths(o2m_path_list,
@@ -191,49 +194,136 @@ bool verify(const conduit::Node &n,
 
 
 //----------------------------------------------------------------------------
-void query_paths(const conduit::Node &n, Node &res)
+std::vector<std::string> data_paths(const conduit::Node &o2mrelation)
 {
-    res.reset();
+    std::vector<std::string> paths;
 
-    res.set(DataType::object());
-
-    NodeConstIterator niter = n.children();
-    while(niter.has_next())
+    NodeConstIterator o2miter = o2mrelation.children();
+    while(o2miter.has_next())
     {
-        const Node &nchld = niter.next();
-        const std::string &nchld_name = niter.name();
+        const Node &nchld = o2miter.next();
+        const std::string &nchld_name = o2miter.name();
         if(std::find(o2m_paths.begin(), o2m_paths.end(), nchld_name) == o2m_paths.end() &&
             nchld.dtype().is_number())
         {
-            res[nchld_name];
+            paths.push_back(nchld_name);
+        }
+    }
+
+    return paths;
+}
+
+
+//----------------------------------------------------------------------------
+void compact_to(const conduit::Node &o2mrelation,
+                conduit::Node &res)
+{
+    res.reset();
+
+    // NOTE(JRC): Compaction only occurs in the case where sizes/offsets exist
+    // because otherwise the data must already be compact due to the default
+    // values of sizes and offsets.
+    if(!o2mrelation.has_child("sizes"))
+    {
+        res.set_external(o2mrelation);
+    }
+    else
+    {
+        O2MIterator o2miter(o2mrelation);
+        const std::vector<std::string> o2m_paths =
+            conduit::blueprint::o2mrelation::data_paths(o2mrelation);
+
+        const conduit::Node &o2m_offsets = o2mrelation["offsets"];
+        const conduit::Node &o2m_sizes = o2mrelation["sizes"];
+        conduit::Node &res_offsets = res["offsets"];
+        conduit::Node &res_sizes = res["sizes"];
+        const conduit::DataType offsets_dtype(o2m_offsets.dtype().id(), 1);
+        const conduit::DataType sizes_dtype(o2m_offsets.dtype().id(), 1);
+        {
+            res_sizes.set(o2m_sizes);
+            res_offsets.set(conduit::DataType(offsets_dtype.id(),
+                o2miter.elements(conduit::blueprint::o2mrelation::ONE)));
+
+            for(index_t pi = 0; pi < (index_t)o2m_paths.size(); pi++)
+            {
+                const std::string& o2m_path = o2m_paths[pi];
+                res[o2m_path].set(conduit::DataType(o2mrelation[o2m_path].dtype().id(),
+                    o2miter.elements(conduit::blueprint::o2mrelation::DATA)));
+            }
+        }
+
+        conduit::Node o2m_temp, res_temp;
+        index_t curr_index = 0, curr_offset = 0;
+        while(o2miter.has_next(conduit::blueprint::o2mrelation::ONE))
+        {
+            const index_t one_index = o2miter.next(conduit::blueprint::o2mrelation::ONE);
+
+            res_temp.set_external(offsets_dtype, res_offsets.element_ptr(one_index));
+            o2m_temp.set(curr_offset);
+            o2m_temp.to_data_type(offsets_dtype.id(), res_temp);
+
+            o2miter.to_front(conduit::blueprint::o2mrelation::MANY);
+            while(o2miter.has_next(conduit::blueprint::o2mrelation::MANY))
+            {
+                o2miter.next(conduit::blueprint::o2mrelation::MANY);
+                const index_t data_index = o2miter.index(conduit::blueprint::o2mrelation::DATA);
+
+                for(index_t pi = 0; pi < (index_t)o2m_paths.size(); pi++, curr_index++)
+                {
+                    const conduit::Node &o2m_data = o2mrelation[o2m_paths[pi]];
+                    conduit::Node &res_data = res[o2m_paths[pi]];
+
+                    const conduit::DataType data_dtype(o2m_data.dtype().id(), 1);
+                    o2m_temp.set_external(data_dtype, (void*)o2m_data.element_ptr(data_index));
+                    res_temp.set_external(data_dtype, (void*)res_data.element_ptr(curr_index));
+                    o2m_temp.to_data_type(data_dtype.id(), res_temp);
+                }
+            }
+
+            curr_offset += o2miter.elements(conduit::blueprint::o2mrelation::MANY);
         }
     }
 }
 
 
 //----------------------------------------------------------------------------
-void to_compact(conduit::Node &o2mrelation)
+bool generate_offsets(conduit::Node &n,
+                      conduit::Node &info)
 {
-    // NOTE(JRC): Compaction only occurs in the case where sizes/offsets exist
-    // because otherwise the data must already be compact due to the default
-    // values of sizes and offsets.
-    if(o2mrelation.has_child("sizes"))
-    {
-        conduit::Node &offsets = o2mrelation["offsets"];
-        conduit::Node &sizes = o2mrelation["sizes"];
+    bool res = true;
 
+    const std::string proto_name = "o2mrelation::generate_offsets";
+
+    if(!n.dtype().is_object())
+    {
+        log::error(info,proto_name,"base node is not an object");
+        res = false;
+    }
+    else if(!n.has_child("sizes"))
+    {
+        log::error(info,proto_name,"missing 'sizes' child");
+        res = false;
+    }
+    else
+    {
+        conduit::Node &sizes = n["sizes"];
+        conduit::Node &offsets = n["offsets"];
+
+        conduit::Node temp;
         std::vector<int64> offset_array(sizes.dtype().number_of_elements());
         for(index_t o = 0; o < (index_t)offset_array.size(); o++)
         {
-            const Node size_node(conduit::DataType(sizes.dtype().id(), 1),
-                const_cast<void*>(sizes.element_ptr(o)), true);
-            offset_array[o] = (o > 0) ? offset_array[o-1] + size_node.to_int64() : 0;
+            temp.set_external(conduit::DataType(sizes.dtype().id(), 1),
+                const_cast<void*>(sizes.element_ptr(o)));
+            offset_array[o] = (o > 0) ? offset_array[o-1] + temp.to_int64() : 0;
         }
 
-        Node offset_node;
-        offset_node.set_external(offset_array);
-        offset_node.to_data_type(offsets.dtype().id(), offsets);
+        offsets.reset();
+        temp.set_external(offset_array);
+        temp.to_data_type(sizes.dtype().id(), offsets);
     }
+
+    return res;
 }
 
 //-----------------------------------------------------------------------------

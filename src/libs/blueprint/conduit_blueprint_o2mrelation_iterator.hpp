@@ -111,11 +111,11 @@ public:
     O2MIterator(const O2MIterator &itr);
 
     /// Primary iterator constructor.
-    O2MIterator(Node *node);
+    O2MIterator(const Node *node);
 
     /// Primary iterator constructor.
     /// this will use the pointer to the passed Node ref.
-    O2MIterator(Node &node);
+    O2MIterator(const Node &node);
 
     /// Destructor
     ~O2MIterator();
@@ -168,9 +168,9 @@ private:
 /// Iterator state/fields.
 //-----------------------------------------------------------------------------
     /// pointer to the Node wrapped by this iterator
-    Node    *m_node;
+    const Node *m_node;
     /// pointer to an internal data Node for the 'o2mrelation'
-    Node    *m_data_node;
+    const Node *m_data_node;
 
     /// current 'one' index in 'o2mrelation' space
     index_t  m_one_index;

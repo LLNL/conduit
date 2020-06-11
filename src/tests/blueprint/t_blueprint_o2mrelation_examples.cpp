@@ -130,9 +130,10 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_verify)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_query_paths)
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_data_paths)
 {
-    Node n, res;
+    Node n;
+    std::vector<std::string> paths;
 
     Node baseline, info;
     baseline["data"].set(conduit::DataType::float32(20));
@@ -142,34 +143,96 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_query_paths)
     EXPECT_TRUE(blueprint::o2mrelation::verify(baseline,info));
 
     n.set(baseline);
-    blueprint::o2mrelation::query_paths(n, res);
-    EXPECT_TRUE(res.dtype().is_object());
-    EXPECT_EQ(res.child_names(), std::vector<std::string>({"data"}));
+    paths = blueprint::o2mrelation::data_paths(n);
+    EXPECT_EQ(paths, std::vector<std::string>({"data"}));
 
     n.set(baseline);
     n["more_data"].set(n["data"]);
     n["not_data_str"].set("string");
     n["not_data_obj"]["nv1"].set(n["data"]);
     n["not_data_obj"]["nv2"].set(n["data"]);
-    blueprint::o2mrelation::query_paths(n, res);
-    EXPECT_TRUE(res.dtype().is_object());
-    EXPECT_EQ(res.child_names(), std::vector<std::string>({"data", "more_data"}));
+    paths = blueprint::o2mrelation::data_paths(n);
+    EXPECT_EQ(paths, std::vector<std::string>({"data", "more_data"}));
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_to_compact)
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_compact_to)
 {
     Node n, ref, info;
 
+    { // No Compaction Tests //
+        blueprint::o2mrelation::examples::uniform(ref, 5, 3, 3);
+        blueprint::o2mrelation::compact_to(ref, n);
+        EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+        EXPECT_FALSE(ref.diff(n, info));
+
+        blueprint::o2mrelation::examples::uniform(ref, 5, 0, 0, "default");
+        blueprint::o2mrelation::compact_to(ref, n);
+        EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+        EXPECT_FALSE(ref.diff(n, info));
+    }
+
+    { // Sizes/Offsets Compaction Tests //
+        blueprint::o2mrelation::examples::uniform(ref, 5, 3, 5);
+        blueprint::o2mrelation::compact_to(ref, n);
+        EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+        EXPECT_TRUE(ref.diff(n, info));
+
+        blueprint::o2mrelation::examples::uniform(ref, 5, 3, 3);
+        EXPECT_FALSE(ref.diff(n, info));
+    }
+
+    { // Data Compaction Tests //
+        blueprint::o2mrelation::examples::uniform(ref, 3, 4, 5, "reversed");
+        blueprint::o2mrelation::compact_to(ref, n);
+        EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+        EXPECT_TRUE(ref.diff(n, info));
+
+        { // Check Path Schema //
+            std::set<std::string> n_childset(n.child_names().begin(), n.child_names().end());
+            std::set<std::string> ref_childset(ref.child_names().begin(), ref.child_names().end());
+            EXPECT_NE(ref_childset, n_childset);
+
+            n_childset.insert("indices");
+            EXPECT_EQ(ref_childset, n_childset);
+
+            conduit::NodeConstIterator niter = n.children();
+            while(niter.has_next())
+            {
+                const std::string child_name = niter.next().name();
+                EXPECT_EQ(ref[child_name].dtype().id(), n[child_name].dtype().id());
+            }
+        }
+
+        { // Check Data //
+            blueprint::o2mrelation::examples::uniform(ref, 3, 4);
+            EXPECT_FALSE(ref["sizes"].diff(n["sizes"], info));
+            EXPECT_FALSE(ref["offsets"].diff(n["offsets"], info));
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_generate_offsets)
+{
+    Node n, ref, info;
+
+    EXPECT_FALSE(blueprint::o2mrelation::generate_offsets(n, info));
+
+    n["test"].set("value");
+    EXPECT_FALSE(blueprint::o2mrelation::generate_offsets(n, info));
+
     blueprint::o2mrelation::examples::uniform(ref, 5, 3, 3);
     n.set(ref);
-    blueprint::o2mrelation::to_compact(n);
+    n.remove("offsets");
+    EXPECT_TRUE(blueprint::o2mrelation::generate_offsets(n, info));
     EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
     EXPECT_FALSE(ref.diff(n, info));
 
     blueprint::o2mrelation::examples::uniform(ref, 5, 3, 4);
     n.set(ref);
-    blueprint::o2mrelation::to_compact(n);
+    n.remove("offsets");
+    EXPECT_TRUE(blueprint::o2mrelation::generate_offsets(n, info));
     EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
     EXPECT_TRUE(ref.diff(n, info));
 
