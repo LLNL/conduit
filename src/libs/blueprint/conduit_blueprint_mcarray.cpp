@@ -348,14 +348,15 @@ verify(const std::string &/*protocol*/,
 bool verify(const conduit::Node &n,
             Node &info)
 {
-    return mlarray::verify(n, info, 0, std::numeric_limits<index_t>::max());
+    return mlarray::verify(n, info, 0, std::numeric_limits<index_t>::max(), true);
 }
 
 //----------------------------------------------------------------------------
 bool verify(const conduit::Node &n,
             Node &info,
             const index_t min_depth,
-            const index_t max_depth)
+            const index_t max_depth,
+            const bool leaf_uniformity)
 {
     info.reset();
     bool res = true;
@@ -453,7 +454,7 @@ bool verify(const conduit::Node &n,
                 log::error(info,protocol,"node leaves have non-numerical types");
                 res = false;
             }
-            else if(curr_node->dtype().number_of_elements() != depth_elems)
+            else if(leaf_uniformity && curr_node->dtype().number_of_elements() != depth_elems)
             {
                 log::error(info,protocol,"node leaves have element count differences");
                 res = false;

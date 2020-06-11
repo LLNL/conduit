@@ -252,6 +252,10 @@ TEST(conduit_blueprint_mcarray_verify, mlarray_invalid_structure)
 
     n["a/z"].set(DataType::float64(3));
     EXPECT_FALSE(blueprint::mlarray::verify(n,info));
+
+    n["a/z"].reset();
+    n["a/z"].set(DataType::float64(2));
+    EXPECT_TRUE(blueprint::mlarray::verify(n,info));
 }
 
 

@@ -573,12 +573,14 @@ void venn(const std::string &matset_type,
     // Area is trivial to compute and easy to verify.
     res["fields/area/association"] = "element";
     res["fields/area/topology"] = "topo";
+    res["fields/area/matset"] = "matset";
     res["fields/area/values"] = DataType::float64(nx * ny);
     // "Importance" is a made-up field.
     // Circles a, b, and c have differing importance.
     // Background material has importance that varies with position.
     res["fields/importance/association"] = "element";
     res["fields/importance/topology"] = "topo";
+    res["fields/importance/matset"] = "matset";
     res["fields/importance/values"] = DataType::float64(nx * ny);
 
 

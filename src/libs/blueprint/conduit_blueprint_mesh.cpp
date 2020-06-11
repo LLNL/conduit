@@ -567,7 +567,8 @@ bool verify_mlarray_field(const std::string &protocol,
                           conduit::Node &info,
                           const std::string &field_name,
                           const index_t min_depth,
-                          const index_t max_depth)
+                          const index_t max_depth,
+                          const bool leaf_uniformity)
 {
     Node &field_info = info[field_name];
 
@@ -575,7 +576,7 @@ bool verify_mlarray_field(const std::string &protocol,
     if(res)
     {
         const Node &field_node = node[field_name];
-        res = blueprint::mlarray::verify(field_node,field_info,min_depth,max_depth);
+        res = blueprint::mlarray::verify(field_node,field_info,min_depth,max_depth,leaf_uniformity);
         if(res)
         {
             log::info(info, protocol, log::quote(field_name) + "is an mlarray");
@@ -2649,8 +2650,8 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
             const std::string chld_name = itr.name();
             if(!chld.dtype().is_number())
             {
-                log::error(info, protocol, "value child \"" + chld_name + "\" " +
-                                           "is not a number array");
+                log::error(info, protocol, "value child " + log::quote(chld_name) +
+                                           " is not a number array");
                 res = false;
             }
         }
@@ -3179,7 +3180,7 @@ mesh::topology::unstructured::verify(const Node &topo,
         }
         else
         {
-            log::error(info,protocol,"invalid child \"elements\"");
+            log::error(info,protocol,"invalid child 'elements'");
             res = false;
         }
 
@@ -3906,26 +3907,30 @@ mesh::matset::verify(const Node &matset,
 
     if(vfs_res)
     {
-        // TODO(JRC): Maybe add a verifier for 'number' or 'object' at the top
-        // here so as to make the validation as explicit as possible.
-        if(!matset["volume_fractions"].dtype().is_object())
+        if(!matset["volume_fractions"].dtype().is_number() &&
+            !matset["volume_fractions"].dtype().is_object())
+        {
+            log::error(info, protocol, "'volume_fractions' isn't the correct type");
+            res &= vfs_res &= false;
+        }
+        else if(matset["volume_fractions"].dtype().is_number() &&
+            verify_number_field(protocol, matset, info, "volume_fractions"))
         {
             log::info(info, protocol, "detected uni-buffer matset");
 
-            res &= verify_number_field(protocol, matset, info, "volume_fractions");
-            res &= verify_integer_field(protocol, matset, info, "material_ids");
+            vfs_res &= verify_integer_field(protocol, matset, info, "material_ids");
             // TODO(JRC): Add a more in-depth verifier for 'material_map' that
             // verifies that it's one level deep and that each child child houses
             // an integer-style array.
-            res &= verify_object_field(protocol, matset, info, "material_map");
+            vfs_res &= verify_object_field(protocol, matset, info, "material_map");
+            vfs_res &= blueprint::o2mrelation::verify(matset, info);
 
-            res &= blueprint::o2mrelation::verify(matset, info);
+            res &= vfs_res;
         }
-        else
+        else if(matset["volume_fractions"].dtype().is_object() &&
+            verify_object_field(protocol, matset, info, "volume_fractions"))
         {
             log::info(info, protocol, "detected multi-buffer matset");
-
-            res &= verify_object_field(protocol, matset, info, "volume_fractions");
 
             const Node &vfs = matset["volume_fractions"];
             Node &vfs_info = info["volume_fractions"];
@@ -3948,6 +3953,57 @@ mesh::matset::verify(const Node &matset,
 
             res &= vfs_res;
             log::validation(vfs_info, vfs_res);
+        }
+    }
+
+    if(matset.has_child("element_ids"))
+    {
+        bool eids_res = true;
+
+        if(vfs_res)
+        {
+            if(!matset["element_ids"].dtype().is_integer() &&
+                !matset["element_ids"].dtype().is_object())
+            {
+                log::error(info, protocol, "'element_ids' isn't the correct type");
+                res &= eids_res &= false;
+            }
+            else if(matset["element_ids"].dtype().is_object() &&
+                matset["volume_fractions"].dtype().is_object())
+            {
+                const std::vector<std::string> &vf_mats = matset["volume_fractions"].child_names();
+                const std::vector<std::string> &eid_mats = matset["element_ids"].child_names();
+                const std::set<std::string> vf_matset(vf_mats.begin(), vf_mats.end());
+                const std::set<std::string> eid_matset(eid_mats.begin(), eid_mats.end());
+                if(vf_matset != eid_matset)
+                {
+                    log::error(info, protocol, "'element_ids' hierarchy must match 'volume_fractions'");
+                    eids_res &= false;
+                }
+
+                const Node &eids = matset["element_ids"];
+                Node &eids_info = info["element_ids"];
+
+                NodeConstIterator mat_it = eids.children();
+                while(mat_it.has_next())
+                {
+                    const std::string &mat_name = mat_it.next().name();
+                    eids_res &= verify_integer_field(protocol, eids, eids_info, mat_name);
+                }
+
+                res &= eids_res;
+                log::validation(eids_info, eids_res);
+            }
+            else if(matset["element_ids"].dtype().is_integer() &&
+                matset["volume_fractions"].dtype().is_number())
+            {
+                res &= eids_res &= verify_integer_field(protocol, matset, info, "element_ids");
+            }
+            else
+            {
+                log::error(info, protocol, "'element_ids' hierarchy must match 'volume_fractions'");
+                res &= eids_res &= false;
+            }
         }
     }
 
@@ -3998,7 +4054,7 @@ mesh::field::verify(const Node &field,
     bool has_basis = field.has_child("basis");
     if(!has_assoc && !has_basis)
     {
-        log::error(info, protocol, "missing child \"association\" or \"basis\"");
+        log::error(info, protocol, "missing child 'association' or 'basis'");
         res = false;
     }
     if(has_assoc)
@@ -4012,20 +4068,44 @@ mesh::field::verify(const Node &field,
 
     bool has_topo = field.has_child("topology");
     bool has_matset = field.has_child("matset");
+    bool has_topo_values = field.has_child("values");
+    bool has_matset_values = field.has_child("matset_values");
     if(!has_topo && !has_matset)
     {
-        log::error(info, protocol, "missing child \"topology\" or \"matset\"");
+        log::error(info, protocol, "missing child 'topology' or 'matset'");
         res = false;
     }
-    if(has_topo)
+
+    if(has_topo ^ has_topo_values)
+    {
+        std::ostringstream oss;
+        oss << "'" << (has_topo ? "topology" : "values") <<"'"
+            << " is present, but its companion "
+            << "'" << (has_topo ? "values" : "topology") << "'"
+            << " is missing";
+        log::error(info, protocol, oss.str());
+        res = false;
+    }
+    else if(has_topo && has_topo_values)
     {
         res &= verify_string_field(protocol, field, info, "topology");
-        res &= verify_mlarray_field(protocol, field, info, "values", 0, 1);
+        res &= verify_mlarray_field(protocol, field, info, "values", 0, 1, false);
     }
-    if(has_matset)
+
+    if(has_matset ^ has_matset_values)
+    {
+        std::ostringstream oss;
+        oss << "'" << (has_matset ? "matset" : "matset_values") <<"'"
+            << " is present, but its companion "
+            << "'" << (has_matset ? "matset_values" : "matset") << "'"
+            << " is missing";
+        log::error(info, protocol, oss.str());
+        res = false;
+    }
+    else if(has_matset && has_matset_values)
     {
         res &= verify_string_field(protocol, field, info, "matset");
-        res &= verify_mlarray_field(protocol, field, info, "matset_values", 1, 2);
+        res &= verify_mlarray_field(protocol, field, info, "matset_values", 1, 2, false);
     }
 
     // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
@@ -4074,7 +4154,7 @@ mesh::field::index::verify(const Node &field_idx,
     bool has_basis = field_idx.has_child("basis");
     if(!has_assoc && !has_basis)
     {
-        log::error(info, protocol, "missing child \"association\" or \"basis\"");
+        log::error(info, protocol, "missing child 'association' or 'basis'");
         res = false;
     }
     if(has_assoc)
@@ -4090,7 +4170,7 @@ mesh::field::index::verify(const Node &field_idx,
     bool has_matset = field_idx.has_child("matset");
     if(!has_topo && !has_matset)
     {
-        log::error(info, protocol, "missing child \"topology\" or \"matset\"");
+        log::error(info, protocol, "missing child 'topology' or 'matset'");
         res = false;
     }
     if(has_topo)
