@@ -674,7 +674,7 @@ void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node 
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
         data_node.set_external(off_dtype, (void*)topo_off.element_ptr(ei));
-        index_t elem_start_index = data_node.to_int64() + topo_is_poly;
+        index_t elem_start_index = data_node.to_int64();
         data_node.set_external(off_dtype, (void*)topo_off.element_ptr(ei+1));
         index_t elem_end_index = (ei < topo_num_elems - 1) ?
             data_node.to_int64() : topo_conn.dtype().number_of_elements();

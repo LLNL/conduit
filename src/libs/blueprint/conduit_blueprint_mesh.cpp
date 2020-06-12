@@ -1042,6 +1042,7 @@ struct TopologyMetadata
         dim_topos[topo_shape.dim]["elements/offsets"].set(topo_offsets);
 
         std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
+        std::vector< std::vector<int64> > dim_sizes(topo_shape.dim + 1);
         std::vector< int64 > dim_offsets(topo_shape.dim + 1);
 
         // Prepare Initial Values for Processing //
@@ -1097,6 +1098,7 @@ struct TopologyMetadata
             entity_parent_bag.pop_back();
 
             std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
+            std::vector<int64> &dim_size = dim_sizes[entity_dim];
             int64 &dim_offset = dim_offsets[entity_dim];
             std::map< std::set<index_t>, index_t > &dim_entity_map = dim_entity_maps[entity_dim];
             ShapeType dim_shape = topo_cascade.get_shape(entity_dim);
@@ -1119,7 +1121,8 @@ struct TopologyMetadata
                 index_t elem_outer_count =  is_3d ? entity_indices[0] : 1;
                 for(index_t oi = 0, ooff = is_3d; oi < elem_outer_count; oi++)
                 {
-                    index_t elem_inner_count = entity_indices[ooff++];
+                    index_t elem_inner_count = 
+                        is_3d ? entity_indices[ooff++] : entity_indices.size();
                     for(index_t ii = 0; ii < elem_inner_count; ii++)
                     {
                         index_t ioff = ooff + ii;
@@ -1134,6 +1137,11 @@ struct TopologyMetadata
                 index_t entity_id = dim_offset;
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
                 dim_entity_map[entity] = dim_offset++;
+
+                if (dim_shape.is_polygonal())
+                {
+                  dim_size.insert(dim_size.end(), entity.size());
+                }
 
                 dim_assocs[entity_dim][entity_id].resize(topo_shape.dim + 1);
                 dim_assocs[entity_dim][entity_id][entity_dim].insert(entity_id);
@@ -1166,32 +1174,35 @@ struct TopologyMetadata
                 embed_parents.push_back(entity_id);
                 ShapeType embed_shape = topo_cascade.get_shape(entity_dim - 1);
 
-                index_t elem_outer_count = dim_shape.is_poly() ?
-                    entity_indices[0] : dim_shape.embed_count;
-                for(index_t oi = 0, ooff = dim_shape.is_poly();
+                index_t elem_outer_count = dim_shape.is_polyhedral() ?
+                    entity_indices[0] : dim_shape.is_polygonal() ? 
+                    entity_indices.size() : dim_shape.embed_count;
+                    
+                for(index_t oi = 0, ooff = dim_shape.is_polyhedral();
                     oi < elem_outer_count; oi++)
                 {
                     index_t elem_inner_count = dim_shape.is_polyhedral() ?
-                        (entity_indices[ooff] + 1) : embed_shape.indices;
+                        (entity_indices[ooff]) : embed_shape.indices;
 
                     std::vector<int64> embed_indices;
                     for(index_t ii = 0; ii < elem_inner_count; ii++)
                     {
                         index_t ioff = ooff + (dim_shape.is_poly() ?
-                            ii : dim_shape.embedding[oi * elem_inner_count + ii]);
+                            ii + dim_shape.is_polyhedral() : dim_shape.embedding[oi * elem_inner_count + ii]);
                         embed_indices.push_back(
                             entity_indices[ioff % entity_indices.size()]);
                     }
+
                     ooff += (
-                        dim_shape.is_polyhedral() ? elem_inner_count : (
+                        dim_shape.is_polyhedral() ? elem_inner_count + 1 : (
                         dim_shape.is_polygonal() ? 1 : 0));
 
                     // TODO(JRC): This is a hack to ensure that the last edge
                     // value for polygonal edge lists is correct.
-                    if(dim_shape.is_polygonal() && oi == elem_outer_count - 1)
-                    {
-                        embed_indices[1] = entity_indices[1];
-                    }
+                    // if(dim_shape.is_polygonal() && oi == elem_outer_count - 1)
+                    // {
+                    //     embed_indices[1] = entity_indices[1];
+                    // }
 
                     entity_index_bag.push_back(embed_indices);
                     entity_dim_bag.push_back(embed_shape.dim);
@@ -1210,6 +1221,20 @@ struct TopologyMetadata
 
             dim_conn.set(DataType(int_dtype.id(), dim_buffers[di].size()));
             data_conn.to_data_type(int_dtype.id(), dim_conn);
+
+            // Generate size for polygonal mesh
+            if (di == 2)
+            {
+                Node &dim_size = dim_topos[di]["elements/sizes"];
+                if (dim_size.dtype().is_empty())
+                {
+                  Node data_size(DataType::int64(dim_sizes[di].size()),
+                       &(dim_sizes[di][0]), true);
+                  dim_size.set(DataType(int_dtype.id(), dim_sizes[di].size()));
+                  data_size.to_data_type(int_dtype.id(), dim_size);
+                }
+            }
+
             get_topology_offsets(dim_topos[di], dim_topos[di]["elements/offsets"]);
         }
     }
@@ -1723,6 +1748,12 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     const ShapeCascade topo_cascade(topo);
     const ShapeType &topo_shape = topo_cascade.get_shape();
 
+    Node topo_sizes;
+    if (topo_shape.is_polygonal())
+    {
+      topo_sizes = topo["elements/sizes"];
+    }
+
     // Discover Data Types //
 
     DataType int_dtype, float_dtype;
@@ -1738,6 +1769,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     Node topo_conn; topo_conn.set_external(topo_conn_const);
     const DataType conn_dtype(topo_conn.dtype().id(), 1);
     const DataType offset_dtype(topo_offsets.dtype().id(), 1);
+    const DataType size_dtype(topo_sizes.dtype().id(), 1);
 
     // Allocate Data Templates for Outputs //
 
@@ -1759,6 +1791,12 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     Node data_node;
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
+        index_t esize;
+        if (topo_shape.is_polygonal())
+        {
+            data_node.set_external(size_dtype, topo_sizes.element_ptr(ei));
+            esize = data_node.to_int64();
+        }
         data_node.set_external(offset_dtype, topo_offsets.element_ptr(ei));
         const index_t eoffset = data_node.to_int64();
         data_node.set_external(conn_dtype, topo_conn.element_ptr(eoffset));
@@ -1770,9 +1808,10 @@ calculate_unstructured_centroids(const conduit::Node &topo,
             fi < elem_num_faces; fi++)
         {
             data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
-            const index_t face_num_coords = topo_shape.is_poly() ?
-                data_node.to_int64() : topo_shape.indices;
-            foffset += topo_shape.is_poly();
+            const index_t face_num_coords = topo_shape.is_polyhedral() ?
+                data_node.to_int64() : topo_shape.is_polygonal() ? 
+                esize : topo_shape.indices;
+            foffset += topo_shape.is_polyhedral();
 
             for(index_t ci = 0; ci < face_num_coords; ci++)
             {
@@ -3304,6 +3343,7 @@ mesh::topology::unstructured::generate_points(const Node &topo,
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
     Node coordset;
+
     find_reference_node(topo, "coordset", coordset);
 
     TopologyMetadata topo_data(topo, coordset);
@@ -3421,6 +3461,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
+
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
         // NOTE: No centroids are generate for the lines of the geometry
@@ -3673,6 +3714,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     // Compute New Elements/Fields for corner Topology //
 
     std::vector<int64> conn_data_raw;
+    std::vector<int64> size_data_raw;
     std::vector<int64> s2d_data_raw, d2s_data_raw;
 
     Node misc_data;
@@ -3736,7 +3778,14 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
             for(index_t bfi = 0; bfi < corner_face_count; bfi++)
             {
-                conn_data_raw.push_back(corners_face_degree);
+                if (is_topo_3d)
+                {
+                  conn_data_raw.push_back(corners_face_degree);
+                }
+                else
+                {
+                  size_data_raw.push_back(corners_face_degree);
+                }
                 for(index_t fi = 0; fi < corners_face_degree - 1; fi++)
                 {
                     index_t fei = ((bfi + fi) % corner_entities.size());
@@ -3760,12 +3809,21 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     }
 
     Node &dest_conn = dest["elements/connectivity"];
+    Node &dest_size = dest["elements/sizes"];
     {
         Node raw_data;
         raw_data.set(conn_data_raw);
         raw_data.to_data_type(int_dtype.id(), dest_conn);
         raw_data.reset();
 
+        if (!is_topo_3d)
+        {
+            raw_data.set(size_data_raw);
+            raw_data.to_data_type(int_dtype.id(), dest_size);
+            raw_data.reset();
+
+            generate_offsets(dest, dest["elements/offsets"]);
+        }
         raw_data.set(s2d_data_raw);
         raw_data.to_data_type(int_dtype.id(), s2dmap);
         raw_data.reset();
