@@ -3188,6 +3188,8 @@ mesh::topology::unstructured::verify(const Node &topo,
             {
                 elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "sizes");
                 elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");   
+
+                elems_res &= blueprint::o2mrelation::verify(topo_elems, info_elems);
             }
             // BHAN This is only for polygonal so far; another "subelement" check needed for polyhedral 
         }
@@ -3217,6 +3219,17 @@ mesh::topology::unstructured::verify(const Node &topo,
                 if(chld_res && chld.has_child("offsets"))
                 {
                     chld_res &= verify_integer_field(protocol, chld, chld_info, "offsets");
+                }
+
+                // Polygonal shape
+                if(chld.has_child("shape") && 
+                   chld["shape"].dtype().is_string() &&
+                   chld["shape"].as_string() == "polygonal")
+                {
+                    chld_res &= verify_integer_field(protocol, chld, chld_info, "sizes");
+                    chld_res &= verify_integer_field(protocol, chld, chld_info, "offsets");   
+
+                    chld_res &= blueprint::o2mrelation::verify(chld, chld_info);
                 }
 
                 log::validation(chld_info,chld_res);

@@ -786,6 +786,16 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["c"]["offsets"].set(DataType::int32(5));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
+        n["elements"]["d"]["shape"].set("polygonal");
+        n["elements"]["d"]["connectivity"].set(DataType::int32(6));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["d"]["offsets"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["d"]["sizes"].set(DataType::int32(2));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["d"]["sizes"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
         n["type"].set("structured");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
     }
