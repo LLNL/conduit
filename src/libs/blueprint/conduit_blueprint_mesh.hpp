@@ -429,6 +429,18 @@ namespace matset
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
+    bool CONDUIT_BLUEPRINT_API is_multi_buffer(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
+    bool CONDUIT_BLUEPRINT_API is_uni_buffer(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
+    bool CONDUIT_BLUEPRINT_API is_element_dominant(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
+    bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::matset::index protocol interface
     //-------------------------------------------------------------------------
     namespace index
