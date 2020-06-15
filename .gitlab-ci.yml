@@ -11,39 +11,27 @@ variables:
 stages:
   - deps
   - install
-  - release_resources
-  - clean
 
 #########
 # SCRIPTS
 #########
 
-# Whether and how to update uberenv
-.run_update_uberenv: &run_update_uberenv |
-  [[ -n "${UPDATE_UBERENV}" ]] && ./scripts/ci/update-uberenv.sh "${UPDATE_UBERENV}"
-
-# How to build uberenv command
-.def_uberenv_cmd: &def_uberenv_cmd |
-  INSTALL=""
-  [[ "${UBERENV_INSTALL}" == "ON" ]] && INSTALL="--install --run_tests"
-  mkdir -p ${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}
-  PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
-  SPEC="--spec=${PKG_SPEC}"
-  UBERENV_CMD="scripts/uberenv/uberenv.py ${INSTALL} ${SPEC} ${PREFIX}"
-
-# Define the generic script for quartz (template)
-.srun_build_script:
+# Define the generic script
+.build_script:
   script:
-    - *run_update_uberenv
-    - *def_uberenv_cmd
+    # Update uberenv if variable set
+    - if [[ -n "${UPDATE_UBERENV}" ]]; then ./scripts/ci/update-uberenv.sh "${UPDATE_UBERENV}"; fi
+    # Switch between dependency and install modes
+    - INSTALL=""
+    - if [[ "${UBERENV_INSTALL}" == "ON" ]]; then INSTALL="--install --run_tests"; fi
+    # Preparing command
+    - mkdir -p ${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}
+    - PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
+    - SPEC="--spec=${PKG_SPEC}"
+    - UBERENV_CMD="scripts/uberenv/uberenv.py ${INSTALL} ${SPEC} ${PREFIX}"
+    # Build command
+    - echo "Build command -- ${UBERENV_CMD}"
     - ${UBERENV_CMD}
-
-# Define the generic script for lassen (template)
-.lsf_build_script:
-  script:
-    - *run_update_uberenv
-    - *def_uberenv_cmd
-    - set -x; lalloc ${RESOURCES} ${UBERENV_CMD}; set +x
 
 # Build modes templates:
 # A job will have one on this template to pilot the behavior of def_uberenv_cmd

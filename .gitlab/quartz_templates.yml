@@ -13,20 +13,19 @@
     - batch
     - quartz
   timeout: 3h
-  except:
-    refs:
-      - /_qnone/
-    variables:
-      - $CONDUIT_CI_QUARTZ == "OFF"
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~/_qnone/ || $CI_LASSEN == "OFF"'
+      when: never
+    - when: on_success
 
 ####
 # Generic quartz jobs
 .build_deps_on_quartz:
-  extends: [.srun_build_script, .mode_deps, .on_quartz]
+  extends: [.build_script, .mode_deps, .on_quartz]
   variables:
     LLNL_SLURM_SCHEDULER_PARAMETERS: -N 1 -t 60 -A radiuss
 
 .install_on_quartz:
-  extends: [.srun_build_script, .mode_install, .on_quartz]
+  extends: [.build_script, .mode_install, .on_quartz]
   variables:
     LLNL_SLURM_SCHEDULER_PARAMETERS: -N 1 -t 10 -A radiuss
