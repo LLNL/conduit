@@ -40,6 +40,10 @@ packages:
     buildable: False
     paths:
       openssl: /usr
+  tar:
+    buildable: False
+    paths:
+      tar: /usr
   conduit:
     version: [master]
   # python 2 constraints

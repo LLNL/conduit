@@ -175,7 +175,8 @@ script:
   # Output something every 10 minutes or Travis kills the job
   - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/ || travis_terminate 1;
+  # use -k to avoid suprises related to certs
+  - python scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/ || travis_terminate 1;
   # todo:
   #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
   #- pip install cpp-coveralls
