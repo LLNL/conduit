@@ -124,11 +124,11 @@ public:
 
     void remove(const std::string &path);
 
-    void list_child_names(std::vector<std::string> &res) const;
+    void list_child_names(std::vector<std::string> &res);
     void list_child_names(const std::string &path,
-                          std::vector<std::string> &res) const;
+                          std::vector<std::string> &res);
 
-    bool has_path(const std::string &path) const;
+    bool has_path(const std::string &path);
     
     void close();
     
@@ -167,11 +167,11 @@ public:
 
     void remove(const std::string &path);
 
-    void list_child_names(std::vector<std::string> &res) const;
+    void list_child_names(std::vector<std::string> &res);
     void list_child_names(const std::string &path,
-                          std::vector<std::string> &res) const;
+                          std::vector<std::string> &res);
 
-    bool has_path(const std::string &path) const;
+    bool has_path(const std::string &path);
     
     void close();
     
@@ -308,7 +308,7 @@ IOHandle::HandleInterface::create(const std::string &path,
     {
         // magic interface
         // path is the path to the root file
-        res = new SidreHandle(path,protocol,options);
+        res = new SidreIOHandle(path,protocol,options);
     }
     else if( protocol == "hdf5" )
     {
@@ -480,7 +480,7 @@ BasicHandle::write(const Node &node,
 
 //-----------------------------------------------------------------------------
 void
-BasicHandle::list_child_names(std::vector<std::string> &res) const
+BasicHandle::list_child_names(std::vector<std::string> &res)
 {
     if( open_mode() == "w")
     {
@@ -493,7 +493,7 @@ BasicHandle::list_child_names(std::vector<std::string> &res) const
 //-----------------------------------------------------------------------------
 void
 BasicHandle::list_child_names(const std::string &path,
-                              std::vector<std::string> &res) const
+                              std::vector<std::string> &res)
 {
     if( open_mode() == "w")
     {
@@ -521,7 +521,7 @@ BasicHandle::remove(const std::string &path)
 
 //-----------------------------------------------------------------------------
 bool 
-BasicHandle::has_path(const std::string &path) const
+BasicHandle::has_path(const std::string &path)
 {
     if( open_mode() == "w")
     {
@@ -699,7 +699,7 @@ HDF5Handle::write(const Node &node,
 
 //-----------------------------------------------------------------------------
 void
-HDF5Handle::list_child_names(std::vector<std::string> &res) const
+HDF5Handle::list_child_names(std::vector<std::string> &res)
 {
     if( open_mode() == "w")
     {
@@ -712,7 +712,7 @@ HDF5Handle::list_child_names(std::vector<std::string> &res) const
 //-----------------------------------------------------------------------------
 void
 HDF5Handle::list_child_names(const std::string &path,
-                             std::vector<std::string> &res) const
+                             std::vector<std::string> &res)
 {
     if( open_mode() == "w")
     {
@@ -738,7 +738,7 @@ HDF5Handle::remove(const std::string &path)
 
 //-----------------------------------------------------------------------------
 bool 
-HDF5Handle::has_path(const std::string &path) const
+HDF5Handle::has_path(const std::string &path) 
 {
     if( open_mode() == "w")
     {
@@ -925,7 +925,7 @@ IOHandle::remove(const std::string &path)
 
 //-----------------------------------------------------------------------------
 void
-IOHandle::list_child_names(std::vector<std::string> &names) const
+IOHandle::list_child_names(std::vector<std::string> &names)
 {
     names.clear();
     if(m_handle != NULL)
@@ -942,7 +942,7 @@ IOHandle::list_child_names(std::vector<std::string> &names) const
 //-----------------------------------------------------------------------------
 void
 IOHandle::list_child_names(const std::string &path,
-                           std::vector<std::string> &names) const
+                           std::vector<std::string> &names)
 {
     names.clear();
     if(m_handle != NULL)
@@ -957,7 +957,7 @@ IOHandle::list_child_names(const std::string &path,
 
 //-----------------------------------------------------------------------------
 bool
-IOHandle::has_path(const std::string &path) const
+IOHandle::has_path(const std::string &path)
 {
     if(m_handle != NULL)
     {

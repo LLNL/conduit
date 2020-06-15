@@ -948,6 +948,18 @@ base64_decode(const void *src,
 }
 
 //-----------------------------------------------------------------------------
+bool
+string_is_integer(const std::string &s)
+{
+    int v = -1;
+    std::istringstream iss(s);
+    iss >> v;
+
+    return !iss.fail();
+}
+
+
+//-----------------------------------------------------------------------------
 std::string
 float64_to_string(float64 value)
 {

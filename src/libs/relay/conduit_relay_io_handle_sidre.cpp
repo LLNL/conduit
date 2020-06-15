@@ -57,6 +57,7 @@
 
 #include "conduit_relay_io.hpp"
 #include "conduit_relay_io_handle.hpp"
+#include "conduit_relay_io_identify_protocol.hpp"
 #include "conduit_relay_io_handle_sidre.hpp"
 
 
@@ -93,11 +94,11 @@ namespace io
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// SidreHandle Implementation 
+// SidreIOHandle Implementation 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-SidreHandle::SidreHandle(const std::string &path,
+SidreIOHandle::SidreIOHandle(const std::string &path,
                          const std::string &protocol,
                          const Node &options)
 : HandleInterface(path,protocol,options)
@@ -106,14 +107,14 @@ SidreHandle::SidreHandle(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
-SidreHandle::~SidreHandle()
+SidreIOHandle::~SidreIOHandle()
 {
     close();
 }
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::open()
+SidreIOHandle::open()
 {
     close();
 
@@ -122,76 +123,97 @@ SidreHandle::open()
     HandleInterface::open();
 
     if( open_mode() == "w" )
-        CONDUIT_ERROR("SidreHandle does not support write mode "
+        CONDUIT_ERROR("SidreIOHandle does not support write mode "
                       "(open_mode = 'w')");
+
+    // two cases,
+    //  a standalone file with a sidre style hierarchy
+    //  a collection of files with a spio generated root
 
     // the root file will be what is passed to path
     m_root_file = path();
 
     if( !utils::is_file( m_root_file ) )
-        CONDUIT_ERROR("Invalid sidre root file: " << m_root_file);
+        CONDUIT_ERROR("Invalid sidre file: " << m_root_file);
 
     std::string m_root_protocol = detect_root_protocol();
 
+    //
     m_root_handle.open(m_root_file, m_root_protocol);
 
-    // check for standard sidre root file entries, we need:
-    // file_pattern, tree_pattern, number_of_trees, number_of_files, protocol
+    // check the simple case
+    if(m_root_handle.has_path("sidre"))
+    {
+        // in this case, we only use the root handle
+        // and sidre meta 0
+        m_has_spio_index = false;
+        m_num_trees = 0;
+        m_num_files = 0;
+        m_file_pattern = "";
+        m_tree_pattern = "";
+    }
+    else
+    {
+        // check for standard sidre root file entries, we need:
+        // file_pattern, tree_pattern, number_of_trees, number_of_files, protocol
 
-    if(!m_root_handle.has_path("file_pattern"))
-        CONDUIT_ERROR("Sidre root file missing entry: file_pattern")
+        if(!m_root_handle.has_path("file_pattern"))
+            CONDUIT_ERROR("Sidre root file missing entry: file_pattern")
 
-    if(!m_root_handle.has_path("tree_pattern"))
-        CONDUIT_ERROR("Sidre root file missing entry: tree_pattern")
+        if(!m_root_handle.has_path("tree_pattern"))
+            CONDUIT_ERROR("Sidre root file missing entry: tree_pattern")
 
-    if(!m_root_handle.has_path("number_of_trees"))
-        CONDUIT_ERROR("Sidre root file missing entry: number_of_trees")
+        if(!m_root_handle.has_path("number_of_trees"))
+            CONDUIT_ERROR("Sidre root file missing entry: number_of_trees")
 
-    if(!m_root_handle.has_path("number_of_files"))
-        CONDUIT_ERROR("Sidre root file missing entry: number_of_files")
+        if(!m_root_handle.has_path("number_of_files"))
+            CONDUIT_ERROR("Sidre root file missing entry: number_of_files")
 
-    if(!m_root_handle.has_path("protocol"))
-        CONDUIT_ERROR("Sidre root file missing entry: protocol")
+        if(!m_root_handle.has_path("protocol"))
+            CONDUIT_ERROR("Sidre root file missing entry: protocol")
 
-    // read the standard entries
-    Node root_info; 
-    m_root_handle.read("file_pattern",root_info["file_pattern"]);
-    m_root_handle.read("tree_pattern",root_info["tree_pattern"]);
-    m_root_handle.read("number_of_trees",root_info["number_of_trees"]);
-    m_root_handle.read("number_of_files",root_info["number_of_files"]);
-    m_root_handle.read("protocol", root_info["protocol"]);
+        // read the standard entries
+        Node root_info; 
+        m_root_handle.read("file_pattern",root_info["file_pattern"]);
+        m_root_handle.read("tree_pattern",root_info["tree_pattern"]);
+        m_root_handle.read("number_of_trees",root_info["number_of_trees"]);
+        m_root_handle.read("number_of_files",root_info["number_of_files"]);
+        m_root_handle.read("protocol", root_info["protocol"]);
 
-    m_num_trees = root_info["number_of_trees"].to_int();
-    m_num_files = root_info["number_of_files"].to_int();
+        m_num_trees = root_info["number_of_trees"].to_int();
+        m_num_files = root_info["number_of_files"].to_int();
 
-    m_file_pattern = root_info["file_pattern"].as_string();
-    m_tree_pattern = root_info["tree_pattern"].as_string();
+        m_file_pattern = root_info["file_pattern"].as_string();
+        m_tree_pattern = root_info["tree_pattern"].as_string();
 
-    // read protocol/name to obtain correct protocol for data
-    // we expect a string like the following:
-    //    sidre_zzz
-    // where zzz is that value we want as the file protocol
+        // read protocol/name to obtain correct protocol for data
+        // we expect a string like the following:
+        //    sidre_zzz
+        // where zzz is that value we want as the file protocol
 
-    m_file_protocol = root_info["protocol/name"].as_string();
-    std::string curr,next;
-    utils::split_string(m_file_protocol,"_",curr,next);
-    m_file_protocol = next;
+        m_file_protocol = root_info["protocol/name"].as_string();
+        std::string curr,next;
+        utils::split_string(m_file_protocol,"_",curr,next);
+        m_file_protocol = next;
 
-    std::cout << "file proto = " << m_file_protocol << std::endl;
+        std::cout << "file proto = " << m_file_protocol << std::endl;
+
+        m_has_spio_index = true;
+    }
     m_open = true;
 }
 
 
 //-----------------------------------------------------------------------------
 bool
-SidreHandle::is_open() const
+SidreIOHandle::is_open() const
 {
     return m_open;
 }
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::read(Node &node)
+SidreIOHandle::read(Node &node)
 {
     if( open_mode() == "w")
     {
@@ -210,7 +232,7 @@ SidreHandle::read(Node &node)
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::read(const std::string &path,
+SidreIOHandle::read(const std::string &path,
                  Node &node)
 {
     if( open_mode() == "w")
@@ -235,27 +257,32 @@ SidreHandle::read(const std::string &path,
     std::string p_next;
     utils::split_path(path,p_first,p_next);
 
-    bool is_number = true;
-    if(p_first == "root")
+    if(m_has_spio_index)
     {
-        read_from_root(p_next,node);
+        if(p_first == "root")
+        {
+            read_from_root(p_next,node);
+        }
+        else
+        {
+            if(!utils::string_is_integer(p_first))
+            {
+                // TODO:ERROR!
+            }
+
+            int tree_id = utils::string_to_value<int>(p_first);
+            read_from_sidre_tree(tree_id,p_next,node);
+        }
     }
-    else if(is_number) // TODO: We are assuming this is a number, yikes!
+    else //
     {
-        int tree_id = -1;
-        std::istringstream iss(p_first);
-        iss >> tree_id;
-        read_from_sidre_tree(tree_id,p_next,node);
-    }
-    else
-    {
-        // TODO BAD PATH
+        read_from_sidre_tree(0,path,node);
     }
 }
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::write(const Node & /*node*/) // node is unused
+SidreIOHandle::write(const Node & /*node*/) // node is unused
 {
     // throw an error if we opened in "r" mode
     if( open_mode() == "r")
@@ -271,7 +298,7 @@ SidreHandle::write(const Node & /*node*/) // node is unused
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::write(const Node & /*node*/, // node is unused
+SidreIOHandle::write(const Node & /*node*/, // node is unused
                    const std::string & /*path*/ ) // path is unused
 {
     // throw an error if we opened in "r" mode
@@ -288,7 +315,7 @@ SidreHandle::write(const Node & /*node*/, // node is unused
 
 //-----------------------------------------------------------------------------
 void
-SidreHandle::list_child_names(std::vector<std::string> &res) const
+SidreIOHandle::list_child_names(std::vector<std::string> &res)
 {
     if( open_mode() == "w")
     {
@@ -296,24 +323,31 @@ SidreHandle::list_child_names(std::vector<std::string> &res) const
                       " (mode = 'w')");
     }
 
-    // root case of the file name populate with root + tree_ids
-
-    res.clear();
-    res.push_back("root");
-
-    std::ostringstream oss;
-    for(int i=0;i<m_num_trees;i++)
+    if(m_has_spio_index)
     {
-        oss.str("");
-        oss << i;
-        res.push_back(oss.str());
+        // root case of the file name populate with root + tree_ids
+        res.clear();
+        res.push_back("root");
+
+        std::ostringstream oss;
+        for(int i=0;i<m_num_trees;i++)
+        {
+            oss.str("");
+            oss << i;
+            res.push_back(oss.str());
+        }
+    }
+    else
+    {
+        // we use tree id zero for non index case
+        sidre_meta_tree_list_child_names(0,"",res);
     }
 }
 
 //-----------------------------------------------------------------------------
 void
-SidreHandle::list_child_names(const std::string &path,
-                             std::vector<std::string> &res) const
+SidreIOHandle::list_child_names(const std::string &path,
+                             std::vector<std::string> &res)
 {
     if( open_mode() == "w")
     {
@@ -321,26 +355,39 @@ SidreHandle::list_child_names(const std::string &path,
                       " (mode = 'w')");
     }
 
-    std::string p_first;
-    std::string p_next;
-    utils::split_path(path,p_first,p_next);
+    if(m_has_spio_index)
+    {
+        std::string p_first;
+        std::string p_next;
+        utils::split_path(path,p_first,p_next);
 
-    if(p_first == "root")
-    {
-        m_root_handle.list_child_names(p_next,res);
+        if(p_first == "root")
+        {
+            m_root_handle.list_child_names(p_next,res);
+        }
+        else 
+        {
+            if(!utils::string_is_integer(p_first))
+            {
+                CONDUIT_ERROR("SidreIOHandle: path must start with 'root' or an "
+                              " integer that represents a sidre tree id. "
+                              " ex: 'root/path'  '0/path', etc.");
+            }
+
+            int tree_id = utils::string_to_value<int>(p_first);
+            sidre_meta_tree_list_child_names(tree_id,path,res);
+        }
     }
-    else // TODO: We are assuming this is a number, yikes!
+    else
     {
-        int tree_id = -1;
-        std::istringstream iss(p_first);
-        iss >> tree_id;
-        //  TODO: GET FROM SIDRE META!
+        // we use tree id zero for non index case
+        sidre_meta_tree_list_child_names(0,path,res);
     }
 }
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::remove(const std::string &/*path*/) // path is unused
+SidreIOHandle::remove(const std::string &/*path*/) // path is unused
 {
     // throw an error if we opened in "r" mode
     if( open_mode() == "r")
@@ -355,7 +402,7 @@ SidreHandle::remove(const std::string &/*path*/) // path is unused
 
 //-----------------------------------------------------------------------------
 bool 
-SidreHandle::has_path(const std::string &path) const
+SidreIOHandle::has_path(const std::string &path)
 {
     if( open_mode() == "w")
     {
@@ -364,20 +411,32 @@ SidreHandle::has_path(const std::string &path) const
     }
 
     bool res = false;
-    std::string p_first;
-    std::string p_next;
-    utils::split_path(path,p_first,p_next);
 
-    if(p_first == "root")
+    if(m_has_spio_index)
     {
-        res = m_root_handle.has_path(p_next);
+        std::string p_first;
+        std::string p_next;
+        utils::split_path(path,p_first,p_next);
+
+        if(p_first == "root")
+        {
+            res = m_root_handle.has_path(p_next);
+        }
+        else
+        {
+            if(!utils::string_is_integer(p_first))
+            {
+                // TODO:ERROR!
+            }
+
+            int tree_id = utils::string_to_value<int>(p_first);
+            sidre_meta_tree_has_path(tree_id,p_next);
+        }
     }
-    else // TODO: We are assuming this is a number, yikes!
+    else
     {
-        int tree_id = -1;
-        std::istringstream iss(p_first);
-        iss >> tree_id;
-        //  GET FROM SIDRE META!
+        // we use tree id zero for non index case
+        sidre_meta_tree_has_path(0,path);
     }
 
     return res;
@@ -386,19 +445,15 @@ SidreHandle::has_path(const std::string &path) const
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::close()
+SidreIOHandle::close()
 {
     m_open = false;
     m_root_handle.close();
 
+    //
     // TODO: clear should call close when handles are destructed ...
     // double check
-    // for( std::map<int,IOHandle>::iterator itr = m_file_handles.begin();
-    //      itr != m_file_handles.end();
-    //      itr++)
-    // {
-    //     itr->second.close();
-    // }
+
     m_file_handles.clear();
     m_sidre_meta.clear();
 }
@@ -409,7 +464,7 @@ SidreHandle::close()
 
 //-----------------------------------------------------------------------------
 std::string 
-SidreHandle::root_file_directory() const
+SidreIOHandle::root_file_directory() const
 {
     std::string curr, next;
     utils::rsplit_file_path(m_root_file, curr, next);
@@ -419,19 +474,21 @@ SidreHandle::root_file_directory() const
 
 //-------------------------------------------------------------------//
 std::string 
-SidreHandle::detect_root_protocol() const
+SidreIOHandle::detect_root_protocol() const
 {
     //
-    // TODO: detect root file type -- could be hdf5, json, or yaml
-    //
-    return "hdf5";
+    // TODO: detect underlying root file type -- 
+    //  could be hdf5, json, or yaml
+    std::string ftype;
+    identify_file_type(path(),ftype);
+    return ftype;
 }
 
 //-------------------------------------------------------------------//
 // adapted from VisIt, avtBlueprintTreeCache
 //              ascent, hola, BlueprintTreePathGenerator
 std::string 
-SidreHandle::expand_pattern(const std::string pattern,
+SidreIOHandle::expand_pattern(const std::string pattern,
                             int idx) const
 {
     //
@@ -471,7 +528,7 @@ SidreHandle::expand_pattern(const std::string pattern,
 //-------------------------------------------------------------------//
 // adapted from VisIt, avtBlueprintTreeCache
 int
-SidreHandle::generate_file_id_for_tree(int tree_id) const
+SidreIOHandle::generate_file_id_for_tree(int tree_id) const
 {
     int file_id = -1;
 
@@ -500,7 +557,7 @@ SidreHandle::generate_file_id_for_tree(int tree_id) const
 //-------------------------------------------------------------------//
 // adapted from VisIt, avtBlueprintTreeCache
 std::string
-SidreHandle::generate_file_path(int tree_id) const
+SidreIOHandle::generate_file_path(int tree_id) const
 {
     // TODO: Map for tree_ids to file_ids?
     int file_id = generate_file_id_for_tree(tree_id);
@@ -511,7 +568,7 @@ SidreHandle::generate_file_path(int tree_id) const
 //-------------------------------------------------------------------//
 // adapted from VisIt, avtBlueprintTreeCache
 std::string
-SidreHandle::generate_tree_path(int tree_id) const
+SidreIOHandle::generate_tree_path(int tree_id) const
 {
     // the tree path should always end in a /
     std::string res = expand_pattern(m_tree_pattern,tree_id);
@@ -530,7 +587,7 @@ SidreHandle::generate_tree_path(int tree_id) const
 // adapted from VisIt, avtBlueprintTreeCache
 //-----------------------------------------------------------------------------
 void
-SidreHandle::generate_domain_to_file_map(int num_domains,
+SidreIOHandle::generate_domain_to_file_map(int num_domains,
                                          int num_files,
                                          Node &out) const
 {
@@ -575,7 +632,7 @@ SidreHandle::generate_domain_to_file_map(int num_domains,
 // Helper that expands a sidre groups's meta path to the expected file path 
 //---------------------------------------------------------------------------//
 std::string
-SidreHandle::generate_sidre_meta_group_path(const std::string &tree_path) const
+SidreIOHandle::generate_sidre_meta_group_path(const std::string &tree_path) const
 {
     // sidre/groups/ga/groups/gb/groups/gc/.../groups/gn
 
@@ -609,7 +666,7 @@ SidreHandle::generate_sidre_meta_group_path(const std::string &tree_path) const
 // Helper that expands a sidre view's meta path to the expected file path
 //---------------------------------------------------------------------------//
 std::string
-SidreHandle::generate_sidre_meta_view_path(const std::string &tree_path) const
+SidreIOHandle::generate_sidre_meta_view_path(const std::string &tree_path) const
 {
     // sidre/groups/ga/groups/gb/groups/gc/.../views/gn
 
@@ -639,8 +696,59 @@ SidreHandle::generate_sidre_meta_view_path(const std::string &tree_path) const
 }
 
 //----------------------------------------------------------------------------/
+bool
+SidreIOHandle::sidre_meta_tree_has_path(int tree_id,
+                                        const std::string &path)
+{
+    prepare_sidre_meta_tree(tree_id,path);
+
+    Node &sidre_meta = m_sidre_meta[tree_id];
+
+    std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
+    std::string sidre_mtree_view  = generate_sidre_meta_view_path(path);
+
+    return sidre_meta.has_path(sidre_mtree_group) || 
+           sidre_meta.has_path(sidre_mtree_view);
+
+}
+
+//----------------------------------------------------------------------------/
 void
-SidreHandle::load_sidre_tree(Node &sidre_meta,
+SidreIOHandle::sidre_meta_tree_list_child_names(int tree_id,
+                                                const std::string &path,
+                                                std::vector<std::string> &res)
+{
+    res.clear();
+    // this will throw an error if we try to access a bad path
+    prepare_sidre_meta_tree(tree_id,path);
+
+    Node &sidre_meta = m_sidre_meta[tree_id];
+
+    std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
+
+    if(sidre_meta.has_path(sidre_mtree_group))
+    {
+        // group case, enum groups then views
+        NodeConstIterator g_itr = sidre_meta[sidre_mtree_group]["groups"].children();
+        while(g_itr.has_next())
+        {
+            g_itr.next();
+            res.push_back(g_itr.name());
+        }
+
+        NodeConstIterator v_itr = sidre_meta[sidre_mtree_group]["views"].children();
+        while(v_itr.has_next())
+        {
+            v_itr.next();
+            res.push_back(v_itr.name());
+        }
+    }    
+}
+
+
+//----------------------------------------------------------------------------/
+void
+SidreIOHandle::load_sidre_tree(Node &sidre_meta,
                              int tree_id,
                              const std::string &tree_path,
                              const std::string &curr_path,
@@ -701,7 +809,7 @@ SidreHandle::load_sidre_tree(Node &sidre_meta,
 
 //----------------------------------------------------------------------------/
 void
-SidreHandle::load_sidre_group(Node &sidre_meta,
+SidreIOHandle::load_sidre_group(Node &sidre_meta,
                               int tree_id,
                               const std::string &group_path,
                               Node &out)
@@ -740,7 +848,7 @@ SidreHandle::load_sidre_group(Node &sidre_meta,
 
 //----------------------------------------------------------------------------/
 void
-SidreHandle::load_sidre_view(Node &sidre_meta_view,
+SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
                              int tree_id,
                              const std::string &view_path,
                              Node &out)
@@ -897,7 +1005,7 @@ SidreHandle::load_sidre_view(Node &sidre_meta_view,
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::read_from_root(const std::string &path, Node &node)
+SidreIOHandle::read_from_root(const std::string &path, Node &node)
 {
     // skip cache first 
     if(!path.empty())
@@ -908,7 +1016,7 @@ SidreHandle::read_from_root(const std::string &path, Node &node)
 
 //-----------------------------------------------------------------------------
 void
-SidreHandle::prepare_file_handle(int tree_id)
+SidreIOHandle::prepare_file_handle(int tree_id)
 {
     // find if the have the correct io handle open already
     int file_id = generate_file_id_for_tree(tree_id);
@@ -922,115 +1030,129 @@ SidreHandle::prepare_file_handle(int tree_id)
 }
 
 //-----------------------------------------------------------------------------
+void
+SidreIOHandle::prepare_sidre_meta_tree(int tree_id,
+                                       const std::string &path)
+{
+    Node &sidre_meta = m_sidre_meta[tree_id];
+
+    // check for read at root of the file, for this case we 
+    // need to read the entire sidre tree
+    if(path.empty() || path == "/")
+    {
+        read_from_file_tree(tree_id, "sidre", sidre_meta);
+    }
+    else // subtree read
+    {
+        std::string sidre_mtree_view  = generate_sidre_meta_view_path(path);
+        std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
+
+        //BP_PLUGIN_INFO("fetch sidre meta tree: "<< tree_path);
+        
+        // this path will either be a sidre group or a sidre view
+        // check if either exists cached
+        if( !sidre_meta.has_path(sidre_mtree_group) ||
+            !sidre_meta.has_path(sidre_mtree_view) )
+        {   
+            // if not cached, we need to fetch
+
+            // check to see if we have a group or view
+            if( file_tree_has_path(tree_id, "sidre/" + sidre_mtree_group) )
+            {
+                // we have a group, read the meta data
+                read_from_file_tree(tree_id, "sidre/" + sidre_mtree_group,
+                                    sidre_meta[sidre_mtree_group]);
+
+            }
+            else if( file_tree_has_path(tree_id, "sidre/" + sidre_mtree_view) )
+            {
+                // we have a view, read the meta data
+                read_from_file_tree(tree_id, "sidre/" + sidre_mtree_view,
+                                    sidre_meta[sidre_mtree_view]);
+            }
+            else
+            {
+                // TODO: ADJ ERROR MESSAGE FOR NON SPIO INDEX CASE
+                CONDUIT_ERROR("Failed to read tree path: " << std::endl
+                            << "Expected to find Sidre Group: "
+                            << tree_id << "/sidre/" << sidre_mtree_group
+                            << " or "
+                            << "Sidre View: "
+                            << tree_id << "/sidre/" << sidre_mtree_view);
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 bool
-SidreHandle::file_tree_has_path(int tree_id,
+SidreIOHandle::file_tree_has_path(int tree_id,
                                 const std::string &path)
 {
-    prepare_file_handle(tree_id);
-    int file_id = generate_file_id_for_tree(tree_id);
-    // find the proper path for the tree inside the file
-    std::string full_path = generate_tree_path(tree_id) + path;
-    // check if the file handle has the expected path
-    return m_file_handles[file_id].has_path(full_path);
+    if(m_has_spio_index)
+    {
+        prepare_file_handle(tree_id);
+        int file_id = generate_file_id_for_tree(tree_id);
+        // find the proper path for the tree inside the file
+        std::string full_path = generate_tree_path(tree_id) + path;
+        // check if the file handle has the expected path
+        return m_file_handles[file_id].has_path(full_path);
+    }
+    else
+    {
+        return m_root_handle.has_path(path);
+    }
 }
 
 //-----------------------------------------------------------------------------
 void 
-SidreHandle::read_from_file_tree(int tree_id,
+SidreIOHandle::read_from_file_tree(int tree_id,
                                  const std::string &path,
                                  Node &node)
 {
-    prepare_file_handle(tree_id);
-    int file_id = generate_file_id_for_tree(tree_id);
-
-    // find the proper path for the tree inside the file
-    std::string full_path = generate_tree_path(tree_id) + path;
-
-    std::cout << "fetch:" << full_path << std::endl;
-
-    if(full_path.empty() || full_path == "/")
+    if(m_has_spio_index) // multi-tree with index case
     {
-        m_file_handles[file_id].read(node);
+        prepare_file_handle(tree_id);
+        int file_id = generate_file_id_for_tree(tree_id);
+
+        // find the proper path for the tree inside the file
+        std::string full_path = generate_tree_path(tree_id) + path;
+
+        std::cout << "fetch:" << full_path << std::endl;
+
+        if(full_path.empty() || full_path == "/")
+        {
+            m_file_handles[file_id].read(node);
+        }
+        else
+        {
+            m_file_handles[file_id].read(full_path,node);
+        }
     }
-    else
+    else // simple case
     {
-        m_file_handles[file_id].read(full_path,node);
+        read_from_root(path,node);
     }
 }
 
 //-----------------------------------------------------------------------------
 void
-SidreHandle::read_from_sidre_tree(int tree_id,
+SidreIOHandle::read_from_sidre_tree(int tree_id,
                                   const std::string &path,
                                   Node &out)
 {
-    // if( protocol == "sidre_hdf5" )
-    // {
+    // if we don't already have it cached, this will fetch
+    // the proper sidre meta data
+    prepare_sidre_meta_tree(tree_id,path);
 
-    //Node &sidre_meta = tree_cache.Cache().FetchSidreMetaTree(tree_id);
+    // start a top level traversal
+    // call load sidre variant that uses existing sidre meta tree
     Node &sidre_meta = m_sidre_meta[tree_id];
-
-    std::string sidre_mtree_view  = generate_sidre_meta_view_path(path);
-    std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
-
-    // this path will either be a sidre group or a sidre view
-    // check if either exists cached
-
-    //BP_PLUGIN_INFO("fetch sidre tree: "<< tree_path);
-
-    if( !sidre_meta.has_path(sidre_mtree_group) ||
-        !sidre_meta.has_path(sidre_mtree_view) )
-    {
-        // has_path(tree_id,path)
-
-        // check to see if we have a group or view
-        if( file_tree_has_path(tree_id, "sidre/" + sidre_mtree_group) )
-        {
-            // we have a group, read the meta data
-            read_from_file_tree(tree_id, "sidre/" + sidre_mtree_group,
-                                sidre_meta[sidre_mtree_group]);
-
-        }
-        else if( file_tree_has_path(tree_id, "sidre/" + sidre_mtree_view) )
-        {
-            // we have a view, read the meta data
-            read_from_file_tree(tree_id, "sidre/" + sidre_mtree_view,
-                                sidre_meta[sidre_mtree_view]);
-        }
-        else
-        {
-            CONDUIT_ERROR("Failed to read tree path: " << std::endl
-                          << "Expected to find Sidre Group: "
-                          << tree_id << "/sidre/" << sidre_mtree_group
-                          << " or "
-                          << "Sidre View: "
-                          << tree_id << "/sidre/" << sidre_mtree_view);
-        }
-    }
-
     load_sidre_tree(sidre_meta,
                     tree_id,
                     path,
                     "",
                     out);
-
-    // // start a top level traversal
-    // LoadSidreTree(sidre_meta,
-    //               tree_cache,
-    //               tree_id,
-    //               tree_root,
-    //               tree_path,
-    //               "",
-    //               out);
-    // visitTimer->StopTimer(t_sidre_tree, "LoadSidreTree");
-
-    // }
-    // else
-    // {
-    //     // error
-    //     // BP_PLUGIN_EXCEPTION1( InvalidVariableException,
-    //     //                       "unknown protocol" << protocol);
-    // }
 }
 
 

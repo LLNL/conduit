@@ -49,16 +49,16 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// SidreHandle -- IO Handle implementation for Sidre Style Files
+// SidreIOHandle -- IO Handle implementation for Sidre Style Files
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class SidreHandle: public IOHandle::HandleInterface
+class SidreIOHandle: public IOHandle::HandleInterface
 {
 public:
-    SidreHandle(const std::string &path,
+    SidreIOHandle(const std::string &path,
                const std::string &protocol,
                const Node &options);
-    virtual ~SidreHandle();
+    virtual ~SidreIOHandle();
 
     void open();
 
@@ -75,11 +75,11 @@ public:
 
     void remove(const std::string &path);
 
-    void list_child_names(std::vector<std::string> &res) const;
+    void list_child_names(std::vector<std::string> &res);
     void list_child_names(const std::string &path,
-                          std::vector<std::string> &res) const;
+                          std::vector<std::string> &res);
 
-    bool has_path(const std::string &path) const;
+    bool has_path(const std::string &path);
 
     void close();
 
@@ -127,6 +127,16 @@ private:
                               Node &node);
 
     void prepare_file_handle(int tree_id);
+    void prepare_sidre_meta_tree(int tree_id,
+                                 const std::string &path);
+
+    bool sidre_meta_tree_has_path(int tree_id,
+                             const std::string &path);
+
+    void sidre_meta_tree_list_child_names(int tree_id,
+                                          const std::string &path,
+                                          std::vector<std::string> &res);
+                                     
 
     bool file_tree_has_path(int tree_id,
                             const std::string &path);
@@ -137,6 +147,8 @@ private:
                              Node &node);
 
     bool                     m_open;
+    bool                     m_has_spio_index;
+
     int                      m_num_trees;
     int                      m_num_files;
 

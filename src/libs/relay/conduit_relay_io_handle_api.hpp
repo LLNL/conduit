@@ -97,10 +97,10 @@ public:
                const std::string &path);
 
     /// list child names at root of handle
-    void list_child_names(std::vector<std::string> &res) const;
+    void list_child_names(std::vector<std::string> &res);
     /// list child names at subpath
     void list_child_names(const std::string &path,
-                          std::vector<std::string> &res) const;
+                          std::vector<std::string> &res);
 
     // TODO: options variants for read and write above? with update of 
     // above options with passed?
@@ -109,7 +109,7 @@ public:
     void remove(const std::string &path);
 
     /// check if given path exists
-    bool has_path(const std::string &path) const;
+    bool has_path(const std::string &path);
 
     // FUTURE: also provide access to read schema
     // void read_schema(Schema &schema);
@@ -143,11 +143,11 @@ public:
         virtual void write(const Node &node) = 0;
         virtual void write(const Node &node,
                    const std::string &path) = 0;
-        virtual void list_child_names(std::vector<std::string> &res) const = 0;
+        virtual void list_child_names(std::vector<std::string> &res) = 0;
         virtual void list_child_names(const std::string &path,
-                              std::vector<std::string> &res) const = 0;
+                              std::vector<std::string> &res) = 0;
         virtual void remove(const std::string &path) = 0;
-        virtual bool has_path(const std::string &path) const = 0;
+        virtual bool has_path(const std::string &path) = 0;
         virtual void close() = 0;
 
         // factory helper methods used by interface class 

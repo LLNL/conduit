@@ -143,6 +143,20 @@ identify_protocol(const std::string &path,
 
 }
 
+//---------------------------------------------------------------------------//
+void
+identify_file_type(const std::string &path,
+                  std::string &file_type)
+{
+    // default to unknown
+    file_type = "unknown";
+
+    // TODO: HARD WIRED!
+    file_type = "hdf5";
+
+    // check for, hdf5, json, or yaml
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::io --
