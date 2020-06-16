@@ -121,7 +121,7 @@ env:
       BLT_CXX_STD=c++11
 
 before_install:
-  - sudo gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys BA9EF27F
+  - gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys BA9EF27F
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get -y install binutils
   - sudo apt-get -y install gcc-4.8
