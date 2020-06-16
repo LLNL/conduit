@@ -48,6 +48,7 @@ stages:
       COMPILER_CC: gcc-5
       COMPILER_CXX: g++-5
       COMPILER_FC: gfortran-5
+      COMPILER_SPEC: gcc@5
     strategy:
       matrix:
         shared_minimal:
@@ -161,7 +162,7 @@ stages:
            which python
            python --version
            # setup spack spec
-           export SPACK_SPEC="%gcc@5"
+           export SPACK_SPEC="%${COMPILER_SPEC}"
            # mpi
            if [ $ENABLE_MPI  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+mpi"; fi
            if [ $ENABLE_MPI  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
@@ -319,6 +320,7 @@ stages:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
       COMPILER_FC: gfortran
+      COMPILER_SPEC: gcc
     strategy:
       matrix:
         shared_py36:
@@ -366,6 +368,8 @@ stages:
            export APT_PKGS="$APT_PKGS libreadline-dev"
            export APT_PKGS="$APT_PKGS libsqlite3-dev"
            export APT_PKGS="$APT_PKGS libbz2-dev"
+           export APT_PKGS="$APT_PKGS openmpi-bin"
+           export APT_PKGS="$APT_PKGS libopenmpi-dev"
            # install pkgs we need
            sudo apt-get -y install $APT_PKGS
         displayName: 'Prepare build env'
@@ -380,7 +384,7 @@ stages:
            which python
            python --version
            # setup spack spec
-           export SPACK_SPEC="%gcc"
+           export SPACK_SPEC="%${COMPILER_SPEC}"
            # mpi
            if [ $ENABLE_MPI  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+mpi"; fi
            if [ $ENABLE_MPI  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
@@ -553,6 +557,7 @@ stages:
     variables:
       COMPILER_CC: clang
       COMPILER_CXX: clang++
+      COMPILER_SPEC: clang
     strategy:
       matrix:
         shared_py36:
@@ -614,7 +619,7 @@ stages:
            which python
            python --version
            # setup spack spec
-           export SPACK_SPEC="%clang"
+           export SPACK_SPEC="%${COMPILER_SPEC}"
            # mpi
            if [ $ENABLE_MPI  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+mpi"; fi
            if [ $ENABLE_MPI  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
@@ -634,6 +639,7 @@ stages:
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
+           if [ $ENABLE_MPI = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^mpich"; fi
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
