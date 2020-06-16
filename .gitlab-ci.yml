@@ -5,7 +5,7 @@
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  INSTALL_ROOT: ${CI_BUILDS_DIR}/conduit/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}/uberenv_libs
+  INSTALL_ROOT: ${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}/uberenv_libs
   SPACK_UPSTREAM: /usr/workspace/radiuss/spack-chain-parent/opt/spack
 
 stages:
@@ -19,19 +19,7 @@ stages:
 # Define the generic script
 .build_script:
   script:
-    # Update uberenv if variable set
-    - if [[ -n "${UPDATE_UBERENV}" ]]; then ./scripts/ci/update-uberenv.sh "${UPDATE_UBERENV}"; fi
-    # Switch between dependency and install modes
-    - INSTALL=""
-    - if [[ "${UBERENV_INSTALL}" == "ON" ]]; then INSTALL="--install --run_tests"; fi
-    # Preparing command
-    - mkdir -p ${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}
-    - PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
-    - SPEC="--spec=${PKG_SPEC}"
-    - UBERENV_CMD="scripts/uberenv/uberenv.py ${INSTALL} ${SPEC} ${PREFIX}"
-    # Build command
-    - echo "Build command -- ${UBERENV_CMD}"
-    - ${UBERENV_CMD}
+    - scripts/ci/build-on-lc.sh
 
 # Build modes templates:
 # A job will have one on this template to pilot the behavior of def_uberenv_cmd
