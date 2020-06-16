@@ -4012,6 +4012,34 @@ mesh::matset::verify(const Node &matset,
     return res;
 }
 
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_multi_buffer(const Node &matset)
+{
+    return matset.child("volume_fractions").dtype().is_object();
+}
+
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_uni_buffer(const Node &matset)
+{
+    return matset.child("volume_fractions").dtype().is_number();
+}
+
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_element_dominant(const Node &matset)
+{
+    return !matset.has_child("element_ids");
+}
+
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_material_dominant(const Node &matset)
+{
+    return matset.has_child("element_ids");
+}
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::matset::index protocol interface
 //-----------------------------------------------------------------------------

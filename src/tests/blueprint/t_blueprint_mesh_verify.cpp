@@ -260,6 +260,14 @@ bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
     EXPECT_TRUE(has_consistent_validity(info));  \
 }                                                \
 
+#define CHECK_MATSET(n, iub, ied)                                       \
+{                                                                       \
+    EXPECT_EQ(blueprint::mesh::matset::is_uni_buffer(n), iub);          \
+    EXPECT_EQ(blueprint::mesh::matset::is_multi_buffer(n), !iub);       \
+    EXPECT_EQ(blueprint::mesh::matset::is_element_dominant(n), ied);    \
+    EXPECT_EQ(blueprint::mesh::matset::is_material_dominant(n), !ied);  \
+}                                                                       \
+
 /// Mesh Coordinate Set Tests ///
 
 //-----------------------------------------------------------------------------
@@ -889,6 +897,9 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
         blueprint::mesh::matset::verify,
         verify_matset_protocol};
 
+    const bool is_uni_buffer = true, is_multi_buffer = false;
+    const bool is_element_dominant = true, is_material_dominant = false;
+
     for(index_t fi = 0; fi < 2; fi++)
     {
         VerifyFun verify_matset = verify_matset_funs[fi];
@@ -943,12 +954,14 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 CHECK_MESH(verify_matset,n,info,false);
                 n["material_ids"].set(DataType::uint32(5));
                 CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_uni_buffer,is_element_dominant);
 
                 n["indices"].set(DataType::uint32(5));
                 CHECK_MESH(verify_matset,n,info,true);
                 n["sizes"].set(DataType::uint32(5));
                 n["offsets"].set(DataType::uint32(5));
                 CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_uni_buffer,is_element_dominant);
             }
 
             { // Multi-Buffer Tests //
@@ -958,17 +971,20 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 n["volume_fractions"]["m1"]["values"].set(DataType::float64(8));
                 n["volume_fractions"]["m1"]["indices"].set(DataType::uint32(5));
                 CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_multi_buffer,is_element_dominant);
 
                 n["volume_fractions"]["m2"]["indices"].set(DataType::uint32(5));
                 CHECK_MESH(verify_matset,n,info,false);
                 n["volume_fractions"]["m2"]["values"].set(DataType::float64(10));
                 CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_multi_buffer,is_element_dominant);
 
                 n["volume_fractions"]["m3"]["sizes"].set(DataType::uint32(3));
                 n["volume_fractions"]["m3"]["values"].set(DataType::float64(30));
                 CHECK_MESH(verify_matset,n,info,false);
                 n["volume_fractions"]["m3"]["offsets"].set(DataType::uint32(3));
                 CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_multi_buffer,is_element_dominant);
 
                 n["volume_fractions"]["m4"]["test"]["values"].set(DataType::uint32(3));
                 CHECK_MESH(verify_matset,n,info,false);
@@ -1003,6 +1019,7 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 CHECK_MESH(verify_matset,n,info,false);
                 n["element_ids"]["m2"].set(DataType::int32(5));
                 CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_multi_buffer,is_material_dominant);
 
                 // Uni-Buffer Volume Fractions //
                 n["volume_fractions"].reset();
@@ -1020,6 +1037,7 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 CHECK_MESH(verify_matset,n,info,false);
                 n["element_ids"].set(DataType::int32(5));
                 CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_uni_buffer,is_material_dominant);
             }
 
             n.reset();

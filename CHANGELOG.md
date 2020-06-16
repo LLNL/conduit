@@ -24,7 +24,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 - Added support for sparse one-to-many relationships with the new `blueprint::o2mrelation` protocol. See the `blueprint::o2mrelation::examples::uniform` example for details.
-- Added sparse one-to-many and uni-buffer specification support to Material sets. See the Material sets documentation
+- Added sparse one-to-many, uni-buffer, and material-dominant specification support to Material sets. See the Material sets documentation
 (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#material-sets) for more details.
 - Added support for Adjacency sets for Structured Mesh Topologies. See the `blueprint::mesh::examples::adjset_uniform` example.
 - Added `blueprint::mesh::examples::julia_nestsets_simple` and `blueprint::mesh::examples::julia_nestsets_complex` examples represent Julia set fractals using patch-based AMR meshes and the Mesh Blueprint Nesting Set protocol. See the Julia AMR Blueprint docs
