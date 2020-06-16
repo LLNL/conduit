@@ -4105,7 +4105,7 @@ mesh::field::verify(const Node &field,
     else if(has_matset && has_matset_values)
     {
         res &= verify_string_field(protocol, field, info, "matset");
-        res &= verify_mlarray_field(protocol, field, info, "matset_values", 1, 2, false);
+        res &= verify_mlarray_field(protocol, field, info, "matset_values", 0, 2, false);
     }
 
     // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required

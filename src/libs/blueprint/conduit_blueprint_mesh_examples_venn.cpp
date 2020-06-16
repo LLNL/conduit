@@ -411,8 +411,8 @@ void venn_sparse_by_element_matset(Node &res)
 
     // The matset values (for fields that have them) get built up
     // in the same way as the sparse fields, into "one big array."
-    res["fields/area/matset_values/values"].set(DataType::float64(vfcount));
-    res["fields/importance/matset_values/values"].set(DataType::float64(vfcount));
+    res["fields/area/matset_values"].set(DataType::float64(vfcount));
+    res["fields/importance/matset_values"].set(DataType::float64(vfcount));
 
     // The actual fields
     res["fields/area/values"].set(DataType::float64(elements));
@@ -422,8 +422,8 @@ void venn_sparse_by_element_matset(Node &res)
     int32_array id = res["matsets/matset/material_ids"].value();
     int32_array sizes = res["matsets/matset/sizes"].value();
     int32_array offsets = res["matsets/matset/offsets"].value();
-    float64_array matset_area = res["fields/area/matset_values/values"].value();
-    float64_array matset_impt = res["fields/importance/matset_values/values"].value();
+    float64_array matset_area = res["fields/area/matset_values"].value();
+    float64_array matset_impt = res["fields/importance/matset_values"].value();
     float64_array field_area = res["fields/area/values"].value();
     float64_array field_impt = res["fields/importance/values"].value();
 
