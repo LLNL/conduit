@@ -119,28 +119,25 @@ env:
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-       - binutils
-       - gcc-4.8
-       - g++-4.8
-       - gfortran-4.8
-       - openmpi-bin
-       - libopenmpi-dev
-       - libncurses-dev
-       - libssl-dev
-       - libopenblas-dev
-       - zlib1g-dev
-       - libgdbm-dev
-       - libreadline-dev
-       - libsqlite3-dev
-       - libbz2-dev
-       - perl
 
 before_install:
+  - gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys BA9EF27F
+  - add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - apt-get -y install binutils
+  - apt-get -y install gcc-4.8
+  - apt-get -y install g++-4.8
+  - apt-get -y install gfortran-4.8
+  - apt-get -y install openmpi-bin
+  - apt-get -y install libopenmpi-dev
+  - apt-get -y install libncurses-dev
+  - apt-get -y install libssl-dev
+  - apt-get -y install libopenblas-dev
+  - apt-get -y install zlib1g-dev
+  - apt-get -y install libgdbm-dev
+  - apt-get -y install libreadline-dev
+  - apt-get -y install libsqlite3-dev
+  - apt-get -y install libbz2-dev
+  - apt-get -y install perl
   - pip install --user cpp-coveralls
 
 script:
