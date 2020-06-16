@@ -179,7 +179,7 @@ stages:
            if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
-           export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
+           if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # show final spec
            echo $SPACK_SPEC
@@ -398,7 +398,7 @@ stages:
            if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
-           export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"
+           if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # show final spec
            echo $SPACK_SPEC
