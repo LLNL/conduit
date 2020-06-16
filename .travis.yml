@@ -120,23 +120,29 @@ env:
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
 
+addons:
+  apt:
+    sources:
+    - sourceline: 'ppa:ubuntu-toolchain-r/test'
+      key_url: 'hkp://keyserver.ubuntu.com:80'
+    packages:
+       - binutils
+       - gcc-4.8
+       - g++-4.8
+       - gfortran-4.8
+       - openmpi-bin
+       - libopenmpi-dev
+       - libncurses-dev
+       - libssl-dev
+       - libopenblas-dev
+       - zlib1g-dev
+       - libgdbm-dev
+       - libreadline-dev
+       - libsqlite3-dev
+       - libbz2-dev
+       - perl
+
 before_install:
-  - sudo add-apt-repository -k hkp://keyserver.ubuntu.com:80 -y ppa:ubuntu-toolchain-r/test
-  - sudo apt-get -y install binutils
-  - sudo apt-get -y install gcc-4.8
-  - sudo apt-get -y install g++-4.8
-  - sudo apt-get -y install gfortran-4.8
-  - sudo apt-get -y install openmpi-bin
-  - sudo apt-get -y install libopenmpi-dev
-  - sudo apt-get -y install libncurses-dev
-  - sudo apt-get -y install libssl-dev
-  - sudo apt-get -y install libopenblas-dev
-  - sudo apt-get -y install zlib1g-dev
-  - sudo apt-get -y install libgdbm-dev
-  - sudo apt-get -y install libreadline-dev
-  - sudo apt-get -y install libsqlite3-dev
-  - sudo apt-get -y install libbz2-dev
-  - sudo apt-get -y install perl
   - pip install --user cpp-coveralls
 
 script:
