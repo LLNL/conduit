@@ -105,16 +105,16 @@ public:
     ///
     Generator(const std::string &schema,
               const std::string &protocol = std::string("conduit_json"),
-              void *data = NULL);
+              const void *data = NULL);
 
 
     void set_schema(const std::string &schema);
     void set_protocol(const std::string &protocol);
-    void set_data_ptr(void *);
+    void set_data_ptr(const void *);
 
     const std::string &schema() const;
     const std::string &protocol()   const;
-    void *data_ptr() const;
+    const void *data_ptr() const;
 
 
 //-----------------------------------------------------------------------------
@@ -144,7 +144,7 @@ private:
     /// holds the parsing protocol
     std::string  m_protocol;
     /// optional external data pointer
-    void        *m_data;
+    const void  *m_data;
 
 };
 //-----------------------------------------------------------------------------

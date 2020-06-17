@@ -153,19 +153,19 @@ public:
     /// in these methods the `external` param controls if we use copy or
     /// external semantics.
     Node(const Generator &gen,
-         bool external);
+         const bool external);
 
     Node(const std::string &json_schema,
-         void *data,
-         bool external);
+         const void *data,
+         const bool external);
    
     Node(const Schema &schema,
-         void *data,
-         bool external);
+         const void *data,
+         const bool external);
 
     Node(const DataType &dtype,
-         void *data,
-         bool external);
+         const void *data,
+         const bool external);
 
 //-----------------------------------------------------------------------------
 ///@}
@@ -220,11 +220,11 @@ public:
 //-----------------------------------------------------------------------------
     void generate(const std::string &schema,
                   const std::string &protocol = std::string("conduit_json"),
-                  void *data = NULL);
+                  const void *data = NULL);
 
     void generate_external(const std::string &schema,
                            const std::string &protocol,
-                           void *data);
+                           const void *data);
 
 //-----------------------------------------------------------------------------
 ///@}
@@ -292,47 +292,47 @@ public:
     void set_schema(const Schema &schema);    
     void set(const Schema &schema);
 
-    void set_data_using_schema(const Schema &schema, void *data);
-    void set(const Schema &schema, void *data);
+    void set_data_using_schema(const Schema &schema, const void *data);
+    void set(const Schema &schema, const void *data);
 
-    void set_data_using_dtype(const DataType &dtype, void *data);
-    void set(const DataType &dtype, void *data);
+    void set_data_using_dtype(const DataType &dtype, const void *data);
+    void set(const DataType &dtype, const void *data);
 
 //-----------------------------------------------------------------------------
 // -- set for bitwidth style scalar types ---
 //-----------------------------------------------------------------------------
     // signed integer scalar types
-    void set_int8(int8 data);
-    void set(int8 data);
+    void set_int8(const int8 data);
+    void set(const int8 data);
 
-    void set_int16(int16 data);
-    void set(int16 data);
+    void set_int16(const int16 data);
+    void set(const int16 data);
     
-    void set_int32(int32 data);
-    void set(int32 data);
+    void set_int32(const int32 data);
+    void set(const int32 data);
     
-    void set_int64(int64 data);
-    void set(int64 data);
+    void set_int64(const int64 data);
+    void set(const int64 data);
 
     // unsigned integer scalar types
-    void set_uint8(uint8 data);
-    void set(uint8 data);
+    void set_uint8(const uint8 data);
+    void set(const uint8 data);
     
-    void set_uint16(uint16 data);
-    void set(uint16 data);
+    void set_uint16(const uint16 data);
+    void set(const uint16 data);
 
-    void set_uint32(uint32 data);
-    void set(uint32 data);
+    void set_uint32(const uint32 data);
+    void set(const uint32 data);
     
-    void set_uint64(uint64 data);
-    void set(uint64 data);
+    void set_uint64(const uint64 data);
+    void set(const uint64 data);
 
     // floating point scalar types
-    void set_float32(float32 data);
-    void set(float32 data);
+    void set_float32(const float32 data);
+    void set(const float32 data);
     
-    void set_float64(float64 data);
-    void set(float64 data);
+    void set_float64(const float64 data);
+    void set(const float64 data);
 
 //-----------------------------------------------------------------------------
 //  set scalar gap methods for c-native types
@@ -349,39 +349,39 @@ public:
 //  selected as int32, Visual Studio needs an explicit method to disambiguate 
 //  the long case.
 //-----------------------------------------------------------------------------
-    void set(char data);
+    void set(const char data);
 
     #ifndef CONDUIT_USE_CHAR
-        void set(signed char data);
-        void set(unsigned char data);
+        void set(const signed char data);
+        void set(const unsigned char data);
     #endif
 
     #ifndef CONDUIT_USE_SHORT
-        void set(short data);
-        void set(unsigned short data);
+        void set(const short data);
+        void set(const unsigned short data);
     #endif
 
     #ifndef CONDUIT_USE_INT
-        void set(int data);
-        void set(unsigned int data);
+        void set(const int data);
+        void set(const unsigned int data);
     #endif
 
     #ifndef CONDUIT_USE_LONG
-        void set(long data);
-        void set(unsigned long data);
+        void set(const long data);
+        void set(const unsigned long data);
     #endif
 
 #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
-        void set(long long data);
-        void set(unsigned long long data);
+        void set(const long long data);
+        void set(const unsigned long long data);
 #endif
 
     #ifndef CONDUIT_USE_FLOAT
-        void set(float data);
+        void set(const float data);
     #endif
 
     #ifndef CONDUIT_USE_DOUBLE
-        void set(double data);
+        void set(const double data);
     #endif
 
 
@@ -879,20 +879,20 @@ public:
     //-------------------------------------------------------------------------
     void set_path_data_using_schema(const std::string &path,
                                     const Schema &schema,
-                                    void *data);              
+                                    const void *data);              
 
     void set_path(const std::string &path,
                   const Schema &schema,
-                  void *data);
+                  const void *data);
 
     //-------------------------------------------------------------------------
     void set_path_data_using_dtype(const std::string &path,
                                    const DataType &dtype,
-                                   void *data);
+                                   const void *data);
 
     void set_path(const std::string &path,
                   const DataType &dtype,
-                  void *data);
+                  const void *data);
 
 //-----------------------------------------------------------------------------
 // -- set_path for bitwidth style scalar types ---
@@ -1585,17 +1585,17 @@ public:
 
     //-------------------------------------------------------------------------
     void set_external_data_using_schema(const Schema &schema,
-                                        void *data);
+                                        const void *data);
 
     void set_external(const Schema &schema,
-                      void *data);
+                      const void *data);
 
     //-------------------------------------------------------------------------
     void set_external_data_using_dtype(const DataType &dtype,
-                                       void *data);
+                                       const void *data);
 
     void set_external(const DataType &dtype,
-                      void *data);
+                      const void *data);
 
 //-----------------------------------------------------------------------------
 // -- set_external via bitwidth style pointers (scalar and array types) -- 
@@ -1603,14 +1603,14 @@ public:
     //-------------------------------------------------------------------------
     // signed integer pointer cases
     //-------------------------------------------------------------------------
-    void set_external_int8_ptr(int8  *data,
+    void set_external_int8_ptr(const int8  *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(conduit::int8),
                                index_t element_bytes = sizeof(conduit::int8),
                                index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(int8  *data,
+    void set_external(const int8  *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int8),
@@ -1618,14 +1618,14 @@ public:
                       index_t endianness = Endianness::DEFAULT_ID);
     
     //-------------------------------------------------------------------------
-    void set_external_int16_ptr(int16 *data, 
+    void set_external_int16_ptr(const int16 *data,
                                 index_t num_elements = 1,
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::int16),
                                 index_t element_bytes = sizeof(conduit::int16),
                                 index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(int16 *data, 
+    void set_external(const int16 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int16),
@@ -1633,14 +1633,14 @@ public:
                       index_t endianness = Endianness::DEFAULT_ID);
     
     //-------------------------------------------------------------------------
-    void set_external_int32_ptr(int32 *data,
+    void set_external_int32_ptr(const int32 *data,
                                 index_t num_elements = 1,
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::int32),
                                 index_t element_bytes = sizeof(conduit::int32),
                                 index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(int32 *data,
+    void set_external(const int32 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int32),
@@ -1648,14 +1648,14 @@ public:
                       index_t endianness = Endianness::DEFAULT_ID);
     
     //-------------------------------------------------------------------------
-    void set_external_int64_ptr(int64 *data,
+    void set_external_int64_ptr(const int64 *data,
                                 index_t num_elements = 1,
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::int64),
                                 index_t element_bytes = sizeof(conduit::int64),
                                 index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(int64 *data,
+    void set_external(const int64 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::int64),
@@ -1665,14 +1665,14 @@ public:
     //-------------------------------------------------------------------------
     // unsigned integer pointer cases
     //-------------------------------------------------------------------------
-    void set_external_uint8_ptr(uint8  *data,
+    void set_external_uint8_ptr(const uint8  *data,
                                 index_t num_elements = 1,
                                 index_t offset = 0,
                                 index_t stride = sizeof(conduit::uint8),
                                 index_t element_bytes = sizeof(conduit::uint8),
                                 index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(uint8  *data,
+    void set_external(const uint8  *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint8),
@@ -1680,14 +1680,14 @@ public:
                       index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
-    void set_external_uint16_ptr(uint16 *data,
+    void set_external_uint16_ptr(const uint16 *data,
                                  index_t num_elements = 1,
                                  index_t offset = 0,
                                  index_t stride = sizeof(conduit::uint16),
                                  index_t element_bytes = sizeof(conduit::uint16),
                                  index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(uint16 *data,
+    void set_external(const uint16 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint16),
@@ -1695,14 +1695,14 @@ public:
                       index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
-    void set_external_uint32_ptr(uint32 *data, 
+    void set_external_uint32_ptr(const uint32 *data, 
                                  index_t num_elements = 1,
                                  index_t offset = 0,
                                  index_t stride = sizeof(conduit::uint32),
                                  index_t element_bytes = sizeof(conduit::uint32),
                                  index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(uint32 *data, 
+    void set_external(const uint32 *data, 
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint32),
@@ -1710,14 +1710,14 @@ public:
                       index_t endianness = Endianness::DEFAULT_ID);
                       
     //-------------------------------------------------------------------------
-    void set_external_uint64_ptr(uint64 *data,
+    void set_external_uint64_ptr(const uint64 *data,
                                  index_t num_elements = 1,
                                  index_t offset = 0,
                                  index_t stride = sizeof(conduit::uint64),
                                  index_t element_bytes = sizeof(conduit::uint64),
                                  index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(uint64 *data,
+    void set_external(const uint64 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::uint64),
@@ -1727,14 +1727,14 @@ public:
     //-------------------------------------------------------------------------
     // floating point pointer cases
     //-------------------------------------------------------------------------
-    void set_external_float32_ptr(float32 *data,
+    void set_external_float32_ptr(const float32 *data,
                                   index_t num_elements = 1,
                                   index_t offset = 0,
                                   index_t stride = sizeof(conduit::float32),
                                   index_t element_bytes = sizeof(conduit::float32),
                                   index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(float32 *data,
+    void set_external(const float32 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::float32),
@@ -1742,14 +1742,14 @@ public:
                       index_t endianness = Endianness::DEFAULT_ID);
 
     //-------------------------------------------------------------------------
-    void set_external_float64_ptr(float64 *data, 
+    void set_external_float64_ptr(const float64 *data,
                                   index_t num_elements = 1,
                                   index_t offset = 0,
                                   index_t stride = sizeof(conduit::float64),
                                   index_t element_bytes = sizeof(conduit::float64),
                                   index_t endianness = Endianness::DEFAULT_ID);
 
-    void set_external(float64 *data, 
+    void set_external(const float64 *data,
                       index_t num_elements = 1,
                       index_t offset = 0,
                       index_t stride = sizeof(conduit::float64),
@@ -1759,7 +1759,7 @@ public:
 //-----------------------------------------------------------------------------
 //  set via pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
-    void set_external_char_ptr(char *data,
+    void set_external_char_ptr(const char *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
@@ -1767,14 +1767,14 @@ public:
                                index_t endianness = Endianness::DEFAULT_ID);
 
     #ifndef CONDUIT_USE_CHAR
-        void set_external(signed char *data,
+        void set_external(const signed char *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
                           index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
                           index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external(unsigned char *data,
+        void set_external(const unsigned char *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
@@ -1783,14 +1783,14 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_SHORT
-        void set_external(short *data,
+        void set_external(const short *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
                           index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
                           index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external(unsigned short *data,
+        void set_external(const unsigned short *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
@@ -1799,14 +1799,14 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_INT
-        void set_external(int *data,
+        void set_external(const int *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_INT),
                           index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
                           index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external(unsigned int *data,
+        void set_external(const unsigned int *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
@@ -1815,14 +1815,14 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_LONG
-        void set_external(long *data,
+        void set_external(const long *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_LONG),
                           index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
                           index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external(unsigned long *data,
+        void set_external(const unsigned long *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
@@ -1831,14 +1831,14 @@ public:
     #endif
 
     #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
-        void set_external(long long *data,
+        void set_external(const long long *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
                           index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
                           index_t endianness = Endianness::DEFAULT_ID);
 
-        void set_external(unsigned long long *data,
+        void set_external(const unsigned long long *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
@@ -1847,7 +1847,7 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_FLOAT
-        void set_external(float *data,
+        void set_external(const float *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
@@ -1856,7 +1856,7 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_DOUBLE
-        void set_external(double *data,
+        void set_external(const double *data,
                           index_t num_elements = 1,
                           index_t offset = 0,
                           index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
@@ -1957,7 +1957,7 @@ public:
 //-----------------------------------------------------------------------------
 // -- set_external for string types ---
 //-----------------------------------------------------------------------------
-    void set_external_char8_str(char *data);
+    void set_external_char8_str(const char *data);
 
 //-----------------------------------------------------------------------------
 // -- set_external for bitwidth style std::vector types ---
@@ -1966,48 +1966,48 @@ public:
     //-------------------------------------------------------------------------
     // signed integer array types via std::vector
     //-------------------------------------------------------------------------
-    void set_external_int8_vector(std::vector<int8> &data);
-    void set_external(std::vector<int8> &data);
+    void set_external_int8_vector(const std::vector<int8> &data);
+    void set_external(const std::vector<int8> &data);
 
     //-------------------------------------------------------------------------
-    void set_external_int16_vector(std::vector<int16> &data);
-    void set_external(std::vector<int16> &data);
+    void set_external_int16_vector(const std::vector<int16> &data);
+    void set_external(const std::vector<int16> &data);
 
     //-------------------------------------------------------------------------
-    void set_external_int32_vector(std::vector<int32> &data);
-    void set_external(std::vector<int32> &data);
+    void set_external_int32_vector(const std::vector<int32> &data);
+    void set_external(const std::vector<int32> &data);
     
     //-------------------------------------------------------------------------
-    void set_external_int64_vector(std::vector<int64> &data);
-    void set_external(std::vector<int64> &data);
+    void set_external_int64_vector(const std::vector<int64> &data);
+    void set_external(const std::vector<int64> &data);
 
     //-------------------------------------------------------------------------
     // unsigned integer array types via std::vector
     //-------------------------------------------------------------------------
-    void set_external_uint8_vector(std::vector<uint8> &data);
-    void set_external(std::vector<uint8> &data);
+    void set_external_uint8_vector(const std::vector<uint8> &data);
+    void set_external(const std::vector<uint8> &data);
     
     //-------------------------------------------------------------------------
-    void set_external_uint16_vector(std::vector<uint16> &data);
-    void set_external(std::vector<uint16> &data);
+    void set_external_uint16_vector(const std::vector<uint16> &data);
+    void set_external(const std::vector<uint16> &data);
     
     //-------------------------------------------------------------------------
-    void set_external_uint32_vector(std::vector<uint32> &data);
-    void set_external(std::vector<uint32> &data);
+    void set_external_uint32_vector(const std::vector<uint32> &data);
+    void set_external(const std::vector<uint32> &data);
     
     //-------------------------------------------------------------------------
-    void set_external_uint64_vector(std::vector<uint64> &data);
-    void set_external(std::vector<uint64> &data);
+    void set_external_uint64_vector(const std::vector<uint64> &data);
+    void set_external(const std::vector<uint64> &data);
 
     //-------------------------------------------------------------------------
     // floating point array types via std::vector
     //-------------------------------------------------------------------------
-    void set_external_float32_vector(std::vector<float32> &data);
-    void set_external(std::vector<float32> &data);
+    void set_external_float32_vector(const std::vector<float32> &data);
+    void set_external(const std::vector<float32> &data);
 
     //-------------------------------------------------------------------------
-    void set_external_float64_vector(std::vector<float64> &data);
-    void set_external(std::vector<float64> &data);
+    void set_external_float64_vector(const std::vector<float64> &data);
+    void set_external(const std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
 //  set_external vector gap methods for c-native types
@@ -2105,7 +2105,7 @@ public:
     // signed integer pointer cases
     //-------------------------------------------------------------------------
     void set_path_external_int8_ptr(const std::string &path,
-                                    int8 *data,
+                                    const int8 *data,
                                     index_t num_elements = 1,
                                     index_t offset = 0,
                                     index_t stride = sizeof(conduit::int8),
@@ -2113,7 +2113,7 @@ public:
                                     index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           int8 *data,
+                           const int8 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int8),
@@ -2122,7 +2122,7 @@ public:
 
     //-------------------------------------------------------------------------
     void set_path_external_int16_ptr(const std::string &path,
-                                     int16 *data, 
+                                     const int16 *data,
                                      index_t num_elements = 1,
                                      index_t offset = 0,
                                      index_t stride = sizeof(conduit::int16),
@@ -2131,7 +2131,7 @@ public:
 
 
     void set_path_external(const std::string &path,
-                           int16 *data, 
+                           const int16 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int16),
@@ -2140,7 +2140,7 @@ public:
  
     //-------------------------------------------------------------------------
     void set_path_external_int32_ptr(const std::string &path,
-                                     int32 *data,
+                                     const int32 *data,
                                      index_t num_elements = 1,
                                      index_t offset = 0,
                                      index_t stride = sizeof(conduit::int32),
@@ -2148,7 +2148,7 @@ public:
                                      index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           int32 *data,
+                           const int32 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int32),
@@ -2157,7 +2157,7 @@ public:
 
     //-------------------------------------------------------------------------
     void set_path_external_int64_ptr(const std::string &path,
-                                     int64 *data,
+                                     const int64 *data,
                                      index_t num_elements = 1,
                                      index_t offset = 0,
                                      index_t stride = sizeof(conduit::int64),
@@ -2165,7 +2165,7 @@ public:
                                      index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           int64 *data,
+                           const int64 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::int64),
@@ -2176,7 +2176,7 @@ public:
     // unsigned integer pointer cases
     //-------------------------------------------------------------------------
     void set_path_external_uint8_ptr(const std::string &path,
-                                     uint8  *data,
+                                     const uint8  *data,
                                      index_t num_elements = 1,
                                      index_t offset = 0,
                                      index_t stride = sizeof(conduit::uint8),
@@ -2184,7 +2184,7 @@ public:
                                      index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           uint8  *data,
+                           const uint8  *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint8),
@@ -2193,7 +2193,7 @@ public:
 
     //-------------------------------------------------------------------------
     void set_path_external_uint16_ptr(const std::string &path,
-                                      uint16 *data,
+                                      const uint16 *data,
                                       index_t num_elements = 1,
                                       index_t offset = 0,
                                       index_t stride = sizeof(conduit::uint16),
@@ -2201,7 +2201,7 @@ public:
                                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           uint16 *data,
+                           const uint16 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint16),
@@ -2210,7 +2210,7 @@ public:
 
     //-------------------------------------------------------------------------
     void set_path_external_uint32_ptr(const std::string &path,
-                                      uint32 *data, 
+                                      const uint32 *data,
                                       index_t num_elements = 1,
                                       index_t offset = 0,
                                       index_t stride = sizeof(conduit::uint32),
@@ -2218,7 +2218,7 @@ public:
                                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           uint32 *data, 
+                           const uint32 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint32),
@@ -2227,7 +2227,7 @@ public:
 
     //-------------------------------------------------------------------------
     void set_path_external_uint64_ptr(const std::string &path,
-                                      uint64 *data,
+                                      const uint64 *data,
                                       index_t num_elements = 1,
                                       index_t offset = 0,
                                       index_t stride = sizeof(conduit::uint64),
@@ -2235,7 +2235,7 @@ public:
                                       index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           uint64 *data,
+                           const uint64 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::uint64),
@@ -2246,7 +2246,7 @@ public:
     // floating point pointer cases
     //-------------------------------------------------------------------------
     void set_path_external_float32_ptr(const std::string &path,
-                                       float32 *data,
+                                       const float32 *data,
                                        index_t num_elements = 1,
                                        index_t offset = 0,
                                        index_t stride = sizeof(conduit::float32),
@@ -2254,7 +2254,7 @@ public:
                                        index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           float32 *data,
+                           const float32 *data,
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::float32),
@@ -2263,7 +2263,7 @@ public:
 
     //-------------------------------------------------------------------------
     void set_path_external_float64_ptr(const std::string &path,
-                                       float64 *data, 
+                                       const float64 *data, 
                                        index_t num_elements = 1,
                                        index_t offset = 0,
                                        index_t stride = sizeof(conduit::float64),
@@ -2271,7 +2271,7 @@ public:
                                        index_t endianness = Endianness::DEFAULT_ID);
 
     void set_path_external(const std::string &path,
-                           float64 *data, 
+                           const float64 *data, 
                            index_t num_elements = 1,
                            index_t offset = 0,
                            index_t stride = sizeof(conduit::float64),
@@ -2282,7 +2282,7 @@ public:
 //  set via pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
     void set_path_external_char_ptr(const std::string &path,
-                                    char *data,
+                                    const char *data,
                                     index_t num_elements = 1,
                                     index_t offset = 0,
                                     index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
@@ -2291,7 +2291,7 @@ public:
 
     #ifndef CONDUIT_USE_CHAR
         void set_path_external(const std::string &path,
-                               signed char *data,
+                               const signed char *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
@@ -2299,7 +2299,7 @@ public:
                                index_t endianness = Endianness::DEFAULT_ID);
 
         void set_path_external(const std::string &path,
-                               unsigned char *data,
+                               const unsigned char *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
@@ -2309,7 +2309,7 @@ public:
 
     #ifndef CONDUIT_USE_SHORT
         void set_path_external(const std::string &path,
-                               short *data,
+                               const short *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
@@ -2317,7 +2317,7 @@ public:
                                index_t endianness = Endianness::DEFAULT_ID);
 
         void set_path_external(const std::string &path,
-                               unsigned short *data,
+                               const unsigned short *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
@@ -2327,7 +2327,7 @@ public:
 
     #ifndef CONDUIT_USE_INT
         void set_path_external(const std::string &path,
-                               int *data,
+                               const int *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_INT),
@@ -2335,7 +2335,7 @@ public:
                                index_t endianness = Endianness::DEFAULT_ID);
 
         void set_path_external(const std::string &path,
-                               unsigned int *data,
+                               const unsigned int *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
@@ -2345,7 +2345,7 @@ public:
 
     #ifndef CONDUIT_USE_LONG
         void set_path_external(const std::string &path,
-                               long *data,
+                               const long *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_LONG),
@@ -2353,7 +2353,7 @@ public:
                                index_t endianness = Endianness::DEFAULT_ID);
 
         void set_path_external(const std::string &path,
-                               unsigned long *data,
+                               const unsigned long *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
@@ -2363,7 +2363,7 @@ public:
    
     #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
         void set_path_external(const std::string &path,
-                               long long *data,
+                               const long long *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
@@ -2371,7 +2371,7 @@ public:
                                index_t endianness = Endianness::DEFAULT_ID);
 
         void set_path_external(const std::string &path,
-                               unsigned long long *data,
+                               const unsigned long long *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
@@ -2381,7 +2381,7 @@ public:
   
     #ifndef CONDUIT_USE_FLOAT
         void set_path_external(const std::string &path,
-                               float *data,
+                               const float *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
@@ -2391,7 +2391,7 @@ public:
 
     #ifndef CONDUIT_USE_DOUBLE
         void set_path_external(const std::string &path,
-                               double *data,
+                               const double *data,
                                index_t num_elements = 1,
                                index_t offset = 0,
                                index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
@@ -2541,7 +2541,7 @@ public:
 //-----------------------------------------------------------------------------
 // -- set_external for string types ---
 //-----------------------------------------------------------------------------
-    void set_path_external_char8_str(const std::string &path, char *data);
+    void set_path_external_char8_str(const std::string &path, const char *data);
 
 //-----------------------------------------------------------------------------
 // -- set_path_external for bitwidth style std::vector types ---
@@ -2551,77 +2551,77 @@ public:
     // signed integer array types via std::vector
     //-------------------------------------------------------------------------
     void set_path_external_int8_vector(const std::string &path,
-                                       std::vector<int8> &data);
+                                       const std::vector<int8> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<int8> &data);
+                           const std::vector<int8> &data);
 
     //-------------------------------------------------------------------------
     void set_path_external_int16_vector(const std::string &path,
-                                        std::vector<int16> &data);
+                                        const std::vector<int16> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<int16> &data);
+                           const std::vector<int16> &data);
 
     //-------------------------------------------------------------------------
     void set_path_external_int32_vector(const std::string &path,
-                                        std::vector<int32> &data);
+                                        const std::vector<int32> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<int32> &data);
+                           const std::vector<int32> &data);
 
     //-------------------------------------------------------------------------
     void set_path_external_int64_vector(const std::string &path,
-                                        std::vector<int64> &data);
+                                        const std::vector<int64> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<int64> &data);
+                           const std::vector<int64> &data);
 
     //-------------------------------------------------------------------------
     // unsigned integer array types via std::vector
     //-------------------------------------------------------------------------
     void set_path_external_uint8_vector(const std::string &path,
-                                        std::vector<uint8> &data);
+                                        const std::vector<uint8> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<uint8> &data);
+                           const std::vector<uint8> &data);
 
     //-------------------------------------------------------------------------
     void set_path_external_uint16_vector(const std::string &path,
-                                         std::vector<uint16> &data);
+                                         const std::vector<uint16> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<uint16> &data);
+                           const std::vector<uint16> &data);
 
     //-------------------------------------------------------------------------
     void set_path_external_uint32_vector(const std::string &path,
-                                         std::vector<uint32> &data);
+                                         const std::vector<uint32> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<uint32> &data);
+                           const std::vector<uint32> &data);
 
     //-------------------------------------------------------------------------
     void set_path_external_uint64_vector(const std::string &path,
-                                         std::vector<uint64> &data);
+                                         const std::vector<uint64> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<uint64> &data);
+                           const std::vector<uint64> &data);
 
     //-------------------------------------------------------------------------
     // floating point array types via std::vector
     //-------------------------------------------------------------------------
     void set_path_external_float32_vector(const std::string &path,
-                                          std::vector<float32> &data);
+                                          const std::vector<float32> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<float32> &data);
+                           const std::vector<float32> &data);
 
     //-------------------------------------------------------------------------
     void set_path_external_float64_vector(const std::string &path,
-                                          std::vector<float64> &data);
+                                          const std::vector<float64> &data);
 
     void set_path_external(const std::string &path,
-                           std::vector<float64> &data);
+                           const std::vector<float64> &data);
 
 //-----------------------------------------------------------------------------
 //  set_path_external vector gap methods for c-native types
@@ -3809,10 +3809,10 @@ public:
     index_t          mmaped_bytes() const
                         {return m_mmaped ? m_data_size : 0;}
 
-    void  *element_ptr(index_t idx)
-        {return static_cast<char*>(m_data) + dtype().element_index(idx);};
+    const void  *element_ptr(index_t idx)
+        {return static_cast<const char*>(m_data) + dtype().element_index(idx);};
     const void  *element_ptr(index_t idx) const 
-        {return static_cast<char*>(m_data) + dtype().element_index(idx);};
+        {return static_cast<const char*>(m_data) + dtype().element_index(idx);};
 
 //-----------------------------------------------------------------------------
 /// description:
@@ -4032,7 +4032,7 @@ private:
 /// description:
 /// these methods are used for construction by the Node & Generator classes.
 //-----------------------------------------------------------------------------
-    void             set_data_ptr(void *data_ptr);
+    void             set_data_ptr(const void *data_ptr);
     ///
     /// Note: set_schema_ptr is *only* used in the case were we have 
     /// a schema pointer that is owned by a parent schema. Using it to set a 
@@ -4118,7 +4118,7 @@ private:
     // work horse for complex node hierarchical setup
     static void      walk_schema(Node   *node,
                                  Schema *schema,
-                                 void   *data);
+                                 const void   *data);
 
     static void      mirror_node(Node *node,
                                  Schema *schema,
@@ -4320,7 +4320,7 @@ private:
 
     // TODO: DataContainer?
     // pointer to the node's data
-    void     *m_data;
+    const void           *m_data;
     // size of the allocated or mmaped data point
     index_t   m_data_size;
 
