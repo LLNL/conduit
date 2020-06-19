@@ -3171,6 +3171,8 @@ mesh::topology::unstructured::verify(const Node &topo,
         Node &info_elems = info["elements"];
 
         bool elems_res = true;
+        bool subelems_res = true;
+
         // single shape case
         if(topo_elems.has_child("shape"))
         {
@@ -3184,12 +3186,45 @@ mesh::topology::unstructured::verify(const Node &topo,
             {
                 elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");
             }
-            if(topo_elems["shape"].dtype().is_string() && topo_elems["shape"].as_string() == "polygonal")
+            if(topo_elems["shape"].dtype().is_string() &&
+              (topo_elems["shape"].as_string() == "polygonal" ||
+               topo_elems["shape"].as_string() == "polyhedral"))
             {
                 elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "sizes");
                 elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");   
 
                 elems_res &= blueprint::o2mrelation::verify(topo_elems, info_elems);
+
+                // Verify subelements if polyhedral
+                if (topo_elems["shape"].as_string() == "polyhedral")
+                {
+                    if(!verify_object_field(protocol, topo, info, "subelements"))
+                    {
+                        subelems_res = false;
+                    }
+                    else 
+                    {
+                        const Node &topo_subelems = topo["subelements"];
+                        Node &info_subelems = info["subelements"];
+
+                        if (!topo_subelems.has_child("shape"))
+                        {
+                            subelems_res = false;
+                        }
+                        else
+                        {
+                            subelems_res &= verify_field_exists(protocol, topo_subelems, info_subelems, "shape") &&
+                                   mesh::topology::shape::verify(topo_subelems["shape"], info_subelems["shape"]);
+                            subelems_res &= verify_integer_field(protocol, topo_subelems, info_subelems, "connectivity");
+                            subelems_res &= verify_integer_field(protocol, topo_subelems, info_subelems, "sizes");
+                            subelems_res &= verify_integer_field(protocol, topo_subelems, info_subelems, "offsets");
+                            subelems_res &= topo_subelems["shape"].as_string() == "polygonal";
+                            subelems_res &= blueprint::o2mrelation::verify(topo_subelems, info_subelems);
+                        }
+
+                        log::validation(info_subelems,subelems_res);
+                    }
+                }
             }
             // BHAN This is only for polygonal so far; another "subelement" check needed for polyhedral 
         }
@@ -3244,6 +3279,7 @@ mesh::topology::unstructured::verify(const Node &topo,
 
         log::validation(info_elems,elems_res);
         res &= elems_res;
+        res &= subelems_res;
     }
 
     log::validation(info,res);
@@ -3294,9 +3330,9 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
         dest.set(topo_templ);
         dest["elements/shape"].set(is_topo_3d ? "polyhedral" : "polygonal");
 
+        // Polygonal case
         if (!is_topo_3d)
         {
-            // BHAN : Note - This hackiness only works for polygonal
             Node poly_size;
             std::vector<int64> poly_size_data(topo_elems, topo_shape.indices);
             poly_size.set_external(poly_size_data);
@@ -3309,39 +3345,86 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
             generate_offsets(dest, dest["elements/offsets"]);
         }
 
+        // Polyhedral case
         else
         {
             Node data_node;
-            std::vector<int64> poly_conn_data(topo_elems *
-                (is_topo_3d + topo_shape.embed_count * (1 + embed_shape.indices)));
-            for(index_t ei = 0; ei < topo_elems; ei++)
+            std::vector<int64> polyhedral_conn_data(topo_elems * topo_shape.embed_count);
+            std::vector<int64> polygonal_conn_data;
+            std::vector<int64> face_indices(embed_shape.indices);
+
+            // Element iteration
+            for (index_t ei = 0; ei < topo_elems; ei++)
             {
                 index_t data_off = topo_shape.indices * ei;
-                index_t poly_off = (is_topo_3d + topo_shape.embed_count *
-                    (1 + embed_shape.indices)) * ei;
+                index_t polyhedral_off = topo_shape.embed_count * ei;
 
-                poly_conn_data[poly_off] = topo_shape.embed_count;
-                for(index_t oi = 0; oi < topo_shape.embed_count; oi++)
+                // Face iteration
+                for (index_t fi = 0; fi < topo_shape.embed_count; fi++)
                 {
-                    index_t outer_off = poly_off + (is_topo_3d +
-                        oi * (1 + embed_shape.indices));
-
-                    poly_conn_data[outer_off] = embed_shape.indices;
-                    for(index_t ii = 0; ii < embed_shape.indices; ii++)
+                    // Indices iteration
+                    for (index_t ii = 0; ii < embed_shape.indices; ii++)
                     {
-                        index_t inner_off = outer_off + 1 + ii;
-                        index_t inner_data_off = data_off + (is_topo_3d ?
-                            topo_shape.embedding[oi * embed_shape.indices + ii] : ii);
+                        index_t inner_data_off =  data_off + 
+                          topo_shape.embedding[fi * embed_shape.indices + ii];
 
                         data_node.set_external(topo_dtype, topo_conn.element_ptr(inner_data_off));
-                        poly_conn_data[inner_off] = data_node.to_int64();
+                        face_indices[ii] = data_node.to_int64();
+                    }
+
+                    bool has_perm = false;
+                    index_t face_index = polygonal_conn_data.size() / embed_shape.indices;
+
+                    // Check if face already exists
+                    for (index_t poly_i = 0; poly_i < face_index; poly_i++ )
+                    {
+                        index_t face_off = poly_i * embed_shape.indices;
+                        has_perm |= std::is_permutation(polygonal_conn_data.begin() + face_off,
+                                                        polygonal_conn_data.begin() + face_off + 
+                                                        embed_shape.indices,
+                                                        face_indices.begin());
+                        if (has_perm)
+                        {
+                            face_index = poly_i;
+                            continue;
+                        }
+                    }
+
+                    // Add face index to polyhedral indices
+                    polyhedral_conn_data[polyhedral_off + fi] = face_index;
+
+                    // Add face indices to polygonal data if no permutation exists
+                    if (!has_perm)
+                    {
+                        polygonal_conn_data.insert(polygonal_conn_data.end(), face_indices.begin(), face_indices.end());
                     }
                 }
             }
 
-            Node poly_conn;
-            poly_conn.set_external(poly_conn_data);
-            poly_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);            
+            Node polyhedral_conn;  
+            polyhedral_conn.set_external(polyhedral_conn_data);
+            polyhedral_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]); 
+
+            Node polyhedral_size;
+            std::vector<int64> polyhedral_size_data(topo_elems, topo_shape.embed_count);
+            polyhedral_size.set_external(polyhedral_size_data);
+            polyhedral_size.to_data_type(int_dtype.id(), dest["elements/sizes"]); 
+
+            dest["subelements/shape"].set("polygonal");
+
+            Node polygonal_conn;
+            polygonal_conn.set_external(polygonal_conn_data);
+            polygonal_conn.to_data_type(int_dtype.id(), dest["subelements/connectivity"]);
+
+            Node polygonal_size;
+            std::vector<int64> polygonal_size_data(polygonal_conn_data.size() / embed_shape.indices,
+                                                   embed_shape.indices);
+            polygonal_size.set_external(polygonal_size_data);
+            polygonal_size.to_data_type(int_dtype.id(), dest["subelements/sizes"]);
+
+            // BHAN - For polyhedral, writes offsets to 
+            // "elements/offsets" and "subelements/offsets"; no choice in dest
+            generate_offsets(dest, dest);       
         }
     }
 }
@@ -3852,17 +3935,17 @@ void
 mesh::topology::unstructured::generate_offsets(const Node &topo,
                                                Node &dest)
 {
-    dest.reset();
-
     const ShapeType topo_shape(topo);
     const DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
-
     const Node &topo_conn = topo["elements/connectivity"];
+
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
     if(topo_shape.indices > 0)
     {
+        dest.reset();
+
         const index_t num_topo_shapes =
             topo_conn.dtype().number_of_elements() / topo_shape.indices;
 
@@ -3876,6 +3959,8 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polygonal")
     {
+        dest.reset();
+
         const Node &topo_size = topo["elements/sizes"];
         std::vector<int64> shape_array;
         index_t i = 0;
@@ -3895,26 +3980,44 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polyhedral")
     {
-        std::vector<int64> shape_array;
-        index_t s = 0;
-        while(s < topo_conn.dtype().number_of_elements())
-        {
-            const Node index_node(topo_dtype,
-                const_cast<void*>(topo_conn.element_ptr(s)), true);
-            shape_array.push_back(s);
+        Node &dest_elem_off = dest["elements/offsets"];
+        Node &dest_subelem_off = dest["subelements/offsets"];
 
-            s += 1;
-            for(index_t f = 0; f < index_node.to_int64(); f++)
-            {
-                const Node face_node(topo_dtype,
-                    const_cast<void*>(topo_conn.element_ptr(s)), true);
-                s += face_node.to_int64() + 1;
-            }
+        const Node& topo_elem_size = dest["elements/sizes"];
+        const Node& topo_subelem_size = dest["subelements/sizes"];
+
+        Node elem_node;
+        Node subelem_node;
+
+        std::vector<int64> shape_array;
+        index_t ei = 0;
+        index_t es = 0;
+        while(ei < topo_elem_size.dtype().number_of_elements())
+        {
+            const Node index_node(int_dtype,
+                const_cast<void*>(topo_elem_size.element_ptr(ei)), true);
+            shape_array.push_back(es);
+            es += index_node.to_int64();
+            ei++;
         }
 
-        Node shape_node;
-        shape_node.set_external(shape_array);
-        shape_node.to_data_type(int_dtype.id(), dest);
+        elem_node.set_external(shape_array);
+        elem_node.to_data_type(int_dtype.id(), dest_elem_off);
+
+        shape_array.clear();
+        ei = 0;
+        es = 0;
+        while(ei < topo_subelem_size.dtype().number_of_elements())
+        {
+            const Node index_node(int_dtype,
+                const_cast<void*>(topo_subelem_size.element_ptr(ei)), true);
+            shape_array.push_back(es);
+            es += index_node.to_int64();
+            ei++;
+        }    
+
+        subelem_node.set_external(shape_array);
+        subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
     }
 }
 
