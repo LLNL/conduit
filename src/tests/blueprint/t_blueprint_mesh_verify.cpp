@@ -762,6 +762,70 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         CHECK_MESH(verify_unstructured_topology,n,info,true);
     }
 
+    { // Single Shape Unstructured Polyhedral Tests //
+        n["elements"].reset();
+        n["elements"]["shape"].set("undefined");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["elements"]["shape"].set("polyhedral");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["sizes"].set(DataType::int32(10));     
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["subelements"]["shape"].set("polygonal");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["sizes"].set(DataType::int32(10));     
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["connectivity"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["subelements"]["connectivity"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["offsets"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"].remove("offsets");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["subelements"]["offsets"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"].remove("offsets");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["sizes"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["sizes"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["subelements"]["sizes"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["sizes"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["type"].set("structured");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["type"].set("unstructured");
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+    }
+
     { // Mixed Shape Topology List Tests //
         n["elements"].reset();
 
@@ -794,6 +858,24 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["d"]["sizes"].set(DataType::int32(2));
         CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["elements"]["d"]["sizes"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["e"]["shape"].set("polyhedral");
+        n["elements"]["e"]["connectivity"].set(DataType::int32(6));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["e"]["offsets"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["e"]["sizes"].set(DataType::int32(2));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["e"]["sizes"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        // BHAN - has_consistent_validity() fails for intermediate
+        // subelement false checks
+        n["subelements"]["e"]["shape"].set("polygonal");
+        n["subelements"]["e"]["connectivity"].set(DataType::int32(6));
+        n["subelements"]["e"]["offsets"].set(DataType::int32(3));
+        n["subelements"]["e"]["sizes"].set(DataType::int32(3));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["type"].set("structured");
