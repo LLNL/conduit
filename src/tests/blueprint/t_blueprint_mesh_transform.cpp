@@ -443,6 +443,10 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             topo_noelem.remove("elements");
             poly_noelem.set_external(topo_poly);
             poly_noelem.remove("elements");
+            if (ti == 3 || ti == 4)
+            {
+                poly_noelem.remove("subelements");
+            }
             EXPECT_FALSE(topo_noelem.diff(poly_noelem, info));
         }
 
@@ -452,6 +456,17 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 
             const conduit::Node &topo_conn = topo_node["elements/connectivity"];
             conduit::Node &poly_conn = topo_poly["elements/connectivity"];
+            conduit::Node poly_subconn;
+            // BHAN - Error when trying to convert empty poly_subconn,
+            // set to element/connectivity for polygonal (unused)
+            if (is_topo_3d)
+            {
+                poly_subconn = topo_poly["subelements/connectivity"];
+            }
+            else
+            {
+                poly_subconn = topo_poly["elements/connectivity"];   
+            }
             EXPECT_EQ(poly_conn.dtype().id(), topo_conn.dtype().id());
 
             const index_t topo_len = topo_conn.dtype().number_of_elements();
@@ -459,51 +474,72 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             const index_t topo_elems = topo_len / topo_indices;
             const index_t poly_stride = poly_len / topo_elems;
 
-            EXPECT_EQ(poly_stride, 
-                      (is_topo_3d + topo_faces * 
-                      ((1 * is_topo_3d) + topo_findices)));
+            EXPECT_EQ(poly_stride, is_topo_3d ? topo_faces : topo_findices );
             EXPECT_EQ(poly_len % topo_elems, 0);
 
-            conduit::Node topo_conn_array, poly_conn_array;
+            conduit::Node topo_conn_array, poly_conn_array, poly_subconn_array;
             topo_conn.to_int64_array(topo_conn_array);
             poly_conn.to_int64_array(poly_conn_array);
+            poly_subconn.to_int64_array(poly_subconn_array);
             const conduit::int64_array topo_data = topo_conn_array.as_int64_array();
             const conduit::int64_array poly_data = poly_conn_array.as_int64_array();
+            const conduit::int64_array poly_subdata = poly_subconn_array.as_int64_array();
             
-            // BHAN error when trying to convert empty poly_size, set
-            // to conn for polyhedral (unused)
             conduit::Node poly_size;
-            if (!is_topo_3d)
+            poly_size = topo_poly["elements/sizes"];
+
+            // BHAN - Error when trying to convert empty poly_subsize,
+            // set to element/sizes for polygonal (unused)
+            conduit::Node poly_subsize;
+            if (is_topo_3d)
             {
-                poly_size = topo_poly["elements/sizes"];
+                poly_subsize = topo_poly["subelements/sizes"];
             }
             else 
             {
-                poly_size = topo_poly["elements/connectivity"];
+                poly_subsize = topo_poly["elements/sizes"];
             }
 
             conduit::Node poly_size_array;
             poly_size.to_int64_array(poly_size_array);
             const conduit::int64_array poly_size_data = poly_size_array.as_int64_array();
-            
+
+            conduit::Node poly_subsize_array;
+            poly_subsize.to_int64_array(poly_subsize_array);
+            const conduit::int64_array poly_subsize_data = poly_subsize_array.as_int64_array();
+
             for(index_t ep = 0, et = 0; ep < poly_len;
                 ep += poly_stride, et += topo_indices)
             {
-                EXPECT_EQ(is_topo_3d ? poly_data[ep] : poly_size_data[ep / poly_stride],
+                EXPECT_EQ(poly_size_data[ep / poly_stride],
                           is_topo_3d ? topo_faces : topo_findices);
 
-                for(index_t efo = ep + is_topo_3d; efo < ep + poly_stride;
-                    efo += (1 * is_topo_3d) + topo_findices)
+                for(index_t efo = ep; efo < ep + poly_stride;
+                    efo += is_topo_3d ? 1 : topo_findices)
                 {
-                    EXPECT_EQ(is_topo_3d ? poly_data[efo] : poly_size_data[efo / poly_stride],
-                              topo_findices);
+                    EXPECT_EQ(is_topo_3d ? poly_subsize_data[efo / poly_stride] :
+                                           poly_size_data[efo / poly_stride],
+                                           topo_findices);
 
                     const std::set<index_t> topo_index_set(
                         &topo_data[et],
                         &topo_data[et + topo_indices]);
-                    const std::set<index_t> poly_index_set(
-                        &poly_data[efo + 1 * is_topo_3d],
-                        &poly_data[efo + 1 * is_topo_3d + topo_findices]);
+
+                    std::set<index_t> poly_index_set;
+                    if (is_topo_3d)
+                    {
+                        std::set<index_t> polyhedral_index_set(
+                        &poly_subdata[poly_data[efo] * topo_findices],
+                        &poly_subdata[poly_data[efo] * topo_findices + topo_findices]);
+                        poly_index_set = polyhedral_index_set;
+                    }
+                    else
+                    {
+                        std::set<index_t> polygonal_index_set(
+                        &poly_data[efo],
+                        &poly_data[efo + topo_findices]);
+                        poly_index_set = polygonal_index_set;
+                    }
                     // set of face indices is completely unique (no duplicates)
                     EXPECT_EQ(poly_index_set.size(), topo_findices);
                     // all polygonal face indices can be found in the base element
