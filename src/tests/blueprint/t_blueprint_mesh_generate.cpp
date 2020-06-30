@@ -793,9 +793,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
         int64_array expected_offsets_data = expected_offsets_int64.as_int64_array();
         for(index_t oi = 0; oi < offset_dtype.number_of_elements(); oi++)
         {
-            expected_offsets_data[oi] = oi * ((grid_mesh.dims() == 3) +
-                grid_mesh.faces_per_elem() * 
-                ((grid_mesh.dims() == 3) + grid_mesh.points_per_face()));
+            expected_offsets_data[oi] = oi * (grid_mesh.dims() == 3 ? 
+                grid_mesh.faces_per_elem() : grid_mesh.points_per_face());
         }
         Node expected_offsets;
         expected_offsets_int64.to_data_type(offset_dtype.id(), expected_offsets);

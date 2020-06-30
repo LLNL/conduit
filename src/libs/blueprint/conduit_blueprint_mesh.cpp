@@ -3467,9 +3467,9 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
             polygonal_size.set_external(polygonal_size_data);
             polygonal_size.to_data_type(int_dtype.id(), dest["subelements/sizes"]);
 
-            // BHAN - For polyhedral, writes offsets to 
-            // "elements/offsets" and "subelements/offsets"; no choice in dest
-            generate_offsets(dest, dest);       
+            // BHAN - For polyhedral, writes offsets for
+            // "elements/offsets" and "subelements/offsets"
+            generate_offsets(dest, dest["elements/offsets"]);       
         }
     }
 }
@@ -4025,11 +4025,11 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polyhedral")
     {
-        Node &dest_elem_off = dest["elements/offsets"];
-        Node &dest_subelem_off = dest["subelements/offsets"];
+        Node &dest_elem_off = const_cast<Node &>(topo)["elements/offsets"];
+        Node &dest_subelem_off = const_cast<Node &>(topo)["subelements/offsets"];
 
-        const Node& topo_elem_size = dest["elements/sizes"];
-        const Node& topo_subelem_size = dest["subelements/sizes"];
+        const Node& topo_elem_size = topo["elements/sizes"];
+        const Node& topo_subelem_size = topo["subelements/sizes"];
 
         Node elem_node;
         Node subelem_node;
@@ -4048,6 +4048,7 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
 
         elem_node.set_external(shape_array);
         elem_node.to_data_type(int_dtype.id(), dest_elem_off);
+        elem_node.to_data_type(int_dtype.id(), dest);
 
         shape_array.clear();
         ei = 0;
