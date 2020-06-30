@@ -1749,9 +1749,20 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     const ShapeType &topo_shape = topo_cascade.get_shape();
 
     Node topo_sizes;
-    if (topo_shape.is_polygonal())
+    if (topo_shape.is_poly())
     {
       topo_sizes = topo["elements/sizes"];
+    }
+
+    Node topo_subconn;
+    Node topo_subsizes;
+    Node topo_suboffsets;
+    if (topo_shape.is_polyhedral())
+    {
+        const Node &topo_subconn_const = topo["subelements/connectivity"];
+        topo_subconn.set_external(topo_subconn_const);
+        topo_subsizes = topo["subelements/sizes"];
+        topo_suboffsets = topo["subelements/offsets"];
     }
 
     // Discover Data Types //
@@ -1770,6 +1781,10 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     const DataType conn_dtype(topo_conn.dtype().id(), 1);
     const DataType offset_dtype(topo_offsets.dtype().id(), 1);
     const DataType size_dtype(topo_sizes.dtype().id(), 1);
+
+    const DataType subconn_dtype(topo_subconn.dtype().id(), 1);
+    const DataType suboffset_dtype(topo_suboffsets.dtype().id(), 1);
+    const DataType subsize_dtype(topo_subsizes.dtype().id(), 1);
 
     // Allocate Data Templates for Outputs //
 
@@ -1799,26 +1814,47 @@ calculate_unstructured_centroids(const conduit::Node &topo,
         }
         data_node.set_external(offset_dtype, topo_offsets.element_ptr(ei));
         const index_t eoffset = data_node.to_int64();
-        data_node.set_external(conn_dtype, topo_conn.element_ptr(eoffset));
+
+        if (topo_shape.is_polyhedral())
+        {
+            data_node.set_external(size_dtype, topo_sizes.element_ptr(ei));
+        }
         const index_t elem_num_faces = topo_shape.is_polyhedral() ?
             data_node.to_int64() : 1;
 
         std::set<index_t> elem_coord_indices;
-        for(index_t fi = 0, foffset = eoffset + topo_shape.is_polyhedral();
+        for(index_t fi = 0, foffset = eoffset;
             fi < elem_num_faces; fi++)
         {
-            data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
+
+            index_t subelem_index, subelem_offset, subelem_size = 0;
+            if (topo_shape.is_polyhedral())
+            {
+                data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
+                subelem_index = data_node.to_int64();
+                data_node.set_external(suboffset_dtype, topo_suboffsets.element_ptr(subelem_index));
+                subelem_offset = data_node.to_int64();
+                data_node.set_external(subsize_dtype, topo_subsizes.element_ptr(subelem_index));
+                subelem_size = data_node.to_int64();
+            }
+
             const index_t face_num_coords = topo_shape.is_polyhedral() ?
-                data_node.to_int64() : topo_shape.is_polygonal() ? 
+                subelem_size : topo_shape.is_polygonal() ? 
                 esize : topo_shape.indices;
-            foffset += topo_shape.is_polyhedral();
 
             for(index_t ci = 0; ci < face_num_coords; ci++)
             {
-                data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset + ci));
-                elem_coord_indices.insert(data_node.to_int64());
+                if (topo_shape.is_polyhedral())
+                {
+                    data_node.set_external(subconn_dtype, topo_subconn.element_ptr(subelem_offset + ci));
+                }
+                else
+                {
+                    data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset + ci)); 
+                }
+                elem_coord_indices.insert(data_node.to_int64());  
             }
-            foffset += face_num_coords;
+            foffset += topo_shape.is_polyhedral() ? 1 : face_num_coords;
         }
 
         float64 ecentroid[3] = {0.0, 0.0, 0.0};
