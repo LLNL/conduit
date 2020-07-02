@@ -302,12 +302,12 @@ def use_spack_mirror(spack_dir,
         # Note: In this case, spack says it removes the mirror, but we still
         # get errors when we try to add a new one, sounds like a bug
         #
-        sexe("spack/bin/spack mirror remove --scope=site {} ".format(mirror_name),
+        sexe("spack/bin/spack mirror remove {} ".format(mirror_name),
              echo=True)
         existing_mirror_path = None
     if not existing_mirror_path:
         # Add if not already there
-        sexe("spack/bin/spack mirror add --scope=site {} {}".format(
+        sexe("spack/bin/spack mirror add {} {}".format(
                 mirror_name, mirror_path), echo=True)
         print("[using mirror {}]".format(mirror_path))
 
