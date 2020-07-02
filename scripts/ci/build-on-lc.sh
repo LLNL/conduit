@@ -22,7 +22,8 @@ mkdir -p ${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}
 # Preparing command
 PREFIX="--prefix=${INSTALL_ROOT}_${SYS_TYPE}_${TOOLCHAIN}"
 SPEC="--spec=${PKG_SPEC}"
-UBERENV_CMD="scripts/uberenv/uberenv.py ${INSTALL} ${SPEC} ${PREFIX}"
+MIRROR="--mirror=${SPACK_MIRROR}"
+UBERENV_CMD="scripts/uberenv/uberenv.py ${INSTALL} ${SPEC} ${PREFIX} ${MIRROR}"
 
 # Build command
 echo "[run] ${UBERENV_CMD}"

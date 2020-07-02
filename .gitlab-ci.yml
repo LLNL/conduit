@@ -7,6 +7,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   INSTALL_ROOT: ${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}/uberenv_libs
   SPACK_UPSTREAM: /usr/workspace/radiuss/spack-chain-parent/opt/spack
+  SPACK_MIRROR: /usr/workspace/radiuss/mirrors/conduit
 
 stages:
   - deps
