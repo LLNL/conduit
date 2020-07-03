@@ -10,6 +10,7 @@ gcc deps on quartz:
 gcc install on quartz:
   extends: [.install_on_quartz, .with_gcc]
   needs: [gcc deps on quartz]
+  allow_failure: true
 
 gcc_static deps on quartz:
   extends: [.build_deps_on_quartz, .with_gcc_static]
