@@ -1,0 +1,31 @@
+##############################################################################
+# Copyright (c) 2014-20, Lawrence Livermore National Security, LLC and Conduit
+# project contributors. See the COPYRIGHT file for details.
+##############################################################################
+
+##################
+# LASSEN TEMPLATES
+##################
+
+# Shared configuration of jobs for lassen
+.on_lassen:
+  tags:
+    - batch
+    - lassen
+  timeout: 3h
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~/_lnone/ || $CI_LASSEN == "OFF"'
+      when: never
+    - when: on_success
+
+####
+# Generic lassen jobs
+.build_deps_on_lassen:
+  extends: [.build_script, .mode_deps, .on_lassen]
+  variables:
+    LLNL_LSF_SCHEDULER_PARAMETERS: -nnodes 1 -W 30 -G radiuss
+
+.install_on_lassen:
+  extends: [.build_script, .mode_install, .on_lassen]
+  variables:
+    LLNL_LSF_SCHEDULER_PARAMETERS: -nnodes 1 -W 10 -G radiuss
