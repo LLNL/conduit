@@ -55,7 +55,7 @@ def key_pkgs():
     return  ["conduit"]
 
 def spec():
-    return  "+zfp+adios"
+    return  "+zfp+adios+silo ^silo~mpi"
 
 
 def timestamp(t=None,sep="_"):
