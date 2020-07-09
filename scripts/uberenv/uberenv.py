@@ -178,6 +178,13 @@ def parse_args():
         if not os.path.isdir(opts["spack_config_dir"]):
             print("[ERROR: invalid spack config dir: {} ]".format(opts["spack_config_dir"]))
             sys.exit(-1)
+    # if rel path is given for the mirror, we need to evaluate here -- before any
+    # chdirs to avoid confusion related to what it is relative to.
+    # (it should be relative to where uberenv is run from, so it matches what you expect
+    #  from shell completion, etc)
+    if not opts["mirror"] is None:
+        if not opts["mirror"].startswith("http") and not os.path.isabs(opts["mirror"]):
+            opts["mirror"] = os.path.abspath(opts["mirror"])
     return opts, extras
 
 
@@ -262,7 +269,6 @@ def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
     if not mirror_path:
         print("[--create-mirror requires a mirror directory]")
         sys.exit(-1)
-    mirror_path = os.path.abspath(mirror_path)
 
     mirror_cmd = "spack/bin/spack "
     if ignore_ssl_errors:
@@ -292,7 +298,6 @@ def use_spack_mirror(spack_dir,
     """
     Configures spack to use mirror at a given path.
     """
-    mirror_path = os.path.abspath(mirror_path)
     existing_mirror_path = find_spack_mirror(spack_dir, mirror_name)
     if existing_mirror_path and mirror_path != existing_mirror_path:
         # Existing mirror has different URL, error out
@@ -479,7 +484,7 @@ def main():
     ##########################################################
     if opts["create_mirror"]:
         return create_spack_mirror(opts["mirror"],
-                                   uberenv_pkg_name,
+                                   uberenv_pkg_name + opts["spec"],
                                    opts["ignore_ssl_errors"])
     else:
         if not opts["mirror"] is None:

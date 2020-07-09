@@ -185,7 +185,7 @@ stages:
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16/
+           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -407,7 +407,7 @@ stages:
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16/
+           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/
         displayName: 'Spack Build Tpls'
 
       - script: |
