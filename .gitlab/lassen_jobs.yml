@@ -10,11 +10,9 @@ clang deps on lassen:
 clang install on lassen:
   extends: [.install_on_lassen, .with_clang]
   needs: [clang deps on lassen]
-  allow_failure: true
 
 xl deps on lassen:
   extends: [.build_deps_on_lassen, .with_xl]
-  allow_failure: true
 
 xl install on lassen:
   extends: [.install_on_lassen, .with_xl]
