@@ -4,7 +4,7 @@
 "package_final_phase" : "configure",
 "package_source_dir" : "../..",
 "spack_url": "https://github.com/spack/spack",
-"spack_branch": "develop",
+"spack_commit": "9d1f71e89f184d9b05f15ff81532aec460795fd0",
 "spack_activate" : {"py-numpy" : ["+python"],
                     "py-sphinx": ["+python","+doc"],
                     "py-mpi4py" : ["+python", "+mpi"],
