@@ -3371,6 +3371,7 @@ mesh::topology::unstructured::verify(const Node &topo,
                         else 
                         {
                             const Node &topo_subelems = topo["subelements"];
+                            Node &info_subelems = info["subelements"];
                             bool has_subnames = topo_subelems.dtype().is_object();
 
                             if(!topo_subelems.has_child(name))
@@ -3400,6 +3401,7 @@ mesh::topology::unstructured::verify(const Node &topo,
 
                                 log::validation(subchld_info,subchld_res);
                             }
+                            log::validation(info_subelems, subchld_res);
                         }
                         elems_res &= subchld_res;
                     }

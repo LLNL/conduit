@@ -870,11 +870,12 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["e"]["sizes"].set(DataType::int32(3));
         CHECK_MESH(verify_unstructured_topology,n,info,false);
 
-        // BHAN - has_consistent_validity() fails for intermediate
-        // subelement false checks
         n["subelements"]["e"]["shape"].set("polygonal");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["subelements"]["e"]["connectivity"].set(DataType::int32(6));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["subelements"]["e"]["offsets"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["subelements"]["e"]["sizes"].set(DataType::int32(3));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
