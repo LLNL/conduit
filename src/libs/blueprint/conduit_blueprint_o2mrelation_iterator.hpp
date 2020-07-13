@@ -78,9 +78,9 @@ namespace o2mrelation
 
 typedef enum
 {
-    DATA = 0,     // empty (default type)
-    ONE  = 1,     // empty (default type)
-    MANY = 2      // char8 string (incore c-string)
+    DATA = 0,     // data array index
+    ONE  = 1,     // one group (outer) index
+    MANY = 2      // many item (inner) index
 } IndexType;
 
 //-----------------------------------------------------------------------------
