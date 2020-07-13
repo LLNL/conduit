@@ -48,7 +48,7 @@ stages:
       COMPILER_CC: gcc-5
       COMPILER_CXX: g++-5
       COMPILER_FC: gfortran-5
-      COMPILER_SPEC: gcc@5.4.0
+      COMPILER_SPEC: gcc@5
     strategy:
       matrix:
         shared_minimal:
