@@ -80,17 +80,69 @@ Taken in sum, the consituents of the **o2mrelation** schema describe how data (c
 Properties, Queries, and Transforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * **conduit::blueprint::o2mrelation::query_paths(const Node &o2mrelation, Node &res)**
+ * **conduit::blueprint::o2mrelation::data_paths(const Node &o2mrelation)**
 
-     Makes the ``res`` node an object with keys being the detected value paths found in ``o2mrelation`` and values being empty nodes.
+     Returns a ``std::vector<std::string>`` object containing all of the data paths in the given **o2mrelation** node.
 
-     * Example: {values: [int64], sizes: [int64], offsets: [int32], other: [char8]} => {values: (empty)}
+     * Example:
 
- * **conduit::blueprint::o2mrelation::to_compact(Node &o2mrelation)**
+     .. code:: json
 
-     Updates the contents of the ``offsets`` array so that it refers to a compacted sequence of relationships.
+         // Input //
+         {
+           "values": [int64],
+           "sizes": [int64],
+           "offsets": [int32],
+           "other": [char8]
+         }
 
-     * Example: sizes: {2, 5, 3, 8} => offsets: {0, 2, 7, 10}
+         // Output //
+         ["values"]
+
+
+ * **conduit::blueprint::o2mrelation::compact_to(const Node &o2mrelation, Node &res)**
+
+     Generates a data-compacted version of the given **o2mrelation** (first parameter) and stores it in the given output node (second parameter).
+
+     * Example:
+
+     .. code:: json
+
+         // Input //
+         {
+           "values": [-1, 2, 3, -1, 0, 1, -1],
+           "sizes": [2, 2],
+           "offsets": [4, 1]
+         }
+
+         // Output //
+         {
+           "values": [0, 1, 2, 3],
+           "sizes": [2, 2],
+           "offsets": [0, 2]
+         }
+
+
+ * **conduit::blueprint::o2mrelation::generate_offsets(Node &n, Node &info)**
+
+     Updates the contents of the given node's ``offsets`` child so that it refers to a compacted sequence of one-to-many relationships.
+
+     * Example:
+
+     .. code:: json
+
+         // Input //
+         {
+           "values": [0, 1, 2, 3],
+           "sizes": [2, 2]
+         }
+
+         // Output //
+         {
+           "values": [0, 1, 2, 3],
+           "sizes": [2, 2],
+           "offsets": [0, 2]
+         }
 
 O2MRelation Examples
 ~~~~~~~~~~~~~~~~~~~~~~~
