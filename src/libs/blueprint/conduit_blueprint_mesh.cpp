@@ -1120,6 +1120,7 @@ struct TopologyMetadata
                 // Number of faces()
                 const bool is_3d = dim_shape.dim == 3;
                 index_t elem_outer_count =  is_3d ? entity_indices.size() : 1;
+                Node temp;
                 for(index_t oi = 0, ooff = 0 ; oi < elem_outer_count; oi++)
                 {
                     index_t elem_inner_count = entity_indices.size();
@@ -1131,13 +1132,12 @@ struct TopologyMetadata
                         Node subelem_off; subelem_off.set_external(subelem_off_const);
                         Node subelem_size; subelem_size.set_external(subelem_size_const);
 
-                        Node subelem_node;
-                        subelem_node.set_external(int_dtype,
+                        temp.set_external(int_dtype,
                             subelem_off.element_ptr(entity_indices[oi]));
-                        ooff = subelem_node.to_int64();
-                        subelem_node.set_external(int_dtype,
+                        ooff = temp.to_int64();
+                        temp.set_external(int_dtype,
                             subelem_size.element_ptr(entity_indices[oi]));
-                        elem_inner_count = subelem_node.to_int64();
+                        elem_inner_count = temp.to_int64();
                     }
 
                     for(index_t ii = 0; ii < elem_inner_count; ii++)
@@ -1148,10 +1148,9 @@ struct TopologyMetadata
                             const Node &subelem_conn_const = (*topo)["subelements/connectivity"];
                             Node subelem_conn; subelem_conn.set_external(subelem_conn_const);
 
-                            Node subelem_node;
-                            subelem_node.set_external(int_dtype,
+                            temp.set_external(int_dtype,
                                 subelem_conn.element_ptr(ioff));
-                            entity.insert(subelem_node.to_int64());
+                            entity.insert(temp.to_int64());
                         }
                         else
                         {
@@ -1205,7 +1204,8 @@ struct TopologyMetadata
 
                 index_t elem_outer_count = dim_shape.is_poly() ?
                     entity_indices.size() : dim_shape.embed_count;
-                    
+                
+                Node temp; 
                 for(index_t oi = 0, ooff = 0;
                     oi < elem_outer_count; oi++)
                 {
@@ -1219,13 +1219,12 @@ struct TopologyMetadata
                         Node subelem_off; subelem_off.set_external(subelem_off_const);
                         Node subelem_size; subelem_size.set_external(subelem_size_const);
 
-                        Node subelem_node;
-                        subelem_node.set_external(int_dtype,
+                        temp.set_external(int_dtype,
                             subelem_off.element_ptr(entity_indices[oi]));
-                        ooff = subelem_node.to_int64();
-                        subelem_node.set_external(int_dtype,
+                        ooff = temp.to_int64();
+                        temp.set_external(int_dtype,
                             subelem_size.element_ptr(entity_indices[oi]));
-                        elem_inner_count = subelem_node.to_int64();
+                        elem_inner_count = temp.to_int64();
                     }
 
                     std::vector<int64> embed_indices;
@@ -1239,10 +1238,9 @@ struct TopologyMetadata
                             const Node &subelem_conn_const = (*topo)["subelements/connectivity"];
                             Node subelem_conn; subelem_conn.set_external(subelem_conn_const);
 
-                            Node subelem_node;
-                            subelem_node.set_external(int_dtype,
+                            temp.set_external(int_dtype,
                                 subelem_conn.element_ptr(ioff));
-                            embed_indices.push_back(subelem_node.to_int64());
+                            embed_indices.push_back(temp.to_int64());
                         }
                         else
                         {
