@@ -529,15 +529,17 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
                     if (is_topo_3d)
                     {
                         std::set<index_t> polyhedral_index_set(
-                        &poly_subdata[poly_data[efo] * topo_findices],
-                        &poly_subdata[poly_data[efo] * topo_findices + topo_findices]);
+                            &poly_subdata[poly_data[efo] * topo_findices],
+                            &poly_subdata[poly_data[efo] * topo_findices + topo_findices]);
+
                         poly_index_set = polyhedral_index_set;
                     }
                     else
                     {
                         std::set<index_t> polygonal_index_set(
-                        &poly_data[efo],
-                        &poly_data[efo + topo_findices]);
+                            &poly_data[efo],
+                            &poly_data[efo + topo_findices]);
+                        
                         poly_index_set = polygonal_index_set;
                     }
                     // set of face indices is completely unique (no duplicates)

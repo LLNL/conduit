@@ -1168,7 +1168,7 @@ struct TopologyMetadata
 
                 if (dim_shape.is_polygonal())
                 {
-                  dim_size.insert(dim_size.end(), entity.size());
+                  dim_size.push_back(entity.size());
                 }
 
                 dim_assocs[entity_dim][entity_id].resize(topo_shape.dim + 1);
@@ -1886,9 +1886,10 @@ calculate_unstructured_centroids(const conduit::Node &topo,
                 subelem_size = data_node.to_int64();
             }
 
-            const index_t face_num_coords = topo_shape.is_polyhedral() ?
-                subelem_size : topo_shape.is_polygonal() ? 
-                esize : topo_shape.indices;
+            const index_t face_num_coords = 
+                topo_shape.is_polyhedral() ? subelem_size :
+                topo_shape.is_polygonal() ? esize :
+                topo_shape.indices;
 
             for(index_t ci = 0; ci < face_num_coords; ci++)
             {
