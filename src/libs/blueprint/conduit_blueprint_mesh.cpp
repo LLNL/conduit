@@ -3275,9 +3275,6 @@ mesh::topology::unstructured::verify(const Node &topo,
               (topo_elems["shape"].as_string() == "polygonal" ||
                topo_elems["shape"].as_string() == "polyhedral"))
             {
-                elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "sizes");
-                elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");   
-
                 elems_res &= blueprint::o2mrelation::verify(topo_elems, info_elems);
 
                 // Verify subelements if polyhedral
@@ -3301,8 +3298,6 @@ mesh::topology::unstructured::verify(const Node &topo,
                             subelems_res &= verify_field_exists(protocol, topo_subelems, info_subelems, "shape") &&
                                    mesh::topology::shape::verify(topo_subelems["shape"], info_subelems["shape"]);
                             subelems_res &= verify_integer_field(protocol, topo_subelems, info_subelems, "connectivity");
-                            subelems_res &= verify_integer_field(protocol, topo_subelems, info_subelems, "sizes");
-                            subelems_res &= verify_integer_field(protocol, topo_subelems, info_subelems, "offsets");
                             subelems_res &= topo_subelems["shape"].as_string() == "polygonal";
                             subelems_res &= blueprint::o2mrelation::verify(topo_subelems, info_subelems);
                         }
@@ -3347,9 +3342,6 @@ mesh::topology::unstructured::verify(const Node &topo,
                    (chld["shape"].as_string() == "polygonal" || 
                    chld["shape"].as_string() == "polyhedral"))
                 {
-                    chld_res &= verify_integer_field(protocol, chld, chld_info, "sizes");
-                    chld_res &= verify_integer_field(protocol, chld, chld_info, "offsets");   
-
                     chld_res &= blueprint::o2mrelation::verify(chld, chld_info);
                     
                     // Polyhedral - Check for subelement child
@@ -3381,9 +3373,7 @@ mesh::topology::unstructured::verify(const Node &topo,
                                     subchld_res &= verify_field_exists(protocol, sub_chld, subchld_info, "shape") &&
                                     mesh::topology::shape::verify(sub_chld["shape"], subchld_info["shape"]);
                                     subchld_res &= verify_integer_field(protocol, sub_chld, subchld_info, "connectivity");
-                                    subchld_res &= sub_chld["shape"].as_string() == "polygonal";
-                                    subchld_res &= verify_integer_field(protocol, sub_chld, subchld_info, "sizes");
-                                    subchld_res &= verify_integer_field(protocol, sub_chld, subchld_info, "offsets");   
+                                    subchld_res &= sub_chld["shape"].as_string() == "polygonal";  
                                     subchld_res &= blueprint::o2mrelation::verify(sub_chld, subchld_info);
                                 }
                                 else

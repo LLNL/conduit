@@ -780,7 +780,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["subelements"]["shape"].set("polygonal");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["subelements"]["connectivity"].set(DataType::int32(10));
-        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["subelements"]["offsets"].set(DataType::int32(10));
         CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["subelements"]["sizes"].set(DataType::int32(10));     
@@ -852,7 +852,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
 
         n["elements"]["d"]["shape"].set("polygonal");
         n["elements"]["d"]["connectivity"].set(DataType::int32(6));
-        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["elements"]["d"]["offsets"].set(DataType::int32(3));
         CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["elements"]["d"]["sizes"].set(DataType::int32(2));
@@ -873,7 +873,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["subelements"]["e"]["shape"].set("polygonal");
         CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["subelements"]["e"]["connectivity"].set(DataType::int32(6));
-        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["subelements"]["e"]["offsets"].set(DataType::int32(3));
         CHECK_MESH(verify_unstructured_topology,n,info,false);
         n["subelements"]["e"]["sizes"].set(DataType::int32(3));
