@@ -1254,13 +1254,6 @@ struct TopologyMetadata
 
                     ooff += dim_shape.is_polygonal() ? 1 : 0;
 
-                    // TODO(JRC): This is a hack to ensure that the last edge
-                    // value for polygonal edge lists is correct.
-                    // if(dim_shape.is_polygonal() && oi == elem_outer_count - 1)
-                    // {
-                    //     embed_indices[1] = entity_indices[1];
-                    // }
-
                     entity_index_bag.push_back(embed_indices);
                     entity_dim_bag.push_back(embed_shape.dim);
                     entity_parent_bag.push_back(embed_parents);

@@ -2190,14 +2190,6 @@ basic(const std::string &mesh_type,
     res.remove("fields");
     res.remove("state");
 
-    // TODO(JRC): Consider removing this code if the extra complexity of having
-    // the "offsets" array in the basic examples is decided to be a non-issue.
-    // Node &topo = res["topologies"].child(0);
-    // if(topo.has_child("elements") && topo["elements"].has_child("offsets"))
-    // {
-    //     topo["elements"].remove("offsets");
-    // }
-
     basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
         res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
 }
