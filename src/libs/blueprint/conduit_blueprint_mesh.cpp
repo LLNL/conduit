@@ -699,6 +699,81 @@ bool verify_reference_field(const std::string &protocol,
 }
 
 //-----------------------------------------------------------------------------
+bool verify_poly_node(bool is_mixed_topo,
+                      std::string name,
+                      const conduit::Node &node,
+                      conduit::Node &node_info,
+                      const conduit::Node &topo,
+                      conduit::Node &info,
+                      bool &elems_res)
+{
+    const std::string protocol = "mesh::topology::unstructured";
+    bool node_res = true;
+
+    // Polygonal & Polyhedral shape
+    if(node.has_child("shape") && 
+       node["shape"].dtype().is_string() &&
+       (node["shape"].as_string() == "polygonal" || 
+       node["shape"].as_string() == "polyhedral"))
+    {
+        node_res &= blueprint::o2mrelation::verify(node, node_info);
+        
+        // Polyhedral - Check for subelements
+        if (node["shape"].as_string() == "polyhedral")
+        {
+            bool subnode_res = true;
+            if(!verify_object_field(protocol, topo, info, "subelements"))
+            {
+                subnode_res = false;
+            }
+            else 
+            {
+                const Node &topo_subelems = topo["subelements"];
+                Node &info_subelems = info["subelements"];
+                bool has_subnames = topo_subelems.dtype().is_object();
+
+                // Look for child "name" if mixed topology case,
+                // otherwise look for "shape" variable.
+                name = is_mixed_topo ? name : "shape";
+                if(!topo_subelems.has_child(name))
+                {
+                    subnode_res = false;
+                }
+                // Checks for topo["subelements"]["name"]["shape"] with mixed topology,
+                // or topo["subelements"]["shape"] with single topology,
+                else
+                {
+                    const Node &sub_node  = is_mixed_topo ? topo_subelems[name] : topo_subelems;
+                    Node &subnode_info = 
+                        !is_mixed_topo ? info_subelems : 
+                        has_subnames ? info["subelements"][name] :
+                        info["subelements"].append();
+
+                    if(sub_node.has_child("shape"))
+                    {
+                        subnode_res &= verify_field_exists(protocol, sub_node, subnode_info, "shape") &&
+                        blueprint::mesh::topology::shape::verify(sub_node["shape"], subnode_info["shape"]);
+                        subnode_res &= verify_integer_field(protocol, sub_node, subnode_info, "connectivity");
+                        subnode_res &= sub_node["shape"].as_string() == "polygonal";  
+                        subnode_res &= blueprint::o2mrelation::verify(sub_node, subnode_info);
+                    }
+                    else
+                    {
+                        subnode_res = false;
+                    }
+
+                    log::validation(subnode_info,subnode_res);
+                }
+                log::validation(info_subelems, subnode_res);
+            }
+            elems_res &= subnode_res;
+        }
+    }
+
+    return node_res;
+}
+
+//-----------------------------------------------------------------------------
 std::string identify_coords_coordsys(const Node &coords)
 {
     Node axes;
@@ -3271,41 +3346,9 @@ mesh::topology::unstructured::verify(const Node &topo,
             {
                 elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");
             }
-            if(topo_elems["shape"].dtype().is_string() &&
-              (topo_elems["shape"].as_string() == "polygonal" ||
-               topo_elems["shape"].as_string() == "polyhedral"))
-            {
-                elems_res &= blueprint::o2mrelation::verify(topo_elems, info_elems);
 
-                // Verify subelements if polyhedral
-                if (topo_elems["shape"].as_string() == "polyhedral")
-                {
-                    if(!verify_object_field(protocol, topo, info, "subelements"))
-                    {
-                        subelems_res = false;
-                    }
-                    else 
-                    {
-                        const Node &topo_subelems = topo["subelements"];
-                        Node &info_subelems = info["subelements"];
-
-                        if (!topo_subelems.has_child("shape"))
-                        {
-                            subelems_res = false;
-                        }
-                        else
-                        {
-                            subelems_res &= verify_field_exists(protocol, topo_subelems, info_subelems, "shape") &&
-                                   mesh::topology::shape::verify(topo_subelems["shape"], info_subelems["shape"]);
-                            subelems_res &= verify_integer_field(protocol, topo_subelems, info_subelems, "connectivity");
-                            subelems_res &= topo_subelems["shape"].as_string() == "polygonal";
-                            subelems_res &= blueprint::o2mrelation::verify(topo_subelems, info_subelems);
-                        }
-
-                        log::validation(info_subelems,subelems_res);
-                    }
-                }
-            }
+            // Verify if node is polygonal or polyhedral
+            elems_res &= verify_poly_node (false, "", topo_elems, info_elems, topo, info, elems_res);
         }
         // shape stream case
         else if(topo_elems.has_child("element_types"))
@@ -3336,58 +3379,8 @@ mesh::topology::unstructured::verify(const Node &topo,
                     chld_res &= verify_integer_field(protocol, chld, chld_info, "offsets");
                 }
 
-                // Polygonal & Polyhedral shape
-                if(chld.has_child("shape") && 
-                   chld["shape"].dtype().is_string() &&
-                   (chld["shape"].as_string() == "polygonal" || 
-                   chld["shape"].as_string() == "polyhedral"))
-                {
-                    chld_res &= blueprint::o2mrelation::verify(chld, chld_info);
-                    
-                    // Polyhedral - Check for subelement child
-                    if (chld["shape"].as_string() == "polyhedral")
-                    {
-                        bool subchld_res = true;
-                        if(!verify_object_field(protocol, topo, info, "subelements"))
-                        {
-                            subchld_res = false;
-                        }
-                        else 
-                        {
-                            const Node &topo_subelems = topo["subelements"];
-                            Node &info_subelems = info["subelements"];
-                            bool has_subnames = topo_subelems.dtype().is_object();
-
-                            if(!topo_subelems.has_child(name))
-                            {
-                                subchld_res = false;
-                            }
-                            else
-                            {
-                                const Node &sub_chld  = topo_subelems[name];
-                                Node &subchld_info = has_subnames ? info["subelements"][name] :
-                                    info["subelements"].append();
-
-                                if(sub_chld.has_child("shape"))
-                                {
-                                    subchld_res &= verify_field_exists(protocol, sub_chld, subchld_info, "shape") &&
-                                    mesh::topology::shape::verify(sub_chld["shape"], subchld_info["shape"]);
-                                    subchld_res &= verify_integer_field(protocol, sub_chld, subchld_info, "connectivity");
-                                    subchld_res &= sub_chld["shape"].as_string() == "polygonal";  
-                                    subchld_res &= blueprint::o2mrelation::verify(sub_chld, subchld_info);
-                                }
-                                else
-                                {
-                                    subchld_res = false;
-                                }
-
-                                log::validation(subchld_info,subchld_res);
-                            }
-                            log::validation(info_subelems, subchld_res);
-                        }
-                        elems_res &= subchld_res;
-                    }
-                }
+                // Verify if child is polygonal or polyhedral
+                chld_res &= verify_poly_node (true, name, chld, chld_info, topo, info, elems_res);
 
                 log::validation(chld_info,chld_res);
                 elems_res &= chld_res;
