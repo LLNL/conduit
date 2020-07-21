@@ -187,8 +187,8 @@ tri         triangle          indices to 3 coordinate tuples
 quad        quadrilateral     indices to 4 coordinate tuples
 tet         tetrahedron       indices to 4 coordinate tuples
 hex         hexahedron        indices to 8 coordinate tuples
-polygonal   polygon           an index count N, then indices to N coordinate tuples
-polyhedral  polyhedron        a face count M, then M polygonal face definitions
+polygonal   polygon           indices to N end-to-end coordinate tuples
+polyhedral  polyhedron        indices to M polygonal faces
 ========== ================  ===================================================
 
 .. note
@@ -325,110 +325,107 @@ That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or Asc
 Polygonal/Polyhedral Topologies
 *********************************
 
-The ``polygonal`` and ``polyhedral`` topology shape types are structually
+The **polygonal** and **polyhedral** topology shape types are structually
 identical to the other explicit topology shape types (see the *Single Shape Topologies*
-section above), but the contents of their ``elements/connectivity`` sections look slightly different.
-In particular, the shape index connectivity for each element in these topologies is **explicit**,
-which means that the index sequence for each element is prefixed by a count that specifies
-the total number of indices (polygonal) or faces (polyhedral) that comprise that element.
-This explicit shape index facilitates both the specification of non-standard shapes (e.g. octogons)
-and of highly mixed shape topologies (e.g. polygons/polyhedra of many different shapes in one topology).
-
-In more explicit terms, the ``elements/connectivity`` lists for the ``polygonal`` and ``polyhedral``
-topology shapes follow these rules:
-
-* **polygonal** - The first element starts at the beginning of the ``elements/connectivity``
-  list. The first value ``V`` for each element ``E`` indicates the number of
-  vertices that comprise polygon ``E``. The next ``V`` values in the list
-  are indices for the ``V`` coordinates that comprise ``E``. The next
-  element begins after this sequence of ``V`` values, and this specification
-  continues until the connectivity list is exhausted of items.
-
-  .. code:: cpp
-
-      // Example Diagram:
-      //
-      //       4-----5
-      //       |`\   |
-      // e1 -> |  \  | <- e0
-      //       |   \.|
-      //       7-----6
-      //
-
-      //    index count ---+     +--- coordinate index values
-      //                   |     |
-      //                   v  |-----|
-      int64 poly_data[] = {3, 4, 6, 5,   // element 0
-                           3, 7, 6, 4};  // element 1
-
-      conduit::Node topology = mesh["topologies/poly_topo"];
-      topology["coordset"] = "coords";
-      topology["type"] = "unstructured";
-      topology["elements/shape"] = "polygonal";
-      topology["elements/connectivity"].set_int64_ptr(&poly_data[0], 8);
+section above), but the contents of their ``elements`` sections look slightly different.
+In particular, these sections are structured as **o2mrelation** objects that map elements
+(the *ones*) to their subelement constituents (the *many*). For **polyhedral** topologies,
+these constituents reside in an additional ``subelements`` section that specifies
+the polyhedral faces in a format identical to ``elements`` in a **polygonal** schema.
 
 
-* **polyhedral** - The first element begins at the first index of the
-  ``elements/connectivity`` list. The first value ``F`` for each element ``E``
-  specifies the number of faces that comprise polyhedron ``E``. The next value
-  ``V`` denotes the number of vertices that comprise the first polygonal face
-  ``F1`` of polyhedron ``E``. Exactly like the polygonal specification, the following
-  sequence of ``V`` values contain the indices of the coordinates for face ``F1``.
-  The next face ``F2`` begins immediately after this sequence, and this process
-  continues until ``F`` faces are enumerated. The next element then begins after
-  this supersequence, and this specification continues until the connectivity list
-  is exhausted of items.
+Polygonal Topologies
+^^^^^^^^^^^^^^^^^^^^^^^
 
-  .. code:: cpp
+The schema for a **polygonal** shape topology is as follows:
 
-      // Example Diagram:
-      //
-      //         0
-      //        /|\
-      //       / | \ <- e0
-      //      /  |  \
-      //     /_.-3-._\
-      //    1.,  |  ,.4
-      //     \ `'2'` /
-      //      \  |  /
-      // e1 -> \ | /
-      //        \|/
-      //         5
-      //
+  * topologies/topo/coordset: "coords"
+  * topologies/topo/type: “unstructured”
+  * topologies/topo/elements: (o2mrelation object)
+  * topologies/topo/elements/shape: "polygonal"
+  * topologies/topo/elements/connectivity: (index array)
 
-      //  face index count ---+
-      //                      |
-      //     face count ---+  |     +--- coordinate index values
-      //                   |  |     |
-      //                   v  v  |-----|
-      int64 poly_data[] = {5, 3, 0, 1, 2, 3, 0, 2, 4, 3, 0, 1, 3, 3, 0, 3, 4, 4, 1, 2, 4, 3,   // element 0
-                           5, 3, 5, 1, 2, 3, 5, 2, 4, 3, 5, 1, 3, 3, 5, 3, 4, 4, 1, 2, 4, 3};  // element 1
+It's important to note that the ``elements/connectivity`` path defines the vertex
+index sequences (relative to ``coordset``) for each element in the topology. These
+vertex sequences must be arranged end-to-end (i.e. such that ``(v[i], v[i+1])``
+defines an edge) relative to their container polygonal elements.
 
-      conduit::Node topology = mesh["topologies/poly_topo"];
-      topology["coordset"] = "coords";
-      topology["type"] = "unstructured";
-      topology["elements/shape"] = "polyhedral";
-      topology["elements/connectivity"].set_int64_ptr(&poly_data[0], 44);
+The following diagram illustrates a simple **polygonal** topology:
+
+  .. code:: yaml
+
+      #
+      #    4--------5
+      #    |`--     |
+      # e1 |   `.   | e0
+      #    |     --.|
+      #    7--------6
+      #
+
+      topologies:
+        topology:
+          coordset: coords
+          type: unstructured
+          elements:
+            shape: polygonal
+            connectivity: [4, 6, 5, 7, 6, 4]
+            sizes: [3, 3]
+            offsets: [0, 3]
 
 
-(Optional) Element Offsets
-****************************
+Polyhedral Topologies
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Unstructured topologies can optionally include a child ``elements/offsets`` to
-indicate the starting position of each element defined in the ``elements/connectivity``
-array. This list is most often specified for heterogeneous and polygonal/polyhedral
-topologies so that the elements don't need to be found by stepping through the input
-connectivity array.
+The schema for a **polyhedral** shape topology is as follows:
 
-    * topologies/topo/elements/offsets: (index array)
+  * topologies/topo/coordset: "coords"
+  * topologies/topo/type: “unstructured”
+  * topologies/topo/elements: (o2mrelation object)
+  * topologies/topo/elements/shape: "polyhedral"
+  * topologies/topo/elements/connectivity: (index array)
+  * topologies/topo/subelements: (o2mrelation object)
+  * topologies/topo/subelements/shape: (shape name)
+  * topologies/topo/subelements/connectivity: (index array)
 
-To generate this array for a given unstructured topology ``topo``, make the
-following call:
+An important nuance to the structure of a **polyhedral** shape topology is that
+the ``elements/connectivity`` path indexes into the ``subelements`` object to list
+the *many* faces associated with each *one* polyhedron. Similarly, the
+``subelements/connectivity`` path indexes into the ``coordset`` path to list the
+*many* vertices associated with each *one* polyhedral face. There is no assumed
+ordering for constituent polyhedral faces relative to their source polyhedra.
 
-  .. code:: cpp
+The following diagram illustrates a simple **polyhedral** topology:
 
-      conduit::blueprint::mesh::topology::unstructured::generate_offsets(topo,                       // input topology
-                                                                         topo["elements/offsets"]);  // output node for offset array
+  .. code:: yaml
+
+      #
+      #         0
+      #        /|\
+      #       / | \ <- e0
+      #      /  |  \
+      #     /_.-3-._\
+      #    1.,  |  ,.4
+      #     \ `'2'` /
+      #      \  |  /
+      # e1 -> \ | /
+      #        \|/
+      #         5
+      #|
+
+      topologies:
+        topology:
+          coordset: coords
+          type: unstructured
+          elements:
+            shape: polyhedral
+            connectivity: [0, 1, 2, 3, 4, 0, 5, 6, 7, 8]
+            sizes: [5, 5]
+            offsets: [0, 5]
+          subelements:
+            shape: polygonal
+            connectivity: [1, 2, 4, 3, 1, 2, 0, 2, 4, 0, 4, 3, 0, 3, 1, 0, 1, 2, 5, 2, 4, 5, 4, 3, 5, 3, 1, 5]
+            sizes: [4, 3, 3, 3, 3, 3, 3, 3, 3]
+            offsets: [0, 4, 7, 10, 13, 16, 19, 22, 25]
 
 
 Material Sets

@@ -674,7 +674,7 @@ void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node 
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
         data_node.set_external(off_dtype, (void*)topo_off.element_ptr(ei));
-        index_t elem_start_index = data_node.to_int64() + topo_is_poly;
+        index_t elem_start_index = data_node.to_int64();
         data_node.set_external(off_dtype, (void*)topo_off.element_ptr(ei+1));
         index_t elem_end_index = (ei < topo_num_elems - 1) ?
             data_node.to_int64() : topo_conn.dtype().number_of_elements();
@@ -793,8 +793,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
         int64_array expected_offsets_data = expected_offsets_int64.as_int64_array();
         for(index_t oi = 0; oi < offset_dtype.number_of_elements(); oi++)
         {
-            expected_offsets_data[oi] = oi * ((grid_mesh.dims() == 3) +
-                grid_mesh.faces_per_elem() * (1 + grid_mesh.points_per_face()));
+            expected_offsets_data[oi] = oi * (grid_mesh.dims() == 3 ? 
+                grid_mesh.faces_per_elem() : grid_mesh.points_per_face());
         }
         Node expected_offsets;
         expected_offsets_int64.to_data_type(offset_dtype.id(), expected_offsets);
