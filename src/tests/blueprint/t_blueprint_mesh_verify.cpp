@@ -714,7 +714,7 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["elements"]["offsets"].set(DataType::float64(10));
-        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["elements"]["offsets"].set(DataType::int32(10));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["elements"].remove("offsets");

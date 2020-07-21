@@ -3336,17 +3336,10 @@ mesh::topology::unstructured::verify(const Node &topo,
         // single shape case
         if(topo_elems.has_child("shape"))
         {
-            // TODO(JRC): Add in o2m validation for polygonal/polyhedral.
             elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
             elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
-            // optional: shape topologies can have an "offsets" array to index
-            // individual elements; this list must be an integer array
-            if(elems_res && topo_elems.has_child("offsets"))
-            {
-                elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");
-            }
-
+            
             // Verify if node is polygonal or polyhedral
             elems_res &= verify_poly_node (false, "", topo_elems, info_elems, topo, info, elems_res);
         }
@@ -3372,12 +3365,6 @@ mesh::topology::unstructured::verify(const Node &topo,
                 chld_res &= verify_field_exists(protocol, chld, chld_info, "shape") &&
                        mesh::topology::shape::verify(chld["shape"], chld_info["shape"]);
                 chld_res &= verify_integer_field(protocol, chld, chld_info, "connectivity");
-                // optional: shape topologies can have an "offsets" array to index
-                // individual elements; this list must be an integer array
-                if(chld_res && chld.has_child("offsets"))
-                {
-                    chld_res &= verify_integer_field(protocol, chld, chld_info, "offsets");
-                }
 
                 // Verify if child is polygonal or polyhedral
                 chld_res &= verify_poly_node (true, name, chld, chld_info, topo, info, elems_res);
