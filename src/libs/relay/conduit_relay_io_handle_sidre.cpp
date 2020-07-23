@@ -151,6 +151,7 @@ SidreIOHandle::open()
         m_num_files = 0;
         m_file_pattern = "";
         m_tree_pattern = "";
+        std::cout << "SIMPLE CASE" << std::endl;
     }
     else
     {
@@ -233,7 +234,7 @@ SidreIOHandle::read(Node &node)
 //-----------------------------------------------------------------------------
 void 
 SidreIOHandle::read(const std::string &path,
-                 Node &node)
+                    Node &node)
 {
     if( open_mode() == "w")
     {
@@ -252,7 +253,6 @@ SidreIOHandle::read(const std::string &path,
     // "root" =>> read_from_root(path,node)
     // tree_id (number) ==> read_from_sidre_tree(tree_id,path)
 
-    
     std::string p_first;
     std::string p_next;
     utils::split_path(path,p_first,p_next);
@@ -276,7 +276,12 @@ SidreIOHandle::read(const std::string &path,
     }
     else //
     {
-        read_from_sidre_tree(0,path,node);
+        // we need to prep sidre meta ...
+        
+        read_from_sidre_tree(m_root_handle,
+                             path,
+                             m_sidre_meta[0],
+                             node);
     }
 }
 
@@ -632,7 +637,7 @@ SidreIOHandle::generate_domain_to_file_map(int num_domains,
 // Helper that expands a sidre groups's meta path to the expected file path 
 //---------------------------------------------------------------------------//
 std::string
-SidreIOHandle::generate_sidre_meta_group_path(const std::string &tree_path) const
+SidreIOHandle::generate_sidre_meta_group_path(const std::string &tree_path)
 {
     // sidre/groups/ga/groups/gb/groups/gc/.../groups/gn
 
@@ -666,7 +671,7 @@ SidreIOHandle::generate_sidre_meta_group_path(const std::string &tree_path) cons
 // Helper that expands a sidre view's meta path to the expected file path
 //---------------------------------------------------------------------------//
 std::string
-SidreIOHandle::generate_sidre_meta_view_path(const std::string &tree_path) const
+SidreIOHandle::generate_sidre_meta_view_path(const std::string &tree_path)
 {
     // sidre/groups/ga/groups/gb/groups/gc/.../views/gn
 
@@ -683,7 +688,7 @@ SidreIOHandle::generate_sidre_meta_view_path(const std::string &tree_path) const
                                    t_next);
         if(t_next == "")
         {
-            oss << "/views/" << t_curr;
+            oss << "views/" << t_curr;
         }
         else
         {
@@ -701,9 +706,16 @@ SidreIOHandle::sidre_meta_tree_has_path(int tree_id,
                                         const std::string &path)
 {
     prepare_sidre_meta_tree(tree_id,path);
-
     Node &sidre_meta = m_sidre_meta[tree_id];
+    return sidre_meta_tree_has_path(sidre_meta,path);
+}
 
+
+//----------------------------------------------------------------------------/
+bool
+SidreIOHandle::sidre_meta_tree_has_path(const Node &sidre_meta,
+                                        const std::string &path)
+{
     std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
     std::string sidre_mtree_view  = generate_sidre_meta_view_path(path);
 
@@ -711,6 +723,68 @@ SidreIOHandle::sidre_meta_tree_has_path(int tree_id,
            sidre_meta.has_path(sidre_mtree_view);
 
 }
+
+
+//----------------------------------------------------------------------------/
+void
+SidreIOHandle::sidre_meta_tree_list_child_names(const Node &sidre_meta,
+                                                const std::string &path,
+                                                std::vector<std::string> &res)
+{
+    res.clear();
+
+    std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
+
+    // empty path means we are checking for read at root of hierarchy
+    if(sidre_mtree_group == "")
+    {
+        if(sidre_meta.has_child("groups"))
+        {
+            // group case, enum groups then views
+            NodeConstIterator g_itr = sidre_meta["groups"].children();
+            while(g_itr.has_next())
+            {
+                g_itr.next();
+                res.push_back(g_itr.name());
+            }
+        }
+
+        if(sidre_meta.has_child("views"))
+        {
+            NodeConstIterator v_itr = sidre_meta["views"].children();
+            while(v_itr.has_next())
+            {
+                v_itr.next();
+                res.push_back(v_itr.name());
+            }
+        }
+    }
+    else if(sidre_meta.has_path(sidre_mtree_group))
+    {
+        // group case, enum groups then views
+        if(sidre_meta[sidre_mtree_group].has_child("groups"))
+        {
+            NodeConstIterator g_itr = sidre_meta[sidre_mtree_group]["groups"].children();
+            while(g_itr.has_next())
+            {
+                g_itr.next();
+                res.push_back(g_itr.name());
+            }
+        }
+
+        if(sidre_meta[sidre_mtree_group].has_child("views"))
+        {
+            NodeConstIterator v_itr = sidre_meta[sidre_mtree_group]["views"].children();
+            while(v_itr.has_next())
+            {
+                v_itr.next();
+                res.push_back(v_itr.name());
+            }
+        }
+    }
+}
+
+
 
 //----------------------------------------------------------------------------/
 void
@@ -724,38 +798,18 @@ SidreIOHandle::sidre_meta_tree_list_child_names(int tree_id,
 
     Node &sidre_meta = m_sidre_meta[tree_id];
 
-    std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
-
-    if(sidre_meta.has_path(sidre_mtree_group))
-    {
-        // group case, enum groups then views
-        NodeConstIterator g_itr = sidre_meta[sidre_mtree_group]["groups"].children();
-        while(g_itr.has_next())
-        {
-            g_itr.next();
-            res.push_back(g_itr.name());
-        }
-
-        NodeConstIterator v_itr = sidre_meta[sidre_mtree_group]["views"].children();
-        while(v_itr.has_next())
-        {
-            v_itr.next();
-            res.push_back(v_itr.name());
-        }
-    }    
+    sidre_meta_tree_list_child_names(sidre_meta,path,res);
 }
-
 
 //----------------------------------------------------------------------------/
 void
 SidreIOHandle::load_sidre_tree(Node &sidre_meta,
-                             int tree_id,
-                             const std::string &tree_path,
-                             const std::string &curr_path,
-                             Node &out)
+                               IOHandle &hnd,
+                               const std::string &tree_path,
+                               const std::string &curr_path,
+                               Node &out)
 {
-    std::cout << "load_sidre_tree w/ meta" << tree_id << 
-              " " << tree_path << " " << curr_path << std::endl;
+    std::cout << "load_sidre_tree w/ meta " << tree_path << " " << curr_path << std::endl;
     // we want to pull out a sub-tree of the sidre group hierarchy 
     //
     // descend down to "tree_path" in sidre meta
@@ -764,6 +818,12 @@ SidreIOHandle::load_sidre_tree(Node &sidre_meta,
     std::string tree_next;
     conduit::utils::split_path(tree_path,tree_curr,tree_next);
 
+    // gen view path
+    // gen group path
+    std::cout << " LOOKING FOR tree_curr " << tree_curr << std::endl;
+    std::cout << " in" << std::endl;
+    sidre_meta.print();
+ 
     if( sidre_meta["groups"].has_path(tree_curr) )
     {
         // BP_PLUGIN_INFO(curr_path << tree_curr << " is a group");
@@ -771,20 +831,20 @@ SidreIOHandle::load_sidre_tree(Node &sidre_meta,
         { 
             // we have the correct sidre meta node, now read
             load_sidre_group(sidre_meta["groups"][tree_curr],
-                             tree_id,
+                             hnd,
                              curr_path + tree_curr  + "/",
                              out);
         }
         else // keep descending 
         {
             load_sidre_tree(sidre_meta["groups"][tree_curr],
-                            tree_id,
+                            hnd,
                             tree_next,
                             curr_path + tree_curr  + "/",
                             out);
         }
     }
-    else if( sidre_meta["view"].has_path(tree_curr) )
+    else if( sidre_meta["views"].has_path(tree_curr) )
     {
         // BP_PLUGIN_INFO(curr_path << tree_curr << " is a view");
         if(tree_next.size() != 0)
@@ -794,29 +854,92 @@ SidreIOHandle::load_sidre_tree(Node &sidre_meta,
         }
         else
         {
-            load_sidre_view(sidre_meta["view"][tree_curr],
-                            tree_id,
+            load_sidre_view(sidre_meta["views"][tree_curr],
+                            hnd,
                             curr_path + tree_curr  + "/",
                             out);
         }
     }
     else
     {
-        CONDUIT_ERROR("sidre tree_id " << tree_id << """ "" does not exist");
-        //error: );
+        CONDUIT_ERROR("sidre path " << curr_path
+                                    << "/"
+                                    << tree_curr
+                                    << " does not exist");
     }
 }
+
+
+// //----------------------------------------------------------------------------/
+// void
+// SidreIOHandle::load_sidre_tree(Node &sidre_meta,
+//                              int tree_id,
+//                              const std::string &tree_path,
+//                              const std::string &curr_path,
+//                              Node &out)
+// {
+//     std::cout << "load_sidre_tree w/ meta" << tree_id <<
+//               " " << tree_path << " " << curr_path << std::endl;
+//     // we want to pull out a sub-tree of the sidre group hierarchy
+//     //
+//     // descend down to "tree_path" in sidre meta
+//
+//     std::string tree_curr;
+//     std::string tree_next;
+//     conduit::utils::split_path(tree_path,tree_curr,tree_next);
+//
+//     if( sidre_meta["groups"].has_path(tree_curr) )
+//     {
+//         // BP_PLUGIN_INFO(curr_path << tree_curr << " is a group");
+//         if(tree_next.size() == 0)
+//         {
+//             // we have the correct sidre meta node, now read
+//             load_sidre_group(sidre_meta["groups"][tree_curr],
+//                              tree_id,
+//                              curr_path + tree_curr  + "/",
+//                              out);
+//         }
+//         else // keep descending
+//         {
+//             load_sidre_tree(sidre_meta["groups"][tree_curr],
+//                             tree_id,
+//                             tree_next,
+//                             curr_path + tree_curr  + "/",
+//                             out);
+//         }
+//     }
+//     else if( sidre_meta["view"].has_path(tree_curr) )
+//     {
+//         // BP_PLUGIN_INFO(curr_path << tree_curr << " is a view");
+//         if(tree_next.size() != 0)
+//         {
+//             CONDUIT_ERROR("Sidre path extends beyond sidre view, "
+//                           "however Sidre views are leaves.");
+//         }
+//         else
+//         {
+//             load_sidre_view(sidre_meta["view"][tree_curr],
+//                             tree_id,
+//                             curr_path + tree_curr  + "/",
+//                             out);
+//         }
+//     }
+//     else
+//     {
+//         CONDUIT_ERROR("sidre tree_id " << tree_id << """ "" does not exist");
+//         //error: );
+//     }
+// }
 
 //----------------------------------------------------------------------------/
 void
 SidreIOHandle::load_sidre_group(Node &sidre_meta,
-                              int tree_id,
-                              const std::string &group_path,
-                              Node &out)
+                                IOHandle &hnd,
+                                const std::string &group_path,
+                                Node &out)
 {
-    std::cout << "load_sidre_group " << tree_id << 
-              " " << group_path << std::endl;
-    
+    std::cout << "load_sidre_group " << group_path << std::endl;
+
     // load this group's children groups and views
     NodeIterator g_itr = sidre_meta["groups"].children();
     while(g_itr.has_next())
@@ -826,7 +949,7 @@ SidreIOHandle::load_sidre_group(Node &sidre_meta,
         //BP_PLUGIN_INFO("loading " << group_path << g_name << " as group");
         std::string cld_path = group_path + g_name;
         load_sidre_group(g,
-                         tree_id,
+                         hnd,
                          cld_path + "/",
                          out[g_name]);
     }
@@ -839,22 +962,59 @@ SidreIOHandle::load_sidre_group(Node &sidre_meta,
         // BP_PLUGIN_INFO("loading " << group_path << v_name << " as view");
         std::string cld_path = group_path + v_name;
         load_sidre_view(v,
-                       tree_id,
-                       cld_path,
-                       out[v_name]);
+                        hnd,
+                        cld_path,
+                        out[v_name]);
     }
 }
+
+// //----------------------------------------------------------------------------/
+// void
+// SidreIOHandle::load_sidre_group(Node &sidre_meta,
+//                               int tree_id,
+//                               const std::string &group_path,
+//                               Node &out)
+// {
+//     std::cout << "load_sidre_group " << tree_id <<
+//               " " << group_path << std::endl;
+//
+//     // load this group's children groups and views
+//     NodeIterator g_itr = sidre_meta["groups"].children();
+//     while(g_itr.has_next())
+//     {
+//         Node &g = g_itr.next();
+//         std::string g_name = g_itr.name();
+//         //BP_PLUGIN_INFO("loading " << group_path << g_name << " as group");
+//         std::string cld_path = group_path + g_name;
+//         load_sidre_group(g,
+//                          tree_id,
+//                          cld_path + "/",
+//                          out[g_name]);
+//     }
+//
+//     NodeIterator v_itr = sidre_meta["views"].children();
+//     while(v_itr.has_next())
+//     {
+//         Node &v = v_itr.next();
+//         std::string v_name = v_itr.name();
+//         // BP_PLUGIN_INFO("loading " << group_path << v_name << " as view");
+//         std::string cld_path = group_path + v_name;
+//         load_sidre_view(v,
+//                        tree_id,
+//                        cld_path,
+//                        out[v_name]);
+//     }
+// }
 
 
 //----------------------------------------------------------------------------/
 void
 SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
-                             int tree_id,
-                             const std::string &view_path,
-                             Node &out)
+                               IOHandle &hnd,
+                               const std::string &view_path,
+                               Node &out)
 {
-    std::cout << "load_sidre_view " << tree_id << 
-              " " << view_path << std::endl;
+    std::cout << "load_sidre_view " << view_path << std::endl;
 
     // view load cases:
     //   the view is a scalar or string
@@ -889,9 +1049,7 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
         int buffer_id = sidre_meta_view["buffer_id"].to_int();
 
         std::ostringstream buffer_fetch_path_oss;
-        buffer_fetch_path_oss << "tree: "
-                              << tree_id
-                              << " /sidre/buffers/buffer_id_" << buffer_id;
+        buffer_fetch_path_oss << "/sidre/buffers/buffer_id_" << buffer_id;
 
         // buffer data path
         std::string buffer_data_fetch_path   = buffer_fetch_path_oss.str() + "/data";
@@ -901,9 +1059,10 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
 
         Node n_buffer_schema_str;
 
-        read_from_file_tree(tree_id,
-                            buffer_schema_fetch_path,
-                            n_buffer_schema_str);
+        hnd.read(buffer_schema_fetch_path,n_buffer_schema_str);
+        // read_from_file_tree(hnd,
+        //                     buffer_schema_fetch_path,
+        //                     n_buffer_schema_str);
 
         std::string buffer_schema_str = n_buffer_schema_str.as_string();
         Schema buffer_schema(buffer_schema_str);
@@ -961,9 +1120,10 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
                 Node n_buff;
                 Node n_view;
 
-                read_from_file_tree(tree_id,
-                                    buffer_data_fetch_path,
-                                    n_buff);
+                hnd.read(buffer_data_fetch_path,n_buff);
+                // read_from_file_tree(hnd,
+                //                     buffer_data_fetch_path,
+                //                     n_buff);
 
                 // create our view on the buffer
                 n_view.set_external(view_schema,n_buff.data_ptr());
@@ -977,9 +1137,10 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
         }
         else // compact, and compat, we can just read
         {
-            read_from_file_tree(tree_id,
-                                buffer_data_fetch_path,
-                                out);
+            hnd.read(buffer_data_fetch_path,out);
+            // read_from_file_tree(hnd,
+            //                     buffer_data_fetch_path,
+            //                     out);
         }
     }
     else if( view_state == "EXTERNAL" )
@@ -993,15 +1154,173 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
         //                << " : "
         //                << fetch_path);
 
-        read_from_file_tree(tree_id,
-                            fetch_path,
-                            out);
+        hnd.read(fetch_path,out);;
+        // read_from_file_tree(tree_id,
+        //                     fetch_path,
+        //                     out);
     }
     else
     {
         // error:  "unsupported sidre view state: " << view_state );
     }
 }
+
+// //----------------------------------------------------------------------------/
+// void
+// SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
+//                              int tree_id,
+//                              const std::string &view_path,
+//                              Node &out)
+// {
+//     std::cout << "load_sidre_view " << tree_id <<
+//               " " << view_path << std::endl;
+//
+//     // view load cases:
+//     //   the view is a scalar or string
+//     //     simply copy the "value" from the meta view
+//     //
+//     //   the view is attached to a buffer
+//     //     in this case we need to get the info about the buffer the view is
+//     //     attached to and read the proper slab of that buffer's hdf5 dataset
+//     //     into a new compact node.
+//     //
+//     //   the view is has external data
+//     //     for this case we can follow the "tree_path" in the sidre external
+//     //     data tree, and fetch the hdf5 dataset that was written there.
+//     //
+//
+//     std::string view_state = sidre_meta_view["state"].as_string();
+//
+//     if( view_state == "STRING")
+//     {
+//         //BP_PLUGIN_INFO("loading " << view_path << " as sidre string view");
+//         out.set(sidre_meta_view["value"]);
+//     }
+//     else if(view_state == "SCALAR")
+//     {
+//         // BP_PLUGIN_INFO("loading " << view_path << " as sidre scalar view");
+//         out.set(sidre_meta_view["value"]);
+//     }
+//     else if( view_state == "BUFFER" )
+//     {
+//         // BP_PLUGIN_INFO("loading " << view_path << " as sidre view linked to a buffer");
+//         // we need to fetch the buffer
+//         int buffer_id = sidre_meta_view["buffer_id"].to_int();
+//
+//         std::ostringstream buffer_fetch_path_oss;
+//         buffer_fetch_path_oss << "tree: "
+//                               << tree_id
+//                               << " /sidre/buffers/buffer_id_" << buffer_id;
+//
+//         // buffer data path
+//         std::string buffer_data_fetch_path   = buffer_fetch_path_oss.str() + "/data";
+//
+//         // we also need the buffer's schema
+//         std::string buffer_schema_fetch_path = buffer_fetch_path_oss.str() + "/schema";
+//
+//         Node n_buffer_schema_str;
+//
+//         read_from_file_tree(tree_id,
+//                             buffer_schema_fetch_path,
+//                             n_buffer_schema_str);
+//
+//         std::string buffer_schema_str = n_buffer_schema_str.as_string();
+//         Schema buffer_schema(buffer_schema_str);
+//
+//         //BP_PLUGIN_INFO("sidre buffer schema: " << buffer_schema.to_json());
+//         //BP_PLUGIN_INFO("sidre buffer data path " << buffer_data_fetch_path);
+//
+//         std::string view_schema_str = sidre_meta_view["schema"].as_string();
+//         // create the schema we want for this view
+//         // it describes how the view relates to the buffer in the hdf5 file
+//
+//         Schema view_schema(view_schema_str);
+//         // BP_PLUGIN_INFO("sidre view schema: " << view_schema.to_json());
+//
+//         // if the schema isn't compact, or if we are reading
+//         // less elements than the entire buffer,
+//         // we need to read a subset of the hdf5 dataset
+//
+//         if(   !view_schema.is_compact() ||
+//             ( view_schema.dtype().number_of_elements() <
+//               buffer_schema.dtype().number_of_elements() )
+//           )
+//         {
+//             // BP_PLUGIN_INFO("Sidre View from Buffer Slab Fetch Case");
+//             //
+//             // Create a compact schema to describe our desired output data
+//             //
+//             Schema view_schema_compact;
+//             view_schema.compact_to(view_schema_compact);
+//             // setup and allocate the output node
+//             out.set(view_schema_compact);
+//
+//             // ---------------------------------------------------------------
+//             // BUFFER-SLAB FETCH
+//             // ---------------------------------------------------------------
+//             //
+//             // we can use hdf5 slab fetch if the the dtype.id() of the buffer
+//             // and the view are the same.
+//             //
+//             //  otherwise, we will have to fetch the entire buffer since
+//             //  hdf5 doesn't support byte level striding.
+//
+//             // if(
+//             //     tree_cache.Read(tree_id,
+//             //                     buffer_data_fetch_path,
+//             //                     view_schema.dtype(),
+//             //                     out)
+//             //     )
+//             // {
+//                 // BP_PLUGIN_INFO("Sidre View from Buffer Slab Fetch Case Failed");
+//                 // ---------------------------------------------------------------
+//                 // Fall back to Non BUFFER-SLAB FETCH
+//                 // ---------------------------------------------------------------
+//                 // this reads the entire buffer to get the proper subset
+//                 Node n_buff;
+//                 Node n_view;
+//
+//                 read_from_file_tree(tree_id,
+//                                     buffer_data_fetch_path,
+//                                     n_buff);
+//
+//                 // create our view on the buffer
+//                 n_view.set_external(view_schema,n_buff.data_ptr());
+//                 // compact the view to our output
+//                 n_view.compact_to(out);
+//             // }
+//             // else
+//             // {
+//             //     //BP_PLUGIN_INFO("Sidre View from Buffer Slab Fetch Case Successful");
+//             // }
+//         }
+//         else // compact, and compat, we can just read
+//         {
+//             read_from_file_tree(tree_id,
+//                                 buffer_data_fetch_path,
+//                                 out);
+//         }
+//     }
+//     else if( view_state == "EXTERNAL" )
+//     {
+//         //BP_PLUGIN_INFO("loading " << view_path << " as sidre external view");
+//
+//         std::string fetch_path = "sidre/external/" + view_path;
+//
+//         // BP_PLUGIN_INFO("relay:io::hdf5_read "
+//         //                << "domain " << tree_id
+//         //                << " : "
+//         //                << fetch_path);
+//
+//         read_from_file_tree(tree_id,
+//                             fetch_path,
+//                             out);
+//     }
+//     else
+//     {
+//         // error:  "unsupported sidre view state: " << view_state );
+//     }
+// }
 
 //-----------------------------------------------------------------------------
 void 
@@ -1031,22 +1350,28 @@ SidreIOHandle::prepare_file_handle(int tree_id)
 
 //-----------------------------------------------------------------------------
 void
-SidreIOHandle::prepare_sidre_meta_tree(int tree_id,
-                                       const std::string &path)
+SidreIOHandle::prepare_sidre_meta_tree(IOHandle &hnd,
+                                       const std::string &path,
+                                       Node &sidre_meta)
 {
-    Node &sidre_meta = m_sidre_meta[tree_id];
-
     // check for read at root of the file, for this case we 
     // need to read the entire sidre tree
     if(path.empty() || path == "/")
     {
-        read_from_file_tree(tree_id, "sidre", sidre_meta);
+        // only read the group + view structure, not buffers or external
+        // since those aren't meta data (they are real data!)
+        hnd.read("sidre/groups",sidre_meta["groups"]);
+
+        // TODO, are there ever views at the root, I don't recall
+        // read_from_file_tree(tree_id, "sidre", sidre_meta);
     }
     else // subtree read
     {
         std::string sidre_mtree_view  = generate_sidre_meta_view_path(path);
         std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
 
+        std::cout << " Show ME ROCK: " << sidre_mtree_view << std::endl;
+        std::cout << " Show ME ROLL: " << sidre_mtree_group << std::endl;
         //BP_PLUGIN_INFO("fetch sidre meta tree: "<< tree_path);
         
         // this path will either be a sidre group or a sidre view
@@ -1057,102 +1382,220 @@ SidreIOHandle::prepare_sidre_meta_tree(int tree_id,
             // if not cached, we need to fetch
 
             // check to see if we have a group or view
-            if( file_tree_has_path(tree_id, "sidre/" + sidre_mtree_group) )
+            if( hnd.has_path("sidre/" + sidre_mtree_group) )
             {
+                hnd.read("sidre/" + sidre_mtree_group,
+                         sidre_meta[sidre_mtree_group]);
                 // we have a group, read the meta data
-                read_from_file_tree(tree_id, "sidre/" + sidre_mtree_group,
-                                    sidre_meta[sidre_mtree_group]);
+                // read_from_file_tree(tree_id, "sidre/" + sidre_mtree_group,
+                //                     sidre_meta[sidre_mtree_group]);
 
             }
-            else if( file_tree_has_path(tree_id, "sidre/" + sidre_mtree_view) )
+            else if( hnd.has_path("sidre/" + sidre_mtree_view) )
             {
                 // we have a view, read the meta data
-                read_from_file_tree(tree_id, "sidre/" + sidre_mtree_view,
-                                    sidre_meta[sidre_mtree_view]);
+                 hnd.read("sidre/" + sidre_mtree_view,
+                          sidre_meta[sidre_mtree_view]);
+                // read_from_file_tree(tree_id, "sidre/" + sidre_mtree_view,
+                //                     sidre_meta[sidre_mtree_view]);
             }
             else
             {
                 // TODO: ADJ ERROR MESSAGE FOR NON SPIO INDEX CASE
                 CONDUIT_ERROR("Failed to read tree path: " << std::endl
                             << "Expected to find Sidre Group: "
-                            << tree_id << "/sidre/" << sidre_mtree_group
+                            << "/sidre/" << sidre_mtree_group
                             << " or "
                             << "Sidre View: "
-                            << tree_id << "/sidre/" << sidre_mtree_view);
+                            << "/sidre/" << sidre_mtree_view);
             }
         }
     }
 }
 
 //-----------------------------------------------------------------------------
-bool
-SidreIOHandle::file_tree_has_path(int tree_id,
-                                const std::string &path)
+void
+SidreIOHandle::prepare_sidre_meta_tree(int tree_id,
+                                       const std::string &path)
 {
-    if(m_has_spio_index)
-    {
-        prepare_file_handle(tree_id);
-        int file_id = generate_file_id_for_tree(tree_id);
-        // find the proper path for the tree inside the file
-        std::string full_path = generate_tree_path(tree_id) + path;
-        // check if the file handle has the expected path
-        return m_file_handles[file_id].has_path(full_path);
-    }
-    else
-    {
-        return m_root_handle.has_path(path);
-    }
-}
+    Node &sidre_meta = m_sidre_meta[tree_id];
 
-//-----------------------------------------------------------------------------
-void 
-SidreIOHandle::read_from_file_tree(int tree_id,
-                                 const std::string &path,
-                                 Node &node)
-{
     if(m_has_spio_index) // multi-tree with index case
     {
         prepare_file_handle(tree_id);
         int file_id = generate_file_id_for_tree(tree_id);
-
-        // find the proper path for the tree inside the file
-        std::string full_path = generate_tree_path(tree_id) + path;
-
-        std::cout << "fetch:" << full_path << std::endl;
-
-        if(full_path.empty() || full_path == "/")
-        {
-            m_file_handles[file_id].read(node);
-        }
-        else
-        {
-            m_file_handles[file_id].read(full_path,node);
-        }
+        prepare_sidre_meta_tree(m_file_handles[file_id],path,sidre_meta);
     }
-    else // simple case
+    else
     {
-        read_from_root(path,node);
+        prepare_sidre_meta_tree(m_root_handle,path,sidre_meta);
     }
+
+    return;
+    //
+    // // check for read at root of the file, for this case we
+    // // need to read the entire sidre tree
+    // if(path.empty() || path == "/")
+    // {
+    //     read_from_file_tree(tree_id, "sidre", sidre_meta);
+    // }
+    // else // subtree read
+    // {
+    //     std::string sidre_mtree_view  = generate_sidre_meta_view_path(path);
+    //     std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
+    //
+    //     //BP_PLUGIN_INFO("fetch sidre meta tree: "<< tree_path);
+    //
+    //     // this path will either be a sidre group or a sidre view
+    //     // check if either exists cached
+    //     if( !sidre_meta.has_path(sidre_mtree_group) ||
+    //         !sidre_meta.has_path(sidre_mtree_view) )
+    //     {
+    //         // if not cached, we need to fetch
+    //
+    //         // check to see if we have a group or view
+    //         if( file_tree_has_path(tree_id, "sidre/" + sidre_mtree_group) )
+    //         {
+    //             // we have a group, read the meta data
+    //             read_from_file_tree(tree_id, "sidre/" + sidre_mtree_group,
+    //                                 sidre_meta[sidre_mtree_group]);
+    //
+    //         }
+    //         else if( file_tree_has_path(tree_id, "sidre/" + sidre_mtree_view) )
+    //         {
+    //             // we have a view, read the meta data
+    //             read_from_file_tree(tree_id, "sidre/" + sidre_mtree_view,
+    //                                 sidre_meta[sidre_mtree_view]);
+    //         }
+    //         else
+    //         {
+    //             // TODO: ADJ ERROR MESSAGE FOR NON SPIO INDEX CASE
+    //             CONDUIT_ERROR("Failed to read tree path: " << std::endl
+    //                         << "Expected to find Sidre Group: "
+    //                         << tree_id << "/sidre/" << sidre_mtree_group
+    //                         << " or "
+    //                         << "Sidre View: "
+    //                         << tree_id << "/sidre/" << sidre_mtree_view);
+    //         }
+    //     }
+    // }
+}
+
+//-----------------------------------------------------------------------------
+// bool
+// SidreIOHandle::file_tree_has_path(int tree_id,
+//                                 const std::string &path)
+// {
+//     if(m_has_spio_index)
+//     {
+//         prepare_file_handle(tree_id);
+//         int file_id = generate_file_id_for_tree(tree_id);
+//         // find the proper path for the tree inside the file
+//         std::string full_path = generate_tree_path(tree_id) + path;
+//         // check if the file handle has the expected path
+//         return m_file_handles[file_id].has_path(full_path);
+//     }
+//     else
+//     {
+//         return m_root_handle.has_path(path);
+//     }
+// }
+
+// //-----------------------------------------------------------------------------
+// void
+// SidreIOHandle::read_from_file_tree(int tree_id,
+//                                    const std::string &path,
+//                                    Node &node)
+// {
+//     if(m_has_spio_index) // multi-tree with index case
+//     {
+//         prepare_file_handle(tree_id);
+//         int file_id = generate_file_id_for_tree(tree_id);
+//
+//         // find the proper path for the tree inside the file
+//         std::string full_path = generate_tree_path(tree_id) + path;
+//
+//         std::cout << "fetch:" << full_path << std::endl;
+//
+//         if(full_path.empty() || full_path == "/")
+//         {
+//             m_file_handles[file_id].read(node);
+//         }
+//         else
+//         {
+//             m_file_handles[file_id].read(full_path,node);
+//         }
+//     }
+//     else // simple case
+//     {
+//         read_from_root(path,node);
+//     }
+// }
+
+//-----------------------------------------------------------------------------
+void
+SidreIOHandle::read_from_sidre_tree(IOHandle &hnd,
+                                    const std::string &path,
+                                    Node &sidre_meta,
+                                    Node &out)
+{
+    // if we don't already have it cached, this will fetch
+    // the proper sidre meta data
+    prepare_sidre_meta_tree(hnd,
+                            path,
+                            sidre_meta);
+
+    load_sidre_tree(sidre_meta,
+                    hnd,
+                    path,
+                    "", // current path starts at root
+                    out);
 }
 
 //-----------------------------------------------------------------------------
 void
 SidreIOHandle::read_from_sidre_tree(int tree_id,
-                                  const std::string &path,
-                                  Node &out)
+                                    const std::string &path,
+                                    Node &out)
 {
+    // TODO REFACTOR TO USE HND VARIANT!
+    
+    
     // if we don't already have it cached, this will fetch
     // the proper sidre meta data
     prepare_sidre_meta_tree(tree_id,path);
+    
+    if(m_has_spio_index)
+    {
+    
+        // fetch the right file handle
+        prepare_file_handle(tree_id);
+        int file_id = generate_file_id_for_tree(tree_id);
+    
+        std::cout << "read_from_sidre_tree: "
+                  << " tree_id " << tree_id
+                  << " file_id " << file_id << std::endl;
 
-    // start a top level traversal
-    // call load sidre variant that uses existing sidre meta tree
-    Node &sidre_meta = m_sidre_meta[tree_id];
-    load_sidre_tree(sidre_meta,
-                    tree_id,
-                    path,
-                    "",
-                    out);
+        // start a top level traversal
+        // call load sidre variant that uses existing sidre meta tree
+        Node &sidre_meta = m_sidre_meta[tree_id];
+        load_sidre_tree(sidre_meta,
+                        m_file_handles[file_id],
+                        path,
+                        "", // current path starts at root
+                        out);
+    }
+    else
+    {
+        // start a top level traversal
+        // call load sidre variant that uses existing sidre meta tree
+        Node &sidre_meta = m_sidre_meta[tree_id];
+        load_sidre_tree(sidre_meta,
+                        m_root_handle,
+                        path,
+                        "", // current path starts at root
+                        out);
+    }
 }
 
 

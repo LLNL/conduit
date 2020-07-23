@@ -98,26 +98,57 @@ private:
     void        generate_domain_to_file_map(int num_domains,
                                             int num_files,
                                             Node &out) const;
-    std::string generate_sidre_meta_group_path(const std::string &tree_path) const;
-    std::string generate_sidre_meta_view_path(const std::string &tree_path)  const;
 
 
-    void load_sidre_tree(Node &sidre_meta,
-                         int tree_id,
-                         const std::string &tree_path,
-                         const std::string &curr_path,
-                         Node &out);
+    // helpers to create sidre meta paths for a group or view
+    static std::string generate_sidre_meta_group_path(const std::string &tree_path);
+    static std::string generate_sidre_meta_view_path(const std::string &tree_path);
 
-    void load_sidre_group(Node &sidre_meta,
-                          int tree_id,
-                          const std::string &group_path,
-                          Node &out);
+    static void read_from_sidre_tree(IOHandle &hnd,
+                                     const std::string &path,
+                                     Node &sidre_meta,
+                                     Node &node);
 
-    void load_sidre_view(Node &sidre_meta_view,
-                         int tree_id,
-                         const std::string &view_path,
-                         Node &out);
+    // basic sidre read logic that works at the handle level
+    static void load_sidre_tree(Node &sidre_meta,
+                                IOHandle &hnd,
+                                const std::string &tree_path,
+                                const std::string &curr_path,
+                                Node &out);
 
+    static void load_sidre_group(Node &sidre_meta,
+                                 IOHandle &hnd,
+                                 const std::string &group_path,
+                                 Node &out);
+
+    static void load_sidre_view(Node &sidre_meta_view,
+                                IOHandle &hnd,
+                                const std::string &view_path,
+                                Node &out);
+
+    bool sidre_meta_tree_has_path(const Node &sidre_meta,
+                                  const std::string &path);
+
+    void sidre_meta_tree_list_child_names(const Node &sidre_meta,
+                                          const std::string &path,
+                                          std::vector<std::string> &res);
+
+    // void load_sidre_tree(Node &sidre_meta,
+    //                      int tree_id,
+    //                      const std::string &tree_path,
+    //                      const std::string &curr_path,
+    //                      Node &out);
+    //
+    // void load_sidre_group(Node &sidre_meta,
+    //                       int tree_id,
+    //                       const std::string &group_path,
+    //                       Node &out);
+    //
+    //
+    // void load_sidre_view(Node &sidre_meta_view,
+    //                      int tree_id,
+    //                      const std::string &view_path,
+    //                      Node &out);
 
     void read_from_root(const std::string &path,
                         Node &node);
@@ -130,21 +161,22 @@ private:
     void prepare_sidre_meta_tree(int tree_id,
                                  const std::string &path);
 
+    static void prepare_sidre_meta_tree(IOHandle &hnd,
+                                       const std::string &path,
+                                       Node &sidre_meta);
     bool sidre_meta_tree_has_path(int tree_id,
-                             const std::string &path);
+                                  const std::string &path);
 
     void sidre_meta_tree_list_child_names(int tree_id,
                                           const std::string &path,
                                           std::vector<std::string> &res);
-                                     
 
-    bool file_tree_has_path(int tree_id,
-                            const std::string &path);
+    // bool file_tree_has_path(int tree_id,
+    //                         const std::string &path);
 
-
-    void read_from_file_tree(int tree_id,
-                             const std::string &path,
-                             Node &node);
+    // void read_from_file_tree(int tree_id,
+    //                          const std::string &path,
+    //                          Node &node);
 
     bool                     m_open;
     bool                     m_has_spio_index;

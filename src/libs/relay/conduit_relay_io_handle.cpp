@@ -871,7 +871,14 @@ IOHandle::read(const std::string &path,
 {
     if(m_handle != NULL)
     {
-        m_handle->read(path, node);
+        if(path.empty())
+        {
+            m_handle->read(node);
+        }
+        else
+        {
+            m_handle->read(path, node);
+        }
     }
     else
     {

@@ -141,7 +141,7 @@ TEST(conduit_relay_io_handle, test_sidre_basic)
     n["my_scalars/f64"].set_float64(10.0);
     n["my_strings/s0"] = "s0 string";
     n["my_strings/s1"] = "s1 string";
-    n["my_arrays/a5_i64_std"].set(conduit_vals_1,5);
+    n["my_arrays/a5_i64"].set(conduit_vals_1,5);
     n["my_arrays/a5_i64_ext"].set_external(conduit_vals_1,5);
     n["my_arrays/b_v1"].set(conduit_vals_2,
                             3,
@@ -164,24 +164,45 @@ TEST(conduit_relay_io_handle, test_sidre_basic)
         std::string protocol = tprotos[i];
         h.open(relay_test_data_path(tbase + protocol),
                protocol);
-
-        EXPECT_TRUE(h.has_path("my_scalars"));
-        EXPECT_TRUE(h.has_path("my_strings"));
-        EXPECT_TRUE(h.has_path("my_strings/s0"));
-
+        // check expected child naes
         std::vector<std::string> rchld;
         h.list_child_names(rchld);
 
+        // print names
         for(int i=0;i< rchld.size();i++)
         {
             std::cout << rchld[i] << std::endl;
         }
 
+        // check names are as we expect
+        EXPECT_EQ(rchld.size(),3);
+        if(rchld.size() == 3)
+        {
+            EXPECT_EQ(rchld[0],"my_scalars");
+            EXPECT_EQ(rchld[1],"my_strings");
+            EXPECT_EQ(rchld[2],"my_arrays");
+        }
+        
+        // check read of every case of leaf
+        
+        
+        Node n_leaf;
+        h.read("my_scalars/i64",n_leaf); n_leaf.print();
+        h.read("my_scalars/f64",n_leaf); n_leaf.print();
+        h.read("my_strings/s0",n_leaf); n_leaf.print();
+        h.read("my_strings/s1",n_leaf); n_leaf.print();
+        h.read("my_arrays/a5_i64",n_leaf); n_leaf.print();
+        h.read("my_arrays/a5_i64_ext",n_leaf); n_leaf.print();
+        h.read("my_arrays/b_v1",n_leaf); n_leaf.print();
+        h.read("my_arrays/b_v2",n_leaf); n_leaf.print();
+
+        CONDUIT_INFO("Full Read Test:");
+
         Node n_read, n_info;
 
-        // h.read(n_read);
-        // n_read.print();
-        // EXPECT_FALSE(n.diff(n_read,n_info));
+        h.read(n_read);
+        n_read.print();
+        EXPECT_FALSE(n.diff(n_read,n_info));
 
         // check subpath read.
         n_read.reset();
