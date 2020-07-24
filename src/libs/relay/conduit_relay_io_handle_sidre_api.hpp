@@ -133,23 +133,6 @@ private:
                                           const std::string &path,
                                           std::vector<std::string> &res);
 
-    // void load_sidre_tree(Node &sidre_meta,
-    //                      int tree_id,
-    //                      const std::string &tree_path,
-    //                      const std::string &curr_path,
-    //                      Node &out);
-    //
-    // void load_sidre_group(Node &sidre_meta,
-    //                       int tree_id,
-    //                       const std::string &group_path,
-    //                       Node &out);
-    //
-    //
-    // void load_sidre_view(Node &sidre_meta_view,
-    //                      int tree_id,
-    //                      const std::string &view_path,
-    //                      Node &out);
-
     void read_from_root(const std::string &path,
                         Node &node);
 
@@ -170,13 +153,6 @@ private:
     void sidre_meta_tree_list_child_names(int tree_id,
                                           const std::string &path,
                                           std::vector<std::string> &res);
-
-    // bool file_tree_has_path(int tree_id,
-    //                         const std::string &path);
-
-    // void read_from_file_tree(int tree_id,
-    //                          const std::string &path,
-    //                          Node &node);
 
     bool                     m_open;
     bool                     m_has_spio_index;
