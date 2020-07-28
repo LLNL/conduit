@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit_relay.hpp"
+#include "conduit_blueprint.hpp"
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -67,64 +68,12 @@ relay_test_data_path(const std::string &test_fname)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_handle, test_sidre_with_root)
-{
-    return;
-    io::IOHandle h;
-    h.open(relay_test_data_path("braid_3d_sidre_examples.root"),
-           "sidre_hdf5");
-
-    std::vector<std::string> rchld;
-    h.list_child_names(rchld);
-
-    for(int i=0;i< rchld.size();i++)
-    {
-        std::cout << rchld[i] << std::endl;
-    }
-
-    Node n;
-    h.read("root",n);
-    n.print();
-
-    n.reset();
-    h.read("root/blueprint_index",n);
-    n.print();
-
-    n.reset();
-    h.read("root/number_of_trees",n);
-    n.print();
-
-    n.reset();
-    h.read("root/protocol",n);
-    n.print();
-
-    n.reset();;
-    h.read("root/blueprint_index/uniform/coordsets/coords/path",n);
-    n.print();
-
-    n.reset();
-    h.read("0/uniform/coordsets/",n);
-    n.print();
-
-    n.reset();
-    h.read("0/uniform/coordsets/coords/spacing",n);
-    n.print();
-
-    
-    n.reset();
-    h.read("0/uniform/topologies/",n);
-    n.print();
-
-    h.close();
-}
-
-//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_handle, test_sidre_basic)
 {
+    //return;
     std::string tbase = "texample_sidre_basic_ds_demo.";
     std::vector<std::string> tprotos;
-    //tprotos.push_back("sidre_conduit_json");
-    //tprotos.push_back("sidre_json");
+    // sidre hdf5 is the only currently supported protocol
     tprotos.push_back("sidre_hdf5");
 
     //
@@ -213,5 +162,68 @@ TEST(conduit_relay_io_handle, test_sidre_basic)
         h.close();
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_sidre_with_root)
+{
+    io::IOHandle h;
+    h.open(relay_test_data_path("out_spio_blueprint_example.root"),
+           "sidre_hdf5");
+
+    std::vector<std::string> rchld;
+    h.list_child_names(rchld);
+
+    for(int i=0;i< rchld.size();i++)
+    {
+        std::cout << rchld[i] << std::endl;
+    }
+
+    Node n, n_info;
+    h.read("root",n);
+    EXPECT_EQ(n["number_of_trees"].to_int64(),4);
+    EXPECT_EQ(n["number_of_files"].to_int64(),4);
+
+    n.reset();
+    h.read("root/blueprint_index",n);
+    // make sure the mesh bp index is valid
+    EXPECT_TRUE(conduit::blueprint::mesh::index::verify(n["mesh"],n_info));
+    n.print();
+
+    n.reset();
+    h.read("root/number_of_trees",n);
+    EXPECT_EQ(n.to_int64(),4);
+
+    n.reset();
+    h.read("root/protocol",n);
+    n.print();
+
+    // check data for each domain
+    for(int i=0;i<4;i++)
+    {
+        std::ostringstream oss;
+        oss << i;
+        std::string tree_root = oss.str();
+
+        CONDUIT_INFO("Reading tree: " << tree_root);
+
+        // read the entire mesh and make sure mesh bp verify is true
+        n.reset();
+        h.read(tree_root + "/mesh",n);
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(n, n_info));
+
+        n.reset();
+        h.read(tree_root + "/mesh/fields/rank",n);
+        n.print();
+        
+        // we expect the "rank" field to be filled with
+        // values that equal the domain id
+        int64_array vals = n["values"].value();
+        EXPECT_EQ(vals[0],i);
+    }
+
+    h.close();
+}
+
+
 
 

@@ -105,6 +105,7 @@ private:
     static std::string generate_sidre_meta_view_path(const std::string &tree_path);
 
     static void read_from_sidre_tree(IOHandle &hnd,
+                                     const std::string &tree_prefix,
                                      const std::string &path,
                                      Node &sidre_meta,
                                      Node &node);
@@ -112,17 +113,20 @@ private:
     // basic sidre read logic that works at the handle level
     static void load_sidre_tree(Node &sidre_meta,
                                 IOHandle &hnd,
+                                const std::string &tree_prefix,
                                 const std::string &tree_path,
                                 const std::string &curr_path,
                                 Node &out);
 
     static void load_sidre_group(Node &sidre_meta,
                                  IOHandle &hnd,
+                                 const std::string &tree_prefix,
                                  const std::string &group_path,
                                  Node &out);
 
     static void load_sidre_view(Node &sidre_meta_view,
                                 IOHandle &hnd,
+                                const std::string &tree_prefix,
                                 const std::string &view_path,
                                 Node &out);
 
@@ -145,6 +149,7 @@ private:
                                  const std::string &path);
 
     static void prepare_sidre_meta_tree(IOHandle &hnd,
+                                       const std::string &tree_prefix,
                                        const std::string &path,
                                        Node &sidre_meta);
     bool sidre_meta_tree_has_path(int tree_id,
