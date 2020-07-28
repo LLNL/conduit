@@ -1,7 +1,7 @@
 // Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
 // Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 // other details. No copyright assignment is required to contribute to Conduit.
-#include <conduit_utils.h>
+#include "conduit_utils.h"
 #include <conduit_utils.hpp>
 
 static void(*conduit_utils_on_info)(const char *, const char *, int) = NULL;
