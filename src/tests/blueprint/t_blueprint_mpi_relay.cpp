@@ -257,18 +257,18 @@ TEST(blueprint_mpi_relay, basic_use)
     string output_base = "test_blueprint_mpi_relay";
     // what we want:
     // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
-    conduit::relay::mpi::io_blueprint::save_mesh(dset,
-                                                 output_base,
-                                                 "hdf5",
-                                                 MPI_COMM_WORLD);
+    conduit::relay::mpi::io::blueprint::save_mesh(dset,
+                                                  output_base,
+                                                  "hdf5",
+                                                  MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     
     // read this back using load_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
     Node n_read, n_diff_info;
-    conduit::relay::mpi::io_blueprint::load_mesh(output_root,
-                                                 n_read,
-                                                 MPI_COMM_WORLD);
+    conduit::relay::mpi::io::blueprint::load_mesh(output_root,
+                                                  n_read,
+                                                  MPI_COMM_WORLD);
     // diff == false, no diff == diff clean
     EXPECT_FALSE(dset.diff(n_read.child(0),n_diff_info));
     
@@ -361,7 +361,11 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
 
         MPI_Barrier(comm);
 
-        conduit::relay::mpi::io_blueprint::save_mesh(data, output_base,"hdf5",nfiles,comm);
+        conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                      output_base,
+                                                      "hdf5",
+                                                      nfiles,
+                                                      comm);
 
         MPI_Barrier(comm);
 

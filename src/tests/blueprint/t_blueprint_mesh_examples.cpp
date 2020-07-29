@@ -412,7 +412,7 @@ TEST(conduit_blueprint_mesh_examples, spiral_multi_file)
         utils::remove_directory(output_dir);
         utils::remove_directory(output_root);
 
-        relay::io_blueprint::save_mesh(data, output_base,"hdf5",nfiles);
+        relay::io::blueprint::save_mesh(data, output_base,"hdf5",nfiles);
 
         // count the files
         //  file_%06llu.{protocol}:/domain_%06llu/...

@@ -99,15 +99,21 @@ namespace mpi
 {
 #endif
 
+
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::<mpi>::blueprint --
+// -- begin conduit::relay::io
 //-----------------------------------------------------------------------------
-namespace io_blueprint
+namespace io
+{
+    
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::io::<mpi>::blueprint
+//-----------------------------------------------------------------------------
+namespace blueprint
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::<mpi>::io_blueprint::detail --
+// -- begin conduit::relay::<mpi>::blueprint::detail --
 //-----------------------------------------------------------------------------
 
 
@@ -125,8 +131,6 @@ public:
     //-------------------------------------------------------------------//
     BlueprintTreePathGenerator(const std::string &file_pattern,
                                const std::string &tree_pattern,
-                               int num_files,
-                               int num_trees,
                                const std::string &protocol,
                                const Node &mesh_index)
     : m_file_pattern(file_pattern),
@@ -307,7 +311,7 @@ bool clean_mesh(const conduit::Node &data,
     {
       conduit::Node info;
       const conduit::Node &child = data.child(i);
-      bool is_valid = blueprint::mesh::verify(child, info);
+      bool is_valid = ::conduit::blueprint::mesh::verify(child, info);
       if(is_valid)
       {
         conduit::Node &dest_dom = output.append();
@@ -321,7 +325,7 @@ bool clean_mesh(const conduit::Node &data,
   {
     // check to see if this is a single valid domain
     conduit::Node info;
-    bool is_valid = blueprint::mesh::verify(data, info);
+    bool is_valid = ::conduit::blueprint::mesh::verify(data, info);
     if(is_valid)
     {
       conduit::Node &dest_dom = output.append();
@@ -630,13 +634,13 @@ void save_mesh(const Node &mesh,
 #endif
     
     int par_rank = 0;
-    int par_size = 0;
     // we may not have any domains so init to max
     int cycle = std::numeric_limits<int>::max();
 
     int local_boolean = is_valid ? 1 : 0;
     int global_boolean = local_boolean;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    int par_size = 0;
     MPI_Comm_rank(mpi_comm, &par_rank);
     MPI_Comm_size(mpi_comm, &par_size);
 
@@ -1010,10 +1014,10 @@ void save_mesh(const Node &mesh,
         Node root;
         Node &bp_idx = root["blueprint_index"];
 
-        blueprint::mesh::generate_index(multi_dom.child(0),
-                                        "",
-                                        global_num_domains,
-                                        bp_idx["mesh"]);
+        ::conduit::blueprint::mesh::generate_index(multi_dom.child(0),
+                                                   "",
+                                                   global_num_domains,
+                                                   bp_idx["mesh"]);
 
         // work around conduit and manually add state fields
         if(multi_dom.child(0).has_path("state/cycle"))
@@ -1136,8 +1140,8 @@ void load_mesh(const std::string &root_file_path,
     // make sure we have a valid bp index
     Node verify_info;
     const Node &mesh_index = root_node["blueprint_index"][mesh_name];
-    if( !blueprint::mesh::index::verify(mesh_index,
-                                        verify_info[mesh_name]))
+    if( !::conduit::blueprint::mesh::index::verify(mesh_index,
+                                                   verify_info[mesh_name]))
     {
         CONDUIT_ERROR("Mesh Blueprint index verify failed" << std::endl
                       << verify_info.to_json());
@@ -1154,8 +1158,6 @@ void load_mesh(const std::string &root_file_path,
     int num_domains = root_node["number_of_trees"].to_int();
     detail::BlueprintTreePathGenerator gen(root_node["file_pattern"].as_string(),
                                            root_node["tree_pattern"].as_string(),
-                                           root_node["number_of_files"].to_int(),
-                                           num_domains,
                                            data_protocol,
                                            mesh_index);
 
@@ -1223,6 +1225,24 @@ void load_mesh(const std::string &root_file_path,
 }
 
 
+//-----------------------------------------------------------------------------
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::io::<mpi>::blueprint --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::io --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::<mpi>::io_blueprint -- (DEPRECATED)
+//-----------------------------------------------------------------------------
+namespace io_blueprint
+{
 
 //---------------------------------------------------------------------------//
 // DEPRECATED
@@ -1233,9 +1253,14 @@ save(const Node &mesh,
      CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
 {
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    save(mesh,path,detail::identify_protocol(path),comm);
+    save(mesh,
+         path,
+         relay::mpi::io::blueprint::detail::identify_protocol(path),
+         comm);
 #else
-    save(mesh,path,detail::identify_protocol(path));
+    save(mesh,
+         path,
+         relay::io::blueprint::detail::identify_protocol(path));
 #endif
 }
 
@@ -1256,7 +1281,7 @@ save(const Node &mesh,
                       "output type must be 'blueprint_root' (JSON) or 'blueprint_root_hdf5' (HDF5): " <<
                       "Failed to save mesh to path " << path);
     }
-    if(!blueprint::mesh::verify(mesh, info))
+    if(!::conduit::blueprint::mesh::verify(mesh, info))
     {
         CONDUIT_ERROR("Given node isn't a valid Blueprint mesh: " <<
                       "Failed to save mesh to path " << path);
@@ -1266,7 +1291,7 @@ save(const Node &mesh,
     // because the official Blueprint function produces results that are incompatible
     // with HDF5 outputs (because they include Conduit lists instead of dictionaries).
     Node index;
-    if(blueprint::mesh::is_multi_domain(mesh))
+    if(::conduit::blueprint::mesh::is_multi_domain(mesh))
     {
         index["data"].set_external(mesh);
     }
@@ -1291,13 +1316,13 @@ save(const Node &mesh,
             {
                 const Node &topo = topo_iter.next();
                 is_domain_index_valid &= (
-                    !blueprint::mesh::topology::unstructured::verify(topo, info) ||
+                    !::conduit::blueprint::mesh::topology::unstructured::verify(topo, info) ||
                     !topo["elements"].has_child("element_types"));
             }
 
             if(is_domain_index_valid)
             {
-                blueprint::mesh::generate_index(
+                ::conduit::blueprint::mesh::generate_index(
                     domain,domain_name,1,bpindex[domain_name]);
             }
         }
@@ -1329,6 +1354,8 @@ save(const Node &mesh,
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::<mpi>::io_blueprint --
 //-----------------------------------------------------------------------------
+
+
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
 }
