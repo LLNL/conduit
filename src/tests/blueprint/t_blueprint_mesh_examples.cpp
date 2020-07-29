@@ -375,6 +375,79 @@ TEST(conduit_blueprint_mesh_examples, julia)
     relay::io_blueprint::save(res, "julia_example.blueprint_root");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, spiral_multi_file)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,data);
+    
+    // lets try with -1 to 8 files.
+    
+    // nfiles less than 1 should trigger default case
+    // (n output files = n domains)
+    std::ostringstream oss;
+    for(int nfiles=-1; nfiles < 9; nfiles++)
+    {
+        CONDUIT_INFO("test nfiles = " << nfiles);
+        oss.str("");
+        oss << "tout_relay_sprial_mesh_save_nfiles_" << nfiles;
+        std::string output_base = oss.str();
+        std::string output_dir  = output_base + ".cycle_000000";
+        std::string output_root = output_base + ".cycle_000000.root";
+
+        // remove existing directory
+        utils::remove_directory(output_dir);
+        utils::remove_directory(output_root);
+
+        relay::io_blueprint::save_mesh(data, output_base,"hdf5",nfiles);
+
+        // count the files
+        //  file_%06llu.{protocol}:/domain_%06llu/...
+        int nfiles_to_check = nfiles;
+        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
+        {
+            nfiles_to_check = 7;
+        }
+
+        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+        EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+        char fmt_buff[64] = {0};
+        for(int i=0;i<nfiles_to_check;i++)
+        {
+            
+            std::string fprefix = "file_";
+            if(nfiles_to_check == 7)
+            {
+                // in the n domains == n files case, the file prefix is 
+                // domain_
+                fprefix = "domain_";
+            }
+            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",i);
+            oss.str("");
+            oss << conduit::utils::join_file_path(output_base + ".cycle_000000",
+                                                  fprefix)
+                << fmt_buff << ".hdf5";
+            std::string fcheck = oss.str();
+            std::cout << " checking: " << fcheck << std::endl;
+            EXPECT_TRUE(conduit::utils::is_file(fcheck));
+        }
+    }
+}
+
 
 
 //-----------------------------------------------------------------------------

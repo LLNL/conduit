@@ -18,9 +18,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added helper script (scripts/regen_docs_outputs.py) that regenerates all example outputs used Conduit's Sphinx docs.
 
 #### Relay
-- Added an open mode option to RelayIOHandle. See RelayIOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
+- Added an open mode option to Relay IOHandle. See Relay IOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
 - Added the conduit.relay.mpi Python module to support Relay MPI in Python.
 - Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
+- Added preliminary support to read Sidre Style HDF5, including those grouped with a root file using Relay IOHandle.
+- Added `conduit::relay::io::blueprint::load_mesh` functions, were pulled in from Ascent's Blueprint import logic.
 
 #### Blueprint
 - Added support for sparse one-to-many relationships with the new `blueprint::o2mrelation` protocol. See the `blueprint::o2mrelation::examples::uniform` example for details.
@@ -54,6 +56,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.
+- `conduit::relay::io_blueprint::save` functions are deprecated in favor of `conduit::relay::io::blueprint::save_mesh`
+- `conduit::relay::io::blueprint::save_mesh` functions were pulled in from Ascent's Blueprint export logic.
+
+
+#### Blueprint
+- Refactored the Polygonal and Polyhedral mesh blueprint specification to leverage one-to-many concepts and to allow more zero-copy use cases. 
 
 
 ## [0.5.1] - Released 2020-01-18

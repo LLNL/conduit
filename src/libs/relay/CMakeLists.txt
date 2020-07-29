@@ -94,7 +94,6 @@ set(conduit_relay_headers
     conduit_relay_io_identify_protocol.hpp
     conduit_relay_io_identify_protocol_api.hpp
     conduit_relay_io_blueprint.hpp
-    conduit_relay_io_blueprint_api.hpp
     conduit_relay_web.hpp
     conduit_relay_web_node_viewer_server.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h
@@ -365,7 +364,7 @@ set(conduit_relay_mpi_io_headers conduit_relay_mpi_io.hpp)
 #
 # Specify the relay mpi io deps
 #
-set(conduit_relay_mpi_io_deps conduit mpi)
+set(conduit_relay_mpi_io_deps conduit mpi conduit_relay_mpi conduit_relay)
 
 #
 # Specify relay mpi c headers
@@ -377,6 +376,9 @@ set(conduit_relay_mpi_io_c_headers
 #
 set(conduit_relay_mpi_io_c_sources
     c/conduit_relay_mpi_io_c.cpp)
+
+list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_blueprint.hpp)
+list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_blueprint.cpp)
 
 if(SILO_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_silo.hpp)
