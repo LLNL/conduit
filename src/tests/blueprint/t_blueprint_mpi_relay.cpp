@@ -141,6 +141,17 @@ TEST(blueprint_mpi_relay, basic_use)
 //-----------------------------------------------------------------------------
 TEST(blueprint_mpi_relay, spiral_multi_file)
 {
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // only run this test if hdf5 is enabled
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("hdf5 is disabled, skipping hdf5 dependent test");
+        return;
+    }
+
     //
     // Set Up MPI
     //
