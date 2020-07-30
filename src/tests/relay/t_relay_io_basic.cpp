@@ -252,9 +252,9 @@ TEST(conduit_relay_io_basic, identify_file_type)
     Node io_protos;
     relay::io::about(io_protos["io"]);
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
-    if(!hdf5_enabled)
+    if(hdf5_enabled)
     {
-        // create and text a hdf5 file
+        // create a hdf5 file
         io::save(n["myobj"],"tout_identify_ftype.hdf5");
         io::identify_file_type("tout_identify_ftype.hdf5",protocol);
         EXPECT_EQ(protocol,"hdf5");
