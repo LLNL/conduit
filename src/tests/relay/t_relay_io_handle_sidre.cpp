@@ -241,6 +241,29 @@ TEST(conduit_relay_io_handle, test_sidre_with_root)
     h.close();
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_sidre_bad_reads)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+
+    io::IOHandle h;
+    h.open(relay_test_data_path("out_spio_blueprint_example.root"),
+           "sidre_hdf5");
+
+    Node n;
+    EXPECT_THROW(h.read("GARBAGE!",n),conduit::Error);
+    EXPECT_THROW(h.read("-1",n),conduit::Error); // neg is invalid
+    EXPECT_THROW(h.read("100000",n),conduit::Error); // to big
+
+}
+
 
 
 

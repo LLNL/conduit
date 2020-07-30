@@ -264,10 +264,26 @@ SidreIOHandle::read(const std::string &path,
         {
             if(!utils::string_is_integer(p_first))
             {
-                // TODO:ERROR!
+                CONDUIT_ERROR("Cannot read Sidre path: '"
+                              << p_first
+                              << "'"
+                              << std::endl
+                              << "Expected 'root' or an integer "
+                              << "tree id (ex: '0')");
             }
 
             int tree_id = utils::string_to_value<int>(p_first);
+
+            // make sure we have a valid tree_id
+            if(tree_id < 0 || tree_id > m_num_trees)
+            {
+                CONDUIT_ERROR("Cannot read from invalid Sidre tree id: "
+                              << tree_id
+                              << std::endl
+                              << "Expected id in range [0,"
+                              << m_num_trees << ")");
+            }
+
             read_from_sidre_tree(tree_id,
                                  p_next,
                                  node);
@@ -1204,9 +1220,6 @@ SidreIOHandle::read_from_sidre_tree(int tree_id,
                                     const std::string &path,
                                     Node &out)
 {
-    // TODO REFACTOR TO USE HND VARIANT!
-    
-    
     // if we don't already have it cached, this will fetch
     // the proper sidre meta data
     prepare_sidre_meta_tree(tree_id,path);

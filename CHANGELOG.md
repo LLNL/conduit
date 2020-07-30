@@ -21,7 +21,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added an open mode option to Relay IOHandle. See Relay IOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
 - Added the conduit.relay.mpi Python module to support Relay MPI in Python.
 - Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
-- Added preliminary support to read Sidre Style HDF5, including those grouped with a root file using Relay IOHandle.
+- Added preliminary support to read Sidre Datastore-style HDF5 using Relay IOHandle,  those grouped with a root file.
 - Added `conduit::relay::io::blueprint::load_mesh` functions, were pulled in from Ascent's Blueprint import logic.
 
 #### Blueprint
