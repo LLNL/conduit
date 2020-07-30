@@ -162,11 +162,13 @@ identify_file_type(const std::string &path,
     // goal: check for: hdf5, json, or yaml
 
     // first check for hdf5
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
     if(conduit::relay::io::is_hdf5_file(path))
     {
         file_type = "hdf5";
     }
     else
+#endif 
     {
         char buff[5] = {0,0,0,0,0};
         // heuristic:
