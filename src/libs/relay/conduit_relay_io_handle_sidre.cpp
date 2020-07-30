@@ -136,7 +136,7 @@ SidreIOHandle::open()
     if( !utils::is_file( m_root_file ) )
         CONDUIT_ERROR("Invalid sidre file: " << m_root_file);
 
-    std::string m_root_protocol = detect_root_protocol();
+    m_root_protocol = detect_root_protocol();
 
     //
     m_root_handle.open(m_root_file, m_root_protocol);

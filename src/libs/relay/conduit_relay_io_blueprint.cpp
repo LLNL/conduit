@@ -1271,7 +1271,7 @@ void
 save(const Node &mesh,
      const std::string &path,
      const std::string &protocol
-     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
+     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm /*comm*/))
 {
     // TODO: Add support for yaml protocol
     Node info;
