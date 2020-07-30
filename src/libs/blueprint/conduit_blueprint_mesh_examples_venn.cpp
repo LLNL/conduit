@@ -252,9 +252,10 @@ void compute_material_sparse_matset_field(Node &res,
 
         float64_array vf_vals = res["matsets/matset/volume_fractions/" + cld_name].value();
         int32_array vf_elt_ids = res["matsets/matset/element_ids/" + cld_name].value();
+        index_t sparse_elements = vf_elt_ids.number_of_elements();
 
         index_t sparse_index = 0;
-        for (index_t elt = 0; elt < elements; ++elt)
+        for (index_t elt = 0; elt < elements && sparse_index < sparse_elements; ++elt)
         {
             if (vf_elt_ids[sparse_index] == elt)
             {
