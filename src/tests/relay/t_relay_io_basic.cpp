@@ -216,6 +216,52 @@ TEST(conduit_relay_io_basic, identify_protocol)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_basic, identify_file_type)
+{
+    std::string protocol;
+
+    // create an empty file!
+    std::ofstream ofs;
+    ofs.open("tout_ident_identify.empty");
+    ofs.close();
+
+    // create a text file
+    ofs.open("tout_ident_identify.txt");
+    ofs << "stuff!" << std::endl;
+    ofs.close();
+
+    io::identify_file_type("tout_ident_ftype.empty",protocol);
+    EXPECT_EQ(protocol,"unknown");
+
+    io::identify_file_type("tout_ident_ftype.txt",protocol);
+    EXPECT_EQ(protocol,"unknown");
+
+    Node n;
+    n["answer"] = 42;
+    
+    // create json and yaml files
+    n.save("tout_identify_ftype.json");
+    n.save("tout_identify_ftype.yaml");
+
+    io::identify_file_type("tout_identify_ftype.json",protocol);
+    EXPECT_EQ(protocol,"json");
+
+    // io::identify_file_type("tout_identify_ftype.yaml",protocol);
+    // EXPECT_EQ(protocol,"yaml");
+
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        // create and text a hdf5 file
+        io::save(n["myobj"],"tout_identify_ftype.hdf5");
+        io::identify_file_type("tout_identify_ftype.hdf5",protocol);
+        EXPECT_EQ(protocol,"hdf5");
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, save_empty)
 {
     Node n;
