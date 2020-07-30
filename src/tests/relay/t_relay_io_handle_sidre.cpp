@@ -70,7 +70,15 @@ relay_test_data_path(const std::string &test_fname)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_handle, test_sidre_basic)
 {
-    //return;
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+
     std::string tbase = "texample_sidre_basic_ds_demo.";
     std::vector<std::string> tprotos;
     // sidre hdf5 is the only currently supported protocol
@@ -166,6 +174,15 @@ TEST(conduit_relay_io_handle, test_sidre_basic)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_handle, test_sidre_with_root)
 {
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+
     io::IOHandle h;
     h.open(relay_test_data_path("out_spio_blueprint_example.root"),
            "sidre_hdf5");

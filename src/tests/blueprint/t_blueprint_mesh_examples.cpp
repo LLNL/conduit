@@ -393,9 +393,9 @@ TEST(conduit_blueprint_mesh_examples, spiral_multi_file)
 
     // use spiral , with 7 domains
     conduit::blueprint::mesh::examples::spiral(7,data);
-    
+
     // lets try with -1 to 8 files.
-    
+
     // nfiles less than 1 should trigger default case
     // (n output files = n domains)
     std::ostringstream oss;
@@ -428,11 +428,11 @@ TEST(conduit_blueprint_mesh_examples, spiral_multi_file)
         char fmt_buff[64] = {0};
         for(int i=0;i<nfiles_to_check;i++)
         {
-            
+
             std::string fprefix = "file_";
             if(nfiles_to_check == 7)
             {
-                // in the n domains == n files case, the file prefix is 
+                // in the n domains == n files case, the file prefix is
                 // domain_
                 fprefix = "domain_";
             }
@@ -447,7 +447,6 @@ TEST(conduit_blueprint_mesh_examples, spiral_multi_file)
         }
     }
 }
-
 
 
 //-----------------------------------------------------------------------------
@@ -765,6 +764,45 @@ TEST(conduit_blueprint_mesh_examples, save_adjset_uniform)
 
     CONDUIT_INFO("Creating: adj_uniform_example.blueprint_root")
     relay::io::save(mesh,"adj_uniform_example.blueprint_root","json");
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, save_load_mesh)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+
+    std::string output_base = "tout_relay_mesh_save_load";
+    // spiral with 3 domains
+    Node data;
+    conduit::blueprint::mesh::examples::spiral(3,data);
+
+    // spiral doesn't have domain ids, lets add some so we diff clean
+    data.child(0)["state/domain_id"] = 0;
+    data.child(1)["state/domain_id"] = 1;
+    data.child(2)["state/domain_id"] = 2;
+
+    relay::io::blueprint::save_mesh(data, output_base, "hdf5", -1);
+
+    data.print();
+    Node n_read, info;
+    relay::io::blueprint::load_mesh(output_base + ".cycle_000000.root",
+                                    n_read);
+
+    n_read.print();
+    // reading back in will add domain_zzzzzz names, check children of read
+
+    data.child(0).diff(n_read.child(0),info);
+    data.child(1).diff(n_read.child(1),info);
+    data.child(2).diff(n_read.child(2),info);
 }
 
 
