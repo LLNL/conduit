@@ -50,8 +50,21 @@
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     #include "conduit_relay_mpi_io_adios.hpp"
+
+// Define argument macros that add a communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG0(ARG) ARG
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) ,ARG
+
 #else
     #include "conduit_relay_io_adios.hpp"
+
+// Define an argument macro that does not add the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG0(ARG) 
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) 
+
+// for non-mpi adios we need to define _NOMPI
+#define _NOMPI
+
 #endif
 
 //-----------------------------------------------------------------------------

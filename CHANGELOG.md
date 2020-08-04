@@ -58,6 +58,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.
 - `conduit::relay::io_blueprint::save` functions are deprecated in favor of `conduit::relay::io::blueprint::save_mesh`
 - `conduit::relay::io::blueprint::save_mesh` functions were pulled in from Ascent's Blueprint export logic.
+- `conduit_relay_io_mpi` lib now depends on `conduit_relay_io`. Due to this change, a single build supports either ADIOS serial (no-mpi) or ADIOS with MPI support, but not both. If conduit is configured with MPI support, ADIOS MPI is used.
 
 
 #### Blueprint
