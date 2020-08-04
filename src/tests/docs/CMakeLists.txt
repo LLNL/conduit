@@ -71,6 +71,9 @@ set(DOCS_PYTHON_TESTS
     t_conduit_docs_tutorial_python_ownership
     t_conduit_docs_tutorial_python_relay_io_handle_examples)
 
+set(DOCS_PYTHON_MPI_TESTS  
+    t_conduit_docs_tutorial_python_relay_mpi_examples)
+
 
 ################################
 # Add our tests
@@ -101,6 +104,15 @@ if(PYTHON_FOUND)
         add_python_test(TEST ${TEST}
                         FOLDER tests/docs)
     endforeach()
+
+    if(MPI_FOUND)
+        foreach(TEST ${DOCS_PYTHON_MPI_TESTS})
+            add_python_mpi_test(TEST ${TEST}
+                                NUM_MPI_TASKS 2)
+                                # FOLDER tests/docs)
+        endforeach()
+    endif()
+
 else()
     message(STATUS "Python disabled: Skipping conduit python tutorial examples")
 endif()

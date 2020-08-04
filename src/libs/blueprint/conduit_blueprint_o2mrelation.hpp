@@ -44,101 +44,95 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_io_adios_api.hpp
+/// file: conduit_blueprint_o2mrelation.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_RELAY_IO_ADIOS_API_HPP
-#define CONDUIT_RELAY_IO_ADIOS_API_HPP
+#ifndef CONDUIT_BLUEPRINT_O2M_HPP
+#define CONDUIT_BLUEPRINT_O2M_HPP
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_initialize_library(
-                           CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm));
+// conduit lib includes
+//-----------------------------------------------------------------------------
+#include "conduit.hpp"
+#include "conduit_blueprint_exports.h"
+
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_finalize_library(
-                           CONDUIT_RELAY_COMMUNICATOR_ARG0(MPI_Comm comm));
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
 
 //-----------------------------------------------------------------------------
-/// Write node data to a given path
+// -- begin conduit::blueprint --
+//-----------------------------------------------------------------------------
+namespace blueprint
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::o2mrelation --
+//-----------------------------------------------------------------------------
+namespace o2mrelation
+{
+
+//-----------------------------------------------------------------------------
+// blueprint protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info);
+
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
+                                  const conduit::Node &n,
+                                  conduit::Node &info);
+
+//-----------------------------------------------------------------------------
+/// o2mrelation blueprint property/query/transform methods
 ///
-/// This methods supports a file system and adios path, joined using a ":"
-///  ex: "/path/on/file/system.bp:/path/inside/adios/file"
-/// 
+/// These methods can be called on any verified o2mrelation
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_save(const Node &node,
-                                  const std::string &path
-                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
-/// Write node data to a given path in an existing file.
+std::vector<std::string> CONDUIT_BLUEPRINT_API data_paths(const conduit::Node &o2mrelation);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API compact_to(const conduit::Node &o2mrelation,
+                                      conduit::Node &res);
+
+//-----------------------------------------------------------------------------
+/// o2mrelation blueprint miscellaneous methods
 ///
-/// This methods supports a file system and adios path, joined using a ":"
-///  ex: "/path/on/file/system.bp:/path/inside/adios/file"
-/// 
+/// These methods can be called on unverified o2mrelation to bring them
+/// into compliance.
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_save_merged(const Node &node,
-                                          const std::string &path
-                                          CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
 //-----------------------------------------------------------------------------
-/// Add a step of node data to an existing file.
-///
-/// This methods supports a file system and adios path, joined using a ":"
-///  ex: "/path/on/file/system.adios:/path/inside/adios/file"
-/// 
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_add_step(const Node &node,
-                                      const std::string &path
-                                      CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+bool CONDUIT_BLUEPRINT_API generate_offsets(conduit::Node &n,
+                                            conduit::Node &info);
 
 //-----------------------------------------------------------------------------
-/// Read adios data from given path into the output node 
-/// 
-/// This methods supports a file system and adios path, joined using a ":"
-///  ex: "/path/on/file/system.bp:/path/inside/adios/file"
-///
+}
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_load(const std::string &path,
-                                  Node &node
-                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+// -- end conduit::blueprint::o2mrelation --
+//-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-/// Read a given step and domain of adios data from given path into the
-//  output node.
-/// 
-/// This methods supports a file system and adios path, joined using a ":"
-///  ex: "/path/on/file/system.bp:/path/inside/adios/file"
-///
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_load(const std::string &path,
-                                  int step,
-                                  int domain,
-                                  Node &node
-                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
+}
 //-----------------------------------------------------------------------------
-/// Pass a Node to set adios i/o options.
+// -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_set_options(const Node &opts
-                                         CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
-//-----------------------------------------------------------------------------
-/// Get a Node that contains adios i/o options.
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API adios_options(Node &opts
-                                     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
+}
 //-----------------------------------------------------------------------------
-/// Get a number of steps.
+// -- end conduit:: --
 //-----------------------------------------------------------------------------
-int  CONDUIT_RELAY_API adios_query_number_of_steps(const std::string &path
-                           CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
 
-//-----------------------------------------------------------------------------
-/// Get a number of domains.
-//-----------------------------------------------------------------------------
-int  CONDUIT_RELAY_API adios_query_number_of_domains(const std::string &path
-                           CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
-#endif
+
+#endif 
+
+
 

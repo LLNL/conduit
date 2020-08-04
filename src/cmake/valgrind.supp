@@ -115,12 +115,12 @@
    fun:COMMENT_THIS_LINE_TO_DISABLE_LEAK_WARNING
 }
 
-#
+######################################
 # OSX  leaks
 #
 
 {
-   Handle OSX specific Leak (possibly leaked)
+   mac os leak ignore 1
    Memcheck:Leak
    match-leak-kinds: possible
    fun:malloc_zone_malloc
@@ -136,6 +136,59 @@
    fun:_ZL22copySwiftV1MangledNamePKcb
    fun:_ZL22copySwiftV1MangledNamePKcb
 }
+#
+{
+   mac os leak ignore 2
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   ...
+   fun:environ_init
+   fun:_os_object_init
+}
+#
+{
+   mac os leak ignore 3
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   ...
+   fun:_hasObjcContents
+   fun:__objc_personality_v0
+}
+#
+{
+   mac os leak ignore 4
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   ...
+   fun:_dyld_objc_notify_register
+   fun:environ_init
+   fun:_os_object_init
+   fun:libdispatch_init
+}
+#
+{
+    mac os leak ignore 5
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   fun:_ZN10objc_class14setHasCustomRREb
+   fun:_ZL11addSubclassP10objc_classS0_
+   fun:_ZNSt3__112__hash_tableINS_17__hash_value_typeImPN23objc_references_support20ObjectAssociationMapEEENS_22__unordered_map_hasherImS5_NS2_20DisguisedPointerHashELb1EEENS_21__unordered_map_equalImS5_NS2_21DisguisedPointerEqualELb1EEENS2_13ObjcAllocatorIS5_EEE8__rehashEm
+   fun:_ZL18updateCustomRR_AWZP10objc_classP8method_t
+   fun:_ZL9addMethodP10objc_classP13objc_selectorPFvvEPKcb
+   fun:_ZL17realizeAllClassesv
+   fun:_objc_flush_caches
+   fun:_objc_flush_caches
+   fun:_objc_flush_caches
+   fun:_objc_flush_caches
+   fun:_read_images
+}
+#####################################
+# end macos leaks
+#####################################
 
 #
 # Non-python specific leaks

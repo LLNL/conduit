@@ -134,7 +134,8 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
 bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                   conduit::Node &info,
                                   const index_t min_depth,
-                                  const index_t max_pepth);
+                                  const index_t max_pepth,
+                                  const bool leaf_uniformity);
 
 //-----------------------------------------------------------------------------
 bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,

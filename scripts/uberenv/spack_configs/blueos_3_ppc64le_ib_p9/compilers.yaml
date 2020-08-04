@@ -32,12 +32,9 @@ compilers:
     modules: []
     operating_system: rhel7
     paths:
-      cc:  /usr/tce/packages/xl/xl-beta-2018.10.29/bin/xlc-gpu 
-      cxx: /usr/tce/packages/xl/xl-beta-2018.10.29/bin/xlC-gpu
-      f77: /usr/tce/packages/xl/xl-beta-2018.10.29/bin/xlf-gpu
-      fc: //usr/tce/packages/xl/xl-beta-2018.10.29/bin/xlf2003-gpu
+      cc:  /usr/tce/packages/xl/xl-beta-2019.06.20/bin/xlc-gpu
+      cxx: /usr/tce/packages/xl/xl-beta-2019.06.20/bin/xlC-gpu
+      f77: /usr/tce/packages/xl/xl-beta-2019.06.20/bin/xlf-gpu
+      fc: //usr/tce/packages/xl/xl-beta-2019.06.20/bin/xlf2003-gpu
     spec: xl@coral
     target: ppc64le
-
-
- 

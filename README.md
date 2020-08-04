@@ -31,7 +31,7 @@ License
 
 Conduit is released under a BSD-style license - for detailed license info, refer to:
 
-http://software.llnl.gov/conduit/licenses.html
+https://llnl-conduit.readthedocs.io/en/latest/licenses.html
 
 or the following files in the Conduit source tree:
 - [LICENSE](/LICENSE)

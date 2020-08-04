@@ -44,43 +44,83 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_io_blueprint_api.hpp
+/// file: conduit_blueprint_o2mrelation_examples.hpp
 ///
 //-----------------------------------------------------------------------------
 
-// NOTE: This functionality is a placeholder for more general functionality in
-// future versions of Blueprint. That said, the functions in this header are
-// subject to change and could be moved with any future iteration of Conduit,
-// so use this header with caution!
-
-#ifndef CONDUIT_RELAY_IO_BLUEPRINT_API_HPP
-#define CONDUIT_RELAY_IO_BLUEPRINT_API_HPP
+#ifndef CONDUIT_BLUEPRINT_O2MRELATION_EXAMPLES_HPP
+#define CONDUIT_BLUEPRINT_O2MRELATION_EXAMPLES_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib include 
+// conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "conduit_relay_exports.h"
-#include "conduit_relay_config.h"
+#include "conduit_blueprint_exports.h"
 
 
 //-----------------------------------------------------------------------------
-// Writes 1 file per MPI Task, but skips empty 
-void CONDUIT_RELAY_API generate_mesh_index(const conduit::Node &mesh,
-                                      const std::string &ref_path,
-                                      conduit::Node &index_out
-                                      CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const conduit::Node &mesh,
-                            const std::string &path
-                            CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+// -- begin conduit::blueprint --
+//-----------------------------------------------------------------------------
+namespace blueprint
+{
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const conduit::Node &mesh,
-                            const std::string &path,
-                            const std::string &protocol
-                            CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+// -- begin conduit::blueprint::o2mrelation --
+//-----------------------------------------------------------------------------
+
+namespace o2mrelation
+{
+
+//-----------------------------------------------------------------------------
+/// Methods that generate example multi-component arrays.
+//-----------------------------------------------------------------------------
+namespace examples
+{
+    //-------------------------------------------------------------------------
+    /// creates a one-to-many relation with a given uniform relationship size,
+    /// a given uniform offset, and an index specification, which can be one of:
+    ///  unspecified
+    ///  default
+    ///  reversed
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API uniform(conduit::Node &res,
+                                       conduit::index_t nones,
+                                       conduit::index_t nmany = 0,
+                                       conduit::index_t noffset = 0,
+                                       const std::string &index_type = "unspecified");
+
+//-----------------------------------------------------------------------------
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::examples --
+//-----------------------------------------------------------------------------
 
 
-#endif
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::o2mrelation --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint:: --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit --
+//-----------------------------------------------------------------------------
+
+
+#endif 
+
+
+

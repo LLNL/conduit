@@ -3323,6 +3323,38 @@ public:
         { return  ConstValue(this,true); }
 
 
+//-----------------------------------------------------------------------------
+// -- String construction methods ---
+//-----------------------------------------------------------------------------
+    // accepted protocols:
+    //   "json"
+    //   "conduit_json"
+    //   "conduit_base64_json"
+    //   "yaml"
+    std::string         to_string(const std::string &protocol="yaml", 
+                                  index_t indent=2, 
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
+
+    void                to_string_stream(std::ostream &os,
+                                         const std::string &protocol="yaml", 
+                                         index_t indent=2, 
+                                         index_t depth=0,
+                                         const std::string &pad=" ",
+                                         const std::string &eoe="\n") const;
+
+    void                to_string_stream(const std::string &stream_path,
+                                         const std::string &protocol="json",
+                                         index_t indent=2, 
+                                         index_t depth=0,
+                                         const std::string &pad=" ",
+                                         const std::string &eoe="\n") const;
+
+    // NOTE(cyrush): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string         to_string_default() const;
 
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
@@ -3560,14 +3592,31 @@ public:
     Node             &fetch(const std::string &path);
     const Node       &fetch(const std::string &path) const;
 
+    /// the `fetch_existing' methods don't modify map structure, if a path
+    /// doesn't exist they will throw an exception
+    Node             &fetch_existing(const std::string &path);
+    const Node       &fetch_existing(const std::string &path) const;
+
+    /// DEPRECATED: `fetch_child` is deprecated in favor of `fetch_existing`
+    ///
     /// the `fetch_child' methods don't modify map structure, if a path
     /// doesn't exist they will throw an exception
     Node             &fetch_child(const std::string &path);
     const Node       &fetch_child(const std::string &path) const;
 
+    // add_child will not try to parse the name as a path. "foo/bar.png" is
+    // a legal name.
+    Node             &add_child(const std::string &name);
+
     /// fetch the node at the given index
     Node             &child(index_t idx);
     const Node       &child(index_t idx) const;
+    
+    /// fetch direct child by name
+    /// the `child' methods don't modify map structure, and also
+    /// do not try to resolve names as paths 
+    Node             &child(const std::string &name);
+    const Node       &child(const std::string &name) const;
 
     /// fetch a pointer to the node  at the given path
     Node             *fetch_ptr(const std::string &path);
@@ -3612,6 +3661,8 @@ public:
     void    remove(index_t idx);
     /// remove child at given path (object interface)
     void    remove(const std::string &path);
+    /// remove child with given name, will not parse name as path 
+    void    remove_child(const std::string &name);
     /// rename a child (object interface)
     void    rename_child(const std::string &current_name,
                          const std::string &new_name);

@@ -56,24 +56,28 @@ The goal of Blueprint is to help facilite a set of shared higher-level conventio
 
 For now, Blueprint is focused on conventions for two important types of data:
 
-*  Multi-Component Arrays (protocol: ``mcarray``)
-
-    A multi-component array is a collection of fixed-sized numeric tuples. 
-    They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
-
 *  Computational Meshes (protocol: ``mesh``)
 
     Many taxonomies and concrete mesh data models have been developed to allow computational meshes to be used in software. Blueprint's conventions for representing mesh data were formed by negotiating with simulation application teams at LLNL and from a survey of existing projects that provide scientific mesh-related APIs including: ADIOS,  Damaris, EAVL, MFEM, Silo, VTK, VTKm, and Xdmf. Blueprint's mesh conventions are not a replacement for existing mesh data models or APIs. Our explicit goal is to outline a comprehensive, but small set of options for describing meshes in-core that simplifies the process of adapting data to several existing mesh-aware APIs.
 
-Protocol Details
------------------
+*  One-to-Many Relations (protocol: ``o2mrelation``)
+
+    A one-to-many relation is a collection of arbitrarily grouped values that encode element associations from a source ("one"s) to a destination ("many"s) space.
+    These constructs are used in computational meshes to represent sparse material data, polygonal/polyhedral topologies, and other non-uniform mappings.
+
+*  Multi-Component Arrays (protocol: ``mcarray``)
+
+    A multi-component array is a collection of fixed-sized numeric tuples.
+    They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
 
 .. toctree::
-    blueprint_mcarray
     blueprint_mesh
+    blueprint_o2mrelation
+    blueprint_mcarray
 
-Blueprint Interface
----------------------
+
+Top Level Blueprint Interface
+-------------------------------
 
 Blueprint provides a generic top level ``verify()`` method, which exposes the verify checks for all supported protocols. 
 
@@ -86,12 +90,15 @@ Blueprint provides a generic top level ``verify()`` method, which exposes the ve
 ``verify()`` returns true if the passed Node *node* conforms to the named protocol. It also provides details about the verification, including specific errors in the passed *info* Node.
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_examples.cpp
-   :lines: 65-79
+   :start-after: BEGIN_EXAMPLE("blueprint_example_1")
+   :end-before:  END_EXAMPLE("blueprint_example_1")
    :language: cpp
    :dedent: 4
 
+
 .. literalinclude:: t_conduit_docs_blueprint_examples_out.txt
-   :lines: 10-19
+   :start-after: BEGIN_EXAMPLE("blueprint_example_1")
+   :end-before:  END_EXAMPLE("blueprint_example_1")
 
 
 
@@ -99,13 +106,14 @@ Methods for specific protocols are grouped in namespaces:
 
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_examples.cpp
-   :lines: 90-116
+   :start-after: BEGIN_EXAMPLE("blueprint_example_2")
+   :end-before:  END_EXAMPLE("blueprint_example_2")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_blueprint_examples_out.txt
-   :lines: 26-83
-
+   :start-after: BEGIN_EXAMPLE("blueprint_example_2")
+   :end-before:  END_EXAMPLE("blueprint_example_2")
 
 
 

@@ -50,13 +50,14 @@
 # blueprint lib Unit Tests
 ################################
 set(BLUEPRINT_TESTS t_blueprint_smoke
+                    t_blueprint_mcarray_verify
+                    t_blueprint_mcarray_examples
+                    t_blueprint_o2mrelation_verify
+                    t_blueprint_o2mrelation_examples
                     t_blueprint_mesh_verify
                     t_blueprint_mesh_transform
                     t_blueprint_mesh_generate
-                    t_blueprint_mcarray_verify
-                    t_blueprint_mesh_examples
-                    t_blueprint_mcarray_examples)
-
+                    t_blueprint_mesh_examples)
 
 ################################
 # Add our Main Unit Tests
@@ -107,7 +108,8 @@ conduit
                                                                  conduit
                                                                  conduit_blueprint
                                                                  conduit_relay
-                                                                 conduit_relay_mpi)
+                                                                 conduit_relay_mpi
+                                                                 conduit_relay_mpi_io)
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping conduit_blueprint_mpi tests")

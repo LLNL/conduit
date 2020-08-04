@@ -61,9 +61,14 @@ if(SILO_FOUND)
   SET(CONDUIT_RELAY_IO_SILO_ENABLED TRUE)
 endif()
 
-if(ADIOS_FOUND)
+if(ADIOS_FOUND AND NOT MPI_FOUND)
   SET(CONDUIT_RELAY_IO_ADIOS_ENABLED TRUE)
 endif()
+
+if(ADIOS_FOUND AND MPI_FOUND)
+  SET(CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED TRUE)
+endif()
+
 
 if(MPI_FOUND)
   SET(CONDUIT_RELAY_MPI_ENABLED TRUE)
@@ -89,10 +94,11 @@ set(conduit_relay_headers
     conduit_relay_io.hpp
     conduit_relay_io_handle.hpp
     conduit_relay_io_handle_api.hpp
+    conduit_relay_io_handle_sidre.hpp
+    conduit_relay_io_handle_sidre_api.hpp
     conduit_relay_io_identify_protocol.hpp
     conduit_relay_io_identify_protocol_api.hpp
     conduit_relay_io_blueprint.hpp
-    conduit_relay_io_blueprint_api.hpp
     conduit_relay_web.hpp
     conduit_relay_web_node_viewer_server.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h
@@ -112,6 +118,7 @@ set(conduit_relay_sources
     conduit_relay.cpp
     conduit_relay_io.cpp
     conduit_relay_io_handle.cpp
+    conduit_relay_io_handle_sidre.cpp
     conduit_relay_io_identify_protocol.cpp
     conduit_relay_io_blueprint.cpp
     conduit_relay_web.cpp
@@ -143,10 +150,9 @@ if(SILO_FOUND)
     list(APPEND conduit_relay_sources conduit_relay_io_silo.cpp)
 endif()
 
-if(ADIOS_FOUND)
+if(ADIOS_FOUND AND NOT MPI_FOUND)
     list(APPEND conduit_relay_headers
          conduit_relay_io_adios.hpp
-         conduit_relay_io_adios_api.hpp
         )
     list(APPEND conduit_relay_sources conduit_relay_io_adios.cpp)
 endif()
@@ -203,7 +209,7 @@ if(HDF5_FOUND)
     endif()
 endif()
 
-if(ADIOS_FOUND)
+if(ADIOS_FOUND AND NOT MPI_FOUND)
     # Link with the serial ADIOS libraries.
     list(APPEND conduit_relay_deps adios_nompi)
 endif()
@@ -362,7 +368,7 @@ set(conduit_relay_mpi_io_headers conduit_relay_mpi_io.hpp)
 #
 # Specify the relay mpi io deps
 #
-set(conduit_relay_mpi_io_deps conduit mpi)
+set(conduit_relay_mpi_io_deps conduit mpi conduit_relay_mpi conduit_relay)
 
 #
 # Specify relay mpi c headers
@@ -375,22 +381,28 @@ set(conduit_relay_mpi_io_c_headers
 set(conduit_relay_mpi_io_c_sources
     c/conduit_relay_mpi_io_c.cpp)
 
+list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_blueprint.hpp)
+list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_blueprint.cpp)
+
 if(SILO_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_silo.hpp)
     list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_silo.cpp)
     list(APPEND conduit_relay_mpi_io_deps silo)
 endif()
+
 if(HDF5_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_hdf5.hpp)
     list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_hdf5.cpp)
     list(APPEND conduit_relay_mpi_io_deps hdf5)
 endif()
+
 if(ADIOS_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_adios.hpp)
     list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_adios.cpp)
     # Link with parallel versions of ADIOS
     list(APPEND conduit_relay_mpi_io_deps adios_mpi)
 endif()
+ 
 
 #
 # setup conduit relay mpi io lib
@@ -404,6 +416,5 @@ add_compiled_library(NAME conduit_relay_mpi_io
                      FOLDER libs)
 
 blt_add_target_compile_flags(TO conduit_relay_mpi_io FLAGS "-DCONDUIT_RELAY_IO_MPI_ENABLED")
-
 
 endif() # end if MPI_FOUND

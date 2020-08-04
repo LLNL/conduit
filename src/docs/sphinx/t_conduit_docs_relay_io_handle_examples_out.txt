@@ -1,24 +1,18 @@
-Running main() from gtest_main.cc
-[==========] Running 1 test from 1 test case.
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
 [----------] Global test environment set-up.
 [----------] 1 test from conduit_docs
 [ RUN      ] conduit_docs.relay_io_handle_1
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_handle_examples.cpp : 63]
- relay_io_handle_example_1
+BEGIN_EXAMPLE("relay_io_handle_example_1")
 
 Node to write:
 
-{
-  "a": 
-  {
-    "data": 1.0,
-    "more_data": 2.0,
-    "b": 
-    {
-      "my_string": "value"
-    }
-  }
-}
+a: 
+  data: 1.0
+  more_data: 2.0
+  b: 
+    my_string: "value"
+
 
 Value at "a/data" = 1
 
@@ -32,22 +26,16 @@ Children of "a": "data" "b" "c"
 
 Read Result:
 
-{
-  "a": 
-  {
-    "data": 1.0,
-    "b": 
-    {
-      "my_string": "value"
-    },
-    "c": 42.0
-  }
-}
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_relay_io_handle_examples.cpp : 134]
- relay_io_handle_example_1
-[       OK ] conduit_docs.relay_io_handle_1 (7 ms)
-[----------] 1 test from conduit_docs (7 ms total)
+a: 
+  data: 1.0
+  b: 
+    my_string: "value"
+  c: 42.0
+
+END_EXAMPLE("relay_io_handle_example_1")
+[       OK ] conduit_docs.relay_io_handle_1 (6 ms)
+[----------] 1 test from conduit_docs (6 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test case ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (7 ms total)
 [  PASSED  ] 1 test.

@@ -87,12 +87,93 @@ namespace mpi
 namespace io
 {
 
-// Define argument macros that add a communicator argument.
-#define CONDUIT_RELAY_COMMUNICATOR_ARG0(ARG) ARG
-#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) ,ARG
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_initialize_library(MPI_Comm comm);
 
-// Functions are provided by this include file.
-#include "conduit_relay_io_adios_api.hpp"
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_finalize_library(MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Write node data to a given path
+///
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.bp:/path/inside/adios/file"
+/// 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_save(const Node &node,
+                                  const std::string &path,
+                                  MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Write node data to a given path in an existing file.
+///
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.bp:/path/inside/adios/file"
+/// 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_save_merged(const Node &node,
+                                          const std::string &path,
+                                          MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Add a step of node data to an existing file.
+///
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.adios:/path/inside/adios/file"
+/// 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_add_step(const Node &node,
+                                      const std::string &path,
+                                      MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Read adios data from given path into the output node 
+/// 
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.bp:/path/inside/adios/file"
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_load(const std::string &path,
+                                  Node &node,
+                                  MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Read a given step and domain of adios data from given path into the
+//  output node.
+/// 
+/// This methods supports a file system and adios path, joined using a ":"
+///  ex: "/path/on/file/system.bp:/path/inside/adios/file"
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_load(const std::string &path,
+                                  int step,
+                                  int domain,
+                                  Node &node,
+                                  MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Pass a Node to set adios i/o options.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_set_options(const Node &opts,
+                                         MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Get a Node that contains adios i/o options.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API adios_options(Node &opts,
+                                     MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Get a number of steps.
+//-----------------------------------------------------------------------------
+int  CONDUIT_RELAY_API adios_query_number_of_steps(const std::string &path,
+                                                   MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Get a number of domains.
+//-----------------------------------------------------------------------------
+int  CONDUIT_RELAY_API adios_query_number_of_domains(const std::string &path,
+                                                     MPI_Comm comm);
 
 }
 //-----------------------------------------------------------------------------

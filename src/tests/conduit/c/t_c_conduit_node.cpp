@@ -415,3 +415,59 @@ TEST(c_conduit_node, c_save_load)
     conduit_node_destroy(n1);
     conduit_node_destroy(n2);
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_child_with_embedded_slashes)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node *n_1 = conduit_node_fetch(n,"normal/path");
+    conduit_node_set_int(n_1,10);
+
+    conduit_node *n_2 = conduit_node_add_child(n,"child_with_/_inside");
+    conduit_node_set_int(n_2,42);
+
+    EXPECT_TRUE(conduit_node_has_path(n,"normal/path"));
+    EXPECT_FALSE(conduit_node_has_child(n,"normal/path"));
+    EXPECT_FALSE(conduit_node_has_path(n,"child_with_/_inside"));
+    EXPECT_TRUE(conduit_node_has_child(n,"child_with_/_inside"));
+
+    EXPECT_EQ(conduit_node_number_of_children(n),2);
+    
+    conduit_node *n_2_test = conduit_node_child_by_name(n,"child_with_/_inside");
+
+    EXPECT_EQ(n_2, n_2_test);
+    
+    EXPECT_EQ(conduit_node_as_int(n_1),10);
+    EXPECT_EQ(conduit_node_as_int(n_2_test),42);
+
+    conduit_node_remove_child_by_name(n,"child_with_/_inside");
+    EXPECT_EQ(conduit_node_number_of_children(n),1);
+    EXPECT_TRUE(conduit_node_has_path(n,"normal/path"));
+    EXPECT_FALSE(conduit_node_has_child(n,"child_with_/_inside"));
+
+
+    conduit_node_destroy(n);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_fetch_existing)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node *n_1 = conduit_node_fetch(n,"normal/path");
+    conduit_node_set_int(n_1,10);
+
+    conduit_node *n_2 = conduit_node_fetch_existing(n,"normal/path");
+
+    EXPECT_EQ(n_1,n_2);
+    
+    EXPECT_EQ(conduit_node_as_int(n_2),10);
+    
+
+    conduit_node_destroy(n);
+}
+
+
+

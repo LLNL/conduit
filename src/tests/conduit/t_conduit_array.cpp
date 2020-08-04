@@ -60,32 +60,36 @@ TEST(conduit_array, basic_construction)
 {
     std::vector<int8> data1(10,8);
     std::vector<int8> data2(10,-8);
-    
+
     void *data1_ptr = &data1[0];
     const void *cdata2_ptr = &data2[0];
 
     DataArray<int8> da_1(data1_ptr,DataType::int8(10));
-    
+
+    std::cout << da_1.to_string() << std::endl;
+
     for(index_t i=0;i<10;i++)
     {
         EXPECT_EQ(8,da_1[i]);
     }
-    
+
     DataArray<int8> da_2(cdata2_ptr,DataType::int8(10));
+
+    std::cout << da_2.to_string() << std::endl;
 
     for(index_t i=0;i<10;i++)
     {
         EXPECT_EQ(-8,da_2[i]);
     }
-    
+
     DataArray<int8> da_3(da_1);
     for(index_t i=0;i<10;i++)
     {
         EXPECT_EQ(8,da_3[i]);
     }
-    
+
     da_3[0] = 16;
-    
+
     da_3 = da_2;
 
     for(index_t i=0;i<10;i++)
@@ -94,6 +98,12 @@ TEST(conduit_array, basic_construction)
     }
 
     da_3[0] = -16;
+
+    std::cout << da_3.to_string() << std::endl;
+    
+    // test other variants of to_string and to stream, etc
+    da_3.to_string_stream(std::cout);
+    da_3.to_json_stream(std::cout);
 
     EXPECT_EQ(16,data1[0]);
     EXPECT_EQ(-16,data2[0]);

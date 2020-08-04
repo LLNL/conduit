@@ -56,25 +56,29 @@ Think of it as a hierarchical variant object.
 .. # from t_conduit_docs_tutorial_basics: basics_very_basic
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
-   :lines: 65-68
+   :start-after: BEGIN_EXAMPLE("basics_very_basic")
+   :end-before:  END_EXAMPLE("basics_very_basic")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
-   :lines: 9-11
+   :start-after: BEGIN_EXAMPLE("basics_very_basic")
+   :end-before:  END_EXAMPLE("basics_very_basic")
 
 .. # from t_conduit_docs_tutorial_basics: basics_hierarchial
 
 The *Node* class supports hierarchical construction.
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
-   :lines: 76-84
+   :start-after: BEGIN_EXAMPLE("basics_hierarchial")
+   :end-before:  END_EXAMPLE("basics_hierarchial")
    :language: cpp
    :dedent: 4
 
 
 .. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
-   :lines: 19-30
+   :start-after: BEGIN_EXAMPLE("basics_hierarchial")
+   :end-before:  END_EXAMPLE("basics_hierarchial")
 
 Borrowing form JSON (and other similar notations), collections of named nodes are
 called *Objects* and collections of unnamed nodes are called *Lists*, all other types
@@ -83,12 +87,14 @@ are leaves that represent concrete data.
 .. # from t_conduit_docs_tutorial_basics: basics_object_and_list
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
-   :lines: 92-105
+   :start-after: BEGIN_EXAMPLE("basics_object_and_list")
+   :end-before:  END_EXAMPLE("basics_object_and_list")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
-   :lines: 38-53
+   :start-after: BEGIN_EXAMPLE("basics_object_and_list")
+   :end-before:  END_EXAMPLE("basics_object_and_list")
 
 You can use a *NodeIterator* ( or a *NodeConstIterator*) to iterate through a Node's 
 children.
@@ -96,12 +102,14 @@ children.
 .. # from t_conduit_docs_tutorial_basics: basics_object_and_list_itr
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
-   :lines: 113-142
+   :start-after: BEGIN_EXAMPLE("basics_object_and_list_itr")
+   :end-before:  END_EXAMPLE("basics_object_and_list_itr")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
-   :lines: 61-84
+   :start-after: BEGIN_EXAMPLE("basics_object_and_list_itr")
+   :end-before:  END_EXAMPLE("basics_object_and_list_itr")
 
 
 Behind the scenes, *Node* instances manage a collection of memory spaces.
@@ -109,12 +117,14 @@ Behind the scenes, *Node* instances manage a collection of memory spaces.
 .. # from t_conduit_docs_tutorial_basics: basics_mem_spaces
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
-   :lines: 151-160
+   :start-after: BEGIN_EXAMPLE("basics_mem_spaces")
+   :end-before:  END_EXAMPLE("basics_mem_spaces")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
-   :lines: 92-118
+   :start-after: BEGIN_EXAMPLE("basics_mem_spaces")
+   :end-before:  END_EXAMPLE("basics_mem_spaces")
 
 .. # we could add an example here
 
@@ -135,25 +145,31 @@ Conduit uses well defined bitwidth style types (inspired by NumPy) for leaf valu
 .. # from t_conduit_docs_tutorial_basics: basics_bw_style
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
-   :lines: 168-174
+   :start-after: BEGIN_EXAMPLE("basics_bw_style")
+   :end-before:  END_EXAMPLE("basics_bw_style")
    :language: cpp
    :dedent: 4
 
 
 .. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
-   :lines: 126-132
+   :start-after: BEGIN_EXAMPLE("basics_bw_style")
+   :end-before:  END_EXAMPLE("basics_bw_style")
+
 
 Standard C++ numeric types will be mapped by the compiler to bitwidth style types.
 
 .. # from t_conduit_docs_tutorial_basics: basics_bw_style_from_native
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
-   :lines: 182-187
+   :start-after: BEGIN_EXAMPLE("basics_bw_style_from_native")
+   :end-before:  END_EXAMPLE("basics_bw_style_from_native")
    :language: cpp
    :dedent: 4
 
 .. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
-   :lines: 140-142
+   :start-after: BEGIN_EXAMPLE("basics_bw_style_from_native")
+   :end-before:  END_EXAMPLE("basics_bw_style_from_native")
+
 
 
 Supported Bitwidth Style Types:

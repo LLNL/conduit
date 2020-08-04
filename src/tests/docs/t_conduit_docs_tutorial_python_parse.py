@@ -60,7 +60,7 @@ def END_EXAMPLE(tag):
 class Conduit_Tutorial_Python_Parse(unittest.TestCase):
 
     def test_docs_tutorial_yaml(self):
-        BEGIN_EXAMPLE("t_py_conduit_docs_tutorial_yaml")
+        BEGIN_EXAMPLE("py_conduit_docs_tutorial_yaml")
         yaml_txt = "mykey: 42.0"
 
         n = conduit.Node()
@@ -68,10 +68,10 @@ class Conduit_Tutorial_Python_Parse(unittest.TestCase):
 
         print(n["mykey"])
         print(n.schema())
-        END_EXAMPLE("t_py_conduit_docs_tutorial_yaml")
+        END_EXAMPLE("py_conduit_docs_tutorial_yaml")
 
     def test_docs_tutorial_json(self):
-        BEGIN_EXAMPLE("t_py_conduit_docs_tutorial_json")
+        BEGIN_EXAMPLE("py_conduit_docs_tutorial_json")
         json_txt = '{"mykey": 42.0}'
 
         n = conduit.Node()
@@ -79,10 +79,10 @@ class Conduit_Tutorial_Python_Parse(unittest.TestCase):
 
         print(n["mykey"])
         print(n.schema())
-        END_EXAMPLE("t_py_conduit_docs_tutorial_json")
+        END_EXAMPLE("py_conduit_docs_tutorial_json")
 
     def test_docs_tutorial_yaml_inline_array(self):
-        BEGIN_EXAMPLE("t_py_conduit_docs_tutorial_yaml_inline_array")
+        BEGIN_EXAMPLE("py_conduit_docs_tutorial_yaml_inline_array")
         yaml_txt = "myarray: [0.0, 10.0, 20.0, 30.0]"
 
         n = conduit.Node()
@@ -91,37 +91,37 @@ class Conduit_Tutorial_Python_Parse(unittest.TestCase):
         print(n["myarray"])
 
         print(n.fetch("myarray").schema())
-        END_EXAMPLE("t_py_conduit_docs_tutorial_yaml_inline_array")
+        END_EXAMPLE("py_conduit_docs_tutorial_yaml_inline_array")
 
     def test_json_generator_std(self):
-        BEGIN_EXAMPLE("t_py_json_generator_std")
+        BEGIN_EXAMPLE("py_json_generator_std")
         g = conduit.Generator("{test: {dtype: float64, value: 100.0}}",
                               "conduit_json")
         n = conduit.Node()
         g.walk(n)
         print(n["test"])
         print(n)
-        END_EXAMPLE("t_py_json_generator_std")
+        END_EXAMPLE("py_json_generator_std")
 
     def test_json_generator_pure_json(self):
-        BEGIN_EXAMPLE("t_py_json_generator_pure_json")
+        BEGIN_EXAMPLE("py_json_generator_pure_json")
         g = conduit.Generator("{test: 100.0}",
                               "json")
         n = conduit.Node()
         g.walk(n)
         print(n["test"])
         print(n)
-        END_EXAMPLE("t_py_json_generator_pure_json")
+        END_EXAMPLE("py_json_generator_pure_json")
 
     def test_json_generator_pure_yaml(self):
-        BEGIN_EXAMPLE("t_py_json_generator_pure_yaml")
+        BEGIN_EXAMPLE("py_json_generator_pure_yaml")
         g = conduit.Generator("test: 100.0",
                               "yaml")
         n = conduit.Node()
         g.walk(n)
         print(n["test"])
         print(n)
-        END_EXAMPLE("t_py_json_generator_pure_yaml")
+        END_EXAMPLE("py_json_generator_pure_yaml")
 
 
 

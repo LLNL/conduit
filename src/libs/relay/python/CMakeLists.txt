@@ -90,3 +90,25 @@ PYTHON_ADD_COMPILED_MODULE(conduit_relay_web_python
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_relay_web_python conduit conduit_relay)
 
+
+################################################################
+# If we have mpi, add the conduit relay mpi module
+################################################################
+
+if(MPI_FOUND)
+
+    # add relay mpi submodule
+    PYTHON_ADD_COMPILED_MODULE(conduit_relay_mpi_python
+                               # dest 
+                               python-modules
+                               # python module dir
+                               conduit/relay/mpi
+                               # c srcs + headers
+                               conduit_relay_mpi_python.cpp
+                               ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
+
+    # link with the proper libs (beyond python)
+    target_link_libraries(conduit_relay_mpi_python conduit conduit_relay_mpi)
+
+endif()
+
