@@ -44,17 +44,13 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay_io_blueprint_api.hpp
+/// file: conduit_relay_io_handle_sidre.hpp
 ///
 //-----------------------------------------------------------------------------
 
-// NOTE: This functionality is a placeholder for more general functionality in
-// future versions of Blueprint. That said, the functions in this header are
-// subject to change and could be moved with any future iteration of Conduit,
-// so use this header with caution!
 
-#ifndef CONDUIT_RELAY_IO_BLUEPRINT_API_HPP
-#define CONDUIT_RELAY_IO_BLUEPRINT_API_HPP
+#ifndef CONDUIT_RELAY_IO_HANDLE_SIDRE_HPP
+#define CONDUIT_RELAY_IO_HANDLE_SIDRE_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib include 
@@ -63,24 +59,44 @@
 #include "conduit_relay_exports.h"
 #include "conduit_relay_config.h"
 
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
 
 //-----------------------------------------------------------------------------
-// Writes 1 file per MPI Task, but skips empty 
-void CONDUIT_RELAY_API generate_mesh_index(const conduit::Node &mesh,
-                                      const std::string &ref_path,
-                                      conduit::Node &index_out
-                                      CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+// -- begin conduit::relay --
+//-----------------------------------------------------------------------------
+namespace relay
+{
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const conduit::Node &mesh,
-                            const std::string &path
-                            CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
-
+// -- begin conduit::relay::io --
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save(const conduit::Node &mesh,
-                            const std::string &path,
-                            const std::string &protocol
-                            CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm));
+namespace io
+{
+
+
+#include "conduit_relay_io_handle_sidre_api.hpp"
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::io --
+//-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
 
 
 #endif
+

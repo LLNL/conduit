@@ -64,15 +64,15 @@ endforeach()
 
 
 if(ADIOS_FOUND)
-    message(STATUS "ADIOS enabled: Adding conduit_relay c interface ADIOS unit tests")
-    foreach(TEST ${RELAY_C_IO_ADIOS_TESTS})
-        add_cpp_test(TEST ${TEST}
-                     DEPENDS_ON conduit conduit_relay
-                     FOLDER tests/relay/c)
-    endforeach()
-
-    if(MPI_FOUND)
-        message(STATUS "MPI enabled: Adding conduit_relay_mpi_adios unit tests")
+    if(NOT MPI_FOUND)
+        message(STATUS "ADIOS enabled: Adding conduit_relay c interface ADIOS unit tests")
+        foreach(TEST ${RELAY_C_IO_ADIOS_TESTS})
+            add_cpp_test(TEST ${TEST}
+                         DEPENDS_ON conduit conduit_relay
+                         FOLDER tests/relay/c)
+        endforeach()
+    else()
+        message(STATUS "ADIOS + MPI enabled: Adding conduit_relay_mpi_adios unit tests")
         foreach(TEST ${RELAY_C_MPI_IO_ADIOS_TESTS})
             add_cpp_mpi_test(TEST ${TEST}
                              NUM_MPI_TASKS 2

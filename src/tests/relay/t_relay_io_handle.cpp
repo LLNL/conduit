@@ -452,3 +452,44 @@ TEST(conduit_relay_io_handle, test_reuse_handle)
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_empty_path_as_root)
+{
+    int64 a_val = 20;
+    int64 b_val = 8;
+    int64 c_val = 13;
+    int64 here_val = 10;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["d/here"] = here_val;
+
+    std::string ofname = "tout_conduit_relay_io_empty_path_as_root.conduit_bin";
+
+    Node n_read_1, n_read_2, n_read_3, info;
+
+    io::IOHandle h;
+    h.open(ofname);
+    h.write(n);
+    h.close();
+
+    // all of these 3 cases should be equiv
+    h.open(ofname);
+    h.read(n_read_1);
+    h.close();
+
+    h.open(ofname);
+    h.read("",n_read_2);
+    h.close();
+
+    h.open(ofname);
+    h.read("/",n_read_3);
+    h.close();
+
+    EXPECT_FALSE(n.diff(n_read_1, info, 0.0));
+    EXPECT_FALSE(n.diff(n_read_2, info, 0.0));
+    EXPECT_FALSE(n.diff(n_read_2, info, 0.0));
+}

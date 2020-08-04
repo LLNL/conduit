@@ -53,6 +53,7 @@ set(RELAY_TESTS t_relay_smoke
                 t_relay_io_basic
                 t_relay_io_file_sizes
                 t_relay_io_handle
+                t_relay_io_handle_sidre
                 t_relay_node_viewer
                 t_relay_websocket)
 
@@ -115,15 +116,15 @@ else()
 endif()
 
 if(ADIOS_FOUND)
-    message(STATUS "ADIOS enabled: Adding conduit_relay ADIOS unit tests")
-    foreach(TEST ${RELAY_ADIOS_TESTS})
-        add_cpp_test(TEST ${TEST}
-                     DEPENDS_ON conduit conduit_relay
-                     FOLDER tests/relay)
-    endforeach()
-
-    if(MPI_FOUND)
-        message(STATUS "MPI enabled: Adding conduit_relay_mpi_adios unit tests")
+    if(NOT MPI_FOUND)
+        message(STATUS "ADIOS enabled: Adding conduit_relay ADIOS unit tests")
+        foreach(TEST ${RELAY_ADIOS_TESTS})
+            add_cpp_test(TEST ${TEST}
+                         DEPENDS_ON conduit conduit_relay
+                         FOLDER tests/relay)
+        endforeach()
+    else()
+        message(STATUS "ADIOS + MPI enabled: Adding conduit_relay_mpi_adios unit tests")
         foreach(TEST ${RELAY_MPI_ADIOS_TESTS})
             add_cpp_mpi_test(TEST ${TEST}
                              NUM_MPI_TASKS 2

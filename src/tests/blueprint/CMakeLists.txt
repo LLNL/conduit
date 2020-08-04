@@ -59,7 +59,6 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mesh_generate
                     t_blueprint_mesh_examples)
 
-
 ################################
 # Add our Main Unit Tests
 ################################
@@ -101,7 +100,8 @@ if(MPI_FOUND)
                                                                  conduit
                                                                  conduit_blueprint
                                                                  conduit_relay
-                                                                 conduit_relay_mpi)
+                                                                 conduit_relay_mpi
+                                                                 conduit_relay_mpi_io)
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping conduit_relay_mpi tests")

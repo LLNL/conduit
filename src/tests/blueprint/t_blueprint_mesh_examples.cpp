@@ -376,6 +376,78 @@ TEST(conduit_blueprint_mesh_examples, julia)
     relay::io_blueprint::save(res, "julia_example.blueprint_root");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, spiral_multi_file)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,data);
+
+    // lets try with -1 to 8 files.
+
+    // nfiles less than 1 should trigger default case
+    // (n output files = n domains)
+    std::ostringstream oss;
+    for(int nfiles=-1; nfiles < 9; nfiles++)
+    {
+        CONDUIT_INFO("test nfiles = " << nfiles);
+        oss.str("");
+        oss << "tout_relay_sprial_mesh_save_nfiles_" << nfiles;
+        std::string output_base = oss.str();
+        std::string output_dir  = output_base + ".cycle_000000";
+        std::string output_root = output_base + ".cycle_000000.root";
+
+        // remove existing directory
+        utils::remove_directory(output_dir);
+        utils::remove_directory(output_root);
+
+        relay::io::blueprint::save_mesh(data, output_base,"hdf5",nfiles);
+
+        // count the files
+        //  file_%06llu.{protocol}:/domain_%06llu/...
+        int nfiles_to_check = nfiles;
+        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
+        {
+            nfiles_to_check = 7;
+        }
+
+        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+        EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+        char fmt_buff[64] = {0};
+        for(int i=0;i<nfiles_to_check;i++)
+        {
+
+            std::string fprefix = "file_";
+            if(nfiles_to_check == 7)
+            {
+                // in the n domains == n files case, the file prefix is
+                // domain_
+                fprefix = "domain_";
+            }
+            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",i);
+            oss.str("");
+            oss << conduit::utils::join_file_path(output_base + ".cycle_000000",
+                                                  fprefix)
+                << fmt_buff << ".hdf5";
+            std::string fcheck = oss.str();
+            std::cout << " checking: " << fcheck << std::endl;
+            EXPECT_TRUE(conduit::utils::is_file(fcheck));
+        }
+    }
+}
 
 
 //-----------------------------------------------------------------------------
@@ -681,6 +753,45 @@ TEST(conduit_blueprint_mesh_examples, save_adjset_uniform)
 
     CONDUIT_INFO("Creating: adj_uniform_example.blueprint_root")
     relay::io::save(mesh,"adj_uniform_example.blueprint_root","json");
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, save_load_mesh)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+
+    std::string output_base = "tout_relay_mesh_save_load";
+    // spiral with 3 domains
+    Node data;
+    conduit::blueprint::mesh::examples::spiral(3,data);
+
+    // spiral doesn't have domain ids, lets add some so we diff clean
+    data.child(0)["state/domain_id"] = 0;
+    data.child(1)["state/domain_id"] = 1;
+    data.child(2)["state/domain_id"] = 2;
+
+    relay::io::blueprint::save_mesh(data, output_base, "hdf5", -1);
+
+    data.print();
+    Node n_read, info;
+    relay::io::blueprint::load_mesh(output_base + ".cycle_000000.root",
+                                    n_read);
+
+    n_read.print();
+    // reading back in will add domain_zzzzzz names, check children of read
+
+    data.child(0).diff(n_read.child(0),info);
+    data.child(1).diff(n_read.child(1),info);
+    data.child(2).diff(n_read.child(2),info);
 }
 
 

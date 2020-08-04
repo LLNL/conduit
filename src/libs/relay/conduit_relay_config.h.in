@@ -58,6 +58,8 @@
 //-----------------------------------------------------------------------------
 #cmakedefine CONDUIT_RELAY_IO_ADIOS_ENABLED
 
+#cmakedefine CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
+
 #cmakedefine CONDUIT_RELAY_IO_HDF5_ENABLED
 
 #cmakedefine CONDUIT_RELAY_IO_SILO_ENABLED
