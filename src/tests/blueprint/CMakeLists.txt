@@ -107,6 +107,7 @@ conduit
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON mpi
                                                                  conduit
                                                                  conduit_blueprint
+                                                                 conduit_blueprint_mpi
                                                                  conduit_relay
                                                                  conduit_relay_mpi
                                                                  conduit_relay_mpi_io)

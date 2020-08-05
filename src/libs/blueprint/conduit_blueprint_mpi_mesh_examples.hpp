@@ -44,28 +44,24 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mpi.hpp
+/// file: conduit_blueprint_mpi_mesh_examples.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_MPI_HPP
-#define CONDUIT_BLUEPRINT_MPI_HPP
+#ifndef CONDUIT_BLUEPRINT_MPI_MESH_EXAMPLES_HPP
+#define CONDUIT_BLUEPRINT_MPI_MESH_EXAMPLES_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
+#include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
-#include "conduit_blueprint_mpi_mesh.hpp"
-#include "conduit_blueprint_mpi_mesh_examples.hpp"
-
 
 #include <mpi.h>
 
-
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin conduit::--
 //-----------------------------------------------------------------------------
 namespace conduit
 {
@@ -76,41 +72,50 @@ namespace conduit
 namespace blueprint
 {
 
-
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mpi --
 //-----------------------------------------------------------------------------
 namespace mpi
 {
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mpi::mesh --
+//-----------------------------------------------------------------------------
+namespace mesh
+{
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
+/// Methods that generate example meshes.
 //-----------------------------------------------------------------------------
-std::string CONDUIT_BLUEPRINT_API about();
-void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
+namespace examples
+{
+    /// Generates a uniform grid per MPI task using
+    /// blueprint::mesh::examples::braid
+    /// Adds an element-associated scalar field painted with the domain id
+    void CONDUIT_BLUEPRINT_API braid_uniform_multi_domain(conduit::Node &res,
+                                                          MPI_Comm comm);
 
+    /// Generates a multi-domain fibonacci estimation of a golden spiral.
+    /// Domains are assigned round-robin to MPI tasks
+    void CONDUIT_BLUEPRINT_API spiral_round_robin(conduit::index_t ndomains,
+                                                  conduit::Node &res,
+                                                  MPI_Comm comm);
+}
 //-----------------------------------------------------------------------------
-/// blueprint verify interface
+// -- end conduit::blueprint::mpi::mesh::examples --
 //-----------------------------------------------------------------------------
 
+}
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
+// -- end conduit::blueprint::mpi::mesh --
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
-                                  const conduit::Node &n,
-                                  conduit::Node &info,
-                                  MPI_Comm comm);
 
-//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mpi --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint --
@@ -119,8 +124,9 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit:: --
+// -- end conduit --
 //-----------------------------------------------------------------------------
+
 
 
 #endif

@@ -44,25 +44,15 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mpi.hpp
+/// file: conduit_blueprint_mpi_mesh_examples.cpp
 ///
 //-----------------------------------------------------------------------------
-
-#ifndef CONDUIT_BLUEPRINT_MPI_HPP
-#define CONDUIT_BLUEPRINT_MPI_HPP
-
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-
-#include "conduit_blueprint_exports.h"
-#include "conduit_blueprint_mpi_mesh.hpp"
 #include "conduit_blueprint_mpi_mesh_examples.hpp"
-
-
-#include <mpi.h>
-
+#include "conduit_relay_mpi.hpp"
+#include "conduit_blueprint_mesh_examples.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -70,12 +60,12 @@
 namespace conduit
 {
 
+
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
+// -- begin conduit::blueprint:: --
 //-----------------------------------------------------------------------------
 namespace blueprint
 {
-
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mpi --
@@ -85,32 +75,119 @@ namespace mpi
 
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
+// -- begin conduit::blueprint::mpi::mesh --
 //-----------------------------------------------------------------------------
-std::string CONDUIT_BLUEPRINT_API about();
-void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
+namespace mesh
+{
+
 
 //-----------------------------------------------------------------------------
-/// blueprint verify interface
+// -- begin conduit::blueprint::mpi::mesh::examples --
+//-----------------------------------------------------------------------------
+namespace examples
+{
+
+//---------------------------------------------------------------------------//
+void
+braid_uniform_multi_domain(Node &res, MPI_Comm comm)
+{
+    int par_rank = relay::mpi::rank(comm);
+
+    index_t npts_x = 10;
+    index_t npts_y = 10;
+    index_t npts_z = 10;
+
+    blueprint::mesh::examples::braid("uniform",
+                                      npts_x,
+                                      npts_y,
+                                      npts_z,
+                                      res);
+
+    // the example data set has the bounds -10 to 10 in all dims
+    // Offset this along x to create mpi 'pencil'
+
+    res["coordsets/coords/origin/x"] = -10.0 + 20.0 * par_rank;
+    res["state/domain_id"] = par_rank;
+    // set cycle to 0, so we can construct the correct root file
+    res["state/cycle"] = 0;
+    
+    // add field with domain_id
+    // radial is element centered as well, borrow details
+    res["fields/rank"].set(res["fields/radial"]);
+
+    float64_array rank_vals = res["fields/rank/values"].value();
+
+    for(index_t i=0; i < rank_vals.number_of_elements(); i++)
+    {
+        rank_vals[i] = (float64) par_rank;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
+spiral_round_robin(conduit::index_t ndomains,
+                   conduit::Node &res,
+                   MPI_Comm comm)
+{
+    res.reset();
+
+    int par_rank = relay::mpi::rank(comm);
+    int par_size = relay::mpi::size(comm);
+
+    /// TODO: We gen full on all ranks, not ideal but prob ok for example
+    Node dset;
+    blueprint::mesh::examples::spiral(ndomains,dset);
+
+    index_t dom_rank = 0;
+    // pick out local doms or this rank
+    for(index_t i=0; i < ndomains; i++)
+    {
+        if(dom_rank == par_rank)
+        {
+            res.append().set(dset.child(i));
+        }
+
+        dom_rank++;
+        if(dom_rank >= par_size)
+        {
+            dom_rank = 0;
+        }
+    }
+
+    NodeIterator itr = res.children();
+    while(itr.has_next())
+    {
+        Node &dom = itr.next();
+        // also add field with domain_id
+        // dist is vertex centered as well, borrow details
+        dom["fields/rank"].set(dom["fields/dist"]);
+        float64_array rank_vals = dom["fields/rank/values"].value();
+        for(index_t i=0; i < rank_vals.number_of_elements(); i++)
+        {
+            rank_vals[i] = (float64) par_rank;
+        }
+    }
+    
+    std::cout << " HERE!" << std::endl;
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mpi::mesh::examples --
 //-----------------------------------------------------------------------------
 
+}
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
+// -- end conduit::blueprint::mpi::mesh --
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
-                                  const conduit::Node &n,
-                                  conduit::Node &info,
-                                  MPI_Comm comm);
 
-//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mpi --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint --
@@ -119,11 +196,5 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit:: --
+// -- end conduit --
 //-----------------------------------------------------------------------------
-
-
-#endif
-
-
-

@@ -2310,6 +2310,9 @@ void spiral(index_t ndoms,
         std::string domain_name = oss.str();
 
         Node &dom = res[domain_name];
+        // set cycle and domain id
+        dom["state/cycle"] = 0;
+        dom["state/domain_id"] = d;
 
         // create a rectilinear coordset
         dom["coordsets/coords/type"] = "rectilinear";

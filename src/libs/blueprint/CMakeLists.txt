@@ -189,7 +189,8 @@ if(MPI_FOUND)
 #
 set(conduit_blueprint_mpi_sources
     conduit_blueprint_mpi.cpp
-    conduit_blueprint_mpi_mesh.cpp)
+    conduit_blueprint_mpi_mesh.cpp
+    conduit_blueprint_mpi_mesh_examples.cpp)
 
 #
 # Specify blueprint mpi headers
@@ -197,6 +198,7 @@ set(conduit_blueprint_mpi_sources
 set(conduit_blueprint_mpi_headers
     conduit_blueprint_mpi.hpp
     conduit_blueprint_mpi_mesh.hpp
+    conduit_blueprint_mpi_mesh_examples.hpp
 ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h)
 
 
