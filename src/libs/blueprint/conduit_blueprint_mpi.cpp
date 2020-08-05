@@ -88,7 +88,7 @@ about()
 {
     Node n;
     blueprint::about(n);
-    return n.to_json();
+    return n.to_yaml();
 }
 
 //---------------------------------------------------------------------------//
@@ -96,13 +96,7 @@ void
 about(Node &n)
 {
     n.reset();
-    n["protocols/mesh/coordset"] = "enabled";
-    n["protocols/mesh/topology"] = "enabled";
-    n["protocols/mesh/field"]    = "enabled";
-    n["protocols/mesh/index"]    = "enabled";
-
-    n["protocols/mcarray"]  = "enabled";
-    n["protocols/zfparray"] = "enabled";
+    n["protocols/mesh"] = "enabled";
 }
 
 //---------------------------------------------------------------------------//
@@ -110,7 +104,7 @@ bool
 verify(const std::string &protocol,
        const Node &n,
        Node &info,
-       MPI_Comm /*comm*/)
+       MPI_Comm comm)
 {
     bool res = false;
     info.reset();
@@ -119,27 +113,9 @@ verify(const std::string &protocol,
     std::string p_next;
     conduit::utils::split_path(protocol,p_curr,p_next);
 
-    if(!p_next.empty())
+    if(p_curr == "mesh")
     {
-        if(p_curr == "mesh")
-        {
-            res = conduit::blueprint::mesh::verify(p_next,n,info);
-        }
-        else if(p_curr == "mcarray")
-        {
-            res = conduit::blueprint::mcarray::verify(p_next,n,info);
-        }
-    }
-    else
-    {
-        if(p_curr == "mesh")
-        {
-            res = conduit::blueprint::mesh::verify(n,info);
-        }
-        else if(p_curr == "mcarray")
-        {
-            res = conduit::blueprint::mcarray::verify(n,info);
-        }
+        res = conduit::blueprint::mpi::mesh::verify(n,info,comm);
     }
 
     return res;

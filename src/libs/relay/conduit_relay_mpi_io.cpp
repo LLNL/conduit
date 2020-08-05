@@ -101,7 +101,7 @@ about(MPI_Comm comm)
 {
     Node n;
     io::about(n, comm);
-    return n.to_json();
+    return n.to_yaml();
 }
 
 //---------------------------------------------------------------------------//

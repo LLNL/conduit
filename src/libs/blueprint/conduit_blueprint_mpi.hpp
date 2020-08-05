@@ -51,22 +51,16 @@
 #ifndef CONDUIT_BLUEPRINT_MPI_HPP
 #define CONDUIT_BLUEPRINT_MPI_HPP
 
-#include <mpi.h>
-
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 
 #include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_mpi_mesh.hpp"
 
-#include "conduit_blueprint_mesh.hpp"
-#include "conduit_blueprint_mesh_examples.hpp"
 
-#include "conduit_blueprint_mcarray.hpp"
-#include "conduit_blueprint_mcarray_examples.hpp"
-
-#include "conduit_blueprint_zfparray.hpp"
+#include <mpi.h>
 
 
 //-----------------------------------------------------------------------------

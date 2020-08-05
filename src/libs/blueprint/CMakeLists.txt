@@ -188,20 +188,22 @@ if(MPI_FOUND)
 # Specify blueprint mpi sources
 #
 set(conduit_blueprint_mpi_sources
-    conduit_blueprint_mpi.cpp)
+    conduit_blueprint_mpi.cpp
+    conduit_blueprint_mpi_mesh.cpp)
 
 #
 # Specify blueprint mpi headers
 #
 set(conduit_blueprint_mpi_headers
     conduit_blueprint_mpi.hpp
+    conduit_blueprint_mpi_mesh.hpp
 ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h)
 
 
 #
 # Specify blueprint mpi deps
 #
-set(conduit_blueprint_mpi_deps conduit conduit_blueprint mpi)
+set(conduit_blueprint_mpi_deps conduit conduit_blueprint mpi conduit_relay_mpi)
 
 #
 # setup conduit blueprint mpi lib
