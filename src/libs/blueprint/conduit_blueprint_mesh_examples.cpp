@@ -228,7 +228,11 @@ void braid_init_example_point_vector_field(index_t npts_x,
                                            index_t npts_z,
                                            Node &res)
 {
-    index_t npts = npts_x * npts_y * npts_z;
+    index_t npts = npts_x * npts_y;
+    if(npts_z > 0)
+    {
+        npts *= npts_z;
+    }
 
     res["association"] = "vertex";
     res["type"] = "vector";
@@ -250,13 +254,31 @@ void braid_init_example_point_vector_field(index_t npts_x,
     // we are using the coords (distance from origin)
     // to create an example vector field
 
-    float64 dx = 20.0 / float64(npts_x - 1);
-    float64 dy =  20.0 / float64(npts_y-1);
+    float64 dx = 0.0;
+    float64 dy = 0.0;
+    
+    if(npts_x > 1)
+    {
+        dx = 20.0  / float64(npts_x - 1);
+    }
+
+    if(npts_x > 1)
+    {
+        dy = 20.0  / float64(npts_x - 1);
+    }
+
+    
     float64 dz = 0.0;
 
     if(npts_z > 1)
     {
         dz = 20.0 / float64(npts_z-1);
+    }
+
+    // make sure outerloop exex
+    if(npts_z < 1)
+    {
+        npts_z = 1;
     }
 
     index_t idx = 0;
@@ -275,7 +297,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
                 u_vals[idx] = cx;
                 v_vals[idx] = cy;
 
-                if(npts_z > 1)
+                if(dz > 0.0)
                 {
                     w_vals[idx] = cz;
                 }
@@ -1109,7 +1131,7 @@ braid_points_explicit(index_t npts_x,
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "point";
 
-    if(npts_z < 0)
+    if(npts_z <= 0)
     {
         npts_z = 1;
     }

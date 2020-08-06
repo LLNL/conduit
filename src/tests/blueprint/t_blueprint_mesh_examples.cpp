@@ -911,13 +911,16 @@ TEST(conduit_blueprint_mesh_examples, braid_bad_inputs)
                                                   -1,
                                                   res),conduit::Error);
 
-
     // a few ok
     blueprint::mesh::examples::braid("points",
                                      1,
                                      1,
                                      0,
                                      res);
+
+    res.print();
+    // check conn array, should have 1 entry
+    EXPECT_EQ(res["topologies/mesh/elements/connectivity"].dtype().number_of_elements(),1);
 
     // should be 2d
     EXPECT_EQ(res["coordsets/coords/values"].number_of_children(),2);
