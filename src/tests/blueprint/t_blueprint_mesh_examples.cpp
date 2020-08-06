@@ -144,7 +144,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     {
         const Node &mesh = itr.next();
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
-        CONDUIT_INFO(info.to_json());
+        CONDUIT_INFO(info.to_yaml());
     }
 
     // TODO: Add VisIt support for rendering mixed element and implicit point
@@ -265,7 +265,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     {
         const Node &mesh = itr.next();
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
-        CONDUIT_INFO(info.to_json());
+        CONDUIT_INFO(info.to_yaml());
     }
 
     // TODO: Add VisIt support for rendering mixed element and implicit point
@@ -371,7 +371,7 @@ TEST(conduit_blueprint_mesh_examples, julia)
                                      res);
     Node info;
     EXPECT_TRUE(blueprint::mesh::verify(res,info));
-    CONDUIT_INFO(info.to_json());
+    CONDUIT_INFO(info.to_yaml());
 
     relay::io_blueprint::save(res, "julia_example.blueprint_root");
 }
@@ -458,7 +458,7 @@ TEST(conduit_blueprint_mesh_examples, spiral)
     blueprint::mesh::examples::spiral(ndoms,res["spiral"]);
     Node info;
     EXPECT_TRUE(blueprint::mesh::verify(res["spiral/domain_000000"],info));
-    CONDUIT_INFO(info.to_json());
+    CONDUIT_INFO(info.to_yaml());
 
     blueprint::mesh::generate_index(res["spiral/domain_000000"],
                                     "",
@@ -490,7 +490,7 @@ TEST(conduit_blueprint_mesh_examples, polytess)
 
     Node info;
     EXPECT_TRUE(blueprint::mesh::verify(res,info));
-    CONDUIT_INFO(info.to_json());
+    CONDUIT_INFO(info.to_yaml());
 
     relay::io_blueprint::save(res, "polytess_example.blueprint_root");
 }
@@ -620,7 +620,7 @@ void venn_test(const std::string &venn_type)
         EXPECT_TRUE(actual_matches_expected);
         if(!actual_matches_expected)
         {
-            CONDUIT_INFO(info.to_json());
+            CONDUIT_INFO(info.to_yaml());
         }
     }
 }
@@ -793,6 +793,158 @@ TEST(conduit_blueprint_mesh_examples, save_load_mesh)
     data.child(1).diff(n_read.child(1),info);
     data.child(2).diff(n_read.child(2),info);
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
+{
+    Node res;
+
+    // several with bad inputs
+    EXPECT_THROW(blueprint::mesh::examples::basic("uniform",
+                                                  -1,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("uniform",
+                                                  1,
+                                                  1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("uniform",
+                                                  2,
+                                                  -1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("tets",
+                                                  2,
+                                                  2,
+                                                  1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("hexs",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("polyhedra",
+                                                  2,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    // a few ok
+    blueprint::mesh::examples::basic("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     res);
+
+    blueprint::mesh::examples::basic("tets",
+                                     2,
+                                     2,
+                                     2,
+                                     res);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, braid_bad_inputs)
+{
+    Node res;
+
+    // several with bad inputs
+    EXPECT_THROW(blueprint::mesh::examples::braid("uniform",
+                                                  -1,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("uniform",
+                                                  1,
+                                                  1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("uniform",
+                                                  2,
+                                                  -1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("tets",
+                                                  2,
+                                                  2,
+                                                  1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("hexs",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("hexs_poly",
+                                                  2,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("points",
+                                                  0,
+                                                  0,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("points_implicit",
+                                                  0,
+                                                  0,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("points",
+                                                  1,
+                                                  1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+
+    // a few ok
+    blueprint::mesh::examples::braid("points",
+                                     1,
+                                     1,
+                                     0,
+                                     res);
+
+    // should be 2d
+    EXPECT_EQ(res["coordsets/coords/values"].number_of_children(),2);
+
+    blueprint::mesh::examples::braid("points",
+                                     1,
+                                     1,
+                                     2,
+                                     res);
+    // should be 3d
+    EXPECT_EQ(res["coordsets/coords/values"].number_of_children(),3);
+
+
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     res);
+
+    blueprint::mesh::examples::braid("tets",
+                                     2,
+                                     2,
+                                     2,
+                                     res);
+
+}
+
 
 
 //-----------------------------------------------------------------------------
