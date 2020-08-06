@@ -127,17 +127,6 @@ TEST(blueprint_mpi_relay, basic_use)
                                                   comm);
     // diff == false, no diff == diff clean
     EXPECT_FALSE(dset.diff(n_read.child(0),n_diff_info));
-
-    if(par_rank == 0)
-        n_diff_info.print();
-
-    MPI_Barrier(comm);
-
-    if(par_rank == 1)
-        n_diff_info.print();
-
-    MPI_Barrier(comm);
-
 }
 
 
@@ -217,13 +206,19 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
     // check verify
     EXPECT_TRUE(blueprint::mpi::mesh::verify(dset,v_info,comm));
 
-    // locally, expect 3 domas for rank 0, 2 for rank 1
+    // locally, expect:
+    //  rank 0: 3 domain
+    //  rank 1: 2 domains
     if(par_rank == 0)
+    {
         EXPECT_EQ(blueprint::mesh::number_of_domains(dset),3);
+    }
     else
+    {
         EXPECT_EQ(blueprint::mesh::number_of_domains(dset),2);
+    }
 
-    // globally, expect par_size domains
+    // globally, expect 5 domains
     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(dset,comm),5);
 
     string protocol = "hdf5";
@@ -242,6 +237,26 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
     conduit::relay::mpi::io::blueprint::load_mesh(output_root,
                                                   n_read,
                                                   comm);
+
+    // globally, expect 5 domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),5);
+
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),3);
+    }
+    else
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),2);
+    }
+
+    EXPECT_EQ(dset.number_of_children(),n_read.number_of_children());
+    for(conduit::index_t i=0;i < dset.number_of_children();i++)
+    {
+        // diff == false, no diff == diff clean
+        EXPECT_FALSE(dset.child(i).diff(n_read.child(i),n_diff_info));
+    }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -270,11 +285,17 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
     // check verify
     EXPECT_TRUE(blueprint::mpi::mesh::verify(dset,v_info,comm));
 
-    // locally, expect 3 domas for rank 0, 2 for rank 1
+    // locally, expect:
+    //  rank 0: 1 domain
+    //  rank 1: 0 domains
     if(par_rank == 0)
+    {
         EXPECT_EQ(blueprint::mesh::number_of_domains(dset),1);
+    }
     else
+    {
         EXPECT_EQ(blueprint::mesh::number_of_domains(dset),0);
+    }
 
     // globally, expect par_size domains
     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(dset,comm),1);
@@ -295,6 +316,30 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
     conduit::relay::mpi::io::blueprint::load_mesh(output_root,
                                                   n_read,
                                                   comm);
+
+    // globally, expect 1 domain
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),1);
+
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),1);
+    }
+    else
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),0);
+    }
+
+    EXPECT_EQ(dset.number_of_children(),n_read.number_of_children());
+    for(conduit::index_t i=0;i < dset.number_of_children();i++)
+    {
+        // diff == false, no diff == diff clean
+        EXPECT_FALSE(dset.child(i).diff(n_read.child(i),n_diff_info));
+    }
+
+    // globally, expect par_size domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),1);
+    
+
 }
 
 
