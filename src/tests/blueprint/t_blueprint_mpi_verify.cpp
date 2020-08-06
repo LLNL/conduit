@@ -81,26 +81,57 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
 
     // empty on all domains should return false ... 
     EXPECT_FALSE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
-    
+
     int par_rank;
     int par_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &par_size);
 
-    // even with a single domain on one rank, we should still verify truy
+    // even with a single domain on one rank, we should still verify true
     if(par_rank == 0)
     {
         conduit::blueprint::mesh::examples::braid("uniform",
-                                          10,
-                                          10,
-                                          10,
-                                          mesh);
+                                                  10,
+                                                  10,
+                                                  10,
+                                                  mesh);
     }
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
-    
+
     // check the number of domains
-    EXPECT_EQ(conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD),1);
+    EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD), 1);
+
+    // check hypothetical index gen
+    conduit::Node bp_index;
+    conduit::blueprint::mpi::mesh::generate_index(mesh,
+                                                  "",
+                                                  bp_index["mesh"],
+                                                  MPI_COMM_WORLD);
+
+
+    mesh.reset();
+    // even with a single domain on one rank, we should still verify true
+    if(par_rank == 1)
+    {
+        conduit::blueprint::mesh::examples::braid("uniform",
+                                                  10,
+                                                  10,
+                                                  10,
+                                                  mesh);
+    }
+
+    EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD) );
+
+    // check the number of domains
+    EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD), 1);
+
+    // check hypothetical index gen
+    conduit::blueprint::mpi::mesh::generate_index(mesh,
+                                                  "",
+                                                  bp_index["mesh"],
+                                                  MPI_COMM_WORLD);
+
 }
 
 

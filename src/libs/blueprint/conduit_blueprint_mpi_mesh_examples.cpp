@@ -168,8 +168,6 @@ spiral_round_robin(conduit::index_t ndomains,
             rank_vals[i] = (float64) par_rank;
         }
     }
-    
-    std::cout << " HERE!" << std::endl;
 }
 
 }

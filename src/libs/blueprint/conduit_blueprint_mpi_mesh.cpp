@@ -111,8 +111,55 @@ verify(const conduit::Node &n,
     n_snd.set_external(&local_verify_ok,1);
     n_reduce.set_external(&global_verify_ok,1);
 
-    relay::mpi::all_reduce(n_snd, n_reduce, MPI_SUM, comm);
+    relay::mpi::sum_all_reduce(n_snd, n_reduce, comm);
     return global_verify_ok > 0;
+}
+
+//-------------------------------------------------------------------------
+void
+generate_index(const conduit::Node &mesh,
+               const std::string &ref_path,
+               Node &index_out,
+               MPI_Comm comm)
+{
+    int par_rank = relay::mpi::rank(comm);
+    int par_size = relay::mpi::size(comm);
+    // we need to know the mesh structure and the number of domains
+    // we can't assume rank zero has any domains (could be empty)
+    // so we look for the lowest rank with 1 or more domains
+
+    index_t local_num_domains = ::conduit::blueprint::mesh::number_of_domains(mesh);
+    index_t global_num_domains = number_of_domains(mesh,comm);
+
+    index_t rank_send = par_size;
+    index_t selected_rank = par_size;
+    if(local_num_domains > 0)
+        rank_send = par_rank;
+
+    Node n_snd, n_reduce;
+    // make sure some MPI task actually had bp data
+    n_snd.set_external(&rank_send,1);
+    n_reduce.set_external(&selected_rank,1);
+
+    relay::mpi::min_all_reduce(n_snd, n_reduce, comm);
+
+    if(par_rank == selected_rank )
+    {
+        if(::conduit::blueprint::mesh::is_multi_domain(mesh))
+        {
+            ::conduit::blueprint::mesh::generate_index(mesh.child(0),
+                                                       ref_path,
+                                                       global_num_domains,
+                                                       index_out);
+        }
+        else
+        {
+            ::conduit::blueprint::mesh::generate_index(mesh,
+                                                       ref_path,
+                                                       global_num_domains,
+                                                       index_out);
+        }
+    }
 }
 
 
