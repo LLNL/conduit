@@ -9,102 +9,102 @@ Updating test list for fixtures
 Added 0 tests to meet fixture requirements
 Checking test dependency graph...
 Checking test dependency graph end
-test 111
-    Start 111: t_conduit_docs_tutorial_python_relay_mpi_examples
+test 114
+    Start 114: t_conduit_docs_tutorial_python_relay_mpi_examples
 
-111: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/openmpi-3.1.4-rnimf6bcbfwt6a6546uuylwg7brjkzxn/bin/mpiexec "-n" "2" "/Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.4-tuamu4qn6msg6bqa5hd7glbv5uxm5lup/bin/python3.7" "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_relay_mpi_examples"
-111: Environment variables: 
-111:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
-111:  OMPI_MCA_rmaps_base_oversubscribe=1
-111: Test timeout computed to be: 1500
-111: test_001_mpi_send_and_recv_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... test_001_mpi_send_and_recv_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
-111: BEGIN_EXAMPLE("py_mpi_send_and_recv_using_schema")
-111: [rank: 0] sending: 
-111: a: 
-111:   data: 1.0
-111:   more_data: 2.0
-111:   b: 
-111:     my_string: "value"
-111: 
-111: [rank: 1] received: 
-111: a: 
-111:   data: 1.0
-111:   more_data: 2.0
-111:   b: 
-111:     my_string: "value"
-111: 
-111: 
-111: END_EXAMPLE("py_mpi_send_and_recv_using_schema")
-111: ok
-111: test_002_mpi_send_and_recv (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-111: test_002_mpi_send_and_recv (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
-111: BEGIN_EXAMPLE("py_mpi_send_and_recv")
-111: [rank: 0] sending: [0, 1, 4, 9]
-111: [rank: 1] received: [0, 1, 4, 9]
-111: 
-111: END_EXAMPLE("py_mpi_send_and_recv")
-111: ok
-111: test_003_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-111: test_003_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
-111: BEGIN_EXAMPLE("py_mpi_bcast_using_schema")
-111: [rank: 0] broadcasting: 
-111: a: 
-111:   data: 1.0
-111:   more_data: 2.0
-111:   b: 
-111:     my_string: "value"
-111: 
-111: [rank: 1] received: 
-111: a: 
-111:   data: 1.0
-111:   more_data: 2.0
-111:   b: 
-111:     my_string: "value"
-111: 
-111: 
-111: END_EXAMPLE("py_mpi_bcast_using_schema")
-111: ok
-111: test_004_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-111: test_004_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
-111: BEGIN_EXAMPLE("py_mpi_bcast")
-111: [rank: 0] broadcasting: [0, 1, 4, 9]
-111: [rank: 1] received: [0, 1, 4, 9]
-111: 
-111: END_EXAMPLE("py_mpi_bcast")
-111: ok
-111: test_005_mpi_sum_all_reduce (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-111: test_005_mpi_sum_all_reduce (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
-111: BEGIN_EXAMPLE("py_mpi_sum_all_reduce")
-111: [rank: 0] sum reduce result: [2, 2, 2, 2]
-111: 
-111: END_EXAMPLE("py_mpi_sum_all_reduce")
-111: ok
-111: test_006_mpi_all_gather (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-111: test_006_mpi_all_gather (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
-111: BEGIN_EXAMPLE("py_mpi_all_gather_using_schema")
-111: [rank: 0] all gather using schema result: 
-111: - [0, 0, 0, 0]
-111: - [1, 1, 1, 1]
-111: 
-111: 
-111: END_EXAMPLE("py_mpi_all_gather_using_schema")
-111: ok
-111: 
-111: ----------------------------------------------------------------------
-111: Ran 6 tests in 0.126s
-111: 
-111: OK
-111: ok
-111: 
-111: ----------------------------------------------------------------------
-111: Ran 6 tests in 0.135s
-111: 
-111: OK
-1/1 Test #111: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.39 sec
+114: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/openmpi-3.1.4-rnimf6bcbfwt6a6546uuylwg7brjkzxn/bin/mpiexec "-n" "2" "/Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.4-tuamu4qn6msg6bqa5hd7glbv5uxm5lup/bin/python3.7" "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_relay_mpi_examples"
+114: Environment variables: 
+114:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+114:  OMPI_MCA_rmaps_base_oversubscribe=1
+114: Test timeout computed to be: 1500
+114: test_001_mpi_send_and_recv_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... test_001_mpi_send_and_recv_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
+114: BEGIN_EXAMPLE("py_mpi_send_and_recv_using_schema")
+114: [rank: 0] sending: 
+114: a: 
+114:   data: 1.0
+114:   more_data: 2.0
+114:   b: 
+114:     my_string: "value"
+114: 
+114: [rank: 1] received: 
+114: a: 
+114:   data: 1.0
+114:   more_data: 2.0
+114:   b: 
+114:     my_string: "value"
+114: 
+114: 
+114: END_EXAMPLE("py_mpi_send_and_recv_using_schema")
+114: ok
+114: test_002_mpi_send_and_recv (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+114: test_002_mpi_send_and_recv (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
+114: BEGIN_EXAMPLE("py_mpi_send_and_recv")
+114: [rank: 0] sending: [0, 1, 4, 9]
+114: [rank: 1] received: [0, 1, 4, 9]
+114: 
+114: END_EXAMPLE("py_mpi_send_and_recv")
+114: ok
+114: test_003_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+114: test_003_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
+114: BEGIN_EXAMPLE("py_mpi_bcast_using_schema")
+114: [rank: 0] broadcasting: 
+114: a: 
+114:   data: 1.0
+114:   more_data: 2.0
+114:   b: 
+114:     my_string: "value"
+114: 
+114: 
+114: END_EXAMPLE("py_mpi_bcast_using_schema")
+114: [rank: 1] received: 
+114: a: 
+114:   data: 1.0
+114:   more_data: 2.0
+114:   b: 
+114:     my_string: "value"
+114: 
+114: ok
+114: test_004_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+114: test_004_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
+114: BEGIN_EXAMPLE("py_mpi_bcast")
+114: [rank: 0] broadcasting: [0, 1, 4, 9]
+114: 
+114: END_EXAMPLE("py_mpi_bcast")
+114: [rank: 1] received: [0, 1, 4, 9]
+114: ok
+114: test_005_mpi_sum_all_reduce (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+114: test_005_mpi_sum_all_reduce (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
+114: BEGIN_EXAMPLE("py_mpi_sum_all_reduce")
+114: [rank: 0] sum reduce result: [2, 2, 2, 2]
+114: 
+114: END_EXAMPLE("py_mpi_sum_all_reduce")
+114: ok
+114: test_006_mpi_all_gather (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+114: test_006_mpi_all_gather (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
+114: BEGIN_EXAMPLE("py_mpi_all_gather_using_schema")
+114: [rank: 0] all gather using schema result: 
+114: - [0, 0, 0, 0]
+114: - [1, 1, 1, 1]
+114: 
+114: 
+114: END_EXAMPLE("py_mpi_all_gather_using_schema")
+114: ok
+114: 
+114: ----------------------------------------------------------------------
+114: Ran 6 tests in 0.084s
+114: 
+114: OK
+114: ok
+114: 
+114: ----------------------------------------------------------------------
+114: Ran 6 tests in 0.085s
+114: 
+114: OK
+1/1 Test #114: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.27 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_relay_mpi_examples
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.42 sec
+Total Test time (real) =   0.29 sec
