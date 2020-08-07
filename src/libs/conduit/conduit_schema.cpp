@@ -512,9 +512,10 @@ Schema::to_string_stream(std::ostream &os,
      if(protocol != "json")
      {
          // unsupported
-         CONDUIT_ERROR("Unknown Schema::to_string protocol:" << protocol
-                      <<"\nSupported protocols:\n" 
-                      <<" json");
+         CONDUIT_ERROR("<Schema::to_string_stream> "
+                       "Unknown Schema::to_string protocol:" << protocol
+                       <<"\nSupported protocols:\n" 
+                       <<" json");
      }
 
     return to_json_stream(os,indent,depth,pad,eoe);
@@ -533,7 +534,10 @@ Schema::to_string_stream(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("Schema::to_string_stream failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_string_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
     to_string_stream(ofs,protocol,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -658,7 +662,10 @@ Schema::to_json_stream(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("Schema::to_json_stream failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_json_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
     to_json_stream(ofs,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -705,7 +712,10 @@ Schema::save(const std::string &ofname,
     std::ofstream ofile;
     ofile.open(ofname.c_str());
     if(!ofile.is_open())
-        CONDUIT_ERROR("<Schema::save> failed to open: " << ofname);
+    {
+        CONDUIT_ERROR("<Node::save> failed to open file: "
+                      << "\"" << ofname << "\"");
+    }
     ofile << oss.str();
     ofile.close();
 }
@@ -718,7 +728,10 @@ Schema::load(const std::string &ifname)
     std::ifstream ifile;
     ifile.open(ifname.c_str());
     if(!ifile.is_open())
-        CONDUIT_ERROR("<Schema::load> failed to open: " << ifname);
+    {
+        CONDUIT_ERROR("<Node::load> failed to open file: "
+                      << "\"" << ifname << "\"");
+    }
     std::string res((std::istreambuf_iterator<char>(ifile)),
                      std::istreambuf_iterator<char>());
     set(res);
@@ -781,15 +794,18 @@ Schema::remove(index_t idx)
     index_t dtype_id = m_dtype.id();
     if(! (dtype_id == DataType::LIST_ID || dtype_id == DataType::OBJECT_ID))
     {
-        CONDUIT_ERROR("<Schema::remove> Schema is not LIST_ID or OBJECT_ID, dtype is" 
-                      << m_dtype.name());
+        CONDUIT_ERROR("<Schema::remove> Error: Cannot remove child by index. "
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object or List, "
+                      "and therefore "
+                      "does not have children.");
     }
     
     std::vector<Schema*>  &chldrn = children();
     if( (size_t)idx >= chldrn.size())
     {
         CONDUIT_ERROR("<Schema::remove> Invalid index:" 
-                    << idx << ">" << chldrn.size() <<  "(list_size)");
+                    << idx << ">=" << chldrn.size() <<  "(number_of_children)");
     }
 
     if(dtype_id == DataType::OBJECT_ID)
@@ -855,7 +871,12 @@ Schema::child(const std::string &name)
 {
     // only objects can have named children
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    {
+        CONDUIT_ERROR("<Schema::child> Error: Cannot fetch child by name."
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object, and therefore "
+                      " does not have named children.");
+    }
     return *children()[child_index(name)];
 }    
 
@@ -865,7 +886,12 @@ Schema::child(const std::string &name) const
 {
     // only objects can have named children
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    {
+        CONDUIT_ERROR("<Schema::child> Error: Cannot fetch child by name."
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object, and therefore "
+                      " does not have named children.");
+    }
     return *children()[child_index(name)];
 }
 
@@ -875,8 +901,13 @@ Schema::fetch_existing(const std::string &path)
 {
     // fetch w/ path forces OBJECT_ID
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
-
+    {
+        CONDUIT_ERROR("<Schema::fetch_existing> Error: Cannot fetch "
+                      "existing path."
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object, and therefore "
+                      "does not have named children.");
+    }
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
@@ -913,7 +944,13 @@ Schema::fetch_existing(const std::string &path) const
 {
     // fetch w/ path forces OBJECT_ID
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::child[OBJECT_ID]>: Schema is not OBJECT_ID");
+    {
+        CONDUIT_ERROR("<Schema::fetch_existing> Error: Cannot fetch "
+                      "existing path."
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object, and therefore "
+                      "does not have named children.");
+    }
 
     std::string p_curr;
     std::string p_next;
@@ -965,9 +1002,9 @@ Schema::child_index(const std::string &name) const
     // error if child does not exist. 
     if(itr == object_map().end())
     {
-        CONDUIT_ERROR("<Schema::child_index[OBJECT_ID]>"
-                      << "Schema(" << path() << ") "
-                      << "Attempt to access invalid child:" << name);
+        CONDUIT_ERROR("<Schema::child_index> Error: "
+                      << "Schema(" << this->path() << ") "
+                      << "attempt to access invalid child named:" << name);
     }
     else
     {
@@ -1002,20 +1039,27 @@ Schema::rename_child(const std::string &current_name,
 {
     // make sure this schema describes an object
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("Cannot rename child, Schema is not OBJECT_ID");
-    
+    {
+        CONDUIT_ERROR("<Schema::rename_child> Error: Cannot rename child. "
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object, and therefore "
+                      "does not have named children.");
+    }
+
     // check if current_name is valid
     if(!has_child(current_name))
     {
-        CONDUIT_ERROR("Cannot rename child, source child named: "
-                       << "'" << current_name << "'" <<
+        CONDUIT_ERROR("<Schema::rename_child> Cannot rename child, "
+                      "source child named: "
+                      << "'" << current_name << "'" <<
                       " does not exist.");
     }
 
     // finally, make sure new_name isn't already a child
     if(has_child(new_name))
     {
-        CONDUIT_ERROR("Cannot rename child, destination child with name: "
+        CONDUIT_ERROR("<Schema::rename_child> Cannot rename child, "
+                      "destination child with name: "
                        << "'" << new_name << "'" <<
                       " already exists.");
     }
@@ -1271,7 +1315,12 @@ void
 Schema::remove(const std::string &path)
 {
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::remove[OBJECT_ID]> Schema is not OBJECT_ID");
+    {
+        CONDUIT_ERROR("<Schema::remove> Error: Cannot remove path."
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object, and therefore "
+                      " does not have named children.");
+    }
 
     std::string p_curr;
     std::string p_next;
@@ -1294,7 +1343,13 @@ void
 Schema::remove_child(const std::string &name)
 {
     if(m_dtype.id() != DataType::OBJECT_ID)
-        CONDUIT_ERROR("<Schema::remove_child[OBJECT_ID]> Schema is not OBJECT_ID");
+    {
+        CONDUIT_ERROR("<Schema::remove_child> Error: Cannot remove "
+                      "child by name."
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object, and therefore "
+                      " does not have named children.");
+    }
 
     size_t idx = (size_t)child_index(name);
     Schema *child = children()[idx];
@@ -1471,8 +1526,10 @@ Schema::object_hierarchy()
 {
     if(m_dtype.id() != DataType::OBJECT_ID)
     {
-        CONDUIT_ERROR("Schema::object_hierarchy() - Schema dtype().id()"
-                      " is not OBJECT_ID");
+        CONDUIT_ERROR("<Schema::object_hierarchy()> Error: Cannot "
+                      "access object_hierarchy. "
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object.");
     }
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
@@ -1483,8 +1540,10 @@ Schema::list_hierarchy()
 {
     if(m_dtype.id() != DataType::LIST_ID)
     {
-        CONDUIT_ERROR("Schema::list_hierarchy() - Schema dtype().id()" 
-                      " is not LIST_ID");
+        CONDUIT_ERROR("<Schema::list_hierarchy()> Error: Cannot "
+                      "access list_hierarchy. "
+                      "Schema(" << this->path() << ") "
+                      "instance is not a List.");
     }
     return static_cast<Schema_List_Hierarchy*>(m_hierarchy_data);
 }
@@ -1496,8 +1555,10 @@ Schema::object_hierarchy() const
 {
     if(m_dtype.id() != DataType::OBJECT_ID)
     {
-        CONDUIT_ERROR("Schema::object_hierarchy() - Schema dtype().id()"
-                      " is not OBJECT_ID");
+        CONDUIT_ERROR("<Schema::object_hierarchy()> Error: Cannot "
+                      "access object_hierarchy. "
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object.");
     }
     return static_cast<Schema_Object_Hierarchy*>(m_hierarchy_data);
 }
@@ -1508,8 +1569,10 @@ Schema::list_hierarchy() const
 {    
     if(m_dtype.id() != DataType::LIST_ID)
     {
-        CONDUIT_ERROR("Schema::list_hierarchy() - Schema dtype().id()" 
-                      " is not LIST_ID");
+        CONDUIT_ERROR("<Schema::list_hierarchy()> Error: Cannot "
+                      "access list_hierarchy. "
+                      "Schema(" << this->path() << ") "
+                      "instance is not a List.");
     }
     return static_cast<Schema_List_Hierarchy*>(m_hierarchy_data);
 }
@@ -1523,8 +1586,12 @@ Schema::children()
     if( ! ( dtype_id == DataType::OBJECT_ID || 
             dtype_id ==  DataType::LIST_ID ))
     {
-        CONDUIT_ERROR("Schema::children() -  Schema dtype().id()"
-                      " is not (OBJECT_ID or LIST_ID)");
+        CONDUIT_ERROR("<Schema::children()> Error: Cannot "
+                      "access children. "
+                      "Schema(" << this->path() << ") "
+                      "instance is not an Object or List, "
+                      "and therefore "
+                      "does not have children.");
     }
     
     if ( dtype_id == DataType::OBJECT_ID)
