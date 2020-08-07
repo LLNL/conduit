@@ -94,94 +94,6 @@ using namespace conduit::relay::mpi;
 #endif
 
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Begin Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-#if defined(IS_PY3K)
-
-//-----------------------------------------------------------------------------
-static int
-PyString_Check(PyObject *o)
-{
-    return PyUnicode_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-static char *
-PyString_AsString(PyObject *py_obj)
-{
-    char *res = NULL;
-    if(PyUnicode_Check(py_obj))
-    {
-        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
-                                                          "ASCII",
-                                                          "strict"); // Owned reference
-        if(temp_bytes != NULL)
-        {
-            res = _conduit_strdup(PyBytes_AS_STRING(temp_bytes));
-            Py_DECREF(temp_bytes);
-        }
-        else
-        {
-            // TODO: Error
-        }
-    }
-    else if(PyBytes_Check(py_obj))
-    {
-        res = _conduit_strdup(PyBytes_AS_STRING(py_obj));
-    }
-    else
-    {
-        // TODO: ERROR or auto convert?
-    }
-    
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-static PyObject *
-PyString_FromString(const char *s)
-{
-    return PyUnicode_FromString(s);
-}
-
-//-----------------------------------------------------------------------------
-static void
-PyString_AsString_Cleanup(char *bytes)
-{
-    free(bytes);
-}
-
-
-//-----------------------------------------------------------------------------
-static int
-PyInt_Check(PyObject *o)
-{
-    return PyLong_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-static long
-PyInt_AsLong(PyObject *o)
-{
-    return PyLong_AsLong(o);
-}
-
-#else // python 2.6+
-
-//-----------------------------------------------------------------------------
-#define PyString_AsString_Cleanup(c) { /* noop */ }
-
-#endif
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// End Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
 struct PyRelay_MPI_Request
@@ -224,11 +136,12 @@ PyRelay_MPI_Request_init(PyRelay_MPI_Request * /*self*/) // self unused
 }
 
 //---------------------------------------------------------------------------//
-static Request *
-PyRelay_MPI_Request_request_pointer(PyRelay_MPI_Request *py_req)
-{
-   return &py_req->request;
-}
+// TODO: Enable when async support is enabled
+// static Request *
+// PyRelay_MPI_Request_request_pointer(PyRelay_MPI_Request *py_req)
+// {
+//    return &py_req->request;
+// }
 
 //----------------------------------------------------------------------------//
 // Request methods table
@@ -293,13 +206,14 @@ static PyTypeObject PyRelay_MPI_Request_TYPE = {
    PyVarObject_TAIL
 };
 
-
 //---------------------------------------------------------------------------//
-static int
-PyRelay_MPI_Request_Check(PyObject* obj)
-{
-    return (PyObject_TypeCheck(obj, &PyRelay_MPI_Request_TYPE));
-}
+// TODO: Enable when async support is enabled
+// //---------------------------------------------------------------------------//
+// static int
+// PyRelay_MPI_Request_Check(PyObject* obj)
+// {
+//     return (PyObject_TypeCheck(obj, &PyRelay_MPI_Request_TYPE));
+// }
 
 
 //-----------------------------------------------------------------------------
