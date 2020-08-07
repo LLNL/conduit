@@ -1772,7 +1772,7 @@ braid_tets(index_t npts_x,
             int32 yoff_n = (j+1) * (nele_hexs_x+1);
 
 
-            for(int32 i = 0; i < nele_hexs_z; i++)
+            for(int32 i = 0; i < nele_hexs_x; i++)
             {
                 // Create a local array of the vertex indices
                 // ordering is same as VTK_HEXAHEDRON
