@@ -2397,6 +2397,25 @@ bool mesh::is_multi_domain(const conduit::Node &n)
     return !n.has_child("coordsets");
 }
 
+//-------------------------------------------------------------------------
+index_t
+mesh::number_of_domains(const conduit::Node &n)
+{
+    // this is a blueprint property, we can assume it will be called 
+    // only when mesh verify is true. Given that - it is easy to 
+    // answer the number of domains
+
+    if(!is_multi_domain(n))
+    {
+        return 1;
+    }
+    else
+    {
+        return n.number_of_children();
+    }
+}
+
+
 
 //-------------------------------------------------------------------------
 void mesh::to_multi_domain(const conduit::Node &n,

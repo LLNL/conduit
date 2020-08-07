@@ -179,3 +179,48 @@ if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
+
+################################################################
+# If we have mpi, add the conduit blueprint mpi library
+################################################################
+if(MPI_FOUND)
+#
+# Specify blueprint mpi sources
+#
+set(conduit_blueprint_mpi_sources
+    conduit_blueprint_mpi.cpp
+    conduit_blueprint_mpi_mesh.cpp
+    conduit_blueprint_mpi_mesh_examples.cpp)
+
+#
+# Specify blueprint mpi headers
+#
+set(conduit_blueprint_mpi_headers
+    conduit_blueprint_mpi.hpp
+    conduit_blueprint_mpi_mesh.hpp
+    conduit_blueprint_mpi_mesh_examples.hpp
+${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h)
+
+
+#
+# Specify blueprint mpi deps
+#
+set(conduit_blueprint_mpi_deps conduit conduit_blueprint mpi conduit_relay_mpi)
+
+#
+# setup conduit blueprint mpi lib
+#
+add_compiled_library(NAME conduit_blueprint_mpi
+                     EXPORT conduit
+                     HEADERS ${conduit_blueprint_mpi_sources}
+                     SOURCES ${conduit_blueprint_mpi_headers}
+                     DEPENDS_ON ${conduit_blueprint_mpi_deps}
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
+
+blt_add_target_compile_flags(TO conduit_blueprint_mpi FLAGS "-DCONDUIT_BLUEPRINT_MPI_ENABLED")
+
+
+endif() # end if MPI_FOUND
+
+

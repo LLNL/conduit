@@ -223,6 +223,10 @@ TEST(conduit_relay_io_handle, test_sidre_with_root)
 
         CONDUIT_INFO("Reading tree: " << tree_root);
 
+        // read the entire tree 
+        n.reset();
+        h.read(tree_root,n);
+
         // read the entire mesh and make sure mesh bp verify is true
         n.reset();
         h.read(tree_root + "/mesh",n);

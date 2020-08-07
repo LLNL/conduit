@@ -44,59 +44,85 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_exports.h
+/// file: conduit_blueprint_mpi.hpp
 ///
 //-----------------------------------------------------------------------------
 
+#ifndef CONDUIT_BLUEPRINT_MPI_HPP
+#define CONDUIT_BLUEPRINT_MPI_HPP
+
 //-----------------------------------------------------------------------------
-#ifndef CONDUIT_BLUEPRINT_EXPORTS_H
-#define CONDUIT_BLUEPRINT_EXPORTS_H
+// conduit lib includes
+//-----------------------------------------------------------------------------
+#include "conduit.hpp"
+
+#include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_mpi_mesh.hpp"
+#include "conduit_blueprint_mpi_mesh_examples.hpp"
+
+
+#include <mpi.h>
+
+
+//-----------------------------------------------------------------------------
+// -- begin conduit:: --
+//-----------------------------------------------------------------------------
+namespace conduit
+{
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint --
+//-----------------------------------------------------------------------------
+namespace blueprint
+{
+
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
+{
+
+
+//-----------------------------------------------------------------------------
+/// The about methods construct human readable info about how blueprint was
+/// configured.
+//-----------------------------------------------------------------------------
+std::string CONDUIT_BLUEPRINT_API about();
+void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
+
+//-----------------------------------------------------------------------------
+/// blueprint verify interface
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms --
+/// Verify passed node confirms to given blueprint protocol.
+/// Messages related to the verification are be placed in the "info" node.
 //-----------------------------------------------------------------------------
-
-#cmakedefine CONDUIT_WINDOWS_DLL_EXPORTS "${CONDUIT_WINDOWS_DLL_EXPORTS}"
-
-#if defined(CONDUIT_BLUEPRINT_EXPORTS) || \
-    defined(conduit_blueprint_EXPORTS) || \
-    defined(CONDUIT_BLUEPRINT_MPI_EXPORTS) || \
-    defined(conduit_blueprint_mpi_EXPORTS)
-    /* define catch all def */
-    #define CONDUIT_BLUEPRINT_EXPORTS_DEFINED 1
-#endif
-
-#if defined(_WIN32)
-    #if defined(CONDUIT_WINDOWS_DLL_EXPORTS)
-        #if defined(CONDUIT_BLUEPRINT_EXPORTS_DEFINED)
-            #define CONDUIT_BLUEPRINT_API __declspec(dllexport)
-        #else
-            #define CONDUIT_BLUEPRINT_API __declspec(dllimport)
-        #endif
-    #else
-        #define CONDUIT_BLUEPRINT_API /* empty for static builds */
-    #endif
-
-    #if defined(_MSC_VER)
-        /* Turn off warning about lack of DLL interface */
-        #pragma warning(disable:4251)
-        /* Turn off warning non-dll class is base for dll-interface class */
-        #pragma warning(disable:4275)
-        /* Turn off warning about identifier truncation */
-        #pragma warning(disable:4786)
-    #endif
-#else
-    #if __GNUC__ >= 4 && (defined(CONDUIT_BLUEPRINT_EXPORTS_DEFINED))
-        #define CONDUIT_BLUEPRINT_API __attribute__ ((visibility("default")))
-    #else
-        #define CONDUIT_BLUEPRINT_API /* hidden by default */
-    #endif
-#endif
+bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
+                                  const conduit::Node &n,
+                                  conduit::Node &info,
+                                  MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
-// CONDUIT_BLUEPRINT_EXPORTS_H
+}
 //-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mpi --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint --
+//-----------------------------------------------------------------------------
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit:: --
+//-----------------------------------------------------------------------------
+
+
 #endif
 
 

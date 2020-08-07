@@ -105,7 +105,7 @@ web_client_root_directory()
     {
         CONDUIT_ERROR("conduit::relay::about result missing 'web_client_root'"
                       << std::endl
-                      << n.to_json());
+                      << n.to_yaml());
     }
 
     web_root = n["web_client_root"].as_string();
