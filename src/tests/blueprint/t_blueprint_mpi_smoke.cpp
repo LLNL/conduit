@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c)  2014-2020, Lawrence Livermore National Security, LLC.
 //
 // Produced at the Lawrence Livermore National Laboratory
 //
@@ -9,7 +9,7 @@
 //
 // This file is part of Conduit.
 //
-// For details, see: http://software.llnl.gov/conduit/.
+// For details, see https://lc.llnl.gov/conduit/.
 //
 // Please also read conduit/LICENSE
 //
@@ -44,60 +44,31 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_exports.h
+/// file: t_blueprint_mpi_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-#ifndef CONDUIT_BLUEPRINT_EXPORTS_H
-#define CONDUIT_BLUEPRINT_EXPORTS_H
-//-----------------------------------------------------------------------------
+#include "conduit.hpp"
+#include "conduit_blueprint_mpi.hpp"
+
+#include <iostream>
+#include "gtest/gtest.h"
 
 //-----------------------------------------------------------------------------
-// -- define proper lib exports for various platforms --
-//-----------------------------------------------------------------------------
-
-#cmakedefine CONDUIT_WINDOWS_DLL_EXPORTS "${CONDUIT_WINDOWS_DLL_EXPORTS}"
-
-#if defined(CONDUIT_BLUEPRINT_EXPORTS) || \
-    defined(conduit_blueprint_EXPORTS) || \
-    defined(CONDUIT_BLUEPRINT_MPI_EXPORTS) || \
-    defined(conduit_blueprint_mpi_EXPORTS)
-    /* define catch all def */
-    #define CONDUIT_BLUEPRINT_EXPORTS_DEFINED 1
-#endif
-
-#if defined(_WIN32)
-    #if defined(CONDUIT_WINDOWS_DLL_EXPORTS)
-        #if defined(CONDUIT_BLUEPRINT_EXPORTS_DEFINED)
-            #define CONDUIT_BLUEPRINT_API __declspec(dllexport)
-        #else
-            #define CONDUIT_BLUEPRINT_API __declspec(dllimport)
-        #endif
-    #else
-        #define CONDUIT_BLUEPRINT_API /* empty for static builds */
-    #endif
-
-    #if defined(_MSC_VER)
-        /* Turn off warning about lack of DLL interface */
-        #pragma warning(disable:4251)
-        /* Turn off warning non-dll class is base for dll-interface class */
-        #pragma warning(disable:4275)
-        /* Turn off warning about identifier truncation */
-        #pragma warning(disable:4786)
-    #endif
-#else
-    #if __GNUC__ >= 4 && (defined(CONDUIT_BLUEPRINT_EXPORTS_DEFINED))
-        #define CONDUIT_BLUEPRINT_API __attribute__ ((visibility("default")))
-    #else
-        #define CONDUIT_BLUEPRINT_API /* hidden by default */
-    #endif
-#endif
+TEST(blueprint_mpi_smoke, basic_use)
+{
+    std::cout << conduit::blueprint::mpi::about() << std::endl;
+}
 
 //-----------------------------------------------------------------------------
-// CONDUIT_BLUEPRINT_EXPORTS_H
-//-----------------------------------------------------------------------------
-#endif
+int main(int argc, char* argv[])
+{
+    int result = 0;
 
+    ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
+    result = RUN_ALL_TESTS();
+    MPI_Finalize();
 
-
+    return result;
+}

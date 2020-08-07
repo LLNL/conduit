@@ -796,6 +796,33 @@ TEST(conduit_blueprint_mesh_examples, save_load_mesh)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, number_of_domains)
+{
+    // test both multi dom and non multi dom case
+
+    Node data;
+    // braid
+    blueprint::mesh::examples::braid("uniform",
+                                      10,10,10,
+                                      data);
+
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(data),1);
+
+    // now check a multi domain mesh ...
+
+    // spiral with 3 domains
+    conduit::blueprint::mesh::examples::spiral(3,data);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(data),3);
+
+    // spiral with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,data);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(data),7);
+
+
+}
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

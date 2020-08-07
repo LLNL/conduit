@@ -44,75 +44,97 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_relay.cpp
+/// file: conduit_blueprint_mpi_mesh.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_relay.hpp"
-#include "conduit_relay_io.hpp"
+#ifndef CONDUIT_BLUEPRINT_MPI_MESH_HPP
+#define CONDUIT_BLUEPRINT_MPI_MESH_HPP
 
 //-----------------------------------------------------------------------------
-// standard lib includes
+// conduit lib includes
 //-----------------------------------------------------------------------------
-#include <iostream>
+#include "conduit.hpp"
+#include "conduit_blueprint_exports.h"
+
+#include <mpi.h>
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin conduit --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay --
+// -- begin conduit::blueprint --
 //-----------------------------------------------------------------------------
-namespace relay
+namespace blueprint
 {
 
-
-//---------------------------------------------------------------------------//
-std::string
-about()
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mpi --
+//-----------------------------------------------------------------------------
+namespace mpi
 {
-    Node n;
-    relay::about(n);
-    return n.to_yaml();
-}
 
-//---------------------------------------------------------------------------//
-void
-about(Node &n)
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh --
+//-----------------------------------------------------------------------------
+
+namespace mesh 
 {
-    n.reset();
 
-    n["web"] = "enabled";
-    
-    Node conduit_about;
-    conduit::about(conduit_about);
-    
-    std::string install_prefix = conduit_about["install_prefix"].as_string();
-    std::string web_root = utils::join_file_path(install_prefix,"share");
-    web_root = utils::join_file_path(web_root,"conduit");
-    web_root = utils::join_file_path(web_root,"web_clients");
-    
-    n["web_client_root"] =  web_root;
+//-----------------------------------------------------------------------------
+/// blueprint protocol verify interface
+//-----------------------------------------------------------------------------
 
-#ifdef CONDUIT_RELAY_MPI_ENABLED
-    n["mpi"] = "enabled";
-#else
-    n["mpi"] = "disabled";
-#endif
+// mesh verify
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+                                  conduit::Node &info,
+                                  MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// blueprint mesh property and transform methods
+/// 
+/// These methods can be called on any verified blueprint mesh.
+//-----------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
+                                          const std::string &ref_path,
+                                          Node &index_out,
+                                          MPI_Comm comm);
+
+//-------------------------------------------------------------------------
+index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh,
+                                                MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
 }
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mpi::mesh --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mpi --
+//-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::relay --
+// -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
+
+
+#endif 
+
 
 

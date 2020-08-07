@@ -50,6 +50,7 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mpi.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_relay_mpi.hpp"
 #include "conduit_relay_mpi_io.hpp"
@@ -83,9 +84,11 @@ TEST(blueprint_mpi_relay, basic_use)
         return;
     }
 
-    int rank = mpi::rank(MPI_COMM_WORLD);
-    int com_size = mpi::size(MPI_COMM_WORLD);
-    std::cout<<"Rank "<<rank<<" of "<<com_size<<"\n";
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    std::cout<<"Rank "<<par_rank<<" of "<<par_size<<"\n";
     index_t npts_x = 10;
     index_t npts_y = 10;
     index_t npts_z = 10;
@@ -100,8 +103,8 @@ TEST(blueprint_mpi_relay, basic_use)
     // the example data set has the bounds -10 to 10 in all dims
     // Offset this along x to create mpi 'pencil'
 
-    dset["coordsets/coords/origin/x"] = -10.0 + 20.0 * rank;
-    dset["state/domain_id"] = rank;
+    dset["coordsets/coords/origin/x"] = -10.0 + 20.0 * par_rank;
+    dset["state/domain_id"] = par_rank;
     // set cycle to 0, so we can construct the correct root file
     dset["state/cycle"] = 0;
 
@@ -113,28 +116,230 @@ TEST(blueprint_mpi_relay, basic_use)
     conduit::relay::mpi::io::blueprint::save_mesh(dset,
                                                   output_base,
                                                   "hdf5",
-                                                  MPI_COMM_WORLD);
+                                                  comm);
     MPI_Barrier(MPI_COMM_WORLD);
-    
+
     // read this back using load_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
     Node n_read, n_diff_info;
     conduit::relay::mpi::io::blueprint::load_mesh(output_root,
                                                   n_read,
-                                                  MPI_COMM_WORLD);
+                                                  comm);
     // diff == false, no diff == diff clean
     EXPECT_FALSE(dset.diff(n_read.child(0),n_diff_info));
-    
-    if(rank == 0)
-        n_diff_info.print();
+}
 
-    MPI_Barrier(MPI_COMM_WORLD);
 
-    if(rank == 1)
-        n_diff_info.print();
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_relay, mpi_mesh_examples_braid)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // only run this test if hdf5 is enabled
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("hdf5 is disabled, skipping hdf5 dependent test");
+        return;
+    }
+
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    Node dset, v_info;
+    blueprint::mpi::mesh::examples::braid_uniform_multi_domain(dset,
+                                                               comm);
+
+    // check verify
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(dset,v_info,comm));
+
+    // locally, expect 1 domain
+    EXPECT_EQ(blueprint::mesh::number_of_domains(dset),1);
+    // globally, expect par_size domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(dset,comm),par_size);
+
+    string protocol = "hdf5";
+    string output_base = "tout_blueprint_mpi_relay_braid_uniform_multi_dom";
+    // what we want:
+    // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
+    conduit::relay::mpi::io::blueprint::save_mesh(dset,
+                                                  output_base,
+                                                  "hdf5",
+                                                  comm);
+    MPI_Barrier(comm);
+
+    // read this back using load_mesh, should diff clean
+    string output_root = output_base + ".cycle_000000.root";
+    Node n_read, n_diff_info;
+    conduit::relay::mpi::io::blueprint::load_mesh(output_root,
+                                                  n_read,
+                                                  comm);
+    // diff == false, no diff == diff clean
+    EXPECT_FALSE(dset.diff(n_read.child(0),n_diff_info));
+}
+
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // only run this test if hdf5 is enabled
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("hdf5 is disabled, skipping hdf5 dependent test");
+        return;
+    }
+
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    Node dset, v_info;
+    blueprint::mpi::mesh::examples::spiral_round_robin(5,
+                                                       dset,
+                                                       comm);
+
+    // check verify
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(dset,v_info,comm));
+
+    // locally, expect:
+    //  rank 0: 3 domain
+    //  rank 1: 2 domains
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(dset),3);
+    }
+    else
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(dset),2);
+    }
+
+    // globally, expect 5 domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(dset,comm),5);
+
+    string protocol = "hdf5";
+    string output_base = "tout_blueprint_mpi_relay_spiral_mpi_dist_5doms";
+    // what we want:
+    // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
+    conduit::relay::mpi::io::blueprint::save_mesh(dset,
+                                                  output_base,
+                                                  "hdf5",
+                                                  comm);
+    MPI_Barrier(comm);
+
+    // read this back using load_mesh, should diff clean
+    string output_root = output_base + ".cycle_000000.root";
+    Node n_read, n_diff_info;
+    conduit::relay::mpi::io::blueprint::load_mesh(output_root,
+                                                  n_read,
+                                                  comm);
+
+    // globally, expect 5 domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),5);
+
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),3);
+    }
+    else
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),2);
+    }
+
+    EXPECT_EQ(dset.number_of_children(),n_read.number_of_children());
+    for(conduit::index_t i=0;i < dset.number_of_children();i++)
+    {
+        // diff == false, no diff == diff clean
+        EXPECT_FALSE(dset.child(i).diff(n_read.child(i),n_diff_info));
+    }
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // only run this test if hdf5 is enabled
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("hdf5 is disabled, skipping hdf5 dependent test");
+        return;
+    }
+
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    Node dset, v_info;
+    blueprint::mpi::mesh::examples::spiral_round_robin(1,
+                                                       dset,
+                                                       comm);
+
+    // check verify
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(dset,v_info,comm));
+
+    // locally, expect:
+    //  rank 0: 1 domain
+    //  rank 1: 0 domains
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(dset),1);
+    }
+    else
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(dset),0);
+    }
+
+    // globally, expect par_size domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(dset,comm),1);
+
+    string protocol = "hdf5";
+    string output_base = "tout_blueprint_mpi_relay_spiral_mpi_dist_1dom";
+    // what we want:
+    // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
+    conduit::relay::mpi::io::blueprint::save_mesh(dset,
+                                                  output_base,
+                                                  "hdf5",
+                                                  comm);
+    MPI_Barrier(comm);
+
+    // read this back using load_mesh, should diff clean
+    string output_root = output_base + ".cycle_000000.root";
+    Node n_read, n_diff_info;
+    conduit::relay::mpi::io::blueprint::load_mesh(output_root,
+                                                  n_read,
+                                                  comm);
+
+    // globally, expect 1 domain
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),1);
+
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),1);
+    }
+    else
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),0);
+    }
+
+    EXPECT_EQ(dset.number_of_children(),n_read.number_of_children());
+    for(conduit::index_t i=0;i < dset.number_of_children();i++)
+    {
+        // diff == false, no diff == diff clean
+        EXPECT_FALSE(dset.child(i).diff(n_read.child(i),n_diff_info));
+    }
+
+    // globally, expect par_size domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),1);
     
-    MPI_Barrier(MPI_COMM_WORLD);
-    
+
 }
 
 
@@ -174,7 +379,7 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
 
     // use spiral , with 7 domains
     conduit::blueprint::mesh::examples::spiral(7,data);
-    
+
     // rank 0 gets first 4 domains, rank 1 gets the rest
     if(par_rank == 0)
     {
@@ -200,7 +405,7 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
     std::ostringstream oss;
 
     // lets try with -1 to 8 files.
-    
+
     // nfiles less than 1 should trigger default case
     // (n output files = n domains)
     for(int nfiles=-1; nfiles < 9; nfiles++)
@@ -208,7 +413,7 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
         CONDUIT_INFO("[" << par_rank <<  "] test nfiles = " << nfiles);
         MPI_Barrier(comm);
         oss.str("");
-        oss << "tout_relay_mpi_sprial_mesh_nfiles_" << nfiles;
+        oss << "tout_relay_mpi_spiral_mesh_nfiles_" << nfiles;
 
         string output_base = oss.str();
 
@@ -246,11 +451,11 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
         char fmt_buff[64] = {0};
         for(int i=0;i<nfiles_to_check;i++)
         {
-            
+
             std::string fprefix = "file_";
             if(nfiles_to_check == 7)
             {
-                // in the n domains == n files case, the file prefix is 
+                // in the n domains == n files case, the file prefix is
                 // domain_
                 fprefix = "domain_";
             }
@@ -263,10 +468,10 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
-        
+
         MPI_Barrier(comm);
     }
-    
+
     // read this back using load_mesh
 }
 
