@@ -17,10 +17,20 @@
 
 /*! \file document.h */
 
+//----------------------------------------------------------------------------
+// MOD FOR CONDUIT: ignore clang macro warning for rapidjson
+// ---------------------------------------------------------------------------
+//---------------------------------------------------------------------------//
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wexpansion-to-defined"
+//---------------------------------------------------------------------------//
+
+
 #include "reader.h"
 #include "internal/meta.h"
 #include "internal/strfunc.h"
 #include <new>      // placement new
+
 
 #ifdef _MSC_VER
 RAPIDJSON_DIAG_PUSH
@@ -2114,5 +2124,12 @@ RAPIDJSON_NAMESPACE_END
 #if defined(_MSC_VER) || defined(__GNUC__)
 RAPIDJSON_DIAG_POP
 #endif
+
+//----------------------------------------------------------------------------
+// MOD FOR CONDUIT: ignore clang macro warning for rapidjson
+// ---------------------------------------------------------------------------
+//---------------------------------------------------------------------------//
+#pragma clang diagnostic pop
+//---------------------------------------------------------------------------//
 
 #endif // RAPIDJSON_DOCUMENT_H_
