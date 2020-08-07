@@ -1229,10 +1229,10 @@ braid_quads(index_t npts_x,
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     int32 idx = 0;
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
         int32 yoff = j * (nele_x+1);
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
             conn[idx+0] = yoff + i;
             conn[idx+1] = yoff + i + (nele_x+1);

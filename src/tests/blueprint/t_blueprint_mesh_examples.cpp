@@ -948,6 +948,24 @@ TEST(conduit_blueprint_mesh_examples, braid_bad_inputs)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, braid_diff_dims)
+{
+    Node mesh;
+    conduit::blueprint::mesh::examples::braid("quads", 2, 3, 0, mesh);
+    conduit::relay::io_blueprint::save(mesh, "braid_quads_2_3.blueprint_root");
+
+    conduit::blueprint::mesh::examples::braid("tris", 2, 3, 0, mesh);
+    conduit::relay::io_blueprint::save(mesh, "braid_tris_2_3.blueprint_root");
+
+    // conduit::blueprint::mesh::examples::braid("tets", 2, 3, 4, mesh);
+    // conduit::relay::io_blueprint::save(mesh, "braid_tets_2_3_4.blueprint_root");
+
+    // conduit::blueprint::mesh::examples::braid("hexs", 2, 3, 4, mesh);
+    // conduit::relay::io_blueprint::save(mesh, "braid_hexs_2_3_4.blueprint_root");
+
+
+}
 
 
 //-----------------------------------------------------------------------------
