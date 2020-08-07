@@ -1,7 +1,7 @@
 Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
-[==========] Running 1 test from 1 test suite.
+[==========] Running 3 tests from 1 test suite.
 [----------] Global test environment set-up.
-[----------] 1 test from conduit_docs
+[----------] 3 tests from conduit_docs
 [ RUN      ] conduit_docs.relay_io_handle_1
 BEGIN_EXAMPLE("relay_io_handle_example_1")
 
@@ -33,9 +33,135 @@ a:
   c: 42.0
 
 END_EXAMPLE("relay_io_handle_example_1")
-[       OK ] conduit_docs.relay_io_handle_1 (6 ms)
-[----------] 1 test from conduit_docs (6 ms total)
+[       OK ] conduit_docs.relay_io_handle_1 (5 ms)
+[ RUN      ] conduit_docs.relay_io_handle_sidre_1
+BEGIN_EXAMPLE("relay_io_handle_example_sidre_1")
+
+Children at root: "my_scalars" "my_strings" "my_arrays" 
+Read Result:
+
+my_scalars: 
+  i64: 1
+  f64: 10.0
+my_strings: 
+  s0: "s0 string"
+  s1: "s1 string"
+my_arrays: 
+  a5_i64: [0, 1, 2, 3, 4]
+  a5_i64_ext: [0, 1, 2, 3, -5]
+  b_v1: [1.0, 1.0, 1.0]
+  b_v2: [2.0, 2.0, 2.0]
+
+END_EXAMPLE("relay_io_handle_example_sidre_1")
+[       OK ] conduit_docs.relay_io_handle_sidre_1 (6 ms)
+[ RUN      ] conduit_docs.relay_io_handle_sidre_2
+BEGIN_EXAMPLE("relay_io_handle_example_sidre_2")
+
+Children at root: "root" "0" "1" "2" "3" 
+Read "root" Result:
+
+blueprint_index: 
+  mesh: 
+    state: 
+      number_of_domains: 4
+    coordsets: 
+      coords: 
+        type: "uniform"
+        coord_system: 
+          axes: 
+            x: 
+            y: 
+          type: "cartesian"
+        path: "mesh/coordsets/coords"
+    topologies: 
+      mesh: 
+        type: "uniform"
+        coordset: "coords"
+        path: "mesh/topologies/mesh"
+    fields: 
+      field: 
+        number_of_components: 1
+        topology: "mesh"
+        association: "element"
+        path: "mesh/fields/field"
+      rank: 
+        number_of_components: 1
+        topology: "mesh"
+        association: "element"
+        path: "mesh/fields/rank"
+file_pattern: "out_spio_blueprint_example/out_spio_blueprint_example_%07d.hdf5"
+number_of_files: 4
+number_of_trees: 4
+protocol: 
+  name: "sidre_hdf5"
+  version: "0.0"
+tree_pattern: "datagroup_%07d"
+
+
+Read "0" Result:
+
+mesh: 
+  coordsets: 
+    coords: 
+      dims: 
+        i: 3
+        j: 3
+      origin: 
+        x: 0.0
+        y: -10.0
+      spacing: 
+        dx: 10.0
+        dy: 10.0
+      type: "uniform"
+  topologies: 
+    mesh: 
+      type: "uniform"
+      coordset: "coords"
+  fields: 
+    field: 
+      association: "element"
+      topology: "mesh"
+      volume_dependent: "false"
+      values: [0.0, 1.0, 2.0, 3.0]
+    rank: 
+      association: "element"
+      topology: "mesh"
+      values: [0, 0, 0, 0]
+
+
+Read "1/mesh" Result:
+
+coordsets: 
+  coords: 
+    dims: 
+      i: 3
+      j: 3
+    origin: 
+      x: 20.0
+      y: -10.0
+    spacing: 
+      dx: 10.0
+      dy: 10.0
+    type: "uniform"
+topologies: 
+  mesh: 
+    type: "uniform"
+    coordset: "coords"
+fields: 
+  field: 
+    association: "element"
+    topology: "mesh"
+    volume_dependent: "false"
+    values: [0.0, 1.0, 2.0, 3.0]
+  rank: 
+    association: "element"
+    topology: "mesh"
+    values: [1, 1, 1, 1]
+
+END_EXAMPLE("relay_io_handle_example_sidre_2")
+[       OK ] conduit_docs.relay_io_handle_sidre_2 (13 ms)
+[----------] 3 tests from conduit_docs (24 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (7 ms total)
-[  PASSED  ] 1 test.
+[==========] 3 tests from 1 test suite ran. (24 ms total)
+[  PASSED  ] 3 tests.

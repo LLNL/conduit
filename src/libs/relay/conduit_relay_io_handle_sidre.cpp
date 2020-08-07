@@ -825,9 +825,9 @@ SidreIOHandle::load_sidre_tree(Node &sidre_meta,
                                const std::string &curr_path,
                                Node &out)
 {
-    // CONDUIT_INFO("load_sidre_tree w/ meta " 
+    // CONDUIT_INFO("load_sidre_tree w/ meta "
     //              << tree_prefix << " "
-    //              << tree_path   << " " 
+    //              << tree_path   << " "
     //              << curr_path);
 
     // we want to pull out a sub-tree of the sidre group hierarchy 
@@ -838,7 +838,17 @@ SidreIOHandle::load_sidre_tree(Node &sidre_meta,
     std::string tree_next;
     conduit::utils::split_path(tree_path,tree_curr,tree_next);
 
-    if( sidre_meta["groups"].has_path(tree_curr) )
+    // root case for a data tree
+    if( tree_curr.empty() )
+    {
+            // we have the correct sidre meta node, now read
+            load_sidre_group(sidre_meta,
+                             hnd,
+                             tree_prefix,
+                             "",
+                             out);
+    }
+    else if( sidre_meta["groups"].has_path(tree_curr) )
     {
         // BP_PLUGIN_INFO(curr_path << tree_curr << " is a group");
         if(tree_next.size() == 0)

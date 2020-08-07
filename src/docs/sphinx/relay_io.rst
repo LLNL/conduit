@@ -182,7 +182,7 @@ Relay I/O Handle Interface
 The ``relay::io::IOHandle`` class provides a high level interface to query, read, and modify files.
 
 It provides a generic interface that is more efficient than the path-based interface for protocols like HDF5 which support partial I/O and querying without reading the entire contents of a file.
-It also supports simpler built-in protocols (conduit_bin, json, etc) that do not support partial I/O for convenience. Its basic contract is that changes to backing (file on disk, etc) are not guaranteed to be reflected until the handle is closed. Relay I/O Handle does not yet support Silo or ADIOS. 
+It also supports simpler built-in protocols (conduit_bin, json, etc) that do not support partial I/O for convenience. Its basic contract is that changes to backing (file on disk, etc) are not guaranteed to be reflected until the handle is closed. Relay I/O Handle supports reading AXOM Sidre DataStore Style files. Relay I/O Handle does not yet support Silo or ADIOS. 
 
 IOHandle has the following instance methods: 
 
@@ -263,6 +263,67 @@ Relay I/O Handle Examples
    :start-after: BEGIN_EXAMPLE("py_relay_io_handle")
    :end-before:  END_EXAMPLE("py_relay_io_handle")
    :dedent: 4
+
+
+* **C++ Sidre Basic Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_handle_examples.cpp
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_sidre_1")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_sidre_1")
+   :language: cpp
+   :dedent: 4
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_sidre_1")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_sidre_1")
+
+* **Python Sidre Basic Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_io_handle_examples.py
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle_sidre")
+   :end-before:  END_EXAMPLE("py_relay_io_handle_sidre")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle_sidre")
+   :end-before:  END_EXAMPLE("py_relay_io_handle_sidre")
+   :dedent: 4
+
+* **C++ Sidre with Root File Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_handle_examples.cpp
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_sidre_2")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_sidre_2")
+   :language: cpp
+   :dedent: 4
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_sidre_2")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_sidre_2")
+
+* **Python Sidre with Root File Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_io_handle_examples.py
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle_sidre_root")
+   :end-before:  END_EXAMPLE("py_relay_io_handle_sidre_root")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle_sidre_root")
+   :end-before:  END_EXAMPLE("py_relay_io_handle_sidre_root")
+   :dedent: 4
+
+
 
 
 Relay I/O HDF5 Interface
