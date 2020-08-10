@@ -14491,6 +14491,22 @@ Node::as_long_double_array() const
 //
 //-----------------------------------------------------------------------------
 
+Node::iterator Node::begin() {
+    return iterator{this};
+}
+
+Node::iterator Node::end() {
+    return iterator{this, number_of_children()};
+}
+
+Node::const_iterator Node::cbegin() const {
+    return const_iterator{this};
+}
+
+Node::const_iterator Node::cend() const {
+    return const_iterator{this, number_of_children()};
+}
+
 //-----------------------------------------------------------------------------
 //
 // -- begin definition of Interface Warts --

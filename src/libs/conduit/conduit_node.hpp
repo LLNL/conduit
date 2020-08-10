@@ -59,6 +59,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <type_traits>
 
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
@@ -78,6 +79,164 @@
 //-----------------------------------------------------------------------------
 namespace conduit
 {
+
+class Node;
+
+/**
+ * Class template for defining C++-style iterators for the Node class.
+ *
+ * The class meets the requirements for a random access iterator.
+ *
+ * @tparam is_const there this iterator iterates over const or non-const
+ * values.
+ */
+template<bool is_const>
+class CONDUIT_API node_iterator_template {
+public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = Node;
+    using pointer = typename std::conditional<is_const, Node const *, Node *>::type;
+    using reference = typename std::conditional<is_const, Node const &, Node &>::type;
+    using difference_type = index_t;
+
+    node_iterator_template() : node_iterator_template{nullptr} {}
+
+    node_iterator_template(node_iterator_template const &rhs) = default;
+
+    template <bool is_const_ = is_const, typename = typename std::enable_if<is_const_>::type>
+    node_iterator_template(node_iterator_template<false> &rhs) :
+            node_iterator_template{rhs.get_node(), rhs.get_index()} {}
+
+    /**
+     * Create a new iterator pointing at the given parent node and index.
+     *
+     * @param parent the parent node whose children to iterate over
+     * @param index the index of the child to which this iterator points
+     */
+    node_iterator_template(pointer parent, index_t index=0) :
+            m_parent{parent}, m_index{index} {}
+
+    bool operator==(node_iterator_template const &rhs) const {
+        return m_parent == rhs.m_parent && m_index == rhs.m_index;
+    }
+
+    bool operator!=(node_iterator_template const &rhs) const {
+        return ! (*this == rhs);
+    }
+
+    node_iterator_template &operator++() {
+        ++m_index;
+        return *this;
+    }
+
+    node_iterator_template operator++(int) {
+        auto result = *this;
+        ++*this;
+        return result;
+    }
+
+    node_iterator_template &operator--() {
+        --m_index;
+        return *this;
+    }
+
+    node_iterator_template operator--(int) {
+        auto result = *this;
+        --*this;
+        return result;
+    }
+
+    reference operator*() {
+        return (*this)[0];
+    }
+
+    pointer operator->() {
+        return m_parent->child_ptr(m_index);
+    }
+
+    node_iterator_template& operator+=(index_t offset) {
+        m_index += offset;
+        return *this;
+    }
+
+    node_iterator_template& operator-=(index_t offset) {
+        m_index -= offset;
+        return *this;
+    }
+
+    node_iterator_template operator+(index_t rhs) const {
+        node_iterator_template result{*this};
+        result += rhs;
+        return result;
+    }
+
+    node_iterator_template operator-(index_t rhs) const {
+        node_iterator_template result{*this};
+        result -= rhs;
+        return result;
+    }
+
+    index_t operator-(node_iterator_template const &rhs) const {
+        return m_index - rhs.m_index;
+    }
+
+    reference operator[](index_t offset) const {
+        return m_parent->child(m_index + offset);
+    }
+
+    bool operator<(node_iterator_template const &rhs) const {
+        return m_index < rhs.m_index;
+    }
+
+    bool operator<=(node_iterator_template const &rhs) const {
+        return m_index <= rhs.m_index;
+    }
+
+    bool operator>(node_iterator_template const &rhs) const {
+        return m_index > rhs.m_index;
+    }
+
+    bool operator>=(node_iterator_template const &rhs) const {
+        return m_index >= rhs.m_index;
+    }
+
+    /**
+     * Get the node being iterated over (the parent).
+     *
+     * @return the parent node
+     */
+    Node const* get_node() const {
+        return m_parent;
+    }
+
+    /**
+     * Get the index of this iterator's node in the parent node
+     *
+     * @return the index corresponding to this iterator's position in the
+     * parent
+     */
+    index_t get_index() const {
+        return m_index;
+    }
+private:
+    pointer m_parent;
+    index_t m_index;
+};
+
+/**
+ * Add an offset to an iterator when the iterator is on the right-hand side.
+ *
+ * @tparam NodeIter the type of the iterator
+ *
+ * @param lhs the offset to add to the iterator
+ * @param rhs the iterator to which to add the offset
+ * @return the offset iterator
+ */
+template<typename NodeIter>
+NodeIter operator+(index_t lhs, NodeIter const &rhs) {
+    return rhs + lhs;
+}
+
 
 //-----------------------------------------------------------------------------
 // -- forward declarations required for conduit::Node --
@@ -117,6 +276,9 @@ public:
     friend class NodeIterator;
     friend class NodeConstIterator;
     friend class Generator;
+
+    using iterator = node_iterator_template<false>;
+    using const_iterator = node_iterator_template<true>;
 
 //-----------------------------------------------------------------------------
 //
@@ -4010,6 +4172,19 @@ public:
     const long_double_array  as_long_double_array() const;
 #endif
 
+    // Support for C++ style iterators and enhanced for loops
+    iterator begin();
+    iterator end();
+
+    const_iterator begin() const {
+        return cbegin();
+    }
+    const_iterator end() const {
+        return cend();
+    }
+
+    const_iterator cbegin() const;
+    const_iterator cend() const;
 
 //-----------------------------------------------------------------------------
 ///@}
