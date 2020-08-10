@@ -341,7 +341,9 @@ Node::load(const std::string &stream_path,
     std::ifstream ifs;
     ifs.open(stream_path.c_str(), std::ios_base::binary);
     if(!ifs.is_open())
+    {
         CONDUIT_ERROR("<Node::load> failed to open: " << stream_path);
+    }
     ifs.read((char *)m_data,dsize);
     ifs.close();
 
@@ -389,7 +391,9 @@ Node::load(const std::string &ibase,
         std::ifstream ifile;
         ifile.open(ibase.c_str());
         if(!ifile.is_open())
+        {
             CONDUIT_ERROR("<Node::load> failed to open: " << ibase);
+        }
         std::string json_data((std::istreambuf_iterator<char>(ifile)),
                                std::istreambuf_iterator<char>());
         
@@ -7565,7 +7569,10 @@ Node::serialize(const std::string &stream_path) const
     std::ofstream ofs;
     ofs.open(stream_path.c_str(), std::ios_base::binary);
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::serialize> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::serialize> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     serialize(ofs);
     ofs.close();
 }
@@ -11265,7 +11272,10 @@ Node::to_string_stream(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("Node::to_string_stream failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_string_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
     to_string_stream(ofs,protocol,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11487,7 +11497,10 @@ Node::to_json_generic(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("Node::to_json failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_json> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
     to_json_generic(ofs,detailed,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11647,7 +11660,10 @@ Node::to_pure_json(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_pure_json> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_json_generic(ofs,false,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11684,7 +11700,10 @@ Node::to_detailed_json(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_detailed_json> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_json_generic(ofs,true,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11724,7 +11743,10 @@ Node::to_base64_json(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_base64_json> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_base64_json> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_base64_json(ofs,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11817,7 +11839,10 @@ Node::to_yaml_generic(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_yaml> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_yaml_generic> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_yaml_generic(ofs,detailed,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11947,7 +11972,10 @@ Node::to_pure_yaml(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_pure_yaml> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_pure_yaml> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_yaml_generic(ofs,false,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -14597,7 +14625,12 @@ Node::MMap::open(const std::string &path,
     m_data_size = data_size;
 
     if (m_mmap_fd == -1) 
-        CONDUIT_ERROR("<Node::mmap> failed to open: " << path);
+    {
+    {
+        CONDUIT_ERROR("<Node::mmap> failed to open file: "
+                     << "\"" << path << "\"");
+    }
+    }
 
     m_data = ::mmap(0,
                     m_data_size,

@@ -228,7 +228,11 @@ void braid_init_example_point_vector_field(index_t npts_x,
                                            index_t npts_z,
                                            Node &res)
 {
-    index_t npts = npts_x * npts_y * npts_z;
+    index_t npts = npts_x * npts_y;
+    if(npts_z > 0)
+    {
+        npts *= npts_z;
+    }
 
     res["association"] = "vertex";
     res["type"] = "vector";
@@ -250,13 +254,31 @@ void braid_init_example_point_vector_field(index_t npts_x,
     // we are using the coords (distance from origin)
     // to create an example vector field
 
-    float64 dx = 20.0 / float64(npts_x - 1);
-    float64 dy =  20.0 / float64(npts_y-1);
+    float64 dx = 0.0;
+    float64 dy = 0.0;
+    
+    if(npts_x > 1)
+    {
+        dx = 20.0  / float64(npts_x - 1);
+    }
+
+    if(npts_x > 1)
+    {
+        dy = 20.0  / float64(npts_x - 1);
+    }
+
+    
     float64 dz = 0.0;
 
     if(npts_z > 1)
     {
         dz = 20.0 / float64(npts_z-1);
+    }
+
+    // make sure outerloop exex
+    if(npts_z < 1)
+    {
+        npts_z = 1;
     }
 
     index_t idx = 0;
@@ -275,7 +297,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
                 u_vals[idx] = cx;
                 v_vals[idx] = cy;
 
-                if(npts_z > 1)
+                if(dz > 0.0)
                 {
                     w_vals[idx] = cz;
                 }
@@ -1098,7 +1120,6 @@ braid_points_explicit(index_t npts_x,
                       Node &res)
 {
     res.reset();
-    index_t npts_total = npts_x * npts_y * npts_z;
 
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -1109,6 +1130,14 @@ braid_points_explicit(index_t npts_x,
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "point";
+
+    if(npts_z <= 0)
+    {
+        npts_z = 1;
+    }
+
+    index_t npts_total = npts_x * npts_y * npts_z;
+
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(npts_total));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -1200,10 +1229,10 @@ braid_quads(index_t npts_x,
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     int32 idx = 0;
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
         int32 yoff = j * (nele_x+1);
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
             conn[idx+0] = yoff + i;
             conn[idx+1] = yoff + i + (nele_x+1);
@@ -1743,7 +1772,7 @@ braid_tets(index_t npts_x,
             int32 yoff_n = (j+1) * (nele_hexs_x+1);
 
 
-            for(int32 i = 0; i < nele_hexs_z; i++)
+            for(int32 i = 0; i < nele_hexs_x; i++)
             {
                 // Create a local array of the vertex indices
                 // ordering is same as VTK_HEXAHEDRON
@@ -2030,7 +2059,7 @@ braid_hexs_and_tets(index_t npts_x,
             int32 yoff_n = (j+1) * (nele_hexs_x+1);
 
 
-            for(int32 i = 0; i < nele_hexs_z; i++)
+            for(int32 i = 0; i < nele_hexs_x; i++)
             {
                 // Create a local array of the vertex indices
                 // ordering is same as VTK_HEXAHEDRON
@@ -2183,7 +2212,47 @@ basic(const std::string &mesh_type,
     }
     if(mesh_type_index < 0 || mesh_type_index >= num_mesh_types)
     {
-        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+        CONDUIT_ERROR("blueprint::mesh::examples::basic unknown mesh_type = "
+                      << mesh_type);
+    }
+
+    bool npts_x_ok = true;
+    bool npts_y_ok = true;
+    bool npts_z_ok = true;
+    
+    if(npts_x <= 1)
+    {
+        npts_x_ok = false;
+    }
+
+    if(npts_y <= 1)
+    {
+        npts_y_ok = false;
+    }
+    
+
+    if(mesh_type == "tets" || mesh_type == "hexs" || mesh_type =="polyhedra")
+    {
+        // z must be valid for these cases
+        if(npts_z <= 1)
+        {
+            npts_z_ok = false;
+        }
+    }
+
+    // don't let de-morgan get you ...
+    if( ! (npts_x_ok && npts_y_ok && npts_z_ok) )
+    {
+        // error, not enough points to create the topo
+        CONDUIT_ERROR("blueprint::mesh::examples::basic requires "
+                      "npts_x > 1 and npts_y > 1 "
+                      " and for mesh_type={\"tets\", \"hexs\", or \"polyhedra\"} "
+                      " npts_z must be > 1" << std::endl << 
+                      "values provided:" << std::endl << 
+                      " mesh_type: " << mesh_type << std::endl <<
+                      " npts_x: " << npts_x << std::endl <<
+                      " npts_y: " << npts_y << std::endl <<
+                      " npts_z: " << npts_z << std::endl);
     }
 
     braid(braid_types[mesh_type_index], npts_x, npts_y, npts_z, res);
@@ -2203,15 +2272,79 @@ braid(const std::string &mesh_type,
       index_t npts_z, // number of points in z
       Node &res)
 {
-    index_t nele_x = npts_x -1;
-    index_t nele_y = npts_y -1;
+    bool npts_x_ok = true;
+    bool npts_y_ok = true;
+    bool npts_z_ok = true;
 
-    if( (nele_x == 0 || nele_y == 0) &&
-        (mesh_type != "points" && mesh_type != "points_implicit") )
+    if( mesh_type == "points" || mesh_type == "points_implicit" )
     {
-        // error, not enough points to create the topo
-        CONDUIT_ERROR("braid with non-points topology requires"
-                      " npts_x > 1 and npts_y > 1");
+        if( npts_x < 1 )
+        {
+            npts_x_ok = false;
+        }
+        if( npts_y < 1 )
+        {
+            npts_y_ok = false;
+        }
+        if( npts_z < 0 )
+        {
+            npts_z_ok = false;
+        }
+    }
+    else
+    {
+        if( npts_x < 2 )
+        {
+            npts_x_ok = false;
+        }
+
+        if( npts_y < 2 )
+        {
+            npts_y_ok = false;
+        }
+
+        // check 3d cases which require z
+        if(mesh_type == "tets" ||
+           mesh_type == "hexs" ||
+           mesh_type == "hexs_poly" ||
+           mesh_type == "hexs_and_tets")
+        {
+            // z must be valid for these cases
+            if(npts_z < 2)
+            {
+                npts_z_ok = false;
+            }
+        }
+    }
+
+
+    if( ! (npts_x_ok && npts_y_ok && npts_z_ok) )
+    {
+        if( mesh_type == "points" || mesh_type == "points_implicit" )
+        {
+            // error, not enough points to create the topo
+            CONDUIT_ERROR("braid with points-based topology requires"
+                          "npts_x > 0,  npts_y > 0  and npts_z >= 0 "
+                          "values provided:" << std::endl << 
+                          " mesh_type: " << mesh_type << std::endl  << 
+                          " npts_x: " << npts_x << std::endl <<
+                          " npts_y: " << npts_y << std::endl <<
+                          " npts_z: " << npts_z << std::endl);
+        }
+        else
+        {
+            // error, not enough points to create the topo
+            CONDUIT_ERROR("braid with non-points topology requires "
+                          "npts_x > 1 and npts_y > 1 "
+                          " and for mesh_type={\"tets\", \"hexs\", "
+                          " \"hexs_poly\", or \"hexs_and_tets\"} "
+                          " npts_z must be > 1" << std::endl << 
+                          "values provided:" << std::endl << 
+                          " mesh_type: " << mesh_type << std::endl <<
+                          " npts_x: " << npts_x << std::endl <<
+                          " npts_y: " << npts_y << std::endl <<
+                          " npts_z: " << npts_z << std::endl);
+        }
     }
 
     if(mesh_type == "uniform")

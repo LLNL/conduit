@@ -946,7 +946,7 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
     for(index_t ti = 0; ti < topo_shape_count; ti++)
     {
         n.reset();
-        blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
+        blueprint::mesh::examples::braid(topology_fids[ti],10,10,2,n);
         Node& topology_node = n["topologies/mesh"];
         CHECK_MESH(verify_topology,topology_node,info,true);
 

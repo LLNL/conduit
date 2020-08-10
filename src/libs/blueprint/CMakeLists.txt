@@ -212,8 +212,8 @@ set(conduit_blueprint_mpi_deps conduit conduit_blueprint mpi conduit_relay_mpi)
 #
 add_compiled_library(NAME conduit_blueprint_mpi
                      EXPORT conduit
-                     HEADERS ${conduit_blueprint_mpi_sources}
-                     SOURCES ${conduit_blueprint_mpi_headers}
+                     HEADERS ${conduit_blueprint_mpi_headers}
+                     SOURCES ${conduit_blueprint_mpi_sources}
                      DEPENDS_ON ${conduit_blueprint_mpi_deps}
                      HEADERS_DEST_DIR include/conduit
                      FOLDER libs)
