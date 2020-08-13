@@ -47,9 +47,18 @@
 /// file: conduit_node_iterator.cpp
 ///
 //-----------------------------------------------------------------------------
+#include "conduit_node_iterator.hpp"
+
 #include <sstream>
 
-#include "conduit_node_iterator.hpp"
+#if __cplusplus >= 201103L
+
+// Including this seems to be a problem on some platforms. Since we only
+// need it for C++11 features, exlcude it when not using C++11.
+#include <type_traits>
+
+#endif
+
 #include "conduit_error.hpp"
 #include "conduit_node.hpp"
 #include "conduit_utils.hpp"
