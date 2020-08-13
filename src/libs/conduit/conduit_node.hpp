@@ -80,6 +80,31 @@
 namespace conduit
 {
 
+// TODO remove when using C++11
+namespace internal {
+template<bool cond, typename T, typename F>
+struct conditional {
+    typedef T type;
+};
+
+template<typename T, typename F>
+struct conditional<false, T, F> {
+    typedef F type;
+};
+
+template<bool cond, class T = void>
+struct enable_if {};
+
+template<class T>
+struct enable_if<true, T> { typedef T type; };
+
+template<class T, class U>
+struct is_same {static const bool value = false;};
+
+template<class T>
+struct is_same<T, T> {static const bool value = true;};
+}
+
 class Node;
 
 /**
@@ -93,19 +118,16 @@ class Node;
 template<bool is_const>
 class CONDUIT_API node_iterator_template {
 public:
-    using iterator_category = std::random_access_iterator_tag;
-    using value_type = Node;
-    using pointer = typename std::conditional<is_const, Node const *, Node *>::type;
-    using reference = typename std::conditional<is_const, Node const &, Node &>::type;
-    using difference_type = index_t;
+    typedef std::random_access_iterator_tag iterator_category;
+    typedef Node value_type;
+    typedef typename internal::conditional<is_const, Node const *, Node *>::type pointer;
+    typedef typename internal::conditional<is_const, Node const &, Node &>::type reference;
+    typedef index_t difference_type;
 
-    node_iterator_template() : node_iterator_template{nullptr} {}
+    node_iterator_template() : m_parent(NULL), m_index(0) {}
 
-    node_iterator_template(node_iterator_template const &rhs) = default;
-
-    template <bool is_const_ = is_const, typename = typename std::enable_if<is_const_>::type>
-    node_iterator_template(node_iterator_template<false> &rhs) :
-            node_iterator_template{rhs.get_node(), rhs.get_index()} {}
+    node_iterator_template(node_iterator_template const &rhs) :
+        m_parent(rhs.m_parent), m_index(rhs.m_index) {}
 
     /**
      * Create a new iterator pointing at the given parent node and index.
@@ -114,7 +136,15 @@ public:
      * @param index the index of the child to which this iterator points
      */
     node_iterator_template(pointer parent, index_t index=0) :
-            m_parent{parent}, m_index{index} {}
+            m_parent(parent), m_index(index) {}
+
+#if __cplusplus >= 201103L
+    // If someone has a nice, simple way to accomplish this with C++03,
+    // please change this and enable the test.
+    template <bool is_const_ = is_const, typename = typename std::enable_if<is_const_>::type>
+    node_iterator_template(node_iterator_template<false> &rhs) :
+            m_parent(rhs.get_parent()), m_index(rhs.get_index()) {}
+#endif
 
     bool operator==(node_iterator_template const &rhs) const {
         return m_parent == rhs.m_parent && m_index == rhs.m_index;
@@ -130,7 +160,7 @@ public:
     }
 
     node_iterator_template operator++(int) {
-        auto result = *this;
+        node_iterator_template result = *this;
         ++*this;
         return result;
     }
@@ -141,7 +171,7 @@ public:
     }
 
     node_iterator_template operator--(int) {
-        auto result = *this;
+        node_iterator_template result = *this;
         --*this;
         return result;
     }
@@ -165,13 +195,13 @@ public:
     }
 
     node_iterator_template operator+(index_t rhs) const {
-        node_iterator_template result{*this};
+        node_iterator_template result(*this);
         result += rhs;
         return result;
     }
 
     node_iterator_template operator-(index_t rhs) const {
-        node_iterator_template result{*this};
+        node_iterator_template result(*this);
         result -= rhs;
         return result;
     }
@@ -205,7 +235,7 @@ public:
      *
      * @return the parent node
      */
-    Node const* get_node() const {
+    Node const* get_parent() const {
         return m_parent;
     }
 
@@ -277,8 +307,8 @@ public:
     friend class NodeConstIterator;
     friend class Generator;
 
-    using iterator = node_iterator_template<false>;
-    using const_iterator = node_iterator_template<true>;
+    typedef node_iterator_template<false> iterator;
+    typedef node_iterator_template<true> const_iterator;
 
 //-----------------------------------------------------------------------------
 //

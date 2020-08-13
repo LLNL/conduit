@@ -110,6 +110,8 @@ TEST(conduit_node_cpp_iterator, const_types) {
     ::testing::StaticAssertTypeEq<bool, decltype(iter >= iter_2)>();
 }
 
+#if __cplusplus >= 201103L
+
 TEST(conduit_node_cpp_iterator, conversion) {
     Node node;
     Node::iterator iter{&node, 3};
@@ -117,6 +119,8 @@ TEST(conduit_node_cpp_iterator, conversion) {
     Node::const_iterator expected_iter{&node, 3};
     EXPECT_EQ(const_iter, expected_iter);
 }
+
+#endif
 
 TEST(conduit_node_cpp_iterator, cbegin_cend) {
     Node node;
@@ -287,7 +291,7 @@ TYPED_TEST(conduit_node_cpp_iteration, comparison_operators) {
 
 TYPED_TEST(conduit_node_cpp_iteration, enhanced_for_loop) {
     index_t current_index = 0;
-    for (auto &cur_node : *this->m_base_node) {
+    for (typename TypeParam::reference cur_node : *this->m_base_node) {
         EXPECT_EQ(&cur_node, this->m_base_node->child_ptr(current_index))
                             << "Got wrong child at " << current_index;
         ++current_index;
