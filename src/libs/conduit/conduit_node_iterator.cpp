@@ -51,6 +51,7 @@
 
 #include "conduit_node_iterator.hpp"
 #include "conduit_error.hpp"
+#include "conduit_node.hpp"
 #include "conduit_utils.hpp"
 
 //-----------------------------------------------------------------------------
