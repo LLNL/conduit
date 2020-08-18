@@ -56,7 +56,9 @@ set(BASIC_C_TESTS
 ################################
 message(STATUS "Adding conduit blueprint lib c interface unit tests")
 foreach(TEST ${BASIC_C_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint)
+    add_cpp_test(TEST ${TEST}
+                 DEPENDS_ON conduit conduit_blueprint
+                 FOLDER tests/blueprint/c)
 endforeach()
 
 

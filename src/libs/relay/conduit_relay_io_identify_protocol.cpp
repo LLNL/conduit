@@ -49,12 +49,21 @@
 //-----------------------------------------------------------------------------
 #include <string>
 #include "conduit_utils.hpp"
+#include "conduit_relay_config.h"
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     #include "conduit_relay_mpi_io_identify_protocol.hpp"
 #else
     #include "conduit_relay_io_identify_protocol.hpp"
 #endif
+
+
+// includes for optional features
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+#include "conduit_relay_io_hdf5.hpp"
+#endif
+
+#include <fstream>
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -141,6 +150,46 @@ identify_protocol(const std::string &path,
 
     // default to conduit_bin
 
+}
+
+//---------------------------------------------------------------------------//
+void
+identify_file_type(const std::string &path,
+                  std::string &file_type)
+{
+    file_type = "unknown";
+
+    // goal: check for: hdf5, json, or yaml
+
+    // first check for hdf5
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+    if(conduit::relay::io::is_hdf5_file(path))
+    {
+        file_type = "hdf5";
+    }
+    else
+#endif 
+    {
+        char buff[5] = {0,0,0,0,0};
+        // heuristic:
+        //  if json, we expect to see "{" in the first 5 chars of the file.
+        std::ifstream ifs;
+        ifs.open(path.c_str());
+        if(ifs.is_open())
+        {
+            ifs.read((char *)buff,5);
+            ifs.close();
+
+            std::string test_str(buff);
+
+            if(test_str.find("{") != std::string::npos)
+            {
+               file_type = "json";
+            }
+
+            // TODO Add YAML heuristic
+        }
+    }
 }
 
 }

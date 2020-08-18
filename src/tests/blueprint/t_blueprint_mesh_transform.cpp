@@ -177,7 +177,7 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
         blueprint::mesh::coordset::rectilinear::verify,
         blueprint::mesh::coordset::_explicit::verify};
 
-    for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
+    for(size_t xi = 0; xi < COORD_TYPES.size(); xi++)
     {
         const std::string icoordset_type = COORD_TYPES[xi];
         const std::string icoordset_braid = get_braid_type(icoordset_type);
@@ -186,7 +186,7 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
         blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(index_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
         {
             const std::string jcoordset_type = COORD_TYPES[xj];
             const std::string jcoordset_braid = get_braid_type(jcoordset_type);
@@ -220,7 +220,7 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
         {NULL, NULL, blueprint::mesh::coordset::rectilinear::to_explicit},
         {NULL, NULL, NULL}};
 
-    for(index_t xi = 0; xi < COORD_TYPES.size(); xi++)
+    for(size_t xi = 0; xi < COORD_TYPES.size(); xi++)
     {
         const std::string icoordset_type = COORD_TYPES[xi];
         const std::string icoordset_braid = get_braid_type(icoordset_type);
@@ -229,15 +229,15 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
         blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(index_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < COORD_TYPES.size(); xj++)
         {
             conduit::Node jcoordset;
             const std::string jcoordset_type = COORD_TYPES[xj];
             XformCoordsFun to_new_coordset = xform_funs[xi][xj];
 
-            for(index_t ii = 0; ii < INT_DTYPES.size(); ii++)
+            for(size_t ii = 0; ii < INT_DTYPES.size(); ii++)
             {
-                for(index_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
+                for(size_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
                 {
                     // NOTE: The following lines are for debugging purposes only.
                     std::cout << "Testing " <<
@@ -285,7 +285,7 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
 
     // NOTE(JRC): We skip the "points" topology during this general check
     // because its rules are peculiar and specific.
-    for(index_t xi = 1; xi < TOPO_TYPES.size(); xi++)
+    for(size_t xi = 1; xi < TOPO_TYPES.size(); xi++)
     {
         const std::string itopology_type = TOPO_TYPES[xi];
         const std::string itopology_braid = get_braid_type(itopology_type);
@@ -295,7 +295,7 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
         const conduit::Node &itopology = imesh["topologies"].child(0);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(index_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
         {
             const std::string jtopology_type = TOPO_TYPES[xj];
             const std::string jtopology_braid = get_braid_type(jtopology_type);
@@ -350,7 +350,7 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
 
     // NOTE(JRC): We skip the "points" topology during this general check
     // because its rules are peculiar and specific.
-    for(index_t xi = 1; xi < TOPO_TYPES.size(); xi++)
+    for(size_t xi = 1; xi < TOPO_TYPES.size(); xi++)
     {
         const std::string itopology_type = TOPO_TYPES[xi];
         const std::string itopology_braid = get_braid_type(itopology_type);
@@ -366,14 +366,14 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
             ibase.set(temp);
         }
 
-        for(index_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < TOPO_TYPES.size(); xj++)
         {
             const std::string jtopology_type = TOPO_TYPES[xj];
             XformTopoFun to_new_topology = xform_funs[xi][xj];
 
-            for(index_t ii = 0; ii < INT_DTYPES.size(); ii++)
+            for(size_t ii = 0; ii < INT_DTYPES.size(); ii++)
             {
-                for(index_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
+                for(size_t fi = 0; fi < FLOAT_DTYPES.size(); fi++)
                 {
                     // NOTE: The following lines are for debugging purposes only.
                     std::cout << "Testing " <<
@@ -443,6 +443,10 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             topo_noelem.remove("elements");
             poly_noelem.set_external(topo_poly);
             poly_noelem.remove("elements");
+            if (ti == 3 || ti == 4)
+            {
+                poly_noelem.remove("subelements");
+            }
             EXPECT_FALSE(topo_noelem.diff(poly_noelem, info));
         }
 
@@ -452,6 +456,17 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 
             const conduit::Node &topo_conn = topo_node["elements/connectivity"];
             conduit::Node &poly_conn = topo_poly["elements/connectivity"];
+            conduit::Node poly_subconn;
+            // BHAN - Error when trying to convert empty poly_subconn,
+            // set to element/connectivity for polygonal (unused)
+            if (is_topo_3d)
+            {
+                poly_subconn = topo_poly["subelements/connectivity"];
+            }
+            else
+            {
+                poly_subconn = topo_poly["elements/connectivity"];   
+            }
             EXPECT_EQ(poly_conn.dtype().id(), topo_conn.dtype().id());
 
             const index_t topo_len = topo_conn.dtype().number_of_elements();
@@ -459,30 +474,74 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             const index_t topo_elems = topo_len / topo_indices;
             const index_t poly_stride = poly_len / topo_elems;
 
-            EXPECT_EQ(poly_stride, (is_topo_3d + topo_faces * (1 + topo_findices)));
+            EXPECT_EQ(poly_stride, is_topo_3d ? topo_faces : topo_findices );
             EXPECT_EQ(poly_len % topo_elems, 0);
 
-            conduit::Node topo_conn_array, poly_conn_array;
+            conduit::Node topo_conn_array, poly_conn_array, poly_subconn_array;
             topo_conn.to_int64_array(topo_conn_array);
             poly_conn.to_int64_array(poly_conn_array);
+            poly_subconn.to_int64_array(poly_subconn_array);
             const conduit::int64_array topo_data = topo_conn_array.as_int64_array();
             const conduit::int64_array poly_data = poly_conn_array.as_int64_array();
+            const conduit::int64_array poly_subdata = poly_subconn_array.as_int64_array();
+            
+            conduit::Node poly_size;
+            poly_size = topo_poly["elements/sizes"];
+
+            // BHAN - Error when trying to convert empty poly_subsize,
+            // set to element/sizes for polygonal (unused)
+            conduit::Node poly_subsize;
+            if (is_topo_3d)
+            {
+                poly_subsize = topo_poly["subelements/sizes"];
+            }
+            else 
+            {
+                poly_subsize = topo_poly["elements/sizes"];
+            }
+
+            conduit::Node poly_size_array;
+            poly_size.to_int64_array(poly_size_array);
+            const conduit::int64_array poly_size_data = poly_size_array.as_int64_array();
+
+            conduit::Node poly_subsize_array;
+            poly_subsize.to_int64_array(poly_subsize_array);
+            const conduit::int64_array poly_subsize_data = poly_subsize_array.as_int64_array();
+
             for(index_t ep = 0, et = 0; ep < poly_len;
                 ep += poly_stride, et += topo_indices)
             {
-                EXPECT_EQ(poly_data[ep], is_topo_3d ? topo_faces : topo_findices);
+                EXPECT_EQ(poly_size_data[ep / poly_stride],
+                          is_topo_3d ? topo_faces : topo_findices);
 
-                for(index_t efo = ep + is_topo_3d; efo < ep + poly_stride;
-                    efo += 1 + topo_findices)
+                for(index_t efo = ep; efo < ep + poly_stride;
+                    efo += is_topo_3d ? 1 : topo_findices)
                 {
-                    EXPECT_EQ(poly_data[efo], topo_findices);
+                    EXPECT_EQ(is_topo_3d ? poly_subsize_data[efo / poly_stride] :
+                                           poly_size_data[efo / poly_stride],
+                                           topo_findices);
 
                     const std::set<index_t> topo_index_set(
                         &topo_data[et],
                         &topo_data[et + topo_indices]);
-                    const std::set<index_t> poly_index_set(
-                        &poly_data[efo + 1],
-                        &poly_data[efo + 1 + topo_findices]);
+
+                    std::set<index_t> poly_index_set;
+                    if (is_topo_3d)
+                    {
+                        std::set<index_t> polyhedral_index_set(
+                            &poly_subdata[poly_data[efo] * topo_findices],
+                            &poly_subdata[poly_data[efo] * topo_findices + topo_findices]);
+
+                        poly_index_set = polyhedral_index_set;
+                    }
+                    else
+                    {
+                        std::set<index_t> polygonal_index_set(
+                            &poly_data[efo],
+                            &poly_data[efo + topo_findices]);
+                        
+                        poly_index_set = polygonal_index_set;
+                    }
                     // set of face indices is completely unique (no duplicates)
                     EXPECT_EQ(poly_index_set.size(), topo_findices);
                     // all polygonal face indices can be found in the base element

@@ -224,7 +224,7 @@ On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the c
     source bootstrap-env.sh
     
     #copy the generated host-config file into the standard location
-    cp uberenv_libs/`hostname`*.cmake to host-configs/
+    cp uberenv_libs/`hostname`*.cmake host-configs/
     
     # run the configure helper script
     ./config-build.sh

@@ -55,7 +55,19 @@ RUN apt-get update && apt-get install -y \
     gfortran \
     zlib1g-dev \
     python \
+    tar \
     unzip \
+    perl \
+    openmpi-bin \
+    libopenmpi-dev \
+    libncurses-dev \
+    libssl-dev \
+    libopenblas-dev \
+    zlib1g-dev \
+    libgdbm-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libbz2-dev \
  && rm -rf /var/lib/apt/lists/*
 
 
@@ -80,7 +92,10 @@ RUN tar -xf conduit.docker.src.tar
 # bootstrap third party libs using spack and uberenv
 #  for this example we use mpich for MPI b/c openmpi's mpiexec
 #  will not run for the root user
-RUN cd conduit && python scripts/uberenv/uberenv.py -k --spec "%gcc+mpi~doc~silo ^mpich ^cmake@3.9.6"
+RUN cd conduit && python scripts/uberenv/uberenv.py \
+    -k \
+    --spec "%gcc+mpi~doc~silo ^mpich ^cmake@3.9.6" \
+    --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
 
 # configure a debug build with cmake
 RUN cd conduit && mkdir build-debug

@@ -45,7 +45,7 @@
 .. _mesh_blueprint:
 
 ===================
-mesh
+Mesh Blueprint
 ===================
 
 This section provides details about the Mesh Blueprint. Lots of them.
@@ -153,6 +153,18 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
     * coordsets/coords/type: “explicit”
     * coordsets/coords/values/{r,theta,phi}
 
+.. note::
+   In all of the coordinate space definitions outlined above, spherical coordinates adhere to the definitions of
+   ``theta``/``phi`` used in the physics and engineering domains. Specifically, this means that ``theta`` refers to
+   the polar angle of the coordinate (i.e. the angle from the +Z cartesian axis) and ``phi`` refers to the azimuthal
+   angle of the coordinate (i.e. the angle from the +X cartesian axis). The figure below most succinctly describes
+   these conventions:
+
+   .. figure:: spherical_coordinates_render.png
+       :width: 400px
+       :align: center
+
+       Figure of ``spherical`` coordinate conventions (courtesy of `Wikipedia <https://en.wikipedia.org/wiki/Spherical_coordinate_system>`_)
 
 Toplogies
 ++++++++++++++++++++
@@ -175,8 +187,8 @@ tri         triangle          indices to 3 coordinate tuples
 quad        quadrilateral     indices to 4 coordinate tuples
 tet         tetrahedron       indices to 4 coordinate tuples
 hex         hexahedron        indices to 8 coordinate tuples
-polygonal   polygon           an index count N, then indices to N coordinate tuples
-polyhedral  polyhedron        a face count M, then M polygonal face definitions
+polygonal   polygon           indices to N end-to-end coordinate tuples
+polyhedral  polyhedron        indices to M polygonal faces
 ========== ================  ===================================================
 
 .. note
@@ -313,110 +325,107 @@ That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or Asc
 Polygonal/Polyhedral Topologies
 *********************************
 
-The ``polygonal`` and ``polyhedral`` topology shape types are structually
+The **polygonal** and **polyhedral** topology shape types are structually
 identical to the other explicit topology shape types (see the *Single Shape Topologies*
-section above), but the contents of their ``elements/connectivity`` sections look slightly different.
-In particular, the shape index connectivity for each element in these topologies is **explicit**,
-which means that the index sequence for each element is prefixed by a count that specifies
-the total number of indices (polygonal) or faces (polyhedral) that comprise that element.
-This explicit shape index facilitates both the specification of non-standard shapes (e.g. octogons)
-and of highly mixed shape topologies (e.g. polygons/polyhedra of many different shapes in one topology).
-
-In more explicit terms, the ``elements/connectivity`` lists for the ``polygonal`` and ``polyhedral``
-topology shapes follow these rules:
-
-* **polygonal** - The first element starts at the beginning of the ``elements/connectivity``
-  list. The first value ``V`` for each element ``E`` indicates the number of
-  vertices that comprise polygon ``E``. The next ``V`` values in the list
-  are indices for the ``V`` coordinates that comprise ``E``. The next
-  element begins after this sequence of ``V`` values, and this specification
-  continues until the connectivity list is exhausted of items.
-
-  .. code:: cpp
-
-      // Example Diagram:
-      //
-      //       4-----5
-      //       |`\   |
-      // e1 -> |  \  | <- e0
-      //       |   \.|
-      //       7-----6
-      //
-
-      //    index count ---+     +--- coordinate index values
-      //                   |     |
-      //                   v  |-----|
-      int64 poly_data[] = {3, 4, 6, 5,   // element 0
-                           3, 7, 6, 4};  // element 1
-
-      conduit::Node topology = mesh["topologies/poly_topo"];
-      topology["coordset"] = "coords";
-      topology["type"] = "unstructured";
-      topology["elements/shape"] = "polygonal";
-      topology["elements/connectivity"].set_int64_ptr(&poly_data[0], 8);
+section above), but the contents of their ``elements`` sections look slightly different.
+In particular, these sections are structured as **o2mrelation** objects that map elements
+(the *ones*) to their subelement constituents (the *many*). For **polyhedral** topologies,
+these constituents reside in an additional ``subelements`` section that specifies
+the polyhedral faces in a format identical to ``elements`` in a **polygonal** schema.
 
 
-* **polyhedral** - The first element begins at the first index of the
-  ``elements/connectivity`` list. The first value ``F`` for each element ``E``
-  specifies the number of faces that comprise polyhedron ``E``. The next value
-  ``V`` denotes the number of vertices that comprise the first polygonal face
-  ``F1`` of polyhedron ``E``. Exactly like the polygonal specification, the following
-  sequence of ``V`` values contain the indices of the coordinates for face ``F1``.
-  The next face ``F2`` begins immediately after this sequence, and this process
-  continues until ``F`` faces are enumerated. The next element then begins after
-  this supersequence, and this specification continues until the connectivity list
-  is exhausted of items.
+Polygonal Topologies
+^^^^^^^^^^^^^^^^^^^^^^^
 
-  .. code:: cpp
+The schema for a **polygonal** shape topology is as follows:
 
-      // Example Diagram:
-      //
-      //         0
-      //        /|\
-      //       / | \ <- e0
-      //      /  |  \
-      //     /_.-3-._\
-      //    1.,  |  ,.4
-      //     \ `'2'` /
-      //      \  |  /
-      // e1 -> \ | /
-      //        \|/
-      //         5
-      //
+  * topologies/topo/coordset: "coords"
+  * topologies/topo/type: “unstructured”
+  * topologies/topo/elements: (o2mrelation object)
+  * topologies/topo/elements/shape: "polygonal"
+  * topologies/topo/elements/connectivity: (index array)
 
-      //  face index count ---+
-      //                      |
-      //     face count ---+  |     +--- coordinate index values
-      //                   |  |     |
-      //                   v  v  |-----|
-      int64 poly_data[] = {5, 3, 0, 1, 2, 3, 0, 2, 4, 3, 0, 1, 3, 3, 0, 3, 4, 4, 1, 2, 4, 3,   // element 0
-                           5, 3, 5, 1, 2, 3, 5, 2, 4, 3, 5, 1, 3, 3, 5, 3, 4, 4, 1, 2, 4, 3};  // element 1
+It's important to note that the ``elements/connectivity`` path defines the vertex
+index sequences (relative to ``coordset``) for each element in the topology. These
+vertex sequences must be arranged end-to-end (i.e. such that ``(v[i], v[i+1])``
+defines an edge) relative to their container polygonal elements.
 
-      conduit::Node topology = mesh["topologies/poly_topo"];
-      topology["coordset"] = "coords";
-      topology["type"] = "unstructured";
-      topology["elements/shape"] = "polyhedral";
-      topology["elements/connectivity"].set_int64_ptr(&poly_data[0], 44);
+The following diagram illustrates a simple **polygonal** topology:
+
+  .. code:: yaml
+
+      #
+      #    4--------5
+      #    |`--     |
+      # e1 |   `.   | e0
+      #    |     --.|
+      #    7--------6
+      #
+
+      topologies:
+        topology:
+          coordset: coords
+          type: unstructured
+          elements:
+            shape: polygonal
+            connectivity: [4, 6, 5, 7, 6, 4]
+            sizes: [3, 3]
+            offsets: [0, 3]
 
 
-(Optional) Element Offsets
-****************************
+Polyhedral Topologies
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Unstructured topologies can optionally include a child ``elements/offsets`` to
-indicate the starting position of each element defined in the ``elements/connectivity``
-array. This list is most often specified for heterogeneous and polygonal/polyhedral
-topologies so that the elements don't need to be found by stepping through the input
-connectivity array.
+The schema for a **polyhedral** shape topology is as follows:
 
-    * topologies/topo/elements/offsets: (index array)
+  * topologies/topo/coordset: "coords"
+  * topologies/topo/type: “unstructured”
+  * topologies/topo/elements: (o2mrelation object)
+  * topologies/topo/elements/shape: "polyhedral"
+  * topologies/topo/elements/connectivity: (index array)
+  * topologies/topo/subelements: (o2mrelation object)
+  * topologies/topo/subelements/shape: (shape name)
+  * topologies/topo/subelements/connectivity: (index array)
 
-To generate this array for a given unstructured topology ``topo``, make the
-following call:
+An important nuance to the structure of a **polyhedral** shape topology is that
+the ``elements/connectivity`` path indexes into the ``subelements`` object to list
+the *many* faces associated with each *one* polyhedron. Similarly, the
+``subelements/connectivity`` path indexes into the ``coordset`` path to list the
+*many* vertices associated with each *one* polyhedral face. There is no assumed
+ordering for constituent polyhedral faces relative to their source polyhedra.
 
-  .. code:: cpp
+The following diagram illustrates a simple **polyhedral** topology:
 
-      conduit::blueprint::mesh::topology::unstructured::generate_offsets(topo,                       // input topology
-                                                                         topo["elements/offsets"]);  // output node for offset array
+  .. code:: yaml
+
+      #
+      #         0
+      #        /|\
+      #       / | \ <- e0
+      #      /  |  \
+      #     /_.-3-._\
+      #    1.,  |  ,.4
+      #     \ `'2'` /
+      #      \  |  /
+      # e1 -> \ | /
+      #        \|/
+      #         5
+      #|
+
+      topologies:
+        topology:
+          coordset: coords
+          type: unstructured
+          elements:
+            shape: polyhedral
+            connectivity: [0, 1, 2, 3, 4, 0, 5, 6, 7, 8]
+            sizes: [5, 5]
+            offsets: [0, 5]
+          subelements:
+            shape: polygonal
+            connectivity: [1, 2, 4, 3, 1, 2, 0, 2, 4, 0, 4, 3, 0, 3, 1, 0, 1, 2, 5, 2, 4, 5, 4, 3, 5, 3, 1, 5]
+            sizes: [4, 3, 3, 3, 3, 3, 3, 3, 3]
+            offsets: [0, 4, 7, 10, 13, 16, 19, 22, 25]
 
 
 Material Sets
@@ -424,12 +433,165 @@ Material Sets
 
 Materials Sets contain material name and volume fraction information defined over a specified mesh topology.
 
-A material set contains an **mcarray** that houses per-material, per-element volume fractions and a source topology over which these volume fractions are defined.
-To conform to protocol, each entry in the ``matsets`` section must be an *Object* that contains the following information:
+A material set is a type of **o2mrelation** that houses per-material, per-element volume fractions that are defined over a referenced source topology.
+Each material set conforms to a schema variant based on:
+
+ * The layout of its per-material buffers.
+ * The indexing scheme used to associate volume fractions with topological elements.
+
+The options for each of these variants are detailed in the following sections.
+
+
+Material Set Buffer Variants
+=================================
+
+Each material set follows one of two variants based on the presented structure of its volume fractions.
+These variants cover volume fractions presented in a single, unified buffer (called **uni-buffer** presentation) and in multiple, per-material buffers (called **multi-buffer** presentation).
+Both of these variants and their corresponding schemas are outlined in the subsections below.
+
+
+Uni-Buffer Material Sets
+*********************************
+
+A **uni-buffer** material set is one that presents all of its volume fraction data in a single data buffer.
+In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associating each volume with a material identifier, and an *Object* mapping of human-readable material names to each unique material identifier.
+Additionally, the top-level of this schema is an **o2mrelation** that sources from the volume fraction/material identifier buffers and targets the material topology.
+To conform to protocol, each ``matsets`` child of this type must be an *Object* that contains the following information:
 
    * matsets/matset/topology: "topo"
-   * matsets/matset/volume_fractions: (mcarray)
+   * matsets/matset/material_map: (integer object)
+   * matsets/matset/material_ids: (integer array)
+   * matsets/matset/volume_fractions: (floating-point array)
 
+The following diagram illustrates a simple **uni-buffer** material set example:
+
+  .. code:: yaml
+
+      #     z0       z1       z2
+      # +--------+--------+--------+
+      # | a0     | a1 ___/|        |
+      # |___-----|----    |   b2   |
+      # |     b0 |     b1 |        |
+      # +--------+--------+--------+
+      #
+
+      matsets:
+        matset:
+          topology: topology
+          volume_fractions:
+            values: [0, a0, b2, b1, b0, 0, a1, 0]
+            material_ids: [0, 1, 2, 2, 2, 0, 1, 0]
+            material_map:
+              a: 1
+              b: 2
+              c: 0
+            sizes: [2, 2, 1]
+            offsets: [0, 2, 4]
+            indices: [1, 4, 6, 3, 2]
+
+
+Multi-Buffer Material Sets
+*********************************
+
+A **multi-buffer** material set is a material set variant wherein the volume fraction data is split such that one buffer exists per material.
+The schema for this variant dictates that each material be presented as an *Object* entry of the ``volume_fractions`` field with the material name as the entry key and the material volume fractions as the entry value.
+Optionally, the value for each such entry can be specified as an **o2mrelation** instead of a flat array to enable greater specification flexibility.
+To conform to protocol, each ``matsets`` child of this type must be an *Object* that contains the following information:
+
+   * matsets/matset/topology: "topo"
+   * matsets/matset/volume_fractions: (object)
+
+The following diagram illustrates a simple **multi-buffer** material set example:
+
+  .. code:: yaml
+
+      #     z0       z1       z2
+      # +--------+--------+--------+
+      # | a0     | a1 ___/|        |
+      # |___-----|----    |   b2   |
+      # |     b0 |     b1 |        |
+      # +--------+--------+--------+
+      #
+
+      matsets:
+        matset:
+          topology: topology
+          volume_fractions:
+            a:
+              values: [0, 0, 0, a1, 0, a0]
+              indices: [5, 3]
+            b:
+              values: [0, b0, b2, b1, 0]
+              indices: [1, 3, 2]
+
+
+Material Set Indexing Variants
+=================================
+
+Material sets can also vary in how volume fractions are associated with topological elements.
+This associative variance leads to two additional schema variants: **element-dominant** (elements/volumes have the same ordering) and **material-dominant** (elements/volumes have independent orderings).
+Both of these variants and their corresponding schemas are outlined in the subsections below.
+
+
+Element-Dominant Material Sets
+*********************************
+
+In an **element-dominant** material set, the volume fraction data order matches the topological element order.
+In other words, the volume fraction group at ``i`` (e.g. ``matset/volume_fractions/mat[i]``) contains the volume fraction data for topological element ``i``.
+This variant is assumed in all material sets that don't have an ``element_ids`` child.
+
+The following diagram illustrates a simple **element-dominant** material set example:
+
+  .. code:: yaml
+
+      #     z0       z1       z2
+      # +--------+--------+--------+
+      # | a0     | a1 ___/|\___ c2 |
+      # |___-----|----    |    ----|
+      # |     b0 |     b1 | b2     |
+      # +--------+--------+--------+
+      #
+
+      matsets:
+        matset:
+          topology: topology
+          volume_fractions:
+            a: [a0, a1, 0]
+            b: [b0, b1, b2]
+            c: [0, 0, c2]
+
+
+Material-Dominant Material Sets
+*********************************
+
+In a **material-dominant** material set, the orders for the volume fractions and topological elements are mismatched and need to be bridged via indirection arrays.
+For these schemas, the ``element_ids`` field hosts these indirection arrays per material (with just one indirection array for uni-buffer material sets).
+In explicit terms, the **material-dominant** volume fraction group at ``i`` (e.g. ``matset/volume_fractions/mat[i]``) contains the volume fraction data for the indirected topological element ``i`` (e.g. ``matset/element_ids/mat[i]``).
+Complementary to the **element-dominant** variant, the **material-dominant** variant applies to all material sets that have an ``element_ids`` child.
+
+The following diagram illustrates a simple **material-dominant** material set example:
+
+  .. code:: yaml
+
+      #     z0       z1       z2
+      # +--------+--------+--------+
+      # | a0     | a1 ___/|\___ c2 |
+      # |___-----|----    |    ----|
+      # |     b0 |     b1 | b2     |
+      # +--------+--------+--------+
+      #
+
+      matsets:
+        matset:
+          topology: topology
+          volume_fractions:
+            a: [a0, a1]
+            b: [b0, b1, b2]
+            c: [c2]
+          element_ids:
+            a: [0, 1]
+            b: [0, 1, 2]
+            c: [2]
 
 
 Fields
@@ -479,7 +641,6 @@ For implicit topologies, the field values are associated with the topology by fa
 For explicit topologies, the field values are associated with the topology by assuming the order of the field values matches the order the elements are defined in the topology.
 
 
-
 Species Sets
 ++++++++++++++++++++
 
@@ -494,6 +655,35 @@ To put it in short, each entry in the ``specsets`` section of the Blueprint hier
  * specsets/specset/matset: "matset"
  * specsets/specset/matset_values: (mcarray)
 
+
+
+Nesting Sets
+++++++++++++++++++++
+
+Nesting Sets are used to represent the nesting relationships between different domains in multi-domain mesh environments. Most commonly, this subset of the Blueprint specification is used for AMR (adaptive mesh refinement) meshes.
+
+Each entry in the Nesting Sets section contains an independent set of nesting relationships between domains in the described mesh.
+On an individual basis, a nesting set contains a source topology, an element association, and a list of nesting windows.
+The windows for a particular nesting set describe the topological nesting pattern for a paired set of domains, which includes the ID of the partnered domain, the type of the partnered domain (parent or child), and the self-relative origin and dimensions of the nesting relationship.
+The Blueprint schema for each entry in the ``nestsets`` section matches the following template:
+
+   * nestsets/nestset/association: "vertex" | "element"
+   * nestsets/nestset/topology: "topo"
+   * nestsets/nestset/windows/window/domain_id: (integer)
+   * nestsets/nestset/windows/window/domain_type: "parent" | "child"
+   * nestsets/nestset/windows/window/ratio/{i, j, k}
+   * nestsets/nestset/windows/window/origin/{i, j, k}
+   * nestsets/nestset/windows/window/dims/{i, j, k}
+
+Each domain that contains a Nesting Sets section must also update its State section to include the domain's global nesting level.
+This additional requirement adds the follow constraint to the ``state`` section:
+
+   * state/level_id: (integer)
+
+.. note::
+   The Nesting Sets section currently only supports nesting specifications for
+   structured topologies. There are plans to extend this feature to support
+   unstructured topologies in future versions of Conduit.
 
 
 Adjacency Sets
@@ -526,8 +716,10 @@ To conform, the ``state`` entry must be an *Object* and can have the following o
 
 .. _examples:
 
-Examples
-~~~~~~~~~~~~~~~~~~~~~
+
+Mesh Blueprint Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 The C++ ``conduit::blueprint::mesh::examples`` namespace and the Python ``conduit.blueprint.mesh.examples`` module provide
 functions that generate example Mesh Blueprint data. For details on how to write these data sets to files, see the unit
@@ -588,16 +780,17 @@ Uniform
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 138-143
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 146-187
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform")
+   :language: yaml
 
 * **Visual**
 
@@ -613,16 +806,17 @@ Rectilinear
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 197-201
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_rectilinear")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 204-235
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_rectilinear")
+   :language: yaml
 
 * **Visual**
 
@@ -638,16 +832,17 @@ Structured
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 244-249
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_structured")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_structured")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 252-291
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_structured")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_structured")
+   :language: yaml
 
 * **Visual**
 
@@ -663,16 +858,17 @@ Tris
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 300-305
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tris")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tris")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 308-344
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tris")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tris")
+   :language: yaml
 
 * **Visual**
 
@@ -688,16 +884,17 @@ Quads
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 353-358
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_quads")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_quads")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 361-397
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_quads")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_quads")
+   :language: yaml
 
 * **Visual**
 
@@ -713,16 +910,17 @@ Polygons
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 514-519
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polygons")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 522-558
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polygons")
+   :language: yaml
 
 * **Visual**
 
@@ -738,16 +936,17 @@ Tets
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 406-411
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tets")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tets")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 414-451
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_tets")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_tets")
+   :language: yaml
 
 * **Visual**
 
@@ -763,16 +962,17 @@ Hexs
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 460-465
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 468-505
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :language: yaml
 
 * **Visual**
 
@@ -788,16 +988,17 @@ Polyhedra
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 567-572
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polyhedra")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
-.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 575-612
-   :language: cpp
-   :dedent: 4
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_polyhedra")
+   :language: yaml
 
 * **Visual**
 
@@ -914,7 +1115,6 @@ The example dataset provides an element-centered scalar field ``iter`` that repr
 for each point tested or zero if not found in the set.
  
 
-
 .. code:: cpp
 
     conduit::blueprint::mesh::examples::julia(index_t nx,
@@ -927,7 +1127,6 @@ for each point tested or zero if not found in the set.
                                               float64 c_im,
                                               Node &res);
 
-
 ``nx``, ``ny`` specify the number of elements in the x and y directions.
 
 ``x_min``, ``x_max``, ``y_min``, ``y_max`` specify the x and y extents.
@@ -935,6 +1134,124 @@ for each point tested or zero if not found in the set.
 ``c_re``, ``c_im`` specify real and complex parts of the constant used.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
+
+julia amr examples
+++++++++++++++++++++
+
+We also provide examples that represent the julia set using AMR meshes. These functions provide concrete examples of the Mesh Blueprint `nestset` protocol for patch-based AMR meshes.
+
+
+.. figure:: julia_nestsets_simple.png
+    :width: 350px
+    :align: center
+
+    Pseudocolor, Mesh, and Domain Boundary plots of the julia_nestsets_simple example.
+
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::julia_nestsets_simple(float64 x_min,
+                                                              float64 x_max,
+                                                              float64 y_min,
+                                                              float64 y_max,
+                                                              float64 c_re,
+                                                              float64 c_im,
+                                                              Node &res);
+
+`julia_nestsets_simple` provides a basic AMR example with two levels and one
+parent/child nesting relationship.
+
+``x_min``, ``x_max``, ``y_min``, ``y_max`` specify the x and y extents.
+
+``c_re``, ``c_im`` specify real and complex parts of the constant used.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
+.. figure:: julia_nestsets_complex.png
+    :width: 350px
+    :align: center
+
+    Pseudocolor, Mesh, and Domain Boundary plots of the julia_nestsets_complex example.
+
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::julia_nestsets_complex(index_t nx,
+                                                               index_t ny,
+                                                               float64 x_min,
+                                                               float64 x_max,
+                                                               float64 y_min,
+                                                               float64 y_max,
+                                                               float64 c_re,
+                                                               float64 c_im,
+                                                               index_t levels,
+                                                               Node &res);
+
+`julia_nestsets_complex` provides an AMR example that refines the mesh
+using more resolution in complex areas.
+
+
+``nx``, ``ny`` specify the number of elements in the x and y directions.
+
+``x_min``, ``x_max``, ``y_min``, ``y_max`` specify the x and y extents.
+
+``c_re``, ``c_im`` specify real and complex parts of the constant used.
+
+``levels`` specifies the number of refinement levels to use.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
+
+venn
++++++++
+
+
+.. figure:: venn_example.png
+    :width: 350px
+    :align: center
+
+    Pseudocolor plot of the venn example ``overlap`` field
+
+
+The ``venn()`` function creates meshes that use three overlapping circle regions, demonstrating different ways to encode volume fraction based multi-material fields. The volume fractions are provided as both standard fields and using the Material sets (``matsets``) Blueprint. It also creates other fields related to overlap pattern.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::venn(const std::string &matset_type,
+                                             index_t nx,
+                                             index_t ny,
+                                             float64 radius,
+                                             Node &res);
+
+
+``matset_type`` specifies the style of matset generated by the example.
+
+Here is a list of valid strings for the ``matset_type`` argument:
+
+.. list-table:: 
+   :widths: 10 15
+   :header-rows: 1
+
+   * - **Matset Type**
+     - **Description**
+
+   * - full
+     - non-sparse volume fractions and matset values
+
+   * - sparse_by_material
+     - sparse (material dominant) volume fractions and matset values
+
+   * - sparse_by_element
+     - sparse (element dominant) volume fractions and matset values
+
+``nx``, ``ny`` specify the number of elements in the x and y directions.
+
+``radius`` specifies the radius of the three circles.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
 
 polytess
 ++++++++++
@@ -1021,10 +1338,64 @@ This snippet provides a complete C++ example that demonstrates:
   * Saving the result to a JSON file that VisIt can open
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :lines: 621-680
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform_detailed")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform_detailed")
    :language: cpp
    :dedent: 4
-   
+
+Expressions (Derived Fields)
+============================
+
+An *expression* is a mathemtical formula which defines a new field in terms of other fields and/or
+other expressions. Expressions are specified in the ``expressions`` section of the Blueprint
+protocol. The ``expressions`` section is optional. When it exists, it is a peer to the ``fields`` section.
+It is a list of *Objects* of the form:
+
+* expressions/expression/number_of_components
+* expressions/expression/topology
+* expressions/expression/definition
+
+The ``number_of_components`` and ``topology`` entries are identical to their meaning as
+entries in the ``fields`` section.
+
+The ``definition`` entry is string valued and holds the expression (e.g. *mathemtical formula*) defining
+how the new field is computed. Blueprint does not interpret this string. It simply passes it along for
+downstream consumers that have the ability to interpret the string and perform the associated operations
+to compute the expression.
+
+If the expected consumer is `VisIt <https://visit.llnl.gov>`_, data producers may wish to consult the
+`Expressions chapter of the VisIt user's manual <https://visit-sphinx-github-user-manual.readthedocs.io/en/develop/gui_manual/Quantitative/Expressions.html#built-in-expressions>`_.
+In addition, data producers should *escape* all names of fields or expressions by bracketing
+them in ``<`` and ``>`` characters. An example expressions entry in the index is
+
+  .. code:: json
+
+      "fields":
+      {
+        "braid":
+        {
+          ...
+        },
+        "radial":
+        {
+          ...
+        },
+      "expressions":
+      {
+        "scalar_expr":
+        {
+          "number_of_components": 1,
+          "topology": "mesh",
+          "definition": "<vector_expr>[1]"
+        },
+        "vector_expr":
+        {
+          "number_of_components": 2,
+          "topology": "mesh",
+          "definition": "{<braid>,recenter(<radial>,\"nodal\")}"
+        }
+      }
+
 .. Properties and Transforms
 .. ---------------------------
 

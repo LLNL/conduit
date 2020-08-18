@@ -103,6 +103,14 @@ conduit_node_fetch(conduit_node *cnode,
 
 //-----------------------------------------------------------------------------
 conduit_node *
+conduit_node_fetch_existing(conduit_node *cnode,
+                            const char *path)
+{
+    return c_node(&cpp_node(cnode)->fetch_existing(path));
+}
+
+//-----------------------------------------------------------------------------
+conduit_node *
 conduit_node_append(conduit_node *cnode)
 {
     return c_node(&cpp_node(cnode)->append());
@@ -110,9 +118,26 @@ conduit_node_append(conduit_node *cnode)
 
 //-----------------------------------------------------------------------------
 conduit_node *
+conduit_node_add_child(conduit_node *cnode,
+                       const char *name)
+{
+    return c_node(&cpp_node(cnode)->add_child(name));
+}
+
+//-----------------------------------------------------------------------------
+conduit_node *
 conduit_node_child(conduit_node *cnode, conduit_index_t idx)
 {
     return c_node(cpp_node(cnode)->child_ptr(idx));
+}
+
+
+//-----------------------------------------------------------------------------
+conduit_node *
+conduit_node_child_by_name(conduit_node *cnode,
+                           const char *name)
+{
+    return c_node(&cpp_node(cnode)->child(name));
 }
 
 //-----------------------------------------------------------------------------
@@ -159,6 +184,15 @@ conduit_node_remove_child(conduit_node *cnode,
                           conduit_index_t idx)
 {
     cpp_node(cnode)->remove(idx);
+}
+
+//-----------------------------------------------------------------------------
+/// remove child by name
+void
+conduit_node_remove_child_by_name(conduit_node *cnode,
+                                  const char *name)
+{
+    cpp_node(cnode)->remove_child(name);
 }
 
 //-----------------------------------------------------------------------------
@@ -354,8 +388,80 @@ conduit_node_update_external(conduit_node *cnode,
     cpp_node(cnode)->update_external(cpp_node_ref(cother));
 }
 
+//-----------------------------------------------------------------------------
+// -- basic io, parsing, and generation ---
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+void
+conduit_node_parse(conduit_node *cnode,
+                   const char* schema,
+                   const char* protocol)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->parse(std::string(schema),proto_str);
+}
 
+//-----------------------------------------------------------------------------
+void
+conduit_node_generate(conduit_node *cnode,
+                      const char* schema,
+                      const char* protocol,
+                      void *data)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->generate(std::string(schema),proto_str,data);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_generate_external(conduit_node *cnode,
+                               const char* schema,
+                               const char* protocol,
+                               void *data)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->generate_external(std::string(schema),proto_str,data);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_save(conduit_node *cnode,
+                  const char* path,
+                  const char* protocol)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->save(std::string(path),proto_str);
+}
+//-----------------------------------------------------------------------------
+void
+conduit_node_load(conduit_node *cnode,
+                  const char* path,
+                  const char* protocol)
+{
+    std::string proto_str;
+    if(protocol != NULL)
+    {
+        proto_str = std::string(protocol);
+    }
+    cpp_node(cnode)->load(std::string(path),proto_str);
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

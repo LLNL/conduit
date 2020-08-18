@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "t_conduit_docs_tutorial_helpers.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -135,12 +136,14 @@ void validate_basic_example(const std::string &name,
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_uniform)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_uniform");
     // create container node
     Node mesh;
     // generate simple uniform 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("uniform", 3, 3, 0, mesh);
     // print out results
     mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_uniform");
 
     const std::string mesh_json = R"(
     {
@@ -193,12 +196,14 @@ TEST(conduit_docs, blueprint_demo_basic_uniform)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_rectilinear)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear");
     // create container node
     Node mesh;
     // generate simple rectilinear 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("rectilinear", 3, 3, 0, mesh);
     // print out results
     mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_rectilinear");
 
     const std::string mesh_json = R"(
     {
@@ -241,12 +246,14 @@ TEST(conduit_docs, blueprint_demo_basic_rectilinear)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_structured)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_structured");
     // create container node
     Node mesh;
     // generate simple structured 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("structured", 3, 3, 1, mesh);
     // print out results
     mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_structured");
 
     const std::string mesh_json = R"(
     {
@@ -297,12 +304,14 @@ TEST(conduit_docs, blueprint_demo_basic_structured)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_tris)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_tris");
     // create container node
     Node mesh;
     // generate simple explicit tri-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("tris", 3, 3, 0, mesh);
     // print out results
     mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_tris");
 
     const std::string mesh_json = R"(
     {
@@ -350,12 +359,14 @@ TEST(conduit_docs, blueprint_demo_basic_tris)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_quads)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_quads");
     // create container node
     Node mesh;
     // generate simple explicit quad-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("quads", 3, 3, 0, mesh);
     // print out results
     mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_quads");
 
     const std::string mesh_json = R"(
     {
@@ -403,13 +414,15 @@ TEST(conduit_docs, blueprint_demo_basic_quads)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_tets)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_tets");
     // create container node
     Node mesh;
     // generate simple explicit tri-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("tets", 3, 3, 3, mesh);
     // print out results
     mesh.print();
-
+    END_EXAMPLE("blueprint_demo_basic_tets");
+    
     const std::string mesh_json = R"(
     {
       "coordsets": 
@@ -457,12 +470,14 @@ TEST(conduit_docs, blueprint_demo_basic_tets)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_hexs)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_hexs");
     // create container node
     Node mesh;
     // generate simple explicit quad-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("hexs", 3, 3, 3, mesh);
     // print out results
     mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_hexs");
 
     const std::string mesh_json = R"(
     {
@@ -511,12 +526,14 @@ TEST(conduit_docs, blueprint_demo_basic_hexs)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_polygons)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_polygons");
     // create container node
     Node mesh;
     // generate simple explicit poly-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("polygons", 3, 3, 0, mesh);
     // print out results
     mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_polygons");
 
     const std::string mesh_json = R"(
     {
@@ -541,7 +558,9 @@ TEST(conduit_docs, blueprint_demo_basic_polygons)
           "elements": 
           {
             "shape": "polygonal",
-            "connectivity": [4, 0, 3, 4, 1, 4, 1, 4, 5, 2, 4, 3, 6, 7, 4, 4, 4, 7, 8, 5]
+            "connectivity": [0, 3, 4, 1, 1, 4, 5, 2, 3, 6, 7, 4, 4, 7, 8, 5],
+            "sizes": [4, 4, 4, 4],
+            "offsets": [0, 4, 8, 12]
           }
         }
       },
@@ -564,12 +583,14 @@ TEST(conduit_docs, blueprint_demo_basic_polygons)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_polyhedra)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra");
     // create container node
     Node mesh;
     // generate simple explicit poly-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("polyhedra", 3, 3, 3, mesh);
     // print out results
     mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_polyhedra");
 
     const std::string mesh_json = R"(
     {
@@ -595,7 +616,16 @@ TEST(conduit_docs, blueprint_demo_basic_polyhedra)
           "elements": 
           {
             "shape": "polyhedral",
-            "connectivity": [6, 4, 0, 1, 4, 3, 4, 0, 1, 10, 9, 4, 1, 4, 13, 10, 4, 4, 3, 12, 13, 4, 3, 0, 9, 12, 4, 9, 10, 13, 12, 6, 4, 1, 2, 5, 4, 4, 1, 2, 11, 10, 4, 2, 5, 14, 11, 4, 5, 4, 13, 14, 4, 4, 1, 10, 13, 4, 10, 11, 14, 13, 6, 4, 3, 4, 7, 6, 4, 3, 4, 13, 12, 4, 4, 7, 16, 13, 4, 7, 6, 15, 16, 4, 6, 3, 12, 15, 4, 12, 13, 16, 15, 6, 4, 4, 5, 8, 7, 4, 4, 5, 14, 13, 4, 5, 8, 17, 14, 4, 8, 7, 16, 17, 4, 7, 4, 13, 16, 4, 13, 14, 17, 16, 6, 4, 9, 10, 13, 12, 4, 9, 10, 19, 18, 4, 10, 13, 22, 19, 4, 13, 12, 21, 22, 4, 12, 9, 18, 21, 4, 18, 19, 22, 21, 6, 4, 10, 11, 14, 13, 4, 10, 11, 20, 19, 4, 11, 14, 23, 20, 4, 14, 13, 22, 23, 4, 13, 10, 19, 22, 4, 19, 20, 23, 22, 6, 4, 12, 13, 16, 15, 4, 12, 13, 22, 21, 4, 13, 16, 25, 22, 4, 16, 15, 24, 25, 4, 15, 12, 21, 24, 4, 21, 22, 25, 24, 6, 4, 13, 14, 17, 16, 4, 13, 14, 23, 22, 4, 14, 17, 26, 23, 4, 17, 16, 25, 26, 4, 16, 13, 22, 25, 4, 22, 23, 26, 25]
+            "connectivity": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 10, 11, 3, 12, 13, 14, 15, 16, 9, 17, 18, 12, 19, 5, 20, 21, 22, 23, 24, 10, 25, 26, 27, 21, 28, 15, 22, 29, 30, 31, 32, 19, 27, 33, 34, 29, 35],
+            "sizes": [6, 6, 6, 6, 6, 6, 6, 6],
+            "offsets": [0, 6, 12, 18, 24, 30, 36, 42]
+          },
+          "subelements":
+          {
+            "shape": "polygonal",
+            "connectivity": [0, 1, 4, 3, 0, 1, 10, 9, 1, 4, 13, 10, 4, 3, 12, 13, 3, 0, 9, 12, 9, 10, 13, 12, 1, 2, 5, 4, 1, 2, 11, 10, 2, 5, 14, 11, 5, 4, 13, 14, 10, 11, 14, 13, 3, 4, 7, 6, 4, 7, 16, 13, 7, 6, 15, 16, 6, 3, 12, 15, 12, 13, 16, 15, 4, 5, 8, 7, 5, 8, 17, 14, 8, 7, 16, 17, 13, 14, 17, 16, 9, 10, 19, 18, 10, 13, 22, 19, 13, 12, 21, 22, 12, 9, 18, 21, 18, 19, 22, 21, 10, 11, 20, 19, 11, 14, 23, 20, 14, 13, 22, 23, 19, 20, 23, 22, 13, 16, 25, 22, 16, 15, 24, 25, 15, 12, 21, 24, 21, 22, 25, 24, 14, 17, 26, 23, 17, 16, 25, 26, 22, 23, 26, 25],
+            "sizes": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+            "offsets": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140]
           }
         }
       },
@@ -618,6 +648,7 @@ TEST(conduit_docs, blueprint_demo_basic_polyhedra)
 //-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_uniform_detailed)
 {
+    BEGIN_EXAMPLE("blueprint_demo_basic_uniform_detailed");
     // create a Conduit node to hold our mesh data
     Node mesh;
     
@@ -678,4 +709,5 @@ TEST(conduit_docs, blueprint_demo_basic_uniform_detailed)
     
     // save our mesh to a json that can be read by VisIt
     conduit::relay::io_blueprint::save(mesh, "basic_detailed_uniform.blueprint_root");
+    END_EXAMPLE("blueprint_demo_basic_uniform_detailed");
 }

@@ -61,9 +61,14 @@ if(SILO_FOUND)
   SET(CONDUIT_RELAY_IO_SILO_ENABLED TRUE)
 endif()
 
-if(ADIOS_FOUND)
+if(ADIOS_FOUND AND NOT MPI_FOUND)
   SET(CONDUIT_RELAY_IO_ADIOS_ENABLED TRUE)
 endif()
+
+if(ADIOS_FOUND AND MPI_FOUND)
+  SET(CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED TRUE)
+endif()
+
 
 if(MPI_FOUND)
   SET(CONDUIT_RELAY_MPI_ENABLED TRUE)
@@ -89,10 +94,11 @@ set(conduit_relay_headers
     conduit_relay_io.hpp
     conduit_relay_io_handle.hpp
     conduit_relay_io_handle_api.hpp
+    conduit_relay_io_handle_sidre.hpp
+    conduit_relay_io_handle_sidre_api.hpp
     conduit_relay_io_identify_protocol.hpp
     conduit_relay_io_identify_protocol_api.hpp
     conduit_relay_io_blueprint.hpp
-    conduit_relay_io_blueprint_api.hpp
     conduit_relay_web.hpp
     conduit_relay_web_node_viewer_server.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h
@@ -112,6 +118,7 @@ set(conduit_relay_sources
     conduit_relay.cpp
     conduit_relay_io.cpp
     conduit_relay_io_handle.cpp
+    conduit_relay_io_handle_sidre.cpp
     conduit_relay_io_identify_protocol.cpp
     conduit_relay_io_blueprint.cpp
     conduit_relay_web.cpp
@@ -143,10 +150,9 @@ if(SILO_FOUND)
     list(APPEND conduit_relay_sources conduit_relay_io_silo.cpp)
 endif()
 
-if(ADIOS_FOUND)
+if(ADIOS_FOUND AND NOT MPI_FOUND)
     list(APPEND conduit_relay_headers
          conduit_relay_io_adios.hpp
-         conduit_relay_io_adios_api.hpp
         )
     list(APPEND conduit_relay_sources conduit_relay_io_adios.cpp)
 endif()
@@ -203,7 +209,7 @@ if(HDF5_FOUND)
     endif()
 endif()
 
-if(ADIOS_FOUND)
+if(ADIOS_FOUND AND NOT MPI_FOUND)
     # Link with the serial ADIOS libraries.
     list(APPEND conduit_relay_deps adios_nompi)
 endif()
@@ -220,7 +226,8 @@ add_compiled_library(NAME conduit_relay
                              ${conduit_relay_fortran_sources}
                              $<TARGET_OBJECTS:conduit_civetweb>
                      DEPENDS_ON ${conduit_relay_deps}
-                     HEADERS_DEST_DIR include/conduit)
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
 
 if(ENABLE_UTILS)
     ###################################
@@ -230,7 +237,8 @@ if(ENABLE_UTILS)
         NAME        conduit_relay_node_viewer
         SOURCES     conduit_relay_web_node_viewer_exe.cpp
         DEPENDS_ON  conduit_relay
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        FOLDER utils)
 
     # add install target for conduit_relay_node_viewer
     install(TARGETS conduit_relay_node_viewer
@@ -243,7 +251,8 @@ if(ENABLE_UTILS)
         NAME        conduit_relay_io_ls
         SOURCES     conduit_relay_io_ls_exe.cpp
         DEPENDS_ON  conduit_relay
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        FOLDER utils)
 
 
     # add install target
@@ -258,7 +267,8 @@ if(ENABLE_UTILS)
         NAME        conduit_relay_io_convert
         SOURCES     conduit_relay_io_convert_exe.cpp
         DEPENDS_ON  conduit_relay
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+        FOLDER utils)
 
     # add install target for conduit_relay_io_convert
     install(TARGETS conduit_relay_io_convert
@@ -332,7 +342,8 @@ add_compiled_library(NAME conduit_relay_mpi
                      HEADERS ${conduit_relay_mpi_headers}
                      SOURCES ${conduit_relay_mpi_sources}
                      DEPENDS_ON ${conduit_relay_mpi_deps}
-                     HEADERS_DEST_DIR include/conduit)
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
 
 
 ################################################################
@@ -357,7 +368,7 @@ set(conduit_relay_mpi_io_headers conduit_relay_mpi_io.hpp)
 #
 # Specify the relay mpi io deps
 #
-set(conduit_relay_mpi_io_deps conduit mpi)
+set(conduit_relay_mpi_io_deps conduit mpi conduit_relay_mpi conduit_relay)
 
 #
 # Specify relay mpi c headers
@@ -370,22 +381,28 @@ set(conduit_relay_mpi_io_c_headers
 set(conduit_relay_mpi_io_c_sources
     c/conduit_relay_mpi_io_c.cpp)
 
+list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_blueprint.hpp)
+list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_blueprint.cpp)
+
 if(SILO_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_silo.hpp)
     list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_silo.cpp)
     list(APPEND conduit_relay_mpi_io_deps silo)
 endif()
+
 if(HDF5_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_hdf5.hpp)
     list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_hdf5.cpp)
     list(APPEND conduit_relay_mpi_io_deps hdf5)
 endif()
+
 if(ADIOS_FOUND)
     list(APPEND conduit_relay_mpi_io_headers conduit_relay_mpi_io_adios.hpp)
     list(APPEND conduit_relay_mpi_io_sources conduit_relay_io_adios.cpp)
     # Link with parallel versions of ADIOS
     list(APPEND conduit_relay_mpi_io_deps adios_mpi)
 endif()
+ 
 
 #
 # setup conduit relay mpi io lib
@@ -395,9 +412,9 @@ add_compiled_library(NAME conduit_relay_mpi_io
                      HEADERS ${conduit_relay_mpi_io_headers} ${conduit_relay_mpi_io_c_headers}
                      SOURCES ${conduit_relay_mpi_io_sources} ${conduit_relay_mpi_io_c_sources}
                      DEPENDS_ON ${conduit_relay_mpi_io_deps}
-                     HEADERS_DEST_DIR include/conduit)
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
 
 blt_add_target_compile_flags(TO conduit_relay_mpi_io FLAGS "-DCONDUIT_RELAY_IO_MPI_ENABLED")
-
 
 endif() # end if MPI_FOUND

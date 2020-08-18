@@ -91,14 +91,16 @@ Save and Load
 * **C++ Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_generic_examples.cpp
-   :lines: 93-107
+   :start-after: BEGIN_EXAMPLE("relay_io_example_1_json")
+   :end-before:  END_EXAMPLE("relay_io_example_1_json")
    :language: cpp
    :dedent: 4
 
 * **Output:**
 
 .. literalinclude:: t_conduit_docs_relay_io_generic_examples_out.txt
-   :lines: 41-65
+   :start-after: BEGIN_EXAMPLE("relay_io_example_1_json")
+   :end-before:  END_EXAMPLE("relay_io_example_1_json")
 
 
 Save Merged 
@@ -107,14 +109,16 @@ Save Merged
 * **C++ Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_generic_examples.cpp
-   :lines: 119-140
+   :start-after: BEGIN_EXAMPLE("relay_io_example_2_hdf5")
+   :end-before:  END_EXAMPLE("relay_io_example_2_hdf5")
    :language: cpp
    :dedent: 4
 
 * **Output:**
 
 .. literalinclude:: t_conduit_docs_relay_io_generic_examples_out.txt
-   :lines: 73-110
+   :start-after: BEGIN_EXAMPLE("relay_io_example_2_hdf5")
+   :end-before:  END_EXAMPLE("relay_io_example_2_hdf5")
 
 
 Load Merged 
@@ -123,14 +127,16 @@ Load Merged
 * **C++ Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_generic_examples.cpp
-   :lines: 150-168
+   :start-after: BEGIN_EXAMPLE("relay_io_example_3_hdf5")
+   :end-before:  END_EXAMPLE("relay_io_example_3_hdf5")
    :language: cpp
    :dedent: 4
 
 * **Output:**
 
 .. literalinclude:: t_conduit_docs_relay_io_generic_examples_out.txt
-   :lines: 118-155
+   :start-after: BEGIN_EXAMPLE("relay_io_example_3_hdf5")
+   :end-before:  END_EXAMPLE("relay_io_example_3_hdf5")
 
 Load from Subpath
 +++++++++++++++++++
@@ -138,14 +144,16 @@ Load from Subpath
 * **C++ Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_generic_examples.cpp
-   :lines: 180-193
+   :start-after: BEGIN_EXAMPLE("relay_io_example_4_hdf5")
+   :end-before:  END_EXAMPLE("relay_io_example_4_hdf5")
    :language: cpp
    :dedent: 4
 
 * **Output:**
 
 .. literalinclude:: t_conduit_docs_relay_io_generic_examples_out.txt
-   :lines: 163-179
+   :start-after: BEGIN_EXAMPLE("relay_io_example_4_hdf5")
+   :end-before:  END_EXAMPLE("relay_io_example_4_hdf5")
 
 
 Save to Subpath
@@ -154,14 +162,16 @@ Save to Subpath
 * **C++ Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_generic_examples.cpp
-   :lines: 204-217
+   :start-after: BEGIN_EXAMPLE("relay_io_example_5_hdf5")
+   :end-before:  END_EXAMPLE("relay_io_example_5_hdf5")
    :language: cpp
    :dedent: 4
 
 * **Output:**
 
 .. literalinclude:: t_conduit_docs_relay_io_generic_examples_out.txt
-   :lines: 187-203
+   :start-after: BEGIN_EXAMPLE("relay_io_example_5_hdf5")
+   :end-before:  END_EXAMPLE("relay_io_example_5_hdf5")
 
 
 .. things not yet covered: options
@@ -172,13 +182,26 @@ Relay I/O Handle Interface
 The ``relay::io::IOHandle`` class provides a high level interface to query, read, and modify files.
 
 It provides a generic interface that is more efficient than the path-based interface for protocols like HDF5 which support partial I/O and querying without reading the entire contents of a file.
-It also supports simpler built-in protocols (conduit_bin, json, etc) that do not support partial I/O for convenience. Its basic contract is that changes to backing (file on disk, etc) are not guaranteed to be reflected until the handle is closed. Relay I/O Handle does not yet support Silo or ADIOS. 
+It also supports simpler built-in protocols (conduit_bin, json, etc) that do not support partial I/O for convenience. Its basic contract is that changes to backing (file on disk, etc) are not guaranteed to be reflected until the handle is closed. Relay I/O Handle supports reading AXOM Sidre DataStore Style files. Relay I/O Handle does not yet support Silo or ADIOS. 
 
 IOHandle has the following instance methods: 
 
  * ``open``
    
-   * Opens a handle. The underlying I/O interface is selected using the extension of the destination path or an explicit protocol argument.
+   * Opens a handle. The underlying I/O interface is selected using the extension of the destination path or an explicit protocol argument. Supports reading and writing by default. Select a different mode by passing an options node that contains a ``mode`` child with one of the following strings:
+
+
+   .. list-table:: 
+      :widths: 10 20
+
+      * - ``rw`` read + write (default mode)
+        - Supports both read and write operations. Creates file if it does not exist.
+
+      * - ``r`` read only 
+        - Only supports read operations. Throws an Error if you open a non-existing file or on any attempt to write. 
+
+      * - ``w`` write only 
+        - Only supports write operations. Throws an Error on any attempt to read.
 
   .. DANGER::
     Note: While you can read from and write to subpaths using a handle, IOHandle *does not* yet support opening a file with a subpath (e.g. ``myhandle.open("file.hdf5:path/data")``).
@@ -215,27 +238,93 @@ Relay I/O Handle Examples
 * **C++ Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_handle_examples.cpp
-   :lines: 64-132
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_1")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_1")
    :language: cpp
    :dedent: 4
 
 * **Output:**
 
 .. literalinclude:: t_conduit_docs_relay_io_handle_examples_out.txt
-   :lines: 9-45
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_1")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_1")
 
 * **Python Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_io_handle_examples.py
-   :lines: 65-111
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle")
+   :end-before:  END_EXAMPLE("py_relay_io_handle")
    :language: python
    :dedent: 8
 
 * **Output:**
 
-.. literalinclude:: t_conduit_docs_python_tutorial_relay_io_handle_examples_out.txt
-   :lines: 28-64
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle")
+   :end-before:  END_EXAMPLE("py_relay_io_handle")
    :dedent: 4
+
+
+* **C++ Sidre Basic Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_handle_examples.cpp
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_sidre_1")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_sidre_1")
+   :language: cpp
+   :dedent: 4
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_sidre_1")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_sidre_1")
+
+* **Python Sidre Basic Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_io_handle_examples.py
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle_sidre")
+   :end-before:  END_EXAMPLE("py_relay_io_handle_sidre")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle_sidre")
+   :end-before:  END_EXAMPLE("py_relay_io_handle_sidre")
+   :dedent: 4
+
+* **C++ Sidre with Root File Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_handle_examples.cpp
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_sidre_2")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_sidre_2")
+   :language: cpp
+   :dedent: 4
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("relay_io_handle_example_sidre_2")
+   :end-before:  END_EXAMPLE("relay_io_handle_example_sidre_2")
+
+* **Python Sidre with Root File Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_relay_io_handle_examples.py
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle_sidre_root")
+   :end-before:  END_EXAMPLE("py_relay_io_handle_sidre_root")
+   :language: python
+   :dedent: 8
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_tutorial_python_relay_io_handle_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("py_relay_io_handle_sidre_root")
+   :end-before:  END_EXAMPLE("py_relay_io_handle_sidre_root")
+   :dedent: 4
+
+
+
 
 Relay I/O HDF5 Interface
 ---------------------------
@@ -257,14 +346,18 @@ HDF5 I/O Interface Basics
 * **C++ Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp
-   :lines: 66-115
+   :start-after: BEGIN_EXAMPLE("relay_io_example_hdf5_interface_1")
+   :end-before:  END_EXAMPLE("relay_io_example_hdf5_interface_1")
    :language: cpp
    :dedent: 4
+
+
 
 * **Output:**
 
 .. literalinclude:: t_conduit_docs_relay_io_hdf5_examples_out.txt
-   :lines: 9-41
+   :start-after: BEGIN_EXAMPLE("relay_io_example_hdf5_interface_1")
+   :end-before:  END_EXAMPLE("relay_io_example_hdf5_interface_1")
 
 
 
@@ -274,14 +367,16 @@ HDF5 I/O Options
 * **C++ Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp
-   :lines: 128-160
+   :start-after: BEGIN_EXAMPLE("relay_io_example_hdf5_interface_opts")
+   :end-before:  END_EXAMPLE("relay_io_example_hdf5_interface_opts")
    :language: cpp
    :dedent: 4
 
 * **Output:**
 
 .. literalinclude:: t_conduit_docs_relay_io_hdf5_examples_out.txt
-   :lines: 49-107
+   :start-after: BEGIN_EXAMPLE("relay_io_example_hdf5_interface_opts")
+   :end-before:  END_EXAMPLE("relay_io_example_hdf5_interface_opts")
 
 You can verify using ``h5stat`` that the data set was written to the hdf5 file using chunking and
 compression.

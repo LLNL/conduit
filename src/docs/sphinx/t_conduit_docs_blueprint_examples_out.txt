@@ -1,63 +1,51 @@
-Running main() from gtest_main.cc
-[==========] Running 2 tests from 1 test case.
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 2 tests from 1 test suite.
 [----------] Global test environment set-up.
 [----------] 2 tests from conduit_docs
 [ RUN      ] conduit_docs.blueprint_example_1
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_blueprint_examples.cpp : 63]
- blueprint_example_1
+BEGIN_EXAMPLE("blueprint_example_1")
 mesh verify succeeded.
 
-{
-  "coords": 
-  {
-    "values": 
-    {
-      "valid": "true"
-    },
-    "valid": "true"
-  }
-}
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_blueprint_examples.cpp : 81]
- blueprint_example_1
+valid: "true"
+coords: 
+  type: 
+    valid: "true"
+  info: 
+    - "mesh::coordset::explicit: 'type' has valid value 'explicit'"
+    - "mesh::coordset::explicit: 'values' is an mcarray"
+  values: 
+    valid: "true"
+  valid: "true"
+
+END_EXAMPLE("blueprint_example_1")
 [       OK ] conduit_docs.blueprint_example_1 (1 ms)
 [ RUN      ] conduit_docs.blueprint_example_2
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_blueprint_examples.cpp : 88]
- blueprint_example_2
+BEGIN_EXAMPLE("blueprint_example_2")
 example 'separate' mcarray 
 
-{
-  "x": [1.0, 1.0, 1.0, 1.0, 1.0],
-  "y": [2.0, 2.0, 2.0, 2.0, 2.0],
-  "z": [3.0, 3.0, 3.0, 3.0, 3.0]
-}
+x: [1.0, 1.0, 1.0, 1.0, 1.0]
+y: [2.0, 2.0, 2.0, 2.0, 2.0]
+z: [3.0, 3.0, 3.0, 3.0, 3.0]
 
-{
-  "mem_spaces": 
-  {
-    "0x7fd6c0600100": 
-    {
-      "path": "x",
-      "type": "allocated",
-      "bytes": 40
-    },
-    "0x7fd6c0600460": 
-    {
-      "path": "y",
-      "type": "allocated",
-      "bytes": 40
-    },
-    "0x7fd6c0600130": 
-    {
-      "path": "z",
-      "type": "allocated",
-      "bytes": 40
-    }
-  },
-  "total_bytes_allocated": 120,
-  "total_bytes_mmaped": 0,
-  "total_bytes_compact": 120,
-  "total_strided_bytes": 120
-}
+
+mem_spaces: 
+  0x7feb01404e70: 
+    path: "x"
+    type: "allocated"
+    bytes: 40
+  0x7feb01404f70: 
+    path: "y"
+    type: "allocated"
+    bytes: 40
+  0x7feb014050d0: 
+    path: "z"
+    type: "allocated"
+    bytes: 40
+total_bytes_allocated: 120
+total_bytes_mmaped: 0
+total_bytes_compact: 120
+total_strided_bytes: 120
+
 transformed to 'interleaved' mcarray 
 
 {
@@ -66,26 +54,20 @@ transformed to 'interleaved' mcarray
   "z": {"dtype":"float64", "number_of_elements": 5, "offset": 16, "stride": 24, "element_bytes": 8, "endianness": "little", "value": [3.0, 3.0, 3.0, 3.0, 3.0]}
 }
 
-{
-  "mem_spaces": 
-  {
-    "0x7fd6c0602090": 
-    {
-      "path": "",
-      "type": "allocated",
-      "bytes": 120
-    }
-  },
-  "total_bytes_allocated": 120,
-  "total_bytes_mmaped": 0,
-  "total_bytes_compact": 120,
-  "total_strided_bytes": 312
-}
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_blueprint_examples.cpp : 117]
- blueprint_example_2
-[       OK ] conduit_docs.blueprint_example_2 (0 ms)
-[----------] 2 tests from conduit_docs (1 ms total)
+mem_spaces: 
+  0x7feb01406bc0: 
+    path: ""
+    type: "allocated"
+    bytes: 120
+total_bytes_allocated: 120
+total_bytes_mmaped: 0
+total_bytes_compact: 120
+total_strided_bytes: 312
+
+END_EXAMPLE("blueprint_example_2")
+[       OK ] conduit_docs.blueprint_example_2 (1 ms)
+[----------] 2 tests from conduit_docs (2 ms total)
 
 [----------] Global test environment tear-down
-[==========] 2 tests from 1 test case ran. (1 ms total)
+[==========] 2 tests from 1 test suite ran. (3 ms total)
 [  PASSED  ] 2 tests.

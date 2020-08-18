@@ -65,7 +65,7 @@ bool dtypes_equal(const DataType &base, const DataType &ref) { return base.equal
 //-----------------------------------------------------------------------------
 void print_dt(const DataType &dtype)
 {
-    std::cout << dtype.to_json() << std::endl;
+    std::cout << dtype.to_string() << std::endl;
 }
 
 //-----------------------------------------------------------------------------

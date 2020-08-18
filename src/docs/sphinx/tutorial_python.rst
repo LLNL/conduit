@@ -53,5 +53,5 @@ of examples for Conduit's Core API and additional libraries.
 .. toctree::
 
    tutorial_python_basics
-   tutorial_python_json
+   tutorial_python_parse
 

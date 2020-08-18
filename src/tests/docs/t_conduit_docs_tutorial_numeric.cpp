@@ -51,6 +51,7 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
+#include "t_conduit_docs_tutorial_helpers.hpp"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -60,36 +61,30 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, numeric_as_dtype)
 {
-    CONDUIT_INFO("numeric_as_dtype");
-        
+    BEGIN_EXAMPLE("numeric_as_dtype");
     Node n;
     int64 val = 100;
     n = val;
     std::cout << n.as_int64() << std::endl;
-
-    CONDUIT_INFO("numeric_as_dtype");
+    END_EXAMPLE("numeric_as_dtype");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, numeric_via_value)
 {
-    CONDUIT_INFO("numeric_via_value");
-    
+    BEGIN_EXAMPLE("numeric_via_value");
     Node n;
     int64 val = 100;
     n = val;
     int64 my_val = n.value();
     std::cout << my_val << std::endl;
-
-    CONDUIT_INFO("numeric_via_value");
+    END_EXAMPLE("numeric_via_value");
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, numeric_ptr_as_dtype)
 {
-    CONDUIT_INFO("numeric_ptr_as_dtype");
-    
+    BEGIN_EXAMPLE("numeric_ptr_as_dtype");
     int64 vals[4] = {100,200,300,400};
 
     Node n;
@@ -101,15 +96,13 @@ TEST(conduit_tutorial, numeric_ptr_as_dtype)
     {
         std::cout << "my_vals[" << i << "] = " << my_vals[i] << std::endl;
     }
-
-    CONDUIT_INFO("numeric_ptr_as_dtype");
+    END_EXAMPLE("numeric_ptr_as_dtype");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, numeric_ptr_via_value)
 {
-    CONDUIT_INFO("numeric_ptr_via_value");
-     
+    BEGIN_EXAMPLE("numeric_ptr_via_value");
     int64 vals[4] = {100,200,300,400};
 
     Node n;
@@ -121,40 +114,38 @@ TEST(conduit_tutorial, numeric_ptr_via_value)
     {
         std::cout << "my_vals[" << i << "] = " << my_vals[i] << std::endl;
     }
-    
-    CONDUIT_INFO("numeric_ptr_via_value");
+    END_EXAMPLE("numeric_ptr_via_value");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, numeric_strided_data_array)
 { 
-    CONDUIT_INFO("numeric_strided_data_array");
-    
+    BEGIN_EXAMPLE("numeric_strided_data_array");
     int64 vals[4] = {100,200,300,400};
 
     Node n;
     n.set(vals,2, // # of elements
                0, // offset in bytes
                sizeof(int64)*2); // stride in bytes
-    
+
     int64_array  my_vals = n.value();
     
     for(index_t i=0; i < 2; i++)
     {
         std::cout << "my_vals[" << i << "] = " << my_vals[i] << std::endl;
     }
-    
+
     my_vals.print();
-    
-    CONDUIT_INFO("numeric_strided_data_array");
+    END_EXAMPLE("numeric_strided_data_array");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, numeric_double_conversion_start)
 {
-    CONDUIT_INFO("numeric_double_conversion_start");
+    BEGIN_EXAMPLE("numeric_double_conversion");
 }
 
+// _conduit_tutorial_cpp_numeric_introspection_start
 //-----------------------------------------------------------------------------
 void must_have_doubles_function(double *vals,index_t num_vals)
 {
@@ -214,10 +205,11 @@ TEST(conduit_tutorial, numeric_double_conversion)
 
     process_doubles(n["double_vals"]);
 }
+// _conduit_tutorial_cpp_numeric_introspection_end
 
 //-----------------------------------------------------------------------------
 TEST(conduit_tutorial, numeric_double_conversion_end)
 {
-    CONDUIT_INFO("numeric_double_conversion_end");
+    END_EXAMPLE("numeric_double_conversion");
 }
 

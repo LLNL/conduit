@@ -73,7 +73,7 @@ namespace io
 zfp::array*
 unwrap_zfparray(const Node &node)
 {
-    Node compressed_data = node.fetch_child(ZFP_COMPRESSED_DATA_FIELD_NAME);
+    Node compressed_data = node.fetch_existing(ZFP_COMPRESSED_DATA_FIELD_NAME);
 
     // verify word size is readable with zfp
     // zfp's bitstream consists of uint words
@@ -105,7 +105,7 @@ unwrap_zfparray(const Node &node)
     }
 
     zfp::array::header header;
-    memcpy(header.buffer, node.fetch_child(ZFP_HEADER_FIELD_NAME).data_ptr(), sizeof(header));
+    memcpy(header.buffer, node.fetch_existing(ZFP_HEADER_FIELD_NAME).data_ptr(), sizeof(header));
 
     try {
         return zfp::array::construct(header, static_cast<uchar*>(compressed_data.data_ptr()), compressed_data.allocated_bytes());

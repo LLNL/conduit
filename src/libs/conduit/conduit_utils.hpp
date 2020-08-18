@@ -430,9 +430,32 @@ namespace utils
            return  oss.str();
      }
 
+
+//-----------------------------------------------------------------------------
+// Helpers to identify if a string contains an integer.
+//-----------------------------------------------------------------------------
+    bool CONDUIT_API string_is_integer(const std::string &s);
+
+//-----------------------------------------------------------------------------
+// Helper that wraps parsing a string value into another type.
+//-----------------------------------------------------------------------------
+    // declare then define to avoid icc warnings
+    template< typename T >
+    T string_to_value(const std::string &s);
+
+    template< typename T >
+    T string_to_value(const std::string &s)
+    {
+        T res;
+        std::istringstream iss(s);
+        iss >> res;
+        return  res;
+    }
+
+
 //-----------------------------------------------------------------------------
 // floating point to string helper, strikes a balance of what we want 
-// for format-wise for debug printing and json.
+// for format-wise for debug printing and json + yaml.
 //-----------------------------------------------------------------------------
     std::string CONDUIT_API float64_to_string(float64 value);
 

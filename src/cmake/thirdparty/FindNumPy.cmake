@@ -120,6 +120,9 @@ if(PYTHONINTERP_FOUND)
         if(NumPy_FIND_REQUIRED)
             message(FATAL_ERROR
                 "NumPy import failure:\n${_NUMPY_ERROR_VALUE}")
+        else()
+            message(STATUS
+                "NumPy import failure:\n${_NUMPY_ERROR_VALUE}")
         endif()
         set(NUMPY_FOUND FALSE)
     endif()

@@ -56,7 +56,9 @@ set(C_TESTS
 ################################
 message(STATUS "Adding conduit lib c interface unit tests")
 foreach(TEST ${C_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit )
+    add_cpp_test(TEST ${TEST}
+                 DEPENDS_ON conduit
+                 FOLDER tests/conduit/c)
 endforeach()
 
 

@@ -47,11 +47,11 @@
 ################################
 
 # add a target to generate documentation with Sphinx
-
 blt_add_sphinx_target( conduit_sphinx )
+blt_set_target_folder( TARGET conduit_sphinx FOLDER docs)
 
 if(DOXYGEN_FOUND)
-   add_dependencies(conduit_sphinx conduit_doxygen) 
+   add_dependencies(conduit_sphinx conduit_doxygen)
 endif()
 
 

@@ -54,7 +54,7 @@ of examples for Conduit's Core API and additional libraries.
 
    tutorial_cpp_basics
    tutorial_cpp_numeric
-   tutorial_cpp_json
+   tutorial_cpp_parse
    tutorial_cpp_ownership
    tutorial_cpp_update
    tutorial_cpp_errors

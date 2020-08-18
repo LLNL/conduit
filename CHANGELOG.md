@@ -4,14 +4,107 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## Unreleased 
+
+### Added
+
+#### General 
+- Added support for children with names that include `/`. Since slashes are part of Conduit's hierarchal path mechanism, you must use explicit methods (add_child(), child(), etc) to create and access children with these types of names. These names are also supported in all basic i/o cases (JSON, YAML, Conduit Binary).
+- Added Node::child and Schema::child methods, which provide access to existing children by name.
+- Added Node::fetch_existing and Schema::fetch_existing methods, which provide access to existing paths or error when given a bad path.
+- Added Node::add_child() and Node::remove_child() to support direct operatrions and cases where names have `/`s.
+- Added a set of conduit::utils::log::remove_* filtering functions, which process conduit log/info nodes and strip out the requested information (useful for focusing the often verbose output in log/info nodes).
+- Added to_string() and to_string_default() methods to Node, Schema, DataType, and DataArray. These methods alias either to_yaml() or to_json(). Long term yaml will be preferred over json, but Schema does not support yaml yet.
+- Added helper script (scripts/regen_docs_outputs.py) that regenerates all example outputs used Conduit's Sphinx docs.
+
+#### Relay
+- Added an open mode option to Relay IOHandle. See Relay IOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
+- Added the conduit.relay.mpi Python module to support Relay MPI in Python.
+- Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
+- Added preliminary support to read Sidre Datastore-style HDF5 using Relay IOHandle,  those grouped with a root file.
+- Added `conduit::relay::io::blueprint::load_mesh` functions, were pulled in from Ascent's Blueprint import logic.
+
+#### Blueprint
+- Added support for sparse one-to-many relationships with the new `blueprint::o2mrelation` protocol. See the `blueprint::o2mrelation::examples::uniform` example for details.
+- Added sparse one-to-many, uni-buffer, and material-dominant specification support to Material sets. See the Material sets documentation
+(https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#material-sets) for more details.
+- Added support for Adjacency sets for Structured Mesh Topologies. See the `blueprint::mesh::examples::adjset_uniform` example.
+- Added `blueprint::mesh::examples::julia_nestsets_simple` and `blueprint::mesh::examples::julia_nestsets_complex` examples represent Julia set fractals using patch-based AMR meshes and the Mesh Blueprint Nesting Set protocol. See the Julia AMR Blueprint docs
+(https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#julia-amr-examples) for more details.
+- Added `blueprint::mesh::examples::venn` example that demonstrates different ways to encode volume fraction based multi-material fields.  See the Venn Blueprint docs
+(https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#venn) for more details.
+- Added `blueprint::mesh::number_of_domains` property method for trees that conform to the mesh blueprint.
+- Added MPI mesh blueprint methods, `blueprint::mpi::mesh::verify` and  `blueprint::mpi::mesh::number_of_domains` (available in the `conduit_blueprint_mpi` library)
+- Added `blueprint::mpi::mesh::examples::braid_uniform_multi_domain` and `blueprint::mpi::mesh::examples::spiral_round_robin` distributed-memory mesh examples to the `conduit_blueprint_mpi` library.
+
+
+### Fixed
+
+#### General 
+- Updated to BLT v0.3.0 to resolve BLT/FindMPI issues with rpath linking commands when using OpenMPI.
+
+
+#### Relay
+- Use H5F_ACC_RDONLY in relay::io::is_hdf5_file to avoid errors when checking files that already have open HDF5 handles.
+
+### Changed
+
+#### General 
+- Node::fetch_child and Schema::fetch_child are deprecated in favor of the more clearly named Node::fetch_existing and Schema::fetch_existing. fetch_child variants still exist, but will be removed in a future release.
+- Python str() methods for Node, Schema, and DataType now use their new to_string() methods.
+- DataArray<T>::to_json(std::ostring &) is deprecated in favor DataArray<T>::to_json_stream. to_json(std::ostring &) will be removed in a future release.
+- Schema::to_json and Schema::save variants with detailed (bool) arg are deprecated. The detailed arg was never used. These methods will be removed in a future release.
+- Node::print() now prints yaml instead of json.
+- The string return variants of `about` methods now return yaml strings instead of json strings.
+- Sphinx Docs code examples and outputs are now included using start-after and end-before style includes.
+
+#### Relay
+- Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.
+- `conduit::relay::io_blueprint::save` functions are deprecated in favor of `conduit::relay::io::blueprint::save_mesh`
+- `conduit::relay::io::blueprint::save_mesh` functions were pulled in from Ascent's Blueprint export logic.
+- `conduit_relay_io_mpi` lib now depends on `conduit_relay_io`. Due to this change, a single build supports either ADIOS serial (no-mpi) or ADIOS with MPI support, but not both. If conduit is configured with MPI support, ADIOS MPI is used.
+
+
+#### Blueprint
+- Refactored the Polygonal and Polyhedral mesh blueprint specification to leverage one-to-many concepts and to allow more zero-copy use cases.
+- The `conduit_blueprint_mpi` library now depends on `conduit_relay_mpi`.
+
+
+## [0.5.1] - Released 2020-01-18
+
+### Added
+
+#### General 
+- Added Node::parse() method, (C++, Python and Fortran) which supports common json and yaml parsing use cases without creating a generator instance.
+- Use FOLDER target property to group targets for Visual Studio
+- Added Node load(), and save() support to the C and Fortran APIs
+
+### Changed
+
+#### General 
+- Node::load() and Node::save() now auto detect which protocol to use when protocol argument is an empty string
+- Changed Node::load() and Node::save() default protocol value to empty (default now is to auto detect)
+- Changed Python linking strategy to defer linking for our compiler modules
+- Conduit Error Exception message strings now print cleaner (avoiding nesting doll string escaping headaches)
+- Build system improvements to support conda-forge builds for Linux, macOS, and Windows
+
+### Fixed
+
+#### General 
+- Fixed install paths for CMake exported target files to follow standard CMake find_package() search conventions. Also perserved duplicate files to support old import path structure for this release.
+- python: Fixed Node.set_external() to accept conduit nodes as well as numpy arrays
+- Fixed dll install locations for Windows
+
+
+## [0.5.0] - Released 2019-10-25
 
 ### Added
 
 #### General 
 - Added support to parse YAML into Conduit Nodes and to create YAML from Conduit Nodes. Support closely follows the "json" protocol, making similar choices related to promoting YAML string leaves to concrete data types.
 - Added several more Conduit Node methods to the C and Fortran APIs. Additions are enumerated here:  https://github.com/LLNL/conduit/pull/426
+- Added Node set support for Python Tuples and Lists with numeric and string entires
+- Added Node set support for Numpy String Arrays. String Arrays become Conduit lists with child char8_str arrays
 
 
 #### Blueprint
@@ -20,6 +113,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
 - Added explicit topological data generation functions for points, lines, and faces
 - Added derived topology generation functions for element centroids, sides, and corners
+- Added the basic example function to the conduit.mesh.blueprint.examples module
 
 #### Relay
 - Added optional ZFP support to relay, that enables wrapping and unwraping zfp arrays into conduit Nodes. 
@@ -28,6 +122,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 #### General 
+- Conduit's automatic build process (uberenv + spack) now defaults to using Python 3
 - Improved CMake export logic to make it easier to find and use Conduit install in a CMake-based build system. (See using-with-cmake example for new recipe)
 
 #### Relay
@@ -44,6 +139,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 
 - Fixed crash with mpi broadcast_using_schema() when receiving tasks pass a non empty Node.
+- Fixed a few Windows API export issues for relay io
 
 ## [0.4.0] - Released 2019-03-01
 
@@ -279,7 +375,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/llnl/conduit/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/llnl/conduit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/llnl/conduit/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/llnl/conduit/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/llnl/conduit/compare/v0.2.1...v0.3.0

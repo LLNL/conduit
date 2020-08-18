@@ -171,6 +171,16 @@ module conduit
      end function c_conduit_node_fetch
 
      !--------------------------------------------------------------------------
+     function c_conduit_node_fetch_existing(cnode, path) result(res) &
+              bind(C, name="conduit_node_fetch_existing")
+          use iso_c_binding
+          implicit none
+          type(C_PTR), value, intent(IN) :: cnode
+          character(kind=C_CHAR), intent(IN) :: path(*)
+          type(C_PTR) :: res
+      end function c_conduit_node_fetch_existing
+
+     !--------------------------------------------------------------------------
      function conduit_node_append(cnode) result(res) &
               bind(C, name="conduit_node_append")
           use iso_c_binding
@@ -190,6 +200,16 @@ module conduit
        end function conduit_node_child
 
     !--------------------------------------------------------------------------
+    function c_conduit_node_child_by_name(cnode,name) result(res) &
+            bind(C, name="conduit_node_child_by_name")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: name(*)
+        type(C_PTR) :: res
+    end function c_conduit_node_child_by_name
+
+    !--------------------------------------------------------------------------
     ! node info methods
     !--------------------------------------------------------------------------
 
@@ -203,23 +223,23 @@ module conduit
      end function conduit_node_is_root
 
 
-     !--------------------------------------------------------------------------
-     function conduit_node_is_data_external(cnode) result(res) &
-              bind(C, name="conduit_node_is_data_external")
-          use iso_c_binding
-          implicit none
-          type(C_PTR), value, intent(IN) :: cnode
-          logical(C_BOOL) :: res
-      end function conduit_node_is_data_external
+    !--------------------------------------------------------------------------
+    function conduit_node_is_data_external(cnode) result(res) &
+          bind(C, name="conduit_node_is_data_external")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        logical(C_BOOL) :: res
+    end function conduit_node_is_data_external
 
-      !--------------------------------------------------------------------------
-      function conduit_node_parent(cnode) result(res) &
-               bind(C, name="conduit_node_parent")
-           use iso_c_binding
-           implicit none
-           type(C_PTR), value, intent(IN) :: cnode
-           type(C_PTR) :: res
-       end function conduit_node_parent
+    !--------------------------------------------------------------------------
+    function conduit_node_parent(cnode) result(res) &
+           bind(C, name="conduit_node_parent")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        type(C_PTR) :: res
+    end function conduit_node_parent
 
     !--------------------------------------------------------------------------
     function conduit_node_number_of_elements(cnode) result(res) &
@@ -266,7 +286,26 @@ module conduit
            type(C_PTR), value, intent(IN) :: cnode
            integer(C_SIZE_T), value, intent(in) :: idx
       end subroutine conduit_node_remove_child
-       
+
+      !--------------------------------------------------------------------------
+      function c_conduit_node_add_child(cnode,name) result(res) &
+               bind(C, name="conduit_node_add_child")
+           use iso_c_binding
+           implicit none
+           type(C_PTR), value, intent(IN) :: cnode
+           character(kind=C_CHAR), intent(IN) :: name(*)
+           type(C_PTR) :: res
+      end function c_conduit_node_add_child
+
+      !--------------------------------------------------------------------------
+      subroutine c_conduit_node_remove_child_by_name(cnode,name) &
+               bind(C, name="conduit_node_remove_child_by_name")
+           use iso_c_binding
+           implicit none
+           type(C_PTR), value, intent(IN) :: cnode
+           character(kind=C_CHAR), intent(IN) :: name(*)
+      end subroutine c_conduit_node_remove_child_by_name
+
       !--------------------------------------------------------------------------
       subroutine c_conduit_node_rename_child(cnode,old_name, new_name) &
                 bind(C, name="conduit_node_rename_child")
@@ -423,6 +462,40 @@ module conduit
            type(C_PTR), value, intent(IN) :: cnode
            type(C_PTR), value, intent(IN) :: cdest
         end subroutine conduit_node_update_external
+
+    !--------------------------------------------------------------------------
+    ! -- basic io, parsing, and generation ---
+    !--------------------------------------------------------------------------
+    
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_parse(cnode, schema, protocol) &
+        bind(C, name="conduit_node_parse")
+    use iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(IN) :: cnode
+    character(kind=C_CHAR), intent(IN) :: schema(*)
+    character(kind=C_CHAR), intent(IN) :: protocol(*)
+    end subroutine c_conduit_node_parse
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_load(cnode, path, protocol) &
+        bind(C, name="conduit_node_load")
+    use iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(IN) :: cnode
+    character(kind=C_CHAR), intent(IN) :: path(*)
+    character(kind=C_CHAR), intent(IN) :: protocol(*)
+    end subroutine c_conduit_node_load
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_save(cnode, path, protocol) &
+        bind(C, name="conduit_node_save")
+    use iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(IN) :: cnode
+    character(kind=C_CHAR), intent(IN) :: path(*)
+    character(kind=C_CHAR), intent(IN) :: protocol(*)
+    end subroutine c_conduit_node_save
 
      !--------------------------------------------------------------------------
      ! node print helpers
@@ -1142,6 +1215,16 @@ contains
         res = c_conduit_node_fetch(cnode, trim(path) // C_NULL_CHAR)
     end function conduit_node_fetch
 
+    !--------------------------------------------------------------------------
+    function conduit_node_fetch_existing(cnode, path) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        type(C_PTR) :: res
+        !---
+        res = c_conduit_node_fetch_existing(cnode, trim(path) // C_NULL_CHAR)
+    end function conduit_node_fetch_existing
 
     !--------------------------------------------------------------------------
     function conduit_node_has_child(cnode, name) result(res)
@@ -1155,6 +1238,28 @@ contains
     end function conduit_node_has_child
 
     !--------------------------------------------------------------------------
+    function conduit_node_add_child(cnode, name) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: name
+        type(C_PTR) :: res
+        !---
+        res = c_conduit_node_add_child(cnode, trim(name) // C_NULL_CHAR)
+    end function conduit_node_add_child
+
+    !--------------------------------------------------------------------------
+    function conduit_node_child_by_name(cnode, name) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: name
+        type(C_PTR) :: res
+        !---
+        res = c_conduit_node_child_by_name(cnode, trim(name) // C_NULL_CHAR)
+    end function conduit_node_child_by_name
+
+    !--------------------------------------------------------------------------
     subroutine conduit_node_remove_path(cnode, path)
         use iso_c_binding
         implicit none
@@ -1163,6 +1268,16 @@ contains
         !---
         call c_conduit_node_remove_path(cnode, trim(path) // C_NULL_CHAR)
     end subroutine conduit_node_remove_path
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_remove_child_by_name(cnode, name)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: name
+        !---
+        call c_conduit_node_remove_child_by_name(cnode, trim(name) // C_NULL_CHAR)
+    end subroutine conduit_node_remove_child_by_name
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_rename_child(cnode, old_name, new_name)
@@ -1174,6 +1289,39 @@ contains
         !---
         call c_conduit_node_rename_child(cnode, trim(old_name) // C_NULL_CHAR, trim(new_name) // C_NULL_CHAR)
     end subroutine conduit_node_rename_child
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_parse(cnode, schema, protocol )
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: schema
+        character(*), intent(IN) :: protocol
+        !---
+        call c_conduit_node_parse(cnode, trim(schema) // C_NULL_CHAR, trim(protocol) // C_NULL_CHAR)
+    end subroutine conduit_node_parse
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_save(cnode, path, protocol )
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        character(*), intent(IN) :: protocol
+        !---
+        call c_conduit_node_save(cnode, trim(path) // C_NULL_CHAR, trim(protocol) // C_NULL_CHAR)
+    end subroutine conduit_node_save
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_load(cnode, path, protocol )
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        character(*), intent(IN) :: protocol
+        !---
+        call c_conduit_node_load(cnode, trim(path) // C_NULL_CHAR, trim(protocol) // C_NULL_CHAR)
+    end subroutine conduit_node_load
 
     !--------------------------------------------------------------------------
     function conduit_node_has_path(cnode, path) result(res)

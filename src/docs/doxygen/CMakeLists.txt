@@ -49,5 +49,6 @@
 # add a target to generate API documentation with Doxygen
 
 blt_add_doxygen_target( conduit_doxygen )
+blt_set_target_folder( TARGET conduit_doxygen FOLDER docs)
 
 

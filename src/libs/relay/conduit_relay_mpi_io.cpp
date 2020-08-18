@@ -67,7 +67,7 @@
 #include "conduit_relay_mpi_io_silo.hpp"
 #endif
 
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
 #include "conduit_relay_mpi_io_adios.hpp"
 #endif
 
@@ -101,7 +101,7 @@ about(MPI_Comm comm)
 {
     Node n;
     io::about(n, comm);
-    return n.to_json();
+    return n.to_yaml();
 }
 
 //---------------------------------------------------------------------------//
@@ -150,7 +150,7 @@ about(Node &n, MPI_Comm comm)
 #endif
 
     // ADIOS aware
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
     io_protos["adios"] = "enabled";
     adios_options(n["io/options/adios"], comm);
 #else
@@ -164,7 +164,7 @@ about(Node &n, MPI_Comm comm)
 void
 initialize(MPI_Comm comm)
 {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
     adios_initialize_library(comm);
 #else 
     CONDUIT_UNUSED(comm);
@@ -175,7 +175,7 @@ initialize(MPI_Comm comm)
 void
 finalize(MPI_Comm comm)
 {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
     adios_finalize_library(comm);
 #else 
     CONDUIT_UNUSED(comm);
@@ -278,7 +278,7 @@ save(const Node &node,
             hdf5_set_options(prev_options);
         }
 #else
-        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks HDF5 support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -287,7 +287,7 @@ save(const Node &node,
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks Silo support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -296,13 +296,13 @@ save(const Node &node,
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_mesh_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks Silo support: " << 
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
     else if( protocol == "adios")
     {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
         Node prev_options;
         if(options.has_child("adios"))
         {
@@ -318,7 +318,7 @@ save(const Node &node,
         }
 #else
         CONDUIT_UNUSED(comm);
-        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -398,7 +398,7 @@ save_merged(const Node &node,
         n.update(node);
         silo_write(n,path);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks Silo support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -408,13 +408,13 @@ save_merged(const Node &node,
         /// TODO .. ?
         silo_mesh_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks Silo support: " << 
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
     else if( protocol == "adios")
     {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
         Node prev_options;
         if(options.has_child("adios"))
         {
@@ -430,7 +430,7 @@ save_merged(const Node &node,
         }
 #else
         CONDUIT_UNUSED(comm);
-        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks ADIOS support: " << 
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -480,7 +480,7 @@ add_step(const Node &node,
     
     if(protocol == "adios")
     {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
 
         Node prev_options;
         if(options.has_child("adios"))
@@ -558,7 +558,7 @@ load(const std::string &path,
             hdf5_set_options(prev_options);
         }
 #else
-        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks HDF5 support: " << 
                       "Failed to load conduit node from path " << path);
 #endif
     }
@@ -578,7 +578,7 @@ load(const std::string &path,
     }
     else if( protocol == "adios")
     {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
         Node prev_options;
         if(options.has_child("adios"))
         {
@@ -595,7 +595,7 @@ load(const std::string &path,
         }
 #else
         CONDUIT_UNUSED(comm);
-        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
     }
@@ -649,7 +649,7 @@ load(const std::string &path,
         node.reset();
         hdf5_read(path,node);
 #else
-        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks HDF5 support: " << 
                       "Failed to load conduit node from path " << path);
 #endif
     }
@@ -669,7 +669,7 @@ load(const std::string &path,
     }
     else if( protocol == "adios")
     {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
         
         Node prev_options;
         if(options.has_child("adios"))
@@ -690,7 +690,7 @@ load(const std::string &path,
         CONDUIT_UNUSED(domain);
         CONDUIT_UNUSED(options);
         CONDUIT_UNUSED(comm);
-        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks ADIOS support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
     }
@@ -747,7 +747,7 @@ load_merged(const std::string &path,
         hdf5_read(path,n);
         node.update(n);
 #else
-        CONDUIT_ERROR("relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks HDF5 support: " << 
                       "Failed to read conduit node from path " << path);
 #endif
     }
@@ -758,7 +758,7 @@ load_merged(const std::string &path,
         silo_read(path,n);
         node.update(n);
 #else
-        CONDUIT_ERROR("relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks Silo support: " << 
                     "Failed to load conduit node from path " << path);
 #endif
     }
@@ -769,13 +769,13 @@ load_merged(const std::string &path,
     }
     else if( protocol == "adios")
     {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
         Node n;
         adios_load(path,n,comm);
         node.update(n);
 #else
         CONDUIT_UNUSED(comm);
-        CONDUIT_ERROR("relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay_mpi_io lacks ADIOS support: " << 
                       "Failed to read conduit node from path " << path);
 #endif
     }
@@ -796,7 +796,7 @@ int query_number_of_steps(const std::string &path, MPI_Comm comm)
 
     if(protocol == "adios")
     {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
         // TODO: see if we can do this on comm's rank 0 and bcast.
         nsteps = adios_query_number_of_steps(path, comm);
 #else
@@ -816,7 +816,7 @@ int query_number_of_domains(const std::string &path, MPI_Comm comm)
 
     if(protocol == "adios")
     {
-#ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
+#ifdef CONDUIT_RELAY_IO_MPI_ADIOS_ENABLED
         // TODO: see if we can do this on comm's rank 0 and bcast.
         ndoms = adios_query_number_of_domains(path, comm);
 #else

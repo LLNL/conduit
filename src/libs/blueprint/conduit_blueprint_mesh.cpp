@@ -69,6 +69,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mcarray.hpp"
+#include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
 
@@ -568,7 +569,8 @@ bool verify_mlarray_field(const std::string &protocol,
                           conduit::Node &info,
                           const std::string &field_name,
                           const index_t min_depth,
-                          const index_t max_depth)
+                          const index_t max_depth,
+                          const bool leaf_uniformity)
 {
     Node &field_info = info[field_name];
 
@@ -576,7 +578,7 @@ bool verify_mlarray_field(const std::string &protocol,
     if(res)
     {
         const Node &field_node = node[field_name];
-        res = blueprint::mlarray::verify(field_node,field_info,min_depth,max_depth);
+        res = blueprint::mlarray::verify(field_node,field_info,min_depth,max_depth,leaf_uniformity);
         if(res)
         {
             log::info(info, protocol, log::quote(field_name) + "is an mlarray");
@@ -584,6 +586,35 @@ bool verify_mlarray_field(const std::string &protocol,
         else
         {
             log::error(info, protocol, log::quote(field_name) + "is not an mlarray");
+        }
+    }
+
+    log::validation(field_info, res);
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool verify_o2mrelation_field(const std::string &protocol,
+                              const conduit::Node &node,
+                              conduit::Node &info,
+                              const std::string &field_name)
+{
+    Node &field_info = info[field_name];
+
+    bool res = verify_field_exists(protocol, node, info, field_name);
+    if(res)
+    {
+        const Node &field_node = node[field_name];
+        res = blueprint::o2mrelation::verify(field_node,field_info);
+        if(res)
+        {
+            log::info(info, protocol, log::quote(field_name) + "describes a one-to-many relation");
+        }
+        else
+        {
+            log::error(info, protocol, log::quote(field_name) + "doesn't describe a one-to-many relation");
         }
     }
 
@@ -667,6 +698,81 @@ bool verify_reference_field(const std::string &protocol,
     log::validation(info, res);
 
     return res;
+}
+
+//-----------------------------------------------------------------------------
+bool verify_poly_node(bool is_mixed_topo,
+                      std::string name,
+                      const conduit::Node &node,
+                      conduit::Node &node_info,
+                      const conduit::Node &topo,
+                      conduit::Node &info,
+                      bool &elems_res)
+{
+    const std::string protocol = "mesh::topology::unstructured";
+    bool node_res = true;
+
+    // Polygonal & Polyhedral shape
+    if(node.has_child("shape") && 
+       node["shape"].dtype().is_string() &&
+       (node["shape"].as_string() == "polygonal" || 
+       node["shape"].as_string() == "polyhedral"))
+    {
+        node_res &= blueprint::o2mrelation::verify(node, node_info);
+        
+        // Polyhedral - Check for subelements
+        if (node["shape"].as_string() == "polyhedral")
+        {
+            bool subnode_res = true;
+            if(!verify_object_field(protocol, topo, info, "subelements"))
+            {
+                subnode_res = false;
+            }
+            else 
+            {
+                const Node &topo_subelems = topo["subelements"];
+                Node &info_subelems = info["subelements"];
+                bool has_subnames = topo_subelems.dtype().is_object();
+
+                // Look for child "name" if mixed topology case,
+                // otherwise look for "shape" variable.
+                name = is_mixed_topo ? name : "shape";
+                if(!topo_subelems.has_child(name))
+                {
+                    subnode_res = false;
+                }
+                // Checks for topo["subelements"]["name"]["shape"] with mixed topology,
+                // or topo["subelements"]["shape"] with single topology,
+                else
+                {
+                    const Node &sub_node  = is_mixed_topo ? topo_subelems[name] : topo_subelems;
+                    Node &subnode_info = 
+                        !is_mixed_topo ? info_subelems : 
+                        has_subnames ? info["subelements"][name] :
+                        info["subelements"].append();
+
+                    if(sub_node.has_child("shape"))
+                    {
+                        subnode_res &= verify_field_exists(protocol, sub_node, subnode_info, "shape") &&
+                        blueprint::mesh::topology::shape::verify(sub_node["shape"], subnode_info["shape"]);
+                        subnode_res &= verify_integer_field(protocol, sub_node, subnode_info, "connectivity");
+                        subnode_res &= sub_node["shape"].as_string() == "polygonal";  
+                        subnode_res &= blueprint::o2mrelation::verify(sub_node, subnode_info);
+                    }
+                    else
+                    {
+                        subnode_res = false;
+                    }
+
+                    log::validation(subnode_info,subnode_res);
+                }
+                log::validation(info_subelems, subnode_res);
+            }
+            elems_res &= subnode_res;
+        }
+    }
+
+    return node_res;
 }
 
 //-----------------------------------------------------------------------------
@@ -1013,6 +1119,7 @@ struct TopologyMetadata
         dim_topos[topo_shape.dim]["elements/offsets"].set(topo_offsets);
 
         std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
+        std::vector< std::vector<int64> > dim_sizes(topo_shape.dim + 1);
         std::vector< int64 > dim_offsets(topo_shape.dim + 1);
 
         // Prepare Initial Values for Processing //
@@ -1068,6 +1175,7 @@ struct TopologyMetadata
             entity_parent_bag.pop_back();
 
             std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
+            std::vector<int64> &dim_size = dim_sizes[entity_dim];
             int64 &dim_offset = dim_offsets[entity_dim];
             std::map< std::set<index_t>, index_t > &dim_entity_map = dim_entity_maps[entity_dim];
             ShapeType dim_shape = topo_cascade.get_shape(entity_dim);
@@ -1085,18 +1193,47 @@ struct TopologyMetadata
                 entity = std::set<int64>(entity_indices.begin(), entity_indices.end());
             }
             else
-            {
+            {   
+                // Number of faces()
                 const bool is_3d = dim_shape.dim == 3;
-                index_t elem_outer_count =  is_3d ? entity_indices[0] : 1;
-                for(index_t oi = 0, ooff = is_3d; oi < elem_outer_count; oi++)
+                index_t elem_outer_count =  is_3d ? entity_indices.size() : 1;
+                Node temp;
+                for(index_t oi = 0, ooff = 0 ; oi < elem_outer_count; oi++)
                 {
-                    index_t elem_inner_count = entity_indices[ooff++];
+                    index_t elem_inner_count = entity_indices.size();
+                    if (is_3d)
+                    {
+                        const Node &subelem_off_const = (*topo)["subelements/offsets"];
+                        const Node &subelem_size_const = (*topo)["subelements/sizes"];
+
+                        Node subelem_off; subelem_off.set_external(subelem_off_const);
+                        Node subelem_size; subelem_size.set_external(subelem_size_const);
+
+                        temp.set_external(int_dtype,
+                            subelem_off.element_ptr(entity_indices[oi]));
+                        ooff = temp.to_int64();
+                        temp.set_external(int_dtype,
+                            subelem_size.element_ptr(entity_indices[oi]));
+                        elem_inner_count = temp.to_int64();
+                    }
+
                     for(index_t ii = 0; ii < elem_inner_count; ii++)
                     {
                         index_t ioff = ooff + ii;
-                        entity.insert(entity_indices[ioff]);
+                        if (is_3d)
+                        {
+                            const Node &subelem_conn_const = (*topo)["subelements/connectivity"];
+                            Node subelem_conn; subelem_conn.set_external(subelem_conn_const);
+
+                            temp.set_external(int_dtype,
+                                subelem_conn.element_ptr(ioff));
+                            entity.insert(temp.to_int64());
+                        }
+                        else
+                        {
+                            entity.insert(entity_indices[ioff]);
+                        }
                     }
-                    ooff += elem_inner_count;
                 }
             }
 
@@ -1105,6 +1242,11 @@ struct TopologyMetadata
                 index_t entity_id = dim_offset;
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
                 dim_entity_map[entity] = dim_offset++;
+
+                if (dim_shape.is_polygonal())
+                {
+                  dim_size.push_back(entity.size());
+                }
 
                 dim_assocs[entity_dim][entity_id].resize(topo_shape.dim + 1);
                 dim_assocs[entity_dim][entity_id][entity_dim].insert(entity_id);
@@ -1138,31 +1280,54 @@ struct TopologyMetadata
                 ShapeType embed_shape = topo_cascade.get_shape(entity_dim - 1);
 
                 index_t elem_outer_count = dim_shape.is_poly() ?
-                    entity_indices[0] : dim_shape.embed_count;
-                for(index_t oi = 0, ooff = dim_shape.is_poly();
+                    entity_indices.size() : dim_shape.embed_count;
+                
+                Node temp; 
+                for(index_t oi = 0, ooff = 0;
                     oi < elem_outer_count; oi++)
                 {
-                    index_t elem_inner_count = dim_shape.is_polyhedral() ?
-                        (entity_indices[ooff] + 1) : embed_shape.indices;
+                    index_t elem_inner_count = embed_shape.indices;
+
+                    if (dim_shape.is_polyhedral())
+                    {
+                        const Node &subelem_off_const = (*topo)["subelements/offsets"];
+                        const Node &subelem_size_const = (*topo)["subelements/sizes"];
+
+                        Node subelem_off; subelem_off.set_external(subelem_off_const);
+                        Node subelem_size; subelem_size.set_external(subelem_size_const);
+
+                        temp.set_external(int_dtype,
+                            subelem_off.element_ptr(entity_indices[oi]));
+                        ooff = temp.to_int64();
+                        temp.set_external(int_dtype,
+                            subelem_size.element_ptr(entity_indices[oi]));
+                        elem_inner_count = temp.to_int64();
+                    }
 
                     std::vector<int64> embed_indices;
                     for(index_t ii = 0; ii < elem_inner_count; ii++)
                     {
                         index_t ioff = ooff + (dim_shape.is_poly() ?
                             ii : dim_shape.embedding[oi * elem_inner_count + ii]);
-                        embed_indices.push_back(
-                            entity_indices[ioff % entity_indices.size()]);
-                    }
-                    ooff += (
-                        dim_shape.is_polyhedral() ? elem_inner_count : (
-                        dim_shape.is_polygonal() ? 1 : 0));
+                        
+                        if (dim_shape.is_polyhedral())
+                        {
+                            const Node &subelem_conn_const = (*topo)["subelements/connectivity"];
+                            Node subelem_conn; subelem_conn.set_external(subelem_conn_const);
 
-                    // TODO(JRC): This is a hack to ensure that the last edge
-                    // value for polygonal edge lists is correct.
-                    if(dim_shape.is_polygonal() && oi == elem_outer_count - 1)
-                    {
-                        embed_indices[1] = entity_indices[1];
+                            temp.set_external(int_dtype,
+                                subelem_conn.element_ptr(ioff));
+                            embed_indices.push_back(temp.to_int64());
+                        }
+                        else
+                        {
+                            embed_indices.push_back(
+                                entity_indices[ioff % entity_indices.size()]);
+                        }
+
                     }
+
+                    ooff += dim_shape.is_polygonal() ? 1 : 0;
 
                     entity_index_bag.push_back(embed_indices);
                     entity_dim_bag.push_back(embed_shape.dim);
@@ -1181,6 +1346,20 @@ struct TopologyMetadata
 
             dim_conn.set(DataType(int_dtype.id(), dim_buffers[di].size()));
             data_conn.to_data_type(int_dtype.id(), dim_conn);
+
+            // Generate size for polygonal mesh
+            if (di == 2)
+            {
+                Node &dim_size = dim_topos[di]["elements/sizes"];
+                if (dim_size.dtype().is_empty())
+                {
+                  Node data_size(DataType::int64(dim_sizes[di].size()),
+                       &(dim_sizes[di][0]), true);
+                  dim_size.set(DataType(int_dtype.id(), dim_sizes[di].size()));
+                  data_size.to_data_type(int_dtype.id(), dim_size);
+                }
+            }
+
             get_topology_offsets(dim_topos[di], dim_topos[di]["elements/offsets"]);
         }
     }
@@ -1277,10 +1456,10 @@ struct TopologyMetadata
         {
             index_t entity_index = entity_index_bag.back();
             entity_index_bag.pop_back();
-            index_t entity_dim = entity_dim_bag.back();
+            index_t entity_dim_back = entity_dim_bag.back();
             entity_dim_bag.pop_back();
 
-            if(entity_dim == embed_dim)
+            if(entity_dim_back == embed_dim)
             {
                 bool embed_exists = embed_set.find(entity_index) == embed_set.end();
                 if(!unique || !embed_exists)
@@ -1292,12 +1471,12 @@ struct TopologyMetadata
             else
             {
                 const std::set<index_t> &embed_ids = get_entity_assocs(
-                    entity_index, entity_dim, entity_dim - 1);
+                    entity_index, entity_dim_back, entity_dim_back - 1);
                 for(std::set<index_t>::const_iterator embed_it = embed_ids.begin();
                     embed_it != embed_ids.end(); embed_it++)
                 {
                     entity_index_bag.push_back(*embed_it);
-                    entity_dim_bag.push_back(entity_dim - 1);
+                    entity_dim_bag.push_back(entity_dim_back - 1);
                 }
             }
         }
@@ -1618,7 +1797,7 @@ convert_topology_to_unstructured(const std::string &base_type,
         num_elems *= edims_axes[d];
         vdims_axes[d] = edims_axes[d] + 1;
     }
-    index_t indices_per_elem = pow(2, csys_axes.size());
+    index_t indices_per_elem = (index_t) pow(2, csys_axes.size());
 
     conduit::Node &conn_node = dest["elements/connectivity"];
     conn_node.set(DataType(int_dtype.id(), num_elems * indices_per_elem));
@@ -1694,6 +1873,23 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     const ShapeCascade topo_cascade(topo);
     const ShapeType &topo_shape = topo_cascade.get_shape();
 
+    Node topo_sizes;
+    if (topo_shape.is_poly())
+    {
+      topo_sizes = topo["elements/sizes"];
+    }
+
+    Node topo_subconn;
+    Node topo_subsizes;
+    Node topo_suboffsets;
+    if (topo_shape.is_polyhedral())
+    {
+        const Node &topo_subconn_const = topo["subelements/connectivity"];
+        topo_subconn.set_external(topo_subconn_const);
+        topo_subsizes = topo["subelements/sizes"];
+        topo_suboffsets = topo["subelements/offsets"];
+    }
+
     // Discover Data Types //
 
     DataType int_dtype, float_dtype;
@@ -1709,6 +1905,11 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     Node topo_conn; topo_conn.set_external(topo_conn_const);
     const DataType conn_dtype(topo_conn.dtype().id(), 1);
     const DataType offset_dtype(topo_offsets.dtype().id(), 1);
+    const DataType size_dtype(topo_sizes.dtype().id(), 1);
+
+    const DataType subconn_dtype(topo_subconn.dtype().id(), 1);
+    const DataType suboffset_dtype(topo_suboffsets.dtype().id(), 1);
+    const DataType subsize_dtype(topo_subsizes.dtype().id(), 1);
 
     // Allocate Data Templates for Outputs //
 
@@ -1730,27 +1931,56 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     Node data_node;
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
+        index_t esize;
+        if (topo_shape.is_polygonal())
+        {
+            data_node.set_external(size_dtype, topo_sizes.element_ptr(ei));
+            esize = data_node.to_int64();
+        }
         data_node.set_external(offset_dtype, topo_offsets.element_ptr(ei));
         const index_t eoffset = data_node.to_int64();
-        data_node.set_external(conn_dtype, topo_conn.element_ptr(eoffset));
+
+        if (topo_shape.is_polyhedral())
+        {
+            data_node.set_external(size_dtype, topo_sizes.element_ptr(ei));
+        }
         const index_t elem_num_faces = topo_shape.is_polyhedral() ?
             data_node.to_int64() : 1;
 
         std::set<index_t> elem_coord_indices;
-        for(index_t fi = 0, foffset = eoffset + topo_shape.is_polyhedral();
+        for(index_t fi = 0, foffset = eoffset;
             fi < elem_num_faces; fi++)
         {
-            data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
-            const index_t face_num_coords = topo_shape.is_poly() ?
-                data_node.to_int64() : topo_shape.indices;
-            foffset += topo_shape.is_poly();
+
+            index_t subelem_index, subelem_offset, subelem_size = 0;
+            if (topo_shape.is_polyhedral())
+            {
+                data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
+                subelem_index = data_node.to_int64();
+                data_node.set_external(suboffset_dtype, topo_suboffsets.element_ptr(subelem_index));
+                subelem_offset = data_node.to_int64();
+                data_node.set_external(subsize_dtype, topo_subsizes.element_ptr(subelem_index));
+                subelem_size = data_node.to_int64();
+            }
+
+            const index_t face_num_coords = 
+                topo_shape.is_polyhedral() ? subelem_size :
+                topo_shape.is_polygonal() ? esize :
+                topo_shape.indices;
 
             for(index_t ci = 0; ci < face_num_coords; ci++)
             {
-                data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset + ci));
-                elem_coord_indices.insert(data_node.to_int64());
+                if (topo_shape.is_polyhedral())
+                {
+                    data_node.set_external(subconn_dtype, topo_subconn.element_ptr(subelem_offset + ci));
+                }
+                else
+                {
+                    data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset + ci)); 
+                }
+                elem_coord_indices.insert(data_node.to_int64());  
             }
-            foffset += face_num_coords;
+            foffset += topo_shape.is_polyhedral() ? 1 : face_num_coords;
         }
 
         float64 ecentroid[3] = {0.0, 0.0, 0.0};
@@ -2168,6 +2398,25 @@ bool mesh::is_multi_domain(const conduit::Node &n)
 
     return !n.has_child("coordsets");
 }
+
+//-------------------------------------------------------------------------
+index_t
+mesh::number_of_domains(const conduit::Node &n)
+{
+    // this is a blueprint property, we can assume it will be called 
+    // only when mesh verify is true. Given that - it is easy to 
+    // answer the number of domains
+
+    if(!is_multi_domain(n))
+    {
+        return 1;
+    }
+    else
+    {
+        return n.number_of_children();
+    }
+}
+
 
 
 //-------------------------------------------------------------------------
@@ -4054,8 +4303,8 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
             const std::string chld_name = itr.name();
             if(!chld.dtype().is_number())
             {
-                log::error(info, protocol, "value child \"" + chld_name + "\" " +
-                                           "is not a number array");
+                log::error(info, protocol, "value child " + log::quote(chld_name) +
+                                           " is not a number array");
                 res = false;
             }
         }
@@ -4536,24 +4785,24 @@ mesh::topology::unstructured::verify(const Node &topo,
         Node &info_elems = info["elements"];
 
         bool elems_res = true;
+        bool subelems_res = true;
+
         // single shape case
         if(topo_elems.has_child("shape"))
         {
             elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
             elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
-            // optional: shape topologies can have an "offsets" array to index
-            // individual elements; this list must be an integer array
-            if(elems_res && topo_elems.has_child("offsets"))
-            {
-                elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "offsets");
-            }
+            
+            // Verify if node is polygonal or polyhedral
+            elems_res &= verify_poly_node (false, "", topo_elems, info_elems, topo, info, elems_res);
         }
         // shape stream case
         else if(topo_elems.has_child("element_types"))
         {
             // TODO
         }
+        // mixed shape case
         else if(topo_elems.number_of_children() != 0)
         {
             bool has_names = topo_elems.dtype().is_object();
@@ -4570,12 +4819,9 @@ mesh::topology::unstructured::verify(const Node &topo,
                 chld_res &= verify_field_exists(protocol, chld, chld_info, "shape") &&
                        mesh::topology::shape::verify(chld["shape"], chld_info["shape"]);
                 chld_res &= verify_integer_field(protocol, chld, chld_info, "connectivity");
-                // optional: shape topologies can have an "offsets" array to index
-                // individual elements; this list must be an integer array
-                if(chld_res && chld.has_child("offsets"))
-                {
-                    chld_res &= verify_integer_field(protocol, chld, chld_info, "offsets");
-                }
+
+                // Verify if child is polygonal or polyhedral
+                chld_res &= verify_poly_node (true, name, chld, chld_info, topo, info, elems_res);
 
                 log::validation(chld_info,chld_res);
                 elems_res &= chld_res;
@@ -4583,12 +4829,13 @@ mesh::topology::unstructured::verify(const Node &topo,
         }
         else
         {
-            log::error(info,protocol,"invalid child \"elements\"");
+            log::error(info,protocol,"invalid child 'elements'");
             res = false;
         }
 
         log::validation(info_elems,elems_res);
         res &= elems_res;
+        res &= subelems_res;
     }
 
     log::validation(info,res);
@@ -4639,37 +4886,102 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
         dest.set(topo_templ);
         dest["elements/shape"].set(is_topo_3d ? "polyhedral" : "polygonal");
 
-        Node data_node;
-        std::vector<int64> poly_conn_data(topo_elems *
-            (is_topo_3d + topo_shape.embed_count * (1 + embed_shape.indices)));
-        for(index_t ei = 0; ei < topo_elems; ei++)
+        // Polygonal case
+        if (!is_topo_3d)
         {
-            index_t data_off = topo_shape.indices * ei;
-            index_t poly_off = (is_topo_3d + topo_shape.embed_count *
-                (1 + embed_shape.indices)) * ei;
+            Node poly_size;
+            std::vector<int64> poly_size_data(topo_elems, topo_shape.indices);
+            poly_size.set_external(poly_size_data);
+            poly_size.to_data_type(int_dtype.id(), dest["elements/sizes"]);
 
-            poly_conn_data[poly_off] = topo_shape.embed_count;
-            for(index_t oi = 0; oi < topo_shape.embed_count; oi++)
-            {
-                index_t outer_off = poly_off + (is_topo_3d +
-                    oi * (1 + embed_shape.indices));
+            Node poly_conn;
+            poly_conn.set_external(topo_conn);
+            poly_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
 
-                poly_conn_data[outer_off] = embed_shape.indices;
-                for(index_t ii = 0; ii < embed_shape.indices; ii++)
-                {
-                    index_t inner_off = outer_off + 1 + ii;
-                    index_t inner_data_off = data_off + (is_topo_3d ?
-                        topo_shape.embedding[oi * embed_shape.indices + ii] : ii);
-
-                    data_node.set_external(topo_dtype, topo_conn.element_ptr(inner_data_off));
-                    poly_conn_data[inner_off] = data_node.to_int64();
-                }
-            }
+            generate_offsets(dest, dest["elements/offsets"]);
         }
 
-        Node poly_conn;
-        poly_conn.set_external(poly_conn_data);
-        poly_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
+        // Polyhedral case
+        else
+        {
+            Node data_node;
+            std::vector<int64> polyhedral_conn_data(topo_elems * topo_shape.embed_count);
+            std::vector<int64> polygonal_conn_data;
+            std::vector<int64> face_indices(embed_shape.indices);
+
+            // Element iteration
+            for (index_t ei = 0; ei < topo_elems; ei++)
+            {
+                index_t data_off = topo_shape.indices * ei;
+                index_t polyhedral_off = topo_shape.embed_count * ei;
+
+                // Face iteration
+                for (index_t fi = 0; fi < topo_shape.embed_count; fi++)
+                {
+                    // Indices iteration
+                    for (index_t ii = 0; ii < embed_shape.indices; ii++)
+                    {
+                        index_t inner_data_off =  data_off + 
+                          topo_shape.embedding[fi * embed_shape.indices + ii];
+
+                        data_node.set_external(topo_dtype, topo_conn.element_ptr(inner_data_off));
+                        face_indices[ii] = data_node.to_int64();
+                    }
+
+                    bool has_perm = false;
+                    index_t face_index = polygonal_conn_data.size() / embed_shape.indices;
+
+                    // Check if face already exists
+                    for (index_t poly_i = 0; poly_i < face_index; poly_i++ )
+                    {
+                        index_t face_off = poly_i * embed_shape.indices;
+                        has_perm |= std::is_permutation(polygonal_conn_data.begin() + face_off,
+                                                        polygonal_conn_data.begin() + face_off + 
+                                                        embed_shape.indices,
+                                                        face_indices.begin());
+                        if (has_perm)
+                        {
+                            face_index = poly_i;
+                            continue;
+                        }
+                    }
+
+                    // Add face index to polyhedral indices
+                    polyhedral_conn_data[polyhedral_off + fi] = face_index;
+
+                    // Add face indices to polygonal data if no permutation exists
+                    if (!has_perm)
+                    {
+                        polygonal_conn_data.insert(polygonal_conn_data.end(), face_indices.begin(), face_indices.end());
+                    }
+                }
+            }
+
+            Node polyhedral_conn;  
+            polyhedral_conn.set_external(polyhedral_conn_data);
+            polyhedral_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]); 
+
+            Node polyhedral_size;
+            std::vector<int64> polyhedral_size_data(topo_elems, topo_shape.embed_count);
+            polyhedral_size.set_external(polyhedral_size_data);
+            polyhedral_size.to_data_type(int_dtype.id(), dest["elements/sizes"]); 
+
+            dest["subelements/shape"].set("polygonal");
+
+            Node polygonal_conn;
+            polygonal_conn.set_external(polygonal_conn_data);
+            polygonal_conn.to_data_type(int_dtype.id(), dest["subelements/connectivity"]);
+
+            Node polygonal_size;
+            std::vector<int64> polygonal_size_data(polygonal_conn_data.size() / embed_shape.indices,
+                                                   embed_shape.indices);
+            polygonal_size.set_external(polygonal_size_data);
+            polygonal_size.to_data_type(int_dtype.id(), dest["subelements/sizes"]);
+
+            // BHAN - For polyhedral, writes offsets for
+            // "elements/offsets" and "subelements/offsets"
+            generate_offsets(dest, dest["elements/offsets"]);       
+        }
     }
 }
 
@@ -4683,6 +4995,7 @@ mesh::topology::unstructured::generate_points(const Node &topo,
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
     Node coordset;
+
     find_reference_node(topo, "coordset", coordset);
 
     TopologyMetadata topo_data(topo, coordset);
@@ -4800,6 +5113,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
+
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
         // NOTE: No centroids are generate for the lines of the geometry
@@ -5010,6 +5324,10 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     dest["type"].set("unstructured");
     dest["coordset"].set(cdest.name());
     dest["elements/shape"].set(corner_shape.type);
+    if (is_topo_3d)
+    {
+        dest["subelements/shape"].set("polygonal");
+    }
     // TODO(JRC): I wasn't able to find a good way to compute the connectivity
     // length a priori because of the possibility of polygonal 3D inputs, but
     // having this information would improve the performance of the method.
@@ -5052,6 +5370,9 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     // Compute New Elements/Fields for corner Topology //
 
     std::vector<int64> conn_data_raw;
+    std::vector<int64> size_data_raw;
+    std::vector<int64> subconn_data_raw;
+    std::vector<int64> subsize_data_raw;
     std::vector<int64> s2d_data_raw, d2s_data_raw;
 
     Node misc_data;
@@ -5110,26 +5431,62 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             if(is_topo_3d)
             {
                 corner_face_count = corner_entities.size();
-                conn_data_raw.push_back(corner_entities.size());
+                size_data_raw.push_back(corner_entities.size());
+
             }
 
             for(index_t bfi = 0; bfi < corner_face_count; bfi++)
             {
-                conn_data_raw.push_back(corners_face_degree);
+                std::vector<int64> face;
                 for(index_t fi = 0; fi < corners_face_degree - 1; fi++)
                 {
                     index_t fei = ((bfi + fi) % corner_entities.size());
                     index_t corner_face_index = corner_entities[fei];
                     index_t corner_index_dim = (fei % 2 == 0) ?
                         line_shape.dim : face_shape.dim;
-                    conn_data_raw.push_back(
+                    face.push_back(
                         dim_coord_offsets[corner_index_dim] + corner_face_index);
                 }
 
                 index_t corner_cap_index = ((bfi % 2) == 0) ?
                     dim_coord_offsets[point_shape.dim] + point_index :
                     dim_coord_offsets[topo_shape.dim] + elem_index;
-                conn_data_raw.push_back(corner_cap_index);
+                face.push_back(corner_cap_index);
+
+                if (is_topo_3d)
+                {
+                    bool has_perm = false;
+                    index_t face_index = subconn_data_raw.size() / corners_face_degree;
+
+                    // Check if face already exists
+                    for (index_t face_i = 0; face_i < face_index; face_i++ )
+                    {
+                        index_t face_off = face_i * corners_face_degree;
+                        has_perm |= std::is_permutation(subconn_data_raw.begin() + face_off,
+                                                        subconn_data_raw.begin() + face_off + 
+                                                        corners_face_degree,
+                                                        face.begin());
+                        if (has_perm)
+                        {
+                            face_index = face_i;
+                            continue;
+                        }
+                    }
+
+                    // Add face index to polyhedral indices
+                    conn_data_raw.push_back(face_index);
+
+                    if (!has_perm)
+                    {
+                        subsize_data_raw.push_back(corners_face_degree);
+                        subconn_data_raw.insert(subconn_data_raw.end(), face.begin(), face.end());
+                    }
+                }
+                else
+                {
+                    size_data_raw.push_back(corners_face_degree);
+                    conn_data_raw.insert(conn_data_raw.end(), face.begin(), face.end());
+                }
             }
 
             s2d_data_raw.push_back(corner_index);
@@ -5139,11 +5496,32 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     }
 
     Node &dest_conn = dest["elements/connectivity"];
+    Node &dest_size = dest["elements/sizes"];
     {
         Node raw_data;
+        if (is_topo_3d)
+        {
+            Node &dest_subconn = dest["subelements/connectivity"];
+            Node &dest_subsize = dest["subelements/sizes"];
+            
+            raw_data.set(subconn_data_raw);
+            raw_data.to_data_type(int_dtype.id(), dest_subconn);
+            raw_data.reset();
+
+            raw_data.set(subsize_data_raw);
+            raw_data.to_data_type(int_dtype.id(), dest_subsize);
+            raw_data.reset();            
+        }
+
         raw_data.set(conn_data_raw);
         raw_data.to_data_type(int_dtype.id(), dest_conn);
         raw_data.reset();
+
+        raw_data.set(size_data_raw);
+        raw_data.to_data_type(int_dtype.id(), dest_size);
+        raw_data.reset();
+
+        generate_offsets(dest, dest["elements/offsets"]);
 
         raw_data.set(s2d_data_raw);
         raw_data.to_data_type(int_dtype.id(), s2dmap);
@@ -5160,17 +5538,17 @@ void
 mesh::topology::unstructured::generate_offsets(const Node &topo,
                                                Node &dest)
 {
-    dest.reset();
-
     const ShapeType topo_shape(topo);
     const DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
-
     const Node &topo_conn = topo["elements/connectivity"];
+
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
     if(topo_shape.indices > 0)
     {
+        dest.reset();
+
         const index_t num_topo_shapes =
             topo_conn.dtype().number_of_elements() / topo_shape.indices;
 
@@ -5184,14 +5562,19 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polygonal")
     {
+        dest.reset();
+
+        const Node &topo_size = topo["elements/sizes"];
         std::vector<int64> shape_array;
+        index_t i = 0;
         index_t s = 0;
-        while(s < topo_conn.dtype().number_of_elements())
+        while(i < topo_size.dtype().number_of_elements())
         {
-            const Node index_node(topo_dtype,
-                const_cast<void*>(topo_conn.element_ptr(s)), true);
+            const Node index_node(int_dtype,
+                const_cast<void*>(topo_size.element_ptr(i)), true);
             shape_array.push_back(s);
-            s += index_node.to_int64() + 1;
+            s += index_node.to_int64();
+            i++;
         }
 
         Node shape_node;
@@ -5200,26 +5583,45 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polyhedral")
     {
-        std::vector<int64> shape_array;
-        index_t s = 0;
-        while(s < topo_conn.dtype().number_of_elements())
-        {
-            const Node index_node(topo_dtype,
-                const_cast<void*>(topo_conn.element_ptr(s)), true);
-            shape_array.push_back(s);
+        Node &dest_elem_off = const_cast<Node &>(topo)["elements/offsets"];
+        Node &dest_subelem_off = const_cast<Node &>(topo)["subelements/offsets"];
 
-            s += 1;
-            for(index_t f = 0; f < index_node.to_int64(); f++)
-            {
-                const Node face_node(topo_dtype,
-                    const_cast<void*>(topo_conn.element_ptr(s)), true);
-                s += face_node.to_int64() + 1;
-            }
+        const Node& topo_elem_size = topo["elements/sizes"];
+        const Node& topo_subelem_size = topo["subelements/sizes"];
+
+        Node elem_node;
+        Node subelem_node;
+
+        std::vector<int64> shape_array;
+        index_t ei = 0;
+        index_t es = 0;
+        while(ei < topo_elem_size.dtype().number_of_elements())
+        {
+            const Node index_node(int_dtype,
+                const_cast<void*>(topo_elem_size.element_ptr(ei)), true);
+            shape_array.push_back(es);
+            es += index_node.to_int64();
+            ei++;
         }
 
-        Node shape_node;
-        shape_node.set_external(shape_array);
-        shape_node.to_data_type(int_dtype.id(), dest);
+        elem_node.set_external(shape_array);
+        elem_node.to_data_type(int_dtype.id(), dest_elem_off);
+        elem_node.to_data_type(int_dtype.id(), dest);
+
+        shape_array.clear();
+        ei = 0;
+        es = 0;
+        while(ei < topo_subelem_size.dtype().number_of_elements())
+        {
+            const Node index_node(int_dtype,
+                const_cast<void*>(topo_subelem_size.element_ptr(ei)), true);
+            shape_array.push_back(es);
+            es += index_node.to_int64();
+            ei++;
+        }    
+
+        subelem_node.set_external(shape_array);
+        subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
     }
 }
 
@@ -5302,15 +5704,145 @@ mesh::matset::verify(const Node &matset,
                      Node &info)
 {
     const std::string protocol = "mesh::matset";
-    bool res = true;
+    bool res = true, vfs_res = true;
     info.reset();
 
     res &= verify_string_field(protocol, matset, info, "topology");
-    res &= verify_mcarray_field(protocol, matset, info, "volume_fractions");
+    res &= vfs_res &= verify_field_exists(protocol, matset, info, "volume_fractions");
+
+    if(vfs_res)
+    {
+        if(!matset["volume_fractions"].dtype().is_number() &&
+            !matset["volume_fractions"].dtype().is_object())
+        {
+            log::error(info, protocol, "'volume_fractions' isn't the correct type");
+            res &= vfs_res &= false;
+        }
+        else if(matset["volume_fractions"].dtype().is_number() &&
+            verify_number_field(protocol, matset, info, "volume_fractions"))
+        {
+            log::info(info, protocol, "detected uni-buffer matset");
+
+            vfs_res &= verify_integer_field(protocol, matset, info, "material_ids");
+            // TODO(JRC): Add a more in-depth verifier for 'material_map' that
+            // verifies that it's one level deep and that each child child houses
+            // an integer-style array.
+            vfs_res &= verify_object_field(protocol, matset, info, "material_map");
+            vfs_res &= blueprint::o2mrelation::verify(matset, info);
+
+            res &= vfs_res;
+        }
+        else if(matset["volume_fractions"].dtype().is_object() &&
+            verify_object_field(protocol, matset, info, "volume_fractions"))
+        {
+            log::info(info, protocol, "detected multi-buffer matset");
+
+            const Node &vfs = matset["volume_fractions"];
+            Node &vfs_info = info["volume_fractions"];
+
+            NodeConstIterator mat_it = vfs.children();
+            while(mat_it.has_next())
+            {
+                const Node &mat = mat_it.next();
+                const std::string &mat_name = mat_it.name();
+
+                if(mat.dtype().is_object())
+                {
+                    vfs_res &= verify_o2mrelation_field(protocol, vfs, vfs_info, mat_name);
+                }
+                else
+                {
+                    vfs_res &= verify_number_field(protocol, vfs, vfs_info, mat_name);
+                }
+            }
+
+            res &= vfs_res;
+            log::validation(vfs_info, vfs_res);
+        }
+    }
+
+    if(matset.has_child("element_ids"))
+    {
+        bool eids_res = true;
+
+        if(vfs_res)
+        {
+            if(!matset["element_ids"].dtype().is_integer() &&
+                !matset["element_ids"].dtype().is_object())
+            {
+                log::error(info, protocol, "'element_ids' isn't the correct type");
+                res &= eids_res &= false;
+            }
+            else if(matset["element_ids"].dtype().is_object() &&
+                matset["volume_fractions"].dtype().is_object())
+            {
+                const std::vector<std::string> &vf_mats = matset["volume_fractions"].child_names();
+                const std::vector<std::string> &eid_mats = matset["element_ids"].child_names();
+                const std::set<std::string> vf_matset(vf_mats.begin(), vf_mats.end());
+                const std::set<std::string> eid_matset(eid_mats.begin(), eid_mats.end());
+                if(vf_matset != eid_matset)
+                {
+                    log::error(info, protocol, "'element_ids' hierarchy must match 'volume_fractions'");
+                    eids_res &= false;
+                }
+
+                const Node &eids = matset["element_ids"];
+                Node &eids_info = info["element_ids"];
+
+                NodeConstIterator mat_it = eids.children();
+                while(mat_it.has_next())
+                {
+                    const std::string &mat_name = mat_it.next().name();
+                    eids_res &= verify_integer_field(protocol, eids, eids_info, mat_name);
+                }
+
+                res &= eids_res;
+                log::validation(eids_info, eids_res);
+            }
+            else if(matset["element_ids"].dtype().is_integer() &&
+                matset["volume_fractions"].dtype().is_number())
+            {
+                res &= eids_res &= verify_integer_field(protocol, matset, info, "element_ids");
+            }
+            else
+            {
+                log::error(info, protocol, "'element_ids' hierarchy must match 'volume_fractions'");
+                res &= eids_res &= false;
+            }
+        }
+    }
 
     log::validation(info, res);
 
     return res;
+}
+
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_multi_buffer(const Node &matset)
+{
+    return matset.child("volume_fractions").dtype().is_object();
+}
+
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_uni_buffer(const Node &matset)
+{
+    return matset.child("volume_fractions").dtype().is_number();
+}
+
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_element_dominant(const Node &matset)
+{
+    return !matset.has_child("element_ids");
+}
+
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_material_dominant(const Node &matset)
+{
+    return matset.has_child("element_ids");
 }
 
 //-----------------------------------------------------------------------------
@@ -5355,7 +5887,7 @@ mesh::field::verify(const Node &field,
     bool has_basis = field.has_child("basis");
     if(!has_assoc && !has_basis)
     {
-        log::error(info, protocol, "missing child \"association\" or \"basis\"");
+        log::error(info, protocol, "missing child 'association' or 'basis'");
         res = false;
     }
     if(has_assoc)
@@ -5369,20 +5901,44 @@ mesh::field::verify(const Node &field,
 
     bool has_topo = field.has_child("topology");
     bool has_matset = field.has_child("matset");
+    bool has_topo_values = field.has_child("values");
+    bool has_matset_values = field.has_child("matset_values");
     if(!has_topo && !has_matset)
     {
-        log::error(info, protocol, "missing child \"topology\" or \"matset\"");
+        log::error(info, protocol, "missing child 'topology' or 'matset'");
         res = false;
     }
-    if(has_topo)
+
+    if(has_topo ^ has_topo_values)
+    {
+        std::ostringstream oss;
+        oss << "'" << (has_topo ? "topology" : "values") <<"'"
+            << " is present, but its companion "
+            << "'" << (has_topo ? "values" : "topology") << "'"
+            << " is missing";
+        log::error(info, protocol, oss.str());
+        res = false;
+    }
+    else if(has_topo && has_topo_values)
     {
         res &= verify_string_field(protocol, field, info, "topology");
-        res &= verify_mlarray_field(protocol, field, info, "values", 0, 1);
+        res &= verify_mlarray_field(protocol, field, info, "values", 0, 1, false);
     }
-    if(has_matset)
+
+    if(has_matset ^ has_matset_values)
+    {
+        std::ostringstream oss;
+        oss << "'" << (has_matset ? "matset" : "matset_values") <<"'"
+            << " is present, but its companion "
+            << "'" << (has_matset ? "matset_values" : "matset") << "'"
+            << " is missing";
+        log::error(info, protocol, oss.str());
+        res = false;
+    }
+    else if(has_matset && has_matset_values)
     {
         res &= verify_string_field(protocol, field, info, "matset");
-        res &= verify_mlarray_field(protocol, field, info, "matset_values", 1, 2);
+        res &= verify_mlarray_field(protocol, field, info, "matset_values", 0, 2, false);
     }
 
     // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
@@ -5431,7 +5987,7 @@ mesh::field::index::verify(const Node &field_idx,
     bool has_basis = field_idx.has_child("basis");
     if(!has_assoc && !has_basis)
     {
-        log::error(info, protocol, "missing child \"association\" or \"basis\"");
+        log::error(info, protocol, "missing child 'association' or 'basis'");
         res = false;
     }
     if(has_assoc)
@@ -5447,7 +6003,7 @@ mesh::field::index::verify(const Node &field_idx,
     bool has_matset = field_idx.has_child("matset");
     if(!has_topo && !has_matset)
     {
-        log::error(info, protocol, "missing child \"topology\" or \"matset\"");
+        log::error(info, protocol, "missing child 'topology' or 'matset'");
         res = false;
     }
     if(has_topo)
@@ -5474,17 +6030,56 @@ mesh::field::index::verify(const Node &field_idx,
 //-----------------------------------------------------------------------------
 bool
 mesh::specset::verify(const Node &specset,
-                    Node &info)
+                      Node &info)
 {
     const std::string protocol = "mesh::specset";
     bool res = true;
     info.reset();
 
-    res &= verify_string_field(protocol, specset, info, "matset");
-    res &= verify_mlarray_field(protocol, specset, info, "matset_values", 2, 2);
     // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
     // entry for specsets.
     // res &= verify_enum_field(protocol, specset, info, "volume_dependent", mesh::booleans);
+    res &= verify_string_field(protocol, specset, info, "matset");
+    if(!verify_object_field(protocol, specset, info, "matset_values"))
+    {
+        res &= false;
+    }
+    else
+    {
+        bool specmats_res = true;
+        index_t specmats_len = 0;
+
+        const Node &specmats = specset["matset_values"];
+        Node &specmats_info = info["matset_values"];
+        NodeConstIterator specmats_it = specmats.children();
+        while(specmats_it.has_next())
+        {
+            const Node &specmat = specmats_it.next();
+            const std::string specmat_name = specmat.name();
+            if(!verify_mcarray_field(protocol, specmats, specmats_info, specmat_name))
+            {
+                specmats_res &= false;
+            }
+            else
+            {
+                const index_t specmat_len = specmat.child(0).dtype().number_of_elements();
+                if(specmats_len == 0)
+                {
+                    specmats_len = specmat_len;
+                }
+                else if(specmats_len != specmat_len)
+                {
+                    log::error(specmats_info, protocol,
+                        log::quote(specmat_name) + " has mismatched length " +
+                        "relative to other material mcarrays in this specset");
+                    specmats_res &= false;
+                }
+            }
+        }
+
+        log::validation(specmats_info, specmats_res);
+        res &= specmats_res;
+    }
 
     log::validation(info, res);
 
@@ -5498,7 +6093,7 @@ mesh::specset::verify(const Node &specset,
 //-----------------------------------------------------------------------------
 bool
 mesh::specset::index::verify(const Node &specset_idx,
-                           Node &info)
+                             Node &info)
 {
     const std::string protocol = "mesh::specset::index";
     bool res = true;
@@ -5556,7 +6151,49 @@ mesh::adjset::verify(const Node &adjset,
             }
             else if(chld.has_child("windows"))
             {
+#if 0
+                group_res &= verify_object_field(protocol, chld,
+                    chld_info, "windows");
 
+                bool windows_res = true;
+                NodeConstIterator witr = chld["windows"].children();
+                while(witr.has_next())
+                {
+                    const Node &wndw = witr.next();
+                    const std::string wndw_name = witr.name();
+                    Node &wndw_info = chld_info["windows"][wndw_name];
+
+                    bool window_res = true;
+                    window_res &= verify_field_exists(protocol, wndw,
+                        wndw_info, "origin") &&
+                        mesh::logical_dims::verify(wndw["origin"],
+                            wndw_info["origin"]);
+                    window_res &= verify_field_exists(protocol, wndw,
+                        wndw_info, "dims") &&
+                        mesh::logical_dims::verify(wndw["dims"],
+                            wndw_info["dims"]);
+                    window_res &= verify_field_exists(protocol, wndw,
+                        wndw_info, "ratio") &&
+                        mesh::logical_dims::verify(wndw["ratio"],
+                            wndw_info["ratio"]);
+
+                    // verify that dimensions for "origin" and
+                    // "dims" and "ratio" are the same
+                    if(window_res)
+                    {
+                        index_t window_dim = wndw["origin"].number_of_children();
+                        window_res &= !wndw.has_child("dims") ||
+                            verify_object_field(protocol, wndw,
+                                wndw_info, "dims", false, window_dim);
+                        window_res &= !wndw.has_child("ratio") ||
+                            verify_object_field(protocol, wndw,
+                                wndw_info, "ratio", false, window_dim);
+                    }
+
+                    log::validation(wndw_info,window_res);
+                    windows_res &= window_res;
+                }
+#endif
                 group_res &= verify_object_field(protocol, chld,
                     chld_info, "windows");
 

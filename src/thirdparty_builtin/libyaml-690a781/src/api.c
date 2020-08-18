@@ -57,13 +57,23 @@ yaml_free(void *ptr)
  * Duplicate a string.
  */
 
+/*
+ * -- 2019-10-22 --
+ * -- Conduit Change for Windows --
+ * -- Use _strdup on Windows --
+ */
+
 YAML_DECLARE(yaml_char_t *)
 yaml_strdup(const yaml_char_t *str)
 {
     if (!str)
         return NULL;
 
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    return (yaml_char_t *)_strdup((char *)str);
+#else
     return (yaml_char_t *)strdup((char *)str);
+#endif
 }
 
 /*

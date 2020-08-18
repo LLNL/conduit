@@ -60,7 +60,7 @@
 /// Contract: Changes to backing (file on disk, etc) aren't guaranteed to 
 //  be reflected until a call to close
 //-----------------------------------------------------------------------------
-class CONDUIT_API IOHandle
+class CONDUIT_RELAY_API IOHandle
 {
 
 public:
@@ -69,8 +69,12 @@ public:
 
     /// establish a handle
     void open(const std::string &path);
+
     void open(const std::string &path,
               const std::string &protocol);
+
+    void open(const std::string &path,
+              const Node &options);
 
     void open(const std::string &path,
               const std::string &protocol,
@@ -93,10 +97,10 @@ public:
                const std::string &path);
 
     /// list child names at root of handle
-    void list_child_names(std::vector<std::string> &res) const;
+    void list_child_names(std::vector<std::string> &res);
     /// list child names at subpath
     void list_child_names(const std::string &path,
-                          std::vector<std::string> &res) const;
+                          std::vector<std::string> &res);
 
     // TODO: options variants for read and write above? with update of 
     // above options with passed?
@@ -105,7 +109,7 @@ public:
     void remove(const std::string &path);
 
     /// check if given path exists
-    bool has_path(const std::string &path) const;
+    bool has_path(const std::string &path);
 
     // FUTURE: also provide access to read schema
     // void read_schema(Schema &schema);
@@ -115,7 +119,64 @@ public:
     /// close the handle
     void close();
 
-    class HandleInterface;
+    //-----------------------------------------------------------------------------
+    // HandleInterface -- base class for all concrete IO Handle Implementations
+    //-----------------------------------------------------------------------------
+    class HandleInterface
+    {
+    public:
+    
+        HandleInterface(const std::string &path,
+                        const std::string &protocol,
+                        const Node &options);
+        virtual ~HandleInterface();
+
+        // main interface methods
+
+        // note: make sure to call HandleInterface::open in derived class 
+        //       open() overrides
+        virtual void open();
+        virtual bool is_open() const = 0;
+        virtual void read(Node &node) = 0;
+        virtual void read(const std::string &path,
+                          Node &node) = 0;
+        virtual void write(const Node &node) = 0;
+        virtual void write(const Node &node,
+                   const std::string &path) = 0;
+        virtual void list_child_names(std::vector<std::string> &res) = 0;
+        virtual void list_child_names(const std::string &path,
+                              std::vector<std::string> &res) = 0;
+        virtual void remove(const std::string &path) = 0;
+        virtual bool has_path(const std::string &path) = 0;
+        virtual void close() = 0;
+
+        // factory helper methods used by interface class 
+        static HandleInterface *create(const std::string &path);
+
+        static HandleInterface *create(const std::string &path,
+                                       const std::string &protocol);
+
+        static HandleInterface *create(const std::string &path,
+                                       const Node &options);
+
+        static HandleInterface *create(const std::string &path,
+                                       const std::string &protocol,
+                                       const Node &options);
+    protected:
+        // access to common state
+        const std::string &path()      const;
+        const std::string &protocol()  const;
+        const std::string &open_mode() const;
+        const Node        &options()   const;
+
+    private:
+
+        std::string m_path;
+        std::string m_protocol;
+        std::string m_open_mode;
+        Node        m_options;
+    };
+
 private:
     HandleInterface *m_handle;
 

@@ -377,3 +377,97 @@ TEST(c_conduit_node, c_remove)
     conduit_node_destroy(n);
 }
 
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_parse)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node_parse(n,"{\"a\": 42.0}","json");
+    conduit_node *a = conduit_node_fetch(n,"a");
+    EXPECT_EQ(conduit_node_as_double(a),42.0);
+
+    conduit_node_parse(n,"a: 42.0","yaml");
+    a = conduit_node_fetch(n,"a");
+    EXPECT_EQ(conduit_node_as_double(a),42.0);
+
+    conduit_node_destroy(n);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_save_load)
+{
+    conduit_node *n1 = conduit_node_create();
+    conduit_node *n2 = conduit_node_create();
+
+    conduit_node *a1 = conduit_node_fetch(n1,"a");
+    conduit_node_set_double(a1,42.0);
+
+    conduit_node_save(n1,"tout_c_node_save.json","json");
+    conduit_node_load(n2,"tout_c_node_save.json","json");
+    conduit_node *a2 = conduit_node_fetch(n2,"a");
+    EXPECT_EQ(conduit_node_as_double(a2),42.0);
+
+    conduit_node_save(n1,"tout_c_node_save.yaml","yaml");
+    conduit_node_load(n2,"tout_c_node_save.yaml","yaml");
+    a2 = conduit_node_fetch(n2,"a");
+    EXPECT_EQ(conduit_node_as_double(a2),42.0);
+
+    conduit_node_destroy(n1);
+    conduit_node_destroy(n2);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_child_with_embedded_slashes)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node *n_1 = conduit_node_fetch(n,"normal/path");
+    conduit_node_set_int(n_1,10);
+
+    conduit_node *n_2 = conduit_node_add_child(n,"child_with_/_inside");
+    conduit_node_set_int(n_2,42);
+
+    EXPECT_TRUE(conduit_node_has_path(n,"normal/path"));
+    EXPECT_FALSE(conduit_node_has_child(n,"normal/path"));
+    EXPECT_FALSE(conduit_node_has_path(n,"child_with_/_inside"));
+    EXPECT_TRUE(conduit_node_has_child(n,"child_with_/_inside"));
+
+    EXPECT_EQ(conduit_node_number_of_children(n),2);
+    
+    conduit_node *n_2_test = conduit_node_child_by_name(n,"child_with_/_inside");
+
+    EXPECT_EQ(n_2, n_2_test);
+    
+    EXPECT_EQ(conduit_node_as_int(n_1),10);
+    EXPECT_EQ(conduit_node_as_int(n_2_test),42);
+
+    conduit_node_remove_child_by_name(n,"child_with_/_inside");
+    EXPECT_EQ(conduit_node_number_of_children(n),1);
+    EXPECT_TRUE(conduit_node_has_path(n,"normal/path"));
+    EXPECT_FALSE(conduit_node_has_child(n,"child_with_/_inside"));
+
+
+    conduit_node_destroy(n);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_fetch_existing)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node *n_1 = conduit_node_fetch(n,"normal/path");
+    conduit_node_set_int(n_1,10);
+
+    conduit_node *n_2 = conduit_node_fetch_existing(n,"normal/path");
+
+    EXPECT_EQ(n_1,n_2);
+    
+    EXPECT_EQ(conduit_node_as_int(n_2),10);
+    
+
+    conduit_node_destroy(n);
+}
+
+
+

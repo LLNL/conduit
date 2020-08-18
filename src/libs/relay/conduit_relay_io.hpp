@@ -58,6 +58,7 @@
 #include "conduit.hpp"
 #include "conduit_relay_exports.h"
 #include "conduit_relay_config.h"
+#include "conduit_relay_io_identify_protocol.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -83,10 +84,6 @@ namespace io
 //-----------------------------------------------------------------------------
 std::string CONDUIT_RELAY_API about();
 void        CONDUIT_RELAY_API about(conduit::Node &res);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API identify_protocol(const std::string &path,
-                                         std::string &io_type);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API initialize();

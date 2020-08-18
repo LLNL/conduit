@@ -54,6 +54,13 @@
 #define IS_PY3K
 #endif
 
+// use  proper strdup
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
@@ -75,99 +82,22 @@
 using namespace conduit;
 
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Begin Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-
-#if defined(IS_PY3K)
-
-//-----------------------------------------------------------------------------
-int
-PyString_Check(PyObject *o)
-{
-    return PyUnicode_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-char *
-PyString_AsString(PyObject *py_obj)
-{
-    char *res = NULL;
-    if(PyUnicode_Check(py_obj))
-    {
-        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
-                                                          "ASCII",
-                                                          "strict"); // Owned reference
-        if(temp_bytes != NULL)
-        {
-            res = strdup(PyBytes_AS_STRING(temp_bytes));
-            Py_DECREF(temp_bytes);
-        }
-        else
-        {
-            // TODO: Error
-        }
-    }
-    else if(PyBytes_Check(py_obj))
-    {
-        res = strdup(PyBytes_AS_STRING(py_obj));
-    }
-    else
-    {
-        // TODO: ERROR or auto convert?
-    }
-    
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-PyObject *
-PyString_FromString(const char *s)
-{
-    return PyUnicode_FromString(s);
-}
-
-//-----------------------------------------------------------------------------
-void
-PyString_AsString_Cleanup(char *bytes)
-{
-    free(bytes);
-}
-
-
-//-----------------------------------------------------------------------------
-int
-PyInt_Check(PyObject *o)
-{
-    return PyLong_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-long
-PyInt_AsLong(PyObject *o)
-{
-    return PyLong_AsLong(o);
-}
-
-#else // python 2.6+
-
-//-----------------------------------------------------------------------------
-#define PyString_AsString_Cleanup(c) { /* noop */ }
-
-#endif
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// End Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 //---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::verify
 //---------------------------------------------------------------------------//
+// doc str
+const char *PyBlueprint_mesh_verify_doc_str =
+"verify(node, info, protocol)\n"
+"\n"
+"Returns True if passed node conforms to the mesh blueprint.\n"
+"Populates info node with verification details.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n"
+"  info: node to hold verify info (conduit.Node instance)\n"
+"  protocol: optional string with sub-protocol name\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mesh_verify(PyObject *, //self
                            PyObject *args,
@@ -228,13 +158,25 @@ PyBlueprint_mesh_verify(PyObject *, //self
         Py_RETURN_FALSE;
 }
 
-void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
-                                          const std::string &ref_path,
-                                          index_t num_domains,
-                                          Node &index_out);
 //---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::generate_index
 //---------------------------------------------------------------------------//
+
+// doc str
+const char *PyBlueprint_mesh_generate_index_doc_str =
+"generate_index(mesh, ref_path, num_domains, dest)\n"
+"\n"
+"Assumes mesh::verify() is True\n"
+"\n"
+"Generates a blueprint index for a given blueprint mesh.\n"
+"\n"
+"Arguments:\n"
+"  mesh: input node (conduit.Node instance)\n"
+"  ref_path: string with reference path to mesh root\n"
+"  num_domains: number of total mesh domains\n"
+"  dest: output node (conduit.Node instance)\n";
+
+// py func
 static PyObject * 
 PyBlueprint_mesh_generate_index(PyObject *, //self
                                 PyObject *args,
@@ -306,11 +248,11 @@ static PyMethodDef blueprint_mesh_python_funcs[] =
     {"verify",
      (PyCFunction)PyBlueprint_mesh_verify,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_verify_doc_str},
     {"generate_index",
      (PyCFunction)PyBlueprint_mesh_generate_index,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_generate_index_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//
@@ -391,9 +333,9 @@ static struct PyModuleDef blueprint_mesh_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_BLUEPRINT_PYTHON_API PyInit_conduit_blueprint_mesh_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API PyObject *PyInit_conduit_blueprint_mesh_python(void)
 #else
-void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_mesh_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API void initconduit_blueprint_mesh_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

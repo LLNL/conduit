@@ -119,10 +119,12 @@ env:
       PYTHON_VERSION=2.7.14
       CMAKE_VERSION=3.9.4
       BLT_CXX_STD=c++11
+
 addons:
   apt:
     sources:
-    - ubuntu-toolchain-r-test
+    - sourceline: 'ppa:ubuntu-toolchain-r/test'
+      key_url: 'hkp://keyserver.ubuntu.com:80'
     packages:
        - binutils
        - gcc-4.8
@@ -151,7 +153,7 @@ script:
   - export FC=${COMPILER_FC}
   - ${CC} --version
   - cd $TRAVIS_BUILD_DIR
-  - echo $TRAVIS_BUILD_DIR 
+  - echo $TRAVIS_BUILD_DIR
   # setup spack spec based on our travis options
   - export SPACK_SPEC="%gcc@4.8"
   # variants
@@ -175,7 +177,8 @@ script:
   # Output something every 10 minutes or Travis kills the job
   - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &
   # build deps using uberenv
-  - python scripts/uberenv/uberenv.py --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/
+  # use -k to avoid suprises related to certs
+  - python scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/travis/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/ || travis_terminate 1;
   # todo:
   #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
   #- pip install cpp-coveralls
@@ -217,7 +220,7 @@ script:
   # test our examples that demo using an installed conduit
   - cd $TRAVIS_BUILD_DIR
   - ./scripts/ci/travis-test-build-examples-vs-install.sh
-  - ./scripts/ci/travis-test-python-example-vs-install.sh 
+  - ./scripts/ci/travis-test-python-example-vs-install.sh
 
 after_success:
   - test ${ENABLE_COVERAGE} = "ON" && coveralls --gcov /usr/bin/gcov-4.8 --include src/libs/conduit --include src/libs/blueprint --gcov-options '\-lp' --root $TRAVIS_BUILD_DIR --build-root $TRAVIS_BUILD_DIR/travis-debug-build;

@@ -195,12 +195,12 @@ Node::Node(const Generator &gen,
 }
 
 //---------------------------------------------------------------------------//
-Node::Node(const std::string &json_schema,
+Node::Node(const std::string &schema,
            void *data,
            bool external)
 {
     init_defaults(); 
-    Generator g(json_schema,"conduit_json",data);
+    Generator g(schema,"conduit_json",data);
 
     if(external)
     {
@@ -270,6 +270,15 @@ Node::Node(const DataType &dtype,
 
 //---------------------------------------------------------------------------//
 void
+Node::parse(const std::string &text,
+            const std::string &protocol)
+{
+    Generator gen(text,protocol,NULL);
+    gen.walk(*this);
+}
+
+//---------------------------------------------------------------------------//
+void
 Node::generate(const Generator &gen)
 {
     gen.walk(*this);
@@ -284,23 +293,23 @@ Node::generate_external(const Generator &gen)
 
 //---------------------------------------------------------------------------//
 void
-Node::generate(const std::string &json_schema,
+Node::generate(const std::string &schema,
                const std::string &protocol,
                void *data)
                
 {
-    Generator g(json_schema,protocol,data);
+    Generator g(schema,protocol,data);
     generate(g);
 }
     
 //---------------------------------------------------------------------------//
 void
-Node::generate_external(const std::string &json_schema,
+Node::generate_external(const std::string &schema,
                         const std::string &protocol,
                         void *data)
                
 {
-    Generator g(json_schema,protocol,data);
+    Generator g(schema,protocol,data);
     generate_external(g);
 }
 
@@ -332,7 +341,9 @@ Node::load(const std::string &stream_path,
     std::ifstream ifs;
     ifs.open(stream_path.c_str(), std::ios_base::binary);
     if(!ifs.is_open())
+    {
         CONDUIT_ERROR("<Node::load> failed to open: " << stream_path);
+    }
     ifs.read((char *)m_data,dsize);
     ifs.close();
 
@@ -354,36 +365,41 @@ Node::load(const std::string &stream_path,
     m_alloced = true;
 }
 
+
 //---------------------------------------------------------------------------//
 void
 Node::load(const std::string &ibase,
            const std::string &protocol)
 {
-    // TODO: auto detect protocol?
-
-    if(protocol == "conduit_bin")
+    std::string proto = protocol;
+    //auto detect protocol
+    if(proto == "")
     {
-        // TODO: use generator?
+        identify_protocol(ibase,proto);
+    }
+
+    if(proto == "conduit_bin")
+    {
         Schema s;
         std::string ifschema = ibase + "_json";
-
         s.load(ifschema);
         load(ibase,s);
     }
-    // single file json cases
+    // single file json and yaml cases
     else
     {
         std::ifstream ifile;
         ifile.open(ibase.c_str());
         if(!ifile.is_open())
+        {
             CONDUIT_ERROR("<Node::load> failed to open: " << ibase);
+        }
         std::string json_data((std::istreambuf_iterator<char>(ifile)),
                                std::istreambuf_iterator<char>());
         
         Generator g(json_data,protocol);
         g.walk(*this);
     }
-        
 }
 
 //---------------------------------------------------------------------------//
@@ -391,9 +407,14 @@ void
 Node::save(const std::string &obase,
            const std::string &protocol) const
 {
-    // TODO: auto detect protocol?
-    
-    if(protocol == "conduit_bin")
+    std::string proto = protocol;
+    //auto detect protocol
+    if(proto == "")
+    {
+        identify_protocol(obase,proto);
+    }
+
+    if(proto == "conduit_bin")
     {
         Node res;
         compact_to(res);
@@ -402,13 +423,13 @@ Node::save(const std::string &obase,
         res.schema().save(ofschema);
         res.serialize(obase);
     }
-    else if( protocol == "yaml")
+    else if( proto == "yaml")
     {
-        to_yaml_stream(obase,protocol);
+        to_yaml_stream(obase,proto);
     }
     else     // single file json cases
     {
-        to_json_stream(obase,protocol);
+        to_json_stream(obase,proto);
     }
 }
 
@@ -482,7 +503,7 @@ Node::set_node(const Node &node)
         for (std::vector<std::string>::const_iterator itr = cld_names.begin();
              itr < cld_names.end(); ++itr)
         {
-            Schema *curr_schema = this->m_schema->fetch_ptr(*itr);
+            Schema *curr_schema = &this->m_schema->add_child(*itr);
             size_t idx = (size_t) this->m_schema->child_index(*itr);
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
@@ -2175,7 +2196,7 @@ void
 Node::set_path_node(const std::string &path,
                     const Node& data) 
 {
-    fetch(path).set_node(data);    
+    fetch(path).set_node(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -7548,7 +7569,10 @@ Node::serialize(const std::string &stream_path) const
     std::ofstream ofs;
     ofs.open(stream_path.c_str(), std::ios_base::binary);
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::serialize> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::serialize> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     serialize(ofs);
     ofs.close();
 }
@@ -7635,7 +7659,9 @@ Node::update(const Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            fetch(ent_name).update(n_src.fetch(ent_name));
+            // note: this (add_child) will add or access existing child
+            // ness b/c of keys with embedded slashes
+            add_child(ent_name).update(n_src.child(ent_name));
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -7704,10 +7730,10 @@ Node::update_compatible(const Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            if(has_path(ent_name))
+            if(has_child(ent_name))
             {
-                fetch(ent_name).update_compatible(n_src.fetch(ent_name));
-                }
+                child(ent_name).update_compatible(n_src.child(ent_name));
+            }
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -7764,7 +7790,9 @@ Node::update_external(Node &n_src)
              itr < scld_names.end(); ++itr)
         {
             std::string ent_name = *itr;
-            fetch(ent_name).update_external(n_src.fetch(ent_name));
+            // note: this (add_child) will add or access existing child
+            // ness b/c of keys with embedded slashes
+            add_child(ent_name).update_external(n_src.child(ent_name));
         }
     }
     else if( dtype_id == DataType::LIST_ID)
@@ -11197,6 +11225,69 @@ Node::ConstValue::operator const long_double_array() const
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// -- String construction methods ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_string(const std::string &protocol, 
+                index_t indent, 
+                index_t depth,
+                const std::string &pad,
+                const std::string &eoe) const
+{
+    std::ostringstream oss;
+    to_string_stream(oss,protocol,indent,depth,pad,eoe);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_string_stream(std::ostream &os,
+                       const std::string &protocol,
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    if(protocol == "yaml")
+    {
+        to_yaml_stream(os,protocol,indent,depth,pad,eoe);
+    }
+    else // assume json
+    {
+        to_json_stream(os,protocol,indent,depth,pad,eoe);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_string_stream(const std::string &stream_path,
+                       const std::string &protocol,
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_string_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_string_stream(ofs,protocol,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_string_default() const
+{
+    return to_string();
+}
+
+//-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------
 
@@ -11222,7 +11313,11 @@ Node::to_json(const std::string &protocol,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " json\n"
+                      << " conduit_json\n"
+                      << " conduit_base64_json\n");
     }
 
     return "{}";
@@ -11251,7 +11346,11 @@ Node::to_json_stream(const std::string &stream_path,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " json\n"
+                      << " conduit_json\n"
+                      << " conduit_base64_json\n");
     }
 }
 
@@ -11278,7 +11377,11 @@ Node::to_json_stream(std::ostream &os,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_json protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " json\n"
+                      << " conduit_json\n"
+                      << " conduit_base64_json\n");
     }
 }
 
@@ -11307,7 +11410,9 @@ Node::to_yaml(const std::string &protocol,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " yaml\n");
     }
 
     return "{}";
@@ -11328,9 +11433,12 @@ Node::to_yaml_stream(const std::string &stream_path,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " yaml\n");
     }
 }
+
 //-----------------------------------------------------------------------------
 void
 Node::to_yaml_stream(std::ostream &os,
@@ -11346,7 +11454,9 @@ Node::to_yaml_stream(std::ostream &os,
     }
     else
     {
-        CONDUIT_ERROR("Unknown to_yaml protocol:" << protocol);
+        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
+                      << "\nSupported protocols:\n" 
+                      << " yaml\n");
     }
 }
 
@@ -11387,7 +11497,10 @@ Node::to_json_generic(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_json> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_json> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
     to_json_generic(ofs,detailed,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11472,36 +11585,36 @@ Node::to_json_generic(std::ostream &os,
         {
             // ints 
             case DataType::INT8_ID:
-                as_int8_array().to_json(os);
+                as_int8_array().to_json_stream(os);
                 break;
             case DataType::INT16_ID:
-                as_int16_array().to_json(os);
+                as_int16_array().to_json_stream(os);
                 break;
             case DataType::INT32_ID:
-                as_int32_array().to_json(os);
+                as_int32_array().to_json_stream(os);
                 break;
             case DataType::INT64_ID:
-                as_int64_array().to_json(os);
+                as_int64_array().to_json_stream(os);
                 break;
             // uints 
             case DataType::UINT8_ID:
-                as_uint8_array().to_json(os);
+                as_uint8_array().to_json_stream(os);
                 break;
             case DataType::UINT16_ID: 
-                as_uint16_array().to_json(os);
+                as_uint16_array().to_json_stream(os);
                 break;
             case DataType::UINT32_ID:
-                as_uint32_array().to_json(os);
+                as_uint32_array().to_json_stream(os);
                 break;
             case DataType::UINT64_ID:
-                as_uint64_array().to_json(os);
+                as_uint64_array().to_json_stream(os);
                 break;
             // floats 
             case DataType::FLOAT32_ID:
-                as_float32_array().to_json(os);
+                as_float32_array().to_json_stream(os);
                 break;
             case DataType::FLOAT64_ID:
-                as_float64_array().to_json(os);
+                as_float64_array().to_json_stream(os);
                 break;
             // char8_str
             case DataType::CHAR8_STR_ID: 
@@ -11547,7 +11660,10 @@ Node::to_pure_json(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_pure_json> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_json_generic(ofs,false,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11584,7 +11700,10 @@ Node::to_detailed_json(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_pure_json> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_detailed_json> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_json_generic(ofs,true,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11624,7 +11743,10 @@ Node::to_base64_json(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_base64_json> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_base64_json> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_base64_json(ofs,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11642,6 +11764,7 @@ Node::to_base64_json(std::ostream &os,
     os.precision(15);
         
     // we need compact data
+    // TODO check if already compact + contig
     Node n;
     compact_to(n);
     
@@ -11665,7 +11788,7 @@ Node::to_base64_json(std::ostream &os,
     utils::indent(os,indent,depth+1,pad);
     os << "\"schema\": ";
 
-    n.schema().to_json_stream(os,true,indent,depth+1,pad,eoe);
+    n.schema().to_json_stream(os,indent,depth+1,pad,eoe);
 
     os  << "," << eoe;
     
@@ -11716,7 +11839,10 @@ Node::to_yaml_generic(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_yaml> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_yaml_generic> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_yaml_generic(ofs,detailed,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11747,6 +11873,10 @@ Node::to_yaml_generic(std::ostream &os,
                                            depth+1,
                                            pad,
                                            eoe);
+
+            // if the child is a leaf, we need eoe
+            if(m_children[i]->number_of_children() == 0)
+                os << eoe;
         }
     }
     else if(dtype().id() == DataType::LIST_ID)
@@ -11763,6 +11893,10 @@ Node::to_yaml_generic(std::ostream &os,
                                            depth+1,
                                            pad,
                                            eoe);
+
+            // if the child is a leaf, we need eoe
+            if(m_children[i]->number_of_children() == 0)
+                os << eoe;
         }
     }
     else // assume leaf data type
@@ -11771,36 +11905,36 @@ Node::to_yaml_generic(std::ostream &os,
         {
             // ints 
             case DataType::INT8_ID:
-                as_int8_array().to_json(os);
+                as_int8_array().to_json_stream(os);
                 break;
             case DataType::INT16_ID:
-                as_int16_array().to_json(os);
+                as_int16_array().to_json_stream(os);
                 break;
             case DataType::INT32_ID:
-                as_int32_array().to_json(os);
+                as_int32_array().to_json_stream(os);
                 break;
             case DataType::INT64_ID:
-                as_int64_array().to_json(os);
+                as_int64_array().to_json_stream(os);
                 break;
             // uints 
             case DataType::UINT8_ID:
-                as_uint8_array().to_json(os);
+                as_uint8_array().to_json_stream(os);
                 break;
             case DataType::UINT16_ID: 
-                as_uint16_array().to_json(os);
+                as_uint16_array().to_json_stream(os);
                 break;
             case DataType::UINT32_ID:
-                as_uint32_array().to_json(os);
+                as_uint32_array().to_json_stream(os);
                 break;
             case DataType::UINT64_ID:
-                as_uint64_array().to_json(os);
+                as_uint64_array().to_json_stream(os);
                 break;
             // floats 
             case DataType::FLOAT32_ID:
-                as_float32_array().to_json(os);
+                as_float32_array().to_json_stream(os);
                 break;
             case DataType::FLOAT64_ID:
-                as_float64_array().to_json(os);
+                as_float64_array().to_json_stream(os);
                 break;
             // char8_str
             case DataType::CHAR8_STR_ID: 
@@ -11811,10 +11945,7 @@ Node::to_yaml_generic(std::ostream &os,
             // empty
             case DataType::EMPTY_ID: 
                 break;
-
         }
-
-        os << eoe;
     }
 
     os.flags(prev_stream_flags);
@@ -11841,7 +11972,10 @@ Node::to_pure_yaml(const std::string &stream_path,
     std::ofstream ofs;
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
-        CONDUIT_ERROR("<Node::to_pure_yaml> failed to open: " << stream_path);
+    {
+        CONDUIT_ERROR("<Node::to_pure_yaml> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
     to_yaml_generic(ofs,false,indent,depth,pad,eoe);
     ofs.close();
 }
@@ -11905,7 +12039,7 @@ Node::info()const
 void
 Node::print() const
 {
-    to_json_stream(std::cout);
+    to_string_stream(std::cout);
     std::cout << std::endl;
 }
 
@@ -11913,7 +12047,7 @@ Node::print() const
 void
 Node::print_detailed() const
 {
-    to_json_stream(std::cout,"conduit_json");
+    to_string_stream(std::cout,"conduit_json");
     std::cout << std::endl;
 }
 
@@ -11945,70 +12079,112 @@ Node::children() const
     return NodeConstIterator(this);
 }
 
+//---------------------------------------------------------------------------//
+Node&
+Node::add_child(const std::string &name)
+{
+    if(has_child(name))
+    {
+        return child(name);
+    }
+
+    Schema &child_schema = m_schema->add_child(name);
+    Schema *child_ptr = &child_schema; 
+    Node *child_node = new Node();
+    child_node->set_schema_ptr(child_ptr);
+    child_node->m_parent = this;
+    m_children.push_back(child_node);
+    return  *m_children[m_children.size() - 1];
+}
 
 //---------------------------------------------------------------------------//
 const Node&
-Node::fetch_child(const std::string &path) const
+Node::child(const std::string &name) const
 {
-    // const fetch_child w/ path requires object role
-    if(!dtype().is_object())
+    if(!m_schema->has_child(name))
     {
-        CONDUIT_ERROR("Cannot fetch_child, Node(" << this->path()
-                      << ") is not an object");
-    }
-    
-    std::string p_curr;
-    std::string p_next;
-    utils::split_path(path,p_curr,p_next);
-    
-    // cull empty paths
-    if(p_curr == "")
-    {
-        return this->fetch_child(p_next);
-    }
-
-    // check for parent
-    if(p_curr == "..")
-    {
-        if(m_parent == NULL)
-        {
-            CONDUIT_ERROR("Cannot fetch_child from NULL parent" << path);
-        }
-        else
-        {
-            return m_parent->fetch_child(p_next);
-        }
-    }
-
-    if(!m_schema->has_child(p_curr))
-    {
-        CONDUIT_ERROR("Cannot fetch non-existent " 
-                      << "child \"" << p_curr << "\" from Node("
+        CONDUIT_ERROR("Cannot access non-existent "
+                      << "child \"" << name << "\" from Node("
                       << this->path()
                       << ")");
     }
+    size_t idx = (size_t)m_schema->child_index(name);
+    return *m_children[idx];
+}
 
-    size_t idx = (size_t)m_schema->child_index(p_curr);
-
-    if(p_next.empty())
+//---------------------------------------------------------------------------//
+Node&
+Node::child(const std::string &name)
+{
+    if(!m_schema->has_child(name))
     {
-        return *m_children[idx];
+        CONDUIT_ERROR("Cannot access non-existent "
+                      << "child \"" << name << "\" from Node("
+                      << this->path()
+                      << ")");
     }
-    else
-    {
-        return m_children[idx]->fetch_child(p_next);
-    }
+    size_t idx = (size_t)m_schema->child_index(name);
+    return *m_children[idx];
 }
 
 
 //---------------------------------------------------------------------------//
-Node&
-Node::fetch_child(const std::string &path)
+const Node&
+Node::fetch_existing(const std::string &path) const
 {
-    // fetch_child w/ path requires object role
+    // const fetch_existing w/ path requires object role
     if(!dtype().is_object())
     {
-        CONDUIT_ERROR("Cannot fetch_child, Node(" << this->path()
+        CONDUIT_ERROR("Cannot fetch_existing, Node(" << this->path()
+                      << ") is not an object");
+    }
+    
+    std::string p_curr;
+    std::string p_next;
+    utils::split_path(path,p_curr,p_next);
+    
+    // cull empty paths
+    if(p_curr == "")
+    {
+        return this->fetch_existing(p_next);
+    }
+
+    // check for parent
+    if(p_curr == "..")
+    {
+        if(m_parent == NULL)
+        {
+            CONDUIT_ERROR("Cannot fetch_existing from NULL parent" << path);
+        }
+        else
+        {
+            return m_parent->fetch_existing(p_next);
+        }
+    }
+
+    // check if descendant
+    if(m_schema->has_child(p_curr) && !p_next.empty())
+    {
+        // `child_index` will error if p_curr is invalid
+        size_t idx = (size_t)m_schema->child_index(p_curr);
+        return m_children[idx]->fetch_existing(p_next);
+    }
+    // is direct child
+    else
+    {
+        // `child` will error if p_curr is invalid
+        return this->child(p_curr);
+    }
+}
+
+//---------------------------------------------------------------------------//
+Node&
+Node::fetch_existing(const std::string &path)
+{
+    // fetch_existing w/ path requires object role
+    if(!dtype().is_object())
+    {
+        CONDUIT_ERROR("Cannot fetch_existing, Node(" << this->path()
                       << ") is not an object");
     }
     
@@ -12019,7 +12195,7 @@ Node::fetch_child(const std::string &path)
     // cull empty paths
     if(p_curr == "")
     {
-        return this->fetch_child(p_next);
+        return this->fetch_existing(p_next);
     }
 
     // check for parent
@@ -12027,11 +12203,11 @@ Node::fetch_child(const std::string &path)
     {
         if(m_parent == NULL)
         {
-            CONDUIT_ERROR("Cannot fetch_child from NULL parent" << path);
+            CONDUIT_ERROR("Cannot fetch_existing from NULL parent" << path);
         }
         else
         {
-            return m_parent->fetch_child(p_next);
+            return m_parent->fetch_existing(p_next);
         }
     }
 
@@ -12051,8 +12227,22 @@ Node::fetch_child(const std::string &path)
     }
     else
     {
-        return m_children[idx]->fetch_child(p_next);
+        return m_children[idx]->fetch_existing(p_next);
     }
+}
+
+
+//---------------------------------------------------------------------------//
+Node&
+Node::fetch_child(const std::string &path)
+{
+    return fetch_existing(path);
+}
+//---------------------------------------------------------------------------//
+const Node&
+Node::fetch_child(const std::string &path) const
+{
+    return fetch_existing(path);
 }
 
 //---------------------------------------------------------------------------//
@@ -12126,7 +12316,7 @@ Node::fetch(const std::string &path)
 const Node&
 Node::fetch(const std::string &path) const
 {
-    return fetch_child(path);
+    return fetch_existing(path);
 }
 
 
@@ -12303,22 +12493,28 @@ Node::remove(const std::string &path)
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
 
-    size_t idx= (size_t) m_schema->child_index(p_curr);
-    
     if(!p_next.empty())
     {
+        size_t idx= (size_t) m_schema->child_index(p_curr);
         m_children[idx]->remove(p_next);
     }
     else
     {
-        // note: we must remove the child pointer before the
-        // schema. b/c the child pointer uses the schema
-        // to cleanup
-        
-        delete m_children[idx];
-        m_schema->remove(p_curr);
-        m_children.erase(m_children.begin() + idx);
+        remove_child(p_curr);    
     }
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::remove_child(const std::string &name)
+{
+   size_t idx= (size_t) m_schema->child_index(name);
+   // note: we must remove the child pointer before the
+   // schema. b/c the child pointer uses the schema
+   // to cleanup
+   delete m_children[idx];
+   m_schema->remove_child(name);
+   m_children.erase(m_children.begin() + idx);
 }
 
 //---------------------------------------------------------------------------//
@@ -14429,7 +14625,12 @@ Node::MMap::open(const std::string &path,
     m_data_size = data_size;
 
     if (m_mmap_fd == -1) 
-        CONDUIT_ERROR("<Node::mmap> failed to open: " << path);
+    {
+    {
+        CONDUIT_ERROR("<Node::mmap> failed to open file: "
+                     << "\"" << path << "\"");
+    }
+    }
 
     m_data = ::mmap(0,
                     m_data_size,
@@ -14669,6 +14870,58 @@ Node::init_defaults()
     m_parent = NULL;
 }
 
+//-----------------------------------------------------------------------------
+//
+// -- private methods that help with protocol detection for load and save  --
+//
+//-----------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------
+// This method is for Node::load() and Node::save() 
+// Since conudit does not link to relay, only basic (non-tpl dependent)
+// cases are supported here
+void
+Node::identify_protocol(const std::string &path,
+                        std::string &io_type)
+{
+    io_type = "conduit_bin";
+
+    std::string file_path;
+    std::string obj_base;
+
+    // check for ":" split
+    conduit::utils::split_file_path(path,
+                                    std::string(":"),
+                                    file_path,
+                                    obj_base);
+
+    std::string file_name_base;
+    std::string file_name_ext;
+
+    // find file extension to auto match
+    conduit::utils::rsplit_string(file_path,
+                                  std::string("."),
+                                  file_name_ext,
+                                  file_name_base);
+
+    if(file_name_ext == "json")
+    {
+        io_type = "json";
+    }
+    else if(file_name_ext == "conduit_json")
+    {
+        io_type = "conduit_json";
+    }
+    else if(file_name_ext == "conduit_base64_json")
+    {
+        io_type = "conduit_base64_json";
+    }
+    else if(file_name_ext == "yaml")
+    {
+        io_type = "yaml";
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 //
@@ -14691,7 +14944,7 @@ Node::walk_schema(Node   *node,
         {
     
             std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema   = schema->fetch_ptr(curr_name);
+            Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
@@ -14731,7 +14984,7 @@ Node::mirror_node(Node   *node,
         {
     
             std::string curr_name = schema->object_order()[i];
-            Schema *curr_schema   = schema->fetch_ptr(curr_name);
+            Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
             const Node *curr_src = src->child_ptr(i);
             curr_node->set_schema_ptr(curr_schema);
@@ -15088,8 +15341,8 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             }
             else
             {
-                Node &info_child = info_children["diff"][child_path];
-                res |= t_child.diff(n.fetch(child_path), info_child, epsilon);
+                Node &info_child = info_children["diff"].add_child(child_path);
+                res |= t_child.diff(n.child(child_path), info_child, epsilon);
             }
         }
 
@@ -15106,8 +15359,8 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             }
             else
             {
-                Node &info_child = info_children["diff"][child_path];
-                res |= fetch(child_path).diff(n_child, info_child, epsilon);
+                Node &info_child = info_children["diff"].add_child(child_path);
+                res |= child(child_path).diff(n_child, info_child, epsilon);
             }
         }
     }
@@ -15257,8 +15510,8 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
             }
             else
             {
-                Node &info_child = info_children["diff"][child_path];
-                res |= t_child.diff_compatible(n.fetch(child_path), info_child, epsilon);
+                Node &info_child = info_children["diff"].add_child(child_path);
+                res |= t_child.diff_compatible(n.child(child_path), info_child, epsilon);
             }
         }
     }

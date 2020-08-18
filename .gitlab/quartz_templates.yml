@@ -1,0 +1,31 @@
+##############################################################################
+# Copyright (c) 2014-20, Lawrence Livermore National Security, LLC and Conduit
+# project contributors. See the COPYRIGHT file for details.
+##############################################################################
+
+##################
+# QUARTZ TEMPLATES
+##################
+
+# Shared configuration of jobs for quartz
+.on_quartz:
+  tags:
+    - batch
+    - quartz
+  timeout: 3h
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~/_qnone/ || $CI_LASSEN == "OFF"'
+      when: never
+    - when: on_success
+
+####
+# Generic quartz jobs
+.build_deps_on_quartz:
+  extends: [.build_script, .mode_deps, .on_quartz]
+  variables:
+    LLNL_SLURM_SCHEDULER_PARAMETERS: -N 1 -t 60 -A radiuss
+
+.install_on_quartz:
+  extends: [.build_script, .mode_install, .on_quartz]
+  variables:
+    LLNL_SLURM_SCHEDULER_PARAMETERS: -N 1 -t 10 -A radiuss

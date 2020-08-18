@@ -1,53 +1,42 @@
-Running main() from gtest_main.cc
-[==========] Running 8 tests from 1 test case.
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 8 tests from 1 test suite.
 [----------] Global test environment set-up.
 [----------] 8 tests from conduit_tutorial
 [ RUN      ] conduit_tutorial.numeric_as_dtype
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 63]
- numeric_as_dtype
+BEGIN_EXAMPLE("numeric_as_dtype")
 100
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 70]
- numeric_as_dtype
+END_EXAMPLE("numeric_as_dtype")
 [       OK ] conduit_tutorial.numeric_as_dtype (0 ms)
 [ RUN      ] conduit_tutorial.numeric_via_value
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 76]
- numeric_via_value
+BEGIN_EXAMPLE("numeric_via_value")
 100
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 84]
- numeric_via_value
+END_EXAMPLE("numeric_via_value")
 [       OK ] conduit_tutorial.numeric_via_value (0 ms)
 [ RUN      ] conduit_tutorial.numeric_ptr_as_dtype
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 91]
- numeric_ptr_as_dtype
+BEGIN_EXAMPLE("numeric_ptr_as_dtype")
 my_vals[0] = 100
 my_vals[1] = 200
 my_vals[2] = 300
 my_vals[3] = 400
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 105]
- numeric_ptr_as_dtype
+END_EXAMPLE("numeric_ptr_as_dtype")
 [       OK ] conduit_tutorial.numeric_ptr_as_dtype (0 ms)
 [ RUN      ] conduit_tutorial.numeric_ptr_via_value
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 111]
- numeric_ptr_via_value
+BEGIN_EXAMPLE("numeric_ptr_via_value")
 my_vals[0] = 100
 my_vals[1] = 200
 my_vals[2] = 300
 my_vals[3] = 400
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 125]
- numeric_ptr_via_value
+END_EXAMPLE("numeric_ptr_via_value")
 [       OK ] conduit_tutorial.numeric_ptr_via_value (0 ms)
 [ RUN      ] conduit_tutorial.numeric_strided_data_array
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 131]
- numeric_strided_data_array
+BEGIN_EXAMPLE("numeric_strided_data_array")
 my_vals[0] = 100
 my_vals[1] = 300
 [100, 300]
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 149]
- numeric_strided_data_array
+END_EXAMPLE("numeric_strided_data_array")
 [       OK ] conduit_tutorial.numeric_strided_data_array (0 ms)
 [ RUN      ] conduit_tutorial.numeric_double_conversion_start
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 155]
- numeric_double_conversion_start
+BEGIN_EXAMPLE("numeric_double_conversion")
 [       OK ] conduit_tutorial.numeric_double_conversion_start (0 ms)
 [ RUN      ] conduit_tutorial.numeric_double_conversion
 float32 case: 
@@ -64,13 +53,12 @@ vals[0] = 1000
 vals[1] = 2000
 vals[2] = 3000
 vals[3] = 4000
-[       OK ] conduit_tutorial.numeric_double_conversion (0 ms)
+[       OK ] conduit_tutorial.numeric_double_conversion (1 ms)
 [ RUN      ] conduit_tutorial.numeric_double_conversion_end
-[/Users/harrison37/Work/conduit/src/tests/docs/t_conduit_docs_tutorial_numeric.cpp : 221]
- numeric_double_conversion_end
-[       OK ] conduit_tutorial.numeric_double_conversion_end (1 ms)
+END_EXAMPLE("numeric_double_conversion")
+[       OK ] conduit_tutorial.numeric_double_conversion_end (0 ms)
 [----------] 8 tests from conduit_tutorial (1 ms total)
 
 [----------] Global test environment tear-down
-[==========] 8 tests from 1 test case ran. (1 ms total)
+[==========] 8 tests from 1 test suite ran. (1 ms total)
 [  PASSED  ] 8 tests.

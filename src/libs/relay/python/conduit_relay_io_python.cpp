@@ -54,6 +54,13 @@
 #define IS_PY3K
 #endif
 
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
+
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
@@ -96,14 +103,14 @@ using namespace conduit::relay::io;
 #if defined(IS_PY3K)
 
 //-----------------------------------------------------------------------------
-int
+static int
 PyString_Check(PyObject *o)
 {
     return PyUnicode_Check(o);
 }
 
 //-----------------------------------------------------------------------------
-char *
+static char *
 PyString_AsString(PyObject *py_obj)
 {
     char *res = NULL;
@@ -114,7 +121,7 @@ PyString_AsString(PyObject *py_obj)
                                                           "strict"); // Owned reference
         if(temp_bytes != NULL)
         {
-            res = strdup(PyBytes_AS_STRING(temp_bytes));
+            res = _conduit_strdup(PyBytes_AS_STRING(temp_bytes));
             Py_DECREF(temp_bytes);
         }
         else
@@ -124,7 +131,7 @@ PyString_AsString(PyObject *py_obj)
     }
     else if(PyBytes_Check(py_obj))
     {
-        res = strdup(PyBytes_AS_STRING(py_obj));
+        res = _conduit_strdup(PyBytes_AS_STRING(py_obj));
     }
     else
     {
@@ -135,14 +142,14 @@ PyString_AsString(PyObject *py_obj)
 }
 
 //-----------------------------------------------------------------------------
-PyObject *
+static PyObject *
 PyString_FromString(const char *s)
 {
     return PyUnicode_FromString(s);
 }
 
 //-----------------------------------------------------------------------------
-void
+static void
 PyString_AsString_Cleanup(char *bytes)
 {
     free(bytes);
@@ -150,14 +157,14 @@ PyString_AsString_Cleanup(char *bytes)
 
 
 //-----------------------------------------------------------------------------
-int
+static int
 PyInt_Check(PyObject *o)
 {
     return PyLong_Check(o);
 }
 
 //-----------------------------------------------------------------------------
-long
+static long
 PyInt_AsLong(PyObject *o)
 {
     return PyLong_AsLong(o);
@@ -310,7 +317,6 @@ PyRelay_IOHandle_is_open(PyRelay_IOHandle *self)
     else
         Py_RETURN_FALSE;
 
-    Py_RETURN_NONE; 
 }
 
 
@@ -1081,9 +1087,9 @@ static struct PyModuleDef relay_io_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_RELAY_PYTHON_API PyInit_conduit_relay_io_python(void)
+CONDUIT_RELAY_PYTHON_API PyObject * PyInit_conduit_relay_io_python(void)
 #else
-void CONDUIT_RELAY_PYTHON_API initconduit_relay_io_python(void)
+CONDUIT_RELAY_PYTHON_API void initconduit_relay_io_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

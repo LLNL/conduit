@@ -46,20 +46,18 @@ cmake_minimum_required(VERSION 3.0)
 ################################
 # cmake policy selections
 ################################
-
-# cmake var deref policy
-if(POLICY CMP0054)
-  cmake_policy(SET CMP0054 OLD)
+# allow find_packages to use ZZZ_ROOT vars
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
 endif()
-
 
 ################################
 # Conduit
 ################################
 
-project(conduit VERSION "0.4.0")
+project(conduit VERSION "0.5.1")
 
-################################
+################################ 
 # Build Options
 ################################
 option(BUILD_SHARED_LIBS  "Build shared libraries"      ON)
@@ -70,7 +68,7 @@ option(ENABLE_DOCS        "Build conduit documentation" ON)
 option(ENABLE_COVERAGE    "Build with coverage flags"   OFF)
 
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
-option(ENABLE_FORTRAN     "Build Fortran  support"      OFF)
+option(ENABLE_FORTRAN     "Build Fortran Support"       OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
 
@@ -113,6 +111,11 @@ include(cmake/SetupFortran.cmake)
 include(cmake/BasicTypeChecks.cmake)
 
 ################################
+# Setup project wide includes
+################################
+include(cmake/SetupIncludes.cmake)
+
+################################
 # Setup 3rd Party Libs
 ################################
 include(cmake/Setup3rdParty.cmake)
@@ -121,11 +124,6 @@ include(cmake/Setup3rdParty.cmake)
 # Setup tests helpers
 ################################
 include(cmake/SetupTests.cmake)
-
-################################
-# Setup project wide includes
-################################
-include(cmake/SetupIncludes.cmake)
 
 ################################
 # Add our libs
@@ -168,4 +166,9 @@ add_subdirectory(config)
 # Create CMake importable
 # exports for all of our targets
 ################################
+# install exports to comply with standard find_package search path expectations
+install(EXPORT conduit DESTINATION lib/cmake/conduit)
+# also install to support our old export directory layout 
+# (preserving for now to avoid issues with downstream packages using old layout)
 install(EXPORT conduit DESTINATION lib/cmake)
+

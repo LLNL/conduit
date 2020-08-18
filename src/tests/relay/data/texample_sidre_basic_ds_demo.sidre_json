@@ -1,0 +1,99 @@
+
+{
+  "sidre": 
+  {
+    "groups": 
+    {
+      "my_scalars": 
+      {
+        "views": 
+        {
+          "i64": 
+          {
+            "state": "SCALAR",
+            "value": 1
+          },
+          "f64": 
+          {
+            "state": "SCALAR",
+            "value": 10.0
+          }
+        }
+      },
+      "my_strings": 
+      {
+        "views": 
+        {
+          "s0": 
+          {
+            "state": "STRING",
+            "value": "s0 string"
+          },
+          "s1": 
+          {
+            "state": "STRING",
+            "value": "s1 string"
+          }
+        }
+      },
+      "my_arrays": 
+      {
+        "views": 
+        {
+          "a5_i64": 
+          {
+            "state": "BUFFER",
+            "buffer_id": 0,
+            "schema": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}",
+            "is_applied": 1
+          },
+          "a5_i64_ext": 
+          {
+            "state": "EXTERNAL",
+            "schema": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}"
+          },
+          "b_v1": 
+          {
+            "state": "BUFFER",
+            "buffer_id": 1,
+            "schema": "{\"dtype\":\"float64\", \"number_of_elements\": 3, \"offset\": 0, \"stride\": 16, \"element_bytes\": 8, \"endianness\": \"little\"}",
+            "is_applied": 1
+          },
+          "b_v2": 
+          {
+            "state": "BUFFER",
+            "buffer_id": 1,
+            "schema": "{\"dtype\":\"float64\", \"number_of_elements\": 3, \"offset\": 8, \"stride\": 16, \"element_bytes\": 8, \"endianness\": \"little\"}",
+            "is_applied": 1
+          }
+        }
+      }
+    },
+    "buffers": 
+    {
+      "buffer_id_0": 
+      {
+        "id": 0,
+        "schema": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}",
+        "data": [0, 1, 2, 3, 4]
+      },
+      "buffer_id_1": 
+      {
+        "id": 1,
+        "schema": "{\"dtype\":\"float64\", \"number_of_elements\": 6, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}",
+        "data": [1.0, 2.0, 1.0, 2.0, 1.0, 2.0]
+      }
+    },
+    "attribute": 
+    {
+    },
+    "external": 
+    {
+      "my_arrays": 
+      {
+        "a5_i64_ext": [0, 1, 2, 3, -5]
+      }
+    }
+  },
+  "sidre_group_name": ""
+}

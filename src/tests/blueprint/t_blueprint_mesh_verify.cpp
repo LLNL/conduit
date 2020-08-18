@@ -260,6 +260,14 @@ bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
     EXPECT_TRUE(has_consistent_validity(info));  \
 }                                                \
 
+#define CHECK_MATSET(n, iub, ied)                                       \
+{                                                                       \
+    EXPECT_EQ(blueprint::mesh::matset::is_uni_buffer(n), iub);          \
+    EXPECT_EQ(blueprint::mesh::matset::is_multi_buffer(n), !iub);       \
+    EXPECT_EQ(blueprint::mesh::matset::is_element_dominant(n), ied);    \
+    EXPECT_EQ(blueprint::mesh::matset::is_material_dominant(n), !ied);  \
+}                                                                       \
+
 /// Mesh Coordinate Set Tests ///
 
 //-----------------------------------------------------------------------------
@@ -706,10 +714,110 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["elements"]["offsets"].set(DataType::float64(10));
-        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["elements"]["offsets"].set(DataType::int32(10));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
         n["elements"].remove("offsets");
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["type"].set("structured");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["type"].set("unstructured");
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+    }
+
+    { // Single Shape Unstructured Polygon Tests //
+        n["elements"].reset();
+        n["elements"]["shape"].set("undefined");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["elements"]["shape"].set("polygonal");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        n["elements"]["offsets"].set(DataType::int32(10));
+        n["elements"]["sizes"].set(DataType::int32(10));     
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["connectivity"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["offsets"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"].remove("offsets");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["sizes"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["sizes"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["type"].set("structured");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["type"].set("unstructured");
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+    }
+
+    { // Single Shape Unstructured Polyhedral Tests //
+        n["elements"].reset();
+        n["elements"]["shape"].set("undefined");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["elements"]["shape"].set("polyhedral");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["sizes"].set(DataType::int32(10));     
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["subelements"]["shape"].set("polygonal");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+        n["subelements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["sizes"].set(DataType::int32(10));     
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["connectivity"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["subelements"]["connectivity"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["connectivity"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["offsets"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"].remove("offsets");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["subelements"]["offsets"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"].remove("offsets");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["offsets"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["sizes"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["sizes"].set(DataType::int32(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["subelements"]["sizes"].set(DataType::float64(10));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["sizes"].set(DataType::int32(10));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["type"].set("structured");
@@ -740,6 +848,35 @@ TEST(conduit_blueprint_mesh_verify, topology_unstructured)
         n["elements"]["c"]["shape"].set("tri");
         n["elements"]["c"]["connectivity"].set(DataType::int32(5));
         n["elements"]["c"]["offsets"].set(DataType::int32(5));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["d"]["shape"].set("polygonal");
+        n["elements"]["d"]["connectivity"].set(DataType::int32(6));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+        n["elements"]["d"]["offsets"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["d"]["sizes"].set(DataType::int32(2));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["d"]["sizes"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+
+        n["elements"]["e"]["shape"].set("polyhedral");
+        n["elements"]["e"]["connectivity"].set(DataType::int32(6));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["e"]["offsets"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["e"]["sizes"].set(DataType::int32(2));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["elements"]["e"]["sizes"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+
+        n["subelements"]["e"]["shape"].set("polygonal");
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["e"]["connectivity"].set(DataType::int32(6));
+        CHECK_MESH(verify_unstructured_topology,n,info,true);
+        n["subelements"]["e"]["offsets"].set(DataType::int32(3));
+        CHECK_MESH(verify_unstructured_topology,n,info,false);
+        n["subelements"]["e"]["sizes"].set(DataType::int32(3));
         CHECK_MESH(verify_unstructured_topology,n,info,true);
 
         n["type"].set("structured");
@@ -809,7 +946,7 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
     for(index_t ti = 0; ti < topo_shape_count; ti++)
     {
         n.reset();
-        blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
+        blueprint::mesh::examples::braid(topology_fids[ti],10,10,2,n);
         Node& topology_node = n["topologies/mesh"];
         CHECK_MESH(verify_topology,topology_node,info,true);
 
@@ -889,6 +1026,9 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
         blueprint::mesh::matset::verify,
         verify_matset_protocol};
 
+    const bool is_uni_buffer = true, is_multi_buffer = false;
+    const bool is_element_dominant = true, is_material_dominant = false;
+
     for(index_t fi = 0; fi < 2; fi++)
     {
         VerifyFun verify_matset = verify_matset_funs[fi];
@@ -929,7 +1069,108 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
             n["volume_fractions"]["m2"].set(DataType::float64(5));
             CHECK_MESH(verify_matset,n,info,true);
 
-            n["volume_fractions"].reset();
+            { // Uni-Buffer Tests //
+                n.reset();
+                n["topology"].set("mesh");
+
+                n["volume_fractions"].set(DataType::float64(5));
+                CHECK_MESH(verify_matset,n,info,false);
+
+                n["material_ids"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                n.remove("material_ids");
+                n["material_map"]["m1"].set(1);
+                CHECK_MESH(verify_matset,n,info,false);
+                n["material_ids"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_uni_buffer,is_element_dominant);
+
+                n["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+                n["sizes"].set(DataType::uint32(5));
+                n["offsets"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_uni_buffer,is_element_dominant);
+            }
+
+            { // Multi-Buffer Tests //
+                n.reset();
+                n["topology"].set("mesh");
+
+                n["volume_fractions"]["m1"]["values"].set(DataType::float64(8));
+                n["volume_fractions"]["m1"]["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_multi_buffer,is_element_dominant);
+
+                n["volume_fractions"]["m2"]["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["volume_fractions"]["m2"]["values"].set(DataType::float64(10));
+                CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_multi_buffer,is_element_dominant);
+
+                n["volume_fractions"]["m3"]["sizes"].set(DataType::uint32(3));
+                n["volume_fractions"]["m3"]["values"].set(DataType::float64(30));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["volume_fractions"]["m3"]["offsets"].set(DataType::uint32(3));
+                CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_multi_buffer,is_element_dominant);
+
+                n["volume_fractions"]["m4"]["test"]["values"].set(DataType::uint32(3));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["volume_fractions"]["m4"]["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,false);
+            }
+
+            { // Element ID Tests //
+                // Multi-Buffer Volume Fractions //
+                n.reset();
+                n["topology"].set("mesh");
+                n["volume_fractions"]["m1"].set(DataType::float64(5));
+                n["volume_fractions"]["m2"].set(DataType::float64(5));
+
+                n["element_ids"].reset();
+                n["element_ids"].set(DataType::float64(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["element_ids"].set(DataType::int64(5));
+                CHECK_MESH(verify_matset,n,info,false);
+
+                n["element_ids"].reset();
+                n["element_ids"]["m1"].set(DataType::int64(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["element_ids"]["m2"].set(DataType::int64(5));
+                CHECK_MESH(verify_matset,n,info,true);
+                n["element_ids"]["m3"].set(DataType::int64(5));
+                CHECK_MESH(verify_matset,n,info,false);
+
+                n["element_ids"].reset();
+                n["element_ids"]["m1"].set(DataType::int64(5));
+                n["element_ids"]["m2"].set(DataType::float32(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["element_ids"]["m2"].set(DataType::int32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_multi_buffer,is_material_dominant);
+
+                // Uni-Buffer Volume Fractions //
+                n["volume_fractions"].reset();
+                n["volume_fractions"].set(DataType::float64(5));
+                n["material_map"]["m1"].set(1);
+                n["material_ids"].set(DataType::uint32(5));
+
+                n["element_ids"].reset();
+                n["element_ids"]["m1"].set(DataType::int64(5));
+                n["element_ids"]["m2"].set(DataType::int64(5));
+                CHECK_MESH(verify_matset,n,info,false);
+
+                n["element_ids"].reset();
+                n["element_ids"].set(DataType::float64(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                n["element_ids"].set(DataType::int32(5));
+                CHECK_MESH(verify_matset,n,info,true);
+                CHECK_MATSET(n,is_uni_buffer,is_material_dominant);
+            }
+
+            n.reset();
+            n["topology"].set("mesh");
             n["volume_fractions"].set(vfs);
             CHECK_MESH(verify_matset,n,info,true);
         }
@@ -986,14 +1227,35 @@ TEST(conduit_blueprint_mesh_verify, specset_general)
             CHECK_MESH(verify_specset,n,info,false);
 
             n["matset_values"].reset();
+            n["matset_values"]["m1"].append().set(DataType::float64(5));
+            n["matset_values"]["m1"].append().set(DataType::float64(5));
+            CHECK_MESH(verify_specset,n,info,true);
+            n["matset_values"]["m2"].append().set(DataType::float64(5));
+            CHECK_MESH(verify_specset,n,info,true);
+
+            n["matset_values"].reset();
             n["matset_values"]["m1"]["s1"].set(DataType::float64(5));
             n["matset_values"]["m2"]["s1"].set(DataType::float64(5));
             CHECK_MESH(verify_specset,n,info,true);
 
             n["matset_values"].reset();
-            n["matset_values"]["m1"]["s2"].set(DataType::float64(5));
+            n["matset_values"]["m1"]["s1"].set(DataType::float64(5));
             n["matset_values"]["m2"]["s2"].set(DataType::float64(5));
             CHECK_MESH(verify_specset,n,info,true);
+            n["matset_values"]["m2"]["s3"].set(DataType::float64(5));
+            CHECK_MESH(verify_specset,n,info,true);
+
+            n["matset_values"].reset();
+            n["matset_values"]["m1"]["s1"].set(DataType::float64(5));
+            n["matset_values"]["m1"]["s2"].set(DataType::float64(6));
+            CHECK_MESH(verify_specset,n,info,false);
+
+            n["matset_values"].reset();
+            n["matset_values"]["m1"]["s1"].set(DataType::float64(5));
+            n["matset_values"]["m1"]["s2"].set(DataType::float64(5));
+            CHECK_MESH(verify_specset,n,info,true);
+            n["matset_values"]["m2"]["s3"].set(DataType::float64(6));
+            CHECK_MESH(verify_specset,n,info,false);
 
             n["matset_values"].reset();
             n["matset_values"].set(mfs);

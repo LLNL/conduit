@@ -59,4 +59,12 @@
 void CONDUIT_RELAY_API identify_protocol(const std::string &path,
                                          std::string &io_type);
 
+//-----------------------------------------------------------------------------
+/// Helper that identifies the underlying file type by opening it 
+/// reading a small amount of data and a set of heuristics. 
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API identify_file_type(const std::string &file_path,
+                                          std::string &file_type);
+
+
 #endif

@@ -1,0 +1,143 @@
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 8 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 8 tests from conduit_tutorial
+[ RUN      ] conduit_tutorial.t_conduit_docs_tutorial_yaml
+BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml")
+42
+
+{
+  "mykey": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 42.0}
+}
+END_EXAMPLE("t_conduit_docs_tutorial_yaml")
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_yaml (0 ms)
+[ RUN      ] conduit_tutorial.t_conduit_docs_tutorial_json
+BEGIN_EXAMPLE("t_conduit_docs_tutorial_json")
+42
+
+{
+  "mykey": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 42.0}
+}
+END_EXAMPLE("t_conduit_docs_tutorial_json")
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_json (0 ms)
+[ RUN      ] conduit_tutorial.t_conduit_docs_tutorial_yaml_inline_array
+BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
+[0.0, 10.0, 20.0, 30.0]
+
+{
+  "myarray": {"dtype":"float64", "number_of_elements": 4, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": [0.0, 10.0, 20.0, 30.0]}
+}
+END_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_yaml_inline_array (0 ms)
+[ RUN      ] conduit_tutorial.json_generator_std
+BEGIN_EXAMPLE("t_json_generator_std")
+100
+
+test: 100.0
+
+
+{
+  "test": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 100.0}
+}
+END_EXAMPLE("t_json_generator_std")
+[       OK ] conduit_tutorial.json_generator_std (0 ms)
+[ RUN      ] conduit_tutorial.json_generator_pure_json
+BEGIN_EXAMPLE("t_json_generator_pure_json")
+100
+
+{
+  "test": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 100.0}
+}
+
+test: 100.0
+
+END_EXAMPLE("t_json_generator_pure_json")
+[       OK ] conduit_tutorial.json_generator_pure_json (1 ms)
+[ RUN      ] conduit_tutorial.json_generator_pure_yaml
+BEGIN_EXAMPLE("t_json_generator_pure_yaml")
+100
+
+{
+  "test": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 100.0}
+}
+
+test: 100.0
+
+END_EXAMPLE("t_json_generator_pure_yaml")
+[       OK ] conduit_tutorial.json_generator_pure_yaml (0 ms)
+[ RUN      ] conduit_tutorial.json_generator_bind_to_incore
+BEGIN_EXAMPLE("t_json_generator_bind_to_incore")
+100 vs 100
+200 vs 200
+
+a: 100.0
+b: 200.0
+
+
+mem_spaces: 
+  0x7ffeeda3e030: 
+    path: "a"
+    type: "external"
+total_bytes_allocated: 0
+total_bytes_mmaped: 0
+total_bytes_compact: 16
+total_strided_bytes: 16
+
+END_EXAMPLE("t_json_generator_bind_to_incore")
+[       OK ] conduit_tutorial.json_generator_bind_to_incore (0 ms)
+[ RUN      ] conduit_tutorial.json_generator_compact
+BEGIN_EXAMPLE("t_json_generator_compact")
+[100.0, 200.0, 300.0, 400.0, 500.0]
+[-100.0, -200.0, -300.0, -400.0, -500.0]
+
+mem_spaces: 
+  0x7ffeeda3dff0: 
+    path: ""
+    type: "external"
+total_bytes_allocated: 0
+total_bytes_mmaped: 0
+total_bytes_compact: 40
+total_strided_bytes: 72
+
+
+mem_spaces: 
+  0x7ffeeda3dff0: 
+    path: ""
+    type: "external"
+total_bytes_allocated: 0
+total_bytes_mmaped: 0
+total_bytes_compact: 40
+total_strided_bytes: 72
+
+[100.0, 200.0, 300.0, 400.0, 500.0]
+{"dtype":"float64", "number_of_elements": 5, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
+
+mem_spaces: 
+  0x7fc10f405730: 
+    path: ""
+    type: "allocated"
+    bytes: 40
+total_bytes_allocated: 40
+total_bytes_mmaped: 0
+total_bytes_compact: 40
+total_strided_bytes: 40
+
+[-100.0, -200.0, -300.0, -400.0, -500.0]
+
+mem_spaces: 
+  0x7fc10f4063a0: 
+    path: ""
+    type: "allocated"
+    bytes: 40
+total_bytes_allocated: 40
+total_bytes_mmaped: 0
+total_bytes_compact: 40
+total_strided_bytes: 40
+
+END_EXAMPLE("t_json_generator_compact")
+[       OK ] conduit_tutorial.json_generator_compact (0 ms)
+[----------] 8 tests from conduit_tutorial (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 1 test suite ran. (2 ms total)
+[  PASSED  ] 8 tests.

@@ -54,6 +54,13 @@
 #define IS_PY3K
 #endif
 
+// use  proper strdup
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
@@ -75,99 +82,112 @@
 using namespace conduit;
 
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Begin Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::basic
+//---------------------------------------------------------------------------//
 
+// doc string
+const char *PyBlueprint_mesh_examples_basic_doc_str =
+"braid(mesh_type, nx, ny, nz, dest)\n"
+"\n"
+"Creates a basic mesh blueprint example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#basic\n"
+"\n"
+"Arguments:\n"
+" mesh_type: string description of the type of mesh to generate\n"
+"  valid mesh_type values:\n"
+"    \"uniform\"\n"
+"    \"rectilinear\"\n"
+"    \"structured\"\n"
+"    \"tris\"\n"
+"    \"quads\"\n"
+"    \"polygons\"\n"
+"    \"tets\"\n"
+"    \"hexs\"\n"
+"    \"polyhedra\"\n"
+" dest: Mesh output (conduit.Node instance)\n";
 
-#if defined(IS_PY3K)
-
-//-----------------------------------------------------------------------------
-int
-PyString_Check(PyObject *o)
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_basic(PyObject *, //self
+                                PyObject *args,
+                                PyObject *kwargs)
 {
-    return PyUnicode_Check(o);
-}
+    const char *mesh_type = NULL;
+    
+    Py_ssize_t nx = 0;
+    Py_ssize_t ny = 0;
+    Py_ssize_t nz = 0;
+    
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"mesh_type",
+                                   "nx",
+                                   "ny",
+                                   "nz",
+                                   "dest",
+                                   NULL};
 
-//-----------------------------------------------------------------------------
-char *
-PyString_AsString(PyObject *py_obj)
-{
-    char *res = NULL;
-    if(PyUnicode_Check(py_obj))
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "snnnO",
+                                     const_cast<char**>(kwlist),
+                                     &mesh_type,
+                                     &nx,
+                                     &ny,
+                                     &nz,
+                                     &py_node))
     {
-        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
-                                                          "ASCII",
-                                                          "strict"); // Owned reference
-        if(temp_bytes != NULL)
-        {
-            res = strdup(PyBytes_AS_STRING(temp_bytes));
-            Py_DECREF(temp_bytes);
-        }
-        else
-        {
-            // TODO: Error
-        }
+        return (NULL);
     }
-    else if(PyBytes_Check(py_obj))
+
+    if(!PyConduit_Node_Check(py_node))
     {
-        res = strdup(PyBytes_AS_STRING(py_obj));
-    }
-    else
-    {
-        // TODO: ERROR or auto convert?
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
     }
     
-    return res;
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    blueprint::mesh::examples::basic(std::string(mesh_type),
+                                     nx,
+                                     ny,
+                                     nz,
+                                     node);
+
+    Py_RETURN_NONE;
 }
-
-//-----------------------------------------------------------------------------
-PyObject *
-PyString_FromString(const char *s)
-{
-    return PyUnicode_FromString(s);
-}
-
-//-----------------------------------------------------------------------------
-void
-PyString_AsString_Cleanup(char *bytes)
-{
-    free(bytes);
-}
-
-
-//-----------------------------------------------------------------------------
-int
-PyInt_Check(PyObject *o)
-{
-    return PyLong_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-long
-PyInt_AsLong(PyObject *o)
-{
-    return PyLong_AsLong(o);
-}
-
-#else // python 2.6+
-
-//-----------------------------------------------------------------------------
-#define PyString_AsString_Cleanup(c) { /* noop */ }
-
-#endif
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// End Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::examples::braid
 //---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_braid_doc_str =
+"braid(mesh_type, nx, ny, nz, dest)\n"
+"\n"
+"Creates a braid mesh blueprint example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#braid\n"
+"\n"
+"Arguments:\n"
+" mesh_type: string description of the type of mesh to generate\n"
+"  valid mesh_type values:\n"
+"    \"uniform\"\n"
+"    \"rectilinear\"\n"
+"    \"structured\"\n"
+"    \"point\"\n"
+"    \"lines\"\n"
+"    \"tris\"\n"
+"    \"quads\"\n"
+"    \"tets\"\n"
+"    \"hexs\"\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mesh_examples_braid(PyObject *, //self
                                 PyObject *args,
@@ -220,9 +240,29 @@ PyBlueprint_mesh_examples_braid(PyObject *, //self
     Py_RETURN_NONE;
 }
 
+
+
+
 //---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::examples::julia
 //---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_julia_doc_str =
+"julia(nx, ny, x_min, x_max, y_min, y_max, c_re, c_im, dest)\n"
+"\n"
+"Creates a julia set mesh blueprint example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#julia\n"
+"\n"
+"Arguments:\n"
+" nx, ny: x and y grid dimensions\n"
+" x_min, x_max: x extents\n"
+" y_min, y_max: y extents\n"
+" c_re, c_im: real and imaginary components of c\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mesh_examples_julia(PyObject *, //self
                                 PyObject *args,
@@ -289,6 +329,20 @@ PyBlueprint_mesh_examples_julia(PyObject *, //self
 //---------------------------------------------------------------------------//
 // conduit::blueprint::mesh::examples::spiral
 //---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_spiral_doc_str =
+"spiral(ndoms, dest)\n"
+"\n"
+"Creates a multi-domain mesh blueprint spiral example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#spiral\n"
+"\n"
+"Arguments:\n"
+" ndoms: number of domains to generate\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mesh_examples_spiral(PyObject *, //self
                                  PyObject *args,
@@ -338,20 +392,25 @@ PyBlueprint_mesh_examples_spiral(PyObject *, //self
 static PyMethodDef blueprint_mesh_examples_python_funcs[] =
 {
     //-----------------------------------------------------------------------//
+    {"basic",
+     (PyCFunction)PyBlueprint_mesh_examples_basic,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_basic_doc_str},
+    //-----------------------------------------------------------------------//
     {"braid",
      (PyCFunction)PyBlueprint_mesh_examples_braid,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_examples_braid_doc_str},
     //-----------------------------------------------------------------------//
     {"julia",
      (PyCFunction)PyBlueprint_mesh_examples_julia,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_examples_julia_doc_str},
     //-----------------------------------------------------------------------//
     {"spiral",
      (PyCFunction)PyBlueprint_mesh_examples_spiral,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mesh_examples_spiral_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//
@@ -432,9 +491,9 @@ static struct PyModuleDef blueprint_mesh_examples_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_BLUEPRINT_PYTHON_API PyInit_conduit_blueprint_mesh_examples_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API PyObject *PyInit_conduit_blueprint_mesh_examples_python(void)
 #else
-void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_mesh_examples_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API void initconduit_blueprint_mesh_examples_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

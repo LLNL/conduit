@@ -1,45 +1,45 @@
 ###############################################################################
 # Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-# 
+#
 # Produced at the Lawrence Livermore National Laboratory
-# 
+#
 # LLNL-CODE-666778
-# 
+#
 # All rights reserved.
-# 
-# This file is part of Conduit. 
-# 
+#
+# This file is part of Conduit.
+#
 # For details, see: http://software.llnl.gov/conduit/.
-# 
+#
 # Please also read conduit/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
+#
+# * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the disclaimer below.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 ###############################################################################
 
 ################################
@@ -49,14 +49,15 @@
 ################################
 # blueprint lib Unit Tests
 ################################
-set(BLUEPRINT_TESTS t_blueprint_smoke 
+set(BLUEPRINT_TESTS t_blueprint_smoke
+                    t_blueprint_mcarray_verify
+                    t_blueprint_mcarray_examples
+                    t_blueprint_o2mrelation_verify
+                    t_blueprint_o2mrelation_examples
                     t_blueprint_mesh_verify
                     t_blueprint_mesh_transform
                     t_blueprint_mesh_generate
-                    t_blueprint_mcarray_verify
-                    t_blueprint_mesh_examples
-                    t_blueprint_mcarray_examples)
-
+                    t_blueprint_mesh_examples)
 
 ################################
 # Add our Main Unit Tests
@@ -64,7 +65,9 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
 
 message(STATUS "Adding blueprint lib unit tests")
 foreach(TEST ${BLUEPRINT_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON conduit conduit_blueprint conduit_relay)
+    add_cpp_test(TEST ${TEST}
+                 DEPENDS_ON conduit conduit_blueprint conduit_relay
+                 FOLDER tests/blueprint)
 endforeach()
 
 ################################
@@ -88,6 +91,33 @@ else()
     message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
+set(BLUEPRINT_MPI_TESTS t_blueprint_mpi_smoke t_blueprint_mpi_verify)
+set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_relay)
+
+if(MPI_FOUND)
+    message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
+    foreach(TEST ${BLUEPRINT_MPI_TESTS})
+        add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON mpi
+conduit
+                                                                 conduit_blueprint_mpi)
+    endforeach()
+
+    message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
+    foreach(TEST ${BLUEPRINT_RELAY_MPI_TESTS})
+        add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON mpi
+                                                                 conduit
+                                                                 conduit_blueprint
+                                                                 conduit_blueprint_mpi
+                                                                 conduit_relay
+                                                                 conduit_relay_mpi
+                                                                 conduit_relay_mpi_io)
+    endforeach()
+else()
+    message(STATUS "MPI disabled: Skipping conduit_blueprint_mpi tests")
+endif()
+
 message(STATUS "Adding blueprint lib Zfp unit tests")
-add_cpp_test(TEST t_blueprint_zfp DEPENDS_ON conduit conduit_blueprint)
+add_cpp_test(TEST t_blueprint_zfp
+             DEPENDS_ON conduit conduit_blueprint
+             FOLDER tests/blueprint)
 

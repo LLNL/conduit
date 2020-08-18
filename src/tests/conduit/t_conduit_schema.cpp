@@ -74,7 +74,7 @@ TEST(schema_basics, construction)
     
     EXPECT_EQ(s2[1].parent(),&s2);
     
-    EXPECT_EQ(s2.fetch_child("a").dtype().id(),DataType::INT64_ID);
+    EXPECT_EQ(s2.fetch_existing("a").dtype().id(),DataType::INT64_ID);
     
 }
 
@@ -223,7 +223,7 @@ TEST(schema_basics, schema_name_by_index)
 }
 
 //-----------------------------------------------------------------------------
-TEST(schema_basics, schema_fetch_child)
+TEST(schema_basics, schema_fetch_existing)
 {
     Schema s;
     s["a"].set(DataType::int64());
@@ -237,8 +237,8 @@ TEST(schema_basics, schema_fetch_child)
     
     EXPECT_EQ(&s_c,&s_c_idx);
 
-    EXPECT_THROW(s.fetch_child("bad"),conduit::Error);
-    EXPECT_THROW(const Schema &s_bad = s_c.fetch_child("bad"),conduit::Error);
+    EXPECT_THROW(s.fetch_existing("bad"),conduit::Error);
+    EXPECT_THROW(const Schema &s_bad = s_c.fetch_existing("bad"),conduit::Error);
     
     const Schema *s_d_ptr = s.fetch_ptr("d");
 
@@ -293,9 +293,9 @@ TEST(schema_basics, schema_errors)
     
     s.reset();
     EXPECT_THROW(s.remove("a"),conduit::Error);
-    EXPECT_THROW(s.fetch_child("a"),conduit::Error);
+    EXPECT_THROW(s.fetch_existing("a"),conduit::Error);
     s = DataType::object();
-    EXPECT_THROW(s.fetch_child(".."),conduit::Error);
+    EXPECT_THROW(s.fetch_existing(".."),conduit::Error);
 }
 
 //-----------------------------------------------------------------------------
@@ -325,8 +325,6 @@ TEST(schema_basics, rename_child)
 
     s.rename_child("c","d");
 
-    s.print();
-
     cnames = s.child_names();
     EXPECT_TRUE(s.has_child("d"));
     EXPECT_FALSE(s.has_child("c"));
@@ -334,7 +332,119 @@ TEST(schema_basics, rename_child)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(schema_basics, pathlike_child_names)
+{
+    Schema s;
+    
+    std::string shared_name = "a/b";
+    std::string path_only = "c/d";
+    std::string direct_only = "e/f";
 
+    s[shared_name].set(DataType::int64());
+    s.add_child(shared_name).set(DataType::int64());
+
+    s[path_only].set(DataType::int64());
+    s.add_child(direct_only).set(DataType::int64());
+    
+    s.print();
+
+    EXPECT_TRUE(s.has_child(shared_name));
+    EXPECT_TRUE(s.has_path(shared_name));
+
+    EXPECT_TRUE(s.has_path(path_only));
+    EXPECT_FALSE(s.has_path(direct_only));
+
+    EXPECT_TRUE(s.has_child(direct_only));
+    EXPECT_FALSE(s.has_child(path_only));
+
+    // Test that explicitly removing children doesn't remove
+    // by path and vice-versa 
+    std::string second_shared_name = "foo/bar";
+    s[second_shared_name].set(DataType::int64());
+    s.add_child(second_shared_name).set(DataType::int64());
+
+    s.remove(shared_name);
+    s.remove_child(second_shared_name);
+
+    EXPECT_TRUE(s.has_child(shared_name));
+    EXPECT_FALSE(s.has_path(shared_name));
+
+    EXPECT_TRUE(s.has_path(second_shared_name));
+    EXPECT_FALSE(s.has_child(second_shared_name));
+
+    s.print();
+
+    // check compact_to , equal and compatible
+    Schema s2;
+    s["a"].set(DataType::int64());
+    s.add_child("key_with_/_ex").set(DataType::int64());
+    
+    EXPECT_EQ(s.child("key_with_/_ex").path(),"{key_with_/_ex}");
+    
+    Schema s3(s2);
+    
+    EXPECT_TRUE(s2.equals(s3));
+    EXPECT_TRUE(s2.compatible(s3));
+    
+    Schema s2_compact;
+    s2.compact_to(s2_compact);
+    EXPECT_TRUE(s2_compact.is_compact());
+    EXPECT_TRUE(s2.compatible(s2_compact));
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(schema_basics, schema_to_string)
+{
+    Schema s;
+    s["a"].set(DataType::int64());
+    s["b"].set(DataType::float64());
+    s["c"].set(DataType::float64());
+
+    std::string res_str  = s.to_string();
+    std::string res_json = s.to_json();
+    
+    std::ostringstream oss;
+    
+    s.to_string_stream(oss);
+    std::string res_str_from_oss = oss.str();
+    
+    oss.str("");
+    s.to_json_stream(oss);    
+    std::string res_json_from_oss = oss.str();
+
+    // save files
+    std::string tf_t_str_file ="tout_schema_to_string_stream_file.json";
+    // remove if exists
+    if(utils::is_file(tf_t_str_file))
+    {
+        utils::remove_file(tf_t_str_file);
+    }
+    s.to_string_stream(tf_t_str_file);
+    EXPECT_TRUE(utils::is_file(tf_t_str_file));
+
+    std::string tf_t_json_file ="tout_schema_to_string_stream_file.json";
+    // remove if exists
+    if(utils::is_file(tf_t_json_file))
+    {
+        utils::remove_file(tf_t_str_file);
+    }
+
+    s.to_json_stream(tf_t_json_file);
+
+    EXPECT_TRUE(utils::is_file(tf_t_json_file));
+
+    std::cout << res_str << std::endl;
+    std::cout << res_json << std::endl;
+    std::cout << res_str_from_oss << std::endl;
+    std::cout << res_json_from_oss << std::endl;
+
+    // we expect these to be the same
+    EXPECT_EQ(res_str, res_json);
+    EXPECT_EQ(res_str, res_str_from_oss);
+    EXPECT_EQ(res_str, res_json_from_oss);
+}
 
 
 //-----------------------------------------------------------------------------

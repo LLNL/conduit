@@ -52,6 +52,105 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.5.1
+-----------------
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.5.1/conduit-v0.5.1-src-with-blt.tar.gz>`__
+
+Highlights
++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+Added
+~~~~~~~~~
+
+* **General**
+
+ * Added Node::parse() method, (C++, Python and Fortran) which supports common json and yaml parsing use cases without creating a generator instance.
+ * Use FOLDER target property to group targets for Visual Studio
+ * Added Node load(), and save() support to the C and Fortran APIs
+
+Changed
+~~~~~~~~~
+
+* **General**
+
+ * Node::load() and Node::save() now auto detect which protocol to use when protocol argument is an empty string
+ * Changed Node::load() and Node::save() default protocol value to empty (default now is to auto detect)
+ * Changed Python linking strategy to defer linking for our compiler modules
+ * Conduit Error Exception message strings now print cleaner (avoiding nesting doll string escaping headaches)
+ * Build system improvements to support conda-forge builds for Linux, macOS, and Windows
+
+Fixed
+~~~~~~~~~
+
+* **General**
+
+ * Fixed install paths for CMake exported target files to follow standard CMake find_package() search conventions. Also perserved duplicate files to support old import path structure for this release.
+ * python: Fixed Node.set_external() to accept conduit nodes as well as numpy arrays
+ * Fixed dll install locations for Windows
+
+
+v0.5.0
+-----------------
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.5.0/conduit-v0.5.0-src-with-blt.tar.gz>`__
+
+Highlights
++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+Added
+~~~~~~~~~
+
+* **General**
+
+ *  Added support to parse YAML into Conduit Nodes and to create YAML from Conduit Nodes. Support closely follows the "json" protocol, making similar choices related to promoting YAML string leaves to concrete data types.
+ * Added several more Conduit Node methods to the C and Fortran APIs. Additions are enumerated here:  https://github.com/LLNL/conduit/pull/426
+ * Added Node set support for Python Tuples and Lists with numeric and string entires
+ * Added Node set support for Numpy String Arrays. String Arrays become Conduit lists with child char8_str arrays
+
+
+* **Blueprint**
+
+ * Added support for a "zfparray" blueprint that holds ZFP compressed array data. 
+ * Added the the "specsets" top-level section to the Blueprint schema, which can be used to represent multi-dimensional per-material quantities (most commonly per-material atomic composition fractions).
+ * Added explicit topological data generation functions for points, lines, and faces
+ * Added derived topology generation functions for element centroids, sides, and corners
+ * Added the basic example function to the conduit.mesh.blueprint.examples module
+
+* **Relay**
+
+ * Added optional ZFP support to relay, that enables wrapping and unwraping zfp arrays into conduit Nodes. 
+ * Extended relay HDF5 I/O support to read a wider range of HDF5 string representations including H5T_VARIABLE strings.
+
+Changed
+~~~~~~~~~
+
+* **General**
+
+ * Conduit's automatic build process (uberenv + spack) now defaults to using Python 3
+ * Improved CMake export logic to make it easier to find and use Conduit install in a CMake-based build system. (See using-with-cmake example for new recipe)
+
+* **Relay**
+
+ * Added is_open() method to IOHandle in the C++ and Python interfaces
+ * Added file name information to Relay HDF5 error messages
+
+
+Fixed
+~~~~~~~~~
+
+* **General**
+
+ * Fixed bug that caused memory access after free during Node destruction
+
+* **Relay**
+
+ * Fixed crash with mpi broadcast_using_schema() when receiving tasks pass a non empty Node.
+ * Fixed a few Windows API export issues for relay io
+
+
 v0.4.0
 -----------------
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.4.0/conduit-v0.4.0-src-with-blt.tar.gz>`__

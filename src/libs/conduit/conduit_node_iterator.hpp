@@ -112,7 +112,6 @@ public:
     std::string name()  const;
     index_t     index() const;
     Node       &node();
-    void        to_front();
 
 //-----------------------------------------------------------------------------
 /// Iterator forward control.
@@ -120,6 +119,7 @@ public:
     bool        has_next() const;
     Node       &next();
     Node       &peek_next();
+    void        to_front();
 
 //-----------------------------------------------------------------------------
 /// Iterator reverse control.

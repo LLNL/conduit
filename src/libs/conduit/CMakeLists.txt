@@ -169,7 +169,8 @@ add_compiled_library(NAME   conduit
                      SOURCES ${conduit_sources} ${conduit_c_sources} ${conduit_fortran_sources}
                              $<TARGET_OBJECTS:conduit_b64>
                              $<TARGET_OBJECTS:conduit_libyaml>
-                     HEADERS_DEST_DIR include/conduit)
+                     HEADERS_DEST_DIR include/conduit
+                     FOLDER libs)
 
 
 #################################

@@ -75,6 +75,13 @@ using namespace conduit::relay::web;
 #define IS_PY3K
 #endif
 
+// use  proper strdup
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // PyVarObject_TAIL is used at the end of each PyVarObject def
 // to make sure we have the correct number of initializers across python
@@ -86,89 +93,6 @@ using namespace conduit::relay::web;
 #define PyVarObject_TAIL
 #endif
 
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Begin Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-#if defined(IS_PY3K)
-
-//-----------------------------------------------------------------------------
-int
-PyString_Check(PyObject *o)
-{
-    return PyUnicode_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-char *
-PyString_AsString(PyObject *py_obj)
-{
-    char *res = NULL;
-    if(PyUnicode_Check(py_obj))
-    {
-        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
-                                                          "ASCII",
-                                                          "strict"); // Owned reference
-        if(temp_bytes != NULL)
-        {
-            res = strdup(PyBytes_AS_STRING(temp_bytes));
-            Py_DECREF(temp_bytes);
-        }
-        else
-        {
-            // TODO: Error
-        }
-    }
-    else if(PyBytes_Check(py_obj))
-    {
-        res = strdup(PyBytes_AS_STRING(py_obj));
-    }
-    else
-    {
-        // TODO: ERROR or auto convert?
-    }
-    
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-PyObject *
-PyString_FromString(const char *s)
-{
-    return PyUnicode_FromString(s);
-}
-
-//-----------------------------------------------------------------------------
-void
-PyString_AsString_Cleanup(char *bytes)
-{
-    free(bytes);
-}
-
-
-//-----------------------------------------------------------------------------
-int
-PyInt_Check(PyObject *o)
-{
-    return PyLong_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-long
-PyInt_AsLong(PyObject *o)
-{
-    return PyLong_AsLong(o);
-}
-
-#else // python 2.6+
-
-//-----------------------------------------------------------------------------
-#define PyString_AsString_Cleanup(c) { /* noop */ }
-
-#endif
 
 //---------------------------------------------------------------------------//
 struct PyRelay_Web_WebServer
@@ -977,9 +901,9 @@ static struct PyModuleDef relay_web_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_RELAY_PYTHON_API PyInit_conduit_relay_web_python(void)
+CONDUIT_RELAY_PYTHON_API PyObject * PyInit_conduit_relay_web_python(void)
 #else
-void CONDUIT_RELAY_PYTHON_API initconduit_relay_web_python(void)
+CONDUIT_RELAY_PYTHON_API void initconduit_relay_web_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

@@ -397,6 +397,13 @@ TEST(conduit_relay_io_adios, test_mpi_time_series)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    // Make a string that is a different size on each rank.
+    std::ostringstream oss;
+    oss << "Rank " << rank << " likes ADIOS";
+    for(int i = 0; i < rank+1; ++i)
+        oss << " very";
+    oss << " much.";
+
     std::string path("test_mpi_time_series.bp"), protocol("adios");
 
     // Remove the file if it exists.

@@ -59,10 +59,9 @@ using namespace conduit::relay;
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_handle, test_active_protos)
 {
-    
     std::string tfile_base = "tout_conduit_relay_io_handle.";
     std::vector<std::string> protocols;
-    
+
     protocols.push_back("conduit_bin");
     protocols.push_back("json");
     protocols.push_back("conduit_json");
@@ -293,6 +292,128 @@ TEST(conduit_relay_io_handle, test_exceptions)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_mode)
+{
+    // default mode is rw, this test checks the "only" modes
+    // read only (mode="r") and write only (mode="w")
+    int64 a_val = 20;
+    int64 b_val = 8;
+    int64 c_val = 13;
+    int64 here_val = 10;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["d/here"] = here_val;
+
+    std::vector<std::string> protocols;
+
+    protocols.push_back("conduit_bin");
+    protocols.push_back("json");
+    protocols.push_back("conduit_json");
+    protocols.push_back("conduit_base64_json");
+    protocols.push_back("yaml");
+
+    Node n_about;
+    io::about(n_about);
+    
+    if(n_about["protocols/hdf5"].as_string() == "enabled")
+        protocols.push_back("hdf5");
+
+    for (std::vector<std::string>::const_iterator itr = protocols.begin();
+             itr < protocols.end(); ++itr)
+    {
+        
+        std::string protocol = *itr;
+        CONDUIT_INFO("Testing Relay IO Handle Open Mode 'r' with protocol: "
+                     << protocol );
+        std::string test_file_name = "tout_conduit_relay_io_handle_mode_ro."
+                                     + protocol;
+
+        if(utils::is_file(test_file_name))
+        {
+            utils::remove_file(test_file_name);
+        }
+
+        /// read only
+        Node opts_ronly;
+        opts_ronly["mode"] = "r";
+
+        io::IOHandle h_ro;
+        // if read only, it will fail to open a file that doesn't exist
+        EXPECT_THROW(h_ro.open(test_file_name,
+                     opts_ronly),
+                     conduit::Error);
+
+        relay::io::save(n,test_file_name);
+        // try again now that the file exists
+        h_ro.open(test_file_name,
+                  opts_ronly);
+
+        // read only, fail to write:
+        EXPECT_THROW(h_ro.write(n), conduit::Error);
+        // read only, fail to write w/ path:
+        EXPECT_THROW(h_ro.write(n,"super"), conduit::Error);
+        // read only, fail to remove:
+        EXPECT_THROW(h_ro.remove("super"), conduit::Error);
+    
+        // make sure we can read something
+        Node n_read;
+        h_ro.read("d/here",n_read);
+        EXPECT_EQ(n["d/here"].as_int64(),n_read.as_int64());
+
+        CONDUIT_INFO("Testing Relay IO Handle Open Mode 'w' with protocol: " 
+                     << protocol );
+        test_file_name = "tout_conduit_relay_io_handle_mode_wo."
+                         + protocol;
+
+        /// write only
+        Node opts_wonly;
+        opts_wonly["mode"] = "w";
+        
+        io::IOHandle h_wo;
+        h_wo.open(test_file_name,opts_wonly);
+
+        // write only, fail to read
+        EXPECT_THROW(h_wo.read(n), conduit::Error);
+        EXPECT_THROW(h_wo.read("super",n), conduit::Error);
+        // write only, fail to has_path
+        EXPECT_THROW(h_wo.has_path("super"), conduit::Error);
+        // write only, fail to list_child_names
+        std::vector<std::string> cld_names;
+        EXPECT_THROW(h_wo.list_child_names(cld_names), conduit::Error);
+        EXPECT_THROW(h_wo.list_child_names("super",cld_names), conduit::Error);
+
+        h_wo.write(n);
+        h_wo.close();
+        
+        // lets read what wrote to make sure the handled actually wrote
+        // something
+        n_read.reset();
+        relay::io::load(test_file_name,n_read);
+        EXPECT_EQ(n["d/here"].as_int64(),n_read["d/here"].to_int64());
+    }
+    
+    //
+    // io::IOHandle h(opts);
+    // // if read only, it will fail to open a file that doesn't exist
+    // EXPECT_THROW(h.open("tout_conduit_relay_io_handle_mode_wo.conduit_bin"),
+    //                     conduit::Error);
+    // n.save("tout_conduit_relay_io_handle_mode_wo.conduit_bin");
+    // // try again.
+    // h.open("tout_conduit_relay_io_handle_mode_ok.conduit_bin")
+    //
+    // // read only, fail to write:
+    // EXPECT_THROW(h.write(n), conduit::Error);
+
+    
+
+}
+
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_handle, test_reuse_handle)
 {
     int64 a_val = 20;
@@ -331,3 +452,44 @@ TEST(conduit_relay_io_handle, test_reuse_handle)
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_empty_path_as_root)
+{
+    int64 a_val = 20;
+    int64 b_val = 8;
+    int64 c_val = 13;
+    int64 here_val = 10;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["d/here"] = here_val;
+
+    std::string ofname = "tout_conduit_relay_io_empty_path_as_root.conduit_bin";
+
+    Node n_read_1, n_read_2, n_read_3, info;
+
+    io::IOHandle h;
+    h.open(ofname);
+    h.write(n);
+    h.close();
+
+    // all of these 3 cases should be equiv
+    h.open(ofname);
+    h.read(n_read_1);
+    h.close();
+
+    h.open(ofname);
+    h.read("",n_read_2);
+    h.close();
+
+    h.open(ofname);
+    h.read("/",n_read_3);
+    h.close();
+
+    EXPECT_FALSE(n.diff(n_read_1, info, 0.0));
+    EXPECT_FALSE(n.diff(n_read_2, info, 0.0));
+    EXPECT_FALSE(n.diff(n_read_2, info, 0.0));
+}

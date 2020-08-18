@@ -157,7 +157,7 @@ endif()
 ##############################################################################
 find_package(Git)
 if(GIT_FOUND)
-  message("git executable: ${GIT_EXECUTABLE}")
+  message(STATUS "git executable: ${GIT_EXECUTABLE}")
   execute_process(COMMAND
     "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -172,7 +172,7 @@ endif()
 ###############################################################################
 macro(add_compiled_library)
     set(options OBJECT)
-    set(singleValuedArgs NAME EXPORT HEADERS_DEST_DIR LIB_DEST_DIR )
+    set(singleValuedArgs NAME EXPORT HEADERS_DEST_DIR LIB_DEST_DIR FOLDER)
     set(multiValuedArgs  HEADERS SOURCES DEPENDS_ON)
 
     ## parse the arguments to the macro
@@ -242,8 +242,13 @@ macro(add_compiled_library)
                     EXPORT ${args_EXPORT}
                     LIBRARY DESTINATION lib
                     ARCHIVE DESTINATION lib
-                    RUNTIME DESTINATION lib)
+                    RUNTIME DESTINATION bin)
         endif()
+    endif()
+
+    # set folder if passed
+    if(DEFINED args_FOLDER)
+        blt_set_target_folder(TARGET  ${args_NAME} FOLDER ${args_FOLDER})
     endif()
 
 endmacro()

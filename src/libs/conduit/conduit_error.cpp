@@ -134,12 +134,11 @@ Error::message() const
 void
 Error::message(std::ostringstream &oss) const
 {
-    Node n;
-    n["file"] = m_file;
-    n["line"] = m_line;
-    n["message"] = m_msg;
-    n.to_json_stream(oss);
     oss << std::endl;
+    oss << "file: " << m_file << std::endl;
+    oss << "line: " << m_line << std::endl;
+    oss << "message: " << std::endl;
+    oss << m_msg << std::endl;
 }
 
 //---------------------------------------------------------------------------//

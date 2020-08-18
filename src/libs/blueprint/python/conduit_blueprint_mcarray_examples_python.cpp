@@ -54,6 +54,13 @@
 #define IS_PY3K
 #endif
 
+// use  proper strdup
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
@@ -75,99 +82,27 @@
 using namespace conduit;
 
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Begin Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-
-#if defined(IS_PY3K)
-
-//-----------------------------------------------------------------------------
-int
-PyString_Check(PyObject *o)
-{
-    return PyUnicode_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-char *
-PyString_AsString(PyObject *py_obj)
-{
-    char *res = NULL;
-    if(PyUnicode_Check(py_obj))
-    {
-        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
-                                                          "ASCII",
-                                                          "strict"); // Owned reference
-        if(temp_bytes != NULL)
-        {
-            res = strdup(PyBytes_AS_STRING(temp_bytes));
-            Py_DECREF(temp_bytes);
-        }
-        else
-        {
-            // TODO: Error
-        }
-    }
-    else if(PyBytes_Check(py_obj))
-    {
-        res = strdup(PyBytes_AS_STRING(py_obj));
-    }
-    else
-    {
-        // TODO: ERROR or auto convert?
-    }
-    
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-PyObject *
-PyString_FromString(const char *s)
-{
-    return PyUnicode_FromString(s);
-}
-
-//-----------------------------------------------------------------------------
-void
-PyString_AsString_Cleanup(char *bytes)
-{
-    free(bytes);
-}
-
-
-//-----------------------------------------------------------------------------
-int
-PyInt_Check(PyObject *o)
-{
-    return PyLong_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-long
-PyInt_AsLong(PyObject *o)
-{
-    return PyLong_AsLong(o);
-}
-
-#else // python 2.6+
-
-//-----------------------------------------------------------------------------
-#define PyString_AsString_Cleanup(c) { /* noop */ }
-
-#endif
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// End Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 //---------------------------------------------------------------------------//
-// conduit::blueprint::mesh::examples::braid
+// conduit::blueprint::mcarray::examples::xyz
 //---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mcarray_examples_xyz_doc_str =
+"xyz(mcarray_type, npts, dest)\n"
+"\n"
+"Creates an xyz mcarray blueprint example.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mcarray.html#examples\n"
+"\n"
+"Arguments:\n"
+" mcarray_type: string description of the type of mcarray to generate\n"
+"  valid mcarray_type values:\n"
+"    \"interleaved\"\n"
+"    \"separate\"\n"
+"    \"contiguous\"\n"
+"    \"interleaved_mixed\"\n"
+" dest: Output node (conduit.Node instance)\n";
+// python func
 static PyObject * 
 PyBlueprint_mcarray_examples_xyz(PyObject *, //self
                                  PyObject *args,
@@ -220,7 +155,7 @@ static PyMethodDef blueprint_mcarray_examples_python_funcs[] =
     {"xyz",
      (PyCFunction)PyBlueprint_mcarray_examples_xyz,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_examples_xyz_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//
@@ -301,9 +236,9 @@ static struct PyModuleDef blueprint_mcarray_examples_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_BLUEPRINT_PYTHON_API PyInit_conduit_blueprint_mcarray_examples_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API PyObject *PyInit_conduit_blueprint_mcarray_examples_python(void)
 #else
-void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_mcarray_examples_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API void initconduit_blueprint_mcarray_examples_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

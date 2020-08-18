@@ -948,10 +948,22 @@ base64_decode(const void *src,
 }
 
 //-----------------------------------------------------------------------------
+bool
+string_is_integer(const std::string &s)
+{
+    int v = -1;
+    std::istringstream iss(s);
+    iss >> v;
+
+    return !iss.fail();
+}
+
+
+//-----------------------------------------------------------------------------
 std::string
 float64_to_string(float64 value)
 {
-    char buffer[64];
+    char buffer[64] = {0};
     snprintf(buffer,64,"%.15g",value);
 
     std::string res(buffer);

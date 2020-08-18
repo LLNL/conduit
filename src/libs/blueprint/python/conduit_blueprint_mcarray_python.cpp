@@ -54,6 +54,13 @@
 #define IS_PY3K
 #endif
 
+// use  proper strdup
+#ifdef CONDUIT_PLATFORM_WINDOWS
+    #define _conduit_strdup _strdup
+#else
+    #define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // -- standard lib includes -- 
 //-----------------------------------------------------------------------------
@@ -75,99 +82,22 @@
 using namespace conduit;
 
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Begin Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-
-#if defined(IS_PY3K)
-
-//-----------------------------------------------------------------------------
-int
-PyString_Check(PyObject *o)
-{
-    return PyUnicode_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-char *
-PyString_AsString(PyObject *py_obj)
-{
-    char *res = NULL;
-    if(PyUnicode_Check(py_obj))
-    {
-        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
-                                                          "ASCII",
-                                                          "strict"); // Owned reference
-        if(temp_bytes != NULL)
-        {
-            res = strdup(PyBytes_AS_STRING(temp_bytes));
-            Py_DECREF(temp_bytes);
-        }
-        else
-        {
-            // TODO: Error
-        }
-    }
-    else if(PyBytes_Check(py_obj))
-    {
-        res = strdup(PyBytes_AS_STRING(py_obj));
-    }
-    else
-    {
-        // TODO: ERROR or auto convert?
-    }
-    
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-PyObject *
-PyString_FromString(const char *s)
-{
-    return PyUnicode_FromString(s);
-}
-
-//-----------------------------------------------------------------------------
-void
-PyString_AsString_Cleanup(char *bytes)
-{
-    free(bytes);
-}
-
-
-//-----------------------------------------------------------------------------
-int
-PyInt_Check(PyObject *o)
-{
-    return PyLong_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-long
-PyInt_AsLong(PyObject *o)
-{
-    return PyLong_AsLong(o);
-}
-
-#else // python 2.6+
-
-//-----------------------------------------------------------------------------
-#define PyString_AsString_Cleanup(c) { /* noop */ }
-
-#endif
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// End Functions to help with Python 2/3 Compatibility.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 //---------------------------------------------------------------------------//
-// conduit::blueprint::mesh::verify
+// conduit::blueprint::mcarray::verify
 //---------------------------------------------------------------------------//
+
+// doc str
+const char *PyBlueprint_mcarray_verify_doc_str =
+"verify(node, info, protocol)\n"
+"\n"
+"Returns True if passed node conforms to the mcarray blueprint.\n"
+"Populates info node with verification details.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n"
+"  info: node to hold verify info (conduit.Node instance)\n"
+"  protocol: optional string with sub-protocol name\n";
+// python func
 static PyObject * 
 PyBlueprint_mcarray_verify(PyObject *, //self
                            PyObject *args,
@@ -236,6 +166,18 @@ PyBlueprint_mcarray_verify(PyObject *, //self
 //-----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
+// doc str
+const char *PyBlueprint_mcarray_is_interleaved_doc_str =
+"is_interleaved(node)\n"
+"\n"
+"Assumes mcarray::verify() is True\n"
+"\n"
+"Returns True if passed node is interleaved in memory.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mcarray_is_interleaved(PyObject *, //self
                                    PyObject *args,
@@ -272,6 +214,20 @@ PyBlueprint_mcarray_is_interleaved(PyObject *, //self
 }
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// doc str
+const char *PyBlueprint_mcarray_to_contiguous_doc_str =
+"to_contiguous(node, dest)\n"
+"\n"
+"Assumes mcarray::verify() is True\n"
+"\n"
+"Converts any mcarray to a contiguous memory layout in output node dest.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n"
+"  dest: output node (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mcarray_to_contiguous(PyObject *, //self
                                   PyObject *args,
@@ -322,6 +278,19 @@ PyBlueprint_mcarray_to_contiguous(PyObject *, //self
 
 
 //----------------------------------------------------------------------------
+// doc str
+const char *PyBlueprint_mcarray_to_interleaved_doc_str =
+"to_interleaved(node, dest)\n"
+"\n"
+"Assumes mcarray::verify() is True\n"
+"\n"
+"Converts any mcarray to an interleaved memory layout in output node dest.\n"
+"\n"
+"Arguments:\n"
+"  node: input node (conduit.Node instance)\n"
+"  dest: output node (conduit.Node instance)\n";
+
+// python func
 static PyObject * 
 PyBlueprint_mcarray_to_interleaved(PyObject *, //self
                                    PyObject *args,
@@ -377,19 +346,19 @@ static PyMethodDef blueprint_mcarray_python_funcs[] =
     {"verify",
      (PyCFunction)PyBlueprint_mcarray_verify,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_verify_doc_str},
     {"is_interleaved",
      (PyCFunction)PyBlueprint_mcarray_is_interleaved,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_is_interleaved_doc_str},
     {"to_interleaved",
      (PyCFunction)PyBlueprint_mcarray_to_interleaved,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_to_interleaved_doc_str},
     {"to_contiguous",
      (PyCFunction)PyBlueprint_mcarray_to_contiguous,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      PyBlueprint_mcarray_to_contiguous_doc_str},
 
     //-----------------------------------------------------------------------//
     // end methods table
@@ -471,9 +440,9 @@ static struct PyModuleDef blueprint_mcarray_python_module_def =
 extern "C" 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-PyObject *CONDUIT_BLUEPRINT_PYTHON_API PyInit_conduit_blueprint_mcarray_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API PyObject *PyInit_conduit_blueprint_mcarray_python(void)
 #else
-void CONDUIT_BLUEPRINT_PYTHON_API initconduit_blueprint_mcarray_python(void)
+CONDUIT_BLUEPRINT_PYTHON_API void initconduit_blueprint_mcarray_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    

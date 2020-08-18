@@ -1,45 +1,45 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
+//
 // Produced at the Lawrence Livermore National Laboratory
-// 
+//
 // LLNL-CODE-666778
-// 
+//
 // All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
+//
+// This file is part of Conduit.
+//
 // For details, see: http://software.llnl.gov/conduit/.
-// 
+//
 // Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
+//
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
+//
+// * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the disclaimer below.
-// 
+//
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the disclaimer (as noted below) in the
 //   documentation and/or other materials provided with the distribution.
-// 
+//
 // * Neither the name of the LLNS/LLNL nor the names of its contributors may
 //   be used to endorse or promote products derived from this software without
 //   specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
 // LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 // DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
 // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -66,6 +66,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <queue>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -129,7 +130,6 @@ struct point
     float64 x, y, z;
 };
 
-
 //---------------------------------------------------------------------------//
 void basic_init_example_element_scalar_field(index_t nele_x,
                                              index_t nele_y,
@@ -172,24 +172,24 @@ void braid_init_example_point_scalar_field(index_t npts_x,
                                            Node &res)
 {
 
-    if(npts_z < 1) 
+    if(npts_z < 1)
     {
         npts_z = 1;
     }
 
     index_t npts = npts_x * npts_y * npts_z;
-    
+
     res["association"] = "vertex";
     res["type"] = "scalar";
     res["topology"] = "mesh";
     res["values"].set(DataType::float64(npts));
-    
+
     float64 *vals = res["values"].value();
 
     float64 dx = (float) (4.0 * PI_VALUE) / float64(npts_x - 1);
     float64 dy = (float) (2.0 * PI_VALUE) / float64(npts_y-1);
     float64 dz = (float) (3.0 * PI_VALUE) / float64(npts_z-1);
-    
+
     index_t idx = 0;
 
     for(index_t k = 0; k < npts_z ; k++)
@@ -201,20 +201,20 @@ void braid_init_example_point_scalar_field(index_t npts_x,
             float64 cy =  (j * dy) - ( PI_VALUE);
             for(index_t i = 0; i < npts_x ; i++)
             {
-            
+
                 float64 cx =  (i * dx) + (2.0 * PI_VALUE);
-                
-                float64 cv =  sin( cx ) + 
-                              sin( cy ) + 
+
+                float64 cv =  sin( cx ) +
+                              sin( cy ) +
                               2 * cos(sqrt( (cx*cx)/2.0 +cy*cy) / .75) +
                               4 * cos( cx*cy / 4.0);
-                                  
+
                 if(npts_z > 1)
                 {
-                    cv += sin( cz ) + 
+                    cv += sin( cz ) +
                           1.5 * cos(sqrt(cx*cx + cy*cy + cz*cz) / .75);
                 }
-                
+
                 vals[idx] = cv;
                 idx++;
             }
@@ -228,8 +228,12 @@ void braid_init_example_point_vector_field(index_t npts_x,
                                            index_t npts_z,
                                            Node &res)
 {
-    index_t npts = npts_x * npts_y * npts_z;
-    
+    index_t npts = npts_x * npts_y;
+    if(npts_z > 0)
+    {
+        npts *= npts_z;
+    }
+
     res["association"] = "vertex";
     res["type"] = "vector";
     res["topology"] = "mesh";
@@ -239,7 +243,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
     float64 *u_vals = res["values/u"].value();
     float64 *v_vals = res["values/v"].value();
     float64 *w_vals = NULL;
-    
+
     if(npts_z > 1)
     {
         res["values/w"].set(DataType::float64(npts));
@@ -249,9 +253,21 @@ void braid_init_example_point_vector_field(index_t npts_x,
     // this logic is from the explicit coord set setup function
     // we are using the coords (distance from origin)
     // to create an example vector field
+
+    float64 dx = 0.0;
+    float64 dy = 0.0;
     
-    float64 dx = 20.0 / float64(npts_x - 1);
-    float64 dy =  20.0 / float64(npts_y-1);
+    if(npts_x > 1)
+    {
+        dx = 20.0  / float64(npts_x - 1);
+    }
+
+    if(npts_x > 1)
+    {
+        dy = 20.0  / float64(npts_x - 1);
+    }
+
+    
     float64 dz = 0.0;
 
     if(npts_z > 1)
@@ -259,15 +275,21 @@ void braid_init_example_point_vector_field(index_t npts_x,
         dz = 20.0 / float64(npts_z-1);
     }
 
+    // make sure outerloop exex
+    if(npts_z < 1)
+    {
+        npts_z = 1;
+    }
+
     index_t idx = 0;
     for(index_t k = 0; k < npts_z ; k++)
     {
         float64 cz = -10.0 + k * dz;
-        
+
         for(index_t j = 0; j < npts_y ; j++)
         {
             float64 cy =  -10.0 + j * dy;
-            
+
             for(index_t i = 0; i < npts_x ; i++)
             {
                 float64 cx =  -10.0 + i * dx;
@@ -275,14 +297,14 @@ void braid_init_example_point_vector_field(index_t npts_x,
                 u_vals[idx] = cx;
                 v_vals[idx] = cy;
 
-                if(npts_z > 1)
+                if(dz > 0.0)
                 {
                     w_vals[idx] = cz;
                 }
-                
+
                 idx++;
             }
-        
+
         }
     }
 }
@@ -296,7 +318,7 @@ void braid_init_example_element_scalar_field(index_t nele_x,
                                              index_t prims_per_ele=1)
 {
     index_t nele = nele_x * nele_y;
-    
+
     if(nele_z > 0)
     {
         nele = nele * nele_z;
@@ -305,9 +327,9 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     res["association"] = "element";
     res["type"] = "scalar";
     res["topology"] = "mesh";
-    
+
     index_t vals_size = nele * prims_per_ele;
-    
+
     res["values"].set(DataType::float64(vals_size));
 
     float64 *vals = res["values"].value();
@@ -315,12 +337,12 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     float64 dx = 20.0 / float64(nele_x);
     float64 dy = 20.0 / float64(nele_y);
     float64 dz = 0.0f;
-    
+
     if(nele_z > 0 )
     {
         dz = 20.0 / float64(nele_z);
     }
-    
+
     index_t idx = 0;
     for(index_t k = 0; (idx == 0 || k < nele_z); k++)
     {
@@ -329,13 +351,13 @@ void braid_init_example_element_scalar_field(index_t nele_x,
         for(index_t j = 0; (idx == 0 || j < nele_y) ; j++)
         {
             float64 cy =  (j * dy) + -10.0;
-            
+
             for(index_t i = 0; (idx == 0 || i < nele_x) ; i++)
             {
                 float64 cx =  (i * dx) + -10.0;
 
                 float64 cv = 10.0 * sqrt( cx*cx + cy*cy );
-                
+
                 if(nele_z != 0)
                 {
                     cv = 10.0 * sqrt( cx*cx + cy*cy +cz*cz );
@@ -438,17 +460,17 @@ void braid_init_uniform_coordset(index_t npts_x,
     {
         dims["k"] = npts_z;
     }
-        
-    // -10 to 10 in each dim, 
+
+    // -10 to 10 in each dim,
     Node &origin = coords["origin"];
     origin["x"] = -10.0;
     origin["y"] = -10.0;
-    
+
     if(npts_z > 1)
     {
         origin["z"] = -10.0;
     }
-    
+
     Node &spacing = coords["spacing"];
     spacing["dx"] = 20.0 / (float64)(npts_x-1);
     spacing["dy"] = 20.0 / (float64)(npts_y-1);
@@ -470,7 +492,7 @@ void braid_init_rectilinear_coordset(index_t npts_x,
     Node &coord_vals = coords["values"];
     coord_vals["x"].set(DataType::float64(npts_x));
     coord_vals["y"].set(DataType::float64(npts_y));
-    
+
     if(npts_z > 1)
     {
         coord_vals["z"].set(DataType::float64(npts_z));
@@ -489,7 +511,7 @@ void braid_init_rectilinear_coordset(index_t npts_x,
     float64 dx = 20.0 / (float64)(npts_x-1);
     float64 dy = 20.0 / (float64)(npts_y-1);
     float64 dz = 0.0;
-    
+
     if(npts_z > 1)
     {
         dz = 20.0 / (float64)(npts_z-1);
@@ -499,12 +521,12 @@ void braid_init_rectilinear_coordset(index_t npts_x,
     {
         x_vals[i] = -10.0 + i * dx;
     }
-    
+
     for(int j=0; j < npts_y; j++)
     {
         y_vals[j] = -10.0 + j * dy;
     }
-    
+
     if(npts_z > 1)
     {
         for(int k=0; k < npts_z; k++)
@@ -522,7 +544,7 @@ braid_init_explicit_coordset(index_t npts_x,
                              Node &coords)
 {
     coords["type"] = "explicit";
-    
+
     index_t npts = npts_x * npts_y;
 
     if(npts_z > 1)
@@ -543,7 +565,7 @@ braid_init_explicit_coordset(index_t npts_x,
     float64 *x_vals = coord_vals["x"].value();
     float64 *y_vals = coord_vals["y"].value();
     float64 *z_vals = NULL;
-    
+
     if(npts_z > 1)
     {
         z_vals = coord_vals["z"].value();
@@ -563,24 +585,24 @@ braid_init_explicit_coordset(index_t npts_x,
     for(index_t k = 0; k < npts_z ; k++)
     {
         float64 cz = -10.0 + k * dz;
-        
+
         for(index_t j = 0; j < npts_y ; j++)
         {
             float64 cy =  -10.0 + j * dy;
-            
+
             for(index_t i = 0; i < npts_x ; i++)
             {
                 x_vals[idx] = -10.0 + i * dx;
                 y_vals[idx] = cy;
-                
+
                 if(npts_z > 1)
                 {
                     z_vals[idx] = cz;
                 }
-                
+
                 idx++;
             }
-        
+
         }
     }
 }
@@ -874,7 +896,7 @@ void braid_init_example_nestset(Node &mesh)
             {
                 std::ostringstream oss;
                 // window_{min_dom_id}_{max_dom_id}
-                oss << "window_" << std::min(dom_id, odom_id) 
+                oss << "window_" << std::min(dom_id, odom_id)
                                  << "_"
                                  << std::max(dom_id, odom_id);
                 window_name = oss.str();
@@ -964,11 +986,11 @@ braid_uniform(index_t npts_x,
               Node &res)
 {
     res.reset();
-    
+
     index_t nele_x = npts_x -1;
     index_t nele_y = npts_y -1;
     index_t nele_z = npts_z -1;
-    
+
     braid_init_example_state(res);
     braid_init_uniform_coordset(npts_x,
                                 npts_y,
@@ -976,8 +998,8 @@ braid_uniform(index_t npts_x,
                                 res["coordsets/coords"]);
 
     res["topologies/mesh/type"] = "uniform";
-    res["topologies/mesh/coordset"] = "coords"; 
-    
+    res["topologies/mesh/coordset"] = "coords";
+
     Node &fields = res["fields"];
 
 
@@ -1008,20 +1030,20 @@ braid_rectilinear(index_t npts_x,
                   Node &res)
 {
     res.reset();
-    
+
     index_t nele_x = npts_x -1;
     index_t nele_y = npts_y -1;
     index_t nele_z = npts_z -1;
-    
+
     braid_init_example_state(res);
     braid_init_rectilinear_coordset(npts_x,
                                     npts_y,
                                     npts_z,
                                     res["coordsets/coords"]);
-    
+
     res["topologies/mesh/type"] = "rectilinear";
-    res["topologies/mesh/coordset"] = "coords"; 
-    
+    res["topologies/mesh/coordset"] = "coords";
+
     Node &fields = res["fields"];
 
     braid_init_example_point_scalar_field(npts_x,
@@ -1049,25 +1071,25 @@ braid_structured(index_t npts_x,
                  Node &res)
 {
     res.reset();
-    
+
     index_t nele_x = npts_x -1;
     index_t nele_y = npts_y -1;
     index_t nele_z = npts_z -1;
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
     res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
-    
+
     if(nele_z > 0)
     {
-        res["topologies/mesh/elements/dims/k"] = (int32)nele_z; 
+        res["topologies/mesh/elements/dims/k"] = (int32)nele_z;
     }
 
     Node &fields = res["fields"];
@@ -1076,9 +1098,9 @@ braid_structured(index_t npts_x,
                                           npts_y,
                                           npts_z,
                                           fields["braid"]);
-                                          
+
     braid_init_example_element_scalar_field(nele_x,
-                                            nele_y, 
+                                            nele_y,
                                             nele_z,
                                             fields["radial"]);
 
@@ -1098,17 +1120,24 @@ braid_points_explicit(index_t npts_x,
                       Node &res)
 {
     res.reset();
-    index_t npts_total = npts_x * npts_y * npts_z;
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-    
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "point";
+
+    if(npts_z <= 0)
+    {
+        npts_z = 1;
+    }
+
+    index_t npts_total = npts_x * npts_y * npts_z;
+
     res["topologies/mesh/elements/connectivity"].set(DataType::int32(npts_total));
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
@@ -1118,14 +1147,14 @@ braid_points_explicit(index_t npts_x,
     }
 
     Node &fields = res["fields"];
-    
+
     braid_init_example_point_scalar_field(npts_x,
                                           npts_y,
                                           npts_z,
                                           fields["braid"]);
-    
+
     braid_init_example_element_scalar_field(npts_x,
-                                            npts_y, 
+                                            npts_y,
                                             npts_z,
                                             fields["radial"]);
 
@@ -1145,25 +1174,25 @@ braid_points_implicit(index_t npts_x,
                       Node &res)
 {
     res.reset();
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-    
+
     res["topologies/mesh/type"] = "points";
     res["topologies/mesh/coordset"] = "coords";
 
     Node &fields = res["fields"];
-    
+
     braid_init_example_point_scalar_field(npts_x,
                                           npts_y,
                                           npts_z,
                                           fields["braid"]);
-    
+
     braid_init_example_element_scalar_field(npts_x,
-                                            npts_y, 
+                                            npts_y,
                                             npts_z,
                                             fields["radial"]);
 
@@ -1182,17 +1211,17 @@ braid_quads(index_t npts_x,
             Node &res)
 {
     res.reset();
-    
+
     int32 nele_x = (int32)(npts_x - 1);
     int32 nele_y = (int32)(npts_y - 1);
     int32 nele = nele_x * nele_y;
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "quad";
@@ -1200,10 +1229,10 @@ braid_quads(index_t npts_x,
     int32 *conn = res["topologies/mesh/elements/connectivity"].value();
 
     int32 idx = 0;
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
         int32 yoff = j * (nele_x+1);
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
             conn[idx+0] = yoff + i;
             conn[idx+1] = yoff + i + (nele_x+1);
@@ -1240,16 +1269,16 @@ braid_quads_and_tris(index_t npts_x,
             Node &res)
 {
     res.reset();
-    
+
     int32 nele_x = (int32)(npts_x - 1);
     int32 nele_y = (int32)(npts_y - 1);
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
 
@@ -1378,7 +1407,7 @@ braid_quads_and_tris_offsets(index_t npts_x,
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
-    
+
     Node &elems = res["topologies/mesh/elements"];
     elems["element_types/quads/stream_id"] = 9; // VTK_QUAD
     elems["element_types/quads/shape"]     = "quad";
@@ -1492,19 +1521,19 @@ braid_lines_2d(index_t npts_x,
                Node &res)
 {
     res.reset();
-    
+
     // require npts_x > 0 && npts_y > 0
 
     int32 nele_quads_x = (int32)(npts_x-1);
     int32 nele_quads_y = (int32)(npts_y-1);
     int32 nele_quads = nele_quads_x * nele_quads_y;
-        
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "line";
@@ -1515,7 +1544,7 @@ braid_lines_2d(index_t npts_x,
     for(int32 j = 0; j < nele_quads_y ; j++)
     {
         int32 yoff = j * (nele_quads_x+1);
-        
+
         for(int32 i = 0; i < nele_quads_x; i++)
         {
             // 4 lines per quad.
@@ -1564,19 +1593,19 @@ braid_tris(index_t npts_x,
            Node &res)
 {
     res.reset();
-    
+
     // require npts_x > 0 && npts_y > 0
 
     int32 nele_quads_x = (int32) npts_x-1;
     int32 nele_quads_y = (int32) npts_y-1;
     int32 nele_quads = nele_quads_x * nele_quads_y;
-        
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "tri";
@@ -1587,10 +1616,10 @@ braid_tris(index_t npts_x,
     for(int32 j = 0; j < nele_quads_y ; j++)
     {
         int32 yoff = j * (nele_quads_x+1);
-        
+
         for(int32 i = 0; i < nele_quads_x; i++)
         {
-            // two tris per quad. 
+            // two tris per quad.
             conn[idx+0] = yoff + i;
             conn[idx+1] = yoff + i + (nele_quads_x+1);
             conn[idx+2] = yoff + i + 1 + (nele_quads_x+1);
@@ -1598,7 +1627,7 @@ braid_tris(index_t npts_x,
             conn[idx+3] = yoff + i;
             conn[idx+4] = yoff + i + 1;
             conn[idx+5] = yoff + i + 1 + (nele_quads_x+1);
-            
+
             idx+=6;
         }
     }
@@ -1632,18 +1661,18 @@ braid_hexs(index_t npts_x,
            Node &res)
 {
     res.reset();
-    
+
     int32 nele_x = (int32)(npts_x - 1);
     int32 nele_y = (int32)(npts_y - 1);
     int32 nele_z = (int32)(npts_z - 1);
     int32 nele = nele_x * nele_y * nele_z;
-    
+
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-  
+
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = "hex";
@@ -1655,7 +1684,7 @@ braid_hexs(index_t npts_x,
     {
         int32 zoff = k * (nele_x+1)*(nele_y+1);
         int32 zoff_n = (k+1) * (nele_x+1)*(nele_y+1);
-        
+
         for(int32 j = 0; j < nele_y ; j++)
         {
             int32 yoff = j * (nele_x+1);
@@ -1707,12 +1736,12 @@ braid_tets(index_t npts_x,
            Node &res)
 {
     res.reset();
-    
+
     int32 nele_hexs_x = (int32) (npts_x - 1);
     int32 nele_hexs_y = (int32) (npts_y - 1);
     int32 nele_hexs_z = (int32) (npts_z - 1);
     int32 nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
-    
+
     int32 tets_per_hex = 6;
     int32 verts_per_tet = 4;
     int32 n_tets_verts = nele_hexs * tets_per_hex * verts_per_tet;
@@ -1722,7 +1751,7 @@ braid_tets(index_t npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-  
+
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
@@ -1736,14 +1765,14 @@ braid_tets(index_t npts_x,
     {
         int32 zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
         int32 zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
-        
+
         for(int32 j = 0; j < nele_hexs_y ; j++)
         {
             int32 yoff = j * (nele_hexs_x+1);
             int32 yoff_n = (j+1) * (nele_hexs_x+1);
 
 
-            for(int32 i = 0; i < nele_hexs_z; i++)
+            for(int32 i = 0; i < nele_hexs_x; i++)
             {
                 // Create a local array of the vertex indices
                 // ordering is same as VTK_HEXAHEDRON
@@ -1821,12 +1850,12 @@ braid_lines_3d(index_t npts_x,
                Node &res)
 {
     res.reset();
-    
+
     int32 nele_hexs_x = (int32)(npts_x - 1);
     int32 nele_hexs_y = (int32)(npts_y - 1);
     int32 nele_hexs_z = (int32)(npts_z - 1);
     int32 nele_hexs = nele_hexs_x * nele_hexs_y * nele_hexs_z;
-    
+
 
     braid_init_example_state(res);
     braid_init_explicit_coordset(npts_x,
@@ -1845,7 +1874,7 @@ braid_lines_3d(index_t npts_x,
     {
         int32 zoff = k * (nele_hexs_x+1)*(nele_hexs_y+1);
         int32 zoff_n = (k+1) * (nele_hexs_x+1)*(nele_hexs_y+1);
-        
+
         for(int32 j = 0; j < nele_hexs_y ; j++)
         {
             int32 yoff = j * (nele_hexs_x+1);
@@ -1854,7 +1883,7 @@ braid_lines_3d(index_t npts_x,
 
             for(int32 i = 0; i < nele_hexs_z; i++)
             {
-                // 12 lines per hex 
+                // 12 lines per hex
                 // Note: this pattern allows for simple per-hex construction,
                 // but it creates spatially overlapping lines
 
@@ -1864,10 +1893,10 @@ braid_lines_3d(index_t npts_x,
 
                 conn[idx++] = zoff + yoff + i + 1;
                 conn[idx++] = zoff + yoff_n + i + 1;
-                
+
                 conn[idx++] = zoff + yoff_n + i + 1;
                 conn[idx++] = zoff + yoff_n + i;
-                
+
                 conn[idx++] = zoff + yoff_n + i;
                 conn[idx++] = zoff + yoff + i;
 
@@ -1877,23 +1906,23 @@ braid_lines_3d(index_t npts_x,
 
                 conn[idx++] = zoff_n + yoff + i + 1;
                 conn[idx++] = zoff_n + yoff_n + i + 1;
-                
+
                 conn[idx++] = zoff_n + yoff_n + i + 1;
                 conn[idx++] = zoff_n + yoff_n + i;
-                
+
                 conn[idx++] = zoff_n + yoff_n + i;
                 conn[idx++] = zoff_n + yoff + i;
 
-                // sides 
+                // sides
                 conn[idx++] = zoff   + yoff + i;
                 conn[idx++] = zoff_n + yoff + i;
 
                 conn[idx++] = zoff   + yoff + i + 1;
                 conn[idx++] = zoff_n + yoff + i + 1;
-                
+
                 conn[idx++] = zoff   + yoff_n + i + 1;
                 conn[idx++] = zoff_n + yoff_n + i + 1;
-                
+
                 conn[idx++] = zoff   + yoff_n + i;
                 conn[idx++] = zoff_n + yoff_n + i;
 
@@ -2030,7 +2059,7 @@ braid_hexs_and_tets(index_t npts_x,
             int32 yoff_n = (j+1) * (nele_hexs_x+1);
 
 
-            for(int32 i = 0; i < nele_hexs_z; i++)
+            for(int32 i = 0; i < nele_hexs_x; i++)
             {
                 // Create a local array of the vertex indices
                 // ordering is same as VTK_HEXAHEDRON
@@ -2137,7 +2166,6 @@ braid_to_poly(Node &res)
 
         conduit::Node &poly_node = poly_topos[topo_index];
         blueprint::mesh::topology::unstructured::to_polygonal(topo_node, poly_node);
-        blueprint::mesh::topology::unstructured::generate_offsets(poly_node, poly_node["elements/offsets"]);
         topo_names[topo_index] = topo_name;
     }
 
@@ -2184,20 +2212,52 @@ basic(const std::string &mesh_type,
     }
     if(mesh_type_index < 0 || mesh_type_index >= num_mesh_types)
     {
-        CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
+        CONDUIT_ERROR("blueprint::mesh::examples::basic unknown mesh_type = "
+                      << mesh_type);
+    }
+
+    bool npts_x_ok = true;
+    bool npts_y_ok = true;
+    bool npts_z_ok = true;
+    
+    if(npts_x <= 1)
+    {
+        npts_x_ok = false;
+    }
+
+    if(npts_y <= 1)
+    {
+        npts_y_ok = false;
+    }
+    
+
+    if(mesh_type == "tets" || mesh_type == "hexs" || mesh_type =="polyhedra")
+    {
+        // z must be valid for these cases
+        if(npts_z <= 1)
+        {
+            npts_z_ok = false;
+        }
+    }
+
+    // don't let de-morgan get you ...
+    if( ! (npts_x_ok && npts_y_ok && npts_z_ok) )
+    {
+        // error, not enough points to create the topo
+        CONDUIT_ERROR("blueprint::mesh::examples::basic requires "
+                      "npts_x > 1 and npts_y > 1 "
+                      " and for mesh_type={\"tets\", \"hexs\", or \"polyhedra\"} "
+                      " npts_z must be > 1" << std::endl << 
+                      "values provided:" << std::endl << 
+                      " mesh_type: " << mesh_type << std::endl <<
+                      " npts_x: " << npts_x << std::endl <<
+                      " npts_y: " << npts_y << std::endl <<
+                      " npts_z: " << npts_z << std::endl);
     }
 
     braid(braid_types[mesh_type_index], npts_x, npts_y, npts_z, res);
     res.remove("fields");
     res.remove("state");
-
-    // TODO(JRC): Consider removing this code if the extra complexity of having
-    // the "offsets" array in the basic examples is decided to be a non-issue.
-    Node &topo = res["topologies"].child(0);
-    if(topo.has_child("elements") && topo["elements"].has_child("offsets"))
-    {
-        topo["elements"].remove("offsets");
-    }
 
     basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
         res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
@@ -2212,15 +2272,79 @@ braid(const std::string &mesh_type,
       index_t npts_z, // number of points in z
       Node &res)
 {
-    index_t nele_x = npts_x -1;
-    index_t nele_y = npts_y -1;
+    bool npts_x_ok = true;
+    bool npts_y_ok = true;
+    bool npts_z_ok = true;
 
-    if( (nele_x == 0 || nele_y == 0) && 
-        (mesh_type != "points" && mesh_type != "points_implicit") )
+    if( mesh_type == "points" || mesh_type == "points_implicit" )
     {
-        // error, not enough points to create the topo
-        CONDUIT_ERROR("braid with non-points topology requires"
-                      " npts_x > 1 and npts_y > 1");
+        if( npts_x < 1 )
+        {
+            npts_x_ok = false;
+        }
+        if( npts_y < 1 )
+        {
+            npts_y_ok = false;
+        }
+        if( npts_z < 0 )
+        {
+            npts_z_ok = false;
+        }
+    }
+    else
+    {
+        if( npts_x < 2 )
+        {
+            npts_x_ok = false;
+        }
+
+        if( npts_y < 2 )
+        {
+            npts_y_ok = false;
+        }
+
+        // check 3d cases which require z
+        if(mesh_type == "tets" ||
+           mesh_type == "hexs" ||
+           mesh_type == "hexs_poly" ||
+           mesh_type == "hexs_and_tets")
+        {
+            // z must be valid for these cases
+            if(npts_z < 2)
+            {
+                npts_z_ok = false;
+            }
+        }
+    }
+
+
+    if( ! (npts_x_ok && npts_y_ok && npts_z_ok) )
+    {
+        if( mesh_type == "points" || mesh_type == "points_implicit" )
+        {
+            // error, not enough points to create the topo
+            CONDUIT_ERROR("braid with points-based topology requires"
+                          "npts_x > 0,  npts_y > 0  and npts_z >= 0 "
+                          "values provided:" << std::endl << 
+                          " mesh_type: " << mesh_type << std::endl  << 
+                          " npts_x: " << npts_x << std::endl <<
+                          " npts_y: " << npts_y << std::endl <<
+                          " npts_z: " << npts_z << std::endl);
+        }
+        else
+        {
+            // error, not enough points to create the topo
+            CONDUIT_ERROR("braid with non-points topology requires "
+                          "npts_x > 1 and npts_y > 1 "
+                          " and for mesh_type={\"tets\", \"hexs\", "
+                          " \"hexs_poly\", or \"hexs_and_tets\"} "
+                          " npts_z must be > 1" << std::endl << 
+                          "values provided:" << std::endl << 
+                          " mesh_type: " << mesh_type << std::endl <<
+                          " npts_x: " << npts_x << std::endl <<
+                          " npts_y: " << npts_y << std::endl <<
+                          " npts_z: " << npts_z << std::endl);
+        }
     }
 
     if(mesh_type == "uniform")
@@ -2294,122 +2418,15 @@ braid(const std::string &mesh_type,
     }
 }
 
-
-//---------------------------------------------------------------------------//
-void julia_fill_values(index_t nx,
-                       index_t ny,
-                       float64 x_min,
-                       float64 x_max,
-                       float64 y_min,
-                       float64 y_max,
-                       float64 c_re,
-                       float64 c_im,
-                       int32_array &out)
-{
-    index_t idx = 0;
-    for(index_t j = 0; j < ny; j++)
-    {
-        for(index_t i = 0; i < nx; i++)
-        {
-            float64 zx = float64(i) / float64(nx-1);
-            float64 zy = float64(j) / float64(ny-1);
-            
-            zx = x_min + (x_max - x_min) * zx;
-            zy = y_min + (y_max - y_min) * zy;
-
-            int32 iter = 0;
-            int32 max_iter = 1000;
-            
-            while( (zx * zx) + (zy * zy ) < 4.0 && iter < max_iter)
-            {
-                float64 x_temp = zx*zx - zy*zy;
-                zy = 2*zx*zy  + c_im;
-                zx = x_temp    + c_re;
-                iter++;
-            }
-            if(iter == max_iter)
-            {
-                out[idx] = 0;
-            }
-            else
-            {
-                out[idx] = iter;
-            }
-    
-            idx++;
-        }
-    }
-}
-
-
-//---------------------------------------------------------------------------//
-void julia(index_t nx,
-           index_t ny,
-           float64 x_min,
-           float64 x_max,
-           float64 y_min,
-           float64 y_max,
-           float64 c_re,
-           float64 c_im,
-           Node &res)
-{
-    res.reset();
-    // create a rectilinear coordset 
-    res["coordsets/coords/type"] = "rectilinear";
-    res["coordsets/coords/values/x"] = DataType::float64(nx+1);
-    res["coordsets/coords/values/y"] = DataType::float64(ny+1);
-    
-    float64_array x_coords = res["coordsets/coords/values/x"].value();
-    float64_array y_coords = res["coordsets/coords/values/y"].value(); 
-    
-    float64 dx = (x_max - x_min) / float64(nx);
-    float64 dy = (y_max - y_min) / float64(ny);
-
-    float64 vx = x_min;
-    for(index_t i =0; i< nx+1; i++)
-    {
-        x_coords[i] = vx;
-        vx+=dx;
-    }
-    
-    float64 vy = x_min;
-    for(index_t i =0; i< ny+1; i++)
-    {
-        y_coords[i] = vy;
-        vy+=dy;
-    }
-    
-    // create the topology
-    
-    res["topologies/topo/type"] = "rectilinear";
-    res["topologies/topo/coordset"] = "coords";
-    
-    
-    // create the fields
-
-    res["fields/iters/association"] = "element";
-    res["fields/iters/topology"] = "topo";
-    res["fields/iters/values"] = DataType::int32(nx * ny);
-    
-    int32_array out = res["fields/iters/values"].value();
-    
-    julia_fill_values(nx,ny,
-                      x_min, x_max,
-                      y_min, y_max,
-                      c_re, c_im,
-                      out);
-}
-
-
 //---------------------------------------------------------------------------//
 void spiral(index_t ndoms,
             Node &res)
 {
     res.reset();
-    
+
     int f_1 = 1;
     int f = 1;
-    
+
     float64 x = 0.0;
     float64 y = 0.0;
 
@@ -2426,14 +2443,17 @@ void spiral(index_t ndoms,
         std::string domain_name = oss.str();
 
         Node &dom = res[domain_name];
+        // set cycle and domain id
+        dom["state/cycle"] = 0;
+        dom["state/domain_id"] = d;
 
-        // create a rectilinear coordset 
+        // create a rectilinear coordset
         dom["coordsets/coords/type"] = "rectilinear";
         dom["coordsets/coords/values/x"] = DataType::float64(f+1);
         dom["coordsets/coords/values/y"] = DataType::float64(f+1);
-    
+
         float64_array x_coords = dom["coordsets/coords/values/x"].value();
-        float64_array y_coords = dom["coordsets/coords/values/y"].value(); 
+        float64_array y_coords = dom["coordsets/coords/values/y"].value();
 
         float64 xv = x;
         float64 yv = y;
@@ -2450,17 +2470,17 @@ void spiral(index_t ndoms,
         dom["topologies/topo/type"] = "rectilinear";
         dom["topologies/topo/coordset"] = "coords";
         // todo, add topo logical origin
-    
-    
+
+
         // create the fields
         dom["fields/dist/association"] = "vertex";
         dom["fields/dist/topology"] = "topo";
         dom["fields/dist/values"] = DataType::float64((f+1) * (f+1));
-    
+
         float64_array dist_vals = dom["fields/dist/values"].value();
 
         index_t idx = 0;
-        // fill the scalar with approx dist to spiral 
+        // fill the scalar with approx dist to spiral
         yv = y;
 
         for(int j=0; j < f+1; j++)
@@ -2476,8 +2496,8 @@ void spiral(index_t ndoms,
             }
             yv+=1;
         }
-    
-        // setup for next domain using one of 4 rotation cases 
+
+        // setup for next domain using one of 4 rotation cases
         switch(rot_case)
         {
             case 0:
@@ -2520,7 +2540,7 @@ void spiral(index_t ndoms,
         }
         // update the rotate case
         rot_case =  (rot_case +1) % 4;
-            
+
         // calc next fib #
         // domain id is one less than the fib #
         if( (d+1) > 1)
@@ -2531,7 +2551,6 @@ void spiral(index_t ndoms,
         }
     }
 }
-
 
 //---------------------------------------------------------------------------//
 point
@@ -2698,7 +2717,7 @@ void polytess(index_t nlevels,
 
     polytess_recursive(nlevels, point_map, point_rmap, polygons, levels);
 
-    index_t conn_size = polygons.size();
+    index_t conn_size = 0;
     for(index_t p = 0; p < (index_t)polygons.size(); p++)
     {
         conn_size += polygons[p].size();
@@ -2727,13 +2746,15 @@ void polytess(index_t nlevels,
     topology["type"].set("unstructured");
     topology["elements/shape"].set("polygonal");
     topology["elements/connectivity"].set(DataType::uint64(conn_size));
+    topology["elements/sizes"].set(DataType::uint64(polygons.size()));
 
     uint64_array conn_array = topology["elements/connectivity"].value();
+    uint64_array size_array = topology["elements/sizes"].value();  
     for(index_t pi = 0, ci = 0; pi < (index_t)polygons.size(); pi++)
     {
         const std::vector<index_t> &p = polygons[pi];
 
-        conn_array[ci++] = p.size();
+        size_array[pi] = p.size();
         for(index_t ii = 0; ii < (index_t)p.size(); ii++)
         {
             conn_array[ci++] = p[ii];
@@ -2863,7 +2884,7 @@ adjset_uniform(Node &res)
     for(index_t i = 0; i < 8; i++)
     {
         std::ostringstream oss;
-        oss << "domain" << i;
+        oss << "domain_" << std::setfill('0') << std::setw(6) << i;
         const std::string domain_name = oss.str();
 
         Node &domain_node = res[domain_name];
@@ -2883,6 +2904,18 @@ adjset_uniform(Node &res)
         domain_topo["elements/origin/j0"].set_int32(20*(i%2));
         domain_topo["type"].set_string("uniform");
         domain_topo["coordset"].set_string("coords");
+
+        // add a simple field that has the domain id
+        Node &domain_field = domain_node["fields/id"];
+        domain_field["association"] = "element";
+        domain_field["topology"] = "topo";
+        domain_field["values"] = DataType::int32(20 * 20);
+
+        int32_array vals =  domain_field["values"].value();
+        for(int j=0;j<20*20;j++)
+        {
+            vals[j] = i;
+        }
 
         Node &domain_adjsets = domain_node["adjsets/adjset"];
         domain_adjsets["association"].set_string("vertex");
