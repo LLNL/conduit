@@ -69,6 +69,31 @@ void print_dt(const DataType &dtype)
 }
 
 //-----------------------------------------------------------------------------
+void print_dt_bells_and_whistles(const DataType &dtype)
+{
+    std::cout << "to_json()" << std::endl;
+    std::cout << dtype.to_json() << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "to_yaml()" << std::endl;
+    std::cout << dtype.to_yaml() << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "to_json_stream()" << std::endl;
+    dtype.to_json_stream(std::cout);
+    std::cout << std::endl;
+
+    std::cout << "to_yaml_stream()" << std::endl;
+    dtype.to_yaml_stream(std::cout,10,1);
+    std::cout << std::endl;
+
+    std::cout << "to_yaml_default()" << std::endl;
+    std::cout << dtype.to_yaml_default();
+    std::cout << std::endl;
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(dtype_tests, value_print)
 {
     EXPECT_EQ(DataType::EMPTY_ID,0);
@@ -77,7 +102,7 @@ TEST(dtype_tests, value_print)
     EXPECT_TRUE( (DataType::EMPTY_ID != DataType::OBJECT_ID) );
 
     DataType dt;
-    
+
     // empty leaf
     dt = DataType::empty();
     EXPECT_TRUE(dt.is_empty());
@@ -134,7 +159,74 @@ TEST(dtype_tests, value_print)
     dt = DataType::float64();
     EXPECT_TRUE(dt.is_float64());
     print_dt(dt);
+}
 
+//-----------------------------------------------------------------------------
+TEST(dtype_tests, value_print_bells_and_whistles)
+{
+    EXPECT_EQ(DataType::EMPTY_ID,0);
+    EXPECT_EQ(DataType::id_to_name(DataType::EMPTY_ID),"empty");
+    EXPECT_EQ(DataType::name_to_id("empty"),DataType::EMPTY_ID);
+    EXPECT_TRUE( (DataType::EMPTY_ID != DataType::OBJECT_ID) );
+
+    DataType dt;
+
+    // empty leaf
+    dt = DataType::empty();
+    EXPECT_TRUE(dt.is_empty());
+    print_dt_bells_and_whistles(dt);
+
+    // generic type
+    dt = DataType::object();
+    EXPECT_TRUE(dt.is_object());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::list();
+    EXPECT_TRUE(dt.is_list());
+    print_dt_bells_and_whistles(dt);
+
+    // signed ints
+    dt = DataType::int8();
+    EXPECT_TRUE(dt.is_int8());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::int16();
+    EXPECT_TRUE(dt.is_int16());
+    print_dt_bells_and_whistles(dt);
+    
+    dt = DataType::int32();
+    EXPECT_TRUE(dt.is_int32());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::int64();
+    EXPECT_TRUE(dt.is_int64());
+    print_dt_bells_and_whistles(dt);
+
+    // unsigned ints
+    dt = DataType::uint8();
+    EXPECT_TRUE(dt.is_uint8());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::uint16();
+    EXPECT_TRUE(dt.is_uint16());
+    print_dt_bells_and_whistles(dt);
+    
+    dt = DataType::uint32();
+    EXPECT_TRUE(dt.is_uint32());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::uint64();
+    EXPECT_TRUE(dt.is_uint64());
+    print_dt_bells_and_whistles(dt);
+    
+    // floating point
+    dt = DataType::float32();
+    EXPECT_TRUE(dt.is_float32());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::float64();
+    EXPECT_TRUE(dt.is_float64());
+    print_dt_bells_and_whistles(dt);
 }
 
 //-----------------------------------------------------------------------------

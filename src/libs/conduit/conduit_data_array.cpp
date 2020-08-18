@@ -335,15 +335,22 @@ void
 DataArray<T>::to_string_stream(std::ostream &os, 
                                const std::string &protocol) const
 {
-    if(protocol != "json")
+    if(protocol == "yaml")
+    {
+        to_yaml_stream(os);
+    }
+    else if(protocol == "json")
+    {
+        to_json_stream(os);
+    }
+    else
     {
         // unsupported
         CONDUIT_ERROR("Unknown DataType::to_string protocol:" << protocol
                      <<"\nSupported protocols:\n" 
-                     <<" json");
+                     <<" json, yaml");
     }
 
-    to_json_stream(os);
 }
 
 //---------------------------------------------------------------------------//
@@ -439,6 +446,24 @@ DataArray<T>::to_json_stream(std::ostream &os) const
         os << "]";
 }
 
+//---------------------------------------------------------------------------//
+template <typename T> 
+std::string
+DataArray<T>::to_yaml() const 
+{ 
+    std::ostringstream oss;
+    to_yaml_stream(oss);
+    return oss.str(); 
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void            
+DataArray<T>::to_yaml_stream(std::ostream &os) const 
+{ 
+    // yep, its the same as to_json_stream ...
+    to_json_stream(os);;
+}
 
 //---------------------------------------------------------------------------//
 template <typename T> 

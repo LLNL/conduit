@@ -582,4 +582,39 @@ TEST(conduit_array, set_using_std_vectors)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_array, print_bells_and_whistles)
+{
+    std::vector<float64>  v_float64(10,64.0);
+
+    float64_array    va_float64(&v_float64[0],DataType::float64(10));
+
+    std::cout << "to_string(\"yaml\")" << std::endl;
+    std::cout << va_float64.to_string("yaml") << std::endl;
+    std::cout << "to_string(\"json\")" << std::endl;
+    std::cout << va_float64.to_string("json") << std::endl;
+
+    std::cout << "to_json()" << std::endl;
+    std::cout << va_float64.to_json() << std::endl;
+
+    std::cout << "to_yaml()" << std::endl;
+    std::cout << va_float64.to_yaml() << std::endl;
+
+    std::cout << "to_string_stream(..., yaml)" << std::endl;
+    va_float64.to_string_stream(std::cout,"yaml");
+    std::cout << std::endl;
+
+    std::cout << "to_string_stream(..., json)" << std::endl;
+    va_float64.to_string_stream(std::cout,"json");
+    std::cout << std::endl;
+
+    std::cout << "to_json_stream()" << std::endl;
+    va_float64.to_json_stream(std::cout);
+    std::cout << std::endl;
+
+    std::cout << "to_yaml_stream()" << std::endl;
+    va_float64.to_yaml_stream(std::cout);
+    std::cout << std::endl;
+}
+
 

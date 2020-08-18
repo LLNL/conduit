@@ -1257,15 +1257,21 @@ void
 DataType::to_string_stream(std::ostream &os, 
                            const std::string &protocol) const
 {
-    if(protocol != "json")
+    if(protocol == "yaml")
+    {
+        to_yaml_stream(os);
+    }
+    else if(protocol == "json")
+    {
+        to_json_stream(os);
+    }
+    else
     {
         // unsupported
         CONDUIT_ERROR("Unknown DataType::to_string protocol:" << protocol
                      <<"\nSupported protocols:\n" 
                      <<" json");
     }
-
-    to_json_stream(os);
 }
 
 //---------------------------------------------------------------------------// 
@@ -1311,6 +1317,70 @@ DataType::to_json_stream(std::ostream &os) const
     }
 
     os << "}";
+}
+
+//---------------------------------------------------------------------------// 
+std::string 
+DataType::to_yaml(index_t indent,
+                  index_t depth,
+                  const std::string &pad,
+                  const std::string &eoe) const
+{
+    std::ostringstream oss;
+    to_yaml_stream(oss,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------// 
+void
+DataType::to_yaml_stream(std::ostream &os,
+                         index_t indent,
+                         index_t depth,
+                         const std::string &pad,
+                         const std::string &eoe) const
+{
+    utils::indent(os,indent,depth,pad);
+    os << "dtype: " << "\"" << id_to_name(m_id) << "\"" << eoe;
+
+    if(is_number() || is_string())
+    {
+        utils::indent(os,indent,depth,pad);
+        os << "number_of_elements: " << m_num_ele << eoe;
+
+        utils::indent(os,indent,depth,pad);
+        os << "offset: " << m_offset << eoe;
+
+        utils::indent(os,indent,depth,pad);
+        os << "stride: " << m_stride << eoe;
+
+        utils::indent(os,indent,depth,pad);
+        os << "element_bytes: " << m_ele_bytes << eoe;
+
+        std::string endian_str;
+        if(m_endianness == Endianness::DEFAULT_ID)
+        {
+            // find this machine's actual endianness
+            endian_str = Endianness::id_to_name(Endianness::machine_default());
+        }
+        else
+        {
+            endian_str = Endianness::id_to_name(m_endianness);
+        }
+
+        utils::indent(os,indent,depth,pad);
+        os << "endianness: \"" << endian_str << "\"" << eoe;
+    }
+}
+
+//---------------------------------------------------------------------------// 
+std::string 
+DataType::to_yaml_default() const
+{
+    return to_yaml();
 }
 
 //---------------------------------------------------------------------------//

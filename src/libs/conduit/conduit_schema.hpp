@@ -196,7 +196,6 @@ public:
     void            compact_to(Schema &s_dest) const;
 
     //-------------------------------------------------------------------------
-    // note: future support: protocol == "yaml"
     std::string     to_string(const std::string &protocol="json",
                               index_t indent=2, 
                               index_t depth=0,
@@ -269,6 +268,31 @@ public:
     // difficulty allocating default string parameters.
     std::string         to_json_default() const;
 
+
+    //-----------------------------------------------------------------------------
+    // -- YAML construction methods ---
+    //-----------------------------------------------------------------------------
+    std::string         to_yaml(index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    void                to_yaml_stream(std::ostream &os,
+                                       index_t indent=2, 
+                                       index_t depth=0,
+                                       const std::string &pad=" ",
+                                       const std::string &eoe="\n") const;
+
+    void                to_yaml_stream(const std::string &stream_path,
+                                       index_t indent=2, 
+                                       index_t depth=0,
+                                       const std::string &pad=" ",
+                                       const std::string &eoe="\n") const;
+
+    // NOTE(JRC): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string         to_yaml_default() const;
 
 //-----------------------------------------------------------------------------
 //

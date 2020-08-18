@@ -403,16 +403,23 @@ TEST(schema_basics, schema_to_string)
     s["c"].set(DataType::float64());
 
     std::string res_str  = s.to_string();
+    std::string res_str_yaml = s.to_string("yaml");
     std::string res_json = s.to_json();
-    
+    std::string res_yaml = s.to_yaml();
+
     std::ostringstream oss;
-    
+
     s.to_string_stream(oss);
     std::string res_str_from_oss = oss.str();
-    
+
     oss.str("");
-    s.to_json_stream(oss);    
+    s.to_json_stream(oss);
     std::string res_json_from_oss = oss.str();
+
+    oss.str("");
+    s.to_yaml_stream(oss);
+    std::string res_yaml_from_oss = oss.str();
+
 
     // save files
     std::string tf_t_str_file ="tout_schema_to_string_stream_file.json";
@@ -421,6 +428,7 @@ TEST(schema_basics, schema_to_string)
     {
         utils::remove_file(tf_t_str_file);
     }
+
     s.to_string_stream(tf_t_str_file);
     EXPECT_TRUE(utils::is_file(tf_t_str_file));
 
@@ -432,18 +440,35 @@ TEST(schema_basics, schema_to_string)
     }
 
     s.to_json_stream(tf_t_json_file);
-
     EXPECT_TRUE(utils::is_file(tf_t_json_file));
 
+    std::string tf_t_yaml_file ="tout_schema_to_string_stream_file.yaml";
+    // remove if exists
+    if(utils::is_file(tf_t_yaml_file))
+    {
+        utils::remove_file(tf_t_yaml_file);
+    }
+
+    s.to_yaml_stream(tf_t_yaml_file);
+    EXPECT_TRUE(utils::is_file(tf_t_yaml_file));
+
+
+    std::cout << "DEFAULT CASE" << std::endl;
     std::cout << res_str << std::endl;
+    std::cout << "JSON CASES" << std::endl;
     std::cout << res_json << std::endl;
     std::cout << res_str_from_oss << std::endl;
     std::cout << res_json_from_oss << std::endl;
+    std::cout << "YAML CASES" << std::endl;
+    std::cout << res_yaml << std::endl;
+    std::cout << res_yaml_from_oss << std::endl;
 
     // we expect these to be the same
     EXPECT_EQ(res_str, res_json);
     EXPECT_EQ(res_str, res_str_from_oss);
     EXPECT_EQ(res_str, res_json_from_oss);
+    EXPECT_EQ(res_str_yaml, res_yaml);
+    EXPECT_EQ(res_yaml, res_yaml_from_oss);
 }
 
 
