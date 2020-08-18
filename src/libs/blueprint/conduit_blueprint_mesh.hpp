@@ -119,6 +119,59 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           index_t num_domains,
                                           Node &index_out);
 
+void CONDUIT_BLUEPRINT_API to_poly(const conduit::Node &n,
+                                   conduit::Node &dest,
+                                   const std::string& name);
+
+void CONDUIT_BLUEPRINT_API to_polyhedral(const conduit::Node &n,
+                                   conduit::Node &dest,
+                                   const std::string& name);
+
+namespace connectivity
+{
+   //-------------------------------------------------------------------------
+   void CONDUIT_BLUEPRINT_API make_element_2d(std::vector<int64_t>& connect,
+                        int64_t element,
+                        int64_t iwidth);
+
+   void CONDUIT_BLUEPRINT_API make_element_3d(std::vector<int64_t>& connect,
+                        int64_t element,
+                        int64_t iwidth,
+                        int64_t jwidth);
+
+   void CONDUIT_BLUEPRINT_API create_elements_2d(const Node& ref_win,
+                                              int64_t i_lo,
+                                              int64_t j_lo,
+                                              int64_t iwidth,
+                                    std::map<int, std::vector<int64_t> >& elems);
+
+   void CONDUIT_BLUEPRINT_API create_elements_3d(const Node& ref_win,
+                                              int64_t i_lo,
+                                              int64_t j_lo,
+                                              int64_t k_lo,
+                                              int64_t iwidth,
+                                              int64_t jwidth,
+                                    std::map<int, std::vector<int64_t> >& elems);
+
+   void CONDUIT_BLUEPRINT_API connect_elements_2d(const Node& ref_win,
+                                              int64_t i_lo,
+                                              int64_t j_lo,
+                                              int64_t iwidth,
+                                              int64_t ratio,
+                                              int64_t& new_vertex,
+                                    std::map<int, std::vector<int64_t> >& elems);
+
+   void CONDUIT_BLUEPRINT_API connect_elements_3d(const Node& ref_win,
+                                              int64_t i_lo,
+                                              int64_t j_lo,
+                                              int64_t k_lo,
+                                              int64_t iwidth,
+                                              int64_t jwidth,
+                                              std::vector<int64_t>& ratio,
+                                              int64_t& new_vertex,
+                                    std::map<int, std::vector<int64_t> >& elems);
+}
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------
