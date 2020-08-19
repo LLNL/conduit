@@ -653,7 +653,7 @@ Schema::to_json_stream(std::ostream &os,
     }
     else // assume leaf data type
     {
-        m_dtype.to_json_stream(os);
+        m_dtype.to_json_stream(os,0,0,"","");
     }
 }
 

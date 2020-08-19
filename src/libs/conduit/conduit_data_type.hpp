@@ -525,17 +525,39 @@ public:
 //-----------------------------------------------------------------------------
 // Transforms
 //-----------------------------------------------------------------------------
-    std::string         to_string(const std::string &protocol="json") const;
+    std::string         to_string(const std::string &protocol="json",
+                                  index_t indent=2,
+                                  index_t depth=0,
+                                  const std::string &pad=" ",
+                                  const std::string &eoe="\n") const;
     void                to_string_stream(std::ostream &os, 
-                                         const std::string &protocol="json") const;
+                                         const std::string &protocol="json",
+                                         index_t indent=2,
+                                         index_t depth=0,
+                                         const std::string &pad=" ",
+                                         const std::string &eoe="\n") const;
 
     // NOTE(cyrush): The primary reason this function exists is to enable 
     // easier compatibility with debugging tools (e.g. totalview, gdb) that
     // have difficulty allocating default string parameters.
     std::string         to_string_default() const;
-    
-    std::string         to_json() const;
-    void                to_json_stream(std::ostream &os) const;
+
+    std::string         to_json(index_t indent=2,
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    void                to_json_stream(std::ostream &os,
+                                       index_t indent=2,
+                                       index_t depth=0,
+                                       const std::string &pad=" ",
+                                       const std::string &eoe="\n") const;
+
+    // NOTE(cyrush): The primary reason this function exists is to enable 
+    // easier compatibility with debugging tools (e.g. totalview, gdb) that
+    // have difficulty allocating default string parameters.
+    std::string         to_json_default() const;
+
 
     std::string         to_yaml(index_t indent=2,
                                 index_t depth=0,
