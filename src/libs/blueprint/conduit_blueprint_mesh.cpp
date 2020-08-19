@@ -6151,49 +6151,6 @@ mesh::adjset::verify(const Node &adjset,
             }
             else if(chld.has_child("windows"))
             {
-#if 0
-                group_res &= verify_object_field(protocol, chld,
-                    chld_info, "windows");
-
-                bool windows_res = true;
-                NodeConstIterator witr = chld["windows"].children();
-                while(witr.has_next())
-                {
-                    const Node &wndw = witr.next();
-                    const std::string wndw_name = witr.name();
-                    Node &wndw_info = chld_info["windows"][wndw_name];
-
-                    bool window_res = true;
-                    window_res &= verify_field_exists(protocol, wndw,
-                        wndw_info, "origin") &&
-                        mesh::logical_dims::verify(wndw["origin"],
-                            wndw_info["origin"]);
-                    window_res &= verify_field_exists(protocol, wndw,
-                        wndw_info, "dims") &&
-                        mesh::logical_dims::verify(wndw["dims"],
-                            wndw_info["dims"]);
-                    window_res &= verify_field_exists(protocol, wndw,
-                        wndw_info, "ratio") &&
-                        mesh::logical_dims::verify(wndw["ratio"],
-                            wndw_info["ratio"]);
-
-                    // verify that dimensions for "origin" and
-                    // "dims" and "ratio" are the same
-                    if(window_res)
-                    {
-                        index_t window_dim = wndw["origin"].number_of_children();
-                        window_res &= !wndw.has_child("dims") ||
-                            verify_object_field(protocol, wndw,
-                                wndw_info, "dims", false, window_dim);
-                        window_res &= !wndw.has_child("ratio") ||
-                            verify_object_field(protocol, wndw,
-                                wndw_info, "ratio", false, window_dim);
-                    }
-
-                    log::validation(wndw_info,window_res);
-                    windows_res &= window_res;
-                }
-#endif
                 group_res &= verify_object_field(protocol, chld,
                     chld_info, "windows");
 
