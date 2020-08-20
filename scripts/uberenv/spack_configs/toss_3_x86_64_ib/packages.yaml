@@ -61,6 +61,8 @@ packages:
        cuda@10.1.168: cuda/10.1.168
     buildable: False
 # LLNL toss3 mvapich2
+  mpi:
+    buildable: False
   mvapich2:
     paths:
       mvapich2@2.2%gcc@4.9.3:  /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
