@@ -3510,7 +3510,7 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 //---------------------------------------------------------------------------//
 static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
-   "Schema",
+   "Iterator",
    sizeof(PyConduit_NodeIterator),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyConduit_NodeIterator_dealloc,   /* tp_dealloc */
@@ -3529,7 +3529,7 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    0, /* setattro */
    0, /* asbuffer */
    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
-   "Conduit schema objects",
+   "Conduit Iterator objects",
    0, /* traverse */
    0, /* clear */
    0, /* tp_richcompare */
