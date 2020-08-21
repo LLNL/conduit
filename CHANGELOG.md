@@ -41,7 +41,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 
 #### General 
-- Updated to BLT v0.3.0 to resolve BLT/FindMPI issues with rpath linking commands when using OpenMPI.
+- Updated to newer BLT to resolve BLT/FindMPI issues with rpath linking commands when using OpenMPI.
+- Fixed internal object name string for the Python Iterator object. It used to report `Schema`, which triggered both puzzling and concerned emotions.
 
 
 #### Relay
