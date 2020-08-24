@@ -525,6 +525,19 @@ public:
 //-----------------------------------------------------------------------------
 // Transforms
 //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // -- String construction methods ---
+    //-----------------------------------------------------------------------------
+    /// Creates a string representation of a data type.
+    /// accepted protocols:
+    ///   "json"
+    ///   "yaml"
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
     std::string         to_string(const std::string &protocol="json",
                                   index_t indent=2,
                                   index_t depth=0,
@@ -542,6 +555,16 @@ public:
     // have difficulty allocating default string parameters.
     std::string         to_string_default() const;
 
+    //-----------------------------------------------------------------------------
+    // -- JSON construction methods ---
+    //-----------------------------------------------------------------------------
+    /// Creates a JSON string representation of a data type.
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
     std::string         to_json(index_t indent=2,
                                 index_t depth=0,
                                 const std::string &pad=" ",
@@ -559,6 +582,16 @@ public:
     std::string         to_json_default() const;
 
 
+    //-----------------------------------------------------------------------------
+    // -- YAML construction methods ---
+    //-----------------------------------------------------------------------------
+    /// Creates a YAML string representation of a data type.
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
     std::string         to_yaml(index_t indent=2,
                                 index_t depth=0,
                                 const std::string &pad=" ",
