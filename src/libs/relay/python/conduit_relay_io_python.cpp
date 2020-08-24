@@ -101,79 +101,12 @@ using namespace conduit::relay::io;
 
 
 #if defined(IS_PY3K)
-
-//-----------------------------------------------------------------------------
-static int
-PyString_Check(PyObject *o)
-{
-    return PyUnicode_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-static char *
-PyString_AsString(PyObject *py_obj)
-{
-    char *res = NULL;
-    if(PyUnicode_Check(py_obj))
-    {
-        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
-                                                          "ASCII",
-                                                          "strict"); // Owned reference
-        if(temp_bytes != NULL)
-        {
-            res = _conduit_strdup(PyBytes_AS_STRING(temp_bytes));
-            Py_DECREF(temp_bytes);
-        }
-        else
-        {
-            // TODO: Error
-        }
-    }
-    else if(PyBytes_Check(py_obj))
-    {
-        res = _conduit_strdup(PyBytes_AS_STRING(py_obj));
-    }
-    else
-    {
-        // TODO: ERROR or auto convert?
-    }
-    
-    return res;
-}
-
 //-----------------------------------------------------------------------------
 static PyObject *
 PyString_FromString(const char *s)
 {
     return PyUnicode_FromString(s);
 }
-
-//-----------------------------------------------------------------------------
-static void
-PyString_AsString_Cleanup(char *bytes)
-{
-    free(bytes);
-}
-
-
-//-----------------------------------------------------------------------------
-static int
-PyInt_Check(PyObject *o)
-{
-    return PyLong_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-static long
-PyInt_AsLong(PyObject *o)
-{
-    return PyLong_AsLong(o);
-}
-
-#else // python 2.6+
-
-//-----------------------------------------------------------------------------
-#define PyString_AsString_Cleanup(c) { /* noop */ }
 
 #endif
 
@@ -477,7 +410,7 @@ PyRelay_IOHandle_list_child_names(PyRelay_IOHandle *self,
     for (std::vector<std::string>::const_iterator itr = cld_names.begin();
          itr < cld_names.end(); ++itr)
     {
-        PyList_Append(retval, PyString_FromString( (*itr).c_str()));
+        PyList_Append(retval,PyString_FromString( (*itr).c_str()));
     }
 
     return retval;
