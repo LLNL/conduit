@@ -683,6 +683,24 @@ TEST(dtype_tests,dtype_endianness_checks)
 
 
 //-----------------------------------------------------------------------------
+TEST(dtype_tests,dtype_to_string_simple_checks)
+{
+    std::string r_json = DataType::float64().to_json();
+    std::string r_yaml = DataType::float64().to_yaml();
+    EXPECT_TRUE(r_json.find("float64") != std::string::npos);
+    EXPECT_TRUE(r_json.find("\"") != std::string::npos);
+    EXPECT_TRUE(r_json.find("{")  != std::string::npos);
+    EXPECT_TRUE(r_json.find("}")  != std::string::npos);
+
+    EXPECT_TRUE(r_yaml.find("float64") != std::string::npos);
+    EXPECT_TRUE(r_yaml.find(":") != std::string::npos);
+    EXPECT_TRUE(r_yaml.find("{") == std::string::npos);
+    EXPECT_TRUE(r_yaml.find("}") == std::string::npos);
+
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(dtype_tests,dtype_comparison_checks)
 {
     const DTypeCompareFun COMPARE_FUNS[3] = {

@@ -762,7 +762,7 @@ Schema::to_yaml_stream(const std::string &stream_path,
         CONDUIT_ERROR("<Node::to_yaml_stream> failed to open file: "
                       << "\"" << stream_path << "\"");
     }
-    to_json_stream(ofs,indent,depth,pad,eoe);
+    to_yaml_stream(ofs,indent,depth,pad,eoe);
     ofs.close();
 }
 
