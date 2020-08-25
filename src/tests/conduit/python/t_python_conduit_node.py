@@ -507,7 +507,7 @@ class Test_Conduit_Node(unittest.TestCase):
         res_to_str_yaml = n.to_string(protocol="yaml")
         res_to_str_json = n.to_string(protocol="json")
 
-        res_to_yaml = n.to_yaml()  
+        res_to_yaml = n.to_yaml()
         res_to_json = n.to_json()
   
         self.assertEqual(res_to_str_def,  res_to_yaml);

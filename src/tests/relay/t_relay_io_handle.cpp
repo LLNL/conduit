@@ -152,10 +152,19 @@ TEST(conduit_relay_io_handle, test_active_protos)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_handle, test_is_open)
 {
-    io::IOHandle h;
+    // remove files if they exist
+    if(utils::is_file("tout_conduit_relay_io_handle_is_open.hdf5"))
+    {
+        utils::remove_file("tout_conduit_relay_io_handle_is_open.hdf5");
+    }
 
+    if(utils::is_file("tout_conduit_relay_io_handle_is_open.conduit_json"))
+    {
+        utils::remove_file("tout_conduit_relay_io_handle_is_open.conduit_json");
+    }
+
+    io::IOHandle h;
     EXPECT_FALSE(h.is_open());
-    
     EXPECT_THROW(h.open("here/is/a/garbage/file/path.json"),
                  conduit::Error);
 
@@ -427,6 +436,21 @@ TEST(conduit_relay_io_handle, test_reuse_handle)
     n["c"] = c_val;
     n["d/here"] = here_val;
 
+    // remove files if they already exist
+
+    if(utils::is_file("tout_conduit_relay_io_handle_reopen_1.conduit_bin"))
+    {
+        utils::remove_file("tout_conduit_relay_io_handle_reopen_1.conduit_bin");
+        utils::remove_file("tout_conduit_relay_io_handle_reopen_1.conduit_json");
+    }
+
+    if(utils::is_file("tout_conduit_relay_io_handle_reopen_2.conduit_bin"))
+    {
+        utils::remove_file("tout_conduit_relay_io_handle_reopen_2.conduit_bin");
+        utils::remove_file("tout_conduit_relay_io_handle_reopen_2.conduit_json");
+    }
+
+
     io::IOHandle h;
     h.open("tout_conduit_relay_io_handle_reopen_1.conduit_bin");
     h.write(n);
@@ -467,7 +491,15 @@ TEST(conduit_relay_io_handle, test_empty_path_as_root)
     n["c"] = c_val;
     n["d/here"] = here_val;
 
+
     std::string ofname = "tout_conduit_relay_io_empty_path_as_root.conduit_bin";
+
+    // remove files if they already exist
+    if(utils::is_file("tout_conduit_relay_io_empty_path_as_root.conduit_bin"))
+    {
+        utils::remove_file("tout_conduit_relay_io_empty_path_as_root.conduit_bin");
+        utils::remove_file("tout_conduit_relay_io_empty_path_as_root.conduit_json");
+    }
 
     Node n_read_1, n_read_2, n_read_3, info;
 

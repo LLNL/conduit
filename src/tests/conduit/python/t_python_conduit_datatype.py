@@ -175,6 +175,25 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertEqual(DataType.float32().id(), DataType.float32_id())
         self.assertEqual(DataType.float64().id(), DataType.float64_id())
 
+    def test_to_string_and_friends(self):
+        dtypes = [ DataType.float64(),
+                   DataType.object(),
+                   DataType.list(),
+                   DataType.empty()]
+
+        for d in dtypes:
+            print("yaml rep")
+            print(d.to_string("yaml"))
+
+            print("json rep")
+            print(d.to_string("json"))
+
+            self.assertEqual(d.to_string("yaml"),d.to_yaml())
+            self.assertEqual(d.to_string("json"),d.to_json())
+
+
+
+
 if __name__ == '__main__':
     unittest.main()
 
