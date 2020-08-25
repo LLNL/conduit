@@ -106,6 +106,11 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           Node &index_out,
                                           MPI_Comm comm);
 
+
+void CONDUIT_BLUEPRINT_API to_poly(const conduit::Node &n,
+                                   conduit::Node &dest,
+                                   const std::string& name);
+
 //-------------------------------------------------------------------------
 index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh,
                                                 MPI_Comm comm);

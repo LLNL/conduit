@@ -126,10 +126,6 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           index_t num_domains,
                                           Node &index_out);
 
-void CONDUIT_BLUEPRINT_API to_poly(const conduit::Node &n,
-                                   conduit::Node &dest,
-                                   const std::string& name);
-
 void CONDUIT_BLUEPRINT_API to_polyhedral(const conduit::Node &n,
                                    conduit::Node &dest,
                                    const std::string& name);
@@ -137,7 +133,7 @@ void CONDUIT_BLUEPRINT_API to_polyhedral(const conduit::Node &n,
 namespace connectivity
 {
    //-------------------------------------------------------------------------
-   void CONDUIT_BLUEPRINT_API make_element_2d(std::vector<int64_t>& connect,
+   void CONDUIT_BLUEPRINT_API make_element_2d(std::vector<int64_t>& elem,
                         int64_t element,
                         int64_t iwidth);
 
