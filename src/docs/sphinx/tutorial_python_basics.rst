@@ -82,7 +82,7 @@ The *Node* class supports hierarchical construction.
    :end-before: END_EXAMPLE("py_basics_hierarchial")
    :dedent: 4
 
-Borrowing form JSON (and other similar notations), collections of named nodes are
+Borrowing from JSON (and other similar notations), collections of named nodes are
 called *Objects* and collections of unnamed nodes are called *Lists*, all other types
 are leaves that represent concrete data. 
 
