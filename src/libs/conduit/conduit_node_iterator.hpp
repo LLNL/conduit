@@ -233,6 +233,9 @@ NodeIter operator+(index_t lhs, NodeIter const &rhs) {
     return rhs + lhs;
 }
 
+/**
+ * A random access iterator which iterates over the children of a node.
+ */
 class NodeChildIterator : public NodeChildIteratorBase<Node&, Node*, NodeChildIterator> {
 public:
     NodeChildIterator() : NodeChildIteratorBase<Node&, Node*, NodeChildIterator>() {}
@@ -247,6 +250,9 @@ public:
             NodeChildIteratorBase<Node&, Node*, NodeChildIterator>(parent, index) {}
 };
 
+/**
+ * A random access const iterator which iterates over the children of a node.
+ */
 class NodeConstChildIterator :
         public NodeChildIteratorBase<Node const &, Node const *, NodeConstChildIterator> {
 public:
@@ -481,7 +487,7 @@ private:
 //-----------------------------------------------------------------------------
 
 template<typename Reference, typename Pointer, typename Iter>
-std::string NodeChildIteratorBase<Reference, Pointer, Iter>::name() const {
+CONDUIT_API std::string NodeChildIteratorBase<Reference, Pointer, Iter>::name() const {
     return NodeConstIterator(m_parent, m_index + 1).name();
 }
 }
