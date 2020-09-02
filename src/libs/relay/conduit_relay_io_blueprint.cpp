@@ -1079,9 +1079,13 @@ void load_mesh(const std::string &root_file_path,
     ifs.open(root_fname.c_str());
     if(!ifs.is_open())
     {
-        CONDUIT_ERROR("failed to open relay root file: " << root_fname);
+        CONDUIT_ERROR("failed to open root file: " << root_fname);
     }
-    ifs.read((char *)buff,5);
+
+    if(!ifs.read((char *)buff,5))
+    {
+        CONDUIT_ERROR("failed to read starting bytes from root file: " << root_fname);
+    }
     ifs.close();
 
     std::string test_str(buff);

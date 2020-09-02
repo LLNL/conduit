@@ -582,4 +582,66 @@ TEST(conduit_array, set_using_std_vectors)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_array, print_bells_and_whistles)
+{
+    Node n;
+
+    n["int32_1"].set(DataType::int32(1));
+    n["int32_2"].set(DataType::int32(2));
+
+    int32_array va_int32_1 = n["int32_1"].value();
+    int32_array va_int32_2 = n["int32_2"].value();
+
+    va_int32_1[0] = 1;
+
+    va_int32_2[0] = 1;
+    va_int32_2[1] = 2;
+
+    std::string s_json_int32_1 = va_int32_1.to_json();
+    std::string s_json_int32_2 = va_int32_2.to_json();
+
+    std::string s_yaml_int32_1 = va_int32_1.to_yaml();
+    std::string s_yaml_int32_2 = va_int32_2.to_yaml();
+
+    std::cout << "int32_1: " << s_json_int32_1 << std::endl;
+    std::cout << "int32_2: " << s_json_int32_2 << std::endl;
+
+    EXPECT_EQ(s_json_int32_1,"1");
+    EXPECT_EQ(s_json_int32_2,"[1, 2]");
+
+    EXPECT_EQ(s_json_int32_1,s_yaml_int32_1);
+    EXPECT_EQ(s_json_int32_2,s_yaml_int32_2);
+
+    std::vector<float64>  v_float64(10,64.0);
+    float64_array    va_float64(&v_float64[0],DataType::float64(10));
+
+    std::cout << "to_string(\"yaml\")" << std::endl;
+    std::cout << va_float64.to_string("yaml") << std::endl;
+    std::cout << "to_string(\"json\")" << std::endl;
+    std::cout << va_float64.to_string("json") << std::endl;
+
+    std::cout << "to_json()" << std::endl;
+    std::cout << va_float64.to_json() << std::endl;
+
+    std::cout << "to_yaml()" << std::endl;
+    std::cout << va_float64.to_yaml() << std::endl;
+
+    std::cout << "to_string_stream(..., yaml)" << std::endl;
+    va_float64.to_string_stream(std::cout,"yaml");
+    std::cout << std::endl;
+
+    std::cout << "to_string_stream(..., json)" << std::endl;
+    va_float64.to_string_stream(std::cout,"json");
+    std::cout << std::endl;
+
+    std::cout << "to_json_stream()" << std::endl;
+    va_float64.to_json_stream(std::cout);
+    std::cout << std::endl;
+
+    std::cout << "to_yaml_stream()" << std::endl;
+    va_float64.to_yaml_stream(std::cout);
+    std::cout << std::endl;
+}
+
 

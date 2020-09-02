@@ -3326,11 +3326,18 @@ public:
 //-----------------------------------------------------------------------------
 // -- String construction methods ---
 //-----------------------------------------------------------------------------
-    // accepted protocols:
-    //   "json"
-    //   "conduit_json"
-    //   "conduit_base64_json"
-    //   "yaml"
+    /// Creates a string representation of a node. 
+    /// accepted protocols:
+    ///   "json"
+    ///   "conduit_json"
+    ///   "conduit_base64_json"
+    ///   "yaml"
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
     std::string         to_string(const std::string &protocol="yaml", 
                                   index_t indent=2, 
                                   index_t depth=0,
@@ -3359,10 +3366,17 @@ public:
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------
-    // accepted protocols:
-    //   "json"
-    //   "conduit_json"
-    //   "conduit_base64_json"
+    /// Creates a JSON string representation of a node. 
+    /// accepted protocols:
+    ///  "json"
+    ///  "conduit_json"
+    ///  "conduit_base64_json"
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
     std::string         to_json(const std::string &protocol="json", 
                                 index_t indent=2, 
                                 index_t depth=0,
@@ -3391,9 +3405,15 @@ public:
 //-----------------------------------------------------------------------------
 // -- YAML construction methods ---
 //-----------------------------------------------------------------------------
-    // accepted protocols:
-    //   "yaml"
-
+    /// Creates a YAML string representation of a node. 
+    /// accepted protocols:
+    ///  "yaml"
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
     std::string         to_yaml(const std::string &protocol="yaml",
                                 index_t indent=2, 
                                 index_t depth=0,

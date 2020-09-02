@@ -142,7 +142,49 @@ class Test_Conduit_Schema(unittest.TestCase):
         self.assertEqual(s.child(name="child_with_/_inside").dtype().id(),DataType.float64().id())
         s["normal"].remove_child("path")
         self.assertFalse(s.has_path("normal/path"))
-        
+
+    def test_compact_to(self):
+        a_val = uint32(10)
+        b_val = uint32(20)
+        c_val = float64(30.0)
+        n = Node()
+        n['a'] = a_val
+        n['b'] = b_val
+        n['c'] = c_val
+        s = n.schema()
+
+        n_info = n.info()
+        print(n_info)
+        self.assertEqual(n_info["mem_spaces"].number_of_children(),3)
+
+        s2 = Schema()
+        s.compact_to(s2);
+
+        n2 = Node()
+        n2.set(s2)
+        n2_info = n2.info()
+        print(n2_info)
+        self.assertEqual(n2_info["mem_spaces"].number_of_children(),1)
+
+
+    def test_to_string_and_friends(self):
+        a_val = uint32(10)
+        b_val = uint32(20)
+        c_val = float64(30.0)
+        n = Node()
+        n['a'] = a_val
+        n['b'] = b_val
+        n['c'] = c_val
+        s = n.schema()
+
+        print("yaml rep")
+        print(s.to_string("yaml"))
+
+        print("json rep")
+        print(s.to_string("json"))
+
+        self.assertEqual(s.to_string("yaml"),s.to_yaml())
+        self.assertEqual(s.to_string("json"),s.to_json())
 
 if __name__ == '__main__':
     unittest.main()

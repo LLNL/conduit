@@ -213,12 +213,15 @@ public:
     std::string     to_string_default() const;
 
     std::string     to_json() const;
-
+    void            to_json_stream(std::ostream &os) const;
+    
     /// DEPRECATED: to_json(std::ostream &os) is deprecated in favor of 
     ///             to_json_stream(std::ostream &os)
     void            to_json(std::ostream &os) const;
 
-    void            to_json_stream(std::ostream &os) const;
+    std::string     to_yaml() const;
+    void            to_yaml_stream(std::ostream &os) const;
+
     void            compact_elements_to(uint8 *data) const;
     
 //-----------------------------------------------------------------------------
