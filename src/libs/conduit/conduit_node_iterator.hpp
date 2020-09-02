@@ -75,7 +75,7 @@ class Node;
  * @tparam the type of the sub class to use for the CRTP pattern
  */
 template<typename Reference, typename Pointer, typename Iter>
-class CONDUIT_API NodeChildIteratorBase {
+class NodeChildIteratorBase {
 public:
     typedef std::random_access_iterator_tag iterator_category;
     typedef Node value_type;
@@ -236,7 +236,7 @@ NodeIter operator+(index_t lhs, NodeIter const &rhs) {
 /**
  * A random access iterator which iterates over the children of a node.
  */
-class NodeChildIterator : public NodeChildIteratorBase<Node&, Node*, NodeChildIterator> {
+class CONDUIT_API NodeChildIterator : public NodeChildIteratorBase<Node&, Node*, NodeChildIterator> {
 public:
     NodeChildIterator() : NodeChildIteratorBase<Node&, Node*, NodeChildIterator>() {}
 
@@ -253,7 +253,7 @@ public:
 /**
  * A random access const iterator which iterates over the children of a node.
  */
-class NodeConstChildIterator :
+class CONDUIT_API NodeConstChildIterator :
         public NodeChildIteratorBase<Node const &, Node const *, NodeConstChildIterator> {
 public:
     NodeConstChildIterator() :
@@ -487,7 +487,7 @@ private:
 //-----------------------------------------------------------------------------
 
 template<typename Reference, typename Pointer, typename Iter>
-CONDUIT_API std::string NodeChildIteratorBase<Reference, Pointer, Iter>::name() const {
+std::string NodeChildIteratorBase<Reference, Pointer, Iter>::name() const {
     return NodeConstIterator(m_parent, m_index + 1).name();
 }
 }
