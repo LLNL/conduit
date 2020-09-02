@@ -62,53 +62,30 @@
 namespace conduit
 {
 
-// TODO remove when using C++11
-namespace internal {
-template<bool cond, typename T, typename F>
-struct conditional {
-    typedef T type;
-};
-
-template<typename T, typename F>
-struct conditional<false, T, F> {
-    typedef F type;
-};
-
-template<bool cond, class T = void>
-struct enable_if {};
-
-template<class T>
-struct enable_if<true, T> { typedef T type; };
-
-template<class T, class U>
-struct is_same {static const bool value = false;};
-
-template<class T>
-struct is_same<T, T> {static const bool value = true;};
-}
-
 class Node;
 
 /**
- * Class template for defining C++-style iterators for the Node class.
+ * Class template for defining C++-style iterators for iterating over children
+ * of a Node.
  *
  * The class meets the requirements for a random access iterator.
  *
- * @tparam is_const there this iterator iterates over const or non-const
- * values.
+ * @tparam Reference the reference type
+ * @tparam Pointer the pointer type
+ * @tparam the type of the sub class to use for the CRTP pattern
  */
-template<bool is_const>
-class CONDUIT_API node_iterator_template {
+template<typename Reference, typename Pointer, typename Iter>
+class CONDUIT_API NodeChildIteratorBase {
 public:
     typedef std::random_access_iterator_tag iterator_category;
     typedef Node value_type;
-    typedef typename internal::conditional<is_const, Node const *, Node *>::type pointer;
-    typedef typename internal::conditional<is_const, Node const &, Node &>::type reference;
+    typedef Pointer pointer;
+    typedef Reference reference;
     typedef index_t difference_type;
 
-    node_iterator_template() : m_parent(NULL), m_index(0) {}
+    NodeChildIteratorBase() : m_parent(NULL), m_index(0) {}
 
-    node_iterator_template(node_iterator_template const &rhs) :
+    NodeChildIteratorBase(NodeChildIteratorBase const &rhs) :
             m_parent(rhs.m_parent), m_index(rhs.m_index) {}
 
     /**
@@ -117,43 +94,43 @@ public:
      * @param parent the parent node whose children to iterate over
      * @param index the index of the child to which this iterator points
      */
-    node_iterator_template(pointer parent, index_t index=0) :
+    NodeChildIteratorBase(pointer parent, index_t index=0) :
             m_parent(parent), m_index(index) {}
 
-#if __cplusplus >= 201103L
-    // If someone has a nice, simple way to accomplish this with C++03,
-    // please change this and enable the test.
-    template <bool is_const_ = is_const, typename = typename std::enable_if<is_const_>::type>
-    node_iterator_template(node_iterator_template<false> &rhs) :
-            m_parent(rhs.get_parent()), m_index(rhs.get_index()) {}
-#endif
+//#if __cplusplus >= 201103L
+//    // If someone has a nice, simple way to accomplish this with C++03,
+//    // please change this and enable the test.
+//    template <bool is_const_ = is_const, typename = typename std::enable_if<is_const_>::type>
+//    node_iterator_template(node_iterator_template<false> &rhs) :
+//            m_parent(rhs.get_parent()), m_index(rhs.get_index()) {}
+//#endif
 
-    bool operator==(node_iterator_template const &rhs) const {
+    bool operator==(NodeChildIteratorBase const &rhs) const {
         return m_parent == rhs.m_parent && m_index == rhs.m_index;
     }
 
-    bool operator!=(node_iterator_template const &rhs) const {
+    bool operator!=(NodeChildIteratorBase const &rhs) const {
         return ! (*this == rhs);
     }
 
-    node_iterator_template &operator++() {
+    Iter &operator++() {
         ++m_index;
-        return *this;
+        return static_cast<Iter&>(*this);
     }
 
-    node_iterator_template operator++(int) {
-        node_iterator_template result = *this;
+    Iter operator++(int) {
+        Iter result = static_cast<Iter&>(*this);
         ++*this;
         return result;
     }
 
-    node_iterator_template &operator--() {
+    Iter &operator--() {
         --m_index;
-        return *this;
+        return static_cast<Iter&>(*this);
     }
 
-    node_iterator_template operator--(int) {
-        node_iterator_template result = *this;
+    Iter operator--(int) {
+        Iter result = static_cast<Iter&>(*this);
         --*this;
         return result;
     }
@@ -166,29 +143,29 @@ public:
         return m_parent->child_ptr(m_index);
     }
 
-    node_iterator_template& operator+=(index_t offset) {
+    Iter& operator+=(index_t offset) {
         m_index += offset;
-        return *this;
+        return static_cast<Iter&>(*this);
     }
 
-    node_iterator_template& operator-=(index_t offset) {
+    Iter& operator-=(index_t offset) {
         m_index -= offset;
-        return *this;
+        return static_cast<Iter&>(*this);
     }
 
-    node_iterator_template operator+(index_t rhs) const {
-        node_iterator_template result(*this);
+    Iter operator+(index_t rhs) const {
+        Iter result(static_cast<Iter const &>(*this));
         result += rhs;
         return result;
     }
 
-    node_iterator_template operator-(index_t rhs) const {
-        node_iterator_template result(*this);
+    Iter operator-(index_t rhs) const {
+        Iter result(static_cast<Iter const &>(*this));
         result -= rhs;
         return result;
     }
 
-    index_t operator-(node_iterator_template const &rhs) const {
+    index_t operator-(Iter const &rhs) const {
         return m_index - rhs.m_index;
     }
 
@@ -196,19 +173,19 @@ public:
         return m_parent->child(m_index + offset);
     }
 
-    bool operator<(node_iterator_template const &rhs) const {
+    bool operator<(Iter const &rhs) const {
         return m_index < rhs.m_index;
     }
 
-    bool operator<=(node_iterator_template const &rhs) const {
+    bool operator<=(Iter const &rhs) const {
         return m_index <= rhs.m_index;
     }
 
-    bool operator>(node_iterator_template const &rhs) const {
+    bool operator>(Iter const &rhs) const {
         return m_index > rhs.m_index;
     }
 
-    bool operator>=(node_iterator_template const &rhs) const {
+    bool operator>=(Iter const &rhs) const {
         return m_index >= rhs.m_index;
     }
 
@@ -230,6 +207,13 @@ public:
     index_t get_index() const {
         return m_index;
     }
+
+    /**
+     * Get the name of the node pointed at by this iterator
+     * @return the node's name
+     */
+    std::string name() const;
+
 private:
     pointer m_parent;
     index_t m_index;
@@ -248,6 +232,43 @@ template<typename NodeIter>
 NodeIter operator+(index_t lhs, NodeIter const &rhs) {
     return rhs + lhs;
 }
+
+class NodeChildIterator : public NodeChildIteratorBase<Node&, Node*, NodeChildIterator> {
+public:
+    NodeChildIterator() : NodeChildIteratorBase<Node&, Node*, NodeChildIterator>() {}
+
+    /**
+     * Create a new iterator pointing at the given parent node and index.
+     *
+     * @param parent the parent node whose children to iterate over
+     * @param index the index of the child to which this iterator points
+     */
+    explicit NodeChildIterator(pointer parent, index_t index=0) :
+            NodeChildIteratorBase<Node&, Node*, NodeChildIterator>(parent, index) {}
+};
+
+class NodeConstChildIterator :
+        public NodeChildIteratorBase<Node const &, Node const *, NodeConstChildIterator> {
+public:
+    NodeConstChildIterator() :
+            NodeChildIteratorBase<Node const &, Node const *, NodeConstChildIterator>() {}
+
+    NodeConstChildIterator(NodeConstChildIterator const &rhs) :
+            NodeChildIteratorBase<Node const &, Node const *, NodeConstChildIterator>(rhs) {}
+
+    NodeConstChildIterator(NodeChildIterator const &rhs) :
+            NodeChildIteratorBase<Node const &, Node const *, NodeConstChildIterator>(
+                    rhs.get_parent(), rhs.get_index()) {}
+
+    /**
+     * Create a new iterator pointing at the given parent node and index.
+     *
+     * @param parent the parent node whose children to iterate over
+     * @param index the index of the child to which this iterator points
+     */
+    explicit NodeConstChildIterator(pointer parent, index_t index=0) :
+            NodeChildIteratorBase<Node const &, Node const *, NodeConstChildIterator>(parent, index) {}
+};
 
 // forward declare NodeConstIterator so it can be a used as a friend
 // to NodeIterator
@@ -320,7 +341,24 @@ public:
 /// Human readable info about this iterator
 //-----------------------------------------------------------------------------
     void        info(Node &res) const;
-    
+
+//-----------------------------------------------------------------------------
+/// Support C++-style iterators
+//-----------------------------------------------------------------------------
+
+    NodeChildIterator begin();
+    NodeChildIterator end();
+
+    NodeConstChildIterator begin() const {
+        return cbegin();
+    }
+    NodeConstChildIterator end() const {
+        return cend();
+    }
+
+    NodeConstChildIterator cbegin() const;
+    NodeConstChildIterator cend() const;
+
 private:
 //-----------------------------------------------------------------------------
 //
@@ -410,7 +448,21 @@ public:
 /// Human readable info about this iterator
 //-----------------------------------------------------------------------------
     void        info(Node &res) const;
-    
+
+
+//-----------------------------------------------------------------------------
+/// Support C++-style iterators
+//-----------------------------------------------------------------------------
+    NodeConstChildIterator begin() const {
+        return cbegin();
+    }
+    NodeConstChildIterator end() const {
+        return cend();
+    }
+
+    NodeConstChildIterator cbegin() const;
+    NodeConstChildIterator cend() const;
+
 private:
 //-----------------------------------------------------------------------------
 //
@@ -428,6 +480,10 @@ private:
 // -- end conduit::NodeIterator --
 //-----------------------------------------------------------------------------
 
+template<typename Reference, typename Pointer, typename Iter>
+std::string NodeChildIteratorBase<Reference, Pointer, Iter>::name() const {
+    return NodeConstIterator(m_parent, m_index + 1).name();
+}
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --

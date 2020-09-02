@@ -295,6 +295,26 @@ NodeIterator::info(Node &res) const
 }
 
 //-----------------------------------------------------------------------------
+/// Support C++-style iterators
+//-----------------------------------------------------------------------------
+NodeChildIterator NodeIterator::begin() {
+    return NodeChildIterator(m_node, m_index);
+}
+
+NodeChildIterator NodeIterator::end() {
+    return NodeChildIterator(m_node, m_num_children);
+}
+
+NodeConstChildIterator NodeIterator::cbegin() const {
+    return NodeConstChildIterator(m_node, m_index);
+}
+
+NodeConstChildIterator NodeIterator::cend() const {
+    return NodeConstChildIterator(m_node, m_num_children);
+}
+
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // End NodeIterator
 //-----------------------------------------------------------------------------
@@ -543,6 +563,19 @@ NodeConstIterator::info(Node &res) const
     res["node_ref"] = utils::to_hex_string(m_node);
     res["number_of_children"] = m_num_children;
 }
+
+
+//-----------------------------------------------------------------------------
+/// Support C++-style iterators
+//-----------------------------------------------------------------------------
+NodeConstChildIterator NodeConstIterator::cbegin() const {
+    return NodeConstChildIterator(m_node, m_index);
+}
+
+NodeConstChildIterator NodeConstIterator::cend() const {
+    return NodeConstChildIterator(m_node, m_num_children);
+}
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

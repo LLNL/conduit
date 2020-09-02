@@ -59,22 +59,22 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 
 TEST(conduit_node_cpp_iterator, non_const_types) {
-    ::testing::StaticAssertTypeEq<Node, Node::iterator::value_type>();
-    ::testing::StaticAssertTypeEq<Node &, Node::iterator::reference>();
-    ::testing::StaticAssertTypeEq<Node *, Node::iterator::pointer>();
-    ::testing::StaticAssertTypeEq<index_t, Node::iterator::difference_type>();
+    ::testing::StaticAssertTypeEq<Node, NodeChildIterator::value_type>();
+    ::testing::StaticAssertTypeEq<Node &, NodeChildIterator::reference>();
+    ::testing::StaticAssertTypeEq<Node *, NodeChildIterator::pointer>();
+    ::testing::StaticAssertTypeEq<index_t, NodeChildIterator::difference_type>();
     ::testing::StaticAssertTypeEq<std::random_access_iterator_tag,
-            Node::iterator::iterator_category>();
+            NodeChildIterator::iterator_category>();
 
-    Node::iterator iter;
+    NodeChildIterator iter;
     ::testing::StaticAssertTypeEq<Node &, decltype(*iter)>();
     ::testing::StaticAssertTypeEq<Node *, decltype(iter.operator->())>();
-    ::testing::StaticAssertTypeEq<Node::iterator &, decltype(iter += 5)>();
-    ::testing::StaticAssertTypeEq<Node::iterator &, decltype(iter -= 5)>();
-    ::testing::StaticAssertTypeEq<Node::iterator, decltype(iter + 5)>();
-    ::testing::StaticAssertTypeEq<Node::iterator, decltype(5 + iter)>();
-    ::testing::StaticAssertTypeEq<Node::iterator, decltype(iter - 5)>();
-    Node::iterator iter_2;
+    ::testing::StaticAssertTypeEq<NodeChildIterator &, decltype(iter += 5)>();
+    ::testing::StaticAssertTypeEq<NodeChildIterator &, decltype(iter -= 5)>();
+    ::testing::StaticAssertTypeEq<NodeChildIterator, decltype(iter + 5)>();
+    ::testing::StaticAssertTypeEq<NodeChildIterator, decltype(5 + iter)>();
+    ::testing::StaticAssertTypeEq<NodeChildIterator, decltype(iter - 5)>();
+    NodeChildIterator iter_2;
     ::testing::StaticAssertTypeEq<index_t, decltype(iter - iter_2)>();
     ::testing::StaticAssertTypeEq<Node &, decltype(iter[3])>();
     ::testing::StaticAssertTypeEq<bool, decltype(iter < iter_2)>();
@@ -84,24 +84,24 @@ TEST(conduit_node_cpp_iterator, non_const_types) {
 }
 
 TEST(conduit_node_cpp_iterator, const_types) {
-    ::testing::StaticAssertTypeEq<Node, Node::const_iterator::value_type>();
+    ::testing::StaticAssertTypeEq<Node, NodeConstChildIterator::value_type>();
     ::testing::StaticAssertTypeEq<Node const &,
-            Node::const_iterator::reference>();
+            NodeConstChildIterator::reference>();
     ::testing::StaticAssertTypeEq<Node const *,
-            Node::const_iterator::pointer>();
-    ::testing::StaticAssertTypeEq<index_t, Node::iterator::difference_type>();
+            NodeConstChildIterator::pointer>();
+    ::testing::StaticAssertTypeEq<index_t, NodeChildIterator::difference_type>();
     ::testing::StaticAssertTypeEq<std::random_access_iterator_tag,
-            Node::const_iterator::iterator_category>();
+            NodeConstChildIterator::iterator_category>();
 
-    Node::const_iterator iter;
+    NodeConstChildIterator iter;
     ::testing::StaticAssertTypeEq<Node const &, decltype(*iter)>();
     ::testing::StaticAssertTypeEq<Node const *, decltype(iter.operator->())>();
-    ::testing::StaticAssertTypeEq<Node::const_iterator &, decltype(iter += 5)>();
-    ::testing::StaticAssertTypeEq<Node::const_iterator &, decltype(iter -= 5)>();
-    ::testing::StaticAssertTypeEq<Node::const_iterator, decltype(iter + 5)>();
-    ::testing::StaticAssertTypeEq<Node::const_iterator, decltype(5 + iter)>();
-    ::testing::StaticAssertTypeEq<Node::const_iterator, decltype(iter - 5)>();
-    Node::const_iterator iter_2;
+    ::testing::StaticAssertTypeEq<NodeConstChildIterator &, decltype(iter += 5)>();
+    ::testing::StaticAssertTypeEq<NodeConstChildIterator &, decltype(iter -= 5)>();
+    ::testing::StaticAssertTypeEq<NodeConstChildIterator, decltype(iter + 5)>();
+    ::testing::StaticAssertTypeEq<NodeConstChildIterator, decltype(5 + iter)>();
+    ::testing::StaticAssertTypeEq<NodeConstChildIterator, decltype(iter - 5)>();
+    NodeConstChildIterator iter_2;
     ::testing::StaticAssertTypeEq<index_t, decltype(iter - iter_2)>();
     ::testing::StaticAssertTypeEq<Node const &, decltype(iter[3])>();
     ::testing::StaticAssertTypeEq<bool, decltype(iter < iter_2)>();
@@ -110,26 +110,22 @@ TEST(conduit_node_cpp_iterator, const_types) {
     ::testing::StaticAssertTypeEq<bool, decltype(iter >= iter_2)>();
 }
 
-#if __cplusplus >= 201103L
-
-TEST(conduit_node_cpp_iterator, conversion) {
+TEST(conduit_node_cpp_iterator, conversion_from_non_const_to_const) {
     Node node;
-    Node::iterator iter{&node, 3};
-    Node::const_iterator const_iter = iter;
-    Node::const_iterator expected_iter{&node, 3};
+    NodeChildIterator iter{&node, 3};
+    NodeConstChildIterator const_iter = iter;
+    NodeConstChildIterator expected_iter{&node, 3};
     EXPECT_EQ(const_iter, expected_iter);
 }
-
-#endif
 
 TEST(conduit_node_cpp_iterator, cbegin_cend) {
     Node node;
     node.add_child("c1");
-    Node::const_iterator begin = static_cast<Node const &>(node).begin();
-    Node::const_iterator cbegin = node.cbegin();
+    NodeConstChildIterator begin = static_cast<Node const &>(node).children().begin();
+    NodeConstChildIterator cbegin = node.children().cbegin();
     EXPECT_EQ(begin, cbegin);
-    Node::const_iterator end = static_cast<Node const &>(node).end();
-    Node::const_iterator cend = node.cend();
+    NodeConstChildIterator end = static_cast<Node const &>(node).children().end();
+    NodeConstChildIterator cend = node.children().cend();
     EXPECT_EQ(end, cend);
 }
 
@@ -154,16 +150,16 @@ private:
     Node m_modifiable_node;
 };
 
-using IteratorTypes = ::testing::Types<Node::iterator, Node::const_iterator>;
+using IteratorTypes = ::testing::Types<NodeChildIterator, NodeConstChildIterator>;
 TYPED_TEST_SUITE(conduit_node_cpp_iteration, IteratorTypes);
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_indirect) {
-    TypeParam iter = this->m_base_node->begin();
+    TypeParam iter = this->m_base_node->children().begin();
     EXPECT_EQ((*iter).as_string(), this->m_base_node->child(0).as_string());
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_arrow) {
-    TypeParam iter = this->m_base_node->begin();
+    TypeParam iter = this->m_base_node->children().begin();
     Node n;
     EXPECT_EQ(iter->as_string(), this->m_base_node->child(0).as_string());
 }
@@ -185,7 +181,7 @@ TYPED_TEST(conduit_node_cpp_iteration, equality) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_pre_increment) {
-    TypeParam iter = this->m_base_node->begin();
+    TypeParam iter = this->m_base_node->children().begin();
     ::testing::StaticAssertTypeEq<TypeParam &, decltype(++iter)>();
     TypeParam &res = ++iter;
     EXPECT_EQ(&res, &iter) << "Did not get same object";
@@ -193,7 +189,7 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_pre_increment) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_post_increment) {
-    TypeParam iter = this->m_base_node->begin();
+    TypeParam iter = this->m_base_node->children().begin();
     EXPECT_EQ(&*iter, this->m_base_node->child_ptr(0));
     ::testing::StaticAssertTypeEq<TypeParam, decltype(iter++)>();
     TypeParam res = iter++;
@@ -202,7 +198,7 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_post_increment) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_pre_decrement) {
-    TypeParam iter = this->m_base_node->end();
+    TypeParam iter = this->m_base_node->children().end();
     ::testing::StaticAssertTypeEq<TypeParam &, decltype(--iter)>();
     TypeParam &res = --iter;
     EXPECT_EQ(&res, &iter) << "Did not get same object";
@@ -210,7 +206,7 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_pre_decrement) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_post_decrement) {
-    TypeParam iter = this->m_base_node->end();
+    TypeParam iter = this->m_base_node->children().end();
     ::testing::StaticAssertTypeEq<TypeParam, decltype(iter--)>();
     TypeParam res = iter--;
     EXPECT_NE(&res, &iter) << "Got same object";
@@ -218,7 +214,7 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_post_decrement) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_plus_equals) {
-    TypeParam iter = this->m_base_node->begin();
+    TypeParam iter = this->m_base_node->children().begin();
     TypeParam &new_iter = iter += 3;
     EXPECT_EQ(&new_iter, &iter) << "Did not get same object";
     EXPECT_EQ(&*iter, this->m_base_node->child_ptr(3))
@@ -230,7 +226,7 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_plus_equals) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_minus_equals) {
-    TypeParam iter = this->m_base_node->end();
+    TypeParam iter = this->m_base_node->children().end();
     TypeParam &new_iter = iter -= 3;
     EXPECT_EQ(&new_iter, &iter) << "Did not get same object";
     EXPECT_EQ(&*iter, this->m_base_node->child_ptr(1))
@@ -242,7 +238,7 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_minus_equals) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_plus) {
-    TypeParam iter = this->m_base_node->begin();
+    TypeParam iter = this->m_base_node->children().begin();
     TypeParam new_iter = iter + 3;
     EXPECT_EQ(&*iter, this->m_base_node->child_ptr(0))
                         << "Moved unexpectedly";
@@ -254,7 +250,7 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_plus) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_minus_offset) {
-    TypeParam iter = this->m_base_node->end();
+    TypeParam iter = this->m_base_node->children().end();
     TypeParam new_iter = iter - 3;
     EXPECT_EQ(&*(--iter), this->m_base_node->child_ptr(3))
                         << "Moved unexpectedly";
@@ -263,7 +259,7 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_minus_offset) {
 }
 
 TYPED_TEST(conduit_node_cpp_iteration, operator_minus_iter) {
-    TypeParam a = this->m_base_node->end();
+    TypeParam a = this->m_base_node->children().end();
     TypeParam b{a};
     a -= 3;
     EXPECT_EQ(3, b - a);
@@ -276,7 +272,6 @@ TYPED_TEST(conduit_node_cpp_iteration, operator_subscript) {
     EXPECT_EQ(&iter[2], this->m_base_node->child_ptr(3));
     EXPECT_EQ(&iter[-1], this->m_base_node->child_ptr(0));
 }
-
 
 TYPED_TEST(conduit_node_cpp_iteration, comparison_operators) {
     TypeParam iter_1{this->m_base_node, 1};
@@ -291,11 +286,22 @@ TYPED_TEST(conduit_node_cpp_iteration, comparison_operators) {
 
 TYPED_TEST(conduit_node_cpp_iteration, enhanced_for_loop) {
     index_t current_index = 0;
-    for (typename TypeParam::reference cur_node : *this->m_base_node) {
+    for (typename TypeParam::reference cur_node : this->m_base_node->children()) {
         EXPECT_EQ(&cur_node, this->m_base_node->child_ptr(current_index))
                             << "Got wrong child at " << current_index;
         ++current_index;
     }
     EXPECT_EQ(current_index, this->m_base_node->number_of_children())
                         << "Did not iterate over all children";
+}
+
+TYPED_TEST(conduit_node_cpp_iteration, name) {
+    auto nodeIter = this->m_base_node->children();
+    TypeParam childIter = nodeIter.begin();
+    while(nodeIter.has_next()) {
+        Node const &node = nodeIter.next();
+        EXPECT_EQ(node.name(), nodeIter.name());
+        EXPECT_EQ(node.name(), childIter.name());
+        ++childIter;
+    }
 }

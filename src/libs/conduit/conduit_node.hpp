@@ -118,9 +118,6 @@ public:
     friend class NodeConstIterator;
     friend class Generator;
 
-    typedef node_iterator_template<false> iterator;
-    typedef node_iterator_template<true> const_iterator;
-
 //-----------------------------------------------------------------------------
 //
 // -- begin declaration of Node construction and destruction --
@@ -4012,20 +4009,6 @@ public:
 #ifdef CONDUIT_USE_LONG_DOUBLE
     const long_double_array  as_long_double_array() const;
 #endif
-
-    // Support for C++ style iterators and enhanced for loops
-    iterator begin();
-    iterator end();
-
-    const_iterator begin() const {
-        return cbegin();
-    }
-    const_iterator end() const {
-        return cend();
-    }
-
-    const_iterator cbegin() const;
-    const_iterator cend() const;
 
 //-----------------------------------------------------------------------------
 ///@}
