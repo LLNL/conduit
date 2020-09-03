@@ -129,14 +129,28 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
 namespace connectivity
 {
    //-------------------------------------------------------------------------
+   struct PolyElemType
+   {
+       std::vector<int64_t> m_elem_verts;
+       std::pair<int64_t, int64_t> m_ifaces;
+       std::pair<int64_t, int64_t> m_jfaces;
+       std::pair<int64_t, int64_t> m_kfaces;
+   };
+
+
+
    void CONDUIT_BLUEPRINT_API make_element_2d(std::vector<int64_t>& elem,
                         int64_t element,
                         int64_t iwidth);
 
-   void CONDUIT_BLUEPRINT_API make_element_3d(std::vector<int64_t>& connect,
+   void CONDUIT_BLUEPRINT_API make_element_3d(PolyElemType& connect,
                         int64_t element,
                         int64_t iwidth,
-                        int64_t jwidth);
+                        int64_t jwidth,
+                        std::map<int, std::vector<int64_t> >& ifaces,
+                        std::map<int, std::vector<int64_t> >& jfaces,
+                        std::map<int, std::vector<int64_t> >& kfaces);
+
 
    void CONDUIT_BLUEPRINT_API create_elements_2d(const Node& ref_win,
                                               int64_t i_lo,
@@ -150,7 +164,10 @@ namespace connectivity
                                               int64_t k_lo,
                                               int64_t iwidth,
                                               int64_t jwidth,
-                                    std::map<int, std::vector<int64_t> >& elems);
+                                    std::map<int, PolyElemType>& elems,
+                                    std::map<int, std::vector<int64_t> >& ifaces,
+                                    std::map<int, std::vector<int64_t> >& jfaces,
+                                    std::map<int, std::vector<int64_t> >& kfaces);
 
    void CONDUIT_BLUEPRINT_API connect_elements_2d(const Node& ref_win,
                                               int64_t i_lo,
@@ -168,7 +185,7 @@ namespace connectivity
                                               int64_t jwidth,
                                               std::vector<int64_t>& ratio,
                                               int64_t& new_vertex,
-                                    std::map<int, std::vector<int64_t> >& elems);
+                                    std::map<int, PolyElemType>& elems);
 }
 
 //-----------------------------------------------------------------------------

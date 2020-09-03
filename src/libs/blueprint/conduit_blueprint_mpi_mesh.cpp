@@ -647,8 +647,15 @@ void to_poly(const Node &n,
         topo["elements/connectivity"].set(connect);
         topo["elements/sizes"].set(num_vertices);
         topo["elements/offsets"].set(elem_offsets);
+
+        //TODO:  zero copy
+        if (chld.has_child("fields"))
+        {
+            dest[domain_name]["fields"] = chld["fields"];
+        }
     }
 }
+
 
 //-----------------------------------------------------------------------------
 void to_polyhedral(const Node &n,
@@ -660,7 +667,11 @@ void to_polyhedral(const Node &n,
 
     NodeConstIterator itr = n.children();
 
-    std::map<int, std::map<int, std::vector<int64_t> > > poly_elems_map;
+//    std::map<int, std::map<int, std::vector<int64_t> > > poly_elems_map;
+    std::map<int, std::map<int, blueprint::mesh::connectivity::PolyElemType> > poly_elems_map;
+    std::map<int, std::map<int, std::vector<int64_t> > > ifaces_map;
+    std::map<int, std::map<int, std::vector<int64_t> > > jfaces_map;
+    std::map<int, std::map<int, std::vector<int64_t> > > kfaces_map;
 
     while(itr.has_next())
     {
@@ -998,6 +1009,9 @@ void to_polyhedral(const Node &n,
         int64_t k_lo = in_topo["elements/origin/k0"].as_int64();
 
         auto& poly_elems = poly_elems_map[domain_id];
+        auto& ifaces = ifaces_map[domain_id];
+        auto& jfaces = jfaces_map[domain_id];
+        auto& kfaces = kfaces_map[domain_id];
 
        if (chld.has_path("adjsets/adjset/groups"))
         {
@@ -1050,7 +1064,7 @@ void to_polyhedral(const Node &n,
                                                                        k_lo,
                                                                        iwidth,
                                                                        jwidth,
-                                                                       poly_elems);
+                                                                       poly_elems, ifaces, jfaces, kfaces);
                                 std::vector<int64_t> use_ratio(3);
                                 use_ratio[0] = ratio_i;
                                 use_ratio[1] = ratio_j;
@@ -1146,22 +1160,62 @@ void to_polyhedral(const Node &n,
 
         int64_t elemsize = iwidth*jwidth*kwidth;
 
-        std::vector<int64_t> connect;
+        std::vector<int64_t> elem_connect;
+        std::vector<int64_t> elem_sizes;
+        std::vector<int64_t> elem_offsets;
+        std::vector<int64_t> subelem_connect;
+        std::vector<int64_t> subelem_sizes;
+        std::vector<int64_t> subelem_offsets;
+        int64_t elem_offset_sum = 0;
+        int64_t subelem_offset_sum = 0;
         for (int elem = 0; elem < elemsize; ++elem)
         {
             auto elem_itr = poly_elems.find(elem);
             if (elem_itr == poly_elems.end())
             {
-                blueprint::mesh::connectivity::make_element_3d(connect, elem, iwidth, jwidth);
+                blueprint::mesh::connectivity::PolyElemType new_elem;
+                blueprint::mesh::connectivity::make_element_3d(new_elem, elem, iwidth, jwidth, ifaces, jfaces, kfaces);
+                elem_connect.insert(elem_connect.end(), new_elem.m_elem_verts.begin(), new_elem.m_elem_verts.end());
+ 
+                elem_sizes.push_back(8);
             }
             else
             {
-                std::vector<int64_t>& poly_elem = elem_itr->second;
-                connect.insert(connect.end(), poly_elem.begin(), poly_elem.end());
+                auto& poly_elem = elem_itr->second.m_elem_verts;
+                elem_connect.insert(elem_connect.end(), poly_elem.begin(), poly_elem.end());
+                elem_sizes.push_back(poly_elem.size());
             }
+            elem_offsets.push_back(elem_offset_sum);
+            elem_offset_sum += elem_sizes.back();
+        }
+        for (auto if_itr = ifaces.begin(); if_itr != ifaces.end(); ++if_itr)
+        {
+            auto& if_elem = if_itr->second;
+            subelem_connect.insert(subelem_connect.end(), if_elem.begin(), if_elem.end());
+            subelem_sizes.push_back(if_elem.size());
+            subelem_offsets.push_back(subelem_offset_sum);
+            subelem_offset_sum += subelem_sizes.back();
+        }
+        for (auto jf_itr = jfaces.begin(); jf_itr != jfaces.end(); ++jf_itr)
+        {
+            auto& jf_elem = jf_itr->second;
+            subelem_connect.insert(subelem_connect.end(), jf_elem.begin(), jf_elem.end());
+            subelem_sizes.push_back(jf_elem.size());
+            subelem_offsets.push_back(subelem_offset_sum);
+            subelem_offset_sum += subelem_sizes.back();
+        }
+        for (auto kf_itr = kfaces.begin(); kf_itr != kfaces.end(); ++kf_itr)
+        {
+            auto& kf_elem = kf_itr->second;
+            subelem_connect.insert(subelem_connect.end(), kf_elem.begin(), kf_elem.end());
+            subelem_sizes.push_back(kf_elem.size());
+            subelem_offsets.push_back(subelem_offset_sum);
+            subelem_offset_sum += subelem_sizes.back();
         }
 
-        topo["elements/connectivity"].set(connect);
+        topo["elements/connectivity"].set(elem_connect);
+        topo["elements/sizes"].set(elem_sizes);
+        topo["elements/offsets"].set(elem_offsets);
     }
 
 }

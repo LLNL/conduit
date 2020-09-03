@@ -2458,58 +2458,130 @@ mesh::connectivity::make_element_2d(std::vector<int64_t>& elem,
 
 
 void
-mesh::connectivity::make_element_3d(std::vector<int64_t>& connect,
+mesh::connectivity::make_element_3d(PolyElemType& connect,
                                     int64_t element,
                                     int64_t iwidth,
-                                    int64_t jwidth)
+                                    int64_t jwidth,
+                                   std::map<int, std::vector<int64_t> >& ifaces,
+                                   std::map<int, std::vector<int64_t> >& jfaces,
+                                   std::map<int, std::vector<int64_t> >& kfaces)
+
 {
     int64_t ilo = element % iwidth;
-    int64_t jlo = element / iwidth;
+    int64_t jlo = (element / iwidth) % jwidth;
     int64_t klo = element / (iwidth*jwidth);
     int64_t ihi = ilo + 1;
     int64_t jhi = jlo + 1;
     int64_t khi = klo + 1;
 
-    int64_t LLL = (iwidth+1)*(jwidth+1)*klo + (iwidth+1)*jlo + ilo;
-    int64_t ULL = (iwidth+1)*(jwidth+1)*klo + (iwidth+1)*jlo + ihi;
-    int64_t LUL = (iwidth+1)*(jwidth+1)*klo + (iwidth+1)*jhi + ilo;
-    int64_t UUL = (iwidth+1)*(jwidth+1)*klo + (iwidth+1)*jhi + ihi;
-    int64_t LLU = (iwidth+1)*(jwidth+1)*khi + (iwidth+1)*jlo + ilo;
-    int64_t ULU = (iwidth+1)*(jwidth+1)*khi + (iwidth+1)*jlo + ihi;
-    int64_t LUU = (iwidth+1)*(jwidth+1)*khi + (iwidth+1)*jhi + ilo;
-    int64_t UUU = (iwidth+1)*(jwidth+1)*khi + (iwidth+1)*jhi + ihi;
+    int64_t jlo_offset = (iwidth+1)*jlo;
+    int64_t jhi_offset = (iwidth+1)*jhi;
+    int64_t klo_offset = (iwidth+1)*(jwidth+1)*klo;
+    int64_t khi_offset = (iwidth+1)*(jwidth+1)*khi;
 
-    connect.push_back(6);
-    connect.push_back(4);
-    connect.push_back(LLL);
-    connect.push_back(LUL);
-    connect.push_back(LUU);
-    connect.push_back(LLU);
-    connect.push_back(4);
-    connect.push_back(ULL);
-    connect.push_back(UUL);
-    connect.push_back(UUU);
-    connect.push_back(ULU);
-    connect.push_back(4);
-    connect.push_back(LLL);
-    connect.push_back(ULL);
-    connect.push_back(ULU);
-    connect.push_back(LLU);
-    connect.push_back(4);
-    connect.push_back(LUL);
-    connect.push_back(UUL);
-    connect.push_back(UUU);
-    connect.push_back(LUU);
-    connect.push_back(4);
-    connect.push_back(LLL);
-    connect.push_back(ULL);
-    connect.push_back(UUL);
-    connect.push_back(LUL);
-    connect.push_back(4);
-    connect.push_back(LLU);
-    connect.push_back(ULU);
-    connect.push_back(UUU);
-    connect.push_back(LUU);
+    connect.m_elem_verts.push_back(ilo + jlo_offset + klo_offset);
+    connect.m_elem_verts.push_back(ihi + jlo_offset + klo_offset);
+    connect.m_elem_verts.push_back(ihi + jhi_offset + klo_offset);
+    connect.m_elem_verts.push_back(ilo + jhi_offset + klo_offset);
+    connect.m_elem_verts.push_back(ilo + jlo_offset + khi_offset);
+    connect.m_elem_verts.push_back(ihi + jlo_offset + khi_offset);
+    connect.m_elem_verts.push_back(ihi + jhi_offset + khi_offset);
+    connect.m_elem_verts.push_back(ilo + jhi_offset + khi_offset);
+
+    //ifaces
+    {
+        int64_t j_offset = jlo_offset; 
+        int64_t k_offset = (iwidth+1)*jwidth*klo;
+
+        int64_t lo_face = ilo + j_offset + k_offset;
+        int64_t hi_face = ihi + j_offset + k_offset;
+
+        connect.m_ifaces.first = lo_face;
+        connect.m_ifaces.second = hi_face;
+
+        //ilo face
+        if (ifaces.find(lo_face) == ifaces.end())
+        {
+            auto& ilo_face = ifaces[lo_face];
+            ilo_face.push_back(ilo + jlo_offset + klo_offset);
+            ilo_face.push_back(ilo + jhi_offset + klo_offset);
+            ilo_face.push_back(ilo + jhi_offset + khi_offset);
+            ilo_face.push_back(ilo + jlo_offset + khi_offset);
+        }
+        //ihi face
+        if (ifaces.find(hi_face) == ifaces.end())
+        {
+            auto& ihi_face = ifaces[hi_face];
+            ihi_face.push_back(ihi + jlo_offset + klo_offset);
+            ihi_face.push_back(ihi + jhi_offset + klo_offset);
+            ihi_face.push_back(ihi + jhi_offset + khi_offset);
+            ihi_face.push_back(ihi + jlo_offset + khi_offset);
+        }
+    }
+    //jfaces
+    {
+        int64_t i_offset = ilo;  
+        int64_t jlo_face_offset = iwidth*jlo; 
+        int64_t jhi_face_offset = iwidth*jhi; 
+        int64_t k_offset = iwidth*(jwidth+1)*klo;
+
+        int64_t lo_face = i_offset + jlo_face_offset + k_offset;
+        int64_t hi_face = i_offset + jhi_face_offset + k_offset;
+
+        connect.m_jfaces.first = lo_face;
+        connect.m_jfaces.second = hi_face;
+
+        //jlo face
+        if (jfaces.find(lo_face) == jfaces.end())
+        {
+            auto& jlo_face = jfaces[lo_face];
+            jlo_face.push_back(ilo + jlo_offset + klo_offset);
+            jlo_face.push_back(ihi + jlo_offset + klo_offset);
+            jlo_face.push_back(ihi + jlo_offset + khi_offset);
+            jlo_face.push_back(ilo + jlo_offset + khi_offset);
+        }
+        //ihi face
+        if (jfaces.find(hi_face) == jfaces.end())
+        {
+            auto& jhi_face = jfaces[hi_face];
+            jhi_face.push_back(ilo + jhi_offset + klo_offset);
+            jhi_face.push_back(ihi + jhi_offset + klo_offset);
+            jhi_face.push_back(ihi + jhi_offset + khi_offset);
+            jhi_face.push_back(ilo + jhi_offset + khi_offset);
+        }
+    }
+    //kfaces
+    {
+        int64_t i_offset = ilo;  
+        int64_t j_offset = iwidth*jlo; 
+        int64_t klo_face_offset = iwidth*jwidth*klo;
+        int64_t khi_face_offset = iwidth*jwidth*khi;
+
+        int64_t lo_face = i_offset + j_offset + klo_face_offset;
+        int64_t hi_face = i_offset + j_offset + khi_face_offset;
+
+        connect.m_kfaces.first = lo_face;
+        connect.m_kfaces.second = hi_face;
+
+        //jlo face
+        if (kfaces.find(lo_face) == kfaces.end())
+        {
+            auto& klo_face = kfaces[lo_face];
+            klo_face.push_back(ilo + jlo_offset + klo_offset);
+            klo_face.push_back(ihi + jlo_offset + klo_offset);
+            klo_face.push_back(ihi + jhi_offset + klo_offset);
+            klo_face.push_back(ilo + jhi_offset + klo_offset);
+        }
+        //ihi face
+        if (kfaces.find(hi_face) == kfaces.end())
+        {
+            auto& khi_face = kfaces[hi_face];
+            khi_face.push_back(ilo + jlo_offset + khi_offset);
+            khi_face.push_back(ihi + jlo_offset + khi_offset);
+            khi_face.push_back(ihi + jhi_offset + khi_offset);
+            khi_face.push_back(ilo + jhi_offset + khi_offset);
+        }
+    }
 }
 
 
@@ -2643,7 +2715,10 @@ mesh::connectivity::create_elements_3d(const Node& ref_win,
                                        int64_t k_lo,
                                        int64_t iwidth,
                                        int64_t jwidth,
-                                       std::map<int, std::vector<int64_t> >& elems)
+                                    std::map<int, PolyElemType>& elems,
+                                  std::map<int, std::vector<int64_t> >& ifaces,
+                                  std::map<int, std::vector<int64_t> >& jfaces,
+                                  std::map<int, std::vector<int64_t> >& kfaces)
 {
     int64_t origin_iref = ref_win["origin/i"].as_int64();
     int64_t origin_jref = ref_win["origin/j"].as_int64();
@@ -2683,12 +2758,13 @@ mesh::connectivity::create_elements_3d(const Node& ref_win,
             {
                 int offset = koffset + joffset + iidx;
                 auto& elem_conn = elems[offset];
-                if (elem_conn.empty())
+                if (elem_conn.m_elem_verts.empty())
                 {
                      mesh::connectivity::make_element_3d(elem_conn,
                                                          offset,
                                                          iwidth,
-                                                         jwidth);
+                                                         jwidth,
+ifaces,jfaces,kfaces);
                 }
             }
         }
@@ -2704,7 +2780,7 @@ mesh::connectivity::connect_elements_3d(const Node& ref_win,
                                      int64_t jwidth,
                                      std::vector<int64_t>& ratio,
                                      int64_t& new_vertex,
-                                     std::map<int, std::vector<int64_t> >& elems)
+                                     std::map<int, PolyElemType>& elems)
 {
 (void)ratio;
     int64_t origin_iref = ref_win["origin/i"].as_int64();
@@ -2733,7 +2809,7 @@ mesh::connectivity::connect_elements_3d(const Node& ref_win,
             {
                 int offset = kidx*iwidth*jwidth + jidx*iwidth + iidx;
                 auto& elem_conn = elems[offset];
-                elem_conn.push_back(new_vertex);
+                elem_conn.m_elem_verts.push_back(new_vertex);
                 ++new_vertex;
             }
         }
