@@ -93,7 +93,7 @@ typedef enum
 ///  General purpose iterator for 'o2mrelation' Nodes.
 ///
 //-----------------------------------------------------------------------------
-class CONDUIT_API O2MIterator
+class CONDUIT_BLUEPRINT_API O2MIterator
 {
 public:
 //-----------------------------------------------------------------------------

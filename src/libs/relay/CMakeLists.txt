@@ -218,6 +218,9 @@ if(ZFP_FOUND)
     list(APPEND conduit_relay_deps zfp)
 endif()
 
+if (MINGW)
+  list(APPEND conduit_relay_deps ws2_32)
+endif ()
 
 add_compiled_library(NAME conduit_relay
                      EXPORT conduit
