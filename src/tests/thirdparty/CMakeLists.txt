@@ -71,6 +71,10 @@ if(UNIX AND NOT APPLE)
 endif()
 
 
+if (MINGW)
+  list(APPEND civet_test_deps ws2_32)
+endif ()
+
 add_cpp_test(TEST t_civetweb_smoke
              SOURCES $<TARGET_OBJECTS:conduit_civetweb>
              DEPENDS_ON ${civet_test_deps}

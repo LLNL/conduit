@@ -52,7 +52,7 @@
 #define NOMINMAX
 #undef min
 #undef max
-#include "Windows.h"
+#include "windows.h"
 #endif
 
 //-----------------------------------------------------------------------------
