@@ -9,14 +9,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### General 
-- Added support for children with names that include `/`. Since slashes are part of Conduit's hierarchal path mechanism, you must use explicit methods (add_child(), child(), etc) to create and access children with these types of names. These names are also supported in all basic i/o cases (JSON, YAML, Conduit Binary).
+- Added support for children with names that include `/`. Since slashes are part of Conduit's hierarchical path mechanism, you must use explicit methods (add_child(), child(), etc) to create and access children with these types of names. These names are also supported in all basic i/o cases (JSON, YAML, Conduit Binary).
 - Added Node::child and Schema::child methods, which provide access to existing children by name.
 - Added Node::fetch_existing and Schema::fetch_existing methods, which provide access to existing paths or error when given a bad path.
-- Added Node::add_child() and Node::remove_child() to support direct operatrions and cases where names have `/`s.
+- Added Node::add_child() and Node::remove_child() to support direct operations and cases where names have `/`s.
 - Added a set of conduit::utils::log::remove_* filtering functions, which process conduit log/info nodes and strip out the requested information (useful for focusing the often verbose output in log/info nodes).
 - Added to_string() and to_string_default() methods to Node, Schema, DataType, and DataArray. These methods alias either to_yaml() or to_json(). Long term yaml will be preferred over json.
 - Added helper script (scripts/regen_docs_outputs.py) that regenerates all example outputs used Conduit's Sphinx docs.
 - Added to_yaml() and to_yaml_stream methods() to Schema, DataType, and DataArray.
+- Added support for C++-style iterators on node children. You can now do `for (Node &node : node.children()) {}`. You can also do `node.children.begin()` and `node.children.end()` to work with the iterators directly.
 
 #### Relay
 - Added an open mode option to Relay IOHandle. See Relay IOHandle docs (https://llnl-conduit.readthedocs.io/en/latest/relay_io.html#relay-i-o-handle-interface) for more details.
