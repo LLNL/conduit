@@ -58,6 +58,50 @@ using namespace conduit;
 
 //-----------------------------------------------------------------------------
 
+// Demonstrate and test simple usage of enhanced for loop
+TEST(conduit_node_cpp_iterator, simple_enhanced_for_loop) {
+    // Create parent and children
+    Node parent;
+    parent.add_child("c0").set("value 0");
+    parent.add_child("c1").set("value 1");
+    parent.add_child("c2").set("value 2");
+    parent.add_child("c3").set("value 3");
+
+    // Ensure enhanced for loop works properly
+    index_t current_index = 0;
+    for (Node &child : parent.children()) {
+        EXPECT_EQ(&child, parent.child_ptr(current_index))
+                            << "Got wrong child at " << current_index;
+        ++current_index;
+    }
+
+    EXPECT_EQ(current_index, parent.number_of_children())
+                        << "Did not iterate over all children";
+}
+
+// Demonstrate and test simple usage of C++ iterator
+TEST(conduit_node_cpp_iterator, simple_iterator_usage) {
+    // Create parent and children
+    Node parent;
+    parent.add_child("c0").set("value 0");
+    parent.add_child("c1").set("value 1");
+    parent.add_child("c2").set("value 2");
+    parent.add_child("c3").set("value 3");
+
+    // Ensure iterators works properly
+    auto children = parent.children();
+    index_t current_index = 0;
+    for (auto iter = children.begin(), end = children.end(); iter != end; ++iter) {
+        Node &child = *iter;
+        EXPECT_EQ(&child, parent.child_ptr(current_index))
+                            << "Got wrong child at " << current_index;
+        ++current_index;
+    }
+
+    EXPECT_EQ(current_index, parent.number_of_children())
+                        << "Did not iterate over all children";
+}
+
 TEST(conduit_node_cpp_iterator, non_const_types) {
     ::testing::StaticAssertTypeEq<Node, NodeChildIterator::value_type>();
     ::testing::StaticAssertTypeEq<Node &, NodeChildIterator::reference>();
