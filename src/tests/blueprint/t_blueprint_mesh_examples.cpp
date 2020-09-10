@@ -413,7 +413,9 @@ TEST(conduit_blueprint_mesh_examples, spiral_multi_file)
         utils::remove_directory(output_dir);
         utils::remove_directory(output_root);
 
-        relay::io::blueprint::save_mesh(data, output_base,"hdf5",nfiles);
+        Node opts;
+        opts["number_of_files"] = nfiles;
+        relay::io::blueprint::save_mesh(data, output_base, "hdf5", opts);
 
         // count the files
         //  file_%06llu.{protocol}:/domain_%06llu/...
@@ -779,7 +781,9 @@ TEST(conduit_blueprint_mesh_examples, save_load_mesh)
     data.child(1)["state/domain_id"] = 1;
     data.child(2)["state/domain_id"] = 2;
 
-    relay::io::blueprint::save_mesh(data, output_base, "hdf5", -1);
+    Node opts;
+    opts["number_of_files"] = -1;
+    relay::io::blueprint::save_mesh(data, output_base, "hdf5", opts);
 
     data.print();
     Node n_read, info;

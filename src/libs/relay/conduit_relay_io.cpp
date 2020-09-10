@@ -71,6 +71,8 @@
 #include "conduit_relay_io_adios.hpp"
 #endif
 
+#include "conduit_relay_io_handle.hpp"
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -119,13 +121,17 @@ about(Node &n)
     io_protos["conduit_bin"] = "enabled";
 
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-    // straight hdf5 
+    // hdf5 
     io_protos["hdf5"] = "enabled";
     
     hdf5_options(n["options/hdf5"]);
+
+    io_protos["sidre_hdf5"] = "enabled";
+
 #else
-    // straight hdf5 
+    // hdf5 
     io_protos["hdf5"] = "disabled";
+    io_protos["sidre_hdf5"] = "enabled";
 #endif
     
     // silo
@@ -543,6 +549,27 @@ load(const std::string &path,
 #else
         CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
                       "Failed to load conduit node from path " << path);
+#endif
+    }
+    else if( protocol == "sidre_hdf5")
+    {
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        IOHandle hnd;
+        // split path to get file and sub path part
+        // check for ":" split    
+        std::string file_path;
+        std::string sub_base;
+        conduit::utils::split_file_path(path,
+                                        std::string(":"),
+                                        file_path,
+                                        sub_base);
+
+        hnd.open(file_path);
+        hnd.read(sub_base,node);
+        hnd.close();
+#else
+        CONDUIT_ERROR("conduit_relay lacks Sidre HDF5 support: " << 
+                      "Failed to save conduit node to path " << path);
 #endif
     }
     else if( protocol == "conduit_silo")

@@ -107,21 +107,14 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
-                                 int number_of_files,
+                                 const std::string &protocol,
                                  MPI_Comm comm);
-
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
                                  const std::string &protocol,
-                                 MPI_Comm comm);
-
-
-void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
-                                 const std::string &path,
-                                 const std::string &protocol,
-                                 int number_of_files,
+                                 const conduit::Node &opts,
                                  MPI_Comm comm);
 
 
@@ -139,7 +132,7 @@ void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
 /// more than one mesh.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
-                                 const std::string &mesh_name,
+                                 const conduit::Node &opts,
                                  conduit::Node &mesh,
                                  MPI_Comm comm);
 

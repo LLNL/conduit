@@ -98,18 +98,41 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
-                                 int number_of_files);
+                                 const std::string &protocol);
+
+
+//-----------------------------------------------------------------------------
+///
+/// opts:
+///      file_style: "default", "root_only", "multi_file"
+///            when # of domains == 1,  "default"   ==> "root_only"
+///            else,                    "default"   ==> "multi_file"
+///      suffix: "default", "cycle", "off" 
+///            if cycle info is present "default"   ==> "cycle"
+///            else,                    "default"   ==> "off"
+///      number_of_files:  {# of files}
+///            when "multi_file":
+///                 <= 0, use # of files == # of domains
+///                  > 0, # of files == number_of_files
+///
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
-                                 const std::string &protocol);
-
-
-void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
-                                 const std::string &path,
                                  const std::string &protocol,
-                                 int number_of_files);
+                                 const conduit::Node &opts);
+
+// //-----------------------------------------------------------------------------
+// void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+//                                  const std::string &path,
+//                                  const std::string &protocol);
+//
+//
+// void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+//                                  const std::string &path,
+//                                  const std::string &protocol,
+//                                  int number_of_files);
+
 
 //-----------------------------------------------------------------------------
 // Load a blueprint mesh from root + file set
@@ -119,16 +142,19 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
                                  conduit::Node &mesh);
 
+
 //-----------------------------------------------------------------------------
-/// Variant with explicit mesh name, for cases where bp data includes
-/// more than one mesh.
-//-----------------------------------------------------------------------------
+///
+/// opts:
+///      mesh_name: "{name}"
+///          provide explicit mesh name, for cases where bp data includes
+///           more than one mesh.
 void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
-                                 const std::string &mesh_name,
+                                 const conduit::Node &opts,
                                  conduit::Node &mesh);
 
+//-----------------------------------------------------------------------------
 }
-
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::io::blueprint --
 //-----------------------------------------------------------------------------

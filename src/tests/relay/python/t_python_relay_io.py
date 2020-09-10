@@ -191,7 +191,7 @@ class Test_Relay_IO(unittest.TestCase):
    
     def test_hdf5_generic_save_opts(self):
         # only run if we have hdf5
-        if not relay.about()["io/protocols/hdf5"] == "enabled":
+        if not relay.io.about()["protocols/hdf5"] == "enabled":
             return
         # 5k float64 zeros, will compress well, but below default 
         # thresh

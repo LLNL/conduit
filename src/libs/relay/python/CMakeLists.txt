@@ -55,6 +55,10 @@ PYTHON_ADD_HYBRID_MODULE(conduit_relay_python
                          setup.py
                          # python srcs
                          py_src/__init__.py
+                         py_src/io/__init__.py
+                         py_src/io/blueprint/__init__.py
+                         py_src/mpi/__init__.py
+                         py_src/web/__init__.py
                          # c srcs + headers
                          conduit_relay_python.cpp
                          ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
@@ -70,6 +74,20 @@ PYTHON_ADD_COMPILED_MODULE(conduit_relay_io_python
                            conduit/relay/io
                            # c srcs + headers
                            conduit_relay_io_python.cpp
+                           ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
+
+
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_relay_io_python conduit conduit_relay)
+
+# add relay io blueprint submodule
+PYTHON_ADD_COMPILED_MODULE(conduit_relay_io_blueprint_python
+                           # dest_dir 
+                           python-modules
+                           # python module dir
+                           conduit/relay/io/blueprint
+                           # c srcs + headers
+                           conduit_relay_io_blueprint_python.cpp
                            ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
 
 

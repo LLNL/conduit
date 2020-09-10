@@ -561,17 +561,19 @@ void save_mesh(const Node &mesh,
                const std::string &path
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
+    // empty opts
+    Node opts;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     save_mesh(mesh,
               path,
               detail::identify_protocol(path),
-              -1, // number of files (-1 == # of domains)
+              opts,
               mpi_comm);
 #else
     save_mesh(mesh,
               path,
               detail::identify_protocol(path),
-              -1); // number of files (-1 == # of domains)
+              opts);
 #endif
 }
 
@@ -581,76 +583,135 @@ void save_mesh(const Node &mesh,
                const std::string &protocol
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
+    // empty opts
+    Node opts;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     save_mesh(mesh,
               path,
               protocol,
-              -1, // number of files (-1 == # of domains)
+              opts, // number of files (-1 == # of domains)
               mpi_comm);
 #else
     save_mesh(mesh,
               path,
               protocol,
-              -1); // number of files (-1 == # of domains)
+              opts); // number of files (-1 == # of domains)
 #endif
 }
 
-//-----------------------------------------------------------------------------
-void save_mesh(const Node &mesh,
-               const std::string &path,
-               int num_files
-               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
-{
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    save_mesh(mesh,
-              path,
-              detail::identify_protocol(path),
-              num_files, // number of files (-1 == # of domains)
-              mpi_comm);
-#else
-    save_mesh(mesh,
-              path,
-              detail::identify_protocol(path),
-              num_files); // number of files (-1 == # of domains)
-#endif
-}
+// //-----------------------------------------------------------------------------
+// void save_mesh(const Node &mesh,
+//                const std::string &path,
+//                int num_files
+//                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+// {
+// #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+//     save_mesh(mesh,
+//               path,
+//               detail::identify_protocol(path),
+//               num_files, // number of files (-1 == # of domains)
+//               mpi_comm);
+// #else
+//     save_mesh(mesh,
+//               path,
+//               detail::identify_protocol(path),
+//               num_files); // number of files (-1 == # of domains)
+// #endif
+// }
 
 //-----------------------------------------------------------------------------
 // Main Mesh Blueprint Save, taken from Ascent
 //-----------------------------------------------------------------------------
+// void save_mesh(const Node &mesh,
+//                const std::string &path,
+//                const std::string &file_protocol,
+//                const Node &opts,
+//                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+// {
+//
+// }
+
+// opts:
+//      file_style: "default", "root_only", "multi_file"
+//            when # of domains == 1,  "default"   ==> "root_only"
+//            else,                    "default"   ==> "multi_file"
+//      suffix: "default", "cycle", "off" 
+//            when # of domains == 1,  "default"   ==> "off"
+//            else,                    "default"   ==> "cycle"
+//      number_of_files:  {# of files}
+//            when "multi_file":
+//                 <= 0, use # of files == # of domains
+//                  > 0, # of files == number_of_files
+//
+
 void save_mesh(const Node &mesh,
                const std::string &path,
                const std::string &file_protocol,
-               int num_files
+               const Node &opts
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
+    std::string opts_file_style = "default";
+    std::string opts_suffix     = "default";
+    int         opts_num_files = -1;
+
+    if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
+    {
+        opts_file_style = opts["file_style"].as_string();
+    }
+
+    if(opts.has_child("suffix") && opts["suffix"].dtype().is_string())
+    {
+        opts_suffix = opts["suffix"].as_string();
+    }
+
+    if(opts.has_child("number_of_files") && opts["number_of_files"].dtype().is_integer())
+    {
+        opts_num_files = (int) opts["number_of_files"].to_int();
+    }
+    
+    // TODO VALIDATE OPTS!
+
+    int num_files = opts_num_files;
+
     // The assumption here is that everything is multi domain
 
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    // nodes used for MPI comm (share them for many operations)
+    Node n_local, n_reduced;
+#endif
+
+    // -----------------------------------------------------------
+    // make sure some MPI taks has data
+    // -----------------------------------------------------------
     Node multi_dom;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    bool is_valid = detail::clean_mesh(mesh, multi_dom,mpi_comm);
+    bool is_valid = detail::clean_mesh(mesh, multi_dom, mpi_comm);
 #else
     bool is_valid = detail::clean_mesh(mesh, multi_dom);
 #endif
-    
+
     int par_rank = 0;
     // we may not have any domains so init to max
     int cycle = std::numeric_limits<int>::max();
 
     int local_boolean = is_valid ? 1 : 0;
     int global_boolean = local_boolean;
+
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     int par_size = 0;
-    MPI_Comm_rank(mpi_comm, &par_rank);
-    MPI_Comm_size(mpi_comm, &par_size);
+    par_rank = relay::mpi::rank(mpi_comm);
+    par_size = relay::mpi::size(mpi_comm);
 
-    // check to see if any valid data exist
-    MPI_Allreduce((void *)(&local_boolean),
-                  (void *)(&global_boolean),
-                  1,
-                  MPI_INT,
-                  MPI_SUM,
-                  mpi_comm);
+    // reduce to check to see if any valid data exist
+
+    n_local = (int)cycle;
+    relay::mpi::sum_all_reduce(n_local,
+                               n_reduced,
+                               mpi_comm);
+
+    global_boolean = n_reduced.as_int();
+
+
 #endif
 
     if(global_boolean == 0)
@@ -658,6 +719,10 @@ void save_mesh(const Node &mesh,
       CONDUIT_INFO("Blueprint save: no valid data exists. Skipping save");
       return;
     }
+
+    // -----------------------------------------------------------
+    // get the number of local domains and the cycle info
+    // -----------------------------------------------------------
 
     int local_num_domains = multi_dom.number_of_children();
     // figure out what cycle we are
@@ -679,70 +744,28 @@ void save_mesh(const Node &mesh,
     }
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    Node n_cycle, n_min;
 
-    n_cycle = (int)cycle;
+    n_local = (int)cycle;
 
-    relay::mpi::min_all_reduce(n_cycle,
-                               n_min,
+    relay::mpi::min_all_reduce(n_local,
+                               n_reduced,
                                mpi_comm);
 
-    cycle = n_min.as_int();
+    cycle = n_reduced.as_int();
 #endif
 
-    // TODO: FMT ?
-    // setup the directory
-    char fmt_buff[64] = {0};
-    snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-
-    std::string output_base_path = path;
-
-    std::ostringstream oss;
-    oss << output_base_path << ".cycle_" << fmt_buff;
-    std::string output_dir  =  oss.str();
-
-    bool dir_ok = false;
-
-    // let rank zero handle dir creation
-    if(par_rank == 0)
-    {
-        // check of the dir exists
-        dir_ok = utils::is_directory(output_dir);
-        if(!dir_ok)
-        {
-            // if not try to let rank zero create it
-            dir_ok = utils::create_directory(output_dir);
-        }
-    }
+    // find the # of global domains
 
     int global_num_domains = local_num_domains;
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    // TODO:
-    // This a reduce to check for an error ...
-    // it will be a common pattern, how do we make this easy?
+    n_local = local_num_domains;
 
-    // use an mpi sum to check if the dir exists
-    Node n_src, n_reduce;
-
-    if(dir_ok)
-        n_src = (int)1;
-    else
-        n_src = (int)0;
-
-    relay::mpi::sum_all_reduce(n_src,
-                               n_reduce,
+    relay::mpi::sum_all_reduce(n_local,
+                               n_reduced,
                                mpi_comm);
 
-    dir_ok = (n_reduce.as_int() == 1);
-
-    n_src = local_num_domains;
-
-    relay::mpi::sum_all_reduce(n_src,
-                               n_reduce,
-                               mpi_comm);
-
-    global_num_domains = n_reduce.as_int();
+    global_num_domains = n_reduced.as_int();
 #endif
 
     if(global_num_domains == 0)
@@ -754,6 +777,56 @@ void save_mesh(const Node &mesh,
       return;
     }
 
+    char fmt_buff[64] = {0};
+    std::ostringstream oss;
+    std::string output_root = "";
+    std::string output_dir = "";
+
+    // ----------------------------------------------------
+    // if using output dir, create:
+    // ----------------------------------------------------
+    {
+        // TODO: FMT ?
+        // setup the directory
+        snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
+
+        std::string output_base_path = path;
+
+        oss << output_base_path << ".cycle_" << fmt_buff;
+        output_dir  =  oss.str();
+
+        bool dir_ok = false;
+
+        // let rank zero handle dir creation
+        if(par_rank == 0)
+        {
+            // check of the dir exists
+            dir_ok = utils::is_directory(output_dir);
+            if(!dir_ok)
+            {
+                // if not try to let rank zero create it
+                dir_ok = utils::create_directory(output_dir);
+            }
+        }
+
+        // make sure everyone knows if dir creation was successful 
+
+        #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+        // use an mpi sum to check if the dir exists
+        n_local = dir_ok ? 1 : 0;
+
+        relay::mpi::sum_all_reduce(n_local,
+                                   n_reduced,
+                                   mpi_comm);
+
+        dir_ok = (n_reduced.as_int() == 1);
+        #endif
+
+        if(!dir_ok)
+        {
+            CONDUIT_ERROR("Error: failed to create directory " << output_dir);
+        }
+    }
 
     // zero or negative (default cases), use one file per domain
     if(num_files <= 0)
@@ -769,12 +842,27 @@ void save_mesh(const Node &mesh,
         num_files = global_num_domains;
     }
 
-    if(!dir_ok)
-    {
-        CONDUIT_ERROR("Error: failed to create directory " << output_dir);
-    }
+    // ------------------------
+    // three cases
+    // default, root_only, multi_file
 
-    if(global_num_domains == num_files)
+    if(global_num_domains == 1)
+    {
+        // TODO FIX!
+        // write out each domain
+        for(int i = 0; i < local_num_domains; ++i)
+        {
+            const Node &dom = multi_dom.child(i);
+            uint64 domain = dom["state/domain_id"].to_uint64();
+
+            snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
+            oss.str("");
+            oss << "domain_" << fmt_buff << "." << file_protocol;
+            std::string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
+            relay::io::save(dom, output_file);
+        }
+    }
+    else if(global_num_domains == num_files)
     {
         // write out each domain
         for(int i = 0; i < local_num_domains; ++i)
@@ -797,7 +885,6 @@ void save_mesh(const Node &mesh,
         //
 
         // books we keep:
-
         Node books;
         books["local_domain_to_file"].set(DataType::int32(local_num_domains));
         books["local_domain_status"].set(DataType::int32(local_num_domains));
@@ -997,7 +1084,15 @@ void save_mesh(const Node &mesh,
         std::string output_tree_pattern;
         std::string output_file_pattern;
 
-        if(global_num_domains == num_files)
+        if(global_num_domains == 1)
+        {
+            // TODO
+            output_tree_pattern = "/";
+            output_file_pattern = conduit::utils::join_file_path(output_dir_base,
+                                                                 "domain_%06d." + file_protocol);
+
+        }
+        else if(global_num_domains == num_files)
         {
             output_tree_pattern = "/";
             output_file_pattern = conduit::utils::join_file_path(output_dir_base,
@@ -1014,6 +1109,7 @@ void save_mesh(const Node &mesh,
         Node root;
         Node &bp_idx = root["blueprint_index"];
 
+        // TODO: Use MPI ver vs providing the domains?
         ::conduit::blueprint::mesh::generate_index(multi_dom.child(0),
                                                    "",
                                                    global_num_domains,
@@ -1031,7 +1127,7 @@ void save_mesh(const Node &mesh,
         }
 
         root["protocol/name"]    = file_protocol;
-        root["protocol/version"] = "0.5.1";
+        root["protocol/version"] = CONDUIT_VERSION;
 
         root["number_of_files"]  = num_files;
         root["number_of_trees"]  = global_num_domains;
@@ -1048,21 +1144,22 @@ void load_mesh(const std::string &root_file_path,
                Node &mesh
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
+    Node opts;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     load_mesh(root_file_path,
-              "",
+              opts,
               mesh,
               mpi_comm);
 #else
     load_mesh(root_file_path,
-              "",
+              opts,
               mesh);
 #endif
 }
 
 //-----------------------------------------------------------------------------
 void load_mesh(const std::string &root_file_path,
-               const std::string &_mesh_name,
+               const Node &opts,
                Node &mesh
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
@@ -1110,8 +1207,12 @@ void load_mesh(const std::string &root_file_path,
     }
 
 
-    std::string mesh_name = _mesh_name;
-    
+    std::string mesh_name ="";
+    if(opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
+    {
+        mesh_name = opts["mesh_name"].as_string();
+    }
+
     if(mesh_name.empty())
     {
         NodeConstIterator itr = root_node["blueprint_index"].children();
@@ -1200,9 +1301,21 @@ void load_mesh(const std::string &root_file_path,
     domain_end = rank_offset + read_size;
 #endif
 
-
-    for(int i = domain_start ; i < domain_end; i++)
+    if(data_protocol == "sidre_hdf5")
     {
+        relay::io::IOHandle hnd;
+        hnd.open(root_fname,"sidre_hdf5");
+        for(int i = domain_start ; i < domain_end; i++)
+        {
+            std::ostringstream oss;
+            oss << i << "/" << mesh_name;
+            hnd.read(oss.str(),mesh);
+        }
+    }
+    else
+    {
+        for(int i = domain_start ; i < domain_end; i++)
+        {
         char domain_fmt_buff[64];
         snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
         oss.str("");
@@ -1215,7 +1328,9 @@ void load_mesh(const std::string &root_file_path,
         relay::io::load(domain_file,
                         data_protocol,
                         mesh[oss.str()]);
+        }
     }
+    
 }
 
 

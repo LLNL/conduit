@@ -429,10 +429,12 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
 
         MPI_Barrier(comm);
 
+        Node opts;
+        opts["number_of_files"] = nfiles;
         conduit::relay::mpi::io::blueprint::save_mesh(data,
                                                       output_base,
                                                       "hdf5",
-                                                      nfiles,
+                                                      opts,
                                                       comm);
 
         MPI_Barrier(comm);
