@@ -2569,11 +2569,40 @@ mesh::generate_index(const Node &mesh,
             Node &idx_matset = index_out["matsets"][matset_name];
 
             idx_matset["topology"] = matset["topology"].as_string();
-            NodeConstIterator mats_itr = matset["volume_fractions"].children();
-            while(mats_itr.has_next())
+
+            // support different flavors of valid matset protos
+            if(matset.has_child("material_map"))
             {
-                mats_itr.next();
-                idx_matset["materials"][mats_itr.name()];
+                NodeConstIterator mats_itr = matset["material_map"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else if(matset.has_child("materials"))
+            {
+                NodeConstIterator mats_itr = matset["materials"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else if(matset.has_child("volume_fractions"))
+            {
+                NodeConstIterator mats_itr = matset["volume_fractions"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else // surprise!
+            {
+                CONDUIT_ERROR("blueprint::mesh::generate_index: "
+                              "Invalid matset flavor."
+                              "Input node does not conform to mesh blueprint.");
             }
 
             std::string ms_ref_path = join_path(ref_path, "matsets");

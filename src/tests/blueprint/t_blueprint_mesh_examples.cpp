@@ -587,8 +587,12 @@ void venn_test_small_yaml(const std::string &venn_type)
     const int nx = 25, ny = 25;
     const double radius = 0.25;
 
-    Node res;
+    Node res, info, n_idx;
     blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+    blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    blueprint::mesh::generate_index(res,"",1,n_idx);
+    EXPECT_TRUE(blueprint::verify("mesh/index",n_idx,info));
     res.save("venn_small_example_" + venn_type + ".yaml");
 }
 
