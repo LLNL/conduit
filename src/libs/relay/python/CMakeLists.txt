@@ -92,7 +92,7 @@ PYTHON_ADD_COMPILED_MODULE(conduit_relay_io_blueprint_python
 
 
 # link with the proper libs (beyond python)
-target_link_libraries(conduit_relay_io_python conduit conduit_relay)
+target_link_libraries(conduit_relay_io_blueprint_python conduit conduit_relay conduit_blueprint)
 
 
 # add relay web submodule
