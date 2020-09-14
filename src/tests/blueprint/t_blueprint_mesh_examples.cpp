@@ -802,6 +802,50 @@ TEST(conduit_blueprint_mesh_examples, save_load_mesh)
     data.child(2).diff(n_read.child(2),info);
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, save_load_mesh_opts)
+{
+    // TODO WIP
+    
+    
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+
+    std::string output_base = "tout_relay_mesh_save_load";
+    // spiral with 3 domains
+    Node data;
+    conduit::blueprint::mesh::examples::spiral(3,data);
+
+    // spiral doesn't have domain ids, lets add some so we diff clean
+    data.child(0)["state/domain_id"] = 0;
+    data.child(1)["state/domain_id"] = 1;
+    data.child(2)["state/domain_id"] = 2;
+
+    Node opts;
+    opts["number_of_files"] = -1;
+    relay::io::blueprint::save_mesh(data, output_base, "hdf5", opts);
+
+    data.print();
+    Node n_read, info;
+    relay::io::blueprint::load_mesh(output_base + ".cycle_000000.root",
+                                    n_read);
+
+    n_read.print();
+    // reading back in will add domain_zzzzzz names, check children of read
+
+    data.child(0).diff(n_read.child(0),info);
+    data.child(1).diff(n_read.child(1),info);
+    data.child(2).diff(n_read.child(2),info);
+}
+
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
 {
