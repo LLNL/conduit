@@ -112,7 +112,11 @@ if(CONDUIT_RELAY_MPI_ENABLED)
     add_library(conduit::conduit_mpi INTERFACE IMPORTED)
     set_property(TARGET conduit::conduit_mpi
                  PROPERTY INTERFACE_LINK_LIBRARIES
-                 conduit::conduit conduit_relay_mpi conduit_relay_mpi_io)
+                 conduit::conduit
+                 conduit_relay_mpi
+                 conduit_relay_mpi_io
+                 conduit_blueprint
+                 conduit_blueprint_mpi)
 endif()
 
 if(NOT Conduit_FIND_QUIETLY)
