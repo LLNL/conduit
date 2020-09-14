@@ -1411,3 +1411,25 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
+{
+    std::string tout_std = "tout_hdf5_empty_compat.hdf5";
+    
+    Node n;
+    n["myval"] = 42;
+    io::save(n,tout_std);
+    n["empty"] = DataType::empty();
+    n.print();
+    io::save_merged(n,tout_std);
+    // used to fail due to bad compat check
+    io::save_merged(n,tout_std);
+
+    Node n_load, n_diff_info;
+    io::load(tout_std,"hdf5",n_load);
+    n_load.print();
+    
+    EXPECT_FALSE(n.diff(n_load,n_diff_info));
+}
+
+
