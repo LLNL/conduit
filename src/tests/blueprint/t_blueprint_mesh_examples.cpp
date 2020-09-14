@@ -841,7 +841,7 @@ TEST(conduit_blueprint_mesh_examples, save_load_mesh_opts)
     }
 
     relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts);
-    EXPECT_TRUE(conduit::utils::is_file( tout_base + ".root"));
+    EXPECT_TRUE(conduit::utils::is_file( tout_base + ".cycle_000100.root"));
 
 
     // remove cycle from braid, default behavior will be diff
