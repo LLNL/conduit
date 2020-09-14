@@ -49,6 +49,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Use H5F_ACC_RDONLY in relay::io::is_hdf5_file to avoid errors when checking files that already have open HDF5 handles.
+- Fixed compatibility check for empty Nodes against HDF5 files with existing paths
 
 ### Changed
 
