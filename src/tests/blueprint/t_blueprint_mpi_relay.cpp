@@ -302,11 +302,25 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
 
     string protocol = "hdf5";
     string output_base = "tout_blueprint_mpi_relay_spiral_mpi_dist_1dom";
-    // what we want:
-    // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
+    Node opts;
+    opts["file_style"] = "multi_file";
+
+    // make sure the files don't exist
+    if(par_rank == 0)
+    {
+        string output_dir  = output_base + ".cycle_000000";
+        string output_root = output_base + ".cycle_000000.root";
+
+        // remove existing output
+        utils::remove_directory(output_dir);
+        utils::remove_directory(output_root);
+    }
+    MPI_Barrier(comm);
+
     conduit::relay::mpi::io::blueprint::save_mesh(dset,
                                                   output_base,
                                                   "hdf5",
+                                                  opts,
                                                   comm);
     MPI_Barrier(comm);
 
