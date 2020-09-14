@@ -110,6 +110,21 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &protocol,
                                  MPI_Comm comm);
 
+
+//-----------------------------------------------------------------------------
+///
+/// opts:
+///      file_style: "default", "root_only", "multi_file"
+///            when # of domains == 1,  "default"   ==> "root_only"
+///            else,                    "default"   ==> "multi_file"
+///      suffix: "default", "cycle", "none" 
+///            if cycle info is present "default"   ==> "cycle"
+///            else,                    "default"   ==> "off"
+///      number_of_files:  {# of files}
+///            when "multi_file":
+///                 <= 0, use # of files == # of domains
+///                  > 0, # of files == number_of_files
+///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
@@ -128,8 +143,11 @@ void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
                                  MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
-/// Variant with explicit mesh name, for cases where bp data includes
-/// more than one mesh.
+///
+/// opts:
+///      mesh_name: "{name}"
+///          provide explicit mesh name, for cases where bp data includes
+///           more than one mesh.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,

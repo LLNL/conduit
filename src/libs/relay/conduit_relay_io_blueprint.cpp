@@ -599,38 +599,9 @@ void save_mesh(const Node &mesh,
 #endif
 }
 
-// //-----------------------------------------------------------------------------
-// void save_mesh(const Node &mesh,
-//                const std::string &path,
-//                int num_files
-//                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
-// {
-// #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-//     save_mesh(mesh,
-//               path,
-//               detail::identify_protocol(path),
-//               num_files, // number of files (-1 == # of domains)
-//               mpi_comm);
-// #else
-//     save_mesh(mesh,
-//               path,
-//               detail::identify_protocol(path),
-//               num_files); // number of files (-1 == # of domains)
-// #endif
-// }
-
 //-----------------------------------------------------------------------------
 // Main Mesh Blueprint Save, taken from Ascent
 //-----------------------------------------------------------------------------
-// void save_mesh(const Node &mesh,
-//                const std::string &path,
-//                const std::string &file_protocol,
-//                const Node &opts,
-//                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
-// {
-//
-// }
-
 // opts:
 //      file_style: "default", "root_only", "multi_file"
 //            when # of domains == 1,  "default"   ==> "root_only"
@@ -750,7 +721,6 @@ void save_mesh(const Node &mesh,
         {
             if(opts_suffix == "cycle")
             {
-                opts_suffix = "none";
                 static std::map<std::string,int> counters;
                 CONDUIT_INFO("Blueprint save: no 'state/cycle' present."
                             " Defaulting to counter");
@@ -1220,8 +1190,6 @@ void save_mesh(const Node &mesh,
         root["file_pattern"]     = output_file_pattern;
         root["tree_pattern"]     = output_tree_pattern;
 
-        relay::io::save(root,root_filename + "TEST", file_protocol);
-        //relay::io::save_merged(root,root_filename, file_protocol);
         relay::io::IOHandle hnd;
         hnd.open(root_filename, file_protocol);
         hnd.write(root);
