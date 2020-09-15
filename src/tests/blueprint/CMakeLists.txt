@@ -56,6 +56,7 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_o2mrelation_examples
                     t_blueprint_mesh_verify
                     t_blueprint_mesh_transform
+                    t_blueprint_mesh_relay
                     t_blueprint_mesh_generate
                     t_blueprint_mesh_examples)
 
@@ -91,14 +92,17 @@ else()
     message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
-set(BLUEPRINT_MPI_TESTS t_blueprint_mpi_smoke t_blueprint_mpi_verify)
-set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_relay)
+set(BLUEPRINT_MPI_TESTS 
+    t_blueprint_mpi_smoke
+    t_blueprint_mpi_mesh_verify)
+
+set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_mesh_relay)
 
 if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
     foreach(TEST ${BLUEPRINT_MPI_TESTS})
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON mpi
-conduit
+                                                                 conduit
                                                                  conduit_blueprint_mpi)
     endforeach()
 

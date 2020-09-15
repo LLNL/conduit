@@ -223,6 +223,20 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
 
     string protocol = "hdf5";
     string output_base = "tout_blueprint_mpi_relay_spiral_mpi_dist_5doms";
+
+    // make sure the files don't exist
+    if(par_rank == 0)
+    {
+        string output_dir  = output_base + ".cycle_000000";
+        string output_root = output_base + ".cycle_000000.root";
+
+        // remove existing output
+        remove_path_if_exists(output_dir);
+        remove_path_if_exists(output_root);
+    }
+    MPI_Barrier(comm);
+
+
     // what we want:
     // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
     conduit::relay::mpi::io::blueprint::save_mesh(dset,
@@ -312,8 +326,8 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
         string output_root = output_base + ".cycle_000000.root";
 
         // remove existing output
-        utils::remove_directory(output_dir);
-        utils::remove_directory(output_root);
+        remove_path_if_exists(output_dir);
+        remove_path_if_exists(output_root);
     }
     MPI_Barrier(comm);
 
@@ -346,6 +360,8 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
     EXPECT_EQ(dset.number_of_children(),n_read.number_of_children());
     for(conduit::index_t i=0;i < dset.number_of_children();i++)
     {
+        dset.print();
+        n_read.print();
         // diff == false, no diff == diff clean
         EXPECT_FALSE(dset.child(i).diff(n_read.child(i),n_diff_info));
     }
@@ -437,8 +453,8 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
         if(par_rank == 0)
         {
             // remove existing directory
-            utils::remove_directory(output_dir);
-            utils::remove_directory(output_root);
+            remove_path_if_exists(output_dir);
+            remove_path_if_exists(output_root);
         }
 
         MPI_Barrier(comm);

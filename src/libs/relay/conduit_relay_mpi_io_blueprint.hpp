@@ -112,14 +112,19 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 
 
 //-----------------------------------------------------------------------------
-///
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
 /// opts:
 ///      file_style: "default", "root_only", "multi_file"
 ///            when # of domains == 1,  "default"   ==> "root_only"
 ///            else,                    "default"   ==> "multi_file"
+///
 ///      suffix: "default", "cycle", "none" 
-///            if cycle info is present "default"   ==> "cycle"
-///            else,                    "default"   ==> "off"
+///            when # of domains == 1,  "default"   ==> "off"
+///            else,                    "default"   ==> "cycle"
+///
+///      mesh_name:  (used if present, default ==> "mesh")
+///
 ///      number_of_files:  {# of files}
 ///            when "multi_file":
 ///                 <= 0, use # of files == # of domains

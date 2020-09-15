@@ -38,6 +38,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `blueprint::mesh::number_of_domains` property method for trees that conform to the mesh blueprint.
 - Added MPI mesh blueprint methods, `blueprint::mpi::mesh::verify` and  `blueprint::mpi::mesh::number_of_domains` (available in the `conduit_blueprint_mpi` library)
 - Added `blueprint::mpi::mesh::examples::braid_uniform_multi_domain` and `blueprint::mpi::mesh::examples::spiral_round_robin` distributed-memory mesh examples to the `conduit_blueprint_mpi` library.
+- Added `state/path` to the Mesh Blueprint index, needed for consumers to know the proper path to read extended state info (such as `domain_id`)
 
 
 ### Fixed
