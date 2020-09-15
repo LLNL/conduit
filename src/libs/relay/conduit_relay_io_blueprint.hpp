@@ -90,13 +90,17 @@ namespace blueprint
 //-----------------------------------------------------------------------------
 // Save a blueprint mesh to root + file set
 //-----------------------------------------------------------------------------
+/// Note: These methods use "write" semantics, they will append to existing
+///       files. 
+///
+///  TODO: Provide those with "save" sematics?
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+                                  const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
-                                 const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                  const std::string &path,
                                  const std::string &protocol);
 
@@ -121,7 +125,7 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///                  > 0, # of files == number_of_files
 ///
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                  const std::string &path,
                                  const std::string &protocol,
                                  const conduit::Node &opts);
@@ -132,7 +136,7 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                  conduit::Node &mesh);
 
 
@@ -143,7 +147,7 @@ void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
 ///          provide explicit mesh name, for cases where bp data includes
 ///           more than one mesh.
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,
                                  conduit::Node &mesh);
 

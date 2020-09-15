@@ -553,49 +553,49 @@ void gen_domain_to_file_map(int num_domains,
 
 
 //-----------------------------------------------------------------------------
-// Sig variants of save_mesh
+// Sig variants of write_mesh
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void save_mesh(const Node &mesh,
-               const std::string &path
-               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+void write_mesh(const Node &mesh,
+                const std::string &path
+                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     // empty opts
     Node opts;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    save_mesh(mesh,
-              path,
-              detail::identify_protocol(path),
-              opts,
-              mpi_comm);
+    write_mesh(mesh,
+               path,
+               detail::identify_protocol(path),
+               opts,
+               mpi_comm);
 #else
-    save_mesh(mesh,
-              path,
-              detail::identify_protocol(path),
-              opts);
+    write_mesh(mesh,
+               path,
+               detail::identify_protocol(path),
+               opts);
 #endif
 }
 
 //-----------------------------------------------------------------------------
-void save_mesh(const Node &mesh,
-               const std::string &path,
-               const std::string &protocol
-               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+void write_mesh(const Node &mesh,
+                const std::string &path,
+                const std::string &protocol
+                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     // empty opts
     Node opts;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    save_mesh(mesh,
-              path,
-              protocol,
-              opts,
-              mpi_comm);
+    write_mesh(mesh,
+               path,
+               protocol,
+               opts,
+               mpi_comm);
 #else
-    save_mesh(mesh,
-              path,
-              protocol,
-              opts);
+    write_mesh(mesh,
+               path,
+               protocol,
+               opts);
 #endif
 }
 
@@ -622,11 +622,11 @@ void save_mesh(const Node &mesh,
 ///                  > 0, # of files == number_of_files
 ///
 //-----------------------------------------------------------------------------
-void save_mesh(const Node &mesh,
-               const std::string &path,
-               const std::string &file_protocol,
-               const Node &opts
-               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+void write_mesh(const Node &mesh,
+                const std::string &path,
+                const std::string &file_protocol,
+                const Node &opts
+                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     // The assumption here is that everything is multi domain
 
@@ -644,7 +644,7 @@ void save_mesh(const Node &mesh,
            opts_suffix != "root_only" &&
            opts_suffix != "multi_file" )
         {
-            CONDUIT_ERROR("save_mesh invalid file_style option: \"" 
+            CONDUIT_ERROR("write_mesh invalid file_style option: \"" 
                           << opts_file_style << "\"\n"
                           " expected: \"default\", \"root_only\", "
                           "or \"multi_file\"");
@@ -661,11 +661,18 @@ void save_mesh(const Node &mesh,
            opts_suffix != "cycle" &&
            opts_suffix != "none" )
         {
-            CONDUIT_ERROR("save_mesh invalid suffix option: \"" 
+            CONDUIT_ERROR("write_mesh invalid suffix option: \"" 
                           << opts_suffix << "\"\n"
                           " expected: \"default\", \"cycle\", or \"none\"");
         }
     }
+    
+    // check for + validate suffix option
+    if(opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
+    {
+        opts_mesh_name = opts["mesh_name"].as_string();
+    }
+    
 
     // check for number_of_files, 0 or -1 implies #files => # domains
     if(opts.has_child("number_of_files") && opts["number_of_files"].dtype().is_integer())
@@ -1219,25 +1226,25 @@ void save_mesh(const Node &mesh,
 }
 
 //-----------------------------------------------------------------------------
-void load_mesh(const std::string &root_file_path,
+void read_mesh(const std::string &root_file_path,
                Node &mesh
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     Node opts;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    load_mesh(root_file_path,
+    read_mesh(root_file_path,
               opts,
               mesh,
               mpi_comm);
 #else
-    load_mesh(root_file_path,
+    read_mesh(root_file_path,
               opts,
               mesh);
 #endif
 }
 
 //-----------------------------------------------------------------------------
-void load_mesh(const std::string &root_file_path,
+void read_mesh(const std::string &root_file_path,
                const Node &opts,
                Node &mesh
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
@@ -1284,7 +1291,6 @@ void load_mesh(const std::string &root_file_path,
     {
         CONDUIT_ERROR("Root file missing 'blueprint_index'");
     }
-
 
     std::string mesh_name ="";
     if(opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())

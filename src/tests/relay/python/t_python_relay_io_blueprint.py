@@ -64,7 +64,7 @@ import conduit.relay.io.blueprint
 
 
 class Test_Relay_IO_Blueprint(unittest.TestCase):
-    def test_relay_io_blueprint_save_load_mesh(self):
+    def test_relay_io_blueprint_write_load_mesh(self):
         #self.assertTrue(False)
         print(os.getcwd())
         # only run if we have hdf5
@@ -82,12 +82,12 @@ class Test_Relay_IO_Blueprint(unittest.TestCase):
         if os.path.isfile(tout):
             os.remove(tout)
         print("saving to {0}".format(tout))
-        relay.io.blueprint.save_mesh(data, tbase, "hdf5")
+        relay.io.blueprint.write_mesh(data, tbase, "hdf5")
         self.assertTrue(os.path.isfile(tout))
 
         n_load = Node()
         info = Node()
-        relay.io.blueprint.load_mesh(n_load, tout)
+        relay.io.blueprint.read_mesh(n_load, tout)
         print(n_load)
         data.diff(n_load,info)
         print(info)

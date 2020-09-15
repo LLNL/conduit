@@ -269,7 +269,7 @@ TEST(conduit_relay_io_handle, test_sidre_bad_reads)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_handle, test_sidre_load_mesh_bp)
+TEST(conduit_relay_io_handle, test_sidre_read_mesh_bp)
 {
     Node io_protos;
     relay::io::about(io_protos["io"]);
@@ -282,13 +282,22 @@ TEST(conduit_relay_io_handle, test_sidre_load_mesh_bp)
     }
 
     Node mesh;
-    relay::io::blueprint::load_mesh(relay_test_data_path("out_spio_blueprint_example.root"),mesh);
+    relay::io::blueprint::read_mesh(
+                        relay_test_data_path("out_spio_blueprint_example.root"),
+                        mesh);
     mesh.print();
     Node opts;
-    opts["number_of_files"] = 1; 
-    relay::io::blueprint::save_mesh(mesh, "here","hdf5",opts);
-
+    opts["file_style"] = "root_only";
+    opts["suffix"] = "none";
+    opts["number_of_files"] = 1;
     
+    std::string tout = "tout_sidre_mesh_then_save";
+    utils::remove_path_if_exists(tout);
+    relay::io::blueprint::write_mesh(mesh, tout,"hdf5",opts);
+
+    Node n_read;
+    relay::io::blueprint::read_mesh(tout + ".root",n_read);
+
 }
 
 

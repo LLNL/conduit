@@ -99,7 +99,7 @@ TEST(conduit_blueprint_mesh_relay, spiral_multi_file)
 
         Node opts;
         opts["number_of_files"] = nfiles;
-        relay::io::blueprint::save_mesh(data, output_base, "hdf5", opts);
+        relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
 
         // count the files
         //  file_%06llu.{protocol}:/domain_%06llu/...
@@ -138,7 +138,7 @@ TEST(conduit_blueprint_mesh_relay, spiral_multi_file)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_relay, save_load_mesh)
+TEST(conduit_blueprint_mesh_relay, save_read_mesh)
 {
     Node io_protos;
     relay::io::about(io_protos["io"]);
@@ -161,11 +161,15 @@ TEST(conduit_blueprint_mesh_relay, save_load_mesh)
 
     Node opts;
     opts["number_of_files"] = -1;
-    relay::io::blueprint::save_mesh(data, output_base, "hdf5", opts);
+
+    remove_path_if_exists(output_base + ".cycle_000000.root");
+    remove_path_if_exists(output_base + ".cycle_000000");
+
+    relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
 
     data.print();
     Node n_read, info;
-    relay::io::blueprint::load_mesh(output_base + ".cycle_000000.root",
+    relay::io::blueprint::read_mesh(output_base + ".cycle_000000.root",
                                     n_read);
 
     n_read.print();
@@ -178,14 +182,14 @@ TEST(conduit_blueprint_mesh_relay, save_load_mesh)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_relay, save_load_mesh_opts)
+TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
 {
     Node io_protos;
     relay::io::about(io_protos["io"]);
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
     if(!hdf5_enabled)
     {
-        CONDUIT_INFO("HDF5 disabled, skipping save_load_mesh_opts test");
+        CONDUIT_INFO("HDF5 disabled, skipping save_read_mesh_opts test");
         return;
     }
 
@@ -211,7 +215,7 @@ TEST(conduit_blueprint_mesh_relay, save_load_mesh_opts)
     opts["suffix"] = "default";
 
     remove_path_if_exists(tout_base + ".cycle_000100.root");
-    relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts);
+    relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file(tout_base + ".cycle_000100.root"));
 
 
@@ -219,26 +223,26 @@ TEST(conduit_blueprint_mesh_relay, save_load_mesh_opts)
     data.remove("state/cycle");
 
     remove_path_if_exists(tout_base + ".root");
-    relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts);
+    relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
 
     //
     opts["suffix"] = "cycle";
 
     remove_path_if_exists(tout_base + ".cycle_000000.root");
-    relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts);
+    relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".cycle_000000.root"));
 
     //
     opts["suffix"] = "none";
 
     remove_path_if_exists(tout_base + ".root");
-    relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts);
+    relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
 
     // this should error
     opts["suffix"] = "garbage";
-    EXPECT_THROW(relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts),Error);
+    EXPECT_THROW(relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts),Error);
 
 
     //
@@ -252,13 +256,13 @@ TEST(conduit_blueprint_mesh_relay, save_load_mesh_opts)
     opts["suffix"] = "none";
 
     remove_path_if_exists(tout_base + ".root");
-    relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts);
+    relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
 
     opts["file_style"] = "root_only";
 
     remove_path_if_exists(tout_base + ".root");
-    relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts);
+    relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
 
 
@@ -266,7 +270,7 @@ TEST(conduit_blueprint_mesh_relay, save_load_mesh_opts)
 
     remove_path_if_exists(tout_base + ".root");
     remove_path_if_exists(tout_base);
-    relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts);
+    relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
     EXPECT_TRUE(is_directory(tout_base));
     EXPECT_TRUE(is_file(join_file_path(tout_base,
@@ -274,7 +278,39 @@ TEST(conduit_blueprint_mesh_relay, save_load_mesh_opts)
 
     opts["file_style"] = "garbage";
 
-    EXPECT_THROW(relay::io::blueprint::save_mesh(data, tout_base, "hdf5", opts),Error);
+    EXPECT_THROW(relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts),Error);
+
+    //
+    // mesh name
+    //
+
+    opts["file_style"] = "default";
+    opts["suffix"] = "none";
+    opts["mesh_name"] = "bananas";
+
+    tout_base = "tout_relay_bp_mesh_opts_mesh_name";
+    remove_path_if_exists(tout_base + ".root");
+    relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
+    EXPECT_TRUE(is_file( tout_base + ".root"));
+
+    Node n_read, load_opts;
+    // even custom name should work just fine with default
+    // (it will pick the first mesh)
+    relay::io::blueprint::read_mesh(tout_base + ".root", n_read);
+
+    // now test bad name
+    load_opts["mesh_name"] = "garbage";
+    EXPECT_THROW(relay::io::blueprint::read_mesh(tout_base + ".root",
+                                                 load_opts,
+                                                 n_read),
+                 Error);
+
+    // now test expected name
+    load_opts["mesh_name"] = "bananas";
+    relay::io::blueprint::read_mesh(tout_base + ".root", load_opts, n_read);
+
+
+
 
 }
 

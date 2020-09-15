@@ -24,7 +24,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added the conduit.relay.mpi Python module to support Relay MPI in Python.
 - Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
 - Added preliminary support to read Sidre Datastore-style HDF5 using Relay IOHandle,  those grouped with a root file.
-- Added `conduit::relay::io::blueprint::load_mesh` functions, were pulled in from Ascent's Blueprint import logic.
+- Added `conduit::relay::io::blueprint::read_mesh` functions, were pulled in from Ascent's Blueprint import logic.
 
 #### Blueprint
 - Added support for sparse one-to-many relationships with the new `blueprint::o2mrelation` protocol. See the `blueprint::o2mrelation::examples::uniform` example for details.
@@ -66,8 +66,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.
-- `conduit::relay::io_blueprint::save` functions are deprecated in favor of `conduit::relay::io::blueprint::save_mesh`
-- `conduit::relay::io::blueprint::save_mesh` functions were pulled in from Ascent's Blueprint export logic.
+- `conduit::relay::io_blueprint::save` functions are deprecated in favor of `conduit::relay::io::blueprint::write_mesh`
+- `conduit::relay::io::blueprint::write_mesh` functions were pulled in from Ascent's Blueprint export logic.
 - `conduit_relay_io_mpi` lib now depends on `conduit_relay_io`. Due to this change, a single build supports either ADIOS serial (no-mpi) or ADIOS with MPI support, but not both. If conduit is configured with MPI support, ADIOS MPI is used.
 
 
