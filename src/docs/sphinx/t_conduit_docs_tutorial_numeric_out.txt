@@ -19,7 +19,7 @@ my_vals[1] = 200
 my_vals[2] = 300
 my_vals[3] = 400
 END_EXAMPLE("numeric_ptr_as_dtype")
-[       OK ] conduit_tutorial.numeric_ptr_as_dtype (0 ms)
+[       OK ] conduit_tutorial.numeric_ptr_as_dtype (1 ms)
 [ RUN      ] conduit_tutorial.numeric_ptr_via_value
 BEGIN_EXAMPLE("numeric_ptr_via_value")
 my_vals[0] = 100
@@ -57,8 +57,8 @@ vals[3] = 4000
 [ RUN      ] conduit_tutorial.numeric_double_conversion_end
 END_EXAMPLE("numeric_double_conversion")
 [       OK ] conduit_tutorial.numeric_double_conversion_end (0 ms)
-[----------] 8 tests from conduit_tutorial (1 ms total)
+[----------] 8 tests from conduit_tutorial (2 ms total)
 
 [----------] Global test environment tear-down
-[==========] 8 tests from 1 test suite ran. (1 ms total)
+[==========] 8 tests from 1 test suite ran. (3 ms total)
 [  PASSED  ] 8 tests.

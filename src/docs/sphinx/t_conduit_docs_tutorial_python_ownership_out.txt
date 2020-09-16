@@ -19,17 +19,17 @@ test 114
 114: test_001_mem_ownership_external (t_conduit_docs_tutorial_python_ownership.Conduit_Tutorial_Python_Ownership) ... ok
 114: 
 114: ----------------------------------------------------------------------
-114: Ran 1 test in 0.001s
+114: Ran 1 test in 0.004s
 114: 
 114: OK
 114: BEGIN_EXAMPLE("py_mem_ownership_external")
 114: 
 114: mem_spaces: 
-114:   0x7fd1ace0ecc0: 
+114:   0x7ff4d9c16a90: 
 114:     path: "v_owned"
 114:     type: "allocated"
 114:     bytes: 40
-114:   0x7fd1ace46240: 
+114:   0x7ff4d9c3ba40: 
 114:     path: "v_external"
 114:     type: "external"
 114: total_bytes_allocated: 40
@@ -47,7 +47,7 @@ test 114
 114: 
 114: [3.1415 0.     0.     0.     0.    ]
 114: END_EXAMPLE("py_mem_ownership_external")
-1/1 Test #114: t_conduit_docs_tutorial_python_ownership ...   Passed    0.14 sec
+1/1 Test #114: t_conduit_docs_tutorial_python_ownership ...   Passed    0.15 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_ownership

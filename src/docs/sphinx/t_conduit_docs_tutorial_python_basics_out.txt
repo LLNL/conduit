@@ -25,7 +25,7 @@ test 111
 111: test_007_basics_bw_style_from_native (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
 111: 
 111: ----------------------------------------------------------------------
-111: Ran 7 tests in 0.001s
+111: Ran 7 tests in 0.003s
 111: 
 111: OK
 111: BEGIN_EXAMPLE("py_basics_very_basic")
@@ -84,15 +84,15 @@ test 111
 111: BEGIN_EXAMPLE("py_basics_mem_spaces")
 111: 
 111: mem_spaces: 
-111:   0x7f93b48ccd20: 
+111:   0x7ff883407c70: 
 111:     path: "my"
 111:     type: "allocated"
 111:     bytes: 5
-111:   0x7f93b48ed3a0: 
+111:   0x7ff883417250: 
 111:     path: "a/b/c"
 111:     type: "allocated"
 111:     bytes: 2
-111:   0x7f93b48aaed0: 
+111:   0x7ff88340fc80: 
 111:     path: "a/b/e"
 111:     type: "allocated"
 111:     bytes: 8
@@ -113,11 +113,11 @@ test 111
 111:   "test": {"dtype":"int64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
 111: }
 111: END_EXAMPLE("py_basics_bw_style_from_native")
-1/1 Test #111: t_conduit_docs_tutorial_python_basics ...   Passed    0.14 sec
+1/1 Test #111: t_conduit_docs_tutorial_python_basics ...   Passed    0.46 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_basics
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.16 sec
+Total Test time (real) =   0.51 sec

@@ -63,11 +63,11 @@ test 113
 113: test: 100.0
 113: 
 113: END_EXAMPLE("py_json_generator_std")
-1/1 Test #113: t_conduit_docs_tutorial_python_parse ...   Passed    0.13 sec
+1/1 Test #113: t_conduit_docs_tutorial_python_parse ...   Passed    0.14 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_parse
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.16 sec
+Total Test time (real) =   0.17 sec

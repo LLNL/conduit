@@ -30,13 +30,13 @@ test 116
 116: test_006_mpi_all_gather (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
 116: 
 116: ----------------------------------------------------------------------
-116: Ran 6 tests in 0.087s
+116: Ran 6 tests in 0.274s
 116: 
 116: OK
 116: ok
 116: 
 116: ----------------------------------------------------------------------
-116: Ran 6 tests in 0.086s
+116: Ran 6 tests in 0.274s
 116: 
 116: OK
 116: 
@@ -100,11 +100,11 @@ test 116
 116:     my_string: "value"
 116: 
 116: [rank: 1] received: [0, 1, 4, 9]
-1/1 Test #116: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.26 sec
+1/1 Test #116: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.48 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_relay_mpi_examples
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.28 sec
+Total Test time (real) =   0.51 sec
