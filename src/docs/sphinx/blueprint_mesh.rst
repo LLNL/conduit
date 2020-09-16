@@ -690,7 +690,7 @@ Mesh Blueprint Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-The C++ ``conduit::blueprint::mesh::s`` namespace and the Python ``conduit.blueprint.mesh.examples`` module provide
+The C++ ``conduit::blueprint::mesh::examples`` namespace and the Python ``conduit.blueprint.mesh.examples`` module provide
 functions that generate example Mesh Blueprint data. For details on how to write these data sets to files, see the unit
 tests that exercise these examples in ``src/tests/blueprint/t_blueprint_mesh_examples.cpp`` and the
 `mesh output <Outputting Meshes for Visualization_>`_ example below. This section outlines the examples that demonstrate
