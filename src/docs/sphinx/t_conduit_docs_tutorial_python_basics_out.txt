@@ -9,115 +9,115 @@ Updating test list for fixtures
 Added 0 tests to meet fixture requirements
 Checking test dependency graph...
 Checking test dependency graph end
-test 109
-    Start 109: t_conduit_docs_tutorial_python_basics
+test 111
+    Start 111: t_conduit_docs_tutorial_python_basics
 
-109: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.4-tuamu4qn6msg6bqa5hd7glbv5uxm5lup/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_basics"
-109: Environment variables: 
-109:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
-109: Test timeout computed to be: 1500
-109: test_001_basics_very_basic (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-109: test_002_basics_hierarchial (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-109: test_003_basics_object_and_list (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-109: test_004_basics_object_and_list_itr (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-109: test_005_basics_mem_spaces (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-109: test_006_basics_bw_style (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-109: test_007_basics_bw_style_from_native (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-109: 
-109: ----------------------------------------------------------------------
-109: Ran 7 tests in 0.001s
-109: 
-109: OK
-109: BEGIN_EXAMPLE("py_basics_very_basic")
-109: 
-109: my: "data"
-109: 
-109: END_EXAMPLE("py_basics_very_basic")
-109: BEGIN_EXAMPLE("py_basics_hierarchial")
-109: 
-109: my: "data"
-109: a: 
-109:   b: 
-109:     c: "d"
-109:     e: 64.0
-109: 
-109: total bytes: 15
-109: 
-109: END_EXAMPLE("py_basics_hierarchial")
-109: BEGIN_EXAMPLE("py_basics_object_and_list")
-109: 
-109: object_example: 
-109:   val1: "data"
-109:   val2: 10
-109:   val3: 3.1415
-109: list_example: 
-109:   - 0
-109:   - 1
-109:   - 2
-109:   - 3
-109:   - 4
-109: 
-109: END_EXAMPLE("py_basics_object_and_list")
-109: BEGIN_EXAMPLE("py_basics_object_and_list_itr")
-109: 
-109: object_example: 
-109:   val1: "data"
-109:   val2: 10
-109:   val3: 3.1415
-109: list_example: 
-109:   - 0
-109:   - 1
-109:   - 2
-109:   - 3
-109:   - 4
-109: 
-109: val1: "data"
-109: val2: 10
-109: val3: 3.1415
-109: 
-109: 0
-109: 1
-109: 2
-109: 3
-109: 4
-109: END_EXAMPLE("py_basics_object_and_list_itr")
-109: BEGIN_EXAMPLE("py_basics_mem_spaces")
-109: 
-109: mem_spaces: 
-109:   0x7fef6a5803f0: 
-109:     path: "my"
-109:     type: "allocated"
-109:     bytes: 5
-109:   0x7fef6a56fb40: 
-109:     path: "a/b/c"
-109:     type: "allocated"
-109:     bytes: 2
-109:   0x7fef6a569080: 
-109:     path: "a/b/e"
-109:     type: "allocated"
-109:     bytes: 8
-109: total_bytes_allocated: 15
-109: total_bytes_mmaped: 0
-109: total_bytes_compact: 15
-109: total_strided_bytes: 15
-109: 
-109: END_EXAMPLE("py_basics_mem_spaces")
-109: BEGIN_EXAMPLE("py_basics_bw_style")
-109: 
-109: test: 100
-109: 
-109: END_EXAMPLE("py_basics_bw_style")
-109: BEGIN_EXAMPLE("py_basics_bw_style_from_native")
-109: 
-109: {
-109:   "test": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
-109: }
-109: END_EXAMPLE("py_basics_bw_style_from_native")
-1/1 Test #109: t_conduit_docs_tutorial_python_basics ...   Passed    0.14 sec
+111: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.6-zd24bom2hns4o42jlzdptijz54ogai7c/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_basics"
+111: Environment variables: 
+111:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+111: Test timeout computed to be: 1500
+111: test_001_basics_very_basic (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+111: test_002_basics_hierarchial (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+111: test_003_basics_object_and_list (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+111: test_004_basics_object_and_list_itr (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+111: test_005_basics_mem_spaces (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+111: test_006_basics_bw_style (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+111: test_007_basics_bw_style_from_native (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+111: 
+111: ----------------------------------------------------------------------
+111: Ran 7 tests in 0.003s
+111: 
+111: OK
+111: BEGIN_EXAMPLE("py_basics_very_basic")
+111: 
+111: my: "data"
+111: 
+111: END_EXAMPLE("py_basics_very_basic")
+111: BEGIN_EXAMPLE("py_basics_hierarchial")
+111: 
+111: my: "data"
+111: a: 
+111:   b: 
+111:     c: "d"
+111:     e: 64.0
+111: 
+111: total bytes: 15
+111: 
+111: END_EXAMPLE("py_basics_hierarchial")
+111: BEGIN_EXAMPLE("py_basics_object_and_list")
+111: 
+111: object_example: 
+111:   val1: "data"
+111:   val2: 10
+111:   val3: 3.1415
+111: list_example: 
+111:   - 0
+111:   - 1
+111:   - 2
+111:   - 3
+111:   - 4
+111: 
+111: END_EXAMPLE("py_basics_object_and_list")
+111: BEGIN_EXAMPLE("py_basics_object_and_list_itr")
+111: 
+111: object_example: 
+111:   val1: "data"
+111:   val2: 10
+111:   val3: 3.1415
+111: list_example: 
+111:   - 0
+111:   - 1
+111:   - 2
+111:   - 3
+111:   - 4
+111: 
+111: val1: "data"
+111: val2: 10
+111: val3: 3.1415
+111: 
+111: 0
+111: 1
+111: 2
+111: 3
+111: 4
+111: END_EXAMPLE("py_basics_object_and_list_itr")
+111: BEGIN_EXAMPLE("py_basics_mem_spaces")
+111: 
+111: mem_spaces: 
+111:   0x7ff883407c70: 
+111:     path: "my"
+111:     type: "allocated"
+111:     bytes: 5
+111:   0x7ff883417250: 
+111:     path: "a/b/c"
+111:     type: "allocated"
+111:     bytes: 2
+111:   0x7ff88340fc80: 
+111:     path: "a/b/e"
+111:     type: "allocated"
+111:     bytes: 8
+111: total_bytes_allocated: 15
+111: total_bytes_mmaped: 0
+111: total_bytes_compact: 15
+111: total_strided_bytes: 15
+111: 
+111: END_EXAMPLE("py_basics_mem_spaces")
+111: BEGIN_EXAMPLE("py_basics_bw_style")
+111: 
+111: test: 100
+111: 
+111: END_EXAMPLE("py_basics_bw_style")
+111: BEGIN_EXAMPLE("py_basics_bw_style_from_native")
+111: 
+111: {
+111:   "test": {"dtype":"int64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
+111: }
+111: END_EXAMPLE("py_basics_bw_style_from_native")
+1/1 Test #111: t_conduit_docs_tutorial_python_basics ...   Passed    0.46 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_basics
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.17 sec
+Total Test time (real) =   0.51 sec
