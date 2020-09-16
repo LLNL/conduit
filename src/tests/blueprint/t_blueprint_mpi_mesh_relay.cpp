@@ -117,7 +117,6 @@ TEST(blueprint_mpi_relay, basic_use)
                                                   output_base,
                                                   "hdf5",
                                                   comm);
-    MPI_Barrier(MPI_COMM_WORLD);
 
     // read this back using read_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
@@ -168,7 +167,6 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_braid)
                                                   output_base,
                                                   "hdf5",
                                                   comm);
-    MPI_Barrier(comm);
 
     // read this back using read_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
@@ -243,7 +241,6 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
                                                   output_base,
                                                   "hdf5",
                                                   comm);
-    MPI_Barrier(comm);
 
     // read this back using read_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
@@ -336,7 +333,6 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
                                                   "hdf5",
                                                   opts,
                                                   comm);
-    MPI_Barrier(comm);
 
     // read this back using read_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
@@ -467,8 +463,6 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
                                                       opts,
                                                       comm);
 
-        MPI_Barrier(comm);
-
         // count the files
         //  file_%06llu.{protocol}:/domain_%06llu/...
         int nfiles_to_check = nfiles;
@@ -500,8 +494,6 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
-
-        MPI_Barrier(comm);
     }
 
     // read this back using read_mesh

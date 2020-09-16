@@ -1223,6 +1223,15 @@ void write_mesh(const Node &mesh,
         hnd.write(root);
         hnd.close();
     }
+
+    // barrier at end of work to avoid file system race
+    // (non root task could write the root file in write_mesh, 
+    // but root task is always the one to read the root file
+    // in read_mesh.
+
+    #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+        MPI_Barrier(mpi_comm);
+    #endif
 }
 
 //-----------------------------------------------------------------------------
