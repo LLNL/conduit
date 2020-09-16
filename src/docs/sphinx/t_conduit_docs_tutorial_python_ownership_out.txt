@@ -9,49 +9,49 @@ Updating test list for fixtures
 Added 0 tests to meet fixture requirements
 Checking test dependency graph...
 Checking test dependency graph end
-test 112
-    Start 112: t_conduit_docs_tutorial_python_ownership
+test 114
+    Start 114: t_conduit_docs_tutorial_python_ownership
 
-112: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.4-tuamu4qn6msg6bqa5hd7glbv5uxm5lup/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_ownership"
-112: Environment variables: 
-112:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
-112: Test timeout computed to be: 1500
-112: test_001_mem_ownership_external (t_conduit_docs_tutorial_python_ownership.Conduit_Tutorial_Python_Ownership) ... ok
-112: 
-112: ----------------------------------------------------------------------
-112: Ran 1 test in 0.001s
-112: 
-112: OK
-112: BEGIN_EXAMPLE("py_mem_ownership_external")
-112: 
-112: mem_spaces: 
-112:   0x7fad50a05170: 
-112:     path: "v_owned"
-112:     type: "allocated"
-112:     bytes: 40
-112:   0x7fad50a0f260: 
-112:     path: "v_external"
-112:     type: "external"
-112: total_bytes_allocated: 40
-112: total_bytes_mmaped: 0
-112: total_bytes_compact: 80
-112: total_strided_bytes: 80
-112: 
-112: 
-112: v_owned: [0.0, 0.0, 0.0, 0.0, 0.0]
-112: v_external: [0.0, 0.0, 0.0, 0.0, 0.0]
-112: 
-112: 
-112: v_owned: [0.0, 0.0, 0.0, 0.0, 0.0]
-112: v_external: [3.1415, 0.0, 0.0, 0.0, 0.0]
-112: 
-112: [3.1415 0.     0.     0.     0.    ]
-112: END_EXAMPLE("py_mem_ownership_external")
-1/1 Test #112: t_conduit_docs_tutorial_python_ownership ...   Passed    0.14 sec
+114: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.6-zd24bom2hns4o42jlzdptijz54ogai7c/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_ownership"
+114: Environment variables: 
+114:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+114: Test timeout computed to be: 1500
+114: test_001_mem_ownership_external (t_conduit_docs_tutorial_python_ownership.Conduit_Tutorial_Python_Ownership) ... ok
+114: 
+114: ----------------------------------------------------------------------
+114: Ran 1 test in 0.001s
+114: 
+114: OK
+114: BEGIN_EXAMPLE("py_mem_ownership_external")
+114: 
+114: mem_spaces: 
+114:   0x7fd1ace0ecc0: 
+114:     path: "v_owned"
+114:     type: "allocated"
+114:     bytes: 40
+114:   0x7fd1ace46240: 
+114:     path: "v_external"
+114:     type: "external"
+114: total_bytes_allocated: 40
+114: total_bytes_mmaped: 0
+114: total_bytes_compact: 80
+114: total_strided_bytes: 80
+114: 
+114: 
+114: v_owned: [0.0, 0.0, 0.0, 0.0, 0.0]
+114: v_external: [0.0, 0.0, 0.0, 0.0, 0.0]
+114: 
+114: 
+114: v_owned: [0.0, 0.0, 0.0, 0.0, 0.0]
+114: v_external: [3.1415, 0.0, 0.0, 0.0, 0.0]
+114: 
+114: [3.1415 0.     0.     0.     0.    ]
+114: END_EXAMPLE("py_mem_ownership_external")
+1/1 Test #114: t_conduit_docs_tutorial_python_ownership ...   Passed    0.14 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_ownership
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.16 sec
+Total Test time (real) =   0.17 sec

@@ -8,7 +8,7 @@ BEGIN_EXAMPLE("basics_very_basic")
 my: "data"
 
 END_EXAMPLE("basics_very_basic")
-[       OK ] conduit_tutorial.basics_very_basic (0 ms)
+[       OK ] conduit_tutorial.basics_very_basic (1 ms)
 [ RUN      ] conduit_tutorial.basics_hierarchial
 BEGIN_EXAMPLE("basics_hierarchial")
 
@@ -66,15 +66,15 @@ END_EXAMPLE("basics_object_and_list_itr")
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7f8b6cc04e90: 
+  0x7f9d3f404d60: 
     path: "my"
     type: "allocated"
     bytes: 5
-  0x7f8b6cc05470: 
+  0x7f9d3f405340: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
-  0x7f8b6cc05ea0: 
+  0x7f9d3f405d70: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8
@@ -92,7 +92,15 @@ test: 100
 
 
 {
-  "test": {"dtype":"uint32", "number_of_elements": 1, "offset": 0, "stride": 4, "element_bytes": 4, "endianness": "little", "value": 100}
+  "test": 
+{
+"dtype":"uint32",
+"number_of_elements": 1,
+"offset": 0,
+"stride": 4,
+"element_bytes": 4,
+"endianness": "little"
+, "value": 100}
 }
 END_EXAMPLE("basics_bw_style")
 [       OK ] conduit_tutorial.basics_bw_style (0 ms)
@@ -100,11 +108,19 @@ END_EXAMPLE("basics_bw_style")
 BEGIN_EXAMPLE("basics_bw_style_from_native")
 
 {
-  "test": {"dtype":"int32", "number_of_elements": 1, "offset": 0, "stride": 4, "element_bytes": 4, "endianness": "little", "value": 100}
+  "test": 
+{
+"dtype":"int32",
+"number_of_elements": 1,
+"offset": 0,
+"stride": 4,
+"element_bytes": 4,
+"endianness": "little"
+, "value": 100}
 }
 END_EXAMPLE("basics_bw_style_from_native")
 [       OK ] conduit_tutorial.basics_bw_style_from_native (0 ms)
-[----------] 7 tests from conduit_tutorial (1 ms total)
+[----------] 7 tests from conduit_tutorial (2 ms total)
 
 [----------] Global test environment tear-down
 [==========] 7 tests from 1 test suite ran. (2 ms total)

@@ -18,7 +18,7 @@ coords:
   valid: "true"
 
 END_EXAMPLE("blueprint_example_1")
-[       OK ] conduit_docs.blueprint_example_1 (1 ms)
+[       OK ] conduit_docs.blueprint_example_1 (2 ms)
 [ RUN      ] conduit_docs.blueprint_example_2
 BEGIN_EXAMPLE("blueprint_example_2")
 example 'separate' mcarray 
@@ -29,15 +29,15 @@ z: [3.0, 3.0, 3.0, 3.0, 3.0]
 
 
 mem_spaces: 
-  0x7feb01404e70: 
+  0x7fc8efd00600: 
     path: "x"
     type: "allocated"
     bytes: 40
-  0x7feb01404f70: 
+  0x7fc8efd00700: 
     path: "y"
     type: "allocated"
     bytes: 40
-  0x7feb014050d0: 
+  0x7fc8efd00880: 
     path: "z"
     type: "allocated"
     bytes: 40
@@ -49,13 +49,37 @@ total_strided_bytes: 120
 transformed to 'interleaved' mcarray 
 
 {
-  "x": {"dtype":"float64", "number_of_elements": 5, "offset": 0, "stride": 24, "element_bytes": 8, "endianness": "little", "value": [1.0, 1.0, 1.0, 1.0, 1.0]},
-  "y": {"dtype":"float64", "number_of_elements": 5, "offset": 8, "stride": 24, "element_bytes": 8, "endianness": "little", "value": [2.0, 2.0, 2.0, 2.0, 2.0]},
-  "z": {"dtype":"float64", "number_of_elements": 5, "offset": 16, "stride": 24, "element_bytes": 8, "endianness": "little", "value": [3.0, 3.0, 3.0, 3.0, 3.0]}
+  "x": 
+{
+"dtype":"float64",
+"number_of_elements": 5,
+"offset": 0,
+"stride": 24,
+"element_bytes": 8,
+"endianness": "little"
+, "value": [1.0, 1.0, 1.0, 1.0, 1.0]},
+  "y": 
+{
+"dtype":"float64",
+"number_of_elements": 5,
+"offset": 8,
+"stride": 24,
+"element_bytes": 8,
+"endianness": "little"
+, "value": [2.0, 2.0, 2.0, 2.0, 2.0]},
+  "z": 
+{
+"dtype":"float64",
+"number_of_elements": 5,
+"offset": 16,
+"stride": 24,
+"element_bytes": 8,
+"endianness": "little"
+, "value": [3.0, 3.0, 3.0, 3.0, 3.0]}
 }
 
 mem_spaces: 
-  0x7feb01406bc0: 
+  0x7fc8efd02370: 
     path: ""
     type: "allocated"
     bytes: 120
@@ -65,9 +89,9 @@ total_bytes_compact: 120
 total_strided_bytes: 312
 
 END_EXAMPLE("blueprint_example_2")
-[       OK ] conduit_docs.blueprint_example_2 (1 ms)
+[       OK ] conduit_docs.blueprint_example_2 (0 ms)
 [----------] 2 tests from conduit_docs (2 ms total)
 
 [----------] Global test environment tear-down
-[==========] 2 tests from 1 test suite ran. (3 ms total)
+[==========] 2 tests from 1 test suite ran. (2 ms total)
 [  PASSED  ] 2 tests.
