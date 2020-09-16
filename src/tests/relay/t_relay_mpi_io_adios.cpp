@@ -407,7 +407,7 @@ TEST(conduit_relay_io_adios, test_mpi_time_series)
     std::string path("test_mpi_time_series.bp"), protocol("adios");
 
     // Remove the file if it exists.
-    conduit::utils::remove_file(path);
+    utils::remove_path_if_exists(path);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // Write multiple time steps to the same file.

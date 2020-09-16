@@ -111,6 +111,69 @@ class Test_Blueprint_Mesh(unittest.TestCase):
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
         self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
 
+    def test_julia_nestsets(self):
+        n = Node()
+        info = Node()
+        self.assertFalse(blueprint.verify("mesh",n,info))
+        self.assertFalse(blueprint.mesh.verify(n,info))
+        # simple case
+        blueprint.mesh.examples.julia_nestsets_simple(-2.0, 2.0,
+                                                      -2.0, 2.0,
+                                                      0.285, 0.01,
+                                                      n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        n_idx = Node()
+        blueprint.mesh.generate_index(n["domain_000000"],"",1,n_idx)
+        self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
+        self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
+        # complex case
+        blueprint.mesh.examples.julia_nestsets_complex(50,50,
+                                                       -2.0, 2.0,
+                                                       -2.0, 2.0,
+                                                       0.285, 0.01,
+                                                       3,
+                                                       n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        n_idx = Node()
+        blueprint.mesh.generate_index(n["domain_000000"],"",1,n_idx)
+        self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
+        self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
+
+    def test_venn(self):
+        n = Node()
+        info = Node()
+        self.assertFalse(blueprint.verify("mesh",n,info))
+        self.assertFalse(blueprint.mesh.verify(n,info))
+        for matset_type in ['full', 
+                            'sparse_by_material',
+                            'sparse_by_element' ]:
+            blueprint.mesh.examples.venn(matset_type,
+                                         10,10,
+                                         .5,
+                                         n);
+            self.assertTrue(blueprint.mesh.verify(n,info))
+            n_idx = Node()
+            blueprint.mesh.generate_index(n,"",1,n_idx)
+            self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
+            print(info)
+            self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
+            print(info)
+
+    def test_polytess(self):
+        n = Node()
+        info = Node()
+        self.assertFalse(blueprint.verify("mesh",n,info))
+        self.assertFalse(blueprint.mesh.verify(n,info))
+        # simple case
+        blueprint.mesh.examples.polytess(3,n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        n_idx = Node()
+        blueprint.mesh.generate_index(n,"",1,n_idx)
+        self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
+        self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
+
+
+
 if __name__ == '__main__':
     unittest.main()
 

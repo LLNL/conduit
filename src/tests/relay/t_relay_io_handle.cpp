@@ -81,11 +81,8 @@ TEST(conduit_relay_io_handle, test_active_protos)
         CONDUIT_INFO("Testing Relay IO Handle with protocol: " 
                      << protocol );
         std::string test_file_name = tfile_base  + protocol;
-    
-        if(utils::is_file(test_file_name))
-        {
-            utils::remove_file(test_file_name);
-        }
+
+        utils::remove_path_if_exists(test_file_name);
 
         int64 a_val = 20;
         int64 b_val = 8;
@@ -153,15 +150,8 @@ TEST(conduit_relay_io_handle, test_active_protos)
 TEST(conduit_relay_io_handle, test_is_open)
 {
     // remove files if they exist
-    if(utils::is_file("tout_conduit_relay_io_handle_is_open.hdf5"))
-    {
-        utils::remove_file("tout_conduit_relay_io_handle_is_open.hdf5");
-    }
-
-    if(utils::is_file("tout_conduit_relay_io_handle_is_open.conduit_json"))
-    {
-        utils::remove_file("tout_conduit_relay_io_handle_is_open.conduit_json");
-    }
+    utils::remove_path_if_exists("tout_conduit_relay_io_handle_is_open.hdf5");
+    utils::remove_path_if_exists("tout_conduit_relay_io_handle_is_open.conduit_json");
 
     io::IOHandle h;
     EXPECT_FALSE(h.is_open());
@@ -340,10 +330,7 @@ TEST(conduit_relay_io_handle, test_mode)
         std::string test_file_name = "tout_conduit_relay_io_handle_mode_ro."
                                      + protocol;
 
-        if(utils::is_file(test_file_name))
-        {
-            utils::remove_file(test_file_name);
-        }
+        utils::remove_path_if_exists(test_file_name);
 
         /// read only
         Node opts_ronly;
@@ -437,18 +424,11 @@ TEST(conduit_relay_io_handle, test_reuse_handle)
     n["d/here"] = here_val;
 
     // remove files if they already exist
+    utils::remove_path_if_exists("tout_conduit_relay_io_handle_reopen_1.conduit_bin");
+    utils::remove_path_if_exists("tout_conduit_relay_io_handle_reopen_1.conduit_json");
 
-    if(utils::is_file("tout_conduit_relay_io_handle_reopen_1.conduit_bin"))
-    {
-        utils::remove_file("tout_conduit_relay_io_handle_reopen_1.conduit_bin");
-        utils::remove_file("tout_conduit_relay_io_handle_reopen_1.conduit_json");
-    }
-
-    if(utils::is_file("tout_conduit_relay_io_handle_reopen_2.conduit_bin"))
-    {
-        utils::remove_file("tout_conduit_relay_io_handle_reopen_2.conduit_bin");
-        utils::remove_file("tout_conduit_relay_io_handle_reopen_2.conduit_json");
-    }
+    utils::remove_path_if_exists("tout_conduit_relay_io_handle_reopen_2.conduit_bin");
+    utils::remove_path_if_exists("tout_conduit_relay_io_handle_reopen_2.conduit_json");
 
 
     io::IOHandle h;
@@ -495,11 +475,8 @@ TEST(conduit_relay_io_handle, test_empty_path_as_root)
     std::string ofname = "tout_conduit_relay_io_empty_path_as_root.conduit_bin";
 
     // remove files if they already exist
-    if(utils::is_file("tout_conduit_relay_io_empty_path_as_root.conduit_bin"))
-    {
-        utils::remove_file("tout_conduit_relay_io_empty_path_as_root.conduit_bin");
-        utils::remove_file("tout_conduit_relay_io_empty_path_as_root.conduit_json");
-    }
+    utils::remove_path_if_exists("tout_conduit_relay_io_empty_path_as_root.conduit_bin");
+    utils::remove_path_if_exists("tout_conduit_relay_io_empty_path_as_root.conduit_json");
 
     Node n_read_1, n_read_2, n_read_3, info;
 

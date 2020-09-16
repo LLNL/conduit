@@ -2445,17 +2445,25 @@ mesh::generate_index(const Node &mesh,
     index_out.reset();
 
     index_out["state/number_of_domains"] = number_of_domains;
-    
-    // check if the input mesh has state/cycle state/time
-    // if so, add those to the index
-    if(mesh.has_path("state/cycle"))
-    {
-        index_out["state/cycle"].set(mesh["state/cycle"]);
-    }
 
-    if(mesh.has_path("state/time"))
+
+    if(mesh.has_child("state"))
     {
-        index_out["state/time"].set(mesh["state/time"]);
+        // check if the input mesh has state/cycle state/time
+        // if so, add those to the index
+        if(mesh.has_path("state/cycle"))
+        {
+            index_out["state/cycle"].set(mesh["state/cycle"]);
+        }
+
+        if(mesh.has_path("state/time"))
+        {
+            index_out["state/time"].set(mesh["state/time"]);
+        }
+        // state may contain other important stuff, like 
+        // the domain_id, so we need a way to read it
+        // from the index
+        index_out["state/path"] = join_path(ref_path, "state");
     }
 
     NodeConstIterator itr = mesh["coordsets"].children();
@@ -2569,11 +2577,40 @@ mesh::generate_index(const Node &mesh,
             Node &idx_matset = index_out["matsets"][matset_name];
 
             idx_matset["topology"] = matset["topology"].as_string();
-            NodeConstIterator mats_itr = matset["volume_fractions"].children();
-            while(mats_itr.has_next())
+
+            // support different flavors of valid matset protos
+            if(matset.has_child("material_map"))
             {
-                mats_itr.next();
-                idx_matset["materials"][mats_itr.name()];
+                NodeConstIterator mats_itr = matset["material_map"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else if(matset.has_child("materials"))
+            {
+                NodeConstIterator mats_itr = matset["materials"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else if(matset.has_child("volume_fractions"))
+            {
+                NodeConstIterator mats_itr = matset["volume_fractions"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else // surprise!
+            {
+                CONDUIT_ERROR("blueprint::mesh::generate_index: "
+                              "Invalid matset flavor."
+                              "Input node does not conform to mesh blueprint.");
             }
 
             std::string ms_ref_path = join_path(ref_path, "matsets");

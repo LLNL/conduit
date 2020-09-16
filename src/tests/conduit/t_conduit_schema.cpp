@@ -424,30 +424,23 @@ TEST(schema_basics, schema_to_string)
     // save files
     std::string tf_t_str_file ="tout_schema_to_string_stream_file.json";
     // remove if exists
-    if(utils::is_file(tf_t_str_file))
-    {
-        utils::remove_file(tf_t_str_file);
-    }
+    utils::remove_path_if_exists(tf_t_str_file);
 
     s.to_string_stream(tf_t_str_file);
     EXPECT_TRUE(utils::is_file(tf_t_str_file));
 
     std::string tf_t_json_file ="tout_schema_to_string_stream_file.json";
+
     // remove if exists
-    if(utils::is_file(tf_t_json_file))
-    {
-        utils::remove_file(tf_t_str_file);
-    }
+    utils::remove_path_if_exists(tf_t_json_file);
 
     s.to_json_stream(tf_t_json_file);
     EXPECT_TRUE(utils::is_file(tf_t_json_file));
 
     std::string tf_t_yaml_file ="tout_schema_to_string_stream_file.yaml";
+
     // remove if exists
-    if(utils::is_file(tf_t_yaml_file))
-    {
-        utils::remove_file(tf_t_yaml_file);
-    }
+    utils::remove_path_if_exists(tf_t_yaml_file);
 
     s.to_yaml_stream(tf_t_yaml_file);
     EXPECT_TRUE(utils::is_file(tf_t_yaml_file));
