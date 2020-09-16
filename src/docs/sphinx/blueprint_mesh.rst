@@ -9,10 +9,19 @@ Mesh Blueprint
 ===================
 
 This section provides details about the Mesh Blueprint. Lots of them.
-We don't have a Mesh Blueprint tutorial yet, if you are looking to wrap your mind 
-around the basic mechanics of describing a mesh, you may want to start by reviewing
-the :ref:`detailed_uniform_example`
-and exploring the other :ref:`examples` included in the blueprint library. 
+These docs provide the main reference for all of the components of
+the Mesh Blueprint protocol and details about :ref:`examples`
+that are included in the Conduit Blueprint Library. 
+
+
+Conduit docs don't have a Mesh Blueprint tutorial yet, if you are looking to 
+wrap your mind around the basic mechanics of describing a mesh:
+
+* The Ascent tutorial includes section on `creating Meshes using Conduit <https://ascent.readthedocs.io/en/latest/Tutorial_Intro_Conduit_Blueprint.html>`_. This is the best reference for getting started and includes C++ and Python code examples.
+
+* The :ref:`complete_uniform_example` at the end of this section shows you how to create and save a uniform grid to a file which VisIt and `Ascent's Replay utility <https://ascent.readthedocs.io/en/latest/Utilities.html?highlight=replay#replay>`_ can read.
+
+* The :ref:`examples` section details functions that to generate several flavors of exemplar meshes.
 
 
 
@@ -681,7 +690,7 @@ Mesh Blueprint Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-The C++ ``conduit::blueprint::mesh::examples`` namespace and the Python ``conduit.blueprint.mesh.examples`` module provide
+The C++ ``conduit::blueprint::mesh::s`` namespace and the Python ``conduit.blueprint.mesh.examples`` module provide
 functions that generate example Mesh Blueprint data. For details on how to write these data sets to files, see the unit
 tests that exercise these examples in ``src/tests/blueprint/t_blueprint_mesh_examples.cpp`` and the
 `mesh output <Outputting Meshes for Visualization_>`_ example below. This section outlines the examples that demonstrate
@@ -1254,59 +1263,101 @@ Outputting Meshes for Visualization
 
 Suppose that you have an arbitrary Blueprint mesh that you want to output from a running code and
 subsequently visualize using a visualization tool (e.g. `VisIt <https://visit.llnl.gov>`_).
-Provided that your mesh is sufficiently simple (see the note at the end of this section for details),
-you can output your mesh using one of the following ``conduit::relay`` library functions:
+You can save your mesh to a set of files, using one of the following
+``conduit::relay::io::blueprint`` library functions:
+
+Save a mesh to disk:
 
 .. code:: cpp
 
-    // saves the given mesh to disk at the given path (using the extension
-    // suffix in the path to inform the output data protocol)
-    conduit::relay::io_blueprint::save(const conduit::Node &mesh,
-                                       const std::string &path);
+    conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
+                                              const std::string &path);
 
-    // saves the given mesh to disk at the given path with the given explicit
-    // output data protocol (e.g. "json", "hdf5")
-    conduit::relay::io_blueprint::save(const conduit::Node &mesh,
-                                       const std::string &path,
-                                       const std::string &protocol);
+Save a mesh to disk using a specific protocol:
 
-It's important to note that both of these functions expect the given path to have
-a valid extension to properly output results. The valid extensions for these
-functions are as follows:
+.. code:: cpp
 
-- ``.blueprint_root`` (JSON Extension)
-- ``.blueprint_root_hdf5`` (HDF5 Extension)
+    conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
+                                              const std::string &protocol,
+                                              const std::string &path);
 
-Files output from these functions can be opened and subsequently visualized
-directly using `VisIt <https://visit.llnl.gov>`_.
+Save a mesh to disk using a specific protocol and options:
 
-.. note::
-   This automatic index generation and save functionality is under development. 
-   It handles most basic cases, but only supports ``json`` and ``hdf5`` output
-   protocols and has limited multi-domain support. We are working on API changes
-   and a more robust capability for future versions of Conduit.
+.. code:: cpp
 
-.. _detailed_uniform_example:
+    /// Options accepted via the `opts` Node argument:
+    ///
+    ///      file_style: "default", "root_only", "multi_file"
+    ///            when # of domains == 1,  "default"   ==> "root_only"
+    ///            else,                    "default"   ==> "multi_file"
+    ///
+    ///      suffix: "default", "cycle", "none" 
+    ///            when # of domains == 1,  "default"   ==> "off"
+    ///            else,                    "default"   ==> "cycle"
+    ///
+    ///      mesh_name:  (used if present, default ==> "mesh")
+    ///
+    ///      number_of_files:  {# of files}
+    ///            when "multi_file":
+    ///                 <= 0, use # of files == # of domains
+    ///                  > 0, # of files == number_of_files
+    ///
+    conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
+                                              const std::string &path,
+                                              const std::string &protocol,
+                                              const conduit::Node &opts);
 
-Detailed Uniform Example
+Loading Meshes from Files
+==========================
+
+If you have a mesh written to a set of blueprint files, you can load them by 
+passing the root file path to the following ``conduit::relay::io::blueprint``
+library functions:
+
+Load a mesh given a root file: 
+
+.. code:: cpp
+
+    conduit::relay::io::blueprint::read_mesh(const std::string &root_file_path,
+                                             conduit::Node &mesh);
+
+
+Load a mesh given a root file and options:
+
+.. code:: cpp
+
+    /// Options accepted via the `opts` Node argument:
+    ///
+    ///      mesh_name: "{name}"
+    ///          provide explicit mesh name, for cases where bp data includes
+    ///           more than one mesh.
+    ///
+    conduit::relay::io::blueprint::read_mesh(const std::string &root_file_path,
+                                             const conduit::Node &opts,
+                                             conduit::Node &mesh);
+
+
+.. _complete_uniform_example:
+
+Complete Uniform Example
 ====================================
 
 This snippet provides a complete C++ example that demonstrates:
 
-  * Describing a uniform mesh in a Conduit tree
+  * Describing a single-domain uniform mesh in a Conduit tree
   * Verifying the tree conforms to the Mesh Blueprint
-  * Saving the result to a JSON file that VisIt can open
+  * Saving the result to a file that VisIt and Ascent Replay can open
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform_detailed")
-   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform_detailed")
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform_complete")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform_complete")
    :language: cpp
    :dedent: 4
 
 Expressions (Derived Fields)
 ============================
 
-An *expression* is a mathemtical formula which defines a new field in terms of other fields and/or
+An *expression* is a mathematical formula which defines a new field in terms of other fields and/or
 other expressions. Expressions are specified in the ``expressions`` section of the Blueprint
 protocol. The ``expressions`` section is optional. When it exists, it is a peer to the ``fields`` section.
 It is a list of *Objects* of the form:

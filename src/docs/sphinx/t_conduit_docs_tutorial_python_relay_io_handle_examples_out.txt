@@ -9,182 +9,182 @@ Updating test list for fixtures
 Added 0 tests to meet fixture requirements
 Checking test dependency graph...
 Checking test dependency graph end
-test 115
-    Start 115: t_conduit_docs_tutorial_python_relay_io_handle_examples
+test 117
+    Start 117: t_conduit_docs_tutorial_python_relay_io_handle_examples
 
-115: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.6-zd24bom2hns4o42jlzdptijz54ogai7c/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_relay_io_handle_examples"
-115: Environment variables: 
-115:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
-115: Test timeout computed to be: 1500
-115: test_001_io_handle (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-115: test_002_io_handle_sidre (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-115: test_003_io_handle_sidre_root (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-115: 
-115: ----------------------------------------------------------------------
-115: Ran 3 tests in 0.024s
-115: 
-115: OK
-115: 
-115: BEGIN_EXAMPLE("py_relay_io_handle")
-115: 
-115: Node to write:
-115: 
-115: a: 
-115:   data: 1.0
-115:   more_data: 2.0
-115:   b: 
-115:     my_string: "value"
-115: 
-115: 
-115: Value at "a/data" = 1.0
-115: 
-115: Removed "a/more_data"
-115: 
-115: Path "a/more_data" is no more
-115: 
-115: Writing to "a/c"
-115: 
-115: Children of "a": ['data', 'b', 'c']
-115: 
-115: Read Result:
-115: 
-115: a: 
-115:   data: 1.0
-115:   b: 
-115:     my_string: "value"
-115:   c: 42.0
-115: 
-115: 
-115: END_EXAMPLE("py_relay_io_handle")
-115: 
-115: BEGIN_EXAMPLE("py_relay_io_handle_sidre")
-115: 
-115: Children at root ['my_scalars', 'my_strings', 'my_arrays']
-115: Read Result:
-115: 
-115: my_scalars: 
-115:   i64: 1
-115:   f64: 10.0
-115: my_strings: 
-115:   s0: "s0 string"
-115:   s1: "s1 string"
-115: my_arrays: 
-115:   a5_i64: [0, 1, 2, 3, 4]
-115:   a5_i64_ext: [0, 1, 2, 3, -5]
-115:   b_v1: [1.0, 1.0, 1.0]
-115:   b_v2: [2.0, 2.0, 2.0]
-115: 
-115: 
-115: END_EXAMPLE("py_relay_io_handle_sidre")
-115: 
-115: BEGIN_EXAMPLE("py_relay_io_handle_sidre_root")
-115: 
-115: Children at root ['root', '0', '1', '2', '3']
-115: Read 'root' Result:
-115: 
-115: blueprint_index: 
-115:   mesh: 
-115:     state: 
-115:       number_of_domains: 4
-115:     coordsets: 
-115:       coords: 
-115:         type: "uniform"
-115:         coord_system: 
-115:           axes: 
-115:             x: 
-115:             y: 
-115:           type: "cartesian"
-115:         path: "mesh/coordsets/coords"
-115:     topologies: 
-115:       mesh: 
-115:         type: "uniform"
-115:         coordset: "coords"
-115:         path: "mesh/topologies/mesh"
-115:     fields: 
-115:       field: 
-115:         number_of_components: 1
-115:         topology: "mesh"
-115:         association: "element"
-115:         path: "mesh/fields/field"
-115:       rank: 
-115:         number_of_components: 1
-115:         topology: "mesh"
-115:         association: "element"
-115:         path: "mesh/fields/rank"
-115: file_pattern: "out_spio_blueprint_example/out_spio_blueprint_example_%07d.hdf5"
-115: number_of_files: 4
-115: number_of_trees: 4
-115: protocol: 
-115:   name: "sidre_hdf5"
-115:   version: "0.0"
-115: tree_pattern: "datagroup_%07d"
-115: 
-115: Read '0' Result:
-115: 
-115: mesh: 
-115:   coordsets: 
-115:     coords: 
-115:       dims: 
-115:         i: 3
-115:         j: 3
-115:       origin: 
-115:         x: 0.0
-115:         y: -10.0
-115:       spacing: 
-115:         dx: 10.0
-115:         dy: 10.0
-115:       type: "uniform"
-115:   topologies: 
-115:     mesh: 
-115:       type: "uniform"
-115:       coordset: "coords"
-115:   fields: 
-115:     field: 
-115:       association: "element"
-115:       topology: "mesh"
-115:       volume_dependent: "false"
-115:       values: [0.0, 1.0, 2.0, 3.0]
-115:     rank: 
-115:       association: "element"
-115:       topology: "mesh"
-115:       values: [0, 0, 0, 0]
-115: 
-115: Read '1/mesh' Result:
-115: 
-115: coordsets: 
-115:   coords: 
-115:     dims: 
-115:       i: 3
-115:       j: 3
-115:     origin: 
-115:       x: 20.0
-115:       y: -10.0
-115:     spacing: 
-115:       dx: 10.0
-115:       dy: 10.0
-115:     type: "uniform"
-115: topologies: 
-115:   mesh: 
-115:     type: "uniform"
-115:     coordset: "coords"
-115: fields: 
-115:   field: 
-115:     association: "element"
-115:     topology: "mesh"
-115:     volume_dependent: "false"
-115:     values: [0.0, 1.0, 2.0, 3.0]
-115:   rank: 
-115:     association: "element"
-115:     topology: "mesh"
-115:     values: [1, 1, 1, 1]
-115: 
-115: 
-115: END_EXAMPLE("py_relay_io_handle_sidre_root")
-1/1 Test #115: t_conduit_docs_tutorial_python_relay_io_handle_examples ...   Passed    0.25 sec
+117: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.6-zd24bom2hns4o42jlzdptijz54ogai7c/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_relay_io_handle_examples"
+117: Environment variables: 
+117:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+117: Test timeout computed to be: 1500
+117: test_001_io_handle (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+117: test_002_io_handle_sidre (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+117: test_003_io_handle_sidre_root (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
+117: 
+117: ----------------------------------------------------------------------
+117: Ran 3 tests in 0.028s
+117: 
+117: OK
+117: 
+117: BEGIN_EXAMPLE("py_relay_io_handle")
+117: 
+117: Node to write:
+117: 
+117: a: 
+117:   data: 1.0
+117:   more_data: 2.0
+117:   b: 
+117:     my_string: "value"
+117: 
+117: 
+117: Value at "a/data" = 1.0
+117: 
+117: Removed "a/more_data"
+117: 
+117: Path "a/more_data" is no more
+117: 
+117: Writing to "a/c"
+117: 
+117: Children of "a": ['data', 'b', 'c']
+117: 
+117: Read Result:
+117: 
+117: a: 
+117:   data: 1.0
+117:   b: 
+117:     my_string: "value"
+117:   c: 42.0
+117: 
+117: 
+117: END_EXAMPLE("py_relay_io_handle")
+117: 
+117: BEGIN_EXAMPLE("py_relay_io_handle_sidre")
+117: 
+117: Children at root ['my_scalars', 'my_strings', 'my_arrays']
+117: Read Result:
+117: 
+117: my_scalars: 
+117:   i64: 1
+117:   f64: 10.0
+117: my_strings: 
+117:   s0: "s0 string"
+117:   s1: "s1 string"
+117: my_arrays: 
+117:   a5_i64: [0, 1, 2, 3, 4]
+117:   a5_i64_ext: [0, 1, 2, 3, -5]
+117:   b_v1: [1.0, 1.0, 1.0]
+117:   b_v2: [2.0, 2.0, 2.0]
+117: 
+117: 
+117: END_EXAMPLE("py_relay_io_handle_sidre")
+117: 
+117: BEGIN_EXAMPLE("py_relay_io_handle_sidre_root")
+117: 
+117: Children at root ['root', '0', '1', '2', '3']
+117: Read 'root' Result:
+117: 
+117: blueprint_index: 
+117:   mesh: 
+117:     state: 
+117:       number_of_domains: 4
+117:     coordsets: 
+117:       coords: 
+117:         type: "uniform"
+117:         coord_system: 
+117:           axes: 
+117:             x: 
+117:             y: 
+117:           type: "cartesian"
+117:         path: "mesh/coordsets/coords"
+117:     topologies: 
+117:       mesh: 
+117:         type: "uniform"
+117:         coordset: "coords"
+117:         path: "mesh/topologies/mesh"
+117:     fields: 
+117:       field: 
+117:         number_of_components: 1
+117:         topology: "mesh"
+117:         association: "element"
+117:         path: "mesh/fields/field"
+117:       rank: 
+117:         number_of_components: 1
+117:         topology: "mesh"
+117:         association: "element"
+117:         path: "mesh/fields/rank"
+117: file_pattern: "out_spio_blueprint_example/out_spio_blueprint_example_%07d.hdf5"
+117: number_of_files: 4
+117: number_of_trees: 4
+117: protocol: 
+117:   name: "sidre_hdf5"
+117:   version: "0.0"
+117: tree_pattern: "datagroup_%07d"
+117: 
+117: Read '0' Result:
+117: 
+117: mesh: 
+117:   coordsets: 
+117:     coords: 
+117:       dims: 
+117:         i: 3
+117:         j: 3
+117:       origin: 
+117:         x: 0.0
+117:         y: -10.0
+117:       spacing: 
+117:         dx: 10.0
+117:         dy: 10.0
+117:       type: "uniform"
+117:   topologies: 
+117:     mesh: 
+117:       type: "uniform"
+117:       coordset: "coords"
+117:   fields: 
+117:     field: 
+117:       association: "element"
+117:       topology: "mesh"
+117:       volume_dependent: "false"
+117:       values: [0.0, 1.0, 2.0, 3.0]
+117:     rank: 
+117:       association: "element"
+117:       topology: "mesh"
+117:       values: [0, 0, 0, 0]
+117: 
+117: Read '1/mesh' Result:
+117: 
+117: coordsets: 
+117:   coords: 
+117:     dims: 
+117:       i: 3
+117:       j: 3
+117:     origin: 
+117:       x: 20.0
+117:       y: -10.0
+117:     spacing: 
+117:       dx: 10.0
+117:       dy: 10.0
+117:     type: "uniform"
+117: topologies: 
+117:   mesh: 
+117:     type: "uniform"
+117:     coordset: "coords"
+117: fields: 
+117:   field: 
+117:     association: "element"
+117:     topology: "mesh"
+117:     volume_dependent: "false"
+117:     values: [0.0, 1.0, 2.0, 3.0]
+117:   rank: 
+117:     association: "element"
+117:     topology: "mesh"
+117:     values: [1, 1, 1, 1]
+117: 
+117: 
+117: END_EXAMPLE("py_relay_io_handle_sidre_root")
+1/1 Test #117: t_conduit_docs_tutorial_python_relay_io_handle_examples ...   Passed    0.26 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_relay_io_handle_examples
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.27 sec
+Total Test time (real) =   0.28 sec

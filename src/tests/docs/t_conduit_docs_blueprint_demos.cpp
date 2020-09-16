@@ -606,9 +606,9 @@ TEST(conduit_docs, blueprint_demo_basic_polyhedra)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_docs, blueprint_demo_basic_uniform_detailed)
+TEST(conduit_docs, blueprint_demo_basic_uniform_complete)
 {
-    BEGIN_EXAMPLE("blueprint_demo_basic_uniform_detailed");
+    BEGIN_EXAMPLE("blueprint_demo_basic_uniform_complete");
     // create a Conduit node to hold our mesh data
     Node mesh;
     
@@ -667,7 +667,8 @@ TEST(conduit_docs, blueprint_demo_basic_uniform_detailed)
     // print out results
     mesh.print();
     
-    // save our mesh to a json that can be read by VisIt
-    conduit::relay::io_blueprint::save(mesh, "basic_detailed_uniform.blueprint_root");
-    END_EXAMPLE("blueprint_demo_basic_uniform_detailed");
+    // save our mesh to a file that can be read by VisIt
+    conduit::relay::io::blueprint::write_mesh(mesh,
+                                              "complete_uniform_mesh_example.blueprint_root");
+    END_EXAMPLE("blueprint_demo_basic_uniform_complete");
 }
