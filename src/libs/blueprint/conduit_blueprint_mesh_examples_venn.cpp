@@ -663,7 +663,6 @@ void venn(const std::string &matset_type,
     res["meta/importance/c"] = c_importance;
 
     // Shape in materials; compute fields with matset values.
-    std::cout << "[Shaping in materials]" << std::endl;
 
     if (matset_type == "full")
     {

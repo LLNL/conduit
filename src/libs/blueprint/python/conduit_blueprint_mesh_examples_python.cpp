@@ -343,7 +343,297 @@ PyBlueprint_mesh_examples_spiral(PyObject *, //self
 
 
 
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::julia_nestsets_simple
+//---------------------------------------------------------------------------//
 
+// doc string
+const char *PyBlueprint_mesh_examples_julia_nestsets_simple_doc_str =
+"julia_nestsets_simple(x_min, x_max, y_min, y_max, c_re, c_im, dest)\n"
+"\n"
+"Provides a basic AMR example mesh with two levels and "
+"one parent/child nesting relationship.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#julia-amr-examples\n"
+"\n"
+"Arguments:\n"
+" x_min, x_max: x extents\n"
+" y_min, y_max: y extents\n"
+" c_re, c_im: real and imaginary components of c\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_julia_nestsets_simple(PyObject *, //self
+                                                PyObject *args,
+                                                PyObject *kwargs)
+{
+    double     x_min = 0.0;
+    double     x_max = 0.0;
+    double     y_min = 0.0;
+    double     y_max = 0.0;
+    double     c_re = 0.0;
+    double     c_im = 0.0;
+
+    PyObject   *py_node  = NULL;
+    
+    static const char *kwlist[] = {"x_min",
+                                   "x_max",
+                                   "y_min",
+                                   "y_max",
+                                   "c_re",
+                                   "c_im",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "ddddddO",
+                                     const_cast<char**>(kwlist),
+                                     &x_min,
+                                     &x_max,
+                                     &y_min,
+                                     &y_max,
+                                     &c_re,
+                                     &c_im,
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+    
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+    
+    blueprint::mesh::examples::julia_nestsets_simple(x_min,x_max,
+                                                     y_min,y_max,
+                                                     c_re,c_im,
+                                                     node);
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::julia_nestsets_complex
+//---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_julia_nestsets_complex_doc_str =
+"julia_nestsets_complex(nx, ny, x_min, x_max, y_min, y_max, c_re, c_im, levels, dest)\n"
+"\n"
+"Provides a basic AMR example that refines the mesh using "
+"more resolution in complex areas.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#julia-amr-examples\n"
+"\n"
+"Arguments:\n"
+" nx, ny: x and y grid dimensions\n"
+" x_min, x_max: x extents\n"
+" y_min, y_max: y extents\n"
+" c_re, c_im: real and imaginary components of c\n"
+" levels: the number of refinement levels to use.\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_julia_nestsets_complex(PyObject *, //self
+                                                 PyObject *args,
+                                                 PyObject *kwargs)
+{
+    Py_ssize_t nx = 0;
+    Py_ssize_t ny = 0;
+    double     x_min = 0.0;
+    double     x_max = 0.0;
+    double     y_min = 0.0;
+    double     y_max = 0.0;
+    double     c_re = 0.0;
+    double     c_im = 0.0;
+    Py_ssize_t levels = 0;
+
+    PyObject   *py_node  = NULL;
+
+    static const char *kwlist[] = {"nx",
+                                   "ny",
+                                   "x_min",
+                                   "x_max",
+                                   "y_min",
+                                   "y_max",
+                                   "c_re",
+                                   "c_im",
+                                   "levels",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "nnddddddnO",
+                                     const_cast<char**>(kwlist),
+                                     &nx,
+                                     &ny,
+                                     &x_min,
+                                     &x_max,
+                                     &y_min,
+                                     &y_max,
+                                     &c_re,
+                                     &c_im,
+                                     &levels,
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    blueprint::mesh::examples::julia_nestsets_complex(nx,ny,
+                                                      x_min,x_max,
+                                                      y_min,y_max,
+                                                      c_re,c_im,
+                                                      levels,
+                                                      node);
+
+    Py_RETURN_NONE;
+}
+
+
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::venn
+//---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_venn_doc_str =
+"venn(matset_type, nx, ny, radius, dest)\n"
+"\n"
+"Provides a basic AMR example that refines the mesh using "
+"more resolution in complex areas.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#venn\n"
+"\n"
+"Arguments:\n"
+" matset_type: string with style of matset to generate.\n"
+"               'full', 'sparse_by_material', or 'sparse_by_element'\n"
+" nx, ny: x and y grid dimensions\n"
+" radius: specifies the radius of the three circles.\n"
+" dest: Mesh output (conduit.Node instance)\n";
+
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_venn(PyObject *, //self
+                               PyObject *args,
+                               PyObject *kwargs)
+{
+    
+    char       *matset_type = NULL;
+    Py_ssize_t           nx = 0;
+    Py_ssize_t           ny = 0;
+    double           radius = 0.0;
+    PyObject   *py_node  = NULL;
+
+    static const char *kwlist[] = {"matset_type",
+                                   "nx",
+                                   "ny",
+                                   "radius",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "snndO",
+                                     const_cast<char**>(kwlist),
+                                     &matset_type,
+                                     &nx,
+                                     &ny,
+                                     &radius,
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    blueprint::mesh::examples::venn(std::string(matset_type),
+                                    nx,ny,
+                                    radius,
+                                    node);
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::polytess
+//---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_polytess_doc_str =
+"polytess(nlevels, dest)\n"
+"\n"
+"Generates a mesh of a polygonal tessellation in the 2D plane comprised of "
+"octagons and squares\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess\n"
+"\n"
+"Arguments:\n"
+" nlevels: specifies the number of tessellation levels/layers to generate.\n";
+
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_polytess(PyObject *, //self
+                                   PyObject *args,
+                                   PyObject *kwargs)
+{
+    Py_ssize_t nlevels = 0;
+    PyObject   *py_node  = NULL;
+
+    static const char *kwlist[] = {"nlevels",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "nO",
+                                     const_cast<char**>(kwlist),
+                                     &nlevels,
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    blueprint::mesh::examples::polytess(nlevels,
+                                        node);
+
+    Py_RETURN_NONE;
+}
 
 
 //---------------------------------------------------------------------------//
@@ -371,6 +661,26 @@ static PyMethodDef blueprint_mesh_examples_python_funcs[] =
      (PyCFunction)PyBlueprint_mesh_examples_spiral,
       METH_VARARGS | METH_KEYWORDS,
       PyBlueprint_mesh_examples_spiral_doc_str},
+    //-----------------------------------------------------------------------//
+    {"julia_nestsets_simple",
+     (PyCFunction)PyBlueprint_mesh_examples_julia_nestsets_simple,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_julia_nestsets_simple_doc_str},
+    //-----------------------------------------------------------------------//
+    {"julia_nestsets_complex",
+     (PyCFunction)PyBlueprint_mesh_examples_julia_nestsets_complex,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_julia_nestsets_complex_doc_str},
+    //-----------------------------------------------------------------------//
+    {"venn",
+     (PyCFunction)PyBlueprint_mesh_examples_venn,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_venn_doc_str},
+    //-----------------------------------------------------------------------//
+    {"polytess",
+     (PyCFunction)PyBlueprint_mesh_examples_polytess,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_polytess_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//

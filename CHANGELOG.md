@@ -24,7 +24,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added the conduit.relay.mpi Python module to support Relay MPI in Python.
 - Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
 - Added preliminary support to read Sidre Datastore-style HDF5 using Relay IOHandle,  those grouped with a root file.
-- Added `conduit::relay::io::blueprint::load_mesh` functions, were pulled in from Ascent's Blueprint import logic.
+- Added `conduit::relay::io::blueprint::read_mesh` functions, were pulled in from Ascent's Blueprint import logic.
 
 #### Blueprint
 - Added support for sparse one-to-many relationships with the new `blueprint::o2mrelation` protocol. See the `blueprint::o2mrelation::examples::uniform` example for details.
@@ -38,6 +38,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `blueprint::mesh::number_of_domains` property method for trees that conform to the mesh blueprint.
 - Added MPI mesh blueprint methods, `blueprint::mpi::mesh::verify` and  `blueprint::mpi::mesh::number_of_domains` (available in the `conduit_blueprint_mpi` library)
 - Added `blueprint::mpi::mesh::examples::braid_uniform_multi_domain` and `blueprint::mpi::mesh::examples::spiral_round_robin` distributed-memory mesh examples to the `conduit_blueprint_mpi` library.
+- Added `state/path` to the Mesh Blueprint index, needed for consumers to know the proper path to read extended state info (such as `domain_id`)
 
 
 ### Fixed
@@ -49,6 +50,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Use H5F_ACC_RDONLY in relay::io::is_hdf5_file to avoid errors when checking files that already have open HDF5 handles.
+- Fixed compatibility check for empty Nodes against HDF5 files with existing paths
 
 ### Changed
 
@@ -64,8 +66,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.
-- `conduit::relay::io_blueprint::save` functions are deprecated in favor of `conduit::relay::io::blueprint::save_mesh`
-- `conduit::relay::io::blueprint::save_mesh` functions were pulled in from Ascent's Blueprint export logic.
+- `conduit::relay::io_blueprint::save` functions are deprecated in favor of `conduit::relay::io::blueprint::write_mesh`
+- `conduit::relay::io::blueprint::write_mesh` functions were pulled in from Ascent's Blueprint export logic.
 - `conduit_relay_io_mpi` lib now depends on `conduit_relay_io`. Due to this change, a single build supports either ADIOS serial (no-mpi) or ADIOS with MPI support, but not both. If conduit is configured with MPI support, ADIOS MPI is used.
 
 

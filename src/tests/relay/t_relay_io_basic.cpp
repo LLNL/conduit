@@ -14,7 +14,7 @@
 
 using namespace conduit;
 using namespace conduit::relay;
-
+using namespace conduit::utils;
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, basic_bin)
@@ -180,17 +180,14 @@ TEST(conduit_relay_io_basic, identify_file_type)
 {
     std::string protocol;
 
-
-    if(utils::is_file("tout_ident_identify.empty"))
-        utils::remove_file("tout_ident_identify.empty");
+    remove_path_if_exists("tout_ident_identify.empty");
 
     // create an empty file!
     std::ofstream ofs;
     ofs.open("tout_ident_identify.empty");
     ofs.close();
 
-    if(utils::is_file("tout_ident_identify.txt"))
-        utils::remove_file("tout_ident_identify.txt");
+    remove_path_if_exists("tout_ident_identify.txt");
 
     // create a text file
     ofs.open("tout_ident_identify.txt");
@@ -203,12 +200,8 @@ TEST(conduit_relay_io_basic, identify_file_type)
     io::identify_file_type("tout_ident_ftype.txt",protocol);
     EXPECT_EQ(protocol,"unknown");
 
-
-    if(utils::is_file("tout_ident_identify.json"))
-        utils::remove_file("tout_ident_identify.json");
-
-    if(utils::is_file("tout_ident_identify.yaml"))
-        utils::remove_file("tout_ident_identify.yaml");
+    remove_path_if_exists("tout_ident_identify.json");
+    remove_path_if_exists("tout_ident_identify.yaml");
 
     Node n;
     n["answer"] = 42;
@@ -229,9 +222,7 @@ TEST(conduit_relay_io_basic, identify_file_type)
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
     if(hdf5_enabled)
     {
-
-        if(utils::is_file("tout_ident_identify.hdf5"))
-            utils::remove_file("tout_ident_identify.hdf5");
+        remove_path_if_exists("tout_ident_identify.hdf5");
 
         // create a hdf5 file
         io::save(n,"tout_identify_ftype.hdf5");

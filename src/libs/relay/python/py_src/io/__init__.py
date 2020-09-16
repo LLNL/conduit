@@ -4,10 +4,11 @@
 
 ###############################################################################
 # file: __init__.py
-# Purpose: Main init for the conduit relay io module.
+# Purpose: Main init for the conduit relay io blueprint module.
 ###############################################################################
 from .conduit_relay_io_python import *
 
+from . import blueprint
 
 
 

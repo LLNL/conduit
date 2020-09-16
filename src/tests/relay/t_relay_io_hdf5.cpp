@@ -720,11 +720,7 @@ TEST(conduit_relay_io_hdf5, hdf5_path_exists)
 TEST(conduit_relay_io_hdf5, hdf5_create_append_methods)
 {
     std::string test_file_name = "tout_hdf5_open_append.hdf5";
-    if(utils::is_file(test_file_name))
-    {
-        utils::remove_file(test_file_name);
-    }
-
+    utils::remove_path_if_exists(test_file_name);
 
     Node n;
     n["a/b/c/d"] = 10;
@@ -844,15 +840,8 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
     std::string tout_std = "tout_hdf5_save_generic_default_options.hdf5";
     std::string tout_cmp = "tout_hdf5_save_generic_test_options.hdf5";
 
-    if(utils::is_file(tout_std))
-    {
-        utils::remove_file(tout_std);
-    }
-
-    if(utils::is_file(tout_cmp))
-    {
-        utils::remove_file(tout_cmp);
-    }
+    utils::remove_path_if_exists(tout_std);
+    utils::remove_path_if_exists(tout_cmp);
 
     io::save(n,tout_std, "hdf5");
     io::save(n,tout_cmp, "hdf5", opts);
@@ -886,10 +875,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
 
     std::string tout = "tout_hdf5_grp_chld_names.hdf5";
 
-    if(utils::is_file(tout))
-    {
-        utils::remove_file(tout);
-    }
+    utils::remove_path_if_exists(tout);
 
     io::save(n,tout, "hdf5");
 
@@ -945,10 +931,7 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
     n["path/mydata"] = 20;
     std::string tout = "tout_hdf5_check_hdf5_file.hdf5";
 
-    if(utils::is_file(tout))
-    {
-        utils::remove_file(tout);
-    }
+    utils::remove_path_if_exists(tout);
 
     io::save(n,tout, "hdf5");
 
@@ -966,11 +949,7 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
 
     tout = "tout_hdf5_check_non_hdf5_file.json";
 
-    if(utils::is_file(tout))
-    {
-        utils::remove_file(tout);
-    }
-
+    utils::remove_path_if_exists(tout);
 
     io::save(n,tout,"json");
 
@@ -991,10 +970,7 @@ TEST(conduit_relay_io_hdf5, test_remove_path)
     n["path/otherdata/leaf"] = 42;
     std::string tout = "tout_test_remove_path.hdf5";
 
-    if(utils::is_file(tout))
-    {
-        utils::remove_file(tout);
-    }
+    utils::remove_path_if_exists(tout);
 
     io::save(n,tout, "hdf5");
 
@@ -1030,10 +1006,7 @@ TEST(conduit_relay_io_hdf5, file_name_in_error)
     n["path/otherdata/leaf"] = 42;
     std::string tout = "tout_our_file_to_test.hdf5";
 
-    if(utils::is_file(tout))
-    {
-        utils::remove_file(tout);
-    }
+    utils::remove_path_if_exists(tout);
 
     io::save(n,tout, "hdf5");
 
@@ -1368,6 +1341,28 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
 
     n_load.print();
     EXPECT_FALSE(n_check.diff(n_load,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
+{
+    std::string tout_std = "tout_hdf5_empty_compat.hdf5";
+    
+    Node n;
+    n["myval"] = 42;
+    io::save(n,tout_std);
+    n["empty"] = DataType::empty();
+    n.print();
+    io::save_merged(n,tout_std);
+    // used to fail due to bad compat check
+    io::save_merged(n,tout_std);
+
+    Node n_load, n_diff_info;
+    io::load(tout_std,"hdf5",n_load);
+    n_load.print();
+    
+    EXPECT_FALSE(n.diff(n_load,n_diff_info));
 }
 
 

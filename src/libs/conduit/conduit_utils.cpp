@@ -520,6 +520,26 @@ remove_directory(const std::string &path)
 
 
 //-----------------------------------------------------------------------------
+bool
+remove_path_if_exists(const std::string &path)
+{
+    if(utils::is_file(path))
+    {
+        return utils::remove_file(path);
+    }
+    else if(utils::is_directory(path))
+    {
+        return utils::remove_directory(path);
+    }
+    else
+    {
+        // nothing to do, report we didn't remove anything
+        return false;
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 int
 system_execute(const std::string &cmd)
 {

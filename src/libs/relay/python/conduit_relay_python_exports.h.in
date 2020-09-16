@@ -23,6 +23,9 @@
             defined(conduit_relay_python_EXPORTS) || \
             defined(CONDUIT_RELAY_IO_PYTHON_EXPORTS) || \
             defined(conduit_relay_io_python_EXPORTS) || \
+            defined(CONDUIT_RELAY_IO_BLUEPRINT_PYTHON_EXPORTS) || \
+            defined(conduit_relay_io_blueprint_python_EXPORTS) || \
+            defined(conduit_relay_io_python_EXPORTS) || \
             defined(CONDUIT_RELAY_MPI_PYTHON_EXPORTS) || \
             defined(conduit_relay_mpi_python_EXPORTS) || \
             defined(CONDUIT_RELAY_WEB_PYTHON_EXPORTS)|| \

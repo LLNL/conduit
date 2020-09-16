@@ -838,21 +838,24 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
     {
         // get the hdf5 dataspace for the passed hdf5 obj
         hid_t h5_test_dspace = H5Dget_space(hdf5_id);
-        // a dataset with H5S_NULL data space is only compatible with 
-        // conduit empty
-        if( H5Sget_simple_extent_type(h5_test_dspace) == H5S_NULL &&
-            !dtype.is_empty())
+
+        if( H5Sget_simple_extent_type(h5_test_dspace) == H5S_NULL )
         {
-            std::ostringstream oss;
-            oss << "Conduit Node (leaf) at path '" << ref_path << "'"
-                << " is not compatible with given HDF5 Dataset at path"
-                << " '" << ref_path << "'"
-                << "\nHDF5 dataset has a H5S_NULL Dataspace which"
-                << " only compatible with an empty Conduit Node";
+            // a dataset with H5S_NULL data space is only compatible with 
+            // conduit empty
+            if(!dtype.is_empty())
+            {
+                std::ostringstream oss;
+                oss << "Conduit Node (leaf) at path '" << ref_path << "'"
+                    << " is not compatible with given HDF5 Dataset at path"
+                    << " '" << ref_path << "'"
+                    << "\nHDF5 dataset has a H5S_NULL Dataspace which"
+                    << " only compatible with an empty Conduit Node";
 
-            incompat_details = oss.str();
+                incompat_details = oss.str();
 
-            res = false;
+                res = false;
+            }
         }
         else
         {
@@ -1108,7 +1111,7 @@ check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
 
     DataType dt = node.dtype();
     // check for leaf or group
-    if(dt.is_number() || dt.is_string())
+    if(dt.is_number() || dt.is_string() || dt.is_empty())
     {
         res = check_if_conduit_leaf_is_compatible_with_hdf5_obj(dt,
                                                                 ref_path,

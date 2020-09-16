@@ -31,6 +31,9 @@
 #include "conduit_relay_mpi_io_adios.hpp"
 #endif
 
+
+#include "conduit_relay_io_handle.hpp"
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -520,6 +523,27 @@ load(const std::string &path,
 #else
         CONDUIT_ERROR("conduit_relay_mpi_io lacks HDF5 support: " << 
                       "Failed to load conduit node from path " << path);
+#endif
+    }
+    else if( protocol == "sidre_hdf5")
+    {
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        relay::io::IOHandle hnd;
+        // split path to get file and sub path part
+        // check for ":" split    
+        std::string file_path;
+        std::string sub_base;
+        conduit::utils::split_file_path(path,
+                                        std::string(":"),
+                                        file_path,
+                                        sub_base);
+
+        hnd.open(file_path);
+        hnd.read(sub_base,node);
+        hnd.close();
+#else
+        CONDUIT_ERROR("conduit_relay lacks Sidre HDF5 support: " << 
+                      "Failed to save conduit node to path " << path);
 #endif
     }
     else if( protocol == "conduit_silo")

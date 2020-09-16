@@ -74,7 +74,7 @@ TEST(conduit_relay_io_handle, test_sidre_basic)
     CONDUIT_INFO("Conduit Test Tree:");
     n.print();
 
-    
+
     for(size_t i =0; i < tprotos.size(); i++)
     {
         io::IOHandle h;
@@ -99,10 +99,10 @@ TEST(conduit_relay_io_handle, test_sidre_basic)
             EXPECT_EQ(rchld[1],"my_strings");
             EXPECT_EQ(rchld[2],"my_arrays");
         }
-        
+
         // check read of every case of leaf
-        
-        
+
+
         Node n_leaf;
         h.read("my_scalars/i64",n_leaf); n_leaf.print();
         h.read("my_scalars/f64",n_leaf); n_leaf.print();
@@ -183,7 +183,7 @@ TEST(conduit_relay_io_handle, test_sidre_with_root)
 
         CONDUIT_INFO("Reading tree: " << tree_root);
 
-        // read the entire tree 
+        // read the entire tree
         n.reset();
         h.read(tree_root,n);
 
@@ -195,7 +195,7 @@ TEST(conduit_relay_io_handle, test_sidre_with_root)
         n.reset();
         h.read(tree_root + "/mesh/fields/rank",n);
         n.print();
-        
+
         // we expect the "rank" field to be filled with
         // values that equal the domain id
         int64_array vals = n["values"].value();
@@ -225,6 +225,38 @@ TEST(conduit_relay_io_handle, test_sidre_bad_reads)
     EXPECT_THROW(h.read("GARBAGE!",n),conduit::Error);
     EXPECT_THROW(h.read("-1",n),conduit::Error); // neg is invalid
     EXPECT_THROW(h.read("100000",n),conduit::Error); // to big
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_sidre_read_mesh_bp)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        return;
+    }
+
+    Node mesh;
+    relay::io::blueprint::read_mesh(
+                        relay_test_data_path("out_spio_blueprint_example.root"),
+                        mesh);
+    mesh.print();
+    Node opts;
+    opts["file_style"] = "root_only";
+    opts["suffix"] = "none";
+    opts["number_of_files"] = 1;
+    
+    std::string tout = "tout_sidre_mesh_then_save";
+    utils::remove_path_if_exists(tout);
+    relay::io::blueprint::write_mesh(mesh, tout,"hdf5",opts);
+
+    Node n_read;
+    relay::io::blueprint::read_mesh(tout + ".root",n_read);
 
 }
 

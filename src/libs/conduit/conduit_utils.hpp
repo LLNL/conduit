@@ -327,6 +327,8 @@ namespace utils
 
      bool CONDUIT_API remove_directory(const std::string &path);
 
+     bool CONDUIT_API remove_path_if_exists(const std::string &path);
+
 //-----------------------------------------------------------------------------
      int  CONDUIT_API system_execute(const std::string &cmd);
 

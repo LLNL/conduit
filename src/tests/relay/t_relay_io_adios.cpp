@@ -573,7 +573,7 @@ TEST(conduit_relay_io_adios, test_time_series)
     std::string path("test_time_series.bp"), protocol("adios");
 
     // Remove the file if it exists.
-    conduit::utils::remove_file(path);
+    remove_path_if_exists(path);
 
     // Write multiple time steps to the same file.
     int nts = 5;
