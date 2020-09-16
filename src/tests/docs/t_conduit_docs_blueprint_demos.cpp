@@ -668,7 +668,12 @@ TEST(conduit_docs, blueprint_demo_basic_uniform_complete)
     mesh.print();
     
     // save our mesh to a file that can be read by VisIt
+    //
+    // this will create the file: complete_uniform_mesh_example.root
+    // which includes the mesh blueprint index and the mesh data
     conduit::relay::io::blueprint::write_mesh(mesh,
-                                              "complete_uniform_mesh_example.blueprint_root");
+                                              "complete_uniform_mesh_example",
+                                              "json");
+
     END_EXAMPLE("blueprint_demo_basic_uniform_complete");
 }

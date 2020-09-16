@@ -294,7 +294,7 @@ That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or Asc
 Polygonal/Polyhedral Topologies
 *********************************
 
-The **polygonal** and **polyhedral** topology shape types are structually
+The **polygonal** and **polyhedral** topology shape types are structurally
 identical to the other explicit topology shape types (see the *Single Shape Topologies*
 section above), but the contents of their ``elements`` sections look slightly different.
 In particular, these sections are structured as **o2mrelation** objects that map elements
@@ -1231,12 +1231,12 @@ polytess
 
     Pseudocolor plot of the polytess example ``level`` field.
 
-The ``polytess()`` function generates a polygonal tesselation in the 2D
-plane comprised of octogons and squares (known formally as a `two-color
+The ``polytess()`` function generates a polygonal tessellation in the 2D
+plane comprised of octagons and squares (known formally as a `two-color
 truncated square tiling <https://en.wikipedia.org/wiki/Truncated_square_tiling>`_).
 
 The scalar element-centered field ``level`` defined in the result mesh associates each element with its
-topological distance from the center of the tesselation.
+topological distance from the center of the tessellation.
 
 .. code:: cpp
 
@@ -1244,8 +1244,8 @@ topological distance from the center of the tesselation.
                                                  Node &res);
 
 
-``nlevels`` specifies the number of tesselation levels/layers to generate. If this value is specified
-as 1 or less, only the central tesselation level (i.e. the octogon in the center of the geometry) will
+``nlevels`` specifies the number of tessellation levels/layers to generate. If this value is specified
+as 1 or less, only the central tessellation level (i.e. the octagon in the center of the geometry) will
 be generated in the result.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
@@ -1314,7 +1314,7 @@ If you have a mesh written to a set of blueprint files, you can load them by
 passing the root file path to the following ``conduit::relay::io::blueprint``
 library functions:
 
-Load a mesh given a root file: 
+Load a mesh given a root file:
 
 .. code:: cpp
 
@@ -1369,7 +1369,7 @@ It is a list of *Objects* of the form:
 The ``number_of_components`` and ``topology`` entries are identical to their meaning as
 entries in the ``fields`` section.
 
-The ``definition`` entry is string valued and holds the expression (e.g. *mathemtical formula*) defining
+The ``definition`` entry is string valued and holds the expression (e.g. *mathematical formula*) defining
 how the new field is computed. Blueprint does not interpret this string. It simply passes it along for
 downstream consumers that have the ability to interpret the string and perform the associated operations
 to compute the expression.
