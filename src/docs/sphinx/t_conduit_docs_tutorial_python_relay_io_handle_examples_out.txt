@@ -21,7 +21,7 @@ test 117
 117: test_003_io_handle_sidre_root (t_conduit_docs_tutorial_python_relay_io_handle_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
 117: 
 117: ----------------------------------------------------------------------
-117: Ran 3 tests in 0.028s
+117: Ran 3 tests in 0.024s
 117: 
 117: OK
 117: 
@@ -180,11 +180,11 @@ test 117
 117: 
 117: 
 117: END_EXAMPLE("py_relay_io_handle_sidre_root")
-1/1 Test #117: t_conduit_docs_tutorial_python_relay_io_handle_examples ...   Passed    0.26 sec
+1/1 Test #117: t_conduit_docs_tutorial_python_relay_io_handle_examples ...   Passed    0.24 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_relay_io_handle_examples
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.28 sec
+Total Test time (real) =   0.27 sec

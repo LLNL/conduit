@@ -123,7 +123,7 @@ b: 200.0
 
 
 mem_spaces: 
-  0x7ffee0526120: 
+  0x7ffeefbbc120: 
     path: "a"
     type: "external"
 total_bytes_allocated: 0
@@ -139,7 +139,7 @@ BEGIN_EXAMPLE("t_json_generator_compact")
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 mem_spaces: 
-  0x7ffee05260e0: 
+  0x7ffeefbbc0e0: 
     path: ""
     type: "external"
 total_bytes_allocated: 0
@@ -149,7 +149,7 @@ total_strided_bytes: 72
 
 
 mem_spaces: 
-  0x7ffee05260e0: 
+  0x7ffeefbbc0e0: 
     path: ""
     type: "external"
 total_bytes_allocated: 0
@@ -161,7 +161,7 @@ total_strided_bytes: 72
 {"dtype":"float64","number_of_elements": 5,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
 
 mem_spaces: 
-  0x7f935af01eb0: 
+  0x7f9d707005b0: 
     path: ""
     type: "allocated"
     bytes: 40
@@ -173,7 +173,7 @@ total_strided_bytes: 40
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 mem_spaces: 
-  0x7f935ad011c0: 
+  0x7f9d707009b0: 
     path: ""
     type: "allocated"
     bytes: 40
@@ -183,9 +183,9 @@ total_bytes_compact: 40
 total_strided_bytes: 40
 
 END_EXAMPLE("t_json_generator_compact")
-[       OK ] conduit_tutorial.json_generator_compact (1 ms)
-[----------] 8 tests from conduit_tutorial (3 ms total)
+[       OK ] conduit_tutorial.json_generator_compact (0 ms)
+[----------] 8 tests from conduit_tutorial (2 ms total)
 
 [----------] Global test environment tear-down
-[==========] 8 tests from 1 test suite ran. (3 ms total)
+[==========] 8 tests from 1 test suite ran. (2 ms total)
 [  PASSED  ] 8 tests.

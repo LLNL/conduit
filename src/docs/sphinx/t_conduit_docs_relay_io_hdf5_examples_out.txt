@@ -34,7 +34,7 @@ a:
 
 File 'myoutput.hdf5' is a hdf5 file
 END_EXAMPLE("relay_io_example_hdf5_interface_1")
-[       OK ] conduit_docs.relay_io_example_hdf5_interface_1 (5 ms)
+[       OK ] conduit_docs.relay_io_example_hdf5_interface_1 (6 ms)
 [ RUN      ] conduit_docs.relay_io_example_hdf5_interface_2
 BEGIN_EXAMPLE("relay_io_example_hdf5_interface_opts")
 
@@ -82,8 +82,8 @@ chunking:
 saving data to 'myoutput_chunked.hdf5' 
 END_EXAMPLE("relay_io_example_hdf5_interface_opts")
 [       OK ] conduit_docs.relay_io_example_hdf5_interface_2 (3 ms)
-[----------] 2 tests from conduit_docs (8 ms total)
+[----------] 2 tests from conduit_docs (9 ms total)
 
 [----------] Global test environment tear-down
-[==========] 2 tests from 1 test suite ran. (8 ms total)
+[==========] 2 tests from 1 test suite ran. (9 ms total)
 [  PASSED  ] 2 tests.

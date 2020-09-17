@@ -84,15 +84,15 @@ test 113
 113: BEGIN_EXAMPLE("py_basics_mem_spaces")
 113: 
 113: mem_spaces: 
-113:   0x7f88c2b3bd00: 
+113:   0x7fd670804980: 
 113:     path: "my"
 113:     type: "allocated"
 113:     bytes: 5
-113:   0x7f88c2b069c0: 
+113:   0x7fd670860fd0: 
 113:     path: "a/b/c"
 113:     type: "allocated"
 113:     bytes: 2
-113:   0x7f88c2b46920: 
+113:   0x7fd670864200: 
 113:     path: "a/b/e"
 113:     type: "allocated"
 113:     bytes: 8
@@ -113,11 +113,11 @@ test 113
 113:   "test": {"dtype":"int64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
 113: }
 113: END_EXAMPLE("py_basics_bw_style_from_native")
-1/1 Test #113: t_conduit_docs_tutorial_python_basics ...   Passed    0.20 sec
+1/1 Test #113: t_conduit_docs_tutorial_python_basics ...   Passed    0.17 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_basics
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.24 sec
+Total Test time (real) =   0.21 sec

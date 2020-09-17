@@ -27,35 +27,7 @@ test 118
 118: test_005_mpi_sum_all_reduce (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
 118: test_005_mpi_sum_all_reduce (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
 118: test_006_mpi_all_gather (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-118: test_006_mpi_all_gather (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-118: 
-118: ----------------------------------------------------------------------
-118: Ran 6 tests in 0.118s
-118: 
-118: OK
-118: ok
-118: 
-118: ----------------------------------------------------------------------
-118: Ran 6 tests in 0.118s
-118: 
-118: OK
-118: [rank: 1] received: 
-118: a: 
-118:   data: 1.0
-118:   more_data: 2.0
-118:   b: 
-118:     my_string: "value"
-118: 
-118: [rank: 1] received: [0, 1, 4, 9]
-118: [rank: 1] received: 
-118: a: 
-118:   data: 1.0
-118:   more_data: 2.0
-118:   b: 
-118:     my_string: "value"
-118: 
-118: [rank: 1] received: [0, 1, 4, 9]
-118: 
+118: test_006_mpi_all_gather (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
 118: BEGIN_EXAMPLE("py_mpi_send_and_recv_using_schema")
 118: [rank: 0] sending: 
 118: a: 
@@ -100,11 +72,39 @@ test 118
 118: 
 118: 
 118: END_EXAMPLE("py_mpi_all_gather_using_schema")
-1/1 Test #118: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.33 sec
+118: [rank: 1] received: 
+118: a: 
+118:   data: 1.0
+118:   more_data: 2.0
+118:   b: 
+118:     my_string: "value"
+118: 
+118: [rank: 1] received: [0, 1, 4, 9]
+118: [rank: 1] received: 
+118: a: 
+118:   data: 1.0
+118:   more_data: 2.0
+118:   b: 
+118:     my_string: "value"
+118: 
+118: [rank: 1] received: [0, 1, 4, 9]
+118: ok
+118: 
+118: ----------------------------------------------------------------------
+118: Ran 6 tests in 0.133s
+118: 
+118: OK
+118: ok
+118: 
+118: ----------------------------------------------------------------------
+118: Ran 6 tests in 0.125s
+118: 
+118: OK
+1/1 Test #118: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.39 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_relay_mpi_examples
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.36 sec
+Total Test time (real) =   0.43 sec
