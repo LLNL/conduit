@@ -66,15 +66,15 @@ END_EXAMPLE("basics_object_and_list_itr")
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7fd6ef405e80: 
+  0x7fa4e4c05e80: 
     path: "my"
     type: "allocated"
     bytes: 5
-  0x7fd6ef405840: 
+  0x7fa4e4c05840: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
-  0x7fd6ef405830: 
+  0x7fa4e4c05830: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8

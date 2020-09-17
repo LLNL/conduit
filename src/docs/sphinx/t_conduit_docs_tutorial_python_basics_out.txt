@@ -23,9 +23,12 @@ test 113
 113: test_005_basics_mem_spaces (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
 113: test_006_basics_bw_style (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
 113: test_007_basics_bw_style_from_native (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_008_basics_fetch_vs_bracket (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_008_basics_numpy_or_node (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_009_basics_fetch_exist (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
 113: 
 113: ----------------------------------------------------------------------
-113: Ran 7 tests in 0.001s
+113: Ran 10 tests in 0.002s
 113: 
 113: OK
 113: BEGIN_EXAMPLE("py_basics_very_basic")
@@ -84,15 +87,15 @@ test 113
 113: BEGIN_EXAMPLE("py_basics_mem_spaces")
 113: 
 113: mem_spaces: 
-113:   0x7fd670804980: 
+113:   0x7fa9f3d56280: 
 113:     path: "my"
 113:     type: "allocated"
 113:     bytes: 5
-113:   0x7fd670860fd0: 
+113:   0x7fa9f3d9baa0: 
 113:     path: "a/b/c"
 113:     type: "allocated"
 113:     bytes: 2
-113:   0x7fd670864200: 
+113:   0x7fa9f3d9adf0: 
 113:     path: "a/b/e"
 113:     type: "allocated"
 113:     bytes: 8
@@ -113,11 +116,58 @@ test 113
 113:   "test": {"dtype":"int64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
 113: }
 113: END_EXAMPLE("py_basics_bw_style_from_native")
-1/1 Test #113: t_conduit_docs_tutorial_python_basics ...   Passed    0.17 sec
+113: BEGIN_EXAMPLE("py_basics_fetch_vs_bracket")
+113: == this will be a ndarray == 
+113: data:  [0. 0. 0. 0. 0.]
+113: repr:  array([0., 0., 0., 0., 0.])
+113: 
+113: == this will be a ndarray == 
+113: data:  [0. 0. 0. 0. 0.]
+113: repr:  array([0., 0., 0., 0., 0.])
+113: 
+113: END_EXAMPLE("py_basics_fetch_vs_bracket")
+113: BEGIN_EXAMPLE("py_basics_numpy_or_node")
+113: == this will be a ndarray == 
+113: data:  [0. 0. 0. 0. 0.]
+113: repr:  array([0., 0., 0., 0., 0.])
+113: 
+113: == this will be a node == 
+113: {node}
+113:  
+113: to: 
+113:   data: [0.0, 0.0, 0.0, 0.0, 0.0]
+113: 
+113: {schema}
+113:  
+113: to: 
+113: 
+113:   data: 
+113:       dtype: "float64"
+113:       number_of_elements: 5
+113:       offset: 0
+113:       stride: 8
+113:       element_bytes: 8
+113:       endianness: "little"
+113: 
+113: END_EXAMPLE("py_basics_numpy_or_node")
+113: BEGIN_EXAMPLE("py_basics_fetch_exist")
+113: == this will be a ndarray == 
+113: data:  [0. 0. 0. 0. 0.]
+113: repr:  array([0., 0., 0., 0., 0.])
+113: 
+113: Here is what went wrong:
+113: 
+113: file: /Users/harrison37/Work/github/llnl/conduit/src/libs/conduit/conduit_node.cpp
+113: line: 12179
+113: message: 
+113: Cannot fetch non-existent child "TYPO" from Node(my/path)
+113: 
+113: END_EXAMPLE("py_basics_fetch_exist")
+1/1 Test #113: t_conduit_docs_tutorial_python_basics ...   Passed    0.16 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_basics
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.21 sec
+Total Test time (real) =   0.20 sec

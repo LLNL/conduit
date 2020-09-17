@@ -25,11 +25,11 @@ test 116
 116: BEGIN_EXAMPLE("py_mem_ownership_external")
 116: 
 116: mem_spaces: 
-116:   0x7f8f5f205010: 
+116:   0x7fc5357237d0: 
 116:     path: "v_owned"
 116:     type: "allocated"
 116:     bytes: 40
-116:   0x7f8f5f205e60: 
+116:   0x7fc535725730: 
 116:     path: "v_external"
 116:     type: "external"
 116: total_bytes_allocated: 40
