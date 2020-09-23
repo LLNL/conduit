@@ -99,9 +99,9 @@ class Conduit_Tutorial_Python_Basics(unittest.TestCase):
         data = numpy.zeros((5,),dtype=numpy.float64)
         n["my/path/to/data"] = data
         
-        # this will be a ndarray
+        # this will be an ndarray
         my_data = n["my/path/to/data"]
-        print("== this will be a ndarray == ")
+        print("== this will be an ndarray == ")
         print("data: ", my_data)
         print("repr: ",repr(my_data))
         print()
@@ -122,7 +122,7 @@ class Conduit_Tutorial_Python_Basics(unittest.TestCase):
         
         # this will be an ndarray
         my_data = n["my/path/to/data"]
-        print("== this will be a ndarray == ")
+        print("== this will be an ndarray == ")
         print("data: ", my_data)
         print("repr: ",repr(my_data))
         print()
@@ -130,7 +130,7 @@ class Conduit_Tutorial_Python_Basics(unittest.TestCase):
         # equiv access via fetch (or fetch_existing)
         # first fetch the node and then the array
         my_data = n.fetch("my/path/to/data").value()
-        print("== this will be a ndarray == ")
+        print("== this will be an ndarray == ")
         print("data: ",my_data)
         print("repr: ",repr(my_data))
         print()
@@ -148,7 +148,7 @@ class Conduit_Tutorial_Python_Basics(unittest.TestCase):
         n_data = n.fetch_existing("my/path/to/data")
         # then the value
         my_data = n_data.value()
-        print("== this will be a ndarray == ")
+        print("== this will be an ndarray == ")
         print("data: ",my_data)
         print("repr: ",repr(my_data))
         print()

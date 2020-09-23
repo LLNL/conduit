@@ -180,9 +180,9 @@ TEST(conduit_tutorial, basics_node_refs_bad)
     // display the contents
     root.print();
 
-    // In this case, notice we aren't use a reference.
+    // In this case, notice we aren't using a reference.
     // This creates a copy, disconnected from the orignal tree!
-    // This is probably not what you are looking for ... 
+    // This is probably not what you are looking for ...
     Node data = root["my/nested/path"];
     // change the value
     data = 42.0;
