@@ -7,8 +7,10 @@
 ===================
 Mesh Blueprint
 ===================
+The Mesh Blueprint is a set of hierarchical conventions to describe mesh-based
+simulation data both in-memory and via files. This section provides details
+about the Mesh Blueprint. Lots of them.
 
-This section provides details about the Mesh Blueprint. Lots of them.
 These docs provide the main reference for all of the components of
 the Mesh Blueprint protocol and details about :ref:`examples`
 that are included in the Conduit Blueprint Library. 
