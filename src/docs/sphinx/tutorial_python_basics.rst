@@ -167,7 +167,7 @@ You can check if a Schema is compatible with another Schema using the **Schema::
 Differences between C++ and Python APIs
 ----------------------------------------
 
-In Python, Node objects are referenced-counted containers that hold C++ Node
+In Python, Node objects are reference-counted containers that hold C++ Node
 pointers. This provides a Python API similar to using references in C++.
 However, you should be aware of some key differences.
 
