@@ -71,6 +71,9 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
                                                       "",
                                                       bp_index["mesh"],
                                                       MPI_COMM_WORLD);
+
+        // all ranks should have index data.
+        EXPECT_TRUE(bp_index["mesh"].dtype().is_object());
     }
 }
 
