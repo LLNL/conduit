@@ -201,7 +201,7 @@ const Nodes
 
 If you aren't careful, the ability to easily create dynamic trees can
 also undermine your process to consume them. 
-For example, asking for a expected but non-existent path will return
+For example, asking for an expected but non-existent path will return
 a reference to an empty Node. Surprise!
 
 Methods like `fetch_existing` allow you to be more explicit
