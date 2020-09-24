@@ -120,6 +120,11 @@ generate_index(const conduit::Node &mesh,
                                                        index_out);
         }
     }
+
+    // broadcast the resulting index to all other ranks
+    relay::mpi::broadcast_using_schema(index_out,
+                                       selected_rank,
+                                       comm);
 }
 
 
