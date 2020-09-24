@@ -61,9 +61,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
-                                 const std::string &path,
-                                 const std::string &protocol);
-
+                                  const std::string &path,
+                                  const std::string &protocol);
 
 //-----------------------------------------------------------------------------
 /// The following options can be passed via the opts Node:
@@ -74,7 +73,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///            else,                    "default"   ==> "multi_file"
 ///
 ///      suffix: "default", "cycle", "none" 
-///            when # of domains == 1,  "default"   ==> "off"
+///            when # of domains == 1,  "default"   ==> "none"
 ///            else,                    "default"   ==> "cycle"
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
@@ -86,9 +85,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
-                                 const std::string &path,
-                                 const std::string &protocol,
-                                 const conduit::Node &opts);
+                                  const std::string &path,
+                                  const std::string &protocol,
+                                  const conduit::Node &opts);
 
 
 //-----------------------------------------------------------------------------

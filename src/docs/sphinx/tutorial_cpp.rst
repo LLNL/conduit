@@ -9,6 +9,8 @@ C++ Tutorial
 This short tutorial provides C++ examples that demonstrate the Conduit's Core 
 API. Conduit's unit tests (*src/tests/{library_name}/*) also provide a rich set 
 of examples for Conduit's Core API and additional libraries. 
+Ascent's Tutorial also provides a brief `intro to Conduit basics <https://ascent.readthedocs.io/en/latest/Tutorial_Intro_Conduit_Basics.html>`_
+with C++ and Python examples. 
 
 .. toctree::
 

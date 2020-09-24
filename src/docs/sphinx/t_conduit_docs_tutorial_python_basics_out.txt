@@ -9,115 +9,165 @@ Updating test list for fixtures
 Added 0 tests to meet fixture requirements
 Checking test dependency graph...
 Checking test dependency graph end
-test 111
-    Start 111: t_conduit_docs_tutorial_python_basics
+test 113
+    Start 113: t_conduit_docs_tutorial_python_basics
 
-111: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.6-zd24bom2hns4o42jlzdptijz54ogai7c/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_basics"
-111: Environment variables: 
-111:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
-111: Test timeout computed to be: 1500
-111: test_001_basics_very_basic (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-111: test_002_basics_hierarchial (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-111: test_003_basics_object_and_list (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-111: test_004_basics_object_and_list_itr (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-111: test_005_basics_mem_spaces (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-111: test_006_basics_bw_style (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-111: test_007_basics_bw_style_from_native (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
-111: 
-111: ----------------------------------------------------------------------
-111: Ran 7 tests in 0.003s
-111: 
-111: OK
-111: BEGIN_EXAMPLE("py_basics_very_basic")
-111: 
-111: my: "data"
-111: 
-111: END_EXAMPLE("py_basics_very_basic")
-111: BEGIN_EXAMPLE("py_basics_hierarchial")
-111: 
-111: my: "data"
-111: a: 
-111:   b: 
-111:     c: "d"
-111:     e: 64.0
-111: 
-111: total bytes: 15
-111: 
-111: END_EXAMPLE("py_basics_hierarchial")
-111: BEGIN_EXAMPLE("py_basics_object_and_list")
-111: 
-111: object_example: 
-111:   val1: "data"
-111:   val2: 10
-111:   val3: 3.1415
-111: list_example: 
-111:   - 0
-111:   - 1
-111:   - 2
-111:   - 3
-111:   - 4
-111: 
-111: END_EXAMPLE("py_basics_object_and_list")
-111: BEGIN_EXAMPLE("py_basics_object_and_list_itr")
-111: 
-111: object_example: 
-111:   val1: "data"
-111:   val2: 10
-111:   val3: 3.1415
-111: list_example: 
-111:   - 0
-111:   - 1
-111:   - 2
-111:   - 3
-111:   - 4
-111: 
-111: val1: "data"
-111: val2: 10
-111: val3: 3.1415
-111: 
-111: 0
-111: 1
-111: 2
-111: 3
-111: 4
-111: END_EXAMPLE("py_basics_object_and_list_itr")
-111: BEGIN_EXAMPLE("py_basics_mem_spaces")
-111: 
-111: mem_spaces: 
-111:   0x7ff883407c70: 
-111:     path: "my"
-111:     type: "allocated"
-111:     bytes: 5
-111:   0x7ff883417250: 
-111:     path: "a/b/c"
-111:     type: "allocated"
-111:     bytes: 2
-111:   0x7ff88340fc80: 
-111:     path: "a/b/e"
-111:     type: "allocated"
-111:     bytes: 8
-111: total_bytes_allocated: 15
-111: total_bytes_mmaped: 0
-111: total_bytes_compact: 15
-111: total_strided_bytes: 15
-111: 
-111: END_EXAMPLE("py_basics_mem_spaces")
-111: BEGIN_EXAMPLE("py_basics_bw_style")
-111: 
-111: test: 100
-111: 
-111: END_EXAMPLE("py_basics_bw_style")
-111: BEGIN_EXAMPLE("py_basics_bw_style_from_native")
-111: 
-111: {
-111:   "test": {"dtype":"int64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
-111: }
-111: END_EXAMPLE("py_basics_bw_style_from_native")
-1/1 Test #111: t_conduit_docs_tutorial_python_basics ...   Passed    0.46 sec
+113: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.6-zd24bom2hns4o42jlzdptijz54ogai7c/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_basics"
+113: Environment variables: 
+113:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+113: Test timeout computed to be: 1500
+113: test_001_basics_very_basic (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_002_basics_hierarchial (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_003_basics_object_and_list (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_004_basics_object_and_list_itr (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_005_basics_mem_spaces (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_006_basics_bw_style (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_007_basics_bw_style_from_native (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_008_basics_fetch_vs_bracket (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_008_basics_numpy_or_node (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: test_009_basics_fetch_exist (t_conduit_docs_tutorial_python_basics.Conduit_Tutorial_Python_Basics) ... ok
+113: 
+113: ----------------------------------------------------------------------
+113: Ran 10 tests in 0.002s
+113: 
+113: OK
+113: BEGIN_EXAMPLE("py_basics_very_basic")
+113: 
+113: my: "data"
+113: 
+113: END_EXAMPLE("py_basics_very_basic")
+113: BEGIN_EXAMPLE("py_basics_hierarchial")
+113: 
+113: my: "data"
+113: a: 
+113:   b: 
+113:     c: "d"
+113:     e: 64.0
+113: 
+113: total bytes: 15
+113: 
+113: END_EXAMPLE("py_basics_hierarchial")
+113: BEGIN_EXAMPLE("py_basics_object_and_list")
+113: 
+113: object_example: 
+113:   val1: "data"
+113:   val2: 10
+113:   val3: 3.1415
+113: list_example: 
+113:   - 0
+113:   - 1
+113:   - 2
+113:   - 3
+113:   - 4
+113: 
+113: END_EXAMPLE("py_basics_object_and_list")
+113: BEGIN_EXAMPLE("py_basics_object_and_list_itr")
+113: 
+113: object_example: 
+113:   val1: "data"
+113:   val2: 10
+113:   val3: 3.1415
+113: list_example: 
+113:   - 0
+113:   - 1
+113:   - 2
+113:   - 3
+113:   - 4
+113: 
+113: val1: "data"
+113: val2: 10
+113: val3: 3.1415
+113: 
+113: 0
+113: 1
+113: 2
+113: 3
+113: 4
+113: END_EXAMPLE("py_basics_object_and_list_itr")
+113: BEGIN_EXAMPLE("py_basics_mem_spaces")
+113: 
+113: mem_spaces: 
+113:   0x7fa9f3d56280: 
+113:     path: "my"
+113:     type: "allocated"
+113:     bytes: 5
+113:   0x7fa9f3d9baa0: 
+113:     path: "a/b/c"
+113:     type: "allocated"
+113:     bytes: 2
+113:   0x7fa9f3d9adf0: 
+113:     path: "a/b/e"
+113:     type: "allocated"
+113:     bytes: 8
+113: total_bytes_allocated: 15
+113: total_bytes_mmaped: 0
+113: total_bytes_compact: 15
+113: total_strided_bytes: 15
+113: 
+113: END_EXAMPLE("py_basics_mem_spaces")
+113: BEGIN_EXAMPLE("py_basics_bw_style")
+113: 
+113: test: 100
+113: 
+113: END_EXAMPLE("py_basics_bw_style")
+113: BEGIN_EXAMPLE("py_basics_bw_style_from_native")
+113: 
+113: {
+113:   "test": {"dtype":"int64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
+113: }
+113: END_EXAMPLE("py_basics_bw_style_from_native")
+113: BEGIN_EXAMPLE("py_basics_fetch_vs_bracket")
+113: == this will be a ndarray == 
+113: data:  [0. 0. 0. 0. 0.]
+113: repr:  array([0., 0., 0., 0., 0.])
+113: 
+113: == this will be a ndarray == 
+113: data:  [0. 0. 0. 0. 0.]
+113: repr:  array([0., 0., 0., 0., 0.])
+113: 
+113: END_EXAMPLE("py_basics_fetch_vs_bracket")
+113: BEGIN_EXAMPLE("py_basics_numpy_or_node")
+113: == this will be a ndarray == 
+113: data:  [0. 0. 0. 0. 0.]
+113: repr:  array([0., 0., 0., 0., 0.])
+113: 
+113: == this will be a node == 
+113: {node}
+113:  
+113: to: 
+113:   data: [0.0, 0.0, 0.0, 0.0, 0.0]
+113: 
+113: {schema}
+113:  
+113: to: 
+113: 
+113:   data: 
+113:       dtype: "float64"
+113:       number_of_elements: 5
+113:       offset: 0
+113:       stride: 8
+113:       element_bytes: 8
+113:       endianness: "little"
+113: 
+113: END_EXAMPLE("py_basics_numpy_or_node")
+113: BEGIN_EXAMPLE("py_basics_fetch_exist")
+113: == this will be a ndarray == 
+113: data:  [0. 0. 0. 0. 0.]
+113: repr:  array([0., 0., 0., 0., 0.])
+113: 
+113: Here is what went wrong:
+113: 
+113: file: /Users/harrison37/Work/github/llnl/conduit/src/libs/conduit/conduit_node.cpp
+113: line: 12179
+113: message: 
+113: Cannot fetch non-existent child "TYPO" from Node(my/path)
+113: 
+113: END_EXAMPLE("py_basics_fetch_exist")
+1/1 Test #113: t_conduit_docs_tutorial_python_basics ...   Passed    0.16 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_basics
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.51 sec
+Total Test time (real) =   0.20 sec

@@ -164,7 +164,7 @@ IOHandle has the following instance methods:
         - Only supports write operations. Throws an Error on any attempt to read.
 
   .. DANGER::
-    Note: While you can read from and write to subpaths using a handle, IOHandle *does not* yet support opening a file with a subpath (e.g. ``myhandle.open("file.hdf5:path/data")``).
+    Note: While you can read from and write to subpaths using a handle, IOHandle *does not* support opening a file with a subpath (e.g. ``myhandle.open("file.hdf5:path/data")``).
 
 
  * ``read``

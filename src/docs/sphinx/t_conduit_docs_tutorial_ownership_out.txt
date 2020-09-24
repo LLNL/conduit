@@ -6,11 +6,11 @@ Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdpart
 BEGIN_EXAMPLE("mem_ownership_external")
 
 mem_spaces: 
-  0x7fd45cc04b70: 
+  0x7fa8c8c04b70: 
     path: "v_owned"
     type: "allocated"
     bytes: 40
-  0x7fd45cc047b0: 
+  0x7fa8c8c047b0: 
     path: "v_external"
     type: "external"
 total_bytes_allocated: 40
@@ -27,8 +27,8 @@ v_owned: [0.0, 3.1415, 6.283, 9.4245, 12.566]
 v_external: [0.0, -3.1415, 6.283, 9.4245, 12.566]
 
 END_EXAMPLE("mem_ownership_external")
-[       OK ] conduit_tutorial.mem_ownership_external (0 ms)
-[----------] 1 test from conduit_tutorial (0 ms total)
+[       OK ] conduit_tutorial.mem_ownership_external (1 ms)
+[----------] 1 test from conduit_tutorial (1 ms total)
 
 [----------] Global test environment tear-down
 [==========] 1 test from 1 test suite ran. (1 ms total)

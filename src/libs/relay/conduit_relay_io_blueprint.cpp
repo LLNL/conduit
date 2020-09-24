@@ -571,7 +571,7 @@ void write_mesh(const Node &mesh,
 ///            else,                    "default"   ==> "multi_file"
 ///
 ///      suffix: "default", "cycle", "none" 
-///            when # of domains == 1,  "default"   ==> "off"
+///            when # of domains == 1,  "default"   ==> "none"
 ///            else,                    "default"   ==> "cycle"
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
