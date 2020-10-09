@@ -679,17 +679,41 @@ void to_polyhedral(const Node &n,
         std::string domain_name = itr.name();
         dest[domain_name]["state"] = chld["state"];
         const Node& in_coords = chld["coordsets/coords"];
+        const Node& in_topo = chld["topologies"][name];
+
+        int64_t iwidth = in_topo["elements/dims/i"].as_int64();
+        int64_t jwidth = in_topo["elements/dims/j"].as_int64();
+        int64_t kwidth = in_topo["elements/dims/k"].as_int64();
 
         int64_t domain_id = chld["state/domain_id"].as_int64();
+
+        {
+            auto& poly_elems = poly_elems_map[domain_id];
+            auto& ifaces = ifaces_map[domain_id];
+            auto& jfaces = jfaces_map[domain_id];
+            auto& kfaces = kfaces_map[domain_id];
+
+            int64_t elemsize = iwidth*jwidth*kwidth;
+
+            std::vector<int64_t> elem_connect;
+            std::vector<int64_t> elem_sizes;
+            std::vector<int64_t> subelem_connect;
+            std::vector<int64_t> subelem_sizes;
+            for (int elem = 0; elem < elemsize; ++elem)
+            {
+                blueprint::mesh::connectivity::make_element_3d(
+                    poly_elems[elem], elem,
+                    iwidth, jwidth, kwidth,
+                    ifaces, jfaces, kfaces);
+            }
+        }
 
         std::ostringstream win_oss;
         win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
         std::string win_name = win_oss.str();
 
-        const Node& in_topo = chld["topologies"][name];
-
-        int64_t niwidth = in_topo["elements/dims/i"].as_int64() + 1;
-        int64_t njwidth = in_topo["elements/dims/j"].as_int64() + 1;
+        int64_t niwidth = iwidth + 1;
+        int64_t njwidth = jwidth + 1;
 
         int64_t i_lo = in_topo["elements/origin/i0"].as_int64();
         int64_t j_lo = in_topo["elements/origin/j0"].as_int64();
@@ -926,6 +950,10 @@ void to_polyhedral(const Node &n,
                                     int64_t nbr_jwidth =
                                        ntopo["elements/dims/j"].as_int64() + 1;
 
+                                    const auto& my_elems = poly_elems_map[domain_id];
+                                    const auto& nbr_elems = poly_elems_map[nbr_id];
+                                    if (my_elems.size() == nbr_elems.size()) continue;
+
                                     const Node& fcoords =
                                        nbr_coords["values"];
                                     const double_array& xarray =
@@ -957,6 +985,79 @@ void to_polyhedral(const Node &n,
                                                 xbuffer.push_back(xarray[offset]);
                                                 ybuffer.push_back(yarray[offset]);
                                                 zbuffer.push_back(zarray[offset]);
+                                            }
+                                        }
+                                    }
+
+                                    iend--;
+                                    jend--;
+                                    kend--;
+                                    int64_t nbr_face;
+                                    if (istart == iend)
+                                    {
+                                       if (iend)
+                                       {
+                                           istart--;
+                                           nbr_face = 1;
+                                       }
+                                       else
+                                       {
+                                           iend++;
+                                           nbr_face = 0;
+                                       }
+                                    }
+                                    if (jstart == jend)
+                                    {
+                                       if (jend)
+                                       {
+                                           jstart--;
+                                           nbr_face = 3;
+                                       }
+                                       else
+                                       {
+                                           jend++;
+                                           nbr_face = 2;
+                                       }
+                                    }
+                                    if (kstart == kend)
+                                    {
+                                       if (kend)
+                                       {
+                                           kstart--;
+                                           nbr_face = 5;
+                                       }
+                                       else
+                                       {
+                                           kend++;
+                                           nbr_face = 4;
+                                       }
+                                    }
+
+                                    for (int64_t kidx = kstart; kidx < kend; ++kidx)
+                                    {
+                                        int64_t koffset = kidx*(nbr_iwidth-1)*(nbr_jwidth-1);
+                                        for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                        {
+                                            int64_t joffset = jidx*(nbr_iwidth-1);
+                                            for (int64_t iidx = istart; iidx < iend; ++iidx)
+                                            {
+                                                int64_t offset = koffset+joffset+iidx;
+                                                auto elem_itr = nbr_elems.find(offset);
+                                                if (elem_itr != nbr_elems.end())
+                                                { 
+                                                    auto& elem = elem_itr->second;
+                                                    int64_t face_id = elem.m_elems[nbr_face]; 
+                                                    auto sub_itr = elem.m_subelems.find(face_id);
+
+                                                    if (sub_itr != elem.m_subelems.end())
+                                                    {
+                                                        auto subelem = sub_itr->second; 
+                                                    if (subelem[0] + subelem[1] == 314159314)
+                                                    {
+                                                    continue;   
+                                                    }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -1012,8 +1113,25 @@ void to_polyhedral(const Node &n,
         auto& ifaces = ifaces_map[domain_id];
         auto& jfaces = jfaces_map[domain_id];
         auto& kfaces = kfaces_map[domain_id];
+#if 0
+        {
+            int64_t elemsize = iwidth*jwidth*kwidth;
 
-       if (chld.has_path("adjsets/adjset/groups"))
+            std::vector<int64_t> elem_connect;
+            std::vector<int64_t> elem_sizes;
+            std::vector<int64_t> subelem_connect;
+            std::vector<int64_t> subelem_sizes;
+            for (int elem = 0; elem < elemsize; ++elem)
+            {
+                blueprint::mesh::connectivity::PolyElemType new_elem;
+                blueprint::mesh::connectivity::make_element_3d(
+                    poly_elems[elem], elem,
+                    iwidth, jwidth, kwidth,
+                    ifaces, jfaces, kfaces);
+            }
+        }
+#endif
+        if (chld.has_path("adjsets/adjset/groups"))
         {
             const Node& in_groups = chld["adjsets/adjset/groups"];
             NodeConstIterator grp_itr = in_groups.children();
@@ -1044,27 +1162,30 @@ void to_polyhedral(const Node &n,
                             int64_t ratio_j = nbr_win["ratio/j"].as_int64();
                             int64_t ratio_k = nbr_win["ratio/k"].as_int64();
 
-                            uint64_t ref_size_i = ref_win["dims/i"].as_uint64();
-                            uint64_t ref_size_j = ref_win["dims/j"].as_uint64();
-                            uint64_t ref_size_k = ref_win["dims/k"].as_uint64();
-                            uint64_t ref_size = ref_size_i*ref_size_j*ref_size_k;
+                            int64_t ref_size_i = ref_win["dims/i"].as_int64();
+                            int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                            int64_t ref_size_k = ref_win["dims/k"].as_int64();
+                            int64_t ref_size = ref_size_i*ref_size_j*ref_size_k;
 
-                            uint64_t nbr_size_i = nbr_win["dims/i"].as_uint64();
-                            uint64_t nbr_size_j = nbr_win["dims/j"].as_uint64();
-                            uint64_t nbr_size_k = nbr_win["dims/k"].as_uint64();
-                            uint64_t nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
+                            int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
+                            int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                            int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
+                            int64_t nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
 
 
                             if (ref_size < nbr_size)
                             {
-
-                                blueprint::mesh::connectivity::create_elements_3d(ref_win,
-                                                                       i_lo,
-                                                                       j_lo,
-                                                                       k_lo,
-                                                                       iwidth,
-                                                                       jwidth,
-                                                                       poly_elems, ifaces, jfaces, kfaces);
+/*
+                                blueprint::mesh::connectivity::create_elements_3d(
+                                   ref_win,
+                                   i_lo,
+                                    j_lo,
+                                    k_lo,
+                                    iwidth,
+                                          jwidth,
+                                          kwidth,
+                                          poly_elems, ifaces, jfaces, kfaces);
+*/
                                 std::vector<int64_t> use_ratio(3);
                                 use_ratio[0] = ratio_i;
                                 use_ratio[1] = ratio_j;
@@ -1109,21 +1230,21 @@ void to_polyhedral(const Node &n,
                                 new_z.insert(new_z.end(), out_z_ptr, out_z_ptr + out_z_size);
 
                                 size_t bi = 0;
-                                for (size_t k = 0; k < nbr_size_k; ++k)
+                                for (int64_t k = 0; k < nbr_size_k; ++k)
                                 {
-                                    int vert_k = k % use_ratio[2];
-                                    for (size_t j = 0; j < nbr_size_j; ++j)
+//                                    int vert_k = k % use_ratio[2];
+                                    for (int64_t j = 0; j < nbr_size_j; ++j)
                                     {
-                                        int vert_j = j % use_ratio[1];
-                                        for (size_t i = 0; i < nbr_size_i; ++i)
+//                                        int vert_j = j % use_ratio[1];
+                                        for (int64_t i = 0; i < nbr_size_i; ++i)
                                         {
-                                            int vert_i = i % use_ratio[0];
-                                            if (vert_k || vert_j || vert_i)
-                                            {
+//                                            int vert_i = i % use_ratio[0];
+//                                            if (vert_k || vert_j || vert_i)
+//                                            {
                                                 new_x.push_back(xbuffer[bi]);
                                                 new_y.push_back(ybuffer[bi]);
                                                 new_z.push_back(zbuffer[bi]);
-                                            }
+//                                            }
                                             ++bi;
                                         }
                                     }
@@ -1131,8 +1252,8 @@ void to_polyhedral(const Node &n,
 
                                 out_values["x"].set(new_x);
                                 out_values["y"].set(new_y);
-                                out_values["z"].set(new_y);
-
+                                out_values["z"].set(new_z);
+/*
                                 blueprint::mesh::connectivity::connect_elements_3d(ref_win,
                                                                      i_lo,
                                                                      j_lo,
@@ -1142,6 +1263,7 @@ void to_polyhedral(const Node &n,
                                                                      use_ratio,
                                                                      new_vertex,
                                                                      poly_elems);
+*/
                             }
                         }
                     }
@@ -1174,14 +1296,14 @@ void to_polyhedral(const Node &n,
             if (elem_itr == poly_elems.end())
             {
                 blueprint::mesh::connectivity::PolyElemType new_elem;
-                blueprint::mesh::connectivity::make_element_3d(new_elem, elem, iwidth, jwidth, ifaces, jfaces, kfaces);
-                elem_connect.insert(elem_connect.end(), new_elem.m_elem_verts.begin(), new_elem.m_elem_verts.end());
+                blueprint::mesh::connectivity::make_element_3d(new_elem, elem, iwidth, jwidth, kwidth, ifaces, jfaces, kfaces);
+                elem_connect.insert(elem_connect.end(), new_elem.m_elems.begin(), new_elem.m_elems.end());
  
-                elem_sizes.push_back(8);
+                elem_sizes.push_back(6);
             }
             else
             {
-                auto& poly_elem = elem_itr->second.m_elem_verts;
+                auto& poly_elem = elem_itr->second.m_elems;
                 elem_connect.insert(elem_connect.end(), poly_elem.begin(), poly_elem.end());
                 elem_sizes.push_back(poly_elem.size());
             }
@@ -1213,9 +1335,14 @@ void to_polyhedral(const Node &n,
             subelem_offset_sum += subelem_sizes.back();
         }
 
+        topo["elements/shape"].set_string("polyhedral");
         topo["elements/connectivity"].set(elem_connect);
         topo["elements/sizes"].set(elem_sizes);
         topo["elements/offsets"].set(elem_offsets);
+        topo["subelements/shape"].set_string("polygonal");
+        topo["subelements/connectivity"].set(subelem_connect);
+        topo["subelements/sizes"].set(subelem_sizes);
+        topo["subelements/offsets"].set(subelem_offsets);
     }
 
 }

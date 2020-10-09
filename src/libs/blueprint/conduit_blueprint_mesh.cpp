@@ -2462,6 +2462,7 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
                                     int64_t element,
                                     int64_t iwidth,
                                     int64_t jwidth,
+                                    int64_t kwidth,
                                    std::map<int, std::vector<int64_t> >& ifaces,
                                    std::map<int, std::vector<int64_t> >& jfaces,
                                    std::map<int, std::vector<int64_t> >& kfaces)
@@ -2479,14 +2480,10 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
     int64_t klo_offset = (iwidth+1)*(jwidth+1)*klo;
     int64_t khi_offset = (iwidth+1)*(jwidth+1)*khi;
 
-    connect.m_elem_verts.push_back(ilo + jlo_offset + klo_offset);
-    connect.m_elem_verts.push_back(ihi + jlo_offset + klo_offset);
-    connect.m_elem_verts.push_back(ihi + jhi_offset + klo_offset);
-    connect.m_elem_verts.push_back(ilo + jhi_offset + klo_offset);
-    connect.m_elem_verts.push_back(ilo + jlo_offset + khi_offset);
-    connect.m_elem_verts.push_back(ihi + jlo_offset + khi_offset);
-    connect.m_elem_verts.push_back(ihi + jhi_offset + khi_offset);
-    connect.m_elem_verts.push_back(ilo + jhi_offset + khi_offset);
+
+    int64_t iface_start = 0; 
+    int64_t jface_start = (iwidth+1)*jwidth*kwidth;
+    int64_t kface_start = jface_start + iwidth*(jwidth+1)*kwidth;
 
     //ifaces
     {
@@ -2508,6 +2505,7 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
             ilo_face.push_back(ilo + jhi_offset + khi_offset);
             ilo_face.push_back(ilo + jlo_offset + khi_offset);
         }
+        connect.m_subelems[iface_start+lo_face] = ifaces[lo_face];
         //ihi face
         if (ifaces.find(hi_face) == ifaces.end())
         {
@@ -2517,6 +2515,9 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
             ihi_face.push_back(ihi + jhi_offset + khi_offset);
             ihi_face.push_back(ihi + jlo_offset + khi_offset);
         }
+        connect.m_subelems[iface_start+hi_face] = ifaces[hi_face];
+        connect.m_elems.push_back(iface_start + lo_face);
+        connect.m_elems.push_back(iface_start + hi_face);
     }
     //jfaces
     {
@@ -2540,7 +2541,8 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
             jlo_face.push_back(ihi + jlo_offset + khi_offset);
             jlo_face.push_back(ilo + jlo_offset + khi_offset);
         }
-        //ihi face
+        connect.m_subelems[jface_start+lo_face] = jfaces[lo_face];
+        //jhi face
         if (jfaces.find(hi_face) == jfaces.end())
         {
             auto& jhi_face = jfaces[hi_face];
@@ -2549,6 +2551,9 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
             jhi_face.push_back(ihi + jhi_offset + khi_offset);
             jhi_face.push_back(ilo + jhi_offset + khi_offset);
         }
+        connect.m_subelems[jface_start+hi_face] = jfaces[hi_face];
+        connect.m_elems.push_back(jface_start + lo_face);
+        connect.m_elems.push_back(jface_start + hi_face);
     }
     //kfaces
     {
@@ -2563,7 +2568,7 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
         connect.m_kfaces.first = lo_face;
         connect.m_kfaces.second = hi_face;
 
-        //jlo face
+        //klo face
         if (kfaces.find(lo_face) == kfaces.end())
         {
             auto& klo_face = kfaces[lo_face];
@@ -2572,7 +2577,8 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
             klo_face.push_back(ihi + jhi_offset + klo_offset);
             klo_face.push_back(ilo + jhi_offset + klo_offset);
         }
-        //ihi face
+        connect.m_subelems[kface_start+lo_face] = kfaces[lo_face];
+        //khi face
         if (kfaces.find(hi_face) == kfaces.end())
         {
             auto& khi_face = kfaces[hi_face];
@@ -2581,6 +2587,9 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
             khi_face.push_back(ihi + jhi_offset + khi_offset);
             khi_face.push_back(ilo + jhi_offset + khi_offset);
         }
+        connect.m_subelems[kface_start+hi_face] = kfaces[hi_face];
+        connect.m_elems.push_back(kface_start + lo_face);
+        connect.m_elems.push_back(kface_start + hi_face);
     }
 }
 
@@ -2715,6 +2724,7 @@ mesh::connectivity::create_elements_3d(const Node& ref_win,
                                        int64_t k_lo,
                                        int64_t iwidth,
                                        int64_t jwidth,
+                                       int64_t kwidth,
                                     std::map<int, PolyElemType>& elems,
                                   std::map<int, std::vector<int64_t> >& ifaces,
                                   std::map<int, std::vector<int64_t> >& jfaces,
@@ -2758,12 +2768,13 @@ mesh::connectivity::create_elements_3d(const Node& ref_win,
             {
                 int offset = koffset + joffset + iidx;
                 auto& elem_conn = elems[offset];
-                if (elem_conn.m_elem_verts.empty())
+                if (elem_conn.m_elems.empty())
                 {
                      mesh::connectivity::make_element_3d(elem_conn,
                                                          offset,
                                                          iwidth,
                                                          jwidth,
+                                                         kwidth,
 ifaces,jfaces,kfaces);
                 }
             }
@@ -2809,7 +2820,7 @@ mesh::connectivity::connect_elements_3d(const Node& ref_win,
             {
                 int offset = kidx*iwidth*jwidth + jidx*iwidth + iidx;
                 auto& elem_conn = elems[offset];
-                elem_conn.m_elem_verts.push_back(new_vertex);
+                elem_conn.m_elems.push_back(new_vertex);
                 ++new_vertex;
             }
         }

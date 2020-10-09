@@ -131,7 +131,8 @@ namespace connectivity
    //-------------------------------------------------------------------------
    struct PolyElemType
    {
-       std::vector<int64_t> m_elem_verts;
+       std::vector<int64_t> m_elems;
+       std::map<int64_t, std::vector<int64_t> > m_subelems;
        std::pair<int64_t, int64_t> m_ifaces;
        std::pair<int64_t, int64_t> m_jfaces;
        std::pair<int64_t, int64_t> m_kfaces;
@@ -147,6 +148,7 @@ namespace connectivity
                         int64_t element,
                         int64_t iwidth,
                         int64_t jwidth,
+                        int64_t kwidth,
                         std::map<int, std::vector<int64_t> >& ifaces,
                         std::map<int, std::vector<int64_t> >& jfaces,
                         std::map<int, std::vector<int64_t> >& kfaces);
@@ -164,6 +166,7 @@ namespace connectivity
                                               int64_t k_lo,
                                               int64_t iwidth,
                                               int64_t jwidth,
+                                              int64_t kwidth,
                                     std::map<int, PolyElemType>& elems,
                                     std::map<int, std::vector<int64_t> >& ifaces,
                                     std::map<int, std::vector<int64_t> >& jfaces,
