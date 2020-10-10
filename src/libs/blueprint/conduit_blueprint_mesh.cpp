@@ -1201,7 +1201,7 @@ struct TopologyMetadata
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
                 dim_entity_map[entity] = dim_offset++;
 
-                if (dim_shape.is_polygonal())
+                if (dim_shape.dim == 2)
                 {
                   dim_size.push_back(entity.size());
                 }
