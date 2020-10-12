@@ -227,87 +227,84 @@ void to_poly(const Node &n,
             while(grp_itr.has_next())
             {
                 const Node& group = grp_itr.next();
-                std::string grp_name = grp_itr.name();
 
-                if (group.has_child("neighbors"))
+                if (group.has_child("neighbors") && group.has_child("windows"))
                 {
                     int64_array neighbors =
                        group["neighbors"].as_int64_array();
 
                     int nbr_id = neighbors[1];
-                    if (group.has_child("windows"))
+
+                    const Node& in_windows = group["windows"];
+                    std::ostringstream nw_oss;
+                    nw_oss << "window_" << std::setw(6)
+                            << std::setfill('0') << nbr_id;
+                    std::string nbr_win_name = nw_oss.str();
+                    const Node& ref_win = in_windows[win_name];
+                    const Node& nbr_win = in_windows[nbr_win_name];
+
+                    if (nbr_win["level_id"].as_int64() < ref_win["level_id"].as_int64())
                     {
-                        const Node& in_windows = group["windows"];
-                        std::ostringstream nw_oss;
-                        nw_oss << "window_" << std::setw(6)
+
+                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size = ref_size_i * ref_size_j;
+
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size = nbr_size_i * nbr_size_j;
+
+                        std::ostringstream nbr_oss;
+                        nbr_oss << "domain_" << std::setw(6)
                                 << std::setfill('0') << nbr_id;
-                        std::string nbr_win_name = nw_oss.str();
-                        const Node& ref_win = in_windows[win_name];
-                        const Node& nbr_win = in_windows[nbr_win_name];
+                        std::string nbr_name = nbr_oss.str();
 
-                        if (nbr_win["level_id"].as_int64() < ref_win["level_id"].as_int64())
+                        if (nbr_size < ref_size && !in_parent->has_child(nbr_name))
                         {
+                            std::vector<double> xbuffer;
+                            std::vector<double> ybuffer;
+                            const Node& fcoords =
+                               in_coords["values"];
+                            const double_array& xarray =
+                               fcoords["x"].as_double_array();
+                            const double_array& yarray =
+                               fcoords["y"].as_double_array();
 
-                            int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                            int64_t ref_size_j = ref_win["dims/j"].as_int64();
-                            int64_t ref_size = ref_size_i * ref_size_j;
+                            int64_t origin_i = ref_win["origin/i"].as_int64();
+                            int64_t origin_j = ref_win["origin/j"].as_int64();
 
-                            int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                            int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
-                            int64_t nbr_size = nbr_size_i * nbr_size_j;
-
-                            std::ostringstream nbr_oss;
-                            nbr_oss << "domain_" << std::setw(6)
-                                    << std::setfill('0') << nbr_id;
-                            std::string nbr_name = nbr_oss.str();
-
-                            if (nbr_size < ref_size && !in_parent->has_child(nbr_name))
-                            {
-                                std::vector<double> xbuffer;
-                                std::vector<double> ybuffer;
-                                const Node& fcoords =
-                                   in_coords["values"];
-                                const double_array& xarray =
-                                   fcoords["x"].as_double_array();
-                                const double_array& yarray =
-                                   fcoords["y"].as_double_array();
-
-                                int64_t origin_i = ref_win["origin/i"].as_int64();
-                                int64_t origin_j = ref_win["origin/j"].as_int64();
-
-                                if (ref_size_i == 1) {
-                                   int icnst = origin_i - i_lo;
-                                   int jstart = origin_j - j_lo;
-                                   int jend = jstart + ref_size_j;
-                                   for (int jidx = jstart; jidx < jend; ++jidx) {
-                                      int offset = jidx * niwidth + icnst;
-                                      xbuffer.push_back(xarray[offset]);
-                                      ybuffer.push_back(yarray[offset]);
-                                   }
-                                } else if (ref_size_j == 1) {
-                                   int jcnst = origin_j - j_lo;
-                                   int istart = origin_i - i_lo;
-                                   int iend = istart + ref_size_i;
-                                   for (int iidx = istart; iidx < iend; ++iidx) {
-                                      int offset = jcnst * niwidth + iidx;
-                                      xbuffer.push_back(xarray[offset]);
-                                      ybuffer.push_back(yarray[offset]);
-                                   }
-                                }
-                                int64_t nbr_rank = group["rank"].as_int64();
-                                MPI_Send(&xbuffer[0],
-                                         xbuffer.size(),
-                                         MPI_DOUBLE,
-                                         nbr_rank,
-                                         domain_id,
-                                         MPI_COMM_WORLD);
-                                MPI_Send(&ybuffer[0],
-                                         ybuffer.size(),
-                                         MPI_DOUBLE,
-                                         nbr_rank,
-                                         domain_id,
-                                         MPI_COMM_WORLD);
+                            if (ref_size_i == 1) {
+                               int icnst = origin_i - i_lo;
+                               int jstart = origin_j - j_lo;
+                               int jend = jstart + ref_size_j;
+                               for (int jidx = jstart; jidx < jend; ++jidx) {
+                                  int offset = jidx * niwidth + icnst;
+                                  xbuffer.push_back(xarray[offset]);
+                                  ybuffer.push_back(yarray[offset]);
+                               }
+                            } else if (ref_size_j == 1) {
+                               int jcnst = origin_j - j_lo;
+                               int istart = origin_i - i_lo;
+                               int iend = istart + ref_size_i;
+                               for (int iidx = istart; iidx < iend; ++iidx) {
+                                  int offset = jcnst * niwidth + iidx;
+                                  xbuffer.push_back(xarray[offset]);
+                                  ybuffer.push_back(yarray[offset]);
+                               }
                             }
+                            int64_t nbr_rank = group["rank"].as_int64();
+                            MPI_Send(&xbuffer[0],
+                                     xbuffer.size(),
+                                     MPI_DOUBLE,
+                                     nbr_rank,
+                                     domain_id,
+                                     MPI_COMM_WORLD);
+                            MPI_Send(&ybuffer[0],
+                                     ybuffer.size(),
+                                     MPI_DOUBLE,
+                                     nbr_rank,
+                                     domain_id,
+                                     MPI_COMM_WORLD);
                         }
                     }
                 }
@@ -342,113 +339,107 @@ void to_poly(const Node &n,
             while(grp_itr.has_next())
             {
                 const Node& group = grp_itr.next();
-                std::string grp_name = grp_itr.name();
 
-                if (group.has_child("neighbors"))
+                if (group.has_child("neighbors") && group.has_child("windows"))
                 {
                     int64_array neighbors = group["neighbors"].as_int64_array();
 
-                    int nbr_id = neighbors[1];
+                    int64_t nbr_id = neighbors[1];
+                    const Node& in_windows = group["windows"];
+                    std::ostringstream nw_oss;
+                    nw_oss << "window_" << std::setw(6)
+                            << std::setfill('0') << nbr_id;
+                    std::string nbr_win_name = nw_oss.str();
 
-                    if (group.has_child("windows"))
+                    const Node& ref_win = in_windows[win_name];
+                    const Node& nbr_win = in_windows[nbr_win_name];
+                    if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
                     {
-                        const Node& in_windows = group["windows"];
-                        std::ostringstream nw_oss;
-                        nw_oss << "window_" << std::setw(6)
-                                << std::setfill('0') << nbr_id;
-                        std::string nbr_win_name = nw_oss.str();
+                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size = ref_size_i * ref_size_j;
 
-                        const Node& ref_win = in_windows[win_name];
-                        const Node& nbr_win = in_windows[nbr_win_name];
-                        if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size = nbr_size_i * nbr_size_j;
+
+                        if (nbr_size > ref_size)
                         {
-                            int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                            int64_t ref_size_j = ref_win["dims/j"].as_int64();
-                            int64_t ref_size = ref_size_i * ref_size_j;
 
-                            int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                            int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
-                            int64_t nbr_size = nbr_size_i * nbr_size_j;
+                            auto& xbuffer = nbr_to_xbuffer[nbr_id];
+                            auto& ybuffer = nbr_to_ybuffer[nbr_id];
 
-                            if (nbr_size > ref_size)
+                            std::ostringstream nbr_oss;
+                            nbr_oss << "domain_" << std::setw(6)
+                                    << std::setfill('0') << nbr_id;
+                            std::string nbr_name = nbr_oss.str();
+
+                            if (!in_parent->has_child(nbr_name))
                             {
 
-                                auto& xbuffer = nbr_to_xbuffer[nbr_id];
-                                auto& ybuffer = nbr_to_ybuffer[nbr_id];
-
-                                std::ostringstream nbr_oss;
-                                nbr_oss << "domain_" << std::setw(6)
-                                        << std::setfill('0') << nbr_id;
-                                std::string nbr_name = nbr_oss.str();
-
-
-                                if (!in_parent->has_child(nbr_name))
-                                {
-/**/
-                                    if (nbr_size_i == 1) {
-                                        xbuffer.resize(nbr_size_j);
-                                        ybuffer.resize(nbr_size_j);
-                                    }
-                                    else if (nbr_size_j == 1)
-                                    {
-                                        xbuffer.resize(nbr_size_i);
-                                        ybuffer.resize(nbr_size_i);
-                                    }
-
-                                    int64_t nbr_rank = group["rank"].as_int64();
-                                    MPI_Recv(&xbuffer[0],
-                                             xbuffer.size(),
-                                             MPI_DOUBLE,
-                                             nbr_rank,
-                                             nbr_id,
-                                             MPI_COMM_WORLD,
-                                             MPI_STATUS_IGNORE);
-                                    MPI_Recv(&ybuffer[0],
-                                             ybuffer.size(),
-                                             MPI_DOUBLE, nbr_rank,
-                                             nbr_id, MPI_COMM_WORLD,
-                                             MPI_STATUS_IGNORE);
-/**/
+                                if (nbr_size_i == 1) {
+                                    xbuffer.resize(nbr_size_j);
+                                    ybuffer.resize(nbr_size_j);
                                 }
-                                else
+                                else if (nbr_size_j == 1)
                                 {
-                                    const Node& nbr_dom =
-                                       (*in_parent)[nbr_name];
-                                    const Node& nbr_coords =
-                                       nbr_dom["coordsets/coords"];
+                                    xbuffer.resize(nbr_size_i);
+                                    ybuffer.resize(nbr_size_i);
+                                }
 
-                                    const Node& ntopo =
-                                       nbr_dom["topologies"][name];
-                                    int64_t ni_lo =
-                                       ntopo["elements/origin/i0"].as_int64();
-                                    int64_t nj_lo =
-                                       ntopo["elements/origin/j0"].as_int64();
-                                    int64_t nbr_iwidth =
-                                       ntopo["elements/dims/i"].as_int64() + 1;
+                                int64_t nbr_rank = group["rank"].as_int64();
+                                MPI_Recv(&xbuffer[0],
+                                         xbuffer.size(),
+                                         MPI_DOUBLE,
+                                         nbr_rank,
+                                         nbr_id,
+                                         MPI_COMM_WORLD,
+                                         MPI_STATUS_IGNORE);
+                                MPI_Recv(&ybuffer[0],
+                                         ybuffer.size(),
+                                         MPI_DOUBLE, nbr_rank,
+                                         nbr_id, MPI_COMM_WORLD,
+                                         MPI_STATUS_IGNORE);
 
-                                    const Node& fcoords =
-                                       nbr_coords["values"];
-                                    const double_array& xarray =
-                                       fcoords["x"].as_double_array();
-                                    const double_array& yarray =
-                                       fcoords["y"].as_double_array();
+                            }
+                            else
+                            {
+                                const Node& nbr_dom =
+                                   (*in_parent)[nbr_name];
+                                const Node& nbr_coords =
+                                   nbr_dom["coordsets/coords"];
 
-                                    int64_t origin_i = nbr_win["origin/i"].as_int64();
-                                    int64_t origin_j = nbr_win["origin/j"].as_int64();
+                                const Node& ntopo =
+                                   nbr_dom["topologies"][name];
+                                int64_t ni_lo =
+                                   ntopo["elements/origin/i0"].as_int64();
+                                int64_t nj_lo =
+                                   ntopo["elements/origin/j0"].as_int64();
+                                int64_t nbr_iwidth =
+                                   ntopo["elements/dims/i"].as_int64() + 1;
 
-                                    int64_t istart = origin_i - ni_lo;
-                                    int64_t jstart = origin_j - nj_lo;
-                                    int64_t iend = istart + nbr_size_i;
-                                    int64_t jend = jstart + nbr_size_j;
-                                    for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                const Node& fcoords =
+                                   nbr_coords["values"];
+                                const double_array& xarray =
+                                   fcoords["x"].as_double_array();
+                                const double_array& yarray =
+                                   fcoords["y"].as_double_array();
+
+                                int64_t origin_i = nbr_win["origin/i"].as_int64();
+                                int64_t origin_j = nbr_win["origin/j"].as_int64();
+
+                                int64_t istart = origin_i - ni_lo;
+                                int64_t jstart = origin_j - nj_lo;
+                                int64_t iend = istart + nbr_size_i;
+                                int64_t jend = jstart + nbr_size_j;
+                                for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                {
+                                    int64_t joffset = jidx*nbr_iwidth;
+                                    for (int64_t iidx = istart; iidx < iend; ++iidx)
                                     {
-                                        int64_t joffset = jidx*nbr_iwidth;
-                                        for (int64_t iidx = istart; iidx < iend; ++iidx)
-                                        {
-                                            int64_t offset = joffset+iidx;
-                                            xbuffer.push_back(xarray[offset]);
-                                            ybuffer.push_back(yarray[offset]);
-                                        }
+                                        int64_t offset = joffset+iidx;
+                                        xbuffer.push_back(xarray[offset]);
+                                        ybuffer.push_back(yarray[offset]);
                                     }
                                 }
                             }
@@ -504,113 +495,110 @@ void to_poly(const Node &n,
             while(grp_itr.has_next())
             {
                 const Node& group = grp_itr.next();
-                std::string grp_name = grp_itr.name();
 
-                if (group.has_child("neighbors"))
+                if (group.has_child("neighbors") && group.has_child("windows"))
                 {
                     int64_array neighbors = group["neighbors"].as_int64_array();
 
                     int nbr_id = neighbors[1];
-                    if (group.has_child("windows"))
-                    {
-                        const Node& in_windows = group["windows"];
-                        std::ostringstream nw_oss;
-                        nw_oss << "window_" << std::setw(6)
-                                << std::setfill('0') << nbr_id;
-                        std::string nbr_win_name = nw_oss.str();
+                    const Node& in_windows = group["windows"];
+                    std::ostringstream nw_oss;
+                    nw_oss << "window_" << std::setw(6)
+                            << std::setfill('0') << nbr_id;
+                    std::string nbr_win_name = nw_oss.str();
 
-                        const Node& ref_win = in_windows[win_name];
-                        const Node& nbr_win = in_windows[nbr_win_name];
-                        if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
+                    const Node& ref_win = in_windows[win_name];
+                    const Node& nbr_win = in_windows[nbr_win_name];
+                    if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
+                    {
+
+                        int64_t ratio_i = nbr_win["ratio/i"].as_int64();
+                        int64_t ratio_j = nbr_win["ratio/j"].as_int64();
+
+                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size = ref_size_i * ref_size_j;
+
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size = nbr_size_i * nbr_size_j;
+
+                        if (ref_size < nbr_size)
                         {
 
-                            int64_t ratio_i = nbr_win["ratio/i"].as_int64();
-                            int64_t ratio_j = nbr_win["ratio/j"].as_int64();
-
-                            int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                            int64_t ref_size_j = ref_win["dims/j"].as_int64();
-                            int64_t ref_size = ref_size_i * ref_size_j;
-
-                            int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                            int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
-                            int64_t nbr_size = nbr_size_i * nbr_size_j;
-
-                            if (ref_size < nbr_size)
+                            blueprint::mesh::connectivity::create_elements_2d(ref_win,
+                                                                   i_lo,
+                                                                   j_lo,
+                                                                   iwidth,
+                                                                   poly_elems);
+                            int use_ratio = 0;
+                            if (nbr_size_j == 1)
                             {
-
-                                blueprint::mesh::connectivity::create_elements_2d(ref_win,
-                                                                       i_lo,
-                                                                       j_lo,
-                                                                       iwidth,
-                                                                       poly_elems);
-                                int use_ratio = 0;
-                                if (nbr_size_j == 1)
-                                {
-                                    use_ratio = ratio_i;
-                                }
-                                else if (nbr_size_i == 1)
-                                {
-                                    use_ratio = ratio_j;
-                                }
-
-                                auto& xbuffer = nbr_to_xbuffer[nbr_id];
-                                auto& ybuffer = nbr_to_ybuffer[nbr_id];
-
-                                size_t added = 0;
-                                if (nbr_size_j == 1)
-                                {
-                                    added = xbuffer.size() - ref_size_i;
-                                } else if (nbr_size_i == 1)
-                                {
-                                    added = ybuffer.size() - ref_size_j;
-                                }
-
-                                const auto& out_x = out_values["x"].as_double_array();
-                                const auto& out_y = out_values["y"].as_double_array();
-                                int64_t new_vertex = out_x.number_of_elements();
-
-                                size_t out_x_size = out_x.number_of_elements();
-                                size_t out_y_size = out_y.number_of_elements();
-
-                                std::vector<double> new_x;
-                                std::vector<double> new_y;
-                                new_x.reserve(out_x_size + added);
-                                new_y.reserve(out_y_size + added);
-                                const double* out_x_ptr = static_cast<const double*>(out_x.element_ptr(0));
-                                const double* out_y_ptr = static_cast<const double*>(out_y.element_ptr(0));
-
-                                new_x.insert(new_x.end(), out_x_ptr, out_x_ptr + out_x_size);
-                                new_y.insert(new_y.end(), out_y_ptr, out_y_ptr + out_y_size);
-
-                                if ((xbuffer.size()-1)%use_ratio)
-                                {
-                                    new_x.reserve(out_x_size + added*2);
-                                }
-                                for (size_t ni = 0; ni < xbuffer.size(); ++ni)
-                                {
-                                    if (ni % use_ratio)
-                                    {
-                                        new_x.push_back(xbuffer[ni]);
-                                        new_y.push_back(ybuffer[ni]);
-                                    }
-                                }
-
-                                out_values["x"].set(new_x);
-                                out_values["y"].set(new_y);
-
-                                blueprint::mesh::connectivity::connect_elements_2d(ref_win,
-                                                                     i_lo,
-                                                                     j_lo,
-                                                                     iwidth,
-                                                                     use_ratio,
-                                                                     new_vertex,
-                                                                     poly_elems);
+                                use_ratio = ratio_i;
                             }
+                            else if (nbr_size_i == 1)
+                            {
+                                use_ratio = ratio_j;
+                            }
+
+                            auto& xbuffer = nbr_to_xbuffer[nbr_id];
+                            auto& ybuffer = nbr_to_ybuffer[nbr_id];
+
+                            size_t added = 0;
+                            if (nbr_size_j == 1)
+                            {
+                                added = xbuffer.size() - ref_size_i;
+                            } else if (nbr_size_i == 1)
+                            {
+                                added = ybuffer.size() - ref_size_j;
+                            }
+
+                            const auto& out_x = out_values["x"].as_double_array();
+                            const auto& out_y = out_values["y"].as_double_array();
+                            int64_t new_vertex = out_x.number_of_elements();
+
+                            size_t out_x_size = out_x.number_of_elements();
+                            size_t out_y_size = out_y.number_of_elements();
+
+                            std::vector<double> new_x;
+                            std::vector<double> new_y;
+                            new_x.reserve(out_x_size + added);
+                            new_y.reserve(out_y_size + added);
+                            const double* out_x_ptr = static_cast<const double*>(out_x.element_ptr(0));
+                            const double* out_y_ptr = static_cast<const double*>(out_y.element_ptr(0));
+
+                            new_x.insert(new_x.end(), out_x_ptr, out_x_ptr + out_x_size);
+                            new_y.insert(new_y.end(), out_y_ptr, out_y_ptr + out_y_size);
+
+                            if ((xbuffer.size()-1)%use_ratio)
+                            {
+                                new_x.reserve(out_x_size + added*2);
+                            }
+                            for (size_t ni = 0; ni < xbuffer.size(); ++ni)
+                            {
+                                if (ni % use_ratio)
+                                {
+                                    new_x.push_back(xbuffer[ni]);
+                                    new_y.push_back(ybuffer[ni]);
+                                }
+                            }
+
+                            out_values["x"].set(new_x);
+                            out_values["y"].set(new_y);
+
+                            blueprint::mesh::connectivity::connect_elements_2d(ref_win,
+                                                                 i_lo,
+                                                                 j_lo,
+                                                                 iwidth,
+                                                                 use_ratio,
+                                                                 new_vertex,
+                                                                 poly_elems);
                         }
                     }
                 }
             }
         }
+
         std::string coords =
             chld["topologies"][name]["coordset"].as_string();
         dest[domain_name]["topologies"][name]["coordset"] = coords;
