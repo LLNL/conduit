@@ -196,20 +196,20 @@ The mesh blueprint protocol accepts four implicit ways to define a topology on a
    
    * topologies/topo/coordset: "coords"
    * topologies/topo/type: “uniform”
-   * topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})
+   * topologies/topo/elements/origin/{i,j,k} (optional, default = {0,0,0})
    
 * **rectilinear**: An implicit topology that defines a grid of elements on top of a *rectilinear* coordinate set. 
    
    * topologies/topo/coordset: "coords"
    * topologies/topo/type: “rectilinear”
-   * topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})
+   * topologies/topo/elements/origin/{i,j,k} (optional, default = {0,0,0})
   
 
 .. .. attention::
 ..    (can we collapse uniform + rectilinear?)
 .. * topologies/topo/type: “structured”
 .. * topologies/topo/elements/dims: "implicit"
-.. * topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})
+.. * topologies/topo/elements/origin/{i,j,k} (optional, default = {0,0,0})
 .. * topologies/coordset: "coords"
 
 

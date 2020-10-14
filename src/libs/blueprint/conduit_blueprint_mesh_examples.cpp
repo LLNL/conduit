@@ -2860,8 +2860,8 @@ adjset_uniform(Node &res)
         domain_coords["origin/y"].set_float64(0.5*(i%2));
 
         Node &domain_topo = domain_node["topologies/topo"];
-        domain_topo["elements/origin/i0"].set_int32(20*(i/2));
-        domain_topo["elements/origin/j0"].set_int32(20*(i%2));
+        domain_topo["elements/origin/i"].set_int32(20*(i/2));
+        domain_topo["elements/origin/j"].set_int32(20*(i%2));
         domain_topo["type"].set_string("uniform");
         domain_topo["coordset"].set_string("coords");
 
