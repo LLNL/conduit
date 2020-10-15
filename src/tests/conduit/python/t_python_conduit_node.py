@@ -14,7 +14,6 @@ from conduit import Node
 
 import numpy as np
 
-
 class Test_Conduit_Node(unittest.TestCase):
     def test_simple(self):
         a_val = np.uint32(10)
@@ -469,13 +468,72 @@ class Test_Conduit_Node(unittest.TestCase):
 
         res_to_yaml = n.to_yaml()
         res_to_json = n.to_json()
-  
+
         self.assertEqual(res_to_str_def,  res_to_yaml);
         self.assertEqual(res_to_str_yaml, res_to_yaml);
-  
+
         self.assertEqual(res_to_str_json,  res_to_json);
 
         n.print_detailed()
+
+    def test_numpy_slice_as_set_input(self):
+        n = Node()
+        # slice with non trivial strides
+        numpy_array = np.array(range(21), dtype='float64')
+        v = numpy_array.reshape((3, 7))
+        print("Input Array")
+        print(v)
+        print("Desired Slice")
+        print(v[:,0])
+        n['v'] = v
+        n['vs'] = v[:,0]
+        n['vs_expected'] = np.array(v[:,0],np.float64)
+        print(n)
+        sdiff = np.setdiff1d(n['vs'], v[:,0])
+        print("Set Difference: ",sdiff )
+        self.assertEqual(len(sdiff), 0);
+        # a more complex slice
+        numpy_array = np.array(range(105), dtype='float64')
+        v = numpy_array.reshape((3, 7, 5))
+        print("Input Array")
+        print(v)
+        print("Desired Slice")
+        print(v[:,0,3:5])
+        n['v'] = v
+        n['vs'] = v[:,0,3:5]
+        n['vs_expected'] = np.array(v[:,0,3:5],np.float64)
+        print(n)
+        sdiff = np.setdiff1d(n['vs'], v[:,0,3:5])
+        print("Set Difference: ",sdiff )
+        self.assertEqual(len(sdiff), 0);
+
+
+    def test_numpy_slice_as_set_external_input(self):
+        n = Node()
+        # slice with non trivial strides
+        numpy_array = np.array(range(21), dtype='float64')
+        v = numpy_array.reshape((3, 7))
+        print("Input Array")
+        print(v)
+        print("Desired Slice")
+        print(v[:,0])
+        n['v'] = v
+        n['vs'].set_external(v[:,0])
+        n['vs_expected'] = np.array(v[:,0],np.float64)
+        print(n)
+        sdiff = np.setdiff1d(n['vs'], v[:,0])
+        print("Set Difference: ",sdiff )
+        self.assertEqual(len(sdiff), 0);
+        # a more complex slice, can't use set external here.
+        n = Node()
+        numpy_array = np.array(range(105), dtype='float64')
+        v = numpy_array.reshape((3, 7, 5))
+        with self.assertRaises(TypeError):
+            n['vs'].set_external(v[:,0,3:5])
+        # lets do a 1-d eff slice, this should work since
+        # it reduces to a 1-D strided case
+        n['vs'].set_external(v[:,0,0])
+        n['vs_expected'] = np.array(v[:,0,0],np.float64)
 
 if __name__ == '__main__':
     unittest.main()
