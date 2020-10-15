@@ -23,7 +23,8 @@ PYTHON_ADD_HYBRID_MODULE(NAME          conduit_python
                          PY_SETUP_FILE setup.py
                          PY_SOURCES    ${conduit_py_python_sources}
                          SOURCES       ${conduit_py_headers}
-                                       ${conduit_py_cpp_sources})
+                                       ${conduit_py_cpp_sources}
+                         FOLDER        libs/python)
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_python conduit)

@@ -17,7 +17,8 @@ PYTHON_ADD_HYBRID_MODULE(NAME          conduit_relay_python
                                        py_src/mpi/__init__.py
                                        py_src/web/__init__.py
                          SOURCES       conduit_relay_python.cpp
-                                       ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
+                                       ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
+                         FOLDER        libs/python)
 
 # link with the proper libs
 target_link_libraries(conduit_relay_python conduit conduit_relay)
@@ -27,7 +28,8 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_python
                            DEST_DIR      python-modules
                            PY_MODULE_DIR conduit/relay/io
                            SOURCES       conduit_relay_io_python.cpp
-                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
+                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
+                           FOLDER        libs/python)
 
 
 # link with the proper libs (beyond python)
@@ -38,7 +40,8 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_blueprint_python
                            DEST_DIR      python-modules
                            PY_MODULE_DIR conduit/relay/io/blueprint
                            SOURCES       conduit_relay_io_blueprint_python.cpp
-                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
+                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
+                           FOLDER        libs/python)
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_relay_io_blueprint_python conduit conduit_relay conduit_blueprint)
@@ -49,7 +52,8 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_web_python
                            DEST_DIR      python-modules 
                            PY_MODULE_DIR conduit/relay/web
                            SOURCES       conduit_relay_web_python.cpp
-                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
+                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
+                           FOLDER        libs/python)
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_relay_web_python conduit conduit_relay)
@@ -66,7 +70,8 @@ if(MPI_FOUND)
                                DEST_DIR      python-modules
                                PY_MODULE_DIR conduit/relay/mpi
                                SOURCES       conduit_relay_mpi_python.cpp
-                                             ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h)
+                                             ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
+                               FOLDER        libs/python)
 
     # link with the proper libs (beyond python)
     target_link_libraries(conduit_relay_mpi_python conduit conduit_relay_mpi)
