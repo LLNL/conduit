@@ -4007,16 +4007,90 @@ static void
 PyConduit_Fill_DataArray_From_PyArray(DataArray<T> &conduit_array,
                                       PyArrayObject *numpy_array)
 {
-    npy_int num_ele = (npy_int)conduit_array.number_of_elements();
+    // proper strided iteration, adapted from:
+    //https://docs.scipy.org/doc/numpy-1.10.0/reference/c-api.iterator.html
 
-    T *numpy_data = (T*)PyArray_BYTES(numpy_array);
 
-    for (npy_intp i = 0; i < num_ele; i++)
+    /* Handle zero-sized arrays specially */
+    if (PyArray_SIZE(numpy_array) == 0)
     {
-        conduit_array[i] = numpy_data[i];
+        // nothing to copy in this case!
+        return;
     }
-}
 
+    /*
+     * Create and use an iterator to copy out the data to our conduit array
+     *   flag NPY_ITER_READONLY
+     *     - The array is never written to.
+     *   flag NPY_ITER_EXTERNAL_LOOP
+     *     - Inner loop is done outside the iterator for efficiency.
+     *   flag NPY_ITER_NPY_ITER_REFS_OK
+     *     - Reference types are acceptable.
+     *   order NPY_KEEPORDER
+     *     - Visit elements in memory order, regardless of strides.
+     *       This is good for performance when the specific order
+     *       elements are visited is unimportant.
+     *   casting NPY_NO_CASTING
+     *     - No casting is required for this operation.
+     */
+     NpyIter* iter = NpyIter_New(numpy_array,
+                                 NPY_ITER_READONLY|
+                                 NPY_ITER_EXTERNAL_LOOP|
+                                 NPY_ITER_REFS_OK,
+                                 NPY_KEEPORDER,
+                                 NPY_NO_CASTING,
+                                 NULL);
+    if (iter == NULL)
+    {
+        // TODO ERROR!
+    }
+
+    /*
+     * The iternext function gets stored in a local variable
+     * so it can be called repeatedly in an efficient manner.
+     */
+    NpyIter_IterNextFunc *iternext = NpyIter_GetIterNext(iter, NULL);
+    if (iternext == NULL)
+    {
+        NpyIter_Deallocate(iter);
+        // TODO ERROR!
+    }
+
+    // The location of the data pointer which the iterator may update
+    char** dataptr = NpyIter_GetDataPtrArray(iter);
+    // The location of the stride which the iterator may update
+    npy_intp* strideptr = NpyIter_GetInnerStrideArray(iter);
+    // The location of the inner loop size which the iterator may update 
+    npy_intp* innersizeptr = NpyIter_GetInnerLoopSizePtr(iter);
+
+    int idx=0;
+    do
+    {
+        // Get the inner loop data/stride/count values
+        char* data = *dataptr;
+        npy_intp stride = *strideptr;
+        npy_intp count = *innersizeptr;
+
+        // This is a typical inner loop for NPY_ITER_EXTERNAL_LOOP
+        while (count--)
+        {
+            conduit_array[idx] = ((T*)data)[0];
+            data += stride;
+            idx++;
+        }
+        // Increment the iterator to the next inner loop
+    }
+    while(iternext(iter));
+
+    // TODO, add just in case consistency check?
+    // npy_int num_ele = (npy_int)conduit_array.number_of_elements();
+    // if(num_ele != idx)
+    // {
+    //  // this doesn't match our expectations
+    // }
+
+    NpyIter_Deallocate(iter);
+}
 
 //---------------------------------------------------------------------------//
 // begin Node python special methods
@@ -5093,9 +5167,14 @@ PyConduit_Node_set_external(PyConduit_Node* self,
     index_t stride = (index_t) PyArray_STRIDE(py_arr, 0);
     int nd = PyArray_NDIM(py_arr);
 
-    if (nd > 1) {
+    if (nd > 1)
+    {
         PyErr_SetString(PyExc_TypeError,
-                        "set_external does not handle multidimensional numpy arrays");
+                        "set_external does not handle multidimensional numpy"
+                        " arrays or multidimensional complex strided views"
+                        " into numpy arrays."
+                        " Views that are effectively 1D-strided are"
+                        "supported.");
         return (NULL);
     }
 

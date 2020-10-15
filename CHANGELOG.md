@@ -46,7 +46,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General 
 - Updated to newer BLT to resolve BLT/FindMPI issues with rpath linking commands when using OpenMPI.
 - Fixed internal object name string for the Python Iterator object. It used to report `Schema`, which triggered both puzzling and concerned emotions.
-
+- Fixed a bug with `Node.set` in the Python API that undermined setting NumPy arrays with sliced views and complex striding. General slices should now work with `set`. No changes to the `set_external` case, which requires 1-D effective striding and throws an exception when more complex strides are presented.
+  
 
 #### Relay
 - Use H5F_ACC_RDONLY in relay::io::is_hdf5_file to avoid errors when checking files that already have open HDF5 handles.
