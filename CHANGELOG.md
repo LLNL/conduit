@@ -25,6 +25,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
 - Added preliminary support to read Sidre Datastore-style HDF5 using Relay IOHandle,  those grouped with a root file.
 - Added `conduit::relay::io::blueprint::read_mesh` functions, were pulled in from Ascent's Blueprint import logic.
+- Added `conduit::relay::mpi::wait` and `conduit::relay::mpi::wait_all`functions. These functions consolidate the logic supporting both `isend` and `irecv` requests. `wait_all` supports cases where both sends and receives were posted, which is a common for non-trivial point-to-point communication use cases.
+
 
 #### Blueprint
 - Added support for sparse one-to-many relationships with the new `blueprint::o2mrelation` protocol. See the `blueprint::o2mrelation::examples::uniform` example for details.
@@ -69,6 +71,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - `conduit::relay::io_blueprint::save` functions are deprecated in favor of `conduit::relay::io::blueprint::write_mesh`
 - `conduit::relay::io::blueprint::write_mesh` functions were pulled in from Ascent's Blueprint export logic.
 - `conduit_relay_io_mpi` lib now depends on `conduit_relay_io`. Due to this change, a single build supports either ADIOS serial (no-mpi) or ADIOS with MPI support, but not both. If conduit is configured with MPI support, ADIOS MPI is used.
+- The functions `conduit::relay::mpi::wait_send` and `conduit::relay::mpi::wait_recv` now use `conduit::relay::mpi::wait`. The functions `wait_send` and `wait_recv` exist to preserve the old API, there is no benefit to use them over `wait`.
+- The functions `conduit::relay::mpi::wait_all_send` and `conduit::relay::mpi::wait_all_recv` now use `conduit::relay::mpi::wait_all`. The functions `wait_all_send` and `wait_all_recv` exist to preserve the old API, there is no benefit to use them over `wait_all`.
 
 
 #### Blueprint

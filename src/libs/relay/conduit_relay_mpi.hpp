@@ -194,11 +194,20 @@ namespace mpi
                                 MPI_Comm comm,
                                 Request *request);
 
+    // wait for either an isend or irecv request
+    int CONDUIT_RELAY_API wait(Request *request,
+                               MPI_Status *status);
+
     int CONDUIT_RELAY_API wait_send(Request *request,
                                     MPI_Status *status);
    
     int CONDUIT_RELAY_API wait_recv(Request *request,
                                     MPI_Status *status);
+
+    // wait for batch of isend and/or irecv requests
+    int CONDUIT_RELAY_API wait_all(int count,
+                                   Request requests[],
+                                   MPI_Status statuses[]);
 
     int CONDUIT_RELAY_API wait_all_send(int count,
                                         Request requests[],
