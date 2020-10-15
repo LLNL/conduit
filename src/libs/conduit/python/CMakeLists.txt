@@ -16,14 +16,14 @@ SET(conduit_py_cpp_sources     conduit_python.cpp)
 # Make sure we have access to numpy
 include_directories(${NUMPY_INCLUDE_DIRS})
 
-# Setup our module
-PYTHON_ADD_HYBRID_MODULE(conduit_python
-                         python-modules
-                         conduit
-                         setup.py
-                         "${conduit_py_python_sources}"
-                         ${conduit_py_headers}
-                         ${conduit_py_cpp_sources})
+# add conduit + conduit_python modules
+PYTHON_ADD_HYBRID_MODULE(NAME          conduit_python
+                         DEST_DIR      python-modules
+                         PY_MODULE_DIR conduit
+                         PY_SETUP_FILE setup.py
+                         PY_SOURCES    ${conduit_py_python_sources}
+                         SOURCES       ${conduit_py_headers}
+                                       ${conduit_py_cpp_sources})
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_python conduit)

@@ -118,30 +118,60 @@ find_package_handle_standard_args(Python  DEFAULT_MSG
 ##############################################################################
 # Macro to use a pure python distutils setup script
 ##############################################################################
-FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
-                                    dest_dir
-                                    py_module_dir
-                                    setup_file)
-    MESSAGE(STATUS "Configuring python distutils setup: ${target_name}")
-    
+FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
+    set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
+    set(multiValuedArgs  PY_SOURCES)
+
+    ## parse the arguments to the macro
+    cmake_parse_arguments(args
+            "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
+
+    # check req'd args
+    if(NOT DEFINED args_NAME)
+       message(FATAL_ERROR
+               "PYTHON_ADD_HYBRID_MODULE: Missing required argument NAME")
+    endif()
+
+    if(NOT DEFINED args_DEST_DIR)
+       message(FATAL_ERROR
+               "PYTHON_ADD_HYBRID_MODULE: Missing required argument DEST_DIR")
+    endif()
+
+    if(NOT DEFINED args_PY_MODULE_DIR)
+       message(FATAL_ERROR
+       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_MODULE_DIR")
+    endif()
+
+    if(NOT DEFINED args_PY_SETUP_FILE)
+       message(FATAL_ERROR
+       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SETUP_FILE")
+    endif()
+
+    if(NOT DEFINED args_PY_SOURCES)
+       message(FATAL_ERROR
+       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SOURCES")
+    endif()
+
+    MESSAGE(STATUS "Configuring python distutils setup: ${args_NAME}")
+
     # dest for build dir
-    set(abs_dest_path ${CMAKE_BINARY_DIR}/${dest_dir})
+    set(abs_dest_path ${CMAKE_BINARY_DIR}/${args_DEST_DIR})
     if(WIN32)
         # on windows, distutils seems to need standard "\" style paths
         string(REGEX REPLACE "/" "\\\\" abs_dest_path  ${abs_dest_path})
     endif()
 
-    add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
-            COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
+    add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
+            COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
             build
-            --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build
+            --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
             install
             --install-purelib="${abs_dest_path}"
-            DEPENDS  ${setup_file} ${ARGN}
+            DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-    add_custom_target(${target_name} ALL DEPENDS 
-                      ${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build)
+    add_custom_target(${args_NAME} ALL DEPENDS
+                      ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build)
 
     # also use distutils for the install ...
     # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
@@ -154,8 +184,8 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
-                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build_install
+                COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
                     install --install-purelib=${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
@@ -165,14 +195,19 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP target_name
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${setup_file} -v
-                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${target_name}_build_install
-                    install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${dest_dir}
+                COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
+                    install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
     endif()
-    
+
+    # set folder if passed
+    if(DEFINED args_FOLDER)
+        blt_set_target_folder(TARGET ${args_NAME} FOLDER ${args_FOLDER})
+    endif()
+
 ENDFUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
 
 ##############################################################################
@@ -183,25 +218,55 @@ ENDFUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
 # to setup proper install targets.
 #
 ##############################################################################
-FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
-                                    dest_dir
-                                    py_module_dir)
-    MESSAGE(STATUS "Configuring python module: ${target_name}")
-    PYTHON_ADD_MODULE(${target_name} ${ARGN})
-    
+FUNCTION(PYTHON_ADD_COMPILED_MODULE)
+    set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR FOLDER)
+    set(multiValuedArgs  SOURCES)
 
-    set_target_properties(${target_name} PROPERTIES
-                                         LIBRARY_OUTPUT_DIRECTORY
-                                         ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+    ## parse the arguments to the macro
+    cmake_parse_arguments(args
+            "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
+
+    # check req'd args
+    if(NOT DEFINED args_NAME)
+       message(FATAL_ERROR
+               "PYTHON_ADD_COMPILED_MODULE: Missing required argument NAME")
+    endif()
+
+    if(NOT DEFINED args_DEST_DIR)
+       message(FATAL_ERROR
+               "PYTHON_ADD_COMPILED_MODULE: Missing required argument DEST_DIR")
+    endif()
+
+    if(NOT DEFINED args_PY_MODULE_DIR)
+       message(FATAL_ERROR
+       "PYTHON_ADD_COMPILED_MODULE: Missing required argument PY_MODULE_DIR")
+    endif()
+
+    if(NOT DEFINED args_SOURCES)
+       message(FATAL_ERROR
+               "PYTHON_ADD_COMPILED_MODULE: Missing required argument SOURCES")
+    endif()
+
+    MESSAGE(STATUS "Configuring python module: ${args_NAME}")
+    PYTHON_ADD_MODULE(${args_NAME} ${args_SOURCES})
+
+    set_target_properties(${args_NAME} PROPERTIES
+                                       LIBRARY_OUTPUT_DIRECTORY
+                                       ${CMAKE_BINARY_DIR}/${args_DEST_DIR}/${args_PY_MODULE_DIR})
+
+    # set folder if passed
+    if(DEFINED args_FOLDER)
+        blt_set_target_folder(TARGET ${args_NAME} FOLDER ${args_FOLDER})
+    endif()
 
     foreach(CFG_TYPE ${CMAKE_CONFIGURATION_TYPES})
         string(TOUPPER ${CFG_TYPE} CFG_TYPE)
-        set_target_properties(${target_name} PROPERTIES
-                                             LIBRARY_OUTPUT_DIRECTORY_${CFG_TYPE}
-                                             ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir})
+        set_target_properties(${args_NAME} PROPERTIES
+                                           LIBRARY_OUTPUT_DIRECTORY_${CFG_TYPE}
+                                           ${CMAKE_BINARY_DIR}/${args_DEST_DIR}/${args_PY_MODULE_DIR})
     endforeach()
 
-    MESSAGE(STATUS "${target_name} build location: ${CMAKE_BINARY_DIR}/${dest_dir}/${py_module_dir}")
+    MESSAGE(STATUS "${args_NAME} build location: ${CMAKE_BINARY_DIR}/${args_DEST_DIR}/${args_PY_MODULE_DIR}")
 
     # macOS and linux
     # defer linking with python, let the final python interpreter
@@ -210,27 +275,27 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE target_name
     # on osx we need to use the following flag to 
     # avoid undefined linking errors
     if(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG)
-        set_target_properties(${target_name} PROPERTIES 
+        set_target_properties(${args_NAME} PROPERTIES
                               LINK_FLAGS "-undefined dynamic_lookup")
     endif()
     
     # win32, link to python
     if(WIN32)
-        target_link_libraries(${target_name} ${PYTHON_LIBRARIES})
+        target_link_libraries(${args_NAME} ${PYTHON_LIBRARIES})
     endif()
 
     # support installing the python module components to an
     # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
-    set(py_install_dir ${dest_dir})
+    set(py_install_dir ${args_DEST_DIR})
     if(PYTHON_MODULE_INSTALL_PREFIX)
         set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
     endif()
 
     install(TARGETS ${target_name}
             EXPORT  conduit
-            LIBRARY DESTINATION ${py_install_dir}/${py_module_dir}
-            ARCHIVE DESTINATION ${py_install_dir}/${py_module_dir}
-            RUNTIME DESTINATION ${py_install_dir}/${py_module_dir}
+            LIBRARY DESTINATION ${py_install_dir}/${args_PY_MODULE_DIR}
+            ARCHIVE DESTINATION ${py_install_dir}/${args_PY_MODULE_DIR}
+            RUNTIME DESTINATION ${py_install_dir}/${args_PY_MODULE_DIR}
     )
 
 ENDFUNCTION(PYTHON_ADD_COMPILED_MODULE)
@@ -238,23 +303,59 @@ ENDFUNCTION(PYTHON_ADD_COMPILED_MODULE)
 ##############################################################################
 # Macro to create a compiled distutils and compiled python module
 ##############################################################################
-FUNCTION(PYTHON_ADD_HYBRID_MODULE target_name
-                                  dest_dir
-                                  py_module_dir
-                                  setup_file
-                                  py_sources)
-    MESSAGE(STATUS "Configuring hybrid python module: ${target_name}")
+FUNCTION(PYTHON_ADD_HYBRID_MODULE)
+    set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
+    set(multiValuedArgs  PY_SOURCES SOURCES)
 
-    PYTHON_ADD_DISTUTILS_SETUP("${target_name}_py_setup"
-                               ${dest_dir}
-                               ${py_module_dir}
-                               ${setup_file}
-                               ${py_sources})
+    ## parse the arguments to the macro
+    cmake_parse_arguments(args
+            "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
 
-    PYTHON_ADD_COMPILED_MODULE(${target_name}
-                               ${dest_dir}
-                               ${py_module_dir}
-                               ${ARGN})
+     # check req'd args
+    if(NOT DEFINED args_NAME)
+        message(FATAL_ERROR
+                "PYTHON_ADD_HYBRID_MODULE: Missing required argument NAME")
+    endif()
+
+    if(NOT DEFINED args_DEST_DIR)
+        message(FATAL_ERROR
+                "PYTHON_ADD_HYBRID_MODULE: Missing required argument DEST_DIR")
+    endif()
+
+    if(NOT DEFINED args_PY_MODULE_DIR)
+        message(FATAL_ERROR
+        "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_MODULE_DIR")
+    endif()
+
+    if(NOT DEFINED args_PY_SETUP_FILE)
+        message(FATAL_ERROR
+        "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SETUP_FILE")
+    endif()
+
+    if(NOT DEFINED args_PY_SOURCES)
+        message(FATAL_ERROR
+        "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SOURCES")
+    endif()
+
+    if(NOT DEFINED args_SOURCES)
+        message(FATAL_ERROR
+                "PYTHON_ADD_HYBRID_MODULE: Missing required argument SOURCES")
+    endif()
+
+    MESSAGE(STATUS "Configuring hybrid python module: ${args_NAME}")
+
+    PYTHON_ADD_DISTUTILS_SETUP(NAME          "${args_NAME}_py_setup"
+                               DEST_DIR      ${args_DEST_DIR}
+                               PY_MODULE_DIR ${args_PY_MODULE_DIR}
+                               PY_SETUP_FILE ${args_PY_SETUP_FILE}
+                               PY_SOURCES    ${args_PY_SOURCES}
+                               FOLDER        ${args_FOLDER})
+
+    PYTHON_ADD_COMPILED_MODULE(NAME          ${args_NAME}
+                               DEST_DIR      ${args_DEST_DIR}
+                               PY_MODULE_DIR ${args_PY_MODULE_DIR}
+                               SOURCES       ${args_SOURCES}
+                               FOLDER        ${args_FOLDER})
 
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
