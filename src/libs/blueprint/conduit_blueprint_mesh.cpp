@@ -1077,7 +1077,6 @@ struct TopologyMetadata
         dim_topos[topo_shape.dim]["elements/offsets"].set(topo_offsets);
 
         std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
-        std::vector< std::vector<int64> > dim_sizes(topo_shape.dim + 1);
         std::vector< int64 > dim_offsets(topo_shape.dim + 1);
 
         // Prepare Initial Values for Processing //
@@ -1133,7 +1132,6 @@ struct TopologyMetadata
             entity_parent_bag.pop_back();
 
             std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
-            std::vector<int64> &dim_size = dim_sizes[entity_dim];
             int64 &dim_offset = dim_offsets[entity_dim];
             std::map< std::set<index_t>, index_t > &dim_entity_map = dim_entity_maps[entity_dim];
             ShapeType dim_shape = topo_cascade.get_shape(entity_dim);
@@ -1200,11 +1198,6 @@ struct TopologyMetadata
                 index_t entity_id = dim_offset;
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
                 dim_entity_map[entity] = dim_offset++;
-
-                if (dim_shape.is_polygonal())
-                {
-                  dim_size.push_back(entity.size());
-                }
 
                 dim_assocs[entity_dim][entity_id].resize(topo_shape.dim + 1);
                 dim_assocs[entity_dim][entity_id][entity_dim].insert(entity_id);
@@ -1305,16 +1298,15 @@ struct TopologyMetadata
             dim_conn.set(DataType(int_dtype.id(), dim_buffers[di].size()));
             data_conn.to_data_type(int_dtype.id(), dim_conn);
 
-            // Generate size for polygonal mesh
-            if (di == 2)
+            // Initialize element/sizes for polygonal mesh using polyhedral's
+            // subelement/sizes
+            if (di == 2 && topo_shape.is_polyhedral())
             {
-                Node &dim_size = dim_topos[di]["elements/sizes"];
-                if (dim_size.dtype().is_empty())
+                Node &polygonal_size = dim_topos[di]["elements/sizes"];
+                Node &polyhedral_subsize = dim_topos[3]["subelements/sizes"];
+                if (polygonal_size.dtype().is_empty())
                 {
-                  Node data_size(DataType::int64(dim_sizes[di].size()),
-                       &(dim_sizes[di][0]), true);
-                  dim_size.set(DataType(int_dtype.id(), dim_sizes[di].size()));
-                  data_size.to_data_type(int_dtype.id(), dim_size);
+                  polygonal_size = polyhedral_subsize;
                 }
             }
 
