@@ -79,6 +79,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Refactored the Polygonal and Polyhedral mesh blueprint specification to leverage one-to-many concepts and to allow more zero-copy use cases.
 - The `conduit_blueprint_mpi` library now depends on `conduit_relay_mpi`.
+- The optional Mesh Blueprint structured topology logical element origin is now specified using `{i,j,k}` instead of `{i0,j0,k0}`.
 
 
 ## [0.5.1] - Released 2020-01-18

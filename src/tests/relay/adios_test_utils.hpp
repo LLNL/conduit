@@ -218,9 +218,9 @@ void add_rectilinear_mesh(Node &n, conduit::float64 origin[3], conduit::float64 
     n["coordsets/coords/values/z"] = coords[2];
     n["topologies/mesh/coordset"] = "coords";
     n["topologies/mesh/type"] = "rectilinear";
-    n["topologies/mesh/elements/origin/i0"] = origin[0];
-    n["topologies/mesh/elements/origin/j0"] = origin[1];
-    n["topologies/mesh/elements/origin/k0"] = origin[2];
+    n["topologies/mesh/elements/origin/i"] = origin[0];
+    n["topologies/mesh/elements/origin/j"] = origin[1];
+    n["topologies/mesh/elements/origin/k"] = origin[2];
 
     n["fields/radius/association"] = "vertex";
     n["fields/radius/type"] = "scalar";
