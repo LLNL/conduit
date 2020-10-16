@@ -465,7 +465,7 @@ TEST(conduit_mpi_test, send_recv_without_using_schema)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, isend_irecv_wait)
+TEST(conduit_mpi_test, isend_irecv_wait_old_api)
 {
     Node n1;
     int rank = 0;
@@ -500,8 +500,46 @@ TEST(conduit_mpi_test, isend_irecv_wait)
 
 }
 
+
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, waitall)
+TEST(conduit_mpi_test, isend_irecv_wait)
+{
+    Node n1;
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    std::vector<double> doubles;
+
+
+    doubles.push_back(rank+1);
+    doubles.push_back(3.4124*rank);
+    doubles.push_back(10.7 - rank);
+
+    n1.set_external(doubles);
+
+
+    mpi::Request request;
+
+    MPI_Status status;
+    if (rank == 0)
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
+    }
+    else if (rank == 1)
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
+    }
+
+    mpi::wait(&request, &status);
+
+    EXPECT_EQ(n1.as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1.as_float64_ptr()[2], 9.7);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, waitall_old_api)
 {
     Node n1;
     int rank = 0;
@@ -538,6 +576,84 @@ TEST(conduit_mpi_test, waitall)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, waitall)
+{
+    Node n1;
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    std::vector<double> doubles;
+
+
+    doubles.push_back(rank+1);
+    doubles.push_back(3.4124*rank);
+    doubles.push_back(10.7 - rank);
+
+    n1.set_external(doubles);
+
+    mpi::Request requests[1];
+
+    MPI_Status statuses[1];
+    if (rank == 0)
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
+    } else if (rank == 1)
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
+    }
+
+    mpi::wait_all(1, requests, statuses);
+
+    EXPECT_EQ(n1.as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1.as_float64_ptr()[2], 9.7);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, waitallmultirequest_old_api)
+{
+    Node n1;
+    Node n2;
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    std::vector<double> doubles;
+
+
+    doubles.push_back(rank+1);
+    doubles.push_back(3.4124*rank);
+    doubles.push_back(10.7 - rank);
+
+    n1.set_external(doubles);
+
+    n2 = 13123;
+
+    mpi::Request requests[2];
+
+    MPI_Status statuses[2];
+    if (rank == 0)
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
+        mpi::irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
+        mpi::wait_all_recv(2, requests, statuses);
+    }
+    else if (rank == 1)
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
+        mpi::isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
+        mpi::wait_all_send(2, requests, statuses);
+    }
+
+    EXPECT_EQ(n1.as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1.as_float64_ptr()[2], 9.7);
+
+    EXPECT_EQ(n2.as_int32(), 13123);
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, waitallmultirequest)
 {
     Node n1;
@@ -556,8 +672,6 @@ TEST(conduit_mpi_test, waitallmultirequest)
 
     n2 = 13123;
 
-
-
     mpi::Request requests[2];
 
     MPI_Status statuses[2];
@@ -565,14 +679,14 @@ TEST(conduit_mpi_test, waitallmultirequest)
     {
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::wait_all_recv(2, requests, statuses);
     }
     else if (rank == 1)
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::wait_all_send(2, requests, statuses);
     }
+
+    mpi::wait_all(2, requests, statuses);
 
     EXPECT_EQ(n1.as_float64_ptr()[0], 2);
     EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
@@ -618,15 +732,13 @@ TEST(conduit_mpi_test, external)
     if (rank == 0)
     {
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
-        mpi::wait_recv(&request, &status);
-
     }
     else if (rank == 1)
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
-        mpi::wait_send(&request, &status);
     }
 
+    mpi::wait(&request, &status);
 
     EXPECT_EQ(n1[0].as_float64_ptr()[0], 2);
     EXPECT_EQ(n1[0].as_float64_ptr()[1], 3.4124);
