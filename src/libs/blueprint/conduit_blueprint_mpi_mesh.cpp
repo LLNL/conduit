@@ -187,9 +187,9 @@ number_of_domains(const conduit::Node &n,
 }
 
 //-------------------------------------------------------------------------
-void to_poly(const Node &n,
-             Node &dest,
-             const std::string& name)
+void to_polygonal(const Node &n,
+                  Node &dest,
+                  const std::string& name)
 {
 
     dest.reset();
