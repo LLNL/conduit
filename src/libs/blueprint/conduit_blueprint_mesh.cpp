@@ -729,7 +729,7 @@ bool verify_poly_node(bool is_mixed_topo,
             elems_res &= subnode_res;
         }
     }
-
+    node_res &= elems_res;
     return node_res;
 }
 
