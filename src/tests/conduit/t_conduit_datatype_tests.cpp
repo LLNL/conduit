@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -69,6 +29,31 @@ void print_dt(const DataType &dtype)
 }
 
 //-----------------------------------------------------------------------------
+void print_dt_bells_and_whistles(const DataType &dtype)
+{
+    std::cout << "to_json()" << std::endl;
+    std::cout << dtype.to_json() << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "to_yaml()" << std::endl;
+    std::cout << dtype.to_yaml() << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "to_json_stream()" << std::endl;
+    dtype.to_json_stream(std::cout);
+    std::cout << std::endl;
+
+    std::cout << "to_yaml_stream()" << std::endl;
+    dtype.to_yaml_stream(std::cout,10,1);
+    std::cout << std::endl;
+
+    std::cout << "to_yaml_default()" << std::endl;
+    std::cout << dtype.to_yaml_default();
+    std::cout << std::endl;
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(dtype_tests, value_print)
 {
     EXPECT_EQ(DataType::EMPTY_ID,0);
@@ -77,7 +62,7 @@ TEST(dtype_tests, value_print)
     EXPECT_TRUE( (DataType::EMPTY_ID != DataType::OBJECT_ID) );
 
     DataType dt;
-    
+
     // empty leaf
     dt = DataType::empty();
     EXPECT_TRUE(dt.is_empty());
@@ -134,7 +119,74 @@ TEST(dtype_tests, value_print)
     dt = DataType::float64();
     EXPECT_TRUE(dt.is_float64());
     print_dt(dt);
+}
 
+//-----------------------------------------------------------------------------
+TEST(dtype_tests, value_print_bells_and_whistles)
+{
+    EXPECT_EQ(DataType::EMPTY_ID,0);
+    EXPECT_EQ(DataType::id_to_name(DataType::EMPTY_ID),"empty");
+    EXPECT_EQ(DataType::name_to_id("empty"),DataType::EMPTY_ID);
+    EXPECT_TRUE( (DataType::EMPTY_ID != DataType::OBJECT_ID) );
+
+    DataType dt;
+
+    // empty leaf
+    dt = DataType::empty();
+    EXPECT_TRUE(dt.is_empty());
+    print_dt_bells_and_whistles(dt);
+
+    // generic type
+    dt = DataType::object();
+    EXPECT_TRUE(dt.is_object());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::list();
+    EXPECT_TRUE(dt.is_list());
+    print_dt_bells_and_whistles(dt);
+
+    // signed ints
+    dt = DataType::int8();
+    EXPECT_TRUE(dt.is_int8());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::int16();
+    EXPECT_TRUE(dt.is_int16());
+    print_dt_bells_and_whistles(dt);
+    
+    dt = DataType::int32();
+    EXPECT_TRUE(dt.is_int32());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::int64();
+    EXPECT_TRUE(dt.is_int64());
+    print_dt_bells_and_whistles(dt);
+
+    // unsigned ints
+    dt = DataType::uint8();
+    EXPECT_TRUE(dt.is_uint8());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::uint16();
+    EXPECT_TRUE(dt.is_uint16());
+    print_dt_bells_and_whistles(dt);
+    
+    dt = DataType::uint32();
+    EXPECT_TRUE(dt.is_uint32());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::uint64();
+    EXPECT_TRUE(dt.is_uint64());
+    print_dt_bells_and_whistles(dt);
+    
+    // floating point
+    dt = DataType::float32();
+    EXPECT_TRUE(dt.is_float32());
+    print_dt_bells_and_whistles(dt);
+
+    dt = DataType::float64();
+    EXPECT_TRUE(dt.is_float64());
+    print_dt_bells_and_whistles(dt);
 }
 
 //-----------------------------------------------------------------------------
@@ -587,6 +639,24 @@ TEST(dtype_tests,dtype_endianness_checks)
     }
     
     EXPECT_FALSE(dt.endianness_matches_machine());
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(dtype_tests,dtype_to_string_simple_checks)
+{
+    std::string r_json = DataType::float64().to_json();
+    std::string r_yaml = DataType::float64().to_yaml();
+    EXPECT_TRUE(r_json.find("float64") != std::string::npos);
+    EXPECT_TRUE(r_json.find("\"") != std::string::npos);
+    EXPECT_TRUE(r_json.find("{")  != std::string::npos);
+    EXPECT_TRUE(r_json.find("}")  != std::string::npos);
+
+    EXPECT_TRUE(r_yaml.find("float64") != std::string::npos);
+    EXPECT_TRUE(r_yaml.find(":") != std::string::npos);
+    EXPECT_TRUE(r_yaml.find("{") == std::string::npos);
+    EXPECT_TRUE(r_yaml.find("}") == std::string::npos);
+
 }
 
 

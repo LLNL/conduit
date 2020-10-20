@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 
 //-----------------------------------------------------------------------------
@@ -1661,6 +1621,211 @@ PyConduit_DataType_id_to_name(PyObject *, // cls -- unused
     return Py_BuildValue("s", DataType::id_to_name(dtype_id).c_str());
 }
 
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_to_string(PyConduit_DataType* self,
+                             PyObject* args,
+                             PyObject* kwargs)
+{
+    
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+
+    std::string protocol = "yaml";
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    char *protocol_c_str = NULL;
+    char *pad_c_str = NULL;
+    char *eoe_c_str = NULL;
+    
+    static const char *kwlist[] = {"protocol",
+                                   "indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|snnss",
+                                     const_cast<char**>(kwlist),
+                                     &protocol_c_str,
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+    
+    if(protocol_c_str != NULL)
+    {
+        protocol = std::string(protocol_c_str);
+    }
+    
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    std::ostringstream oss;
+    
+    try
+    {
+        self->dtype.to_string_stream(oss,
+                                     protocol,
+                                     indent,
+                                     depth,
+                                     pad,
+                                     eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_to_json(PyConduit_DataType* self,
+                           PyObject* args,
+                           PyObject* kwargs)
+{
+    
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    char *pad_c_str = NULL;
+    char *eoe_c_str = NULL;
+    
+    static const char *kwlist[] = {"indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|snnss",
+                                     const_cast<char**>(kwlist),
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    std::ostringstream oss;
+    
+    try
+    {
+        self->dtype.to_json_stream(oss,
+                                   indent,
+                                   depth,
+                                   pad,
+                                   eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_to_yaml(PyConduit_DataType* self,
+                           PyObject* args,
+                           PyObject* kwargs)
+{
+    
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    char *pad_c_str = NULL;
+    char *eoe_c_str = NULL;
+    
+    static const char *kwlist[] = {"indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|snnss",
+                                     const_cast<char**>(kwlist),
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    std::ostringstream oss;
+    
+    try
+    {
+        self->dtype.to_yaml_stream(oss,
+                                   indent,
+                                   depth,
+                                   pad,
+                                   eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+
 // -- id enum value access -- /
 
 //-----------------------------------------------------------------------------
@@ -1781,117 +1946,136 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
     {"set_id",
      (PyCFunction)PyConduit_DataType_set_id,
       METH_VARARGS,
-      "{todo}"},
+      "Sets the dtype id of this DataType"},
     //-----------------------------------------------------------------------//
     {"set_number_of_elements",
      (PyCFunction)PyConduit_DataType_set_number_of_elements,
      METH_VARARGS,
-     "{todo}"},
+     "Sets the number of elements property of this DataType"},
     //-----------------------------------------------------------------------//
     {"set_offset",
      (PyCFunction)PyConduit_DataType_set_offset,
      METH_VARARGS,
-     "{todo}"},
+     "Sets the byte offset property of this DataType"},
     //-----------------------------------------------------------------------//
     {"set_stride",
      (PyCFunction)PyConduit_DataType_set_stride,
      METH_VARARGS,
-     "{todo}"},
+     "Sets the byte stride property of this DataType"},
     //-----------------------------------------------------------------------//
     {"set_element_bytes",
      (PyCFunction)PyConduit_DataType_set_element_bytes,
      METH_VARARGS,
-     "{todo}"},
+     "Sets the number of bytes per element property of this DataType"},
     //-----------------------------------------------------------------------//
     {"set_endianness",
      (PyCFunction)PyConduit_DataType_set_endianness,
      METH_VARARGS,
-     "{todo}"},
+     "Sets the endianness property of this DataType"},
     //-----------------------------------------------------------------------//
     {"id",
      (PyCFunction)PyConduit_DataType_id,
      METH_NOARGS,
-     "{todo}"},
+     "Returns the dtype id of this DataType"},
     //-----------------------------------------------------------------------//
     {"bytes_compact",
      (PyCFunction)PyConduit_DataType_bytes_compact,
      METH_NOARGS,
-     "{todo}"},
+     "Returns the bytes compact property of this DataType"},
     //-----------------------------------------------------------------------//
     {"strided_bytes",
      (PyCFunction)PyConduit_DataType_strided_bytes,
      METH_NOARGS,
-     "{todo}"},
+     "Returns the strided bytes property of this DataType"},
     //-----------------------------------------------------------------------//
     {"spanned_bytes",
      (PyCFunction)PyConduit_DataType_spanned_bytes,
      METH_NOARGS,
-     "{todo}"},
+     "Returns the bytes spanned property of this DataType"},
     //-----------------------------------------------------------------------//
     {"is_compact",
      (PyCFunction)PyConduit_DataType_is_compact,
      METH_NOARGS,
-     "{todo}"},
+     "Returns if this DataType is compact"},
     //-----------------------------------------------------------------------//
     {"compatible",
      (PyCFunction)PyConduit_DataType_compatible,
      METH_VARARGS,
-     "{todo}"},
+     "Returns if this DataType is compatible with another DataType instance"},
     //-----------------------------------------------------------------------//
     {"is_number",
      (PyCFunction)PyConduit_DataType_is_number,
      METH_NOARGS,
-     "{todo}"},
+     "Returns if this DataType is a number"},
     //-----------------------------------------------------------------------//
     {"is_floating_point",
      (PyCFunction)PyConduit_DataType_is_floating_point,
      METH_NOARGS,
-     "{todo}"},
+     "Returns if this DataType is a floating point number"},
     //-----------------------------------------------------------------------//
     {"is_integer",
      (PyCFunction)PyConduit_DataType_is_integer,
      METH_NOARGS,
-     "{todo}"},
+     "Returns if this DataType is an integer"},
     //-----------------------------------------------------------------------//
     {"is_signed_integer",
      (PyCFunction)PyConduit_DataType_is_signed_integer,
      METH_NOARGS,
-     "{todo}"},
+     "Returns if this DataType is a signed integer"},
     //-----------------------------------------------------------------------//
     {"is_unsigned_integer",
      (PyCFunction)PyConduit_DataType_is_unsigned_integer,
      METH_NOARGS,
-     "{todo}"},
+     "Returns if this DataType is an unsigned integer"},
     //-----------------------------------------------------------------------//
     {"number_of_elements",
      (PyCFunction)PyConduit_DataType_number_of_elements,
      METH_NOARGS,
-     "{todo}"},
+     "Returns the number of elements property of this DataType"},
     //-----------------------------------------------------------------------//
     {"offset",
      (PyCFunction)PyConduit_DataType_offset,
      METH_VARARGS,
-     "{todo}"},
+     "Returns the byte offset property of this DataType"},
     //-----------------------------------------------------------------------//
     {"stride",
      (PyCFunction)PyConduit_DataType_stride,
      METH_NOARGS,
-     "{todo}"},
+     "Returns the byte stride property of this DataType"},
     //-----------------------------------------------------------------------//
     {"element_bytes",
      (PyCFunction)PyConduit_DataType_element_bytes,
      METH_NOARGS,
-     "{todo}"},
+     "Returns the number of bytes per element property of this DataType"},
     //-----------------------------------------------------------------------//
     {"endianness",
      (PyCFunction)PyConduit_DataType_endianness,
      METH_NOARGS,
-     "{todo}"},
+     "Returns the endianness property of this DataType"},
     //-----------------------------------------------------------------------//
     {"element_index",
      (PyCFunction)PyConduit_DataType_element_index,
      METH_VARARGS,
-     "{todo}"},
+     "Returns the byte offset for a given element index of this DataType"},
+    //-----------------------------------------------------------------------//
+    {"to_string",
+     (PyCFunction)PyConduit_DataType_to_string, 
+     METH_VARARGS| METH_KEYWORDS,
+     "Returns a string representation of the DataType. "
+     "Optionally takes protocol and spacing options. "
+     "(Default protocol='yaml'.)"},
+    //-----------------------------------------------------------------------//
+    {"to_json",
+     (PyCFunction)PyConduit_DataType_to_json, 
+     METH_VARARGS| METH_KEYWORDS,
+     "Returns a JSON string representation of the DataType. "
+     "Optionally takes protocol and spacing options."},
+    //-----------------------------------------------------------------------//
+    {"to_yaml",
+     (PyCFunction)PyConduit_DataType_to_yaml, 
+     METH_VARARGS| METH_KEYWORDS,
+     "Returns a YAML string representation of the DataType. "
+     "Optionally takes protocol and spacing options."},
     //-----------------------------------------------------------------------//
     // --- static methods --- ///
     //-----------------------------------------------------------------------//
@@ -1899,128 +2083,127 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
     {"name_to_id",
      (PyCFunction)PyConduit_DataType_name_to_id,
      METH_VARARGS | METH_STATIC,
-     "{todo}"},
+     "Converts a DataType name string to its corresponding id value"},
     //-----------------------------------------------------------------------//
     {"id_to_name",
      (PyCFunction)PyConduit_DataType_id_to_name,
      METH_VARARGS | METH_STATIC,
-     "{todo}"},
+     "Converts a DataType id value to its corresponding name string"},
     //-----------------------------------------------------------------------//
     {"empty",
      (PyCFunction)PyConduit_DataType_empty,
      METH_NOARGS | METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for the empty role"},
     //-----------------------------------------------------------------------//
     {"object",
      (PyCFunction)PyConduit_DataType_object,
      METH_NOARGS | METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for the object role"},
     //-----------------------------------------------------------------------//
     {"list",
      (PyCFunction)PyConduit_DataType_list,
      METH_NOARGS | METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for the list role"},
     //-----------------------------------------------------------------------//
     {"int8",
      (PyCFunction)PyConduit_DataType_int8,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an int8 leaf"},
     //-----------------------------------------------------------------------//
     {"int16",
      (PyCFunction)PyConduit_DataType_int16,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an int16 leaf"},
     //-----------------------------------------------------------------------//
     {"int32",
      (PyCFunction)PyConduit_DataType_int32,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an int32 leaf"},
     //-----------------------------------------------------------------------//
     {"int64",
      (PyCFunction)PyConduit_DataType_int64,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an int64 leaf"},
     //-----------------------------------------------------------------------//
     {"uint8",
      (PyCFunction)PyConduit_DataType_uint8,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an uint8 leaf"},
     //-----------------------------------------------------------------------//
     {"uint16",
      (PyCFunction)PyConduit_DataType_uint16,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an uint16 leaf"},
     //-----------------------------------------------------------------------//
     {"uint32",
      (PyCFunction)PyConduit_DataType_uint32,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an uint32 leaf"},
     //-----------------------------------------------------------------------//
     {"uint64",
      (PyCFunction)PyConduit_DataType_uint64,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an uint64 leaf"},
     //-----------------------------------------------------------------------//
     {"float32",
      (PyCFunction)PyConduit_DataType_float32,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an float32 leaf"},
     //-----------------------------------------------------------------------//
     {"float64",
      (PyCFunction)PyConduit_DataType_float64,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for an float64 leaf"},
     //-----------------------------------------------------------------------//
     {"c_char",
      (PyCFunction)PyConduit_DataType_c_char,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native char leaf"},
     //-----------------------------------------------------------------------//
     {"c_short",
      (PyCFunction)PyConduit_DataType_c_short,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native short leaf"},
     //-----------------------------------------------------------------------//
     {"c_int",
      (PyCFunction)PyConduit_DataType_c_int,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native int leaf"},
     //-----------------------------------------------------------------------//
     {"c_long",
      (PyCFunction)PyConduit_DataType_c_long,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native long leaf"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_char",
      (PyCFunction)PyConduit_DataType_c_unsigned_char,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native unsigned char leaf"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_short",
      (PyCFunction)PyConduit_DataType_c_unsigned_short,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native unsigned short leaf"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_int",
      (PyCFunction)PyConduit_DataType_c_unsigned_int,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native unsigned int leaf"},
     //-----------------------------------------------------------------------//
     {"c_unsigned_long",
      (PyCFunction)PyConduit_DataType_c_unsigned_long,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native unsigned long leaf"},
     //-----------------------------------------------------------------------//
     {"c_float",
      (PyCFunction)PyConduit_DataType_c_float,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
+     "Creates a DataType for a c-style native float leaf"},
     //-----------------------------------------------------------------------//
     {"c_double",
      (PyCFunction)PyConduit_DataType_c_double,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
-     "{todo}"},
-     
+     "Creates a DataType for a c-style native double leaf"},
     // -- ids -- //
     //-----------------------------------------------------------------------//
      {"empty_id",
@@ -2094,7 +2277,7 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      {"float64_id",
       (PyCFunction)PyConduit_DataType_float64_id,
       METH_NOARGS | METH_STATIC,
-      "Returns DataType::FLOAT64_ID"},     
+      "Returns DataType::FLOAT64_ID"},
     //-----------------------------------------------------------------------//
     // end DataType methods table
     //-----------------------------------------------------------------------//
@@ -3009,18 +3192,236 @@ PyConduit_Schema_child_names(PyConduit_Schema *self)
 /// Transformation Methods
 //
 //-----------------------------------------------------------------------------
-    // void            compact_to(Schema &s_dest) const;
-    // std::string     to_json(bool detailed=true,
-    //                             index_t indent=2,
-    //                             index_t depth=0,
-    //                             const std::string &pad=" ",
-    //                             const std::string &eoe="\n") const;
-    // void            to_json(std::ostringstream &oss,
-    //                             bool detailed=true,
-    //                             index_t indent=2,
-    //                             index_t depth=0,
-    //                             const std::string &pad=" ",
-    //                             const std::string &eoe="\n") const;
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_compact_to(PyConduit_Schema* self,
+                     PyObject* args)
+{
+    PyObject* value = NULL;
+    
+    if (!PyArg_ParseTuple(args, "O", &value))
+    {
+         return (NULL);
+    }
+
+    if(PyConduit_Schema_Check(value))
+    {
+        self->schema->compact_to(*((PyConduit_Schema*)value)->schema);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "value must be a Conduit Schema");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_to_string(PyConduit_Schema* self,
+                           PyObject* args,
+                           PyObject* kwargs)
+{
+    
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+
+    std::string protocol = "yaml";
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    char *protocol_c_str = NULL;
+    char *pad_c_str = NULL;
+    char *eoe_c_str = NULL;
+    
+    static const char *kwlist[] = {"protocol",
+                                   "indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|snnss",
+                                     const_cast<char**>(kwlist),
+                                     &protocol_c_str,
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+    
+    if(protocol_c_str != NULL)
+    {
+        protocol = std::string(protocol_c_str);
+    }
+    
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    std::ostringstream oss;
+    
+    try
+    {
+        self->schema->to_string_stream(oss,
+                                       protocol,
+                                       indent,
+                                       depth,
+                                       pad,
+                                       eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_to_json(PyConduit_Schema* self,
+                         PyObject* args,
+                         PyObject* kwargs)
+{
+    
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    char *pad_c_str = NULL;
+    char *eoe_c_str = NULL;
+    
+    static const char *kwlist[] = {"indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|snnss",
+                                     const_cast<char**>(kwlist),
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    std::ostringstream oss;
+    
+    try
+    {
+        self->schema->to_json_stream(oss,
+                                     indent,
+                                     depth,
+                                     pad,
+                                     eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_to_yaml(PyConduit_Schema* self,
+                         PyObject* args,
+                         PyObject* kwargs)
+{
+    
+    Py_ssize_t indent = 2;
+    Py_ssize_t depth  = 0;
+
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    char *pad_c_str = NULL;
+    char *eoe_c_str = NULL;
+    
+    static const char *kwlist[] = {"indent",
+                                   "depth",
+                                   "pad",
+                                   "eoe",
+                                    NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|snnss",
+                                     const_cast<char**>(kwlist),
+                                     &indent,
+                                     &depth,
+                                     &pad_c_str,
+                                     &eoe_c_str))
+    {
+        return NULL;
+    }
+
+    if(pad_c_str != NULL)
+    {
+        pad = std::string(pad_c_str);
+    }
+
+    if(eoe_c_str != NULL)
+    {
+        eoe = std::string(eoe_c_str);
+    }
+    
+    std::ostringstream oss;
+    
+    try
+    {
+        self->schema->to_yaml_stream(oss,
+                                     indent,
+                                     depth,
+                                     pad,
+                                     eoe);
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+
+
 
 //-----------------------------------------------------------------------------
 //
@@ -3135,6 +3536,30 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
      (PyCFunction)PyConduit_Schema_has_child,
      METH_VARARGS, 
      "Returns if this schema has the given child"},
+    //-----------------------------------------------------------------------//
+    {"compact_to",
+     (PyCFunction)PyConduit_Schema_compact_to, 
+     METH_VARARGS| METH_KEYWORDS,
+     "Compacts this schema into the passed schema instance."},
+    //-----------------------------------------------------------------------//
+    {"to_string",
+     (PyCFunction)PyConduit_Schema_to_string, 
+     METH_VARARGS| METH_KEYWORDS,
+     "Returns a string representation of the schema. "
+     "Optionally takes protocol and spacing options. "
+     "(Default protocol='yaml'.)"},
+    //-----------------------------------------------------------------------//
+    {"to_json",
+     (PyCFunction)PyConduit_Schema_to_json, 
+     METH_VARARGS| METH_KEYWORDS,
+     "Returns a JSON string representation of the schema. "
+     "Optionally takes protocol and spacing options."},
+    //-----------------------------------------------------------------------//
+    {"to_yaml",
+     (PyCFunction)PyConduit_Schema_to_yaml, 
+     METH_VARARGS| METH_KEYWORDS,
+     "Returns a YAML string representation of the schema. "
+     "Optionally takes protocol and spacing options."},
     //-----------------------------------------------------------------------//
     // end Schema methods table
     //-----------------------------------------------------------------------//
@@ -3510,7 +3935,7 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 //---------------------------------------------------------------------------//
 static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
-   "Schema",
+   "Iterator",
    sizeof(PyConduit_NodeIterator),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyConduit_NodeIterator_dealloc,   /* tp_dealloc */
@@ -3529,7 +3954,7 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    0, /* setattro */
    0, /* asbuffer */
    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
-   "Conduit schema objects",
+   "Conduit Iterator objects",
    0, /* traverse */
    0, /* clear */
    0, /* tp_richcompare */
@@ -3582,16 +4007,90 @@ static void
 PyConduit_Fill_DataArray_From_PyArray(DataArray<T> &conduit_array,
                                       PyArrayObject *numpy_array)
 {
-    npy_int num_ele = (npy_int)conduit_array.number_of_elements();
+    // proper strided iteration, adapted from:
+    //https://docs.scipy.org/doc/numpy-1.10.0/reference/c-api.iterator.html
 
-    T *numpy_data = (T*)PyArray_BYTES(numpy_array);
 
-    for (npy_intp i = 0; i < num_ele; i++)
+    /* Handle zero-sized arrays specially */
+    if (PyArray_SIZE(numpy_array) == 0)
     {
-        conduit_array[i] = numpy_data[i];
+        // nothing to copy in this case!
+        return;
     }
-}
 
+    /*
+     * Create and use an iterator to copy out the data to our conduit array
+     *   flag NPY_ITER_READONLY
+     *     - The array is never written to.
+     *   flag NPY_ITER_EXTERNAL_LOOP
+     *     - Inner loop is done outside the iterator for efficiency.
+     *   flag NPY_ITER_NPY_ITER_REFS_OK
+     *     - Reference types are acceptable.
+     *   order NPY_KEEPORDER
+     *     - Visit elements in memory order, regardless of strides.
+     *       This is good for performance when the specific order
+     *       elements are visited is unimportant.
+     *   casting NPY_NO_CASTING
+     *     - No casting is required for this operation.
+     */
+     NpyIter* iter = NpyIter_New(numpy_array,
+                                 NPY_ITER_READONLY|
+                                 NPY_ITER_EXTERNAL_LOOP|
+                                 NPY_ITER_REFS_OK,
+                                 NPY_KEEPORDER,
+                                 NPY_NO_CASTING,
+                                 NULL);
+    if (iter == NULL)
+    {
+        // TODO ERROR!
+    }
+
+    /*
+     * The iternext function gets stored in a local variable
+     * so it can be called repeatedly in an efficient manner.
+     */
+    NpyIter_IterNextFunc *iternext = NpyIter_GetIterNext(iter, NULL);
+    if (iternext == NULL)
+    {
+        NpyIter_Deallocate(iter);
+        // TODO ERROR!
+    }
+
+    // The location of the data pointer which the iterator may update
+    char** dataptr = NpyIter_GetDataPtrArray(iter);
+    // The location of the stride which the iterator may update
+    npy_intp* strideptr = NpyIter_GetInnerStrideArray(iter);
+    // The location of the inner loop size which the iterator may update 
+    npy_intp* innersizeptr = NpyIter_GetInnerLoopSizePtr(iter);
+
+    int idx=0;
+    do
+    {
+        // Get the inner loop data/stride/count values
+        char* data = *dataptr;
+        npy_intp stride = *strideptr;
+        npy_intp count = *innersizeptr;
+
+        // This is a typical inner loop for NPY_ITER_EXTERNAL_LOOP
+        while (count--)
+        {
+            conduit_array[idx] = ((T*)data)[0];
+            data += stride;
+            idx++;
+        }
+        // Increment the iterator to the next inner loop
+    }
+    while(iternext(iter));
+
+    // TODO, add just in case consistency check?
+    // npy_int num_ele = (npy_int)conduit_array.number_of_elements();
+    // if(num_ele != idx)
+    // {
+    //  // this doesn't match our expectations
+    // }
+
+    NpyIter_Deallocate(iter);
+}
 
 //---------------------------------------------------------------------------//
 // begin Node python special methods
@@ -4668,9 +5167,14 @@ PyConduit_Node_set_external(PyConduit_Node* self,
     index_t stride = (index_t) PyArray_STRIDE(py_arr, 0);
     int nd = PyArray_NDIM(py_arr);
 
-    if (nd > 1) {
+    if (nd > 1)
+    {
         PyErr_SetString(PyExc_TypeError,
-                        "set_external does not handle multidimensional numpy arrays");
+                        "set_external does not handle multidimensional numpy"
+                        " arrays or multidimensional complex strided views"
+                        " into numpy arrays."
+                        " Views that are effectively 1D-strided are"
+                        "supported.");
         return (NULL);
     }
 

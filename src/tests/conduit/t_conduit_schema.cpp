@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2015, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://llnl.github.io/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -403,47 +363,65 @@ TEST(schema_basics, schema_to_string)
     s["c"].set(DataType::float64());
 
     std::string res_str  = s.to_string();
+    std::string res_str_yaml = s.to_string("yaml");
     std::string res_json = s.to_json();
-    
+    std::string res_yaml = s.to_yaml();
+
     std::ostringstream oss;
-    
+
     s.to_string_stream(oss);
     std::string res_str_from_oss = oss.str();
-    
+
     oss.str("");
-    s.to_json_stream(oss);    
+    s.to_json_stream(oss);
     std::string res_json_from_oss = oss.str();
+
+    oss.str("");
+    s.to_yaml_stream(oss);
+    std::string res_yaml_from_oss = oss.str();
+
 
     // save files
     std::string tf_t_str_file ="tout_schema_to_string_stream_file.json";
     // remove if exists
-    if(utils::is_file(tf_t_str_file))
-    {
-        utils::remove_file(tf_t_str_file);
-    }
+    utils::remove_path_if_exists(tf_t_str_file);
+
     s.to_string_stream(tf_t_str_file);
     EXPECT_TRUE(utils::is_file(tf_t_str_file));
 
     std::string tf_t_json_file ="tout_schema_to_string_stream_file.json";
+
     // remove if exists
-    if(utils::is_file(tf_t_json_file))
-    {
-        utils::remove_file(tf_t_str_file);
-    }
+    utils::remove_path_if_exists(tf_t_json_file);
 
     s.to_json_stream(tf_t_json_file);
-
     EXPECT_TRUE(utils::is_file(tf_t_json_file));
 
+    std::string tf_t_yaml_file ="tout_schema_to_string_stream_file.yaml";
+
+    // remove if exists
+    utils::remove_path_if_exists(tf_t_yaml_file);
+
+    s.to_yaml_stream(tf_t_yaml_file);
+    EXPECT_TRUE(utils::is_file(tf_t_yaml_file));
+
+
+    std::cout << "DEFAULT CASE" << std::endl;
     std::cout << res_str << std::endl;
+    std::cout << "JSON CASES" << std::endl;
     std::cout << res_json << std::endl;
     std::cout << res_str_from_oss << std::endl;
     std::cout << res_json_from_oss << std::endl;
+    std::cout << "YAML CASES" << std::endl;
+    std::cout << res_yaml << std::endl;
+    std::cout << res_yaml_from_oss << std::endl;
 
     // we expect these to be the same
     EXPECT_EQ(res_str, res_json);
     EXPECT_EQ(res_str, res_str_from_oss);
     EXPECT_EQ(res_str, res_json_from_oss);
+    EXPECT_EQ(res_str_yaml, res_yaml);
+    EXPECT_EQ(res_yaml, res_yaml_from_oss);
 }
 
 

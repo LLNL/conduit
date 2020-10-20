@@ -9,65 +9,65 @@ Updating test list for fixtures
 Added 0 tests to meet fixture requirements
 Checking test dependency graph...
 Checking test dependency graph end
-test 111
-    Start 111: t_conduit_docs_tutorial_python_parse
+test 115
+    Start 115: t_conduit_docs_tutorial_python_parse
 
-111: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.4-tuamu4qn6msg6bqa5hd7glbv5uxm5lup/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_parse"
-111: Environment variables: 
-111:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
-111: Test timeout computed to be: 1500
-111: test_docs_tutorial_json (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
-111: test_docs_tutorial_yaml (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
-111: test_docs_tutorial_yaml_inline_array (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
-111: test_json_generator_pure_json (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
-111: test_json_generator_pure_yaml (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
-111: test_json_generator_std (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
-111: 
-111: ----------------------------------------------------------------------
-111: Ran 6 tests in 0.001s
-111: 
-111: OK
-111: BEGIN_EXAMPLE("py_conduit_docs_tutorial_json")
-111: 42.0
-111: 
-111: {
-111:   "mykey": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
-111: }
-111: END_EXAMPLE("py_conduit_docs_tutorial_json")
-111: BEGIN_EXAMPLE("py_conduit_docs_tutorial_yaml")
-111: 42.0
-111: 
-111: {
-111:   "mykey": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
-111: }
-111: END_EXAMPLE("py_conduit_docs_tutorial_yaml")
-111: BEGIN_EXAMPLE("py_conduit_docs_tutorial_yaml_inline_array")
-111: [ 0. 10. 20. 30.]
-111: {"dtype":"float64", "number_of_elements": 4, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little"}
-111: END_EXAMPLE("py_conduit_docs_tutorial_yaml_inline_array")
-111: BEGIN_EXAMPLE("py_json_generator_pure_json")
-111: 100.0
-111: 
-111: test: 100.0
-111: 
-111: END_EXAMPLE("py_json_generator_pure_json")
-111: BEGIN_EXAMPLE("py_json_generator_pure_yaml")
-111: 100.0
-111: 
-111: test: 100.0
-111: 
-111: END_EXAMPLE("py_json_generator_pure_yaml")
-111: BEGIN_EXAMPLE("py_json_generator_std")
-111: 100.0
-111: 
-111: test: 100.0
-111: 
-111: END_EXAMPLE("py_json_generator_std")
-1/1 Test #111: t_conduit_docs_tutorial_python_parse ...   Passed    0.15 sec
+115: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.6-zd24bom2hns4o42jlzdptijz54ogai7c/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_parse"
+115: Environment variables: 
+115:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+115: Test timeout computed to be: 1500
+115: test_docs_tutorial_json (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
+115: test_docs_tutorial_yaml (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
+115: test_docs_tutorial_yaml_inline_array (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
+115: test_json_generator_pure_json (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
+115: test_json_generator_pure_yaml (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
+115: test_json_generator_std (t_conduit_docs_tutorial_python_parse.Conduit_Tutorial_Python_Parse) ... ok
+115: 
+115: ----------------------------------------------------------------------
+115: Ran 6 tests in 0.001s
+115: 
+115: OK
+115: BEGIN_EXAMPLE("py_conduit_docs_tutorial_json")
+115: 42.0
+115: 
+115: {
+115:   "mykey": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
+115: }
+115: END_EXAMPLE("py_conduit_docs_tutorial_json")
+115: BEGIN_EXAMPLE("py_conduit_docs_tutorial_yaml")
+115: 42.0
+115: 
+115: {
+115:   "mykey": {"dtype":"float64","number_of_elements": 1,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
+115: }
+115: END_EXAMPLE("py_conduit_docs_tutorial_yaml")
+115: BEGIN_EXAMPLE("py_conduit_docs_tutorial_yaml_inline_array")
+115: [ 0. 10. 20. 30.]
+115: {"dtype":"float64","number_of_elements": 4,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
+115: END_EXAMPLE("py_conduit_docs_tutorial_yaml_inline_array")
+115: BEGIN_EXAMPLE("py_json_generator_pure_json")
+115: 100.0
+115: 
+115: test: 100.0
+115: 
+115: END_EXAMPLE("py_json_generator_pure_json")
+115: BEGIN_EXAMPLE("py_json_generator_pure_yaml")
+115: 100.0
+115: 
+115: test: 100.0
+115: 
+115: END_EXAMPLE("py_json_generator_pure_yaml")
+115: BEGIN_EXAMPLE("py_json_generator_std")
+115: 100.0
+115: 
+115: test: 100.0
+115: 
+115: END_EXAMPLE("py_json_generator_std")
+1/1 Test #115: t_conduit_docs_tutorial_python_parse ...   Passed    0.17 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_parse
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.18 sec
+Total Test time (real) =   0.19 sec

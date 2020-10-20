@@ -11,3 +11,4 @@ _uberenv_test*
 conduit.docker.src.tar
 conduit.docker.src.tar.gz
 Testing/
+.idea

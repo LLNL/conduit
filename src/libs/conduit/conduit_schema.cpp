@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -509,16 +469,22 @@ Schema::to_string_stream(std::ostream &os,
                          const std::string &pad,
                          const std::string &eoe) const
 {
-     if(protocol != "json")
-     {
-         // unsupported
-         CONDUIT_ERROR("<Schema::to_string_stream> "
-                       "Unknown Schema::to_string protocol:" << protocol
+    if(protocol == "yaml")
+    {
+        to_yaml_stream(os,indent,depth,pad,eoe);
+    }
+    else if(protocol == "json")
+    {
+        to_json_stream(os,indent,depth,pad,eoe);
+    }
+    else
+    {
+        // unsupported
+        CONDUIT_ERROR("<Schema::to_string_stream> "
+                      "Unknown Schema::to_string protocol:" << protocol
                        <<"\nSupported protocols:\n" 
-                       <<" json");
-     }
-
-    return to_json_stream(os,indent,depth,pad,eoe);
+                       <<" json, yaml");
+    }
 }
 
 
@@ -613,7 +579,7 @@ Schema::to_json_stream(std::ostream &os,
         os << eoe;
         utils::indent(os,indent,depth,pad);
         os << "{" << eoe;
-    
+
         size_t nchildren = children().size();
         for(size_t i=0; i < nchildren;i++)
         {
@@ -647,7 +613,7 @@ Schema::to_json_stream(std::ostream &os,
     }
     else // assume leaf data type
     {
-        m_dtype.to_json_stream(os);
+        m_dtype.to_json_stream(os,0,0,"","");
     }
 }
 
@@ -676,6 +642,97 @@ Schema::to_json_default() const
 {
    return to_json();
 }
+
+//---------------------------------------------------------------------------//
+std::string
+Schema::to_yaml(index_t indent,
+                index_t depth,
+                const std::string &pad,
+                const std::string &eoe) const
+{
+   std::ostringstream oss;
+   to_yaml_stream(oss,indent,depth,pad,eoe);
+   return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+void
+Schema::to_yaml_stream(std::ostream &os,
+                       index_t indent,
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    if(m_dtype.id() == DataType::OBJECT_ID)
+    {
+        os << eoe;
+        size_t nchildren = children().size();
+        for(size_t i=0; i <  nchildren;i++)
+        {
+            utils::indent(os,indent,depth,pad);
+            // we always need eoe
+            os << object_order()[i] << ": " << eoe;
+            children()[i]->to_yaml_stream(os,
+                                          indent,
+                                          depth+1,
+                                          pad,
+                                          eoe);
+
+
+
+        }
+    }
+    else if(m_dtype.id() == DataType::LIST_ID)
+    {
+        os << eoe;
+        size_t nchildren = children().size();
+        for(size_t i=0; i < nchildren;i++)
+        {
+            utils::indent(os,indent,depth,pad);
+            os << "- ";
+            children()[i]->to_yaml_stream(os,
+                                          indent,
+                                          depth+1,
+                                          pad,
+                                          eoe);
+        }
+    }
+    else // assume leaf data type
+    {
+        m_dtype.to_yaml_stream(os,
+                               indent,
+                               depth+1,
+                               pad,
+                               eoe);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Schema::to_yaml_stream(const std::string &stream_path,
+                       index_t indent, 
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_yaml_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_yaml_stream(ofs,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+//---------------------------------------------------------------------------//
+std::string
+Schema::to_yaml_default() const
+{
+   return to_yaml();
+}
+
 
 //-----------------------------------------------------------------------------
 //

@@ -55,6 +55,7 @@ setup (name = 'conduit relay',
        package_dir = {'conduit.relay':'py_src'},
        packages=['conduit.relay',
                  'conduit.relay.io',
+                 'conduit.relay.io.blueprint',
                  'conduit.relay.mpi',
                  'conduit.relay.web'],
        cmdclass={'install_egg_info': SkipEggInfo})

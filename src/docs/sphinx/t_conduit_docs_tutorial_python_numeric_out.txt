@@ -9,27 +9,27 @@ Updating test list for fixtures
 Added 0 tests to meet fixture requirements
 Checking test dependency graph...
 Checking test dependency graph end
-test 110
-    Start 110: t_conduit_docs_tutorial_python_numeric
+test 114
+    Start 114: t_conduit_docs_tutorial_python_numeric
 
-110: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.4-tuamu4qn6msg6bqa5hd7glbv5uxm5lup/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_numeric"
-110: Environment variables: 
-110:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
-110: Test timeout computed to be: 1500
-110: test_001_numeric_via_value (t_conduit_docs_tutorial_python_numeric.Conduit_Tutorial_Python_Numeric) ... ok
-110: 
-110: ----------------------------------------------------------------------
-110: Ran 1 test in 0.000s
-110: 
-110: OK
-110: BEGIN_EXAMPLE("py_numeric_via_value")
-110: 10
-110: END_EXAMPLE("py_numeric_via_value")
-1/1 Test #110: t_conduit_docs_tutorial_python_numeric ...   Passed    0.14 sec
+114: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-x86_64/clang-10.0.0-apple/python-3.7.6-zd24bom2hns4o42jlzdptijz54ogai7c/bin/python3.7 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_numeric"
+114: Environment variables: 
+114:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+114: Test timeout computed to be: 1500
+114: test_001_numeric_via_value (t_conduit_docs_tutorial_python_numeric.Conduit_Tutorial_Python_Numeric) ... ok
+114: 
+114: ----------------------------------------------------------------------
+114: Ran 1 test in 0.000s
+114: 
+114: OK
+114: BEGIN_EXAMPLE("py_numeric_via_value")
+114: 10
+114: END_EXAMPLE("py_numeric_via_value")
+1/1 Test #114: t_conduit_docs_tutorial_python_numeric ...   Passed    0.15 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_numeric
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.16 sec
+Total Test time (real) =   0.18 sec

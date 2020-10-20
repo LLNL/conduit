@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -195,8 +155,19 @@ public:
 //-----------------------------------------------------------------------------
     void            compact_to(Schema &s_dest) const;
 
-    //-------------------------------------------------------------------------
-    // note: future support: protocol == "yaml"
+    //-----------------------------------------------------------------------------
+    // -- String construction methods ---
+    //-----------------------------------------------------------------------------
+    /// Creates a string representation of a schema.
+    /// accepted protocols:
+    ///   "json"
+    ///   "yaml"
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
     std::string     to_string(const std::string &protocol="json",
                               index_t indent=2, 
                               index_t depth=0,
@@ -222,7 +193,16 @@ public:
     // difficulty allocating default string parameters.
     std::string     to_string_default() const;
 
-    //-------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // -- JSON construction methods ---
+    //-----------------------------------------------------------------------------
+    /// Creates a JSON string representation of a schema.
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
     std::string     to_json(index_t indent=2,
                             index_t depth=0,
                             const std::string &pad=" ",
@@ -269,6 +249,37 @@ public:
     // difficulty allocating default string parameters.
     std::string         to_json_default() const;
 
+    //-----------------------------------------------------------------------------
+    // -- YAML construction methods ---
+    //-----------------------------------------------------------------------------
+    /// Creates a YAML string representation of a schema.
+    ///
+    /// formatting details:
+    ///   this method prefixes entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+    ///
+    std::string         to_yaml(index_t indent=2, 
+                                index_t depth=0,
+                                const std::string &pad=" ",
+                                const std::string &eoe="\n") const;
+
+    void                to_yaml_stream(std::ostream &os,
+                                       index_t indent=2, 
+                                       index_t depth=0,
+                                       const std::string &pad=" ",
+                                       const std::string &eoe="\n") const;
+
+    void                to_yaml_stream(const std::string &stream_path,
+                                       index_t indent=2, 
+                                       index_t depth=0,
+                                       const std::string &pad=" ",
+                                       const std::string &eoe="\n") const;
+
+    // NOTE(JRC): The primary reason this function exists is to enable easier
+    // compatibility with debugging tools (e.g. totalview, gdb) that have
+    // difficulty allocating default string parameters.
+    std::string         to_yaml_default() const;
 
 //-----------------------------------------------------------------------------
 //

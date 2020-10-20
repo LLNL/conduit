@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -754,17 +714,21 @@ isend(const Node &node,
       MPI_Comm mpi_comm,
       Request *request) 
 {
-    
+
     const void *data_ptr  = node.contiguous_data_ptr();
     index_t     data_size = node.total_bytes_compact();
-    
+
+    // note: this checks for both compact and contig
     if( data_ptr == NULL ||
        !node.is_compact() )
     {
         node.compact_to(request->m_buffer);
         data_ptr  = request->m_buffer.data_ptr();
     }
-    
+
+    // for wait_all,  this must always be NULL except for
+    // the irecv cases where copy out is necessary
+    // isend case must always be NULL
     request->m_rcv_ptr = NULL;
 
     int mpi_error =  MPI_Isend(const_cast<void*>(data_ptr), 
@@ -787,16 +751,18 @@ irecv(Node &node,
       MPI_Comm mpi_comm,
       Request *request) 
 {
-    
     // if rcv is compact, we can write directly into recv
-    // if its not compact, we need a recv_buffer
-    
+    // if it's not compact, we need a recv_buffer
+
     void    *data_ptr  = node.contiguous_data_ptr();
     index_t  data_size = node.total_bytes_compact();
-    
-    if(data_ptr != NULL && 
+
+    // note: this checks for both compact and contig
+    if(data_ptr != NULL &&
        node.is_compact() )
     {
+        // for wait_all,  this must always be NULL except for
+        // the irecv cases where copy out is necessary
         request->m_rcv_ptr = NULL;
     }
     else
@@ -818,28 +784,19 @@ irecv(Node &node,
     return mpi_error;
 }
 
-//---------------------------------------------------------------------------//
-int
-wait_send(Request *request,
-          MPI_Status *status) 
-{
-    int mpi_error = MPI_Wait(&(request->m_request), status);
-    CONDUIT_CHECK_MPI_ERROR(mpi_error);
-    
-    request->m_buffer.reset();
-
-    return mpi_error;
-}
 
 //---------------------------------------------------------------------------//
+// wait handles both send and recv requests
 int
-wait_recv(Request *request,
-          MPI_Status *status) 
+wait(Request *request,
+     MPI_Status *status) 
 {
     int mpi_error = MPI_Wait(&(request->m_request), status);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
     // we need to update if m_rcv_ptr was used
+    // this will only be non NULL in the recv copy out case,
+    // sends will always be NULL
     if(request->m_rcv_ptr)
     {
         request->m_rcv_ptr->update(request->m_buffer);
@@ -847,60 +804,51 @@ wait_recv(Request *request,
 
     request->m_buffer.reset();
     request->m_rcv_ptr = NULL;
-    
+
     return mpi_error;
 }
 
 //---------------------------------------------------------------------------//
 int
-wait_all_send(int count,
-              Request requests[],
-              MPI_Status statuses[]) 
+wait_send(Request *request,
+          MPI_Status *status) 
 {
-     MPI_Request *justrequests = new MPI_Request[count];
-     
-     for (int i = 0; i < count; ++i) 
-     {
-         // mpi requests can be simply copied
-         justrequests[i] = requests[i].m_request;
-     }
-     
-     int mpi_error = MPI_Waitall(count, justrequests, statuses);
-     CONDUIT_CHECK_MPI_ERROR(mpi_error);
-
-     for (int i = 0; i < count; ++i)
-     {
-         requests[i].m_request = justrequests[i];
-         requests[i].m_buffer.reset();
-     }
-
-     delete [] justrequests;
-
-     return mpi_error; 
-
-
+    return wait(request,status);
 }
 
 //---------------------------------------------------------------------------//
 int
-wait_all_recv(int count,
-              Request requests[],
-              MPI_Status statuses[])
+wait_recv(Request *request,
+          MPI_Status *status) 
+{
+    return wait(request,status);
+}
+
+
+//---------------------------------------------------------------------------//
+// wait all handles mixed batches of sends and receives 
+int
+wait_all(int count,
+         Request requests[],
+         MPI_Status statuses[])
 {
      MPI_Request *justrequests = new MPI_Request[count];
-     
+
      for (int i = 0; i < count; ++i)
      {
          // mpi requests can be simply copied
          justrequests[i] = requests[i].m_request;
      }
-     
+
      int mpi_error = MPI_Waitall(count, justrequests, statuses);
      CONDUIT_CHECK_MPI_ERROR(mpi_error);
 
      for (int i = 0; i < count; ++i)
      {
-         if(requests[i].m_rcv_ptr)
+         // if this request is a recv, we need to check for copy out
+         // m_rcv_ptr will always be NULL, unless we have done a
+         // irecv where we need to use the pointer.
+         if(requests[i].m_rcv_ptr != NULL)
          {
              requests[i].m_rcv_ptr->update(requests[i].m_buffer);
              requests[i].m_rcv_ptr = NULL;
@@ -913,8 +861,26 @@ wait_all_recv(int count,
      delete [] justrequests;
 
      return mpi_error; 
-
 }
+
+//---------------------------------------------------------------------------//
+int
+wait_all_send(int count,
+              Request requests[],
+              MPI_Status statuses[]) 
+{
+    return wait_all(count,requests,statuses);
+}
+
+//---------------------------------------------------------------------------//
+int
+wait_all_recv(int count,
+              Request requests[],
+              MPI_Status statuses[])
+{
+   return  wait_all(count,requests,statuses);
+}
+
 
 //---------------------------------------------------------------------------//
 int

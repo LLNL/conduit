@@ -29,9 +29,9 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0]
 
 END_EXAMPLE("blueprint_demo_basic_uniform")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'uniform'
-[       OK ] conduit_docs.blueprint_demo_basic_uniform (9 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_uniform (10 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_rectilinear
 BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
 
@@ -53,7 +53,7 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0]
 
 END_EXAMPLE("blueprint_demo_basic_rectilinear")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'rectilinear'
 [       OK ] conduit_docs.blueprint_demo_basic_rectilinear (6 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_structured
@@ -81,7 +81,7 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0]
 
 END_EXAMPLE("blueprint_demo_basic_structured")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'structured'
 [       OK ] conduit_docs.blueprint_demo_basic_structured (8 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_tris
@@ -108,7 +108,7 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 
 END_EXAMPLE("blueprint_demo_basic_tris")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'tris'
 [       OK ] conduit_docs.blueprint_demo_basic_tris (6 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_quads
@@ -135,9 +135,9 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0]
 
 END_EXAMPLE("blueprint_demo_basic_quads")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'quads'
-[       OK ] conduit_docs.blueprint_demo_basic_quads (7 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_quads (8 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_tets
 BEGIN_EXAMPLE("blueprint_demo_basic_tets")
 
@@ -163,9 +163,9 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0]
 
 END_EXAMPLE("blueprint_demo_basic_tets")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'tets'
-[       OK ] conduit_docs.blueprint_demo_basic_tets (7 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_tets (8 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_hexs
 BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
 
@@ -191,9 +191,9 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 
 END_EXAMPLE("blueprint_demo_basic_hexs")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'hexs'
-[       OK ] conduit_docs.blueprint_demo_basic_hexs (7 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_hexs (9 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_polygons
 BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
 
@@ -220,9 +220,9 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0]
 
 END_EXAMPLE("blueprint_demo_basic_polygons")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'polygons'
-[       OK ] conduit_docs.blueprint_demo_basic_polygons (7 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_polygons (8 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_polyhedra
 BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
 
@@ -255,11 +255,11 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 
 END_EXAMPLE("blueprint_demo_basic_polyhedra")
-[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 107]
+[/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'polyhedra'
-[       OK ] conduit_docs.blueprint_demo_basic_polyhedra (12 ms)
-[ RUN      ] conduit_docs.blueprint_demo_basic_uniform_detailed
-BEGIN_EXAMPLE("blueprint_demo_basic_uniform_detailed")
+[       OK ] conduit_docs.blueprint_demo_basic_polyhedra (11 ms)
+[ RUN      ] conduit_docs.blueprint_demo_basic_uniform_complete
+BEGIN_EXAMPLE("blueprint_demo_basic_uniform_complete")
 
 coordsets: 
   coords: 
@@ -287,10 +287,10 @@ fields:
     topology: "topo"
     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
 
-END_EXAMPLE("blueprint_demo_basic_uniform_detailed")
-[       OK ] conduit_docs.blueprint_demo_basic_uniform_detailed (3 ms)
-[----------] 10 tests from conduit_docs (72 ms total)
+END_EXAMPLE("blueprint_demo_basic_uniform_complete")
+[       OK ] conduit_docs.blueprint_demo_basic_uniform_complete (6 ms)
+[----------] 10 tests from conduit_docs (80 ms total)
 
 [----------] Global test environment tear-down
-[==========] 10 tests from 1 test suite ran. (72 ms total)
+[==========] 10 tests from 1 test suite ran. (80 ms total)
 [  PASSED  ] 10 tests.

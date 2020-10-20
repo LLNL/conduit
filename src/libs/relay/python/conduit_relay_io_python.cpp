@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 
 //-----------------------------------------------------------------------------
@@ -101,79 +61,12 @@ using namespace conduit::relay::io;
 
 
 #if defined(IS_PY3K)
-
-//-----------------------------------------------------------------------------
-static int
-PyString_Check(PyObject *o)
-{
-    return PyUnicode_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-static char *
-PyString_AsString(PyObject *py_obj)
-{
-    char *res = NULL;
-    if(PyUnicode_Check(py_obj))
-    {
-        PyObject * temp_bytes = PyUnicode_AsEncodedString(py_obj,
-                                                          "ASCII",
-                                                          "strict"); // Owned reference
-        if(temp_bytes != NULL)
-        {
-            res = _conduit_strdup(PyBytes_AS_STRING(temp_bytes));
-            Py_DECREF(temp_bytes);
-        }
-        else
-        {
-            // TODO: Error
-        }
-    }
-    else if(PyBytes_Check(py_obj))
-    {
-        res = _conduit_strdup(PyBytes_AS_STRING(py_obj));
-    }
-    else
-    {
-        // TODO: ERROR or auto convert?
-    }
-    
-    return res;
-}
-
 //-----------------------------------------------------------------------------
 static PyObject *
 PyString_FromString(const char *s)
 {
     return PyUnicode_FromString(s);
 }
-
-//-----------------------------------------------------------------------------
-static void
-PyString_AsString_Cleanup(char *bytes)
-{
-    free(bytes);
-}
-
-
-//-----------------------------------------------------------------------------
-static int
-PyInt_Check(PyObject *o)
-{
-    return PyLong_Check(o);
-}
-
-//-----------------------------------------------------------------------------
-static long
-PyInt_AsLong(PyObject *o)
-{
-    return PyLong_AsLong(o);
-}
-
-#else // python 2.6+
-
-//-----------------------------------------------------------------------------
-#define PyString_AsString_Cleanup(c) { /* noop */ }
 
 #endif
 
@@ -477,7 +370,7 @@ PyRelay_IOHandle_list_child_names(PyRelay_IOHandle *self,
     for (std::vector<std::string>::const_iterator itr = cld_names.begin();
          itr < cld_names.end(); ++itr)
     {
-        PyList_Append(retval, PyString_FromString( (*itr).c_str()));
+        PyList_Append(retval,PyString_FromString( (*itr).c_str()));
     }
 
     return retval;

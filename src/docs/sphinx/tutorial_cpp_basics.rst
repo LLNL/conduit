@@ -1,46 +1,6 @@
-.. ############################################################################
-.. # Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-.. # 
-.. # Produced at the Lawrence Livermore National Laboratory
-.. # 
-.. # LLNL-CODE-666778
-.. # 
-.. # All rights reserved.
-.. # 
-.. # This file is part of Conduit. 
-.. # 
-.. # For details, see: http://software.llnl.gov/conduit/.
-.. # 
-.. # Please also read conduit/LICENSE
-.. # 
-.. # Redistribution and use in source and binary forms, with or without 
-.. # modification, are permitted provided that the following conditions are met:
-.. # 
-.. # * Redistributions of source code must retain the above copyright notice, 
-.. #   this list of conditions and the disclaimer below.
-.. # 
-.. # * Redistributions in binary form must reproduce the above copyright notice,
-.. #   this list of conditions and the disclaimer (as noted below) in the
-.. #   documentation and/or other materials provided with the distribution.
-.. # 
-.. # * Neither the name of the LLNS/LLNL nor the names of its contributors may
-.. #   be used to endorse or promote products derived from this software without
-.. #   specific prior written permission.
-.. # 
-.. # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-.. # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.. # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.. # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-.. # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-.. # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-.. # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.. # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.. # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-.. # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-.. # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-.. # POSSIBILITY OF SUCH DAMAGE.
-.. # 
-.. ############################################################################
+.. # Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+.. # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+.. # other details. No copyright assignment is required to contribute to Conduit.
 
 ======================
 Basic Concepts
@@ -183,14 +143,18 @@ Conduit provides these types by constructing a mapping for the current platform 
 When C++11 support is enabled, Conduit's bitwidth style types will match the C++11 standard bitwidth types defined in ``<cstdint>``.
 
 
+When a **set** method is called on a leaf Node, if the data passed to the **set** is compatible with the Node's Schema the data is simply copied.
+
 Compatible Schemas
 --------------------------------
 
-When a **set** method is called on a Node, if the data passed to the **set** is compatible with the Node's Schema the data is simply copied. No allocation or Schema changes occur. If the data is not compatible the Node will be reconfigured to store the passed data.
+When passed a compatible Node, Node methods ``update`` and ``update_compatible``
+allow you to copy data into Node or extend a Node with new data without
+changing existing allocations. 
 
 **Schemas do not need to be identical to be compatible.**
 
-You can check if a Schema is compatible with another Schema using the **Schema::compatible(Schema &test)** method. Here is the criteria for checking if two Schemas are compatible:  
+You can check if a Schema is compatible with another Schema using the **Schema::compatible(Schema &test)** method. Here is the criteria for checking if two Schemas are compatible:
 
  - **If the calling Schema describes an Object** : The passed test Schema must describe an Object and the test Schema's children must be compatible with the calling Schema's children that have the same name.
 
@@ -199,7 +163,65 @@ You can check if a Schema is compatible with another Schema using the **Schema::
  - **If the calling Schema describes a leaf data type**: The calling Schema's and test Schema's **dtype().id()** and **dtype().element_bytes()** must match, and the calling Schema **dtype().number_of_elements()** must be greater than or equal than the test Schema's.
 
 
+Node References
+--------------------------------
+
+For most uses cases in C++, Node references are the best solution to build and
+manipulate trees. They allow you to avoid expensive copies and pass around
+sub-trees without worrying about valid pointers.
 
 
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
+   :start-after: BEGIN_EXAMPLE("basics_node_refs")
+   :end-before:  END_EXAMPLE("basics_node_refs")
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
+   :start-after: BEGIN_EXAMPLE("basics_node_refs")
+   :end-before:  END_EXAMPLE("basics_node_refs")
 
 
+In C++ the Node assignment operator that takes a Node input is really an alias
+to set. That is, if follows set (deep copy) semantics.
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
+   :start-after: BEGIN_EXAMPLE("basics_node_refs_bad")
+   :end-before:  END_EXAMPLE("basics_node_refs_bad")
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
+   :start-after: BEGIN_EXAMPLE("basics_node_refs_bad")
+   :end-before:  END_EXAMPLE("basics_node_refs_bad")
+
+
+const Nodes
+--------------------------------
+
+If you aren't careful, the ability to easily create dynamic trees can
+also undermine your process to consume them. 
+For example, asking for an expected but non-existent path will return
+a reference to an empty Node. Surprise!
+
+Methods like `fetch_existing` allow you to be more explicit
+when asking for expected data. In C++, ``const Node`` references are also common
+way to process trees in an read-only fashion. ``const`` methods will not modify
+the tree structure, so if you ask for a non-existent path, you will receive
+an error instead of reference to an empty Node.
+
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
+   :start-after: BEGIN_BLOCK("basics_const_example")
+   :end-before:  END_BLOCK("basics_const_example")
+   :language: cpp
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_basics.cpp
+   :start-after: BEGIN_EXAMPLE("basics_const_vs_non_const")
+   :end-before:  END_EXAMPLE("basics_const_vs_non_const")
+   :language: cpp
+   :dedent: 4
+
+.. literalinclude:: t_conduit_docs_tutorial_basics_out.txt
+   :start-after: BEGIN_EXAMPLE("basics_const_vs_non_const")
+   :end-before:  END_EXAMPLE("basics_const_vs_non_const")

@@ -1,7 +1,7 @@
 Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
-[==========] Running 7 tests from 1 test suite.
+[==========] Running 10 tests from 1 test suite.
 [----------] Global test environment set-up.
-[----------] 7 tests from conduit_tutorial
+[----------] 10 tests from conduit_tutorial
 [ RUN      ] conduit_tutorial.basics_very_basic
 BEGIN_EXAMPLE("basics_very_basic")
 
@@ -36,7 +36,7 @@ list_example:
   - 4
 
 END_EXAMPLE("basics_object_and_list")
-[       OK ] conduit_tutorial.basics_object_and_list (0 ms)
+[       OK ] conduit_tutorial.basics_object_and_list (1 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list_itr
 BEGIN_EXAMPLE("basics_object_and_list_itr")
 
@@ -66,15 +66,15 @@ END_EXAMPLE("basics_object_and_list_itr")
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7f8b6cc04e90: 
+  0x7fa4e4c05e80: 
     path: "my"
     type: "allocated"
     bytes: 5
-  0x7f8b6cc05470: 
+  0x7fa4e4c05840: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
-  0x7f8b6cc05ea0: 
+  0x7fa4e4c05830: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8
@@ -92,7 +92,15 @@ test: 100
 
 
 {
-  "test": {"dtype":"uint32", "number_of_elements": 1, "offset": 0, "stride": 4, "element_bytes": 4, "endianness": "little", "value": 100}
+  "test": 
+{
+"dtype":"uint32",
+"number_of_elements": 1,
+"offset": 0,
+"stride": 4,
+"element_bytes": 4,
+"endianness": "little"
+, "value": 100}
 }
 END_EXAMPLE("basics_bw_style")
 [       OK ] conduit_tutorial.basics_bw_style (0 ms)
@@ -100,12 +108,101 @@ END_EXAMPLE("basics_bw_style")
 BEGIN_EXAMPLE("basics_bw_style_from_native")
 
 {
-  "test": {"dtype":"int32", "number_of_elements": 1, "offset": 0, "stride": 4, "element_bytes": 4, "endianness": "little", "value": 100}
+  "test": 
+{
+"dtype":"int32",
+"number_of_elements": 1,
+"offset": 0,
+"stride": 4,
+"element_bytes": 4,
+"endianness": "little"
+, "value": 100}
 }
 END_EXAMPLE("basics_bw_style_from_native")
 [       OK ] conduit_tutorial.basics_bw_style_from_native (0 ms)
-[----------] 7 tests from conduit_tutorial (1 ms total)
+[ RUN      ] conduit_tutorial.basics_node_refs
+BEGIN_EXAMPLE("basics_node_refs")
+
+my: 
+  nested: 
+    path: 0.0
+
+
+my: 
+  nested: 
+    path: 42.0
+
+END_EXAMPLE("basics_node_refs")
+[       OK ] conduit_tutorial.basics_node_refs (0 ms)
+[ RUN      ] conduit_tutorial.basics_node_refs_bad
+BEGIN_EXAMPLE("basics_node_refs_bad")
+
+my: 
+  nested: 
+    path: 0.0
+
+
+my: 
+  nested: 
+    path: 0.0
+
+END_EXAMPLE("basics_node_refs_bad")
+[       OK ] conduit_tutorial.basics_node_refs_bad (0 ms)
+[ RUN      ] conduit_tutorial.basics_const_vs_non_const
+BEGIN_EXAMPLE("basics_const_vs_non_const")
+== n1 == 
+
+my: 
+  important: 
+    but: 
+      mistyped: 
+        path: 
+          to: 
+            data: 42.0
+
+
+==> important: 0
+n1 after calling `important_suprise`
+
+my: 
+  important: 
+    but: 
+      mistyped: 
+        path: 
+          to: 
+            data: 42.0
+    data: 
+
+== n2 == 
+
+my: 
+  important: 
+    but: 
+      mistyped: 
+        path: 
+          to: 
+            data: 42.0
+
+
+file: /Users/harrison37/Work/github/llnl/conduit/src/libs/conduit/conduit_node.cpp
+line: 12179
+message: 
+Cannot fetch non-existent child "data" from Node(my/important)
+
+n2 after calling `important`
+
+my: 
+  important: 
+    but: 
+      mistyped: 
+        path: 
+          to: 
+            data: 42.0
+
+END_EXAMPLE("basics_const_vs_non_const")
+[       OK ] conduit_tutorial.basics_const_vs_non_const (0 ms)
+[----------] 10 tests from conduit_tutorial (1 ms total)
 
 [----------] Global test environment tear-down
-[==========] 7 tests from 1 test suite ran. (2 ms total)
-[  PASSED  ] 7 tests.
+[==========] 10 tests from 1 test suite ran. (1 ms total)
+[  PASSED  ] 10 tests.

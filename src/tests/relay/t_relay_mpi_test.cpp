@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-666778
-//
-// All rights reserved.
-//
-// This file is part of Conduit.
-//
-// For details, see: http://software.llnl.gov/conduit/.
-//
-// Please also read conduit/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -505,7 +465,7 @@ TEST(conduit_mpi_test, send_recv_without_using_schema)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, isend_irecv_wait)
+TEST(conduit_mpi_test, isend_irecv_wait_old_api)
 {
     Node n1;
     int rank = 0;
@@ -540,8 +500,46 @@ TEST(conduit_mpi_test, isend_irecv_wait)
 
 }
 
+
 //-----------------------------------------------------------------------------
-TEST(conduit_mpi_test, waitall)
+TEST(conduit_mpi_test, isend_irecv_wait)
+{
+    Node n1;
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    std::vector<double> doubles;
+
+
+    doubles.push_back(rank+1);
+    doubles.push_back(3.4124*rank);
+    doubles.push_back(10.7 - rank);
+
+    n1.set_external(doubles);
+
+
+    mpi::Request request;
+
+    MPI_Status status;
+    if (rank == 0)
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
+    }
+    else if (rank == 1)
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
+    }
+
+    mpi::wait(&request, &status);
+
+    EXPECT_EQ(n1.as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1.as_float64_ptr()[2], 9.7);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, waitall_old_api)
 {
     Node n1;
     int rank = 0;
@@ -578,6 +576,84 @@ TEST(conduit_mpi_test, waitall)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, waitall)
+{
+    Node n1;
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    std::vector<double> doubles;
+
+
+    doubles.push_back(rank+1);
+    doubles.push_back(3.4124*rank);
+    doubles.push_back(10.7 - rank);
+
+    n1.set_external(doubles);
+
+    mpi::Request requests[1];
+
+    MPI_Status statuses[1];
+    if (rank == 0)
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
+    } else if (rank == 1)
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
+    }
+
+    mpi::wait_all(1, requests, statuses);
+
+    EXPECT_EQ(n1.as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1.as_float64_ptr()[2], 9.7);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, waitallmultirequest_old_api)
+{
+    Node n1;
+    Node n2;
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    std::vector<double> doubles;
+
+
+    doubles.push_back(rank+1);
+    doubles.push_back(3.4124*rank);
+    doubles.push_back(10.7 - rank);
+
+    n1.set_external(doubles);
+
+    n2 = 13123;
+
+    mpi::Request requests[2];
+
+    MPI_Status statuses[2];
+    if (rank == 0)
+    {
+        mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
+        mpi::irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
+        mpi::wait_all_recv(2, requests, statuses);
+    }
+    else if (rank == 1)
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
+        mpi::isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
+        mpi::wait_all_send(2, requests, statuses);
+    }
+
+    EXPECT_EQ(n1.as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1.as_float64_ptr()[2], 9.7);
+
+    EXPECT_EQ(n2.as_int32(), 13123);
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, waitallmultirequest)
 {
     Node n1;
@@ -596,8 +672,6 @@ TEST(conduit_mpi_test, waitallmultirequest)
 
     n2 = 13123;
 
-
-
     mpi::Request requests[2];
 
     MPI_Status statuses[2];
@@ -605,14 +679,14 @@ TEST(conduit_mpi_test, waitallmultirequest)
     {
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::irecv(n2, 1, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::wait_all_recv(2, requests, statuses);
     }
     else if (rank == 1)
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &requests[0]);
         mpi::isend(n2, 0, 0, MPI_COMM_WORLD, &requests[1]);
-        mpi::wait_all_send(2, requests, statuses);
     }
+
+    mpi::wait_all(2, requests, statuses);
 
     EXPECT_EQ(n1.as_float64_ptr()[0], 2);
     EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
@@ -658,15 +732,13 @@ TEST(conduit_mpi_test, external)
     if (rank == 0)
     {
         mpi::irecv(n1, 1, 0, MPI_COMM_WORLD, &request);
-        mpi::wait_recv(&request, &status);
-
     }
     else if (rank == 1)
     {
         mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
-        mpi::wait_send(&request, &status);
     }
 
+    mpi::wait(&request, &status);
 
     EXPECT_EQ(n1[0].as_float64_ptr()[0], 2);
     EXPECT_EQ(n1[0].as_float64_ptr()[1], 3.4124);

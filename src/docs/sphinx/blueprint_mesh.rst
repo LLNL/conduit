@@ -1,58 +1,29 @@
-.. ############################################################################
-.. # Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-.. # 
-.. # Produced at the Lawrence Livermore National Laboratory
-.. # 
-.. # LLNL-CODE-666778
-.. # 
-.. # All rights reserved.
-.. # 
-.. # This file is part of Conduit. 
-.. # 
-.. # For details, see: http://software.llnl.gov/conduit/.
-.. # 
-.. # Please also read conduit/LICENSE
-.. # 
-.. # Redistribution and use in source and binary forms, with or without 
-.. # modification, are permitted provided that the following conditions are met:
-.. # 
-.. # * Redistributions of source code must retain the above copyright notice, 
-.. #   this list of conditions and the disclaimer below.
-.. # 
-.. # * Redistributions in binary form must reproduce the above copyright notice,
-.. #   this list of conditions and the disclaimer (as noted below) in the
-.. #   documentation and/or other materials provided with the distribution.
-.. # 
-.. # * Neither the name of the LLNS/LLNL nor the names of its contributors may
-.. #   be used to endorse or promote products derived from this software without
-.. #   specific prior written permission.
-.. # 
-.. # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-.. # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.. # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.. # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-.. # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-.. # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-.. # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.. # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.. # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-.. # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-.. # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-.. # POSSIBILITY OF SUCH DAMAGE.
-.. # 
-.. ############################################################################
+.. # Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+.. # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+.. # other details. No copyright assignment is required to contribute to Conduit.
 
 .. _mesh_blueprint:
 
 ===================
 Mesh Blueprint
 ===================
+The Mesh Blueprint is a set of hierarchical conventions to describe mesh-based
+simulation data both in-memory and via files. This section provides details
+about the Mesh Blueprint. Lots of them.
 
-This section provides details about the Mesh Blueprint. Lots of them.
-We don't have a Mesh Blueprint tutorial yet, if you are looking to wrap your mind 
-around the basic mechanics of describing a mesh, you may want to start by reviewing
-the :ref:`detailed_uniform_example`
-and exploring the other :ref:`examples` included in the blueprint library. 
+These docs provide the main reference for all of the components of
+the Mesh Blueprint protocol and details about :ref:`examples`
+that are included in the Conduit Blueprint Library. 
+
+
+Conduit docs don't have a Mesh Blueprint tutorial yet, if you are looking to 
+wrap your mind around the basic mechanics of describing a mesh:
+
+* The Ascent tutorial includes section on `creating Meshes using Conduit <https://ascent.readthedocs.io/en/latest/Tutorial_Intro_Conduit_Blueprint.html>`_. This is the best reference for getting started and includes C++ and Python code examples.
+
+* The :ref:`complete_uniform_example` at the end of this section shows you how to create and save a uniform grid to a file which VisIt and `Ascent's Replay utility <https://ascent.readthedocs.io/en/latest/Utilities.html?highlight=replay#replay>`_ can read.
+
+* The :ref:`examples` section details functions that to generate several flavors of exemplar meshes.
 
 
 
@@ -225,20 +196,20 @@ The mesh blueprint protocol accepts four implicit ways to define a topology on a
    
    * topologies/topo/coordset: "coords"
    * topologies/topo/type: “uniform”
-   * topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})
+   * topologies/topo/elements/origin/{i,j,k} (optional, default = {0,0,0})
    
 * **rectilinear**: An implicit topology that defines a grid of elements on top of a *rectilinear* coordinate set. 
    
    * topologies/topo/coordset: "coords"
    * topologies/topo/type: “rectilinear”
-   * topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})
+   * topologies/topo/elements/origin/{i,j,k} (optional, default = {0,0,0})
   
 
 .. .. attention::
 ..    (can we collapse uniform + rectilinear?)
 .. * topologies/topo/type: “structured”
 .. * topologies/topo/elements/dims: "implicit"
-.. * topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})
+.. * topologies/topo/elements/origin/{i,j,k} (optional, default = {0,0,0})
 .. * topologies/coordset: "coords"
 
 
@@ -325,7 +296,7 @@ That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or Asc
 Polygonal/Polyhedral Topologies
 *********************************
 
-The **polygonal** and **polyhedral** topology shape types are structually
+The **polygonal** and **polyhedral** topology shape types are structurally
 identical to the other explicit topology shape types (see the *Single Shape Topologies*
 section above), but the contents of their ``elements`` sections look slightly different.
 In particular, these sections are structured as **o2mrelation** objects that map elements
@@ -1262,12 +1233,12 @@ polytess
 
     Pseudocolor plot of the polytess example ``level`` field.
 
-The ``polytess()`` function generates a polygonal tesselation in the 2D
-plane comprised of octogons and squares (known formally as a `two-color
+The ``polytess()`` function generates a polygonal tessellation in the 2D
+plane comprised of octagons and squares (known formally as a `two-color
 truncated square tiling <https://en.wikipedia.org/wiki/Truncated_square_tiling>`_).
 
 The scalar element-centered field ``level`` defined in the result mesh associates each element with its
-topological distance from the center of the tesselation.
+topological distance from the center of the tessellation.
 
 .. code:: cpp
 
@@ -1275,8 +1246,8 @@ topological distance from the center of the tesselation.
                                                  Node &res);
 
 
-``nlevels`` specifies the number of tesselation levels/layers to generate. If this value is specified
-as 1 or less, only the central tesselation level (i.e. the octogon in the center of the geometry) will
+``nlevels`` specifies the number of tessellation levels/layers to generate. If this value is specified
+as 1 or less, only the central tessellation level (i.e. the octagon in the center of the geometry) will
 be generated in the result.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
@@ -1293,60 +1264,102 @@ Outputting Meshes for Visualization
 ====================================
 
 Suppose that you have an arbitrary Blueprint mesh that you want to output from a running code and
-subsequently visualize using a visualization tool (e.g. `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_).
-Provided that your mesh is sufficiently simple (see the note at the end of this section for details),
-you can output your mesh using one of the following ``conduit::relay`` library functions:
+subsequently visualize using a visualization tool (e.g. `VisIt <https://visit.llnl.gov>`_).
+You can save your mesh to a set of files, using one of the following
+``conduit::relay::io::blueprint`` library functions:
+
+Save a mesh to disk:
 
 .. code:: cpp
 
-    // saves the given mesh to disk at the given path (using the extension
-    // suffix in the path to inform the output data protocol)
-    conduit::relay::io_blueprint::save(const conduit::Node &mesh,
-                                       const std::string &path);
+    conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
+                                              const std::string &path);
 
-    // saves the given mesh to disk at the given path with the given explicit
-    // output data protocol (e.g. "json", "hdf5")
-    conduit::relay::io_blueprint::save(const conduit::Node &mesh,
-                                       const std::string &path,
-                                       const std::string &protocol);
+Save a mesh to disk using a specific protocol:
 
-It's important to note that both of these functions expect the given path to have
-a valid extension to properly output results. The valid extensions for these
-functions are as follows:
+.. code:: cpp
 
-- ``.blueprint_root`` (JSON Extension)
-- ``.blueprint_root_hdf5`` (HDF5 Extension)
+    conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
+                                              const std::string &protocol,
+                                              const std::string &path);
 
-Files output from these functions can be opened and subsequently visualized
-directly using `VisIt <https://wci.llnl.gov/simulation/computer-codes/visit>`_.
+Save a mesh to disk using a specific protocol and options:
 
-.. note::
-   This automatic index generation and save functionality is under development. 
-   It handles most basic cases, but only supports ``json`` and ``hdf5`` output
-   protocols and has limited multi-domain support. We are working on API changes
-   and a more robust capability for future versions of Conduit.
+.. code:: cpp
 
-.. _detailed_uniform_example:
+    /// Options accepted via the `opts` Node argument:
+    ///
+    ///      file_style: "default", "root_only", "multi_file"
+    ///            when # of domains == 1,  "default"   ==> "root_only"
+    ///            else,                    "default"   ==> "multi_file"
+    ///
+    ///      suffix: "default", "cycle", "none" 
+    ///            when # of domains == 1,  "default"   ==> "none"
+    ///            else,                    "default"   ==> "cycle"
+    ///
+    ///      mesh_name:  (used if present, default ==> "mesh")
+    ///
+    ///      number_of_files:  {# of files}
+    ///            when "multi_file":
+    ///                 <= 0, use # of files == # of domains
+    ///                  > 0, # of files == number_of_files
+    ///
+    conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
+                                              const std::string &path,
+                                              const std::string &protocol,
+                                              const conduit::Node &opts);
 
-Detailed Uniform Example
+Loading Meshes from Files
+==========================
+
+If you have a mesh written to a set of blueprint files, you can load them by 
+passing the root file path to the following ``conduit::relay::io::blueprint``
+library functions:
+
+Load a mesh given a root file:
+
+.. code:: cpp
+
+    conduit::relay::io::blueprint::read_mesh(const std::string &root_file_path,
+                                             conduit::Node &mesh);
+
+
+Load a mesh given a root file and options:
+
+.. code:: cpp
+
+    /// Options accepted via the `opts` Node argument:
+    ///
+    ///      mesh_name: "{name}"
+    ///          provide explicit mesh name, for cases where bp data includes
+    ///           more than one mesh.
+    ///
+    conduit::relay::io::blueprint::read_mesh(const std::string &root_file_path,
+                                             const conduit::Node &opts,
+                                             conduit::Node &mesh);
+
+
+.. _complete_uniform_example:
+
+Complete Uniform Example
 ====================================
 
 This snippet provides a complete C++ example that demonstrates:
 
-  * Describing a uniform mesh in a Conduit tree
+  * Describing a single-domain uniform mesh in a Conduit tree
   * Verifying the tree conforms to the Mesh Blueprint
-  * Saving the result to a JSON file that VisIt can open
+  * Saving the result to a file that VisIt and Ascent Replay can open
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform_detailed")
-   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform_detailed")
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_uniform_complete")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_uniform_complete")
    :language: cpp
    :dedent: 4
 
 Expressions (Derived Fields)
 ============================
 
-An *expression* is a mathemtical formula which defines a new field in terms of other fields and/or
+An *expression* is a mathematical formula which defines a new field in terms of other fields and/or
 other expressions. Expressions are specified in the ``expressions`` section of the Blueprint
 protocol. The ``expressions`` section is optional. When it exists, it is a peer to the ``fields`` section.
 It is a list of *Objects* of the form:
@@ -1358,7 +1371,7 @@ It is a list of *Objects* of the form:
 The ``number_of_components`` and ``topology`` entries are identical to their meaning as
 entries in the ``fields`` section.
 
-The ``definition`` entry is string valued and holds the expression (e.g. *mathemtical formula*) defining
+The ``definition`` entry is string valued and holds the expression (e.g. *mathematical formula*) defining
 how the new field is computed. Blueprint does not interpret this string. It simply passes it along for
 downstream consumers that have the ability to interpret the string and perform the associated operations
 to compute the expression.
