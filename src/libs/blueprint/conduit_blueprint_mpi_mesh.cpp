@@ -143,6 +143,27 @@ generate_index(const conduit::Node &mesh,
 
     relay::mpi::min_all_reduce(n_snd, n_reduce, comm);
 
+    Node do_par_map;
+    do_par_map.set_uint8(0);
+    if(par_rank == selected_rank )
+    {
+        if(::conduit::blueprint::mesh::is_multi_domain(mesh))
+        {
+            if(mesh.child(0).has_child("state") && mesh.child(0)["state"].has_child("domain_id"))
+            {
+                do_par_map.set_uint8(1);
+            }
+        }
+    }
+
+    relay::mpi::broadcast(do_par_map, selected_rank, comm); 
+
+    Node partition;
+    if(do_par_map.as_uint8())
+    {
+        generate_partition(mesh, partition, comm);
+    }
+
     if(par_rank == selected_rank )
     {
         if(::conduit::blueprint::mesh::is_multi_domain(mesh))
@@ -185,6 +206,49 @@ number_of_domains(const conduit::Node &n,
     relay::mpi::all_reduce(n_snd, n_reduce, MPI_SUM, comm);
     return global_num_domains;
 }
+
+//-------------------------------------------------------------------------
+void generate_partition(const conduit::Node &mesh,
+                        Node &partition,
+                        MPI_Comm comm)
+{
+    int par_rank = relay::mpi::rank(comm);
+
+    std::vector<conduit::int64> local_domains;
+
+    conduit::NodeConstIterator itr = mesh.children();
+    while (itr.has_next())
+    {
+        const conduit::Node &chld = itr.next();
+        if (chld.has_child("state"))
+        {
+            const conduit::Node &state = chld["state"];
+            if (state.has_child("domain_id"))
+            {
+                 conduit::int64 dom_id = state["domain_id"].as_int64();
+                 local_domains.push_back(dom_id);
+            }
+        }
+    }
+
+    Node num_local, num_global;
+    num_local.set_int64(local_domains.size());
+    num_global.set_int64(0);
+    relay::mpi::sum_all_reduce(num_local, num_global, comm);
+
+    std::vector<int64> local_partition(num_global.as_int64(), 0);
+    for (auto m_itr = local_domains.begin(); m_itr != local_domains.end();
+         ++m_itr)
+    {
+         local_partition[*m_itr] = par_rank;
+    }
+
+    Node local_par;
+    local_par.set_external(&local_partition[0], local_partition.size());
+
+    relay::mpi::max_all_reduce(local_par, partition, comm);
+}
+
 
 //-------------------------------------------------------------------------
 void to_polygonal(const Node &n,

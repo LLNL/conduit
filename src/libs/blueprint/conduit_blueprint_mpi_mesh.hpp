@@ -118,6 +118,10 @@ void CONDUIT_BLUEPRINT_API to_polyhedral(const conduit::Node &n,
 index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh,
                                                 MPI_Comm comm);
 
+void CONDUIT_BLUEPRINT_API generate_partition(const conduit::Node &mesh,
+                                              Node &partition,
+                                              MPI_Comm comm);
+
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
