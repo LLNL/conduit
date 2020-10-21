@@ -68,6 +68,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Sphinx Docs code examples and outputs are now included using start-after and end-before style includes.
 - Schema to_json() and to_json_stream() methods were expanded to support indent, depth, pad and end-of-element args.
 - In Python, conduit.Node() repr now returns the YAML string representation of the Node. Perviously verbose `conduit_json` was used, which was overwhelming.
+- conduit.about() now reports the git tag if found, and `version` was changed to add git sha and status (dirty) info to avoid confusion between release and development installs.
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.

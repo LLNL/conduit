@@ -43,8 +43,29 @@ about(Node &n)
 
 #ifdef CONDUIT_GIT_SHA1
     n["git_sha1"] = CONDUIT_GIT_SHA1;
+#else
+    n["git_sha1"] = "unknown";
 #endif
-    
+
+#ifdef CONDUIT_GIT_SHA1_ABBREV
+    n["git_sha1_abbrev"] = CONDUIT_GIT_SHA1_ABBREV;
+#else
+    n["git_sha1_abbrev"] = "unknown";
+#endif
+
+#ifdef CONDUIT_GIT_TAG
+    n["git_tag"] = CONDUIT_GIT_TAG;
+#else
+    n["git_tag"] = "unknown";
+#endif
+
+    if(n["git_tag"].as_string() == "unknown" && 
+       n["git_sha1_abbrev"].as_string() != "unknown")
+    {
+        n["version"] = n["version"].as_string()
+                       + "-" + n["git_sha1_abbrev"].as_string();
+    }
+
     n["compilers/cpp"] = CONDUIT_CPP_COMPILER;
 #ifdef CONDUIT_FORTRAN_COMPILER
     n["compilers/fortran"] = CONDUIT_FORTRAN_COMPILER;
