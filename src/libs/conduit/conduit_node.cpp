@@ -354,10 +354,10 @@ Node::load(const std::string &ibase,
         {
             CONDUIT_ERROR("<Node::load> failed to open: " << ibase);
         }
-        std::string json_data((std::istreambuf_iterator<char>(ifile)),
-                               std::istreambuf_iterator<char>());
-        
-        Generator g(json_data,protocol);
+        std::string data((std::istreambuf_iterator<char>(ifile)),
+                          std::istreambuf_iterator<char>());
+
+        Generator g(data,proto);
         g.walk(*this);
     }
 }
