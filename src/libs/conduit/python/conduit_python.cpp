@@ -4177,9 +4177,7 @@ PyConduit_Node_str(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_repr(PyConduit_Node* self)
 {
-   std::ostringstream oss;
-   self->node->to_json_stream(oss,"conduit_json");
-   return (Py_BuildValue("s", oss.str().c_str()));
+    return PyConduit_Node_str(self);
 }
 
 //---------------------------------------------------------------------------//
@@ -4380,15 +4378,16 @@ PyConduit_Node_save(PyConduit_Node *self,
     {
         return NULL;
     }
-    
+
     std::string path_str(path);
-    std::string protocol_str("conduit_bin");
-    
+    // keep blank, allow conduit to detect based on file name
+    std::string protocol_str("");
+
     if(protocol != NULL)
     {
         protocol_str = std::string(protocol);
     }
-    
+
     try
     {
         self->node->save(path_str,protocol_str);
@@ -4399,8 +4398,8 @@ PyConduit_Node_save(PyConduit_Node *self,
                         e.message().c_str());
         return NULL;
     }
-    
-    
+
+
     Py_RETURN_NONE;
 }
 
@@ -4462,7 +4461,8 @@ PyConduit_Node_load(PyConduit_Node *self,
     }
     else
     {
-        std::string protocol_str("conduit_bin");
+    // keep blank, allow conduit to detect based on file name
+        std::string protocol_str("");
 
         if( protocol != NULL)
         {

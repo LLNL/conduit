@@ -1427,8 +1427,15 @@ void read_mesh(const std::string &root_file_path,
                     {
                         std::string entry_name = itr.name();
                         std::string entry_path = entry["path"].as_string();
-                        hnd.read(utils::join_path(tree_path, entry_path),
-                                 mesh_out[outer_name][entry_name]);
+                        std::string fetch_path = utils::join_path(tree_path,
+                                                                  entry_path);
+                        // some parts may not exist in all domains
+                        // only read if they are there
+                        if(hnd.has_path(fetch_path))
+                        {   
+                            hnd.read(fetch_path,
+                                     mesh_out[outer_name][entry_name]);
+                        }
                     }
                 }
             }

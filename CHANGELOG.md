@@ -49,7 +49,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Updated to newer BLT to resolve BLT/FindMPI issues with rpath linking commands when using OpenMPI.
 - Fixed internal object name string for the Python Iterator object. It used to report `Schema`, which triggered both puzzling and concerned emotions.
 - Fixed a bug with `Node.set` in the Python API that undermined setting NumPy arrays with sliced views and complex striding. General slices should now work with `set`. No changes to the `set_external` case, which requires 1-D effective striding and throws an exception when more complex strides are presented.
-  
+- Fixed a bug with auto detect of protocol for Node.load
+- Fixed bugs with auto detect of protocol for Node.load and Node.save in the Python interface
+
 
 #### Relay
 - Use H5F_ACC_RDONLY in relay::io::is_hdf5_file to avoid errors when checking files that already have open HDF5 handles.
@@ -66,6 +68,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - The string return variants of `about` methods now return yaml strings instead of json strings.
 - Sphinx Docs code examples and outputs are now included using start-after and end-before style includes.
 - Schema to_json() and to_json_stream() methods were expanded to support indent, depth, pad and end-of-element args.
+- In Python, conduit.Node() repr now returns the YAML string representation of the Node. Perviously verbose `conduit_json` was used, which was overwhelming.
+- conduit.about() now reports the git tag if found, and `version` was changed to add git sha and status (dirty) info to avoid confusion between release and development installs.
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.
