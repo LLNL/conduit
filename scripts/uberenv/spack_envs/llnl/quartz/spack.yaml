@@ -1,0 +1,5 @@
+spack:
+    specs:
+      - python
+      - conduit+python
+    concretization: together
