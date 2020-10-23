@@ -5,18 +5,18 @@ spack:
     concretization: together
     compilers:
       - compiler:
-        environment: {}
-        extra_rpaths: []
-        flags: {}
-        modules: []
-        operating_system: rhel7
-        paths:
-          cc:  /usr/tce/bin/gcc
-          cxx: /usr/tce/bin/g++
-          f77: /usr/tce/bin/gfortran
-          fc:  /usr/tce/bin/gfortran
-        spec: gcc@4.9.3
-        target: x86_64
+          environment: {}
+          extra_rpaths: []
+          flags: {}
+          modules: []
+          operating_system: rhel7
+          paths:
+            cc:  /usr/tce/bin/gcc
+            cxx: /usr/tce/bin/g++
+            f77: /usr/tce/bin/gfortran
+            fc:  /usr/tce/bin/gfortran
+          spec: gcc@4.9.3
+          target: x86_64
     packages:
       all:
         compiler: [gcc]
