@@ -21,8 +21,8 @@ spack:
       all:
         compiler: [gcc]
         providers:
-          blas: [netlib-lapack]
-          lapack: [netlib-lapack]
+          blas: [openblas]
+          lapack: [openblas]
           mpi: [mvapich2]
         # Lock down which MPI we are using
       mvapich2:
@@ -51,13 +51,6 @@ spack:
         buildable: false
       mpt:
         buildable: false
-      # blas is a bit more complicated because its a virtual package so fake it with
-      # the following per spack docs
-      netlib-lapack:
-        buildable: false
-        externals:
-          - spec: netlib-lapack@3.6.1
-            prefix: /usr
       # System level packages to not build
       autoconf:
         buildable: false
