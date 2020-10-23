@@ -3,6 +3,9 @@ spack:
       - python
       - conduit+python
     concretization: together
+    config:
+      install_tree: .
+      install_path_scheme: "spack-libs/${COMPILERNAME}-${COMPILERVER}/${PACKAGE}-${VERSION}"
     compilers:
       - compiler:
           environment: {}
@@ -25,13 +28,13 @@ spack:
           blas: [openblas]
           lapack: [openblas]
           mpi: [mvapich2]
-        # Lock down which MPI we are using
+      # Lock down which MPI we are using
       mvapich2:
         buildable: false
         externals:
           - spec: mvapich2@2.3%gcc@4.9.3
             prefix: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-4.9.3/
-      # Spack may grab one of this for mpi & we don't want to use them
+      # Spack may grab one of these for mpi & we don't want to use them
       openmpi:
         buildable: false
       mpich:
