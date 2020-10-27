@@ -85,7 +85,7 @@ endfunction()
 ##------------------------------------------------------------------------------
 function(add_python_test )
     set(options)
-    set(singleValueArgs TEST FOLDER )
+    set(singleValueArgs TEST )
     set(multiValueArgs )
 
     # parse our arguments
@@ -120,11 +120,6 @@ function(add_python_test )
                      APPEND
                      PROPERTY
                      ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
-    endif()
-
-    # set folder if passed
-    if( DEFINED args_FOLDER )
-        blt_set_target_folder(TARGET ${args_TEST} FOLDER ${args_FOLDER})
     endif()
 
 endfunction(add_python_test)
