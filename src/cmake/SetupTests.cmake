@@ -85,7 +85,7 @@ endfunction()
 ##------------------------------------------------------------------------------
 function(add_python_test )
     set(options)
-    set(singleValueArgs TEST )
+    set(singleValueArgs TEST FOLDER )
     set(multiValueArgs )
 
     # parse our arguments
