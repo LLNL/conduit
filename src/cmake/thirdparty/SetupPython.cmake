@@ -291,7 +291,7 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE)
         set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
     endif()
 
-    install(TARGETS ${target_name}
+    install(TARGETS ${args_NAME}
             EXPORT  conduit
             LIBRARY DESTINATION ${py_install_dir}/${args_PY_MODULE_DIR}
             ARCHIVE DESTINATION ${py_install_dir}/${args_PY_MODULE_DIR}
