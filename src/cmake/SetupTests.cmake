@@ -122,11 +122,6 @@ function(add_python_test )
                      ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
     endif()
 
-    # set folder if passed
-    if( DEFINED args_FOLDER )
-        blt_set_target_folder(TARGET ${args_TEST} FOLDER ${args_FOLDER})
-    endif()
-
 endfunction(add_python_test)
 
 ##------------------------------------------------------------------------------
