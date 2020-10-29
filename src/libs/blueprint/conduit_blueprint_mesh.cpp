@@ -2397,15 +2397,15 @@ mesh::connectivity::make_element_2d(std::vector<int64_t>& elem,
     int64_t ihi = ilo + 1;
     int64_t jhi = jlo + 1;
 
-    int64_t LL = (iwidth+1)*jlo + ilo;
-    int64_t UL = (iwidth+1)*jlo + ihi;
-    int64_t LU = (iwidth+1)*jhi + ilo;
-    int64_t UU = (iwidth+1)*jhi + ihi;
+    int64_t ilo_jlo = (iwidth+1)*jlo + ilo;
+    int64_t ihi_jlo = (iwidth+1)*jlo + ihi;
+    int64_t ihi_jhi = (iwidth+1)*jhi + ihi;
+    int64_t ilo_jhi = (iwidth+1)*jhi + ilo;
  
-    elem.push_back(LL);
-    elem.push_back(UL);
-    elem.push_back(UU);
-    elem.push_back(LU);
+    elem.push_back(ilo_jlo);
+    elem.push_back(ihi_jlo);
+    elem.push_back(ihi_jhi);
+    elem.push_back(ilo_jhi);
 }
 
 
@@ -2561,7 +2561,7 @@ mesh::connectivity::create_elements_2d(const Node& ref_win,
 
     int64_t ref_size_i = ref_win["dims/i"].as_int64();
     int64_t ref_size_j = ref_win["dims/j"].as_int64();
-#if 1
+
     if (ref_size_i == 1)
     {
         int jstart = origin_jref - j_lo;
@@ -2627,7 +2627,7 @@ mesh::connectivity::create_elements_2d(const Node& ref_win,
             }
         }
     }
-#endif
+
     int istart = origin_iref - i_lo;
     int jstart = origin_jref - j_lo;
     int iend = istart + ref_size_i - 1;
@@ -2727,7 +2727,9 @@ mesh::connectivity::create_elements_3d(const Node& ref_win,
                                                          iwidth,
                                                          jwidth,
                                                          kwidth,
-ifaces,jfaces,kfaces);
+                                                         ifaces,
+                                                         jfaces,
+                                                         kfaces);
                 }
             }
         }
@@ -2741,11 +2743,9 @@ mesh::connectivity::connect_elements_3d(const Node& ref_win,
                                      int64_t k_lo,
                                      int64_t iwidth,
                                      int64_t jwidth,
-                                     std::vector<int64_t>& ratio,
                                      int64_t& new_vertex,
                                      std::map<int, PolyElemType>& elems)
 {
-(void)ratio;
     int64_t origin_iref = ref_win["origin/i"].as_int64();
     int64_t origin_jref = ref_win["origin/j"].as_int64();
     int64_t origin_kref = ref_win["origin/k"].as_int64();

@@ -109,7 +109,8 @@ generate_index(const conduit::Node &mesh,
     {
         if(::conduit::blueprint::mesh::is_multi_domain(mesh))
         {
-            if(mesh.child(0).has_child("state") && mesh.child(0)["state"].has_child("domain_id"))
+            if(mesh.child(0).has_child("state") &&
+               mesh.child(0)["state"].has_child("domain_id"))
             {
                 do_par_map.set_uint8(1);
             }
