@@ -140,6 +140,12 @@ generate_index(const conduit::Node &mesh,
                                                        global_num_domains,
                                                        index_out);
         }
+
+        if (!partition.dtype().is_empty())
+        {
+            index_out["state/partition_size"].set(par_size);
+            index_out["state/domain_to_partition_map"].set(partition);
+        }
     }
 
     // broadcast the resulting index to all other ranks
