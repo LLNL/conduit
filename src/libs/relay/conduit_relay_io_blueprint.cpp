@@ -214,7 +214,7 @@ bool global_someone_agrees(bool vote
 void make_domain_ids(conduit::Node &domains
                      CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
-  int num_domains = domains.number_of_children();
+  int num_domains = (int)domains.number_of_children();
 
   int domain_offset = 0;
 
@@ -256,7 +256,7 @@ bool clean_mesh(const conduit::Node &data,
                 CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
   output.reset();
-  const int potential_doms = data.number_of_children();
+  const index_t potential_doms = data.number_of_children();
   bool maybe_multi_dom = true;
 
   if(!data.dtype().is_object() && !data.dtype().is_list())
@@ -306,9 +306,9 @@ bool clean_mesh(const conduit::Node &data,
 void check_for_attributes(const conduit::Node &input,
                           std::vector<std::string> &list)
 {
-  const int num_doms = input.number_of_children();
+  const index_t num_doms = input.number_of_children();
   std::set<std::string> specials;
-  for(int d = 0; d < num_doms; ++d)
+  for(index_t d = 0; d < num_doms; ++d)
   {
     const conduit::Node &dom = input.child(d);
     if(dom.has_path("fields"))
@@ -340,8 +340,8 @@ void filter_fields(const conduit::Node &input,
   //
   check_for_attributes(input, fields);
 
-  const int num_doms = input.number_of_children();
-  for(int d = 0; d < num_doms; ++d)
+  const index_t num_doms = input.number_of_children();
+  for(index_t d = 0; d < num_doms; ++d)
   {
     const conduit::Node &dom = input.child(d);
     conduit::Node &out_dom = output.append();
@@ -386,15 +386,15 @@ void filter_fields(const conduit::Node &input,
     }
   }
 
-  const int num_out_doms = output.number_of_children();
+  const index_t num_out_doms = output.number_of_children();
   bool has_data = false;
   // check to see if this resulted in any data
-  for(int d = 0; d < num_out_doms; ++d)
+  for(index_t d = 0; d < num_out_doms; ++d)
   {
     const conduit::Node &dom = output.child(d);
     if(dom.has_path("fields"))
     {
-      int fsize = dom["fields"].number_of_children();
+      index_t fsize = dom["fields"].number_of_children();
       if(fsize != 0)
       {
         has_data = true;
@@ -691,7 +691,7 @@ void write_mesh(const Node &mesh,
     // get the number of local domains and the cycle info
     // -----------------------------------------------------------
 
-    int local_num_domains = multi_dom.number_of_children();
+    index_t local_num_domains = multi_dom.number_of_children();
     // figure out what cycle we are
     if(local_num_domains > 0 && is_valid)
     {
@@ -732,7 +732,7 @@ void write_mesh(const Node &mesh,
     // -----------------------------------------------------------
     // find the # of global domains
     // -----------------------------------------------------------
-    int global_num_domains = local_num_domains;
+    int global_num_domains = (int)local_num_domains;
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     n_local = local_num_domains;
@@ -1037,7 +1037,7 @@ void write_mesh(const Node &mesh,
                             // TODO FMT
                             snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain_id);
                             oss << "domain_" << fmt_buff << "/" << opts_mesh_name;
-                            std::string path = oss.str();
+                            std::string curr_path = oss.str();
    
 
                             if(!hnd.is_open())
@@ -1045,7 +1045,7 @@ void write_mesh(const Node &mesh,
                                 hnd.open(output_file);
                             }
 
-                            hnd.write(dom,path);
+                            hnd.write(dom, curr_path);
                             // CONDUIT_INFO("rank " << par_rank << " output_file"
                             //              << output_file << " path " << path);
 
@@ -1361,7 +1361,7 @@ void read_mesh(const std::string &root_file_path,
         hnd.open(root_fname,"sidre_hdf5");
         for(int i = domain_start ; i < domain_end; i++)
         {
-            std::ostringstream oss;
+            oss.str("");
             oss << i << "/" << mesh_name;
             hnd.read(oss.str(),mesh);
         }

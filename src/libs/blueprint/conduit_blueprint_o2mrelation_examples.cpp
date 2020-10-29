@@ -116,8 +116,8 @@ uniform(Node &res,
         for(index_t many_idx = 0; many_idx < nmany; many_idx++, datum_idx++)
         {
             res_data[one_idx * noffset + many_idx] = datum_idx + 1.0f;
-            res_indices[datum_idx] = many_idx + noffset *
-                ( !rev_indices ? one_idx : nones - one_idx - 1 );
+            res_indices[datum_idx] = (uint32)(many_idx + noffset *
+                ( !rev_indices ? one_idx : nones - one_idx - 1 ));
         }
     }
 
@@ -132,14 +132,14 @@ uniform(Node &res,
         uint32_array res_sizes = res["sizes"].value();
         for(index_t one_idx = 0; one_idx < nones; one_idx++)
         {
-            res_sizes[one_idx] = nmany;
+            res_sizes[one_idx] = (uint32) nmany;
         }
 
         res["offsets"].set(DataType::uint32(nones));
         uint32_array res_offsets = res["offsets"].value();
         for(index_t one_idx = 0; one_idx < nones; one_idx++)
         {
-            res_offsets[one_idx] = use_indices ? one_idx * nmany : one_idx * noffset;
+            res_offsets[one_idx] =(uint32)(use_indices ? one_idx * nmany : one_idx * noffset);
         }
     }
 }

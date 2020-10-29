@@ -6347,9 +6347,9 @@ PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
 
         // get unicode data and construct a python unicode object from it
         void *unicode_buffer_ptr = PyArray_GETPTR1(py_arr,i);
-        
+        int unicode_str_len = ((int)(buffer_len)) / 4;
         PyObject *py_temp_unicode = PyUnicode_From_UTF32_Unicode_Buffer((const char*)unicode_buffer_ptr,
-                                                                        buffer_len/4);
+                                                                        unicode_str_len);
             
         if(py_temp_unicode == NULL)
         {

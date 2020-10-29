@@ -1072,14 +1072,15 @@ hash(const char *k, unsigned int length, unsigned int initval)
 unsigned int
 hash(const char *k, unsigned int initval)
 {
-    return hashing::Hash((unsigned char const*)k, strlen(k), initval);
+    return hashing::Hash((unsigned char const*)k,
+                         (unsigned int)strlen(k), initval);
 }
 
 unsigned int
 hash(const std::string &k, unsigned int initval)
 {
-    return hashing::Hash((unsigned char const*)k.c_str(), 
-                         k.size(), initval);
+    return hashing::Hash((unsigned char const*)k.c_str(),
+                         (unsigned int)k.size(), initval);
 }
 
 }

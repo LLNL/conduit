@@ -300,7 +300,8 @@ yaml_parser_load_scalar(yaml_parser_t *parser, yaml_event_t *first_event)
 
     if (!PUSH(parser, parser->document->nodes, node)) goto error;
 
-    index = parser->document->nodes.top - parser->document->nodes.start;
+    // CONDUIT CHANGE: supress warnings ident on windows 
+    index = (int)(parser->document->nodes.top - parser->document->nodes.start);
 
     if (!yaml_parser_register_anchor(parser, index,
                 first_event->data.scalar.anchor)) return 0;
@@ -347,7 +348,8 @@ yaml_parser_load_sequence(yaml_parser_t *parser, yaml_event_t *first_event)
 
     if (!PUSH(parser, parser->document->nodes, node)) goto error;
 
-    index = parser->document->nodes.top - parser->document->nodes.start;
+    // CONDUIT CHANGE: supress warnings ident on windows 
+    index = (int)(parser->document->nodes.top - parser->document->nodes.start);
 
     if (!yaml_parser_register_anchor(parser, index,
                 first_event->data.sequence_start.anchor)) return 0;
@@ -409,8 +411,9 @@ yaml_parser_load_mapping(yaml_parser_t *parser, yaml_event_t *first_event)
             first_event->start_mark, first_event->end_mark);
 
     if (!PUSH(parser, parser->document->nodes, node)) goto error;
-
-    index = parser->document->nodes.top - parser->document->nodes.start;
+    
+    // CONDUIT CHANGE: supress warnings ident on windows 
+    index = (int)(parser->document->nodes.top - parser->document->nodes.start);
 
     if (!yaml_parser_register_anchor(parser, index,
                 first_event->data.mapping_start.anchor)) return 0;

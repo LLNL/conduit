@@ -551,7 +551,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset_simple)
                                                      0.285, 0.01, // c value
                                                      res["julia_nestset_simple"]);
 
-    int ndoms = res["julia_nestset_simple"].number_of_children();
+    index_t ndoms = res["julia_nestset_simple"].number_of_children();
 
     Node info;
     if(!blueprint::mesh::verify(res["julia_nestset_simple"],info))
@@ -591,7 +591,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
                                                       3, // amr levels
                                                       res["julia_nestset_complex"]);
 
-    int ndoms = res["julia_nestset_complex"].number_of_children();
+    index_t ndoms = res["julia_nestset_complex"].number_of_children();
 
     Node info;
     if(!blueprint::mesh::verify(res["julia_nestset_complex"],info))

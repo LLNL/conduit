@@ -1881,7 +1881,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     Node data_node;
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
-        index_t esize;
+        index_t esize = 0;
         if (topo_shape.is_polygonal())
         {
             data_node.set_external(size_dtype, topo_sizes.element_ptr(ei));
@@ -1902,7 +1902,9 @@ calculate_unstructured_centroids(const conduit::Node &topo,
             fi < elem_num_faces; fi++)
         {
 
-            index_t subelem_index, subelem_offset, subelem_size = 0;
+            index_t subelem_index = 0;
+            index_t subelem_offset = 0;
+            index_t subelem_size = 0;
             if (topo_shape.is_polyhedral())
             {
                 data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
