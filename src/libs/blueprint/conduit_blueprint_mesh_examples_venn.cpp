@@ -179,7 +179,7 @@ void build_material_sparse(Node & src, index_t len,
     {
         if (src_val[idx] > 0)
         {
-            sparse_element_ids[sparse_idx] = idx;
+            sparse_element_ids[sparse_idx] = (int32)idx;
             sparse_val[sparse_idx] = src_val[idx];
 
             matset_area_val[sparse_idx] = element_area;
@@ -304,7 +304,7 @@ void venn_sparse_by_material_matset(Node &res)
         float64 fgvf = cir_a[idx] + cir_b[idx] + cir_c[idx];
         if (fgvf < 1.)
         {
-            bg_idx[nidx] = idx;
+            bg_idx[nidx] = (int32)idx;
 
             bg_val[nidx] = 1. - fgvf;
 
@@ -433,7 +433,7 @@ void venn_sparse_by_element_matset(Node &res)
         }
 
         sizes[idx] = size;
-        offsets[idx] = vfidx;
+        offsets[idx] = (int32) vfidx;
         vfidx += size;
     }
 }

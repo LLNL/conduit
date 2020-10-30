@@ -189,7 +189,7 @@ void compact_to(const conduit::Node &o2mrelation,
     else
     {
         O2MIterator o2miter(o2mrelation);
-        const std::vector<std::string> o2m_paths =
+        const std::vector<std::string> o2m_paths_curr =
             conduit::blueprint::o2mrelation::data_paths(o2mrelation);
 
         const conduit::Node &o2m_offsets = o2mrelation["offsets"];
@@ -203,9 +203,9 @@ void compact_to(const conduit::Node &o2mrelation,
             res_offsets.set(conduit::DataType(offsets_dtype.id(),
                 o2miter.elements(conduit::blueprint::o2mrelation::ONE)));
 
-            for(index_t pi = 0; pi < (index_t)o2m_paths.size(); pi++)
+            for(index_t pi = 0; pi < (index_t)o2m_paths_curr.size(); pi++)
             {
-                const std::string& o2m_path = o2m_paths[pi];
+                const std::string& o2m_path = o2m_paths_curr[pi];
                 res[o2m_path].set(conduit::DataType(o2mrelation[o2m_path].dtype().id(),
                     o2miter.elements(conduit::blueprint::o2mrelation::DATA)));
             }
@@ -227,10 +227,10 @@ void compact_to(const conduit::Node &o2mrelation,
                 o2miter.next(conduit::blueprint::o2mrelation::MANY);
                 const index_t data_index = o2miter.index(conduit::blueprint::o2mrelation::DATA);
 
-                for(index_t pi = 0; pi < (index_t)o2m_paths.size(); pi++, curr_index++)
+                for(index_t pi = 0; pi < (index_t)o2m_paths_curr.size(); pi++, curr_index++)
                 {
-                    const conduit::Node &o2m_data = o2mrelation[o2m_paths[pi]];
-                    conduit::Node &res_data = res[o2m_paths[pi]];
+                    const conduit::Node &o2m_data = o2mrelation[o2m_paths_curr[pi]];
+                    conduit::Node &res_data = res[o2m_paths_curr[pi]];
 
                     const conduit::DataType data_dtype(o2m_data.dtype().id(), 1);
                     o2m_temp.set_external(data_dtype, (void*)o2m_data.element_ptr(data_index));

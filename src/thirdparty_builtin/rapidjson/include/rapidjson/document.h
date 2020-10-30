@@ -21,8 +21,10 @@
 // MOD FOR CONDUIT: ignore clang macro warning for rapidjson
 // ---------------------------------------------------------------------------
 //---------------------------------------------------------------------------//
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wexpansion-to-defined"
+#ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wexpansion-to-defined"
+#endif
 //---------------------------------------------------------------------------//
 
 
@@ -2129,7 +2131,9 @@ RAPIDJSON_DIAG_POP
 // MOD FOR CONDUIT: ignore clang macro warning for rapidjson
 // ---------------------------------------------------------------------------
 //---------------------------------------------------------------------------//
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif
 //---------------------------------------------------------------------------//
 
 #endif // RAPIDJSON_DOCUMENT_H_
