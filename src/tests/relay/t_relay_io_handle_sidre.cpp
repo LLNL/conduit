@@ -218,6 +218,7 @@ TEST(conduit_relay_io_handle, test_sidre_with_root)
     EXPECT_TRUE(tchld.size() == 0 );
     h.list_child_names("1000",tchld);
     EXPECT_TRUE(tchld.size() == 0 );
+    h.list_child_names("0/nesh",tchld);
     EXPECT_TRUE(tchld.size() == 0 );
 
     // check data for each domain
