@@ -691,7 +691,7 @@ void write_mesh(const Node &mesh,
     // get the number of local domains and the cycle info
     // -----------------------------------------------------------
 
-    index_t local_num_domains = multi_dom.number_of_children();
+    int local_num_domains = (int)multi_dom.number_of_children();
     // figure out what cycle we are
     if(local_num_domains > 0 && is_valid)
     {
