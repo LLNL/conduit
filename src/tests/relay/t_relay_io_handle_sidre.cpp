@@ -149,6 +149,7 @@ TEST(conduit_relay_io_handle, test_sidre_with_root)
 
     std::vector<std::string> rchld;
     h.list_child_names(rchld);
+    EXPECT_TRUE(rchld.size() > 0 );
 
     for(int i=0;i< rchld.size();i++)
     {
@@ -173,6 +174,51 @@ TEST(conduit_relay_io_handle, test_sidre_with_root)
     n.reset();
     h.read("root/protocol",n);
     n.print();
+
+    EXPECT_TRUE(h.has_path("root"));
+    EXPECT_TRUE(h.has_path("root/blueprint_index"));
+    EXPECT_TRUE(h.has_path("0"));
+    EXPECT_TRUE(h.has_path("0/mesh"));
+
+    // bad path checks
+    EXPECT_FALSE(h.has_path("loot"));
+    EXPECT_FALSE(h.has_path("loot/blueprint_index"));
+    EXPECT_FALSE(h.has_path("-1000"));
+    EXPECT_FALSE(h.has_path("1000"));
+    EXPECT_FALSE(h.has_path("0/nesh"));
+
+    // list child_names test
+    std::vector<std::string> tchld;
+    h.list_child_names("root",tchld);
+    EXPECT_TRUE(tchld.size() > 0 );
+    
+    // children found
+    std::cout << "root children " << std::endl;
+    for(int i=0;i< tchld.size();i++)
+    {
+        std::cout << tchld[i] << std::endl;
+    }
+
+    // TODO FIX THIS
+    h.list_child_names("0/mesh",tchld);
+    EXPECT_TRUE(tchld.size() > 0 );
+
+    // children found
+    std::cout << "0/mesh children "  << std::endl;
+    for(int i=0;i< tchld.size();i++)
+    {
+        std::cout << tchld[i] << std::endl;
+    }
+
+    h.list_child_names("loot",tchld);
+    EXPECT_TRUE(tchld.size() == 0 );
+    h.list_child_names("loot/blueprint_index",tchld);
+    EXPECT_TRUE(tchld.size() == 0 );
+    h.list_child_names("-1000",tchld);
+    EXPECT_TRUE(tchld.size() == 0 );
+    h.list_child_names("1000",tchld);
+    EXPECT_TRUE(tchld.size() == 0 );
+    EXPECT_TRUE(tchld.size() == 0 );
 
     // check data for each domain
     for(int i=0;i<4;i++)

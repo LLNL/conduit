@@ -328,8 +328,11 @@ SidreIOHandle::list_child_names(std::vector<std::string> &res)
 //-----------------------------------------------------------------------------
 void
 SidreIOHandle::list_child_names(const std::string &path,
-                             std::vector<std::string> &res)
+                                std::vector<std::string> &res)
 {
+    // note: if the path is bad, we return an empty list
+    res.clear();
+
     if( open_mode() == "w")
     {
         CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
@@ -344,19 +347,26 @@ SidreIOHandle::list_child_names(const std::string &path,
 
         if(p_first == "root")
         {
-            m_root_handle.list_child_names(p_next,res);
+            if(p_next.empty())
+            {
+                m_root_handle.list_child_names(res);
+            }
+            else
+            {
+                m_root_handle.list_child_names(p_next,res);
+            }
         }
         else 
         {
-            if(!utils::string_is_integer(p_first))
+            if(utils::string_is_integer(p_first))
             {
-                CONDUIT_ERROR("SidreIOHandle: path must start with 'root' or an "
-                              " integer that represents a sidre tree id. "
-                              " ex: 'root/path'  '0/path', etc.");
+                int tree_id = utils::string_to_value<int>(p_first);
+                // make sure tree_id is valid
+                if(tree_id >= 0 && tree_id < m_num_trees )
+                {
+                    sidre_meta_tree_list_child_names(tree_id,p_next,res);
+                }
             }
-
-            int tree_id = utils::string_to_value<int>(p_first);
-            sidre_meta_tree_list_child_names(tree_id,path,res);
         }
     }
     else
@@ -401,17 +411,41 @@ SidreIOHandle::has_path(const std::string &path)
 
         if(p_first == "root")
         {
-            res = m_root_handle.has_path(p_next);
+            if(p_next.empty())
+            {
+                res = true;
+            } 
+            else
+            {
+                res = m_root_handle.has_path(p_next);
+            }
         }
         else
         {
             if(!utils::string_is_integer(p_first))
             {
-                // TODO:ERROR!
+                res = false;
             }
-
-            int tree_id = utils::string_to_value<int>(p_first);
-            sidre_meta_tree_has_path(tree_id,p_next);
+            else
+            {
+                int tree_id = utils::string_to_value<int>(p_first);
+                // make sure tree_id is valid
+                if(tree_id >= 0 && tree_id < m_num_trees )
+                {
+                    if(p_next.empty())
+                    {
+                        res = true;
+                    }
+                    else
+                    {
+                        res = sidre_meta_tree_has_path(tree_id,p_next);
+                    }
+                }
+                else
+                {
+                    res = false;
+                }
+            }
         }
     }
     else
@@ -1120,16 +1154,19 @@ SidreIOHandle::prepare_sidre_meta_tree(IOHandle &hnd,
                  hnd.read(tree_prefix + "sidre/" + sidre_mtree_view,
                           sidre_meta[sidre_mtree_view]);
             }
-            else
-            {
-                // TODO: Add file handle path
-                CONDUIT_ERROR("Failed to read tree path: " << std::endl
-                            << "Expected to find Sidre Group: "
-                            << tree_prefix << "sidre/" << sidre_mtree_group
-                            << " or "
-                            << "Sidre View: "
-                            << tree_prefix << "sidre/" << sidre_mtree_view);
-            }
+            // the path is invalid, we don't throw an error here
+            // because this method is also used to prepare sidre meta trees
+            // for has_path and list_child_names cases, which don't throw 
+            // errors, but here are the details about what we would expect
+            // for valid path:
+            // {
+            //     CONDUIT_ERROR("Failed to read tree path: " << std::endl
+            //                 << "Expected to find Sidre Group: "
+            //                 << tree_prefix << "sidre/" << sidre_mtree_group
+            //                 << " or "
+            //                 << "Sidre View: "
+            //                 << tree_prefix << "sidre/" << sidre_mtree_view);
+            // }
         }
     }
 }
