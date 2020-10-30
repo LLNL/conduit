@@ -240,8 +240,8 @@ void to_polygonal(const Node &n,
         dest[domain_name]["state"] = chld["state"];
         const Node& in_coords = chld["coordsets/coords"];
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
-        int64_t level_id = chld["state/level_id"].as_int64();
+        int64_t domain_id = chld["state/domain_id"].as_int();
+        int64_t level_id = chld["state/level_id"].as_int();
         if (level_id == 0) continue; 
 
         std::ostringstream win_oss;
@@ -250,10 +250,10 @@ void to_polygonal(const Node &n,
 
         const Node& in_topo = chld["topologies"][name];
 
-        int64_t niwidth = in_topo["elements/dims/i"].as_int64() + 1;
+        int64_t niwidth = in_topo["elements/dims/i"].as_int() + 1;
 
-        int64_t i_lo = in_topo["elements/origin/i0"].as_int64();
-        int64_t j_lo = in_topo["elements/origin/j0"].as_int64();
+        int64_t i_lo = in_topo["elements/origin/i0"].as_int();
+        int64_t j_lo = in_topo["elements/origin/j0"].as_int();
 
         const Node* in_parent = chld.parent();
 
@@ -266,8 +266,8 @@ void to_polygonal(const Node &n,
 
                 if (group.has_child("neighbors") && group.has_child("windows"))
                 {
-                    int64_array neighbors =
-                       group["neighbors"].as_int64_array();
+                    int_array neighbors =
+                       group["neighbors"].as_int_array();
 
                     int nbr_id = neighbors[1];
 
@@ -279,15 +279,15 @@ void to_polygonal(const Node &n,
                     const Node& ref_win = in_windows[win_name];
                     const Node& nbr_win = in_windows[nbr_win_name];
 
-                    if (nbr_win["level_id"].as_int64() < ref_win["level_id"].as_int64())
+                    if (nbr_win["level_id"].as_int() < ref_win["level_id"].as_int())
                     {
 
-                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size_i = ref_win["dims/i"].as_int();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int();
                         int64_t ref_size = ref_size_i * ref_size_j;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int();
                         int64_t nbr_size = nbr_size_i * nbr_size_j;
 
                         std::ostringstream nbr_oss;
@@ -306,8 +306,8 @@ void to_polygonal(const Node &n,
                             const double_array& yarray =
                                fcoords["y"].as_double_array();
 
-                            int64_t origin_i = ref_win["origin/i"].as_int64();
-                            int64_t origin_j = ref_win["origin/j"].as_int64();
+                            int64_t origin_i = ref_win["origin/i"].as_int();
+                            int64_t origin_j = ref_win["origin/j"].as_int();
 
                             if (ref_size_i == 1) {
                                int icnst = origin_i - i_lo;
@@ -328,7 +328,7 @@ void to_polygonal(const Node &n,
                                   ybuffer.push_back(yarray[offset]);
                                }
                             }
-                            int64_t nbr_rank = group["rank"].as_int64();
+                            int64_t nbr_rank = group["rank"].as_int();
                             MPI_Send(&xbuffer[0],
                                      xbuffer.size(),
                                      MPI_DOUBLE,
@@ -357,7 +357,7 @@ void to_polygonal(const Node &n,
         const Node& chld = itr.next();
         std::string domain_name = itr.name();
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64_t domain_id = chld["state/domain_id"].as_int();
 
         std::ostringstream win_oss;
         win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
@@ -378,9 +378,9 @@ void to_polygonal(const Node &n,
 
                 if (group.has_child("neighbors") && group.has_child("windows"))
                 {
-                    int64_array neighbors = group["neighbors"].as_int64_array();
+                    int_array neighbors = group["neighbors"].as_int_array();
 
-                    int64_t nbr_id = neighbors[1];
+                    int nbr_id = neighbors[1];
                     const Node& in_windows = group["windows"];
                     std::ostringstream nw_oss;
                     nw_oss << "window_" << std::setw(6)
@@ -389,14 +389,14 @@ void to_polygonal(const Node &n,
 
                     const Node& ref_win = in_windows[win_name];
                     const Node& nbr_win = in_windows[nbr_win_name];
-                    if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
+                    if (nbr_win["level_id"].as_int() > ref_win["level_id"].as_int())
                     {
-                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size_i = ref_win["dims/i"].as_int();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int();
                         int64_t ref_size = ref_size_i * ref_size_j;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int();
                         int64_t nbr_size = nbr_size_i * nbr_size_j;
 
                         if (nbr_size > ref_size)
@@ -423,7 +423,7 @@ void to_polygonal(const Node &n,
                                     ybuffer.resize(nbr_size_i);
                                 }
 
-                                int64_t nbr_rank = group["rank"].as_int64();
+                                int64_t nbr_rank = group["rank"].as_int();
                                 MPI_Recv(&xbuffer[0],
                                          xbuffer.size(),
                                          MPI_DOUBLE,
@@ -448,11 +448,11 @@ void to_polygonal(const Node &n,
                                 const Node& ntopo =
                                    nbr_dom["topologies"][name];
                                 int64_t ni_lo =
-                                   ntopo["elements/origin/i0"].as_int64();
+                                   ntopo["elements/origin/i0"].as_int();
                                 int64_t nj_lo =
-                                   ntopo["elements/origin/j0"].as_int64();
+                                   ntopo["elements/origin/j0"].as_int();
                                 int64_t nbr_iwidth =
-                                   ntopo["elements/dims/i"].as_int64() + 1;
+                                   ntopo["elements/dims/i"].as_int() + 1;
 
                                 const Node& fcoords =
                                    nbr_coords["values"];
@@ -461,8 +461,8 @@ void to_polygonal(const Node &n,
                                 const double_array& yarray =
                                    fcoords["y"].as_double_array();
 
-                                int64_t origin_i = nbr_win["origin/i"].as_int64();
-                                int64_t origin_j = nbr_win["origin/j"].as_int64();
+                                int64_t origin_i = nbr_win["origin/i"].as_int();
+                                int64_t origin_j = nbr_win["origin/j"].as_int();
 
                                 int64_t istart = origin_i - ni_lo;
                                 int64_t jstart = origin_j - nj_lo;
@@ -494,7 +494,7 @@ void to_polygonal(const Node &n,
         Node& out_coords = dest[domain_name]["coordsets/coords"];
         const Node& in_coords = chld["coordsets/coords"];
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64_t domain_id = chld["state/domain_id"].as_int();
         std::ostringstream win_oss;
         win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
         std::string win_name = win_oss.str();
@@ -516,11 +516,11 @@ void to_polygonal(const Node &n,
 
         const Node& in_topo = chld["topologies"][name];
 
-        int64_t iwidth = in_topo["elements/dims/i"].as_int64();
-        int64_t jwidth = in_topo["elements/dims/j"].as_int64();
+        int64_t iwidth = in_topo["elements/dims/i"].as_int();
+        int64_t jwidth = in_topo["elements/dims/j"].as_int();
 
-        int64_t i_lo = in_topo["elements/origin/i0"].as_int64();
-        int64_t j_lo = in_topo["elements/origin/j0"].as_int64();
+        int64_t i_lo = in_topo["elements/origin/i0"].as_int();
+        int64_t j_lo = in_topo["elements/origin/j0"].as_int();
 
         auto& poly_elems = poly_elems_map[domain_id];
 
@@ -534,7 +534,7 @@ void to_polygonal(const Node &n,
 
                 if (group.has_child("neighbors") && group.has_child("windows"))
                 {
-                    int64_array neighbors = group["neighbors"].as_int64_array();
+                    int_array neighbors = group["neighbors"].as_int_array();
 
                     int nbr_id = neighbors[1];
                     const Node& in_windows = group["windows"];
@@ -545,18 +545,18 @@ void to_polygonal(const Node &n,
 
                     const Node& ref_win = in_windows[win_name];
                     const Node& nbr_win = in_windows[nbr_win_name];
-                    if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
+                    if (nbr_win["level_id"].as_int() > ref_win["level_id"].as_int())
                     {
 
-                        int64_t ratio_i = nbr_win["ratio/i"].as_int64();
-                        int64_t ratio_j = nbr_win["ratio/j"].as_int64();
+                        int64_t ratio_i = nbr_win["ratio/i"].as_int();
+                        int64_t ratio_j = nbr_win["ratio/j"].as_int();
 
-                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size_i = ref_win["dims/i"].as_int();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int();
                         int64_t ref_size = ref_size_i * ref_size_j;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int();
                         int64_t nbr_size = nbr_size_i * nbr_size_j;
 
                         if (ref_size < nbr_size)

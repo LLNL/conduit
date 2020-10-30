@@ -2556,11 +2556,11 @@ mesh::connectivity::create_elements_2d(const Node& ref_win,
                                        int64_t iwidth,
                                        std::map<int, std::vector<int64_t> >& elems)
 {
-    int64_t origin_iref = ref_win["origin/i"].as_int64();
-    int64_t origin_jref = ref_win["origin/j"].as_int64();
+    int64_t origin_iref = ref_win["origin/i"].as_int();
+    int64_t origin_jref = ref_win["origin/j"].as_int();
 
-    int64_t ref_size_i = ref_win["dims/i"].as_int64();
-    int64_t ref_size_j = ref_win["dims/j"].as_int64();
+    int64_t ref_size_i = ref_win["dims/i"].as_int();
+    int64_t ref_size_j = ref_win["dims/j"].as_int();
 
     if (ref_size_i == 1)
     {
@@ -2682,13 +2682,13 @@ mesh::connectivity::create_elements_3d(const Node& ref_win,
                                   std::map<int, std::vector<int64_t> >& jfaces,
                                   std::map<int, std::vector<int64_t> >& kfaces)
 {
-    int64_t origin_iref = ref_win["origin/i"].as_int64();
-    int64_t origin_jref = ref_win["origin/j"].as_int64();
-    int64_t origin_kref = ref_win["origin/k"].as_int64();
+    int64_t origin_iref = ref_win["origin/i"].as_int();
+    int64_t origin_jref = ref_win["origin/j"].as_int();
+    int64_t origin_kref = ref_win["origin/k"].as_int();
 
-    int64_t ref_size_i = ref_win["dims/i"].as_int64();
-    int64_t ref_size_j = ref_win["dims/j"].as_int64();
-    int64_t ref_size_k = ref_win["dims/k"].as_int64();
+    int64_t ref_size_i = ref_win["dims/i"].as_int();
+    int64_t ref_size_j = ref_win["dims/j"].as_int();
+    int64_t ref_size_k = ref_win["dims/k"].as_int();
 
     int istart = origin_iref - i_lo;
     int jstart = origin_jref - j_lo;
@@ -2746,13 +2746,13 @@ mesh::connectivity::connect_elements_3d(const Node& ref_win,
                                      int64_t& new_vertex,
                                      std::map<int, PolyElemType>& elems)
 {
-    int64_t origin_iref = ref_win["origin/i"].as_int64();
-    int64_t origin_jref = ref_win["origin/j"].as_int64();
-    int64_t origin_kref = ref_win["origin/k"].as_int64();
+    int64_t origin_iref = ref_win["origin/i"].as_int();
+    int64_t origin_jref = ref_win["origin/j"].as_int();
+    int64_t origin_kref = ref_win["origin/k"].as_int();
 
-    int64_t ref_size_i = ref_win["dims/i"].as_int64();
-    int64_t ref_size_j = ref_win["dims/j"].as_int64();
-    int64_t ref_size_k = ref_win["dims/k"].as_int64();
+    int64_t ref_size_i = ref_win["dims/i"].as_int();
+    int64_t ref_size_j = ref_win["dims/j"].as_int();
+    int64_t ref_size_k = ref_win["dims/k"].as_int();
 
     int kstart = origin_kref - k_lo;
     int kend = origin_kref - k_lo + ref_size_k - 1;
@@ -2788,11 +2788,11 @@ mesh::connectivity::connect_elements_2d(const Node& ref_win,
                                      int64_t& new_vertex,
                                      std::map<int, std::vector<int64_t> >& elems)
 {
-    int64_t origin_iref = ref_win["origin/i"].as_int64();
-    int64_t origin_jref = ref_win["origin/j"].as_int64();
+    int64_t origin_iref = ref_win["origin/i"].as_int();
+    int64_t origin_jref = ref_win["origin/j"].as_int();
 
-    int64_t ref_size_i = ref_win["dims/i"].as_int64();
-    int64_t ref_size_j = ref_win["dims/j"].as_int64();
+    int64_t ref_size_i = ref_win["dims/i"].as_int();
+    int64_t ref_size_j = ref_win["dims/j"].as_int();
 
     if (ref_size_i == 1)
     {
