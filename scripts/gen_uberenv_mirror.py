@@ -54,8 +54,8 @@ from os.path import join as pjoin
 def key_pkgs():
     return  ["conduit"]
 
-def spec():
-    return  "+zfp+adios+silo ^silo~mpi"
+def specs():
+    return  ["+zfp+adios+silo ^silo~mpi ^mpich", "+zfp+adios+silo ^silo~mpi ^openmpi"]
 
 
 def timestamp(t=None,sep="_"):
@@ -122,10 +122,11 @@ def gen_key_tarballs():
         shutil.copyfile(pkg_tarball,des_path)
 
 def gen_mirror():
-    cmd = 'python {0} --create-mirror --spec="{1}"'.format(pjoin("uberenv","uberenv.py"),
-                                                           spec())
-    cmd += ' --prefix=uberenv_libs --mirror=uberenv_mirror'
-    sexe(cmd)
+    for spec in specs():
+        cmd = 'python {0} --create-mirror --spec="{1}"'.format(pjoin("uberenv","uberenv.py"),
+                                                               spec)
+        cmd += ' --prefix=uberenv_libs --mirror=uberenv_mirror'
+        sexe(cmd)
 
 def main():
     gen_mirror()
