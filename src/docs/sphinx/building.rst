@@ -357,8 +357,7 @@ You can specify specific versions of a dependency using ``^``. For Example, to b
 
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We recommend CMake 3.9 or newer. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python and C++11 support.
-
+We recommend CMake 3.9 or newer. We test building Conduit with CMake 3.9 and 3.14. Other versions of CMake may work, however CMake 3.18.0 and 3.18.1 have known issues that impact HDF5 support. CMake 3.18.2 resolved the HDF5 issues.
 
 
 Using Conduit in Another Project
