@@ -57,6 +57,7 @@ def gen_llnl_news_entry(release_id,src):
 def gen_sphinx_entry(release_id,src):
     txt  = "v{0}\n".format(release_id)
     txt += "---------------------------------\n\n"
+    txt += "* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v{0}/conduit-v{0}-src-with-blt.tar.gz>`__\n\n".format(release_id)
     txt += "Highlights\n"
     txt += "++++++++++++++++++++++++++++++++++++\n\n"
     txt += "(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)\n\n"
@@ -78,8 +79,12 @@ def gen_sphinx_entry(release_id,src):
             sub_title = l[4:].strip()
             txt += "\n* **" + sub_title +"**\n\n"
         elif sub_open and active_rel == release_id and l.startswith("-"):
-            txt += " * " + l[1:].strip()+"\n"
+            txt += " * " + sphinx_translate_ticks(l[1:].strip())+"\n"
     return txt
+
+def sphinx_translate_ticks(l):
+    # todo, we may need to do a more robust job of this ..
+    return l.replace("`","``")
 
 def gen_github_entry(release_id,src):
     txt  = "# {0} Release Highlights\n\n".format(release_id)
