@@ -61,4 +61,4 @@ packages:
             mpich@7.6.3: cray-mpich/7.6.3
         buildable: False
     conduit:
-        version: [master]
+        version: [develop]

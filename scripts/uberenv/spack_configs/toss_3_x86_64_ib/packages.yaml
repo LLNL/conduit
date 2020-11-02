@@ -38,7 +38,7 @@ packages:
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
-    version: [master]
+    version: [develop]
   python:
     variants: ~dbm
   cmake:

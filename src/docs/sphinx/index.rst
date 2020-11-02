@@ -2,7 +2,7 @@
 .. # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 .. # other details. No copyright assignment is required to contribute to Conduit.
 
-.. Conduit documentation master file, created by
+.. Conduit documentation main file, created by
    sphinx-quickstart on Thu Oct 16 11:23:46 2014.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.

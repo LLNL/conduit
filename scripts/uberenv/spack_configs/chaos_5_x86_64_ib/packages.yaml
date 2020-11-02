@@ -36,7 +36,7 @@ packages:
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
-    version: [master]
+    version: [develop]
 # LLNL chaos5 CUDA 
   cuda:
     paths:
