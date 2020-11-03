@@ -54,7 +54,7 @@ packages:
       paths:
           perl: /usr
   conduit:
-      version: [master]
+      version: [develop]
   cmake:
       version: [3.9.6]
       variants: ~ncurses~openssl

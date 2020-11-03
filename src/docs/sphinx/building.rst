@@ -246,7 +246,7 @@ Default invocation on OSX:
                                       --spack-config-dir scripts/uberenv/spack_configs/darwin/
 
 
-The uberenv `--install` installs conduit\@master (not just the development dependencies):
+The uberenv `--install` installs conduit\@develop (not just the development dependencies):
 
 .. code:: bash
 
@@ -315,11 +315,11 @@ To install the latest released version of Conduit with all options (and also bui
   
   spack install conduit
 
-To build and install Conduit's github master branch run:
+To build and install Conduit's github develop branch run:
   
 .. code:: bash
   
-  spack install conduit@master
+  spack install conduit@develop
 
 
 The Conduit Spack package provides several `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ that customize the options and dependencies used to build Conduit:

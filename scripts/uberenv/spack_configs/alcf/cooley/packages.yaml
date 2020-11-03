@@ -37,7 +37,7 @@ packages:
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
   conduit:
-    version: [master]
+    version: [develop]
 # Cooley Cuda
   cuda:
     paths:
