@@ -2415,9 +2415,9 @@ mesh::connectivity::make_element_3d(PolyElemType& connect,
                                     int64_t iwidth,
                                     int64_t jwidth,
                                     int64_t kwidth,
-                                   std::map<int, std::vector<int64_t> >& ifaces,
-                                   std::map<int, std::vector<int64_t> >& jfaces,
-                                   std::map<int, std::vector<int64_t> >& kfaces)
+                                    std::map<int, std::vector<int64_t> >& ifaces,
+                                    std::map<int, std::vector<int64_t> >& jfaces,
+                                    std::map<int, std::vector<int64_t> >& kfaces)
 
 {
     int64_t ilo = element % iwidth;
@@ -2738,13 +2738,13 @@ mesh::connectivity::create_elements_3d(const Node& ref_win,
 
 void
 mesh::connectivity::connect_elements_3d(const Node& ref_win,
-                                     int64_t i_lo,
-                                     int64_t j_lo,
-                                     int64_t k_lo,
-                                     int64_t iwidth,
-                                     int64_t jwidth,
-                                     int64_t& new_vertex,
-                                     std::map<int, PolyElemType>& elems)
+                                        int64_t i_lo,
+                                        int64_t j_lo,
+                                        int64_t k_lo,
+                                        int64_t iwidth,
+                                        int64_t jwidth,
+                                        int64_t& new_vertex,
+                                        std::map<int, PolyElemType>& elems)
 {
     int64_t origin_iref = ref_win["origin/i"].as_int();
     int64_t origin_jref = ref_win["origin/j"].as_int();
