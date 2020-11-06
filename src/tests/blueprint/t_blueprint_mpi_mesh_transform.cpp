@@ -20,158 +20,196 @@ using namespace conduit;
 
 /// Transform Tests ///
 
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_transform, amr_2d_transform)
+// These tests do a polygonal transformation of a structured AMR mesh into
+// a polygonal mesh.  The mesh has two domains and looks like this: 
+//
+//  _____________________________________________
+//  |    |    |    |    |__|__|__|__|__|__|__|__|
+//  |____|____|____|____|__|__|__|__|__|__|__|__|
+//  |    |    |    |    |__|__|__|__|__|__|__|__|
+//  |____|____|____|____|__|__|__|__|__|__|__|__|
+//  |    |    |    |    |__|__|__|__|__|__|__|__|
+//  |____|____|____|____|__|__|__|__|__|__|__|__|
+//  |    |    |    |    |__|__|__|__|__|__|__|__|
+//  |____|____|____|____|__|__|__|__|__|__|__|__|
+//
+//        domain 0              domain 1
+
+void test_transform_create_coarse_domain(Node& domain)
 {
-    Node mesh, info;
-    Node& domain_0 = mesh["domain_000000"];
-    Node& domain_1 = mesh["domain_000001"];
+    domain["state/domain_id"] = 0;
+    domain["state/level_id"] = 0;
 
-    domain_0["state/domain_id"] = 0;
-    domain_0["state/level_id"] = 0;
-    domain_1["state/domain_id"] = 1;
-    domain_1["state/level_id"] = 1;
-
-    std::vector<double> xcoords_0;
+    std::vector<double> xcoords;
     for (int i = 0; i < 5; ++i)
     {
-        xcoords_0.push_back(0.0);
-        xcoords_0.push_back(0.25);
-        xcoords_0.push_back(0.5);
-        xcoords_0.push_back(0.75);
-        xcoords_0.push_back(1.0);
+        xcoords.push_back(0.0);
+        xcoords.push_back(0.25);
+        xcoords.push_back(0.5);
+        xcoords.push_back(0.75);
+        xcoords.push_back(1.0);
     }
-    std::vector<double> ycoords_0;
+    std::vector<double> ycoords;
     double yval = 0.0;
     for (int i = 0; i < 5; ++i)
     {
-        ycoords_0.push_back(yval);
-        ycoords_0.push_back(yval);
-        ycoords_0.push_back(yval);
-        ycoords_0.push_back(yval);
-        ycoords_0.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
         yval += 0.25;
     }
 
-    std::vector<double> xcoords_1;
+    Node& coords = domain["coordsets/coords"];
+    coords["type"] = "explicit";
+    coords["values/x"].set(xcoords);
+    coords["values/y"].set(ycoords);
+
+
+    Node& topo = domain["topologies/topo"];
+    topo["coordset"] = "coords";
+    topo["type"] = "structured";
+
+    topo["elements/origin/i0"] = 0;
+    topo["elements/origin/j0"] = 0;
+    topo["elements/dims/i"] = 4;
+    topo["elements/dims/j"] = 4;
+
+    Node& field = domain["fields/field"];
+    field["association"] = "element";
+    field["type"] = "scalar";
+    field["topology"] = "topo";
+
+    std::vector<double> vals(16, 0.5);
+    field["values"].set(vals);
+
+    Node& adjset = domain["adjsets/adjset"];
+    adjset["association"] =  "vertex";
+    adjset["topology"] =  "topo";
+
+    Node& group = adjset["groups/group_000001"];
+    std::vector<int> nbrs(2);
+    nbrs[0] = 0;
+    nbrs[1] = 1;
+    group["neighbors"].set(nbrs);
+    group["rank"] = 1;
+
+    group["windows/window_000000/level_id"] = 0;
+    group["windows/window_000000/origin/i"] = 4;
+    group["windows/window_000000/origin/j"] = 0;
+    group["windows/window_000000/dims/i"] = 1;
+    group["windows/window_000000/dims/j"] = 5;
+    group["windows/window_000000/ratio/i"] = 2;
+    group["windows/window_000000/ratio/j"] = 2;
+    group["windows/window_000001/level_id"] = 1;
+    group["windows/window_000001/origin/i"] = 8;
+    group["windows/window_000001/origin/j"] = 0;
+    group["windows/window_000001/dims/i"] = 1;
+    group["windows/window_000001/dims/j"] = 9;
+    group["windows/window_000001/ratio/i"] = 2;
+    group["windows/window_000001/ratio/j"] = 2;
+}
+
+void test_transform_create_fine_domain(Node& domain)
+{
+    domain["state/domain_id"] = 1;
+    domain["state/level_id"] = 1;
+
+    std::vector<double> xcoords;
     for (int i = 0; i < 9; ++i)
     {
-        xcoords_1.push_back(1.0);
-        xcoords_1.push_back(1.125);
-        xcoords_1.push_back(1.25);
-        xcoords_1.push_back(1.375);
-        xcoords_1.push_back(1.5);
-        xcoords_1.push_back(1.625);
-        xcoords_1.push_back(1.75);
-        xcoords_1.push_back(1.875);
-        xcoords_1.push_back(1.0);
+        xcoords.push_back(1.0);
+        xcoords.push_back(1.125);
+        xcoords.push_back(1.25);
+        xcoords.push_back(1.375);
+        xcoords.push_back(1.5);
+        xcoords.push_back(1.625);
+        xcoords.push_back(1.75);
+        xcoords.push_back(1.875);
+        xcoords.push_back(1.0);
     }
-    std::vector<double> ycoords_1;
-    yval = 0.0;
+    std::vector<double> ycoords;
+    double yval = 0.0;
     for (int i = 0; i < 9; ++i)
     {
-        ycoords_1.push_back(yval);
-        ycoords_1.push_back(yval);
-        ycoords_1.push_back(yval);
-        ycoords_1.push_back(yval);
-        ycoords_1.push_back(yval);
-        ycoords_1.push_back(yval);
-        ycoords_1.push_back(yval);
-        ycoords_1.push_back(yval);
-        ycoords_1.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
+        ycoords.push_back(yval);
         yval += 0.125;
     }
 
-    Node& coords_0 = domain_0["coordsets/coords"];
-    coords_0["type"] = "explicit";
-    coords_0["values/x"].set(xcoords_0);
-    coords_0["values/y"].set(ycoords_0);
+    Node& coords = domain["coordsets/coords"];
+    coords["type"] = "explicit";
+    coords["values/x"].set(xcoords);
+    coords["values/y"].set(ycoords);
 
-    Node& coords_1 = domain_1["coordsets/coords"];
-    coords_1["type"] = "explicit";
-    coords_1["values/x"].set(xcoords_1);
-    coords_1["values/y"].set(ycoords_1);
+    Node& topo = domain["topologies/topo"];
+    topo["coordset"] = "coords";
+    topo["type"] = "structured";
 
-    Node& topo_0 = domain_0["topologies/topo"];
-    Node& topo_1 = domain_1["topologies/topo"];
-    topo_0["coordset"] = "coords";
-    topo_1["coordset"] = "coords";
-    topo_0["type"] = "structured";
-    topo_1["type"] = "structured";
+    topo["elements/origin/i0"] = 8;
+    topo["elements/origin/j0"] = 0;
+    topo["elements/dims/i"] = 8;
+    topo["elements/dims/j"] = 8;
 
-    topo_0["elements/origin/i0"] = 0;
-    topo_0["elements/origin/j0"] = 0;
-    topo_1["elements/origin/i0"] = 8;
-    topo_1["elements/origin/j0"] = 0;
-    topo_0["elements/dims/i"] = 4;
-    topo_0["elements/dims/j"] = 4;
-    topo_1["elements/dims/i"] = 8;
-    topo_1["elements/dims/j"] = 8;
+    Node& field = domain["fields/field"];
+    field["association"] = "element";
+    field["type"] = "scalar";
+    field["topology"] = "topo";
 
-    Node& field_0 = domain_0["fields/field"];
-    Node& field_1 = domain_1["fields/field"];
-    field_0["association"] = "element";
-    field_1["association"] = "element";
-    field_0["type"] = "scalar";
-    field_1["type"] = "scalar";
-    field_0["topology"] = "topo";
-    field_1["topology"] = "topo";
+    std::vector<double> vals(64, 1.5);
+    field["values"].set(vals);
 
-    std::vector<double> vals_0(16, 0.5);
-    std::vector<double> vals_1(64, 1.5);
-    field_0["values"].set(vals_0);
-    field_1["values"].set(vals_1);
+    Node& adjset = domain["adjsets/adjset"];
+    adjset["association"] =  "vertex";
+    adjset["topology"] =  "topo";
 
-    Node& adjset_0 = domain_0["adjsets/adjset"];
-    Node& adjset_1 = domain_1["adjsets/adjset"];
-    adjset_0["association"] =  "vertex";
-    adjset_0["topology"] =  "topo";
-    adjset_1["association"] =  "vertex";
-    adjset_1["topology"] =  "topo";
+    Node& group = adjset["groups/group_000000"];
+    std::vector<int> nbrs(2);
+    nbrs[0] = 1;
+    nbrs[1] = 0;
+    group["neighbors"].set(nbrs);
+    group["rank"] = 0;
 
-    Node& group_0_1 = adjset_0["groups/group_000001"];
-    std::vector<int> nbrs_0(2);
-    nbrs_0[0] = 0;
-    nbrs_0[1] = 1;
-    group_0_1["neighbors"].set(nbrs_0);
-    group_0_1["rank"] = 0;
+    group["windows/window_000001/level_id"] = 1;
+    group["windows/window_000001/origin/i"] = 8;
+    group["windows/window_000001/origin/j"] = 0;
+    group["windows/window_000001/dims/i"] = 1;
+    group["windows/window_000001/dims/j"] = 9;
+    group["windows/window_000001/ratio/i"] = 2;
+    group["windows/window_000001/ratio/j"] = 2;
+    group["windows/window_000000/level_id"] = 0;
+    group["windows/window_000000/origin/i"] = 4;
+    group["windows/window_000000/origin/j"] = 0;
+    group["windows/window_000000/dims/i"] = 1;
+    group["windows/window_000000/dims/j"] = 5;
+    group["windows/window_000000/ratio/i"] = 2;
+    group["windows/window_000000/ratio/j"] = 2;
 
-    group_0_1["windows/window_000000/level_id"] = 0;
-    group_0_1["windows/window_000000/origin/i"] = 4;
-    group_0_1["windows/window_000000/origin/j"] = 0;
-    group_0_1["windows/window_000000/dims/i"] = 1;
-    group_0_1["windows/window_000000/dims/j"] = 5;
-    group_0_1["windows/window_000000/ratio/i"] = 2;
-    group_0_1["windows/window_000000/ratio/j"] = 2;
-    group_0_1["windows/window_000001/level_id"] = 1;
-    group_0_1["windows/window_000001/origin/i"] = 8;
-    group_0_1["windows/window_000001/origin/j"] = 0;
-    group_0_1["windows/window_000001/dims/i"] = 1;
-    group_0_1["windows/window_000001/dims/j"] = 9;
-    group_0_1["windows/window_000001/ratio/i"] = 2;
-    group_0_1["windows/window_000001/ratio/j"] = 2;
+}
 
-    Node& group_1_0 = adjset_1["groups/group_000000"];
-    std::vector<int> nbrs_1(2);
-    nbrs_1[0] = 1;
-    nbrs_1[1] = 0;
-    group_1_0["neighbors"].set(nbrs_1);
-    group_1_0["rank"] = 0;
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, amr_2d_transform_serial)
+{
+    int par_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
 
-    group_1_0["windows/window_000001/level_id"] = 1;
-    group_1_0["windows/window_000001/origin/i"] = 8;
-    group_1_0["windows/window_000001/origin/j"] = 0;
-    group_1_0["windows/window_000001/dims/i"] = 1;
-    group_1_0["windows/window_000001/dims/j"] = 9;
-    group_1_0["windows/window_000001/ratio/i"] = 2;
-    group_1_0["windows/window_000001/ratio/j"] = 2;
-    group_1_0["windows/window_000000/level_id"] = 0;
-    group_1_0["windows/window_000000/origin/i"] = 4;
-    group_1_0["windows/window_000000/origin/j"] = 0;
-    group_1_0["windows/window_000000/dims/i"] = 1;
-    group_1_0["windows/window_000000/dims/j"] = 5;
-    group_1_0["windows/window_000000/ratio/i"] = 2;
-    group_1_0["windows/window_000000/ratio/j"] = 2;
+    Node mesh, info;
+
+    if (par_rank > 0)
+    {
+        Node& domain_0 = mesh["domain_000000"];
+        Node& domain_1 = mesh["domain_000001"];
+        test_transform_create_coarse_domain(domain_0);
+        test_transform_create_fine_domain(domain_1);
+    }
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
 
@@ -180,6 +218,8 @@ TEST(conduit_blueprint_mesh_transform, amr_2d_transform)
     conduit::blueprint::mpi::mesh::to_polygonal(mesh, poly, "topo");
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
+
+    poly.save("transform_serial.json", "json");
  
 }
 
@@ -187,6 +227,7 @@ TEST(conduit_blueprint_mesh_transform, amr_2d_transform)
 TEST(conduit_blueprint_mesh_transform, amr_2d_transform_parallel)
 {
     Node mesh, info;
+    std::string filename;
 
     int par_rank;
     int par_size;
@@ -197,164 +238,16 @@ TEST(conduit_blueprint_mesh_transform, amr_2d_transform_parallel)
 
     if (par_rank == 0)
     {
+        filename = "transform_parallel_0.json";
+
         Node& domain_0 = mesh["domain_000000"];
-
-        domain_0["state/domain_id"] = 0;
-        domain_0["state/level_id"] = 0;
-
-        std::vector<double> xcoords_0;
-        for (int i = 0; i < 5; ++i)
-        {
-            xcoords_0.push_back(0.0);
-            xcoords_0.push_back(0.25);
-            xcoords_0.push_back(0.5);
-            xcoords_0.push_back(0.75);
-            xcoords_0.push_back(1.0);
-        }
-        std::vector<double> ycoords_0;
-        double yval = 0.0;
-        for (int i = 0; i < 5; ++i)
-        {
-            ycoords_0.push_back(yval);
-            ycoords_0.push_back(yval);
-            ycoords_0.push_back(yval);
-            ycoords_0.push_back(yval);
-            ycoords_0.push_back(yval);
-            yval += 0.25;
-        }
-
-
-        Node& coords_0 = domain_0["coordsets/coords"];
-        coords_0["type"] = "explicit";
-        coords_0["values/x"].set(xcoords_0);
-        coords_0["values/y"].set(ycoords_0);
-
-        Node& topo_0 = domain_0["topologies/topo"];
-        topo_0["coordset"] = "coords";
-        topo_0["type"] = "structured";
-
-        topo_0["elements/origin/i0"] = 0;
-        topo_0["elements/origin/j0"] = 0;
-        topo_0["elements/dims/i"] = 4;
-        topo_0["elements/dims/j"] = 4;
-
-        Node& field_0 = domain_0["fields/field"];
-        field_0["association"] = "element";
-        field_0["type"] = "scalar";
-        field_0["topology"] = "topo";
-
-        std::vector<double> vals_0(16, 0.5);
-        field_0["values"].set(vals_0);
-
-        Node& adjset_0 = domain_0["adjsets/adjset"];
-        adjset_0["association"] =  "vertex";
-        adjset_0["topology"] =  "topo";
-
-        Node& group_0_1 = adjset_0["groups/group_000001"];
-        std::vector<int> nbrs_0(2);
-        nbrs_0[0] = 0;
-        nbrs_0[1] = 1;
-        group_0_1["neighbors"].set(nbrs_0);
-        group_0_1["rank"] = 1;
-
-        group_0_1["windows/window_000000/level_id"] = 0;
-        group_0_1["windows/window_000000/origin/i"] = 4;
-        group_0_1["windows/window_000000/origin/j"] = 0;
-        group_0_1["windows/window_000000/dims/i"] = 1;
-        group_0_1["windows/window_000000/dims/j"] = 5;
-        group_0_1["windows/window_000000/ratio/i"] = 2;
-        group_0_1["windows/window_000000/ratio/j"] = 2;
-        group_0_1["windows/window_000001/level_id"] = 1;
-        group_0_1["windows/window_000001/origin/i"] = 8;
-        group_0_1["windows/window_000001/origin/j"] = 0;
-        group_0_1["windows/window_000001/dims/i"] = 1;
-        group_0_1["windows/window_000001/dims/j"] = 9;
-        group_0_1["windows/window_000001/ratio/i"] = 2;
-        group_0_1["windows/window_000001/ratio/j"] = 2;
+        test_transform_create_coarse_domain(domain_0);
     }
     else if (par_rank == 1)
     {
+        filename = "transform_parallel_1.json";
         Node& domain_1 = mesh["domain_000001"];
-
-        domain_1["state/domain_id"] = 1;
-        domain_1["state/level_id"] = 1;
-
-        std::vector<double> xcoords_1;
-        for (int i = 0; i < 9; ++i)
-        {
-            xcoords_1.push_back(1.0);
-            xcoords_1.push_back(1.125);
-            xcoords_1.push_back(1.25);
-            xcoords_1.push_back(1.375);
-            xcoords_1.push_back(1.5);
-            xcoords_1.push_back(1.625);
-            xcoords_1.push_back(1.75);
-            xcoords_1.push_back(1.875);
-            xcoords_1.push_back(1.0);
-        }
-        std::vector<double> ycoords_1;
-        double yval = 0.0;
-        for (int i = 0; i < 9; ++i)
-        {
-            ycoords_1.push_back(yval);
-            ycoords_1.push_back(yval);
-            ycoords_1.push_back(yval);
-            ycoords_1.push_back(yval);
-            ycoords_1.push_back(yval);
-            ycoords_1.push_back(yval);
-            ycoords_1.push_back(yval);
-            ycoords_1.push_back(yval);
-            ycoords_1.push_back(yval);
-            yval += 0.125;
-        }
-
-        Node& coords_1 = domain_1["coordsets/coords"];
-        coords_1["type"] = "explicit";
-        coords_1["values/x"].set(xcoords_1);
-        coords_1["values/y"].set(ycoords_1);
-
-        Node& topo_1 = domain_1["topologies/topo"];
-        topo_1["coordset"] = "coords";
-        topo_1["type"] = "structured";
-
-        topo_1["elements/origin/i0"] = 8;
-        topo_1["elements/origin/j0"] = 0;
-        topo_1["elements/dims/i"] = 8;
-        topo_1["elements/dims/j"] = 8;
-
-        Node& field_1 = domain_1["fields/field"];
-        field_1["association"] = "element";
-        field_1["type"] = "scalar";
-        field_1["topology"] = "topo";
-
-        std::vector<double> vals_1(64, 1.5);
-        field_1["values"].set(vals_1);
-
-        Node& adjset_1 = domain_1["adjsets/adjset"];
-        adjset_1["association"] =  "vertex";
-        adjset_1["topology"] =  "topo";
-
-        Node& group_1_0 = adjset_1["groups/group_000000"];
-        std::vector<int> nbrs_1(2);
-        nbrs_1[0] = 1;
-        nbrs_1[1] = 0;
-        group_1_0["neighbors"].set(nbrs_1);
-        group_1_0["rank"] = 0;
-
-        group_1_0["windows/window_000001/level_id"] = 1;
-        group_1_0["windows/window_000001/origin/i"] = 8;
-        group_1_0["windows/window_000001/origin/j"] = 0;
-        group_1_0["windows/window_000001/dims/i"] = 1;
-        group_1_0["windows/window_000001/dims/j"] = 9;
-        group_1_0["windows/window_000001/ratio/i"] = 2;
-        group_1_0["windows/window_000001/ratio/j"] = 2;
-        group_1_0["windows/window_000000/level_id"] = 0;
-        group_1_0["windows/window_000000/origin/i"] = 4;
-        group_1_0["windows/window_000000/origin/j"] = 0;
-        group_1_0["windows/window_000000/dims/i"] = 1;
-        group_1_0["windows/window_000000/dims/j"] = 5;
-        group_1_0["windows/window_000000/ratio/i"] = 2;
-        group_1_0["windows/window_000000/ratio/j"] = 2;
+        test_transform_create_fine_domain(domain_1);
     }
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
@@ -364,6 +257,11 @@ TEST(conduit_blueprint_mesh_transform, amr_2d_transform_parallel)
     conduit::blueprint::mpi::mesh::to_polygonal(mesh, poly, "topo");
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
+
+    if (par_rank == 0 || par_rank == 1)
+    {
+        poly.save(filename, "json");
+    }
  
 }
 
@@ -378,4 +276,6 @@ int main(int argc, char* argv[])
 
     return result;
 }
+
+
 
