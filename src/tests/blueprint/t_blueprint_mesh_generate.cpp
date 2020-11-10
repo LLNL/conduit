@@ -43,6 +43,8 @@ static const index_t ELEM_TYPE_FACE_INDICES[]  = {     3,       4,      3,      
 static const index_t ELEM_TYPE_COUNT = sizeof(ELEM_TYPE_LIST) / sizeof(ELEM_TYPE_LIST[0]);
 
 static const std::string CSET_AXES[] = {"x", "y", "z"};
+static const std::string O2M_PATHS[] = {"sizes", "offsets", "values"};
+static const index_t O2M_PATH_COUNT = sizeof(O2M_PATHS) / sizeof(O2M_PATHS[0]);
 
 const static index_t TRIVIAL_GRID[] = {2, 2, 2};
 const static index_t SIMPLE_GRID[] = {3, 3, 3};
@@ -898,13 +900,27 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
         // interfaces are complicated and make counting too difficult.
         if(grid_it->type == 2) { continue; }
 
-        EXPECT_EQ(t2p_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(t2p_map.dtype().number_of_elements(),
-            (grid_mesh.points_per_elem() + 1) * grid_mesh.elems());
+        for(index_t mi = 0; mi < 2; mi++)
+        {
+            const conduit::Node& map_node = (mi == 0) ? t2p_map : p2t_map;
+            EXPECT_TRUE(o2mrelation::verify(map_node, info));
+            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            {
+                const std::string& o2m_path = O2M_PATHS[pi];
+                EXPECT_TRUE(map_node.has_child(o2m_path));
+                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
+            }
+        }
 
-        EXPECT_EQ(p2t_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(p2t_map.dtype().number_of_elements(),
-            grid_mesh.elem_valence(0) + grid_mesh.points());
+        EXPECT_EQ(t2p_map["values"].dtype().number_of_elements(),
+            grid_mesh.points_per_elem() * grid_mesh.elems());
+        EXPECT_EQ(t2p_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.elems());
+
+        EXPECT_EQ(p2t_map["values"].dtype().number_of_elements(),
+            grid_mesh.elem_valence(0));
+        EXPECT_EQ(p2t_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.points());
 
         // TODO(JRC): It's currently possible, albeit very annoying, to do a
         // reasonable check of the points against the initial topology to make
@@ -958,13 +974,27 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
 
         // Verify Correctness of Mappings //
 
-        EXPECT_EQ(t2l_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(t2l_map.dtype().number_of_elements(),
-            (grid_mesh.lines_per_elem() + 1) * grid_mesh.elems());
+        for(index_t mi = 0; mi < 2; mi++)
+        {
+            const conduit::Node& map_node = (mi == 0) ? t2l_map : l2t_map;
+            EXPECT_TRUE(o2mrelation::verify(map_node, info));
+            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            {
+                const std::string& o2m_path = O2M_PATHS[pi];
+                EXPECT_TRUE(map_node.has_child(o2m_path));
+                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
+            }
+        }
 
-        EXPECT_EQ(l2t_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(l2t_map.dtype().number_of_elements(),
-            grid_mesh.elem_valence(1) + grid_mesh.lines());
+        EXPECT_EQ(t2l_map["values"].dtype().number_of_elements(),
+            grid_mesh.lines_per_elem() * grid_mesh.elems());
+        EXPECT_EQ(t2l_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.elems());
+
+        EXPECT_EQ(l2t_map["values"].dtype().number_of_elements(),
+            grid_mesh.elem_valence(1));
+        EXPECT_EQ(l2t_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.lines());
 
         // TODO(JRC): If consistency checks are in place, extend those checks
         // to validate that the contents of the maps are correct.
@@ -1024,13 +1054,27 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
 
         // Verify Correctness of Mappings //
 
-        EXPECT_EQ(t2f_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(t2f_map.dtype().number_of_elements(),
-            (grid_mesh.faces_per_elem() + 1) * grid_mesh.elems());
+        for(index_t mi = 0; mi < 2; mi++)
+        {
+            const conduit::Node& map_node = (mi == 0) ? t2f_map : f2t_map;
+            EXPECT_TRUE(o2mrelation::verify(map_node, info));
+            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            {
+                const std::string& o2m_path = O2M_PATHS[pi];
+                EXPECT_TRUE(map_node.has_child(o2m_path));
+                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
+            }
+        }
 
-        EXPECT_EQ(f2t_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(f2t_map.dtype().number_of_elements(),
-            grid_mesh.elem_valence(2) + grid_mesh.faces());
+        EXPECT_EQ(t2f_map["values"].dtype().number_of_elements(),
+            grid_mesh.faces_per_elem() * grid_mesh.elems());
+        EXPECT_EQ(t2f_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.elems());
+
+        EXPECT_EQ(f2t_map["values"].dtype().number_of_elements(),
+            grid_mesh.elem_valence(2));
+        EXPECT_EQ(f2t_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.faces());
 
         // TODO(JRC): If consistency checks are in place, extend those checks
         // to validate that the contents of the maps are correct.

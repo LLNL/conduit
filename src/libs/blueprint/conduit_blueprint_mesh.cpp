@@ -1349,22 +1349,24 @@ struct TopologyMetadata
 
     void get_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const
     {
-        Node imap_node;
-        std::vector<index_t> map_vec;
-        for(index_t sdi = 0; sdi < (index_t)dim_assocs[src_dim].size(); sdi++)
+        std::vector<index_t> values, sizes, offsets;
+        for(index_t sdi = 0, so = 0; sdi < (index_t)dim_assocs[src_dim].size(); sdi++, so += sizes.back())
         {
             const std::set<index_t> &src_assocs = get_entity_assocs(sdi, src_dim, dst_dim);
-            map_vec.push_back( (index_t)src_assocs.size() );
-            for(std::set<index_t>::const_iterator assoc_it = src_assocs.begin();
-                assoc_it != src_assocs.end(); assoc_it++)
-            {
-                map_vec.push_back( *assoc_it );
-            }
+            values.insert(values.end(), src_assocs.begin(), src_assocs.end());
+            sizes.push_back((index_t)src_assocs.size());
+            offsets.push_back(so);
         }
-        imap_node.set(map_vec);
 
-        map_node.reset();
-        imap_node.to_data_type(int_dtype.id(), map_node);
+        std::vector<index_t>* path_data[] = { &values, &sizes, &offsets };
+        std::string path_names[] = { "values", "sizes", "offsets" };
+        const index_t path_count = sizeof(path_data) / sizeof(path_data[0]);
+        for(index_t pi = 0; pi < path_count; pi++)
+        {
+            Node data;
+            data.set(*path_data[pi]);
+            data.to_data_type(int_dtype.id(), map_node[path_names[pi]]);
+        }
     }
 
     index_t get_length(index_t dim=-1) const
@@ -3513,14 +3515,14 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
                 }
             }
 
-            Node polyhedral_conn;  
+            Node polyhedral_conn;
             polyhedral_conn.set_external(polyhedral_conn_data);
-            polyhedral_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]); 
+            polyhedral_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
 
             Node polyhedral_size;
             std::vector<int64> polyhedral_size_data(topo_elems, topo_shape.embed_count);
             polyhedral_size.set_external(polyhedral_size_data);
-            polyhedral_size.to_data_type(int_dtype.id(), dest["elements/sizes"]); 
+            polyhedral_size.to_data_type(int_dtype.id(), dest["elements/sizes"]);
 
             dest["subelements/shape"].set("polygonal");
 
@@ -3536,7 +3538,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 
             // BHAN - For polyhedral, writes offsets for
             // "elements/offsets" and "subelements/offsets"
-            generate_offsets(dest, dest["elements/offsets"]);       
+            generate_offsets(dest, dest["elements/offsets"]);
         }
     }
 }
@@ -4019,7 +4021,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                     {
                         index_t face_off = face_i * corners_face_degree;
                         has_perm |= std::is_permutation(subconn_data_raw.begin() + face_off,
-                                                        subconn_data_raw.begin() + face_off + 
+                                                        subconn_data_raw.begin() + face_off +
                                                         corners_face_degree,
                                                         face.begin());
                         if (has_perm)
@@ -4059,14 +4061,14 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         {
             Node &dest_subconn = dest["subelements/connectivity"];
             Node &dest_subsize = dest["subelements/sizes"];
-            
+
             raw_data.set(subconn_data_raw);
             raw_data.to_data_type(int_dtype.id(), dest_subconn);
             raw_data.reset();
 
             raw_data.set(subsize_data_raw);
             raw_data.to_data_type(int_dtype.id(), dest_subsize);
-            raw_data.reset();            
+            raw_data.reset();
         }
 
         raw_data.set(conn_data_raw);
@@ -4101,7 +4103,7 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
-    if(topo_shape.indices > 0)
+    if(!topo_shape.is_poly())
     {
         dest.reset();
 
@@ -4174,7 +4176,7 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
             shape_array.push_back(es);
             es += index_node.to_int64();
             ei++;
-        }    
+        }
 
         subelem_node.set_external(shape_array);
         subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
