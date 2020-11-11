@@ -3739,7 +3739,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     // Compute New Elements/Fields for Side Topology //
 
     int64 elem_index = 0, side_index = 0;
-    int64 s2d_index = 0, d2s_index = 0;
+    int64 s2d_val_index = 0, d2s_val_index = 0;
+    int64 s2d_elem_index = 0, d2s_elem_index = 0;
 
     std::vector<int64> line_data_raw(2);
     std::vector<int64> side_data_raw(sides_elem_degree);
@@ -3752,9 +3753,14 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     Node side_data(DataType::int64(sides_elem_degree), &side_data_raw[0], true);
 
     s2dmap.reset();
+    s2dmap["values"].set(DataType(int_dtype.id(), sides_num_elems));
+    s2dmap["sizes"].set(DataType(int_dtype.id(), topo_num_elems));
+    s2dmap["offsets"].set(DataType(int_dtype.id(), topo_num_elems));
+
     d2smap.reset();
-    s2dmap.set(DataType(int_dtype.id(), topo_num_elems + sides_num_elems));
-    d2smap.set(DataType(int_dtype.id(), 2 * sides_num_elems));
+    d2smap["values"].set(DataType(int_dtype.id(), sides_num_elems));
+    d2smap["sizes"].set(DataType(int_dtype.id(), sides_num_elems));
+    d2smap["offsets"].set(DataType(int_dtype.id(), sides_num_elems));
 
     Node &dest_conn = dest["elements/connectivity"];
     for(; elem_index < (int64)topo_num_elems; elem_index++)
@@ -3763,7 +3769,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         std::vector< index_t > elem_edim_stack(1, topo_shape.dim);
         std::vector< std::vector<index_t> > elem_eparent_stack(1);
 
-        int64 s2d_start_index = s2d_index++;
+        int64 s2d_start_index = s2d_val_index;
 
         while(!elem_embed_stack.empty())
         {
@@ -3791,18 +3797,18 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                 side_data.to_data_type(int_dtype.id(), misc_data);
 
                 misc_data.set_external(DataType(int_dtype.id(), 1),
-                    s2dmap.element_ptr(s2d_index++));
+                    s2dmap["values"].element_ptr(s2d_val_index++));
                 side_index_data.to_data_type(int_dtype.id(), misc_data);
+
+                misc_data.set_external(DataType(int_dtype.id(), 1),
+                    d2smap["values"].element_ptr(d2s_val_index++));
+                elem_index_data.to_data_type(int_dtype.id(), misc_data);
 
                 int64 side_num_elems = 1;
                 raw_data.set(side_num_elems);
                 misc_data.set_external(DataType(int_dtype.id(), 1),
-                    d2smap.element_ptr(d2s_index++));
+                    d2smap["sizes"].element_ptr(d2s_elem_index++));
                 raw_data.to_data_type(int_dtype.id(), misc_data);
-
-                misc_data.set_external(DataType(int_dtype.id(), 1),
-                    d2smap.element_ptr(d2s_index++));
-                elem_index_data.to_data_type(int_dtype.id(), misc_data);
 
                 side_index++;
             }
@@ -3822,12 +3828,18 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
             }
         }
 
-        int64 elem_num_sides = s2d_index - s2d_start_index - 1;
+        int64 elem_num_sides = s2d_val_index - s2d_start_index;
         raw_data.set(elem_num_sides);
         misc_data.set_external(DataType(int_dtype.id(), 1),
-            s2dmap.element_ptr(s2d_start_index++));
+            s2dmap["sizes"].element_ptr(s2d_elem_index++));
         raw_data.to_data_type(int_dtype.id(), misc_data);
     }
+
+    // TODO(JRC): Implement these counts in-line instead of being lazy and
+    // taking care of it at the end of the function w/ a helper.
+    Node info;
+    blueprint::o2mrelation::generate_offsets(s2dmap, info);
+    blueprint::o2mrelation::generate_offsets(d2smap, info);
 }
 
 //-----------------------------------------------------------------------------
@@ -3899,6 +3911,9 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             corners_num_coords));
     }
 
+    s2dmap.reset();
+    d2smap.reset();
+
     // Populate Data Arrays w/ Calculated Coordinates //
 
     std::vector<index_t> dim_coord_offsets(topo_shape.dim + 1);
@@ -3925,13 +3940,12 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         }
     }
 
-    // Compute New Elements/Fields for corner Topology //
+    // Compute New Elements/Fields for Corner Topology //
 
-    std::vector<int64> conn_data_raw;
-    std::vector<int64> size_data_raw;
-    std::vector<int64> subconn_data_raw;
-    std::vector<int64> subsize_data_raw;
-    std::vector<int64> s2d_data_raw, d2s_data_raw;
+    std::vector<int64> conn_data_raw, size_data_raw;
+    std::vector<int64> subconn_data_raw, subsize_data_raw;
+    std::vector<int64> s2d_idx_data_raw, s2d_size_data_raw;
+    std::vector<int64> d2s_idx_data_raw, d2s_size_data_raw;
 
     Node misc_data;
     for(index_t elem_index = 0, corner_index = 0; elem_index < (int64)topo_num_elems; elem_index++)
@@ -3943,7 +3957,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
         const std::set<index_t> &elem_points = topo_data.get_entity_assocs(
             elem_index, topo_shape.dim, point_shape.dim);
-        s2d_data_raw.push_back(elem_points.size());
+        s2d_size_data_raw.push_back(elem_points.size());
         for(std::set<index_t>::const_iterator points_it = elem_points.begin();
             points_it != elem_points.end(); ++points_it, corner_index++)
         {
@@ -4047,9 +4061,9 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                 }
             }
 
-            s2d_data_raw.push_back(corner_index);
-            d2s_data_raw.push_back(1);
-            d2s_data_raw.push_back(elem_index);
+            s2d_idx_data_raw.push_back(corner_index);
+            d2s_size_data_raw.push_back(1);
+            d2s_idx_data_raw.push_back(elem_index);
         }
     }
 
@@ -4081,13 +4095,25 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
         generate_offsets(dest, dest["elements/offsets"]);
 
-        raw_data.set(s2d_data_raw);
-        raw_data.to_data_type(int_dtype.id(), s2dmap);
+        raw_data.set(s2d_idx_data_raw);
+        raw_data.to_data_type(int_dtype.id(), s2dmap["values"]);
+        raw_data.reset();
+        raw_data.set(s2d_size_data_raw);
+        raw_data.to_data_type(int_dtype.id(), s2dmap["sizes"]);
         raw_data.reset();
 
-        raw_data.set(d2s_data_raw);
-        raw_data.to_data_type(int_dtype.id(), d2smap);
+        raw_data.set(d2s_idx_data_raw);
+        raw_data.to_data_type(int_dtype.id(), d2smap["values"]);
         raw_data.reset();
+        raw_data.set(d2s_size_data_raw);
+        raw_data.to_data_type(int_dtype.id(), d2smap["sizes"]);
+        raw_data.reset();
+
+        // TODO(JRC): Implement these counts in-line instead of being lazy and
+        // taking care of it at the end of the function w/ a helper.
+        Node info;
+        blueprint::o2mrelation::generate_offsets(s2dmap, info);
+        blueprint::o2mrelation::generate_offsets(d2smap, info);
     }
 }
 

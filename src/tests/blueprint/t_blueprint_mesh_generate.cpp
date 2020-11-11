@@ -88,34 +88,37 @@ std::vector<index_list> calc_combinations(const index_t combo_length, const inde
     return (combo_length > 0) ? combinations : std::vector<index_list>(1);
 }
 
-std::vector<index_list> expand_ilarray(const Node &ilarray)
+// std::vector<index_list> expand_ilarray(const Node &ilarray)
+std::vector<index_list> expand_o2mrelation(const Node &o2m)
 {
-    std::vector<index_list> ilvector;
-
     // TODO(JRC): This is to get around annoying const correctness... there
     // really ought to be a better way.
-    Node iltemp;
-    iltemp.set_external(ilarray);
-    Node ildata;
+    Node o2m_temp;
+    o2m_temp.set_external(o2m);
 
-    const DataType ildtype(ilarray.dtype().id(), 1);
-    for(index_t ai = 0; ai < ilarray.dtype().number_of_elements(); )
+    Node data;
+    const DataType o2m_dtype(o2m["values"].dtype().id(), 1);
+
+    std::vector<index_list> o2m_list;
+    o2mrelation::O2MIterator o2m_iter(o2m);
+    while(o2m_iter.has_next(o2mrelation::ONE))
     {
-        ildata.set_external(ildtype, iltemp.element_ptr(ai));
-        int64 subvector_length = ildata.to_int64();
+        o2m_iter.next(o2mrelation::ONE);
+        o2m_iter.to_front(o2mrelation::MANY);
 
-        index_list ilsubvector(subvector_length);
-        for(index_t asi = 0; asi < subvector_length; asi++)
+        index_list one_list(o2m_iter.elements(o2mrelation::MANY));
+        while(o2m_iter.has_next(o2mrelation::MANY))
         {
-            ildata.set_external(ildtype, iltemp.element_ptr(ai + 1 + asi));
-            ilsubvector[asi] = ildata.to_int64();
+          index_t many_index = o2m_iter.next(o2mrelation::MANY);
+          index_t data_index = o2m_iter.index(o2mrelation::DATA);
+          data.set_external(o2m_dtype, o2m_temp["values"].element_ptr(data_index));
+          one_list[many_index] = data.to_index_t();
         }
 
-        ilvector.push_back(ilsubvector);
-        ai += 1 + subvector_length;
+        o2m_list.push_back(one_list);
     }
 
-    return ilvector;
+    return o2m_list;
 }
 
 struct GridMesh
@@ -1161,30 +1164,44 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
 
         // Verify Correctness of Mappings //
 
+        for(index_t mi = 0; mi < 2; mi++)
+        {
+            const conduit::Node& map_node = (mi == 0) ? t2s_map : s2t_map;
+            EXPECT_TRUE(o2mrelation::verify(map_node, info));
+            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            {
+                const std::string& o2m_path = O2M_PATHS[pi];
+                EXPECT_TRUE(map_node.has_child(o2m_path));
+                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
+            }
+        }
+
         // NOTE(JRC): In 3D, each side propogates internally to each hex twice
         // in order to cover both attached faces.
         const index_t vfactor = (grid_mesh.dims() < 3) ? 1 : 2;
 
-        EXPECT_EQ(t2s_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(t2s_map.dtype().number_of_elements(),
-            vfactor * grid_mesh.elem_valence(1) + grid_mesh.elems());
+        EXPECT_EQ(t2s_map["values"].dtype().number_of_elements(),
+            vfactor * grid_mesh.elem_valence(1));
+        EXPECT_EQ(t2s_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.elems());
+
+        EXPECT_EQ(s2t_map["values"].dtype().number_of_elements(),
+            vfactor * grid_mesh.elem_valence(1));
+        EXPECT_EQ(s2t_map["sizes"].dtype().number_of_elements(),
+            vfactor * grid_mesh.elem_valence(1));
 
         std::vector<index_list> expected_elem_side_lists;
         for(index_t ei = 0, si = 0; ei < grid_mesh.elems(); ei++)
         {
-            index_list expected_elem_sides;
+            std::vector<index_t> expected_elem_sides;
             for(index_t esi = 0; esi < vfactor * grid_mesh.lines_per_elem(); esi++, si++)
             {
                 expected_elem_sides.push_back(si);
             }
             expected_elem_side_lists.push_back(expected_elem_sides);
         }
-        std::vector<index_list> actual_elem_side_lists = expand_ilarray(t2s_map);
+        std::vector<index_list> actual_elem_side_lists = expand_o2mrelation(t2s_map);
         EXPECT_EQ(actual_elem_side_lists, expected_elem_side_lists);
-
-        EXPECT_EQ(s2t_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(s2t_map.dtype().number_of_elements(),
-            vfactor * 2 * grid_mesh.elem_valence(1));
 
         std::vector<index_list> expected_side_elem_lists;
         for(index_t ei = 0, si = 0; ei < grid_mesh.elems(); ei++)
@@ -1196,7 +1213,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
                 expected_side_elem_lists.push_back(expected_side_elems);
             }
         }
-        std::vector<index_list> actual_side_elem_lists = expand_ilarray(s2t_map);
+        std::vector<index_list> actual_side_elem_lists = expand_o2mrelation(s2t_map);
         EXPECT_EQ(actual_side_elem_lists, expected_side_elem_lists);
     }
 }
@@ -1282,9 +1299,27 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
 
         // Verify Correctness of Mappings //
 
-        EXPECT_EQ(t2c_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(t2c_map.dtype().number_of_elements(),
-            grid_mesh.elem_valence(0) + grid_mesh.elems());
+        for(index_t mi = 0; mi < 2; mi++)
+        {
+            const conduit::Node& map_node = (mi == 0) ? t2c_map : c2t_map;
+            EXPECT_TRUE(o2mrelation::verify(map_node, info));
+            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            {
+                const std::string& o2m_path = O2M_PATHS[pi];
+                EXPECT_TRUE(map_node.has_child(o2m_path));
+                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
+            }
+        }
+
+        EXPECT_EQ(t2c_map["values"].dtype().number_of_elements(),
+            grid_mesh.elem_valence(0));
+        EXPECT_EQ(t2c_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.elems());
+
+        EXPECT_EQ(c2t_map["values"].dtype().number_of_elements(),
+            grid_mesh.elem_valence(0));
+        EXPECT_EQ(c2t_map["sizes"].dtype().number_of_elements(),
+            grid_mesh.elem_valence(0));
 
         std::vector<index_list> expected_elem_corner_lists;
         for(index_t ei = 0, ci = 0; ei < grid_mesh.elems(); ei++)
@@ -1296,12 +1331,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
             }
             expected_elem_corner_lists.push_back(expected_elem_corners);
         }
-        std::vector<index_list> actual_elem_corner_lists = expand_ilarray(t2c_map);
+        std::vector<index_list> actual_elem_corner_lists = expand_o2mrelation(t2c_map);
         EXPECT_EQ(actual_elem_corner_lists, expected_elem_corner_lists);
-
-        EXPECT_EQ(c2t_map.dtype().id(), grid_conn.dtype().id());
-        EXPECT_EQ(c2t_map.dtype().number_of_elements(),
-            2 * grid_mesh.elem_valence(0));
 
         std::vector<index_list> expected_corner_elem_lists;
         for(index_t ei = 0, ci = 0; ei < grid_mesh.elems(); ei++)
@@ -1313,7 +1344,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
                 expected_corner_elem_lists.push_back(expected_corner_elems);
             }
         }
-        std::vector<index_list> actual_corner_elem_lists = expand_ilarray(c2t_map);
+        std::vector<index_list> actual_corner_elem_lists = expand_o2mrelation(c2t_map);
         EXPECT_EQ(actual_corner_elem_lists, expected_corner_elem_lists);
     }
 }
