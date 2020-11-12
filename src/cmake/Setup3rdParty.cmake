@@ -47,7 +47,7 @@ include_directories(thirdparty_builtin/civetweb-0a95342/include)
 ################################
 # Setup includes for fmt
 ################################
-include_directories(thirdparty_builtin/fmt-5.0.3/)
+include_directories(thirdparty_builtin/fmt-7.1.0/)
 
 
 ################################

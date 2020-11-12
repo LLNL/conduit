@@ -51,10 +51,16 @@
 #include <iostream>
 #include "gtest/gtest.h"
 
-#include "fmt/conduit_fmt.h"
+#include "conduit_fmt/conduit_fmt.h"
 
-TEST(libb64_smoke, basic_use )
+TEST(fmt_smoke, basic_use )
 {
-    std::string res = fmt::format("The answer is {}.", 42);
+    std::string res = conduit_fmt::format("The answer is {}.", 42);
+    std::cout << res << std::endl;
     EXPECT_EQ(res, "The answer is 42.");
+
+    res = conduit_fmt::format("The answer is {answer:0.2f}.",
+                conduit_fmt::arg("answer",3.14));
+    std::cout << res << std::endl;
+    EXPECT_EQ(res, "The answer is 3.14.");
 }
