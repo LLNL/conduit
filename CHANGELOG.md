@@ -4,6 +4,14 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+#### General 
+- Added a builtin sandboxed version of fmt. The namespace and directory paths were changed to `conduit_fmt` to avoid potential symbol collisions with other codes using fmt.
+
+
 ## [0.6.0] - Released 2020-11-02
 
 ### Added
