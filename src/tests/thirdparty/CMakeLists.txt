@@ -21,6 +21,9 @@ add_cpp_test(TEST t_libyaml_smoke
             SOURCES $<TARGET_OBJECTS:conduit_libyaml>
             FOLDER tests/thirdparty)
 
+add_cpp_test(TEST t_fmt_smoke
+             FOLDER tests/thirdparty)
+
 
 set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
 
