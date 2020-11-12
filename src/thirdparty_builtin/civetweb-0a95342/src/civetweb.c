@@ -9676,7 +9676,8 @@ handle_websocket_request(struct mg_connection *conn,
 			do {
 				sep = strchr(protocol, ',');
 				curSubProtocol = protocol;
-				len = sep ? (unsigned long)(sep - protocol) : strlen(protocol);
+                // CONDUIT CHANGE: supress warnings ident on windows 
+				len = (unsigned long) (sep ? (unsigned long)(sep - protocol) : strlen(protocol));
 				while (sep && isspace(*++sep))
 					; // ignore leading whitespaces
 				protocol = sep;

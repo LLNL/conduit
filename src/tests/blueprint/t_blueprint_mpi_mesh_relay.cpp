@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-666778
-//
-// All rights reserved.
-//
-// This file is part of Conduit.
-//
-// For details, see https://lc.llnl.gov/conduit/.
-//
-// Please also read conduit/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -112,17 +72,16 @@ TEST(blueprint_mpi_relay, basic_use)
     //string protocol = "conduit_bin";
     string output_base = "test_blueprint_mpi_relay";
     // what we want:
-    // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
-    conduit::relay::mpi::io::blueprint::save_mesh(dset,
+    // relay::mpi::io::blueprint::write_mesh(dset, output_path,"hdf5");
+    conduit::relay::mpi::io::blueprint::write_mesh(dset,
                                                   output_base,
                                                   "hdf5",
                                                   comm);
-    MPI_Barrier(MPI_COMM_WORLD);
 
-    // read this back using load_mesh, should diff clean
+    // read this back using read_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
     Node n_read, n_diff_info;
-    conduit::relay::mpi::io::blueprint::load_mesh(output_root,
+    conduit::relay::mpi::io::blueprint::read_mesh(output_root,
                                                   n_read,
                                                   comm);
     // diff == false, no diff == diff clean
@@ -163,17 +122,16 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_braid)
     string protocol = "hdf5";
     string output_base = "tout_blueprint_mpi_relay_braid_uniform_multi_dom";
     // what we want:
-    // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
-    conduit::relay::mpi::io::blueprint::save_mesh(dset,
+    // relay::mpi::io::blueprint::write_mesh(dset, output_path,"hdf5");
+    conduit::relay::mpi::io::blueprint::write_mesh(dset,
                                                   output_base,
                                                   "hdf5",
                                                   comm);
-    MPI_Barrier(comm);
 
-    // read this back using load_mesh, should diff clean
+    // read this back using read_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
     Node n_read, n_diff_info;
-    conduit::relay::mpi::io::blueprint::load_mesh(output_root,
+    conduit::relay::mpi::io::blueprint::read_mesh(output_root,
                                                   n_read,
                                                   comm);
     // diff == false, no diff == diff clean
@@ -223,18 +181,31 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
 
     string protocol = "hdf5";
     string output_base = "tout_blueprint_mpi_relay_spiral_mpi_dist_5doms";
+
+    // make sure the files don't exist
+    if(par_rank == 0)
+    {
+        string output_dir  = output_base + ".cycle_000000";
+        string output_root = output_base + ".cycle_000000.root";
+
+        // remove existing output
+        remove_path_if_exists(output_dir);
+        remove_path_if_exists(output_root);
+    }
+    MPI_Barrier(comm);
+
+
     // what we want:
-    // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
-    conduit::relay::mpi::io::blueprint::save_mesh(dset,
+    // relay::mpi::io::blueprint::write_mesh(dset, output_path,"hdf5");
+    conduit::relay::mpi::io::blueprint::write_mesh(dset,
                                                   output_base,
                                                   "hdf5",
                                                   comm);
-    MPI_Barrier(comm);
 
-    // read this back using load_mesh, should diff clean
+    // read this back using read_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
     Node n_read, n_diff_info;
-    conduit::relay::mpi::io::blueprint::load_mesh(output_root,
+    conduit::relay::mpi::io::blueprint::read_mesh(output_root,
                                                   n_read,
                                                   comm);
 
@@ -302,18 +273,31 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
 
     string protocol = "hdf5";
     string output_base = "tout_blueprint_mpi_relay_spiral_mpi_dist_1dom";
-    // what we want:
-    // relay::mpi::io::blueprint::save_mesh(dset, output_path,"hdf5");
-    conduit::relay::mpi::io::blueprint::save_mesh(dset,
-                                                  output_base,
-                                                  "hdf5",
-                                                  comm);
+    Node opts;
+    opts["file_style"] = "multi_file";
+
+    // make sure the files don't exist
+    if(par_rank == 0)
+    {
+        string output_dir  = output_base + ".cycle_000000";
+        string output_root = output_base + ".cycle_000000.root";
+
+        // remove existing output
+        remove_path_if_exists(output_dir);
+        remove_path_if_exists(output_root);
+    }
     MPI_Barrier(comm);
 
-    // read this back using load_mesh, should diff clean
+    conduit::relay::mpi::io::blueprint::write_mesh(dset,
+                                                  output_base,
+                                                  "hdf5",
+                                                  opts,
+                                                  comm);
+
+    // read this back using read_mesh, should diff clean
     string output_root = output_base + ".cycle_000000.root";
     Node n_read, n_diff_info;
-    conduit::relay::mpi::io::blueprint::load_mesh(output_root,
+    conduit::relay::mpi::io::blueprint::read_mesh(output_root,
                                                   n_read,
                                                   comm);
 
@@ -332,6 +316,8 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
     EXPECT_EQ(dset.number_of_children(),n_read.number_of_children());
     for(conduit::index_t i=0;i < dset.number_of_children();i++)
     {
+        dset.print();
+        n_read.print();
         // diff == false, no diff == diff clean
         EXPECT_FALSE(dset.child(i).diff(n_read.child(i),n_diff_info));
     }
@@ -423,19 +409,19 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
         if(par_rank == 0)
         {
             // remove existing directory
-            utils::remove_directory(output_dir);
-            utils::remove_directory(output_root);
+            remove_path_if_exists(output_dir);
+            remove_path_if_exists(output_root);
         }
 
         MPI_Barrier(comm);
 
-        conduit::relay::mpi::io::blueprint::save_mesh(data,
+        Node opts;
+        opts["number_of_files"] = nfiles;
+        conduit::relay::mpi::io::blueprint::write_mesh(data,
                                                       output_base,
                                                       "hdf5",
-                                                      nfiles,
+                                                      opts,
                                                       comm);
-
-        MPI_Barrier(comm);
 
         // count the files
         //  file_%06llu.{protocol}:/domain_%06llu/...
@@ -468,11 +454,9 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
-
-        MPI_Barrier(comm);
     }
 
-    // read this back using load_mesh
+    // read this back using read_mesh
 }
 
 

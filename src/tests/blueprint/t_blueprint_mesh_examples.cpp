@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-666778
-//
-// All rights reserved.
-//
-// This file is part of Conduit.
-//
-// For details, see https://lc.llnl.gov/conduit/.
-//
-// Please also read conduit/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -58,10 +18,12 @@
 #include "gtest/gtest.h"
 
 using namespace conduit;
+using namespace conduit::utils;
 
 index_t OUTPUT_NUM_AXIS_POINTS = 5;
 
 std::string PROTOCOL_VER = CONDUIT_VERSION;
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
@@ -171,7 +133,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
             // The silo output is not yet defined and it throws an exception
             // in conduit_silo.cpp::silo_write_ucd_zonelist()
             // in the following line that is looking for the 'shape' node:
-            //              std::string topo_shape = shape_block->fetch("shape").as_string();
+            //   std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
             if( name == "quads_and_tris" || name == "quads_and_tris_offsets" )
@@ -376,79 +338,6 @@ TEST(conduit_blueprint_mesh_examples, julia)
     relay::io_blueprint::save(res, "julia_example.blueprint_root");
 }
 
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_examples, spiral_multi_file)
-{
-    Node io_protos;
-    relay::io::about(io_protos["io"]);
-    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
-    if(!hdf5_enabled)
-    {
-        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
-        return;
-    }
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-
-    // use spiral , with 7 domains
-    conduit::blueprint::mesh::examples::spiral(7,data);
-
-    // lets try with -1 to 8 files.
-
-    // nfiles less than 1 should trigger default case
-    // (n output files = n domains)
-    std::ostringstream oss;
-    for(int nfiles=-1; nfiles < 9; nfiles++)
-    {
-        CONDUIT_INFO("test nfiles = " << nfiles);
-        oss.str("");
-        oss << "tout_relay_sprial_mesh_save_nfiles_" << nfiles;
-        std::string output_base = oss.str();
-        std::string output_dir  = output_base + ".cycle_000000";
-        std::string output_root = output_base + ".cycle_000000.root";
-
-        // remove existing directory
-        utils::remove_directory(output_dir);
-        utils::remove_directory(output_root);
-
-        relay::io::blueprint::save_mesh(data, output_base,"hdf5",nfiles);
-
-        // count the files
-        //  file_%06llu.{protocol}:/domain_%06llu/...
-        int nfiles_to_check = nfiles;
-        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
-        {
-            nfiles_to_check = 7;
-        }
-
-        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
-        EXPECT_TRUE(conduit::utils::is_file(output_root));
-
-        char fmt_buff[64] = {0};
-        for(int i=0;i<nfiles_to_check;i++)
-        {
-
-            std::string fprefix = "file_";
-            if(nfiles_to_check == 7)
-            {
-                // in the n domains == n files case, the file prefix is
-                // domain_
-                fprefix = "domain_";
-            }
-            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",i);
-            oss.str("");
-            oss << conduit::utils::join_file_path(output_base + ".cycle_000000",
-                                                  fprefix)
-                << fmt_buff << ".hdf5";
-            std::string fcheck = oss.str();
-            std::cout << " checking: " << fcheck << std::endl;
-            EXPECT_TRUE(conduit::utils::is_file(fcheck));
-        }
-    }
-}
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, spiral)
@@ -585,8 +474,12 @@ void venn_test_small_yaml(const std::string &venn_type)
     const int nx = 25, ny = 25;
     const double radius = 0.25;
 
-    Node res;
+    Node res, info, n_idx;
     blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+    blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    blueprint::mesh::generate_index(res,"",1,n_idx);
+    EXPECT_TRUE(blueprint::verify("mesh/index",n_idx,info));
     res.save("venn_small_example_" + venn_type + ".yaml");
 }
 
@@ -658,7 +551,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset_simple)
                                                      0.285, 0.01, // c value
                                                      res["julia_nestset_simple"]);
 
-    int ndoms = res["julia_nestset_simple"].number_of_children();
+    index_t ndoms = res["julia_nestset_simple"].number_of_children();
 
     Node info;
     if(!blueprint::mesh::verify(res["julia_nestset_simple"],info))
@@ -698,7 +591,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset)
                                                       3, // amr levels
                                                       res["julia_nestset_complex"]);
 
-    int ndoms = res["julia_nestset_complex"].number_of_children();
+    index_t ndoms = res["julia_nestset_complex"].number_of_children();
 
     Node info;
     if(!blueprint::mesh::verify(res["julia_nestset_complex"],info))
@@ -755,44 +648,6 @@ TEST(conduit_blueprint_mesh_examples, save_adjset_uniform)
     relay::io::save(mesh,"adj_uniform_example.blueprint_root","json");
 }
 
-
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_examples, save_load_mesh)
-{
-    Node io_protos;
-    relay::io::about(io_protos["io"]);
-    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
-    if(!hdf5_enabled)
-    {
-        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
-        return;
-    }
-
-    std::string output_base = "tout_relay_mesh_save_load";
-    // spiral with 3 domains
-    Node data;
-    conduit::blueprint::mesh::examples::spiral(3,data);
-
-    // spiral doesn't have domain ids, lets add some so we diff clean
-    data.child(0)["state/domain_id"] = 0;
-    data.child(1)["state/domain_id"] = 1;
-    data.child(2)["state/domain_id"] = 2;
-
-    relay::io::blueprint::save_mesh(data, output_base, "hdf5", -1);
-
-    data.print();
-    Node n_read, info;
-    relay::io::blueprint::load_mesh(output_base + ".cycle_000000.root",
-                                    n_read);
-
-    n_read.print();
-    // reading back in will add domain_zzzzzz names, check children of read
-
-    data.child(0).diff(n_read.child(0),info);
-    data.child(1).diff(n_read.child(1),info);
-    data.child(2).diff(n_read.child(2),info);
-}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
@@ -963,7 +818,6 @@ TEST(conduit_blueprint_mesh_examples, braid_diff_dims)
 
     conduit::blueprint::mesh::examples::braid("hexs", 2, 3, 4, mesh);
     conduit::relay::io_blueprint::save(mesh, "braid_hexs_2_3_4.blueprint_root");
-
 
 }
 

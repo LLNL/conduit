@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -769,7 +729,7 @@ bool verify_poly_node(bool is_mixed_topo,
             elems_res &= subnode_res;
         }
     }
-
+    node_res &= elems_res;
     return node_res;
 }
 
@@ -1117,7 +1077,6 @@ struct TopologyMetadata
         dim_topos[topo_shape.dim]["elements/offsets"].set(topo_offsets);
 
         std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
-        std::vector< std::vector<int64> > dim_sizes(topo_shape.dim + 1);
         std::vector< int64 > dim_offsets(topo_shape.dim + 1);
 
         // Prepare Initial Values for Processing //
@@ -1173,7 +1132,6 @@ struct TopologyMetadata
             entity_parent_bag.pop_back();
 
             std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
-            std::vector<int64> &dim_size = dim_sizes[entity_dim];
             int64 &dim_offset = dim_offsets[entity_dim];
             std::map< std::set<index_t>, index_t > &dim_entity_map = dim_entity_maps[entity_dim];
             ShapeType dim_shape = topo_cascade.get_shape(entity_dim);
@@ -1240,11 +1198,6 @@ struct TopologyMetadata
                 index_t entity_id = dim_offset;
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
                 dim_entity_map[entity] = dim_offset++;
-
-                if (dim_shape.is_polygonal())
-                {
-                  dim_size.push_back(entity.size());
-                }
 
                 dim_assocs[entity_dim][entity_id].resize(topo_shape.dim + 1);
                 dim_assocs[entity_dim][entity_id][entity_dim].insert(entity_id);
@@ -1345,16 +1298,15 @@ struct TopologyMetadata
             dim_conn.set(DataType(int_dtype.id(), dim_buffers[di].size()));
             data_conn.to_data_type(int_dtype.id(), dim_conn);
 
-            // Generate size for polygonal mesh
-            if (di == 2)
+            // Initialize element/sizes for polygonal mesh using polyhedral's
+            // subelement/sizes
+            if (di == 2 && topo_shape.is_polyhedral())
             {
-                Node &dim_size = dim_topos[di]["elements/sizes"];
-                if (dim_size.dtype().is_empty())
+                Node &polygonal_size = dim_topos[di]["elements/sizes"];
+                Node &polyhedral_subsize = dim_topos[3]["subelements/sizes"];
+                if (polygonal_size.dtype().is_empty())
                 {
-                  Node data_size(DataType::int64(dim_sizes[di].size()),
-                       &(dim_sizes[di][0]), true);
-                  dim_size.set(DataType(int_dtype.id(), dim_sizes[di].size()));
-                  data_size.to_data_type(int_dtype.id(), dim_size);
+                  polygonal_size = polyhedral_subsize;
                 }
             }
 
@@ -1929,7 +1881,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     Node data_node;
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
-        index_t esize;
+        index_t esize = 0;
         if (topo_shape.is_polygonal())
         {
             data_node.set_external(size_dtype, topo_sizes.element_ptr(ei));
@@ -1950,7 +1902,9 @@ calculate_unstructured_centroids(const conduit::Node &topo,
             fi < elem_num_faces; fi++)
         {
 
-            index_t subelem_index, subelem_offset, subelem_size = 0;
+            index_t subelem_index = 0;
+            index_t subelem_offset = 0;
+            index_t subelem_size = 0;
             if (topo_shape.is_polyhedral())
             {
                 data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
@@ -2445,17 +2399,25 @@ mesh::generate_index(const Node &mesh,
     index_out.reset();
 
     index_out["state/number_of_domains"] = number_of_domains;
-    
-    // check if the input mesh has state/cycle state/time
-    // if so, add those to the index
-    if(mesh.has_path("state/cycle"))
-    {
-        index_out["state/cycle"].set(mesh["state/cycle"]);
-    }
 
-    if(mesh.has_path("state/time"))
+
+    if(mesh.has_child("state"))
     {
-        index_out["state/time"].set(mesh["state/time"]);
+        // check if the input mesh has state/cycle state/time
+        // if so, add those to the index
+        if(mesh.has_path("state/cycle"))
+        {
+            index_out["state/cycle"].set(mesh["state/cycle"]);
+        }
+
+        if(mesh.has_path("state/time"))
+        {
+            index_out["state/time"].set(mesh["state/time"]);
+        }
+        // state may contain other important stuff, like 
+        // the domain_id, so we need a way to read it
+        // from the index
+        index_out["state/path"] = join_path(ref_path, "state");
     }
 
     NodeConstIterator itr = mesh["coordsets"].children();
@@ -2569,11 +2531,40 @@ mesh::generate_index(const Node &mesh,
             Node &idx_matset = index_out["matsets"][matset_name];
 
             idx_matset["topology"] = matset["topology"].as_string();
-            NodeConstIterator mats_itr = matset["volume_fractions"].children();
-            while(mats_itr.has_next())
+
+            // support different flavors of valid matset protos
+            if(matset.has_child("material_map"))
             {
-                mats_itr.next();
-                idx_matset["materials"][mats_itr.name()];
+                NodeConstIterator mats_itr = matset["material_map"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else if(matset.has_child("materials"))
+            {
+                NodeConstIterator mats_itr = matset["materials"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else if(matset.has_child("volume_fractions"))
+            {
+                NodeConstIterator mats_itr = matset["volume_fractions"].children();
+                while(mats_itr.has_next())
+                {
+                    mats_itr.next();
+                    idx_matset["materials"][mats_itr.name()];
+                }
+            }
+            else // surprise!
+            {
+                CONDUIT_ERROR("blueprint::mesh::generate_index: "
+                              "Invalid matset flavor."
+                              "Input node does not conform to mesh blueprint.");
             }
 
             std::string ms_ref_path = join_path(ref_path, "matsets");

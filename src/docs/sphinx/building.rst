@@ -1,46 +1,6 @@
-.. ############################################################################
-.. # Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
-.. # 
-.. # Produced at the Lawrence Livermore National Laboratory
-.. # 
-.. # LLNL-CODE-666778
-.. # 
-.. # All rights reserved.
-.. # 
-.. # This file is part of Conduit. 
-.. # 
-.. # For details, see: http://software.llnl.gov/conduit/.
-.. # 
-.. # Please also read conduit/LICENSE
-.. # 
-.. # Redistribution and use in source and binary forms, with or without 
-.. # modification, are permitted provided that the following conditions are met:
-.. # 
-.. # * Redistributions of source code must retain the above copyright notice, 
-.. #   this list of conditions and the disclaimer below.
-.. # 
-.. # * Redistributions in binary form must reproduce the above copyright notice,
-.. #   this list of conditions and the disclaimer (as noted below) in the
-.. #   documentation and/or other materials provided with the distribution.
-.. # 
-.. # * Neither the name of the LLNS/LLNL nor the names of its contributors may
-.. #   be used to endorse or promote products derived from this software without
-.. #   specific prior written permission.
-.. # 
-.. # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-.. # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.. # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.. # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-.. # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-.. # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-.. # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.. # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.. # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-.. # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-.. # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-.. # POSSIBILITY OF SUCH DAMAGE.
-.. # 
-.. ############################################################################
+.. # Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+.. # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+.. # other details. No copyright assignment is required to contribute to Conduit.
 
 .. _building:
 
@@ -286,7 +246,7 @@ Default invocation on OSX:
                                       --spack-config-dir scripts/uberenv/spack_configs/darwin/
 
 
-The uberenv `--install` installs conduit\@master (not just the development dependencies):
+The uberenv `--install` installs conduit\@develop (not just the development dependencies):
 
 .. code:: bash
 
@@ -355,11 +315,11 @@ To install the latest released version of Conduit with all options (and also bui
   
   spack install conduit
 
-To build and install Conduit's github master branch run:
+To build and install Conduit's github develop branch run:
   
 .. code:: bash
   
-  spack install conduit@master
+  spack install conduit@develop
 
 
 The Conduit Spack package provides several `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ that customize the options and dependencies used to build Conduit:
@@ -397,8 +357,7 @@ You can specify specific versions of a dependency using ``^``. For Example, to b
 
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We recommend CMake 3.9 or newer. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python and C++11 support.
-
+We recommend CMake 3.9 or newer. We test building Conduit with CMake 3.9 and 3.14. Other versions of CMake may work, however CMake 3.18.0 and 3.18.1 have known issues that impact HDF5 support. CMake 3.18.2 resolved the HDF5 issues.
 
 
 Using Conduit in Another Project

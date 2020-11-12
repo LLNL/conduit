@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -368,8 +328,11 @@ SidreIOHandle::list_child_names(std::vector<std::string> &res)
 //-----------------------------------------------------------------------------
 void
 SidreIOHandle::list_child_names(const std::string &path,
-                             std::vector<std::string> &res)
+                                std::vector<std::string> &res)
 {
+    // note: if the path is bad, we return an empty list
+    res.clear();
+
     if( open_mode() == "w")
     {
         CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
@@ -384,19 +347,26 @@ SidreIOHandle::list_child_names(const std::string &path,
 
         if(p_first == "root")
         {
-            m_root_handle.list_child_names(p_next,res);
+            if(p_next.empty())
+            {
+                m_root_handle.list_child_names(res);
+            }
+            else
+            {
+                m_root_handle.list_child_names(p_next,res);
+            }
         }
         else 
         {
-            if(!utils::string_is_integer(p_first))
+            if(utils::string_is_integer(p_first))
             {
-                CONDUIT_ERROR("SidreIOHandle: path must start with 'root' or an "
-                              " integer that represents a sidre tree id. "
-                              " ex: 'root/path'  '0/path', etc.");
+                int tree_id = utils::string_to_value<int>(p_first);
+                // make sure tree_id is valid
+                if(tree_id >= 0 && tree_id < m_num_trees )
+                {
+                    sidre_meta_tree_list_child_names(tree_id,p_next,res);
+                }
             }
-
-            int tree_id = utils::string_to_value<int>(p_first);
-            sidre_meta_tree_list_child_names(tree_id,path,res);
         }
     }
     else
@@ -441,17 +411,41 @@ SidreIOHandle::has_path(const std::string &path)
 
         if(p_first == "root")
         {
-            res = m_root_handle.has_path(p_next);
+            if(p_next.empty())
+            {
+                res = true;
+            } 
+            else
+            {
+                res = m_root_handle.has_path(p_next);
+            }
         }
         else
         {
             if(!utils::string_is_integer(p_first))
             {
-                // TODO:ERROR!
+                res = false;
             }
-
-            int tree_id = utils::string_to_value<int>(p_first);
-            sidre_meta_tree_has_path(tree_id,p_next);
+            else
+            {
+                int tree_id = utils::string_to_value<int>(p_first);
+                // make sure tree_id is valid
+                if(tree_id >= 0 && tree_id < m_num_trees )
+                {
+                    if(p_next.empty())
+                    {
+                        res = true;
+                    }
+                    else
+                    {
+                        res = sidre_meta_tree_has_path(tree_id,p_next);
+                    }
+                }
+                else
+                {
+                    res = false;
+                }
+            }
         }
     }
     else
@@ -1160,16 +1154,19 @@ SidreIOHandle::prepare_sidre_meta_tree(IOHandle &hnd,
                  hnd.read(tree_prefix + "sidre/" + sidre_mtree_view,
                           sidre_meta[sidre_mtree_view]);
             }
-            else
-            {
-                // TODO: Add file handle path
-                CONDUIT_ERROR("Failed to read tree path: " << std::endl
-                            << "Expected to find Sidre Group: "
-                            << tree_prefix << "sidre/" << sidre_mtree_group
-                            << " or "
-                            << "Sidre View: "
-                            << tree_prefix << "sidre/" << sidre_mtree_view);
-            }
+            // the path is invalid, we don't throw an error here
+            // because this method is also used to prepare sidre meta trees
+            // for has_path and list_child_names cases, which don't throw 
+            // errors, but here are the details about what we would expect
+            // for valid path:
+            // {
+            //     CONDUIT_ERROR("Failed to read tree path: " << std::endl
+            //                 << "Expected to find Sidre Group: "
+            //                 << tree_prefix << "sidre/" << sidre_mtree_group
+            //                 << " or "
+            //                 << "Sidre View: "
+            //                 << tree_prefix << "sidre/" << sidre_mtree_view);
+            // }
         }
     }
 }

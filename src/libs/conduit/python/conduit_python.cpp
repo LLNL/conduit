@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 
 //-----------------------------------------------------------------------------
@@ -4047,16 +4007,90 @@ static void
 PyConduit_Fill_DataArray_From_PyArray(DataArray<T> &conduit_array,
                                       PyArrayObject *numpy_array)
 {
-    npy_int num_ele = (npy_int)conduit_array.number_of_elements();
+    // proper strided iteration, adapted from:
+    //https://docs.scipy.org/doc/numpy-1.10.0/reference/c-api.iterator.html
 
-    T *numpy_data = (T*)PyArray_BYTES(numpy_array);
 
-    for (npy_intp i = 0; i < num_ele; i++)
+    /* Handle zero-sized arrays specially */
+    if (PyArray_SIZE(numpy_array) == 0)
     {
-        conduit_array[i] = numpy_data[i];
+        // nothing to copy in this case!
+        return;
     }
-}
 
+    /*
+     * Create and use an iterator to copy out the data to our conduit array
+     *   flag NPY_ITER_READONLY
+     *     - The array is never written to.
+     *   flag NPY_ITER_EXTERNAL_LOOP
+     *     - Inner loop is done outside the iterator for efficiency.
+     *   flag NPY_ITER_NPY_ITER_REFS_OK
+     *     - Reference types are acceptable.
+     *   order NPY_KEEPORDER
+     *     - Visit elements in memory order, regardless of strides.
+     *       This is good for performance when the specific order
+     *       elements are visited is unimportant.
+     *   casting NPY_NO_CASTING
+     *     - No casting is required for this operation.
+     */
+     NpyIter* iter = NpyIter_New(numpy_array,
+                                 NPY_ITER_READONLY|
+                                 NPY_ITER_EXTERNAL_LOOP|
+                                 NPY_ITER_REFS_OK,
+                                 NPY_KEEPORDER,
+                                 NPY_NO_CASTING,
+                                 NULL);
+    if (iter == NULL)
+    {
+        // TODO ERROR!
+    }
+
+    /*
+     * The iternext function gets stored in a local variable
+     * so it can be called repeatedly in an efficient manner.
+     */
+    NpyIter_IterNextFunc *iternext = NpyIter_GetIterNext(iter, NULL);
+    if (iternext == NULL)
+    {
+        NpyIter_Deallocate(iter);
+        // TODO ERROR!
+    }
+
+    // The location of the data pointer which the iterator may update
+    char** dataptr = NpyIter_GetDataPtrArray(iter);
+    // The location of the stride which the iterator may update
+    npy_intp* strideptr = NpyIter_GetInnerStrideArray(iter);
+    // The location of the inner loop size which the iterator may update 
+    npy_intp* innersizeptr = NpyIter_GetInnerLoopSizePtr(iter);
+
+    int idx=0;
+    do
+    {
+        // Get the inner loop data/stride/count values
+        char* data = *dataptr;
+        npy_intp stride = *strideptr;
+        npy_intp count = *innersizeptr;
+
+        // This is a typical inner loop for NPY_ITER_EXTERNAL_LOOP
+        while (count--)
+        {
+            conduit_array[idx] = ((T*)data)[0];
+            data += stride;
+            idx++;
+        }
+        // Increment the iterator to the next inner loop
+    }
+    while(iternext(iter));
+
+    // TODO, add just in case consistency check?
+    // npy_int num_ele = (npy_int)conduit_array.number_of_elements();
+    // if(num_ele != idx)
+    // {
+    //  // this doesn't match our expectations
+    // }
+
+    NpyIter_Deallocate(iter);
+}
 
 //---------------------------------------------------------------------------//
 // begin Node python special methods
@@ -4143,9 +4177,7 @@ PyConduit_Node_str(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_repr(PyConduit_Node* self)
 {
-   std::ostringstream oss;
-   self->node->to_json_stream(oss,"conduit_json");
-   return (Py_BuildValue("s", oss.str().c_str()));
+    return PyConduit_Node_str(self);
 }
 
 //---------------------------------------------------------------------------//
@@ -4346,15 +4378,16 @@ PyConduit_Node_save(PyConduit_Node *self,
     {
         return NULL;
     }
-    
+
     std::string path_str(path);
-    std::string protocol_str("conduit_bin");
-    
+    // keep blank, allow conduit to detect based on file name
+    std::string protocol_str("");
+
     if(protocol != NULL)
     {
         protocol_str = std::string(protocol);
     }
-    
+
     try
     {
         self->node->save(path_str,protocol_str);
@@ -4365,8 +4398,8 @@ PyConduit_Node_save(PyConduit_Node *self,
                         e.message().c_str());
         return NULL;
     }
-    
-    
+
+
     Py_RETURN_NONE;
 }
 
@@ -4428,7 +4461,8 @@ PyConduit_Node_load(PyConduit_Node *self,
     }
     else
     {
-        std::string protocol_str("conduit_bin");
+    // keep blank, allow conduit to detect based on file name
+        std::string protocol_str("");
 
         if( protocol != NULL)
         {
@@ -5133,9 +5167,14 @@ PyConduit_Node_set_external(PyConduit_Node* self,
     index_t stride = (index_t) PyArray_STRIDE(py_arr, 0);
     int nd = PyArray_NDIM(py_arr);
 
-    if (nd > 1) {
+    if (nd > 1)
+    {
         PyErr_SetString(PyExc_TypeError,
-                        "set_external does not handle multidimensional numpy arrays");
+                        "set_external does not handle multidimensional numpy"
+                        " arrays or multidimensional complex strided views"
+                        " into numpy arrays."
+                        " Views that are effectively 1D-strided are"
+                        "supported.");
         return (NULL);
     }
 
@@ -6308,9 +6347,9 @@ PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
 
         // get unicode data and construct a python unicode object from it
         void *unicode_buffer_ptr = PyArray_GETPTR1(py_arr,i);
-        
+        int unicode_str_len = ((int)(buffer_len)) / 4;
         PyObject *py_temp_unicode = PyUnicode_From_UTF32_Unicode_Buffer((const char*)unicode_buffer_ptr,
-                                                                        buffer_len/4);
+                                                                        unicode_str_len);
             
         if(py_temp_unicode == NULL)
         {

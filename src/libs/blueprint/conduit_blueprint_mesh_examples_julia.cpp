@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-666778
-//
-// All rights reserved.
-//
-// This file is part of Conduit.
-//
-// For details, see: http://software.llnl.gov/conduit/.
-//
-// Please also read conduit/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -181,8 +141,8 @@ void paint_2d_nestsets(conduit::Node &domain,
     }
     else if(coords["type"].as_string() == "rectilinear")
     {
-      el_dims[0] = coords["values/x"].dtype().number_of_elements() - 1;
-      el_dims[1] = coords["values/y"].dtype().number_of_elements() - 1;
+      el_dims[0] = (int)(coords["values/x"].dtype().number_of_elements() - 1);
+      el_dims[1] = (int)(coords["values/y"].dtype().number_of_elements() - 1);
     }
     else
     {
@@ -217,8 +177,8 @@ void paint_2d_nestsets(conduit::Node &domain,
   if(nest_id == -1) return;
 
   const Node &nestset = domain["nestsets"].child(nest_id);
-  const int windows = nestset["windows"].number_of_children();
-  for(int i = 0; i < windows; ++i)
+  const index_t windows = nestset["windows"].number_of_children();
+  for(index_t i = 0; i < windows; ++i)
   {
     const Node &window = nestset["windows"].child(i);
     if(window["domain_type"].as_string() != "child")
@@ -273,7 +233,7 @@ void gap_scanner(const std::vector<int32> &values,
       {
         if(gap_length > gap[1])
         {
-          gap[0] = i + offset;
+          gap[0] = (int32)(i + offset);
           gap[1] = gap_length;
         }
         in_gap = false;
@@ -302,7 +262,7 @@ void inflection_scanner(const std::vector<int32> &values,
       int32 mag = abs(deriv - prev);
       if(mag  > crit[1])
       {
-        crit[0] = i + offset;
+        crit[0] = (int32)(i + offset);
         crit[1] = mag;
       }
     }
@@ -324,7 +284,7 @@ struct AABB
     box[2][1] = std::numeric_limits<index_t>::min();
   }
 
-  bool valid(int axis)
+  bool valid(index_t axis)
   {
     return box[axis][0] <= box[axis][1];
   }
@@ -348,27 +308,27 @@ struct AABB
               <<"("<<box[1][0]<<","<<box[1][0]<<")\n";
   }
 
-  int length(int axis)
+  index_t length(index_t axis)
   {
     return (box[axis][1] - box[axis][0] + 1);
   }
 
-  int min(int axis)
+  index_t min(index_t axis)
   {
     return box[axis][0];
   }
 
-  int max(int axis)
+  index_t max(index_t axis)
   {
     return box[axis][1];
   }
 
-  void split(const int axis,
-             const int index,
+  void split(const index_t axis,
+             const index_t index,
              AABB &left,
              AABB &right)
   {
-    for(int i = 0; i < 3; ++i)
+    for(index_t i = 0; i < 3; ++i)
     {
       if(i == axis)
       {
@@ -395,13 +355,13 @@ struct AABB
 
   void mid_split(AABB &left, AABB &right)
   {
-    int axis = 0;
-    int len = 0;
-    for(int i = 0; i < 3; i++)
+    index_t axis = 0;
+    index_t len = 0;
+    for(index_t i = 0; i < 3; i++)
     {
       if(valid(i))
       {
-        int size = length(i);
+        index_t size = length(i);
         if(size > len)
         {
           axis  = i;
@@ -410,7 +370,7 @@ struct AABB
       }
     }
 
-    int pos = len/2 + box[axis][0] - 1;
+    index_t pos = len/2 + box[axis][0] - 1;
     split(axis, pos, left, right);
   }
 
@@ -614,7 +574,7 @@ void julia(index_t nx,
 
 int32 refine(int32 domain_index,
              int32 domain_id_start,
-             float32 threshold,
+             float64 threshold,
              float64 efficiency,
              int32 min_size,
              float64 c_re,
@@ -655,6 +615,7 @@ int32 refine(int32 domain_index,
     float32 ddx = std::abs(x_vals[0] - 2.f * x_vals[1] + x_vals[2]);
     float32 ddy = std::abs(y_vals[0] - 2.f * y_vals[1] + y_vals[2]);
     float32 eps = sqrt(ddx*ddx + ddy*ddy);
+    // TODO, should der be a floating point # here?
     der[i] = eps;
     if(eps > threshold)
     {
@@ -732,7 +693,7 @@ int32 refine(int32 domain_index,
      cwindow["ratio/i"] = 2;
      cwindow["ratio/j"] = 2;
   }
-  return boxs.size();
+  return (int32)boxs.size();
 }
 
 void julia_nestsets_complex(index_t nx,

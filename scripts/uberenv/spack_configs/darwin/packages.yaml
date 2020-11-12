@@ -49,7 +49,7 @@ packages:
     variants: ~openmp
 # custom variants
   conduit:
-    version: [master]
+    version: [develop]
   python:
     variants: +shared~dbm
   # python 2 constraints

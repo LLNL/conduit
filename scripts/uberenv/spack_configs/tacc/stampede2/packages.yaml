@@ -44,4 +44,4 @@ packages:
     modules:
         intel-mkl: mkl
   conduit:
-    version: [master]
+    version: [develop]

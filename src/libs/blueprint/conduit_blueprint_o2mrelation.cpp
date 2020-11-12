@@ -1,46 +1,6 @@
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-// 
-// Produced at the Lawrence Livermore National Laboratory
-// 
-// LLNL-CODE-666778
-// 
-// All rights reserved.
-// 
-// This file is part of Conduit. 
-// 
-// For details, see: http://software.llnl.gov/conduit/.
-// 
-// Please also read conduit/LICENSE
-// 
-// Redistribution and use in source and binary forms, with or without 
-// modification, are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, 
-//   this list of conditions and the disclaimer below.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-// 
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
-// 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
 ///
@@ -229,7 +189,7 @@ void compact_to(const conduit::Node &o2mrelation,
     else
     {
         O2MIterator o2miter(o2mrelation);
-        const std::vector<std::string> o2m_paths =
+        const std::vector<std::string> o2m_paths_curr =
             conduit::blueprint::o2mrelation::data_paths(o2mrelation);
 
         const conduit::Node &o2m_offsets = o2mrelation["offsets"];
@@ -243,9 +203,9 @@ void compact_to(const conduit::Node &o2mrelation,
             res_offsets.set(conduit::DataType(offsets_dtype.id(),
                 o2miter.elements(conduit::blueprint::o2mrelation::ONE)));
 
-            for(index_t pi = 0; pi < (index_t)o2m_paths.size(); pi++)
+            for(index_t pi = 0; pi < (index_t)o2m_paths_curr.size(); pi++)
             {
-                const std::string& o2m_path = o2m_paths[pi];
+                const std::string& o2m_path = o2m_paths_curr[pi];
                 res[o2m_path].set(conduit::DataType(o2mrelation[o2m_path].dtype().id(),
                     o2miter.elements(conduit::blueprint::o2mrelation::DATA)));
             }
@@ -267,10 +227,10 @@ void compact_to(const conduit::Node &o2mrelation,
                 o2miter.next(conduit::blueprint::o2mrelation::MANY);
                 const index_t data_index = o2miter.index(conduit::blueprint::o2mrelation::DATA);
 
-                for(index_t pi = 0; pi < (index_t)o2m_paths.size(); pi++, curr_index++)
+                for(index_t pi = 0; pi < (index_t)o2m_paths_curr.size(); pi++, curr_index++)
                 {
-                    const conduit::Node &o2m_data = o2mrelation[o2m_paths[pi]];
-                    conduit::Node &res_data = res[o2m_paths[pi]];
+                    const conduit::Node &o2m_data = o2mrelation[o2m_paths_curr[pi]];
+                    conduit::Node &res_data = res[o2m_paths_curr[pi]];
 
                     const conduit::DataType data_dtype(o2m_data.dtype().id(), 1);
                     o2m_temp.set_external(data_dtype, (void*)o2m_data.element_ptr(data_index));

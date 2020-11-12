@@ -1,46 +1,6 @@
-###############################################################################
-# Copyright (c) 2014-2018, Lawrence Livermore National Security, LLC.
-# 
-# Produced at the Lawrence Livermore National Laboratory
-# 
-# LLNL-CODE-666778
-# 
-# All rights reserved.
-# 
-# This file is part of Conduit. 
-# 
-# For details, see: http://software.llnl.gov/conduit/.
-# 
-# Please also read conduit/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
-# modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
-#   this list of conditions and the disclaimer below.
-# 
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-# 
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-# POSSIBILITY OF SUCH DAMAGE.
-# 
-###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Conduit.
 """
  file: t_python_conduit_node.py
  description: Unit tests for conduit::Node python module interface.
@@ -53,7 +13,6 @@ import unittest
 from conduit import Node
 
 import numpy as np
-
 
 class Test_Conduit_Node(unittest.TestCase):
     def test_simple(self):
@@ -509,13 +468,72 @@ class Test_Conduit_Node(unittest.TestCase):
 
         res_to_yaml = n.to_yaml()
         res_to_json = n.to_json()
-  
+
         self.assertEqual(res_to_str_def,  res_to_yaml);
         self.assertEqual(res_to_str_yaml, res_to_yaml);
-  
+
         self.assertEqual(res_to_str_json,  res_to_json);
 
         n.print_detailed()
+
+    def test_numpy_slice_as_set_input(self):
+        n = Node()
+        # slice with non trivial strides
+        numpy_array = np.array(range(21), dtype='float64')
+        v = numpy_array.reshape((3, 7))
+        print("Input Array")
+        print(v)
+        print("Desired Slice")
+        print(v[:,0])
+        n['v'] = v
+        n['vs'] = v[:,0]
+        n['vs_expected'] = np.array(v[:,0],np.float64)
+        print(n)
+        sdiff = np.setdiff1d(n['vs'], v[:,0])
+        print("Set Difference: ",sdiff )
+        self.assertEqual(len(sdiff), 0);
+        # a more complex slice
+        numpy_array = np.array(range(105), dtype='float64')
+        v = numpy_array.reshape((3, 7, 5))
+        print("Input Array")
+        print(v)
+        print("Desired Slice")
+        print(v[:,0,3:5])
+        n['v'] = v
+        n['vs'] = v[:,0,3:5]
+        n['vs_expected'] = np.array(v[:,0,3:5],np.float64)
+        print(n)
+        sdiff = np.setdiff1d(n['vs'], v[:,0,3:5])
+        print("Set Difference: ",sdiff )
+        self.assertEqual(len(sdiff), 0);
+
+
+    def test_numpy_slice_as_set_external_input(self):
+        n = Node()
+        # slice with non trivial strides
+        numpy_array = np.array(range(21), dtype='float64')
+        v = numpy_array.reshape((3, 7))
+        print("Input Array")
+        print(v)
+        print("Desired Slice")
+        print(v[:,0])
+        n['v'] = v
+        n['vs'].set_external(v[:,0])
+        n['vs_expected'] = np.array(v[:,0],np.float64)
+        print(n)
+        sdiff = np.setdiff1d(n['vs'], v[:,0])
+        print("Set Difference: ",sdiff )
+        self.assertEqual(len(sdiff), 0);
+        # a more complex slice, can't use set external here.
+        n = Node()
+        numpy_array = np.array(range(105), dtype='float64')
+        v = numpy_array.reshape((3, 7, 5))
+        with self.assertRaises(TypeError):
+            n['vs'].set_external(v[:,0,3:5])
+        # lets do a 1-d eff slice, this should work since
+        # it reduces to a 1-D strided case
+        n['vs'].set_external(v[:,0,0])
+        n['vs_expected'] = np.array(v[:,0,0],np.float64)
 
 if __name__ == '__main__':
     unittest.main()

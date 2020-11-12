@@ -1,46 +1,6 @@
-###############################################################################
-# Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
-# 
-# Produced at the Lawrence Livermore National Laboratory
-# 
-# LLNL-CODE-666778
-# 
-# All rights reserved.
-# 
-# This file is part of Conduit. 
-# 
-# For details, see: http://software.llnl.gov/conduit/.
-# 
-# Please also read conduit/LICENSE
-# 
-# Redistribution and use in source and binary forms, with or without 
-# modification, are permitted provided that the following conditions are met:
-# 
-# * Redistributions of source code must retain the above copyright notice, 
-#   this list of conditions and the disclaimer below.
-# 
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-# 
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-# POSSIBILITY OF SUCH DAMAGE.
-# 
-###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Conduit.
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_python_exports.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_python_exports.h")
@@ -56,14 +16,15 @@ SET(conduit_py_cpp_sources     conduit_python.cpp)
 # Make sure we have access to numpy
 include_directories(${NUMPY_INCLUDE_DIRS})
 
-# Setup our module
-PYTHON_ADD_HYBRID_MODULE(conduit_python
-                         python-modules
-                         conduit
-                         setup.py
-                         "${conduit_py_python_sources}"
-                         ${conduit_py_headers}
-                         ${conduit_py_cpp_sources})
+# add conduit + conduit_python modules
+PYTHON_ADD_HYBRID_MODULE(NAME          conduit_python
+                         DEST_DIR      python-modules
+                         PY_MODULE_DIR conduit
+                         PY_SETUP_FILE setup.py
+                         PY_SOURCES    ${conduit_py_python_sources}
+                         SOURCES       ${conduit_py_headers}
+                                       ${conduit_py_cpp_sources}
+                         FOLDER        libs/python)
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_python conduit)
@@ -81,8 +42,10 @@ endif()
 # python interp with the conduit module already in PYTHONPATH
 
 set(_PYMOD_DIR ${PROJECT_BINARY_DIR}/python-modules)
+
+# gen python helper to ${PROJECT_BINARY_DIR}/bin
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/run_python_with_conduit.sh.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/run_python_with_conduit_build.sh" @ONLY)
+                "${PROJECT_BINARY_DIR}/bin/run_python_with_conduit_build.sh" @ONLY)
 
 if(PYTHON_MODULE_INSTALL_PREFIX)
     set(_PYMOD_DIR ${PYTHON_MODULE_INSTALL_PREFIX})
