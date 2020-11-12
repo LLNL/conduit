@@ -4,6 +4,12 @@
 # Ref:
 # https://aka.ms/yaml
 
+#####
+# TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
+#####
+variables:
+  ubuntu18_tag: alpinedav/ascent-ci:ubuntu-18-devel
+
 # only build merge target pr to develop
 trigger: none
 pr:
@@ -314,7 +320,7 @@ stages:
   - job: Ubuntu_18
     pool:
       vmImage: 'ubuntu-16.04'
-    container: alpinedav/ascent-ci:ubuntu-18.04-dev
+    container: ${{ variables.ubuntu18_tag }}
     timeoutInMinutes: 0
     variables:
       COMPILER_CC: gcc
