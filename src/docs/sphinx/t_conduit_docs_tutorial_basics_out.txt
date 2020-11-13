@@ -8,7 +8,7 @@ BEGIN_EXAMPLE("basics_very_basic")
 my: "data"
 
 END_EXAMPLE("basics_very_basic")
-[       OK ] conduit_tutorial.basics_very_basic (0 ms)
+[       OK ] conduit_tutorial.basics_very_basic (3 ms)
 [ RUN      ] conduit_tutorial.basics_hierarchial
 BEGIN_EXAMPLE("basics_hierarchial")
 
@@ -20,7 +20,7 @@ a:
 
 total bytes: 15
 END_EXAMPLE("basics_hierarchial")
-[       OK ] conduit_tutorial.basics_hierarchial (0 ms)
+[       OK ] conduit_tutorial.basics_hierarchial (1 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list
 BEGIN_EXAMPLE("basics_object_and_list")
 
@@ -61,20 +61,20 @@ val3: 3.1415
 3
 4
 END_EXAMPLE("basics_object_and_list_itr")
-[       OK ] conduit_tutorial.basics_object_and_list_itr (0 ms)
+[       OK ] conduit_tutorial.basics_object_and_list_itr (1 ms)
 [ RUN      ] conduit_tutorial.basics_mem_spaces
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7fa4e4c05e80: 
+  0x7f7fee4006a0: 
     path: "my"
     type: "allocated"
     bytes: 5
-  0x7fa4e4c05840: 
+  0x7f7fee401bc0: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
-  0x7fa4e4c05830: 
+  0x7f7fee401bb0: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8
@@ -103,7 +103,7 @@ test: 100
 , "value": 100}
 }
 END_EXAMPLE("basics_bw_style")
-[       OK ] conduit_tutorial.basics_bw_style (0 ms)
+[       OK ] conduit_tutorial.basics_bw_style (1 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style_from_native
 BEGIN_EXAMPLE("basics_bw_style_from_native")
 
@@ -185,7 +185,7 @@ my:
 
 
 file: /Users/harrison37/Work/github/llnl/conduit/src/libs/conduit/conduit_node.cpp
-line: 12179
+line: 12913
 message: 
 Cannot fetch non-existent child "data" from Node(my/important)
 
@@ -200,9 +200,9 @@ my:
             data: 42.0
 
 END_EXAMPLE("basics_const_vs_non_const")
-[       OK ] conduit_tutorial.basics_const_vs_non_const (0 ms)
-[----------] 10 tests from conduit_tutorial (1 ms total)
+[       OK ] conduit_tutorial.basics_const_vs_non_const (1 ms)
+[----------] 10 tests from conduit_tutorial (8 ms total)
 
 [----------] Global test environment tear-down
-[==========] 10 tests from 1 test suite ran. (1 ms total)
+[==========] 10 tests from 1 test suite ran. (8 ms total)
 [  PASSED  ] 10 tests.

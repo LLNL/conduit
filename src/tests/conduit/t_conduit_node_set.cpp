@@ -6905,4 +6905,116 @@ TEST(conduit_node, node_set_non_compact_dtype)
     
 }
 
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+TEST(conduit_array, cxx_11_init_lists)
+{
+    Node n, n_check, n_info;
+
+    // int 
+    {
+        std::vector<int> v = {-1,2,-3,4,-5};
+        n_check = v;
+
+        n.set({-1,2,-3,4,-5});
+        n.print();
+        EXPECT_TRUE(n.dtype().is_int());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+
+        n = {-1,2,-3,4,-5};
+        n.print();
+        EXPECT_TRUE(n.dtype().is_int());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+    }
+
+    // uint
+    {
+        std::vector<unsigned int> v = {1,2,3,4,5};
+        n_check = v;
+
+        n.set({1u,2u,3u,4u,5u});
+        n.print();
+        EXPECT_TRUE(n.dtype().is_unsigned_int());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+
+        n = {1u,2u,3u,4u,5u};
+        n.print();
+        EXPECT_TRUE(n.dtype().is_unsigned_int());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+    }
+
+    // long
+    {
+        std::vector<long> v = {-1,2,-3,4,-5};
+        n_check = v;
+
+        n.set({-1l,2l,-3l,4l,-5l});
+        n.print();
+        EXPECT_TRUE(n.dtype().is_long());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+
+        n = {-1l,2l,-3l,4l,-5l};
+        n.print();
+        EXPECT_TRUE(n.dtype().is_long());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+    }
+
+    // ulong
+    {
+        std::vector<unsigned long> v = {1,2,3,4,5};
+        n_check = v;
+
+        n.set({1ul,2ul,3ul,4ul,5ul});
+        n.print();
+        EXPECT_TRUE(n.dtype().is_unsigned_long());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+
+        n = {1ul,2ul,3ul,4ul,5ul};
+        n.print();
+        EXPECT_TRUE(n.dtype().is_unsigned_long());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+    }
+
+    // float
+    {
+        std::vector<float> v = {1.0,2.0,3.0,4.0,5.0};
+        n_check = v;
+
+        n.set({1.0f,2.0f,3.0f,4.0f,5.0f});
+        n.print();
+        EXPECT_TRUE(n.dtype().is_float());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+
+        n = {1.0f,2.0f,3.0f,4.0f,5.0f};
+        n.print();
+        EXPECT_TRUE(n.dtype().is_float());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+    }
+    
+
+    // double
+    {
+        std::vector<double> v = {1.0,2.0,3.0,4.0,5.0};
+        n_check = v;
+
+        n.set({1.0,2.0,3.0,4.0,5.0});
+        n.print();
+        EXPECT_TRUE(n.dtype().is_double());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+
+        n = {1.0,2.0,3.0,4.0,5.0};
+        n.print();
+        EXPECT_TRUE(n.dtype().is_double());
+        EXPECT_FALSE(n.diff(n_check,n_info));
+    }
+
+}
+
+//-----------------------------------------------------------------------------
+#endif // end CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+
 

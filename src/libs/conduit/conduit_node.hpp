@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <fstream>
 #include <sstream>
 
 //-----------------------------------------------------------------------------
@@ -445,7 +446,7 @@ public:
     void set(const std::vector<int16>  &data);
 
     //-------------------------------------------------------------------------
-    void set_int32_vector(const std::vector<int32>  &data);    
+    void set_int32_vector(const std::vector<int32>  &data);
     void set(const std::vector<int32>  &data);
 
     //-------------------------------------------------------------------------
@@ -518,6 +519,111 @@ public:
         void set(const std::vector<double> &data);
     #endif
 
+
+//-----------------------------------------------------------------------------
+// -- std::initializer_list support --
+//-----------------------------------------------------------------------------
+//
+// When C++11 support is enabled, support std::initializer_lists
+//
+// Example:
+//   Node n;
+//   n.set({1,2,3,4,5,6});
+//
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- set for bitwidth style std::initializer_list types ---
+//-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // signed integer array types via std::initializer_list
+    //-------------------------------------------------------------------------
+    void set_int8_initializer_list(const std::initializer_list<int8>   &data);
+    void set(const std::initializer_list<int8>   &data);
+    
+    //-------------------------------------------------------------------------
+    void set_int16_initializer_list(const std::initializer_list<int16>  &data);
+    void set(const std::initializer_list<int16>  &data);
+
+    //-------------------------------------------------------------------------
+    void set_int32_initializer_list(const std::initializer_list<int32>  &data);
+    void set(const std::initializer_list<int32>  &data);
+
+    //-------------------------------------------------------------------------
+    void set_int64_initializer_list(const std::initializer_list<int64>  &data);
+    void set(const std::initializer_list<int64>  &data);
+
+    //-------------------------------------------------------------------------
+    // unsigned integer array types via std::initializer_list
+    //-------------------------------------------------------------------------
+    void set_uint8_initializer_list(const std::initializer_list<uint8>   &data);
+    void set(const std::initializer_list<uint8>   &data);
+    
+    //-------------------------------------------------------------------------
+    void set_uint16_initializer_list(const std::initializer_list<uint16>  &data);
+    void set(const std::initializer_list<uint16>  &data);
+
+    //-------------------------------------------------------------------------
+    void set_uint32_initializer_list(const std::initializer_list<uint32>  &data);
+    void set(const std::initializer_list<uint32>  &data);
+    
+    //-------------------------------------------------------------------------
+    void set_uint64_initializer_list(const std::initializer_list<uint64>  &data);
+    void set(const std::initializer_list<uint64>  &data);
+
+    //-------------------------------------------------------------------------
+    // floating point array types via std::initializer_list
+    //-------------------------------------------------------------------------
+    void set_float32_initializer_list(const std::initializer_list<float32> &data);
+    void set(const std::initializer_list<float32> &data);
+
+    //-------------------------------------------------------------------------
+    void set_float64_initializer_list(const std::initializer_list<float64> &data);
+    void set(const std::initializer_list<float64> &data);
+
+//-----------------------------------------------------------------------------
+//  set initializer_list gap methods for c-native types
+//-----------------------------------------------------------------------------
+    void set(const std::initializer_list<char> &data);
+
+    #ifndef CONDUIT_USE_CHAR
+        void set(const std::initializer_list<signed char> &data);
+        void set(const std::initializer_list<unsigned char> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(const std::initializer_list<short> &data);
+        void set(const std::initializer_list<unsigned short> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        void set(const std::initializer_list<int> &data);
+        void set(const std::initializer_list<unsigned int> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        void set(const std::initializer_list<long> &data);
+        void set(const std::initializer_list<unsigned long> &data);
+    #endif
+
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        void set(const std::initializer_list<long long> &data);
+        void set(const std::initializer_list<unsigned long long> &data);
+#endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        void set(const std::initializer_list<float> &data);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        void set(const std::initializer_list<double> &data);
+    #endif
+
+//-----------------------------------------------------------------------------
+#endif // end CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // -- set via bitwidth style pointers (scalar and array types) -- 
@@ -2804,6 +2910,7 @@ public:
     Node &operator=(const std::vector<float32> &data);
     Node &operator=(const std::vector<float64> &data);
 
+
 //-----------------------------------------------------------------------------
 // --  assignment c-native gap operators for vector types ---
 //-----------------------------------------------------------------------------
@@ -2841,6 +2948,80 @@ public:
 #ifndef CONDUIT_USE_DOUBLE
     Node &operator=(const std::vector<double> &data);
 #endif
+
+//-----------------------------------------------------------------------------
+// -- std::initializer_list support --
+//-----------------------------------------------------------------------------
+//
+// When C++11 support is enabled, support std::initializer_lists
+//
+// Example:
+//   Node n;
+//   n = {1,2,3,4,5,6};
+//
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+// -- assignment operators for std::initializer_list types ---
+//-----------------------------------------------------------------------------
+    // signed integer array types via std::initializer_list
+    Node &operator=(const std::initializer_list<int8>   &data);
+    Node &operator=(const std::initializer_list<int16>  &data);
+    Node &operator=(const std::initializer_list<int32>  &data);
+    Node &operator=(const std::initializer_list<int64>  &data);
+
+    // unsigned integer array types via std::initialize_list
+    Node &operator=(const std::initializer_list<uint8>   &data);
+    Node &operator=(const std::initializer_list<uint16>  &data);
+    Node &operator=(const std::initializer_list<uint32>  &data);
+    Node &operator=(const std::initializer_list<uint64>  &data);
+
+    // floating point array types via std::initializer_list
+    Node &operator=(const std::initializer_list<float32> &data);
+    Node &operator=(const std::initializer_list<float64> &data);
+
+//-----------------------------------------------------------------------------
+// --  assignment c-native gap operators for initializer_list types ---
+//-----------------------------------------------------------------------------
+
+    Node &operator=(const std::initializer_list<char> &data);
+
+#ifndef CONDUIT_USE_CHAR
+    Node &operator=(const std::initializer_list<signed char> &data);
+    Node &operator=(const std::initializer_list<unsigned char> &data);
+#endif
+
+#ifndef CONDUIT_USE_SHORT
+    Node &operator=(const std::initializer_list<short> &data);
+    Node &operator=(const std::initializer_list<unsigned short> &data);
+#endif
+
+#ifndef CONDUIT_USE_INT
+    Node &operator=(const std::initializer_list<int> &data);
+    Node &operator=(const std::initializer_list<unsigned int> &data); 
+#endif
+
+#ifndef CONDUIT_USE_LONG
+    Node &operator=(const std::initializer_list<long> &data);
+    Node &operator=(const std::initializer_list<unsigned long> &data); 
+#endif
+
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+    Node &operator=(const std::initializer_list<long long> &data);
+    Node &operator=(const std::initializer_list<unsigned long long> &data); 
+#endif
+
+#ifndef CONDUIT_USE_FLOAT
+    Node &operator=(const std::initializer_list<float> &data);
+#endif
+
+#ifndef CONDUIT_USE_DOUBLE
+    Node &operator=(const std::initializer_list<double> &data);
+#endif
+
+//-----------------------------------------------------------------------------
+#endif // end CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------

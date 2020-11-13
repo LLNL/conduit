@@ -144,6 +144,130 @@ public:
     void            set(const std::vector<float64> &values)
                         {set(&values[0],values.size());}
 
+    //-------------------------------------------------------------------------
+    #ifdef CONDUIT_USE_CXX11
+    //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // -- set for std::initializer_list types ---
+    //-------------------------------------------------------------------------
+
+    /// signed integer arrays via std::initializer_list
+    void            set(const std::initializer_list<int8>    &values);
+    void            set(const std::initializer_list<int16>   &values);
+    void            set(const std::initializer_list<int32>   &values);
+    void            set(const std::initializer_list<int64>   &values);
+
+    /// unsigned integer arrays via std::initializer_list
+    void            set(const std::initializer_list<uint8>   &values);
+    void            set(const std::initializer_list<uint16>  &values);
+    void            set(const std::initializer_list<uint32>  &values);
+    void            set(const std::initializer_list<uint64>  &values);
+    
+    /// floating point arrays via std::initializer_list
+    void            set(const std::initializer_list<float32> &values);
+    void            set(const std::initializer_list<float64> &values);
+
+    //-------------------------------------------------------------------------
+    // --  assignment c-native gap operators for initializer_list types ---
+    //-------------------------------------------------------------------------
+
+    void set(const std::initializer_list<char> &values);
+
+    #ifndef CONDUIT_USE_CHAR
+        void set(const std::initializer_list<signed char> &values);
+        void set(const std::initializer_list<unsigned char> &values);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        void set(const std::initializer_list<short> &values);
+        void set(const std::initializer_list<unsigned short> &values);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+       void set(const std::initializer_list<int> &values);
+       void set(const std::initializer_list<unsigned int> &values); 
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+       void set(const std::initializer_list<long> &values);
+       void set(const std::initializer_list<unsigned long> &values); 
+    #endif
+
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+       void set(const std::initializer_list<long long> &values);
+       void set(const std::initializer_list<unsigned long long> &values); 
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+       void set(const std::initializer_list<float> &values);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+       void setconst std::initializer_list<double> &values);
+    #endif
+
+    //-------------------------------------------------------------------------
+    // -- assignment operators for std::initializer_list types ---
+    //-------------------------------------------------------------------------
+    // signed integer array types via std::initializer_list
+    DataArray &operator=(const std::initializer_list<int8>   &values);
+    DataArray &operator=(const std::initializer_list<int16>  &values);
+    DataArray &operator=(const std::initializer_list<int32>  &values);
+    DataArray &operator=(const std::initializer_list<int64>  &values);
+
+    // unsigned integer array types via std::initialize_list
+    DataArray &operator=(const std::initializer_list<uint8>   &values);
+    DataArray &operator=(const std::initializer_list<uint16>  &values);
+    DataArray &operator=(const std::initializer_list<uint32>  &values);
+    DataArray &operator=(const std::initializer_list<uint64>  &values);
+
+    // floating point array types via std::initializer_list
+    DataArray &operator=(const std::initializer_list<float32> &values);
+    DataArray &operator=(const std::initializer_list<float64> &values);
+
+    //-------------------------------------------------------------------------
+    // --  assignment c-native gap operators for initializer_list types ---
+    //-------------------------------------------------------------------------
+
+    DataArray &operator=(const std::initializer_list<char> &values);
+
+    #ifndef CONDUIT_USE_CHAR
+        DataArray &operator=(const std::initializer_list<signed char> &values);
+        DataArray &operator=(const std::initializer_list<unsigned char> &values);
+    #endif
+
+    #ifndef CONDUIT_USE_SHORT
+        DataArray &operator=(const std::initializer_list<short> &values);
+        DataArray &operator=(const std::initializer_list<unsigned short> &values);
+    #endif
+
+    #ifndef CONDUIT_USE_INT
+        DataArray &operator=(const std::initializer_list<int> &values);
+        DataArray &operator=(const std::initializer_list<unsigned int> &values);
+    #endif
+
+    #ifndef CONDUIT_USE_LONG
+        DataArray &operator=(const std::initializer_list<long> &values);
+        DataArray &operator=(const std::initializer_list<unsigned long> &values);
+    #endif
+
+    #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+        DataArray &operator=(const std::initializer_list<long long> &values);
+        DataArray &operator=(const std::initializer_list<unsigned long long> &values);
+    #endif
+
+    #ifndef CONDUIT_USE_FLOAT
+        DataArray &operator=(const std::initializer_list<float> &values);
+    #endif
+
+    #ifndef CONDUIT_USE_DOUBLE
+        DataArray &operator=(const std::initializer_list<double> &values);
+    #endif
+
+    //-------------------------------------------------------------------------
+    #endif // end CONDUIT_USE_CXX11
+    //-------------------------------------------------------------------------
+
     /// signed integer arrays via DataArray
     void            set(const DataArray<int8>    &values);
     void            set(const DataArray<int16>   &values);

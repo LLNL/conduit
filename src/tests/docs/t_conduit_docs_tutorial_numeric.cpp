@@ -173,3 +173,37 @@ TEST(conduit_tutorial, numeric_double_conversion_end)
     END_EXAMPLE("numeric_double_conversion");
 }
 
+
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+TEST(conduit_tutorial, numeric_cxx11_init)
+{
+    BEGIN_EXAMPLE("numeric_cxx11_init");
+    Node n;
+
+    // set with integer c++11 initializer list
+    n.set({100,200,300});
+    n.print();
+
+    // assign with integer c++11 initializer list
+    n = {100,200,300};
+    n.print();
+
+    // set with floating point c++11 initializer list
+    n.set({1.0,2.0,3.0});
+    n.print();
+
+    // assign with floating point c++11 initializer list
+    n = {1.0,2.0,3.0};
+    n.print();
+
+    END_EXAMPLE("numeric_cxx11_init");
+}
+//-----------------------------------------------------------------------------
+#endif // end CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+
+
+

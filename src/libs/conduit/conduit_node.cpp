@@ -1586,6 +1586,480 @@ Node::set(const std::vector<double> &data)
 
 
 
+
+//-----------------------------------------------------------------------------
+// -- std::initializer_list support --
+//-----------------------------------------------------------------------------
+//
+// When C++11 support is enabled, support std::initializer_lists
+//
+// Example:
+//   Node n;
+//   n.set({1,2,3,4,5,6});
+//
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- set for bitwidth style std::initializer_list types ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// signed integer array types via std::initializer_list
+//-----------------------------------------------------------------------------
+
+// -- int8 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_int8_initializer_list(const std::initializer_list<int8> &data)
+{
+    init(DataType::int8(data.size()));
+    int8 *data_ptr = (int8*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<int8> &data)
+{
+    set_int8_initializer_list(data);
+}
+
+// -- int16 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_int16_initializer_list(const std::initializer_list<int16> &data)
+{
+    init(DataType::int16(data.size()));
+    int16 *data_ptr = (int16*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<int16> &data)
+{
+    set_int16_initializer_list(data);
+}
+
+// -- int32 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_int32_initializer_list(const std::initializer_list<int32> &data)
+{
+    init(DataType::int32(data.size()));
+    int32 *data_ptr = (int32*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<int32> &data)
+{
+    set_int32_initializer_list(data);
+}
+
+
+// -- int64 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_int64_initializer_list(const std::initializer_list<int64> &data)
+{
+    init(DataType::int64(data.size()));
+    int64 *data_ptr = (int64*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<int64> &data)
+{
+    set_int64_initializer_list(data);
+}
+
+//-----------------------------------------------------------------------------
+// unsigned integer array types via std::initializer_list
+//-----------------------------------------------------------------------------
+
+
+// -- uint8 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_uint8_initializer_list(const std::initializer_list<uint8> &data)
+{
+    init(DataType::uint8(data.size()));
+    uint8 *data_ptr = (uint8*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<uint8> &data)
+{
+    set_uint8_initializer_list(data);
+}
+
+// -- uint16 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_uint16_initializer_list(const std::initializer_list<uint16> &data)
+{
+    init(DataType::uint16(data.size()));
+    uint16 *data_ptr = (uint16*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<uint16> &data)
+{
+    set_uint16_initializer_list(data);
+}
+
+// -- uint32 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_uint32_initializer_list(const std::initializer_list<uint32> &data)
+{
+    init(DataType::uint32(data.size()));
+    uint32 *data_ptr = (uint32*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<uint32> &data)
+{
+    set_uint32_initializer_list(data);
+}
+
+// -- uint64 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_uint64_initializer_list(const std::initializer_list<uint64> &data)
+{
+    init(DataType::uint64(data.size()));
+    uint64 *data_ptr = (uint64*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<uint64> &data)
+{
+    set_uint64_initializer_list(data);
+}
+
+
+//-----------------------------------------------------------------------------
+// floating point array types via std::initializer_list
+//-----------------------------------------------------------------------------
+
+// -- float32 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_float32_initializer_list(const std::initializer_list<float32> &data)
+{
+    init(DataType::float32(data.size()));
+    float32 *data_ptr = (float32*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<float32> &data)
+{
+    set_float32_initializer_list(data);
+}
+
+// -- float64 --
+
+//-----------------------------------------------------------------------------
+void
+Node::set_float64_initializer_list(const std::initializer_list<float64> &data)
+{
+    init(DataType::float64(data.size()));
+    float64 *data_ptr = (float64*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<float64> &data)
+{
+    set_float64_initializer_list(data);
+}
+
+
+//-----------------------------------------------------------------------------
+//  set initializer_list gap methods for c-native types
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<char> &data)
+{
+    init(DataType::c_char(data.size()));
+    char *data_ptr = (char*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<signed char> &data)
+{
+    init(DataType::c_char(data.size()));
+    signed char *data_ptr = (signed char*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+    
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<unsigned char> &data)
+{
+    init(DataType::c_unsigned_char(data.size()));
+    unsigned char *data_ptr = (unsigned char*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+    
+}
+
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<short> &data)
+{
+    init(DataType::c_short(data.size()));
+    short *data_ptr = (short*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<unsigned short> &data)
+{
+    init(DataType::c_unsigned_short(data.size()));
+    unsigned short *data_ptr = (unsigned short*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<int> &data)
+{
+    init(DataType::c_int(data.size()));
+    int *data_ptr = (int*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<unsigned int> &data)
+{
+    init(DataType::c_unsigned_int(data.size()));
+    unsigned int *data_ptr = (unsigned int*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<long> &data)
+{
+    init(DataType::c_long(data.size()));
+    long *data_ptr = (long*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<unsigned long> &data)
+{
+    init(DataType::c_unsigned_long(data.size()));
+    unsigned long *data_ptr = (unsigned long*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<long long> &data)
+{
+    init(DataType::c_long_long(data.size()));
+    long long *data_ptr = (long long*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<unsigned long long> &data)
+{
+    init(DataType::c_unsigned_long_long(data.size()));
+    unsigned long long *data_ptr = (unsigned long long*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<float> &data)
+{
+    init(DataType::c_float(data.size()));
+    float *data_ptr = (float*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+void
+Node::set(const std::initializer_list<double> &data)
+{
+    init(DataType::c_double(data.size()));
+    double *data_ptr = (double*)m_data;
+    for (auto val : data)
+    {
+        *data_ptr = val;
+        data_ptr++;
+    }
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#endif // end CONDUIT_USE_CXX11 (end of set for std::initializer_lists)
+//-----------------------------------------------------------------------------
+
+
 //-----------------------------------------------------------------------------
 // -- set via pointers (scalar and array types) -- 
 //-----------------------------------------------------------------------------
@@ -7497,6 +7971,266 @@ Node::operator=(const std::vector<double> &data)
 #endif // end use double check
 //-----------------------------------------------------------------------------
 
+
+
+
+//-----------------------------------------------------------------------------
+// -- std::initializer_list support --
+
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- assignment operators for std::initializer_list types ---
+//-----------------------------------------------------------------------------
+
+
+// signed integer array types via std::initializer_list
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<int8> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<int16> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<int32> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<int64> &data)
+{
+    set(data);
+    return *this;
+}
+
+// unsigned integer array types via std::initialize_list
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<uint8> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<uint16> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<uint32> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<uint64> &data)
+{
+    set(data);
+    return *this;
+}
+
+// floating point array types via std::initializer_list
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<float32> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<float64> &data)
+{
+    set(data);
+    return *this;
+}
+
+
+//-----------------------------------------------------------------------------
+// --  assignment c-native gap operators for initializer_list types ---
+//-----------------------------------------------------------------------------
+
+Node &
+Node::operator=(const std::initializer_list<char> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_CHAR
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<signed char> &data);
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<unsigned char> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use char check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_SHORT
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<short> &data);
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<unsigned short> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use short check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_INT
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<int> &data);
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<unsigned int> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use int check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_LONG
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<long> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<unsigned long> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<long long> &data)
+{
+    set(data);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<unsigned long long> &data)
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use long long check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_FLOAT
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<float> &data);
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use float check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#ifndef CONDUIT_USE_DOUBLE
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+Node &
+Node::operator=(const std::initializer_list<double> &data);
+{
+    set(data);
+    return *this;
+}
+//-----------------------------------------------------------------------------
+#endif // end use double check
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+#endif // end CONDUIT_USE_CXX11 (end assign op suport for std::init lists)
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //
