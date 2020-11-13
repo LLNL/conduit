@@ -192,7 +192,22 @@ void test_transform_create_fine_domain(Node& domain)
     group["windows/window_000000/dims/j"] = 5;
     group["windows/window_000000/ratio/i"] = 2;
     group["windows/window_000000/ratio/j"] = 2;
+}
 
+void test_verify_topologies(Node& struct_topo, Node& poly_topo)
+{
+    Node info;
+    EXPECT_TRUE(conduit::blueprint::mesh::topology::unstructured::verify(
+        poly_topo,info));
+    EXPECT_EQ(poly_topo["elements/shape"].as_string(), "polygonal");
+
+    int num_elems_structured =
+        struct_topo["elements/dims/i"].as_int() *
+        struct_topo["elements/dims/j"].as_int();
+    int num_sizes = poly_topo["elements/sizes"].dtype().number_of_elements();       
+    int num_offsets = poly_topo["elements/offsets"].dtype().number_of_elements();
+    EXPECT_EQ(num_elems_structured, num_sizes);
+    EXPECT_EQ(num_elems_structured, num_offsets);
 }
 
 //-----------------------------------------------------------------------------
@@ -219,8 +234,16 @@ TEST(conduit_blueprint_mesh_transform, amr_2d_transform_serial)
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
 
-    poly.save("transform_serial.json", "json");
- 
+    if (par_rank > 0)
+    {
+        Node& mesh_topo = mesh["domain_000000/topologies/topo"];
+        Node& poly_topo = poly["domain_000000/topologies/topo"];
+        test_verify_topologies(mesh_topo, poly_topo);
+
+        mesh_topo = mesh["domain_000001/topologies/topo"];
+        poly_topo = poly["domain_000001/topologies/topo"];
+        test_verify_topologies(mesh_topo, poly_topo);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -258,11 +281,18 @@ TEST(conduit_blueprint_mesh_transform, amr_2d_transform_parallel)
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
 
-    if (par_rank == 0 || par_rank == 1)
+    if (par_rank == 0)
     {
-        poly.save(filename, "json");
+        Node& mesh_topo = mesh["domain_000000/topologies/topo"];
+        Node& poly_topo = poly["domain_000000/topologies/topo"];
+        test_verify_topologies(mesh_topo, poly_topo);
     }
- 
+    else if (par_rank == 1)
+    {
+        Node& mesh_topo = mesh["domain_000001/topologies/topo"];
+        Node& poly_topo = poly["domain_000001/topologies/topo"];
+        test_verify_topologies(mesh_topo, poly_topo);
+    }
 }
 
 int main(int argc, char* argv[])
