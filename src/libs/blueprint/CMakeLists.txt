@@ -90,7 +90,7 @@ add_compiled_library(NAME conduit_blueprint
                      EXPORT conduit
                      HEADERS ${blueprint_headers} ${blueprint_c_headers}
                      SOURCES ${blueprint_sources} ${blueprint_c_sources} ${blueprint_fortran_sources}
-                     DEPENDS_ON conduit mpi
+                     DEPENDS_ON conduit
                      HEADERS_DEST_DIR include/conduit
                      FOLDER libs)
 
