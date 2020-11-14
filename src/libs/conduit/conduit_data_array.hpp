@@ -11,6 +11,10 @@
 #ifndef CONDUIT_DATA_ARRAY_HPP
 #define CONDUIT_DATA_ARRAY_HPP
 
+#ifdef CONDUIT_USE_CXX11
+#include <initializer_list>
+#endif
+
 //-----------------------------------------------------------------------------
 // -- conduit  includes -- 
 //-----------------------------------------------------------------------------

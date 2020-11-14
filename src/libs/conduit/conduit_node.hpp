@@ -21,6 +21,10 @@
 #include <fstream>
 #include <sstream>
 
+#ifdef CONDUIT_USE_CXX11
+#include <initializer_list>
+#endif
+
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
