@@ -41,6 +41,17 @@
 
 #cmakedefine CONDUIT_USE_CXX11
 
+//-----------------------------------------------------------------------------
+// if built with c++11 support, make sure a c++11 compiler is used
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_USE_CXX11)
+    #if defined(_MSC_VER) &&  _MSC_VER < 1900
+        #error Conduit was built with c++11 support, please use a c++11 compliant compiler
+    #elif __cplusplus <= 199711L
+        #error Conduit was built with c++11 support, please use a c++11 compliant compiler
+    #endif
+#endif
+
 #endif
 
 

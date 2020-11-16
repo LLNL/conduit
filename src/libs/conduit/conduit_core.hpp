@@ -23,13 +23,6 @@
 #include "conduit_config.h"
 
 //-----------------------------------------------------------------------------
-// if built with c++11 support, make sure a c++11 compiler is used
-//-----------------------------------------------------------------------------
-#if defined(CONDUIT_USE_CXX11) && __cplusplus <= 199711L
-  #error Conduit was built with c++11 support, please use a c++11 compliant compiler
-#endif
-
-//-----------------------------------------------------------------------------
 // -- define proper lib exports for various platforms -- 
 //-----------------------------------------------------------------------------
 #include "conduit_exports.h"
