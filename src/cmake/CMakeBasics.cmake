@@ -55,7 +55,7 @@ if( BLT_CXX_STD STREQUAL "c++98" )
     message(STATUS "NOTE: C++98 support is deprecated and C++11"
                    " will be required in a future release.")
 else()
-    set(CONDUIT_USE_CXX11 1)
+    set(CONDUIT_USE_CXX11 TRUE)
     message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == 1)")
 endif()
 

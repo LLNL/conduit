@@ -76,6 +76,14 @@ find_package(Conduit REQUIRED
 #
 
 
+######
+# If Conduit was built with c++11 support, make sure we enable it
+######
+if(CONDUIT_USE_CXX11)
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
 #######################################################
 # create our example 
 #######################################################
