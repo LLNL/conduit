@@ -6,6 +6,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Changed
+
+#### General 
+- Conduit now requires C++11 support.
+
 ### Added
 
 #### General 
