@@ -39,6 +39,8 @@
 
 #cmakedefine CONDUIT_FORTRAN_COMPILER "${CONDUIT_FORTRAN_COMPILER}"
 
+#cmakedefine CONDUIT_USE_FMT
+
 #cmakedefine CONDUIT_USE_CXX11
 
 //-----------------------------------------------------------------------------
