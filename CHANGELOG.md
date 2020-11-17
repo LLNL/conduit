@@ -14,7 +14,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### General 
-- Added a builtin sandboxed version of fmt. The namespace and directory paths were changed to `conduit_fmt` to avoid potential symbol collisions with other codes using fmt.
+- Added a builtin sandboxed header-only version of fmt. The namespace and directory paths were changed to `conduit_fmt` to avoid potential symbol collisions with other codes using fmt. Downstream software can use by including `conduit_fmt/conduit_fmt.h`.
 - Added support for using C++11 initializer lists to set Node and DataArray values from numeric arrays. See C++ tutorial docs (https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_numeric.html#c-11-initializer-lists) for more details.
 
 
