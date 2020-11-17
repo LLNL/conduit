@@ -51,12 +51,11 @@ if(WIN32 AND BUILD_SHARED_LIBS)
 endif()
 
 if( BLT_CXX_STD STREQUAL "c++98" )
-    message(STATUS "C++11 support disabled")
-    message(STATUS "NOTE: C++98 support is deprecated and C++11"
-                   " will be required in a future release.")
+    message(FATAL_ERROR "Conduit now requires C++11 support."
+                        "\nPlease set BLT_CXX_STD to c++11 or newer.")
 else()
-    set(CONDUIT_USE_CXX11 1)
-    message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == 1)")
+    set(CONDUIT_USE_CXX11 TRUE)
+    message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == TRUE)")
 endif()
 
 ################################

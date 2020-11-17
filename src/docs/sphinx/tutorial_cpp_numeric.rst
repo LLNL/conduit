@@ -89,6 +89,23 @@ indexing for all types of arrays.
    :start-after: BEGIN_EXAMPLE("numeric_strided_data_array")
    :end-before:  END_EXAMPLE("numeric_strided_data_array")
 
+C++11 Initializer Lists 
+-----------------------------------
+
+When C++11 support is enabled you can set Node values using initializer lists
+with numeric literals. 
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
+   :start-after: BEGIN_EXAMPLE("numeric_cxx11_init")
+   :end-before:  END_EXAMPLE("numeric_cxx11_init")
+   :language: cpp
+   :dedent: 4
+
+
+.. literalinclude:: t_conduit_docs_tutorial_numeric_out.txt
+   :start-after: BEGIN_EXAMPLE("numeric_cxx11_init")
+   :end-before:  END_EXAMPLE("numeric_cxx11_init")
+
 
 Using Introspection and Conversion
 -----------------------------------

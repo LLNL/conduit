@@ -6,10 +6,16 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Changed
+
+#### General 
+- Conduit now requires C++11 support.
+
 ### Added
 
 #### General 
 - Added a builtin sandboxed version of fmt. The namespace and directory paths were changed to `conduit_fmt` to avoid potential symbol collisions with other codes using fmt.
+- Added support for using C++11 initializer lists to set Node and DataArray values from numeric arrays. See C++ tutorial docs (https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_numeric.html#c-11-initializer-lists) for more details.
 
 
 ## [0.6.0] - Released 2020-11-02

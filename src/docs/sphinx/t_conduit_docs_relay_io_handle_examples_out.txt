@@ -33,7 +33,7 @@ a:
   c: 42.0
 
 END_EXAMPLE("relay_io_handle_example_1")
-[       OK ] conduit_docs.relay_io_handle_1 (6 ms)
+[       OK ] conduit_docs.relay_io_handle_1 (9 ms)
 [ RUN      ] conduit_docs.relay_io_handle_sidre_1
 BEGIN_EXAMPLE("relay_io_handle_example_sidre_1")
 
@@ -53,7 +53,7 @@ my_arrays:
   b_v2: [2.0, 2.0, 2.0]
 
 END_EXAMPLE("relay_io_handle_example_sidre_1")
-[       OK ] conduit_docs.relay_io_handle_sidre_1 (6 ms)
+[       OK ] conduit_docs.relay_io_handle_sidre_1 (9 ms)
 [ RUN      ] conduit_docs.relay_io_handle_sidre_2
 BEGIN_EXAMPLE("relay_io_handle_example_sidre_2")
 
@@ -159,9 +159,9 @@ fields:
     values: [1, 1, 1, 1]
 
 END_EXAMPLE("relay_io_handle_example_sidre_2")
-[       OK ] conduit_docs.relay_io_handle_sidre_2 (14 ms)
-[----------] 3 tests from conduit_docs (26 ms total)
+[       OK ] conduit_docs.relay_io_handle_sidre_2 (20 ms)
+[----------] 3 tests from conduit_docs (38 ms total)
 
 [----------] Global test environment tear-down
-[==========] 3 tests from 1 test suite ran. (26 ms total)
+[==========] 3 tests from 1 test suite ran. (38 ms total)
 [  PASSED  ] 3 tests.
