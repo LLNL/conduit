@@ -12,6 +12,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Conduit now requires C++11 support.
 
 ### Added
+- CMake: Added extra check for include dir vs fully resolved hdf5 path.
 
 #### General 
 - Added a builtin sandboxed version of fmt. The namespace and directory paths were changed to `conduit_fmt` to avoid potential symbol collisions with other codes using fmt.
