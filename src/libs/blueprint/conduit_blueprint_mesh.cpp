@@ -111,7 +111,7 @@ namespace conduit { namespace blueprint { namespace mesh {
         {0, 2, 1}, {0, 1, 3},
         {0, 3, 2}, {1, 2, 3}};
     static const index_t topo_hex_embedding[6][4] = {
-        {0, 1, 2, 3}, {0, 1, 5, 4}, {1, 2, 6, 5},
+        {0, 3, 2, 1}, {0, 1, 5, 4}, {1, 2, 6, 5},
         {2, 3, 7, 6}, {3, 0, 4, 7}, {4, 5, 6, 7}};
 
     static const index_t* topo_shape_embedding_list[8] = {
@@ -671,13 +671,13 @@ bool verify_poly_node(bool is_mixed_topo,
     bool node_res = true;
 
     // Polygonal & Polyhedral shape
-    if(node.has_child("shape") && 
+    if(node.has_child("shape") &&
        node["shape"].dtype().is_string() &&
-       (node["shape"].as_string() == "polygonal" || 
+       (node["shape"].as_string() == "polygonal" ||
        node["shape"].as_string() == "polyhedral"))
     {
         node_res &= blueprint::o2mrelation::verify(node, node_info);
-        
+
         // Polyhedral - Check for subelements
         if (node["shape"].as_string() == "polyhedral")
         {
@@ -686,7 +686,7 @@ bool verify_poly_node(bool is_mixed_topo,
             {
                 subnode_res = false;
             }
-            else 
+            else
             {
                 const Node &topo_subelems = topo["subelements"];
                 Node &info_subelems = info["subelements"];
@@ -704,8 +704,8 @@ bool verify_poly_node(bool is_mixed_topo,
                 else
                 {
                     const Node &sub_node  = is_mixed_topo ? topo_subelems[name] : topo_subelems;
-                    Node &subnode_info = 
-                        !is_mixed_topo ? info_subelems : 
+                    Node &subnode_info =
+                        !is_mixed_topo ? info_subelems :
                         has_subnames ? info["subelements"][name] :
                         info["subelements"].append();
 
@@ -714,7 +714,7 @@ bool verify_poly_node(bool is_mixed_topo,
                         subnode_res &= verify_field_exists(protocol, sub_node, subnode_info, "shape") &&
                         blueprint::mesh::topology::shape::verify(sub_node["shape"], subnode_info["shape"]);
                         subnode_res &= verify_integer_field(protocol, sub_node, subnode_info, "connectivity");
-                        subnode_res &= sub_node["shape"].as_string() == "polygonal";  
+                        subnode_res &= sub_node["shape"].as_string() == "polygonal";
                         subnode_res &= blueprint::o2mrelation::verify(sub_node, subnode_info);
                     }
                     else
@@ -1149,7 +1149,7 @@ struct TopologyMetadata
                 entity = std::set<int64>(entity_indices.begin(), entity_indices.end());
             }
             else
-            {   
+            {
                 // Number of faces()
                 const bool is_3d = dim_shape.dim == 3;
                 index_t elem_outer_count =  is_3d ? entity_indices.size() : 1;
@@ -1232,8 +1232,8 @@ struct TopologyMetadata
 
                 index_t elem_outer_count = dim_shape.is_poly() ?
                     entity_indices.size() : dim_shape.embed_count;
-                
-                Node temp; 
+
+                Node temp;
                 for(index_t oi = 0, ooff = 0;
                     oi < elem_outer_count; oi++)
                 {
@@ -1260,7 +1260,7 @@ struct TopologyMetadata
                     {
                         index_t ioff = ooff + (dim_shape.is_poly() ?
                             ii : dim_shape.embedding[oi * elem_inner_count + ii]);
-                        
+
                         if (dim_shape.is_polyhedral())
                         {
                             const Node &subelem_conn_const = (*topo)["subelements/connectivity"];
@@ -1917,7 +1917,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
                 subelem_size = data_node.to_int64();
             }
 
-            const index_t face_num_coords = 
+            const index_t face_num_coords =
                 topo_shape.is_polyhedral() ? subelem_size :
                 topo_shape.is_polygonal() ? esize :
                 topo_shape.indices;
@@ -1930,9 +1930,9 @@ calculate_unstructured_centroids(const conduit::Node &topo,
                 }
                 else
                 {
-                    data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset + ci)); 
+                    data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset + ci));
                 }
-                elem_coord_indices.insert(data_node.to_int64());  
+                elem_coord_indices.insert(data_node.to_int64());
             }
             foffset += topo_shape.is_polyhedral() ? 1 : face_num_coords;
         }
@@ -2311,9 +2311,9 @@ bool mesh::verify_multi_domain(const Node &n,
 
         log::info(info, protocol, "is a multi domain mesh");
     }
-    
+
     log::validation(info,res);
-    
+
     return res;
 }
 
@@ -2325,8 +2325,8 @@ mesh::verify(const Node &n,
 {
     bool res = true;
     info.reset();
-    
-    // if n has the child "coordsets", we assume it is a single domain 
+
+    // if n has the child "coordsets", we assume it is a single domain
     // mesh
     if(n.has_child("coordsets"))
     {
@@ -2343,11 +2343,11 @@ mesh::verify(const Node &n,
 //-------------------------------------------------------------------------
 bool mesh::is_multi_domain(const conduit::Node &n)
 {
-    // this is a blueprint property, we can assume it will be called 
+    // this is a blueprint property, we can assume it will be called
     // only when mesh verify is true. Given that - the only check
-    // we need to make is the minimal check to distinguish between 
+    // we need to make is the minimal check to distinguish between
     // a single domain and a multi domain tree structure.
-    // checking for a child named "coordsets" mirrors the 
+    // checking for a child named "coordsets" mirrors the
     // top level verify check
 
     return !n.has_child("coordsets");
@@ -2357,8 +2357,8 @@ bool mesh::is_multi_domain(const conduit::Node &n)
 index_t
 mesh::number_of_domains(const conduit::Node &n)
 {
-    // this is a blueprint property, we can assume it will be called 
-    // only when mesh verify is true. Given that - it is easy to 
+    // this is a blueprint property, we can assume it will be called
+    // only when mesh verify is true. Given that - it is easy to
     // answer the number of domains
 
     if(!is_multi_domain(n))
@@ -2416,7 +2416,7 @@ mesh::generate_index(const Node &mesh,
         {
             index_out["state/time"].set(mesh["state/time"]);
         }
-        // state may contain other important stuff, like 
+        // state may contain other important stuff, like
         // the domain_id, so we need a way to read it
         // from the index
         index_out["state/path"] = join_path(ref_path, "state");
@@ -2466,7 +2466,7 @@ mesh::generate_index(const Node &mesh,
             }
             else
             {
-                // assume cartesian 
+                // assume cartesian
                 index_t num_comps = coordset["dims"].number_of_children();
 
                 if(num_comps > 0)
@@ -3152,7 +3152,7 @@ mesh::topology::points::verify(const Node & topo,
     res &= verify_enum_field(protocol, topo, info, "type",
         std::vector<std::string>(1, "points"));
 
-    // if needed in the future, can be used to verify optional info for 
+    // if needed in the future, can be used to verify optional info for
     // implicit 'points' topology
 
     log::validation(info,res);
@@ -3351,7 +3351,7 @@ mesh::topology::unstructured::verify(const Node &topo,
             elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
             elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
-            
+
             // Verify if node is polygonal or polyhedral
             elems_res &= verify_poly_node (false, "", topo_elems, info_elems, topo, info, elems_res);
         }
@@ -3479,25 +3479,23 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
                     // Indices iteration
                     for (index_t ii = 0; ii < embed_shape.indices; ii++)
                     {
-                        index_t inner_data_off =  data_off + 
+                        index_t inner_data_off =  data_off +
                           topo_shape.embedding[fi * embed_shape.indices + ii];
 
                         data_node.set_external(topo_dtype, topo_conn.element_ptr(inner_data_off));
                         face_indices[ii] = data_node.to_int64();
                     }
 
-                    bool has_perm = false;
-                    index_t face_index = polygonal_conn_data.size() / embed_shape.indices;
-
                     // Check if face already exists
+                    bool face_exists = false;
+                    index_t face_index = polygonal_conn_data.size() / embed_shape.indices;
                     for (index_t poly_i = 0; poly_i < face_index; poly_i++ )
                     {
                         index_t face_off = poly_i * embed_shape.indices;
-                        has_perm |= std::is_permutation(polygonal_conn_data.begin() + face_off,
-                                                        polygonal_conn_data.begin() + face_off + 
-                                                        embed_shape.indices,
-                                                        face_indices.begin());
-                        if (has_perm)
+                        face_exists |= std::is_permutation(polygonal_conn_data.begin() + face_off,
+                                                           polygonal_conn_data.begin() + face_off + embed_shape.indices,
+                                                           face_indices.begin());
+                        if (face_exists)
                         {
                             face_index = poly_i;
                             continue;
@@ -3508,7 +3506,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
                     polyhedral_conn_data[polyhedral_off + fi] = face_index;
 
                     // Add face indices to polygonal data if no permutation exists
-                    if (!has_perm)
+                    if (!face_exists)
                     {
                         polygonal_conn_data.insert(polygonal_conn_data.end(), face_indices.begin(), face_indices.end());
                     }
@@ -4787,7 +4785,7 @@ mesh::adjset::verify(const Node &adjset,
                         chld_info, "orientation");
                 }
             }
- 
+
             log::validation(chld_info,group_res);
             groups_res &= group_res;
         }
