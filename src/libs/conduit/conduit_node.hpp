@@ -3497,7 +3497,7 @@ public:
                                          const std::string &eoe="\n") const;
 
     void                to_string_stream(const std::string &stream_path,
-                                         const std::string &protocol="json",
+                                         const std::string &protocol="yaml",
                                          index_t indent=2, 
                                          index_t depth=0,
                                          const std::string &pad=" ",
