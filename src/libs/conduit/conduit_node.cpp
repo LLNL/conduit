@@ -13,7 +13,7 @@
 #if !defined(CONDUIT_PLATFORM_WINDOWS)
 //
 // mmap interface not available on windows
-// 
+//
 #include <sys/mman.h>
 #include <unistd.h>
 #else
@@ -24,14 +24,14 @@
 #endif
 
 //-----------------------------------------------------------------------------
-// -- standard cpp lib includes -- 
+// -- standard cpp lib includes --
 //-----------------------------------------------------------------------------
 #include <algorithm>
 #include <iostream>
 #include <map>
 
 //-----------------------------------------------------------------------------
-// -- standard c lib includes -- 
+// -- standard c lib includes --
 //-----------------------------------------------------------------------------
 #include <cstdio>
 #include <cstdlib>
@@ -42,7 +42,7 @@
 #include <fcntl.h>
 
 //-----------------------------------------------------------------------------
-// -- conduit includes -- 
+// -- conduit includes --
 //-----------------------------------------------------------------------------
 #include "conduit_error.hpp"
 #include "conduit_utils.hpp"
@@ -55,7 +55,7 @@ using namespace conduit::utils;
 /// The CONDUIT_CHECK_DTYPE macro is used to check the dtype for leaf access
 /// methods. If a type mismatch occurs, the message provides the full path to
 /// the node.
-// 
+//
 //-----------------------------------------------------------------------------
 #define CONDUIT_CHECK_DTYPE( dtype_node, dtype_id_expect, method, rtn ) \
 {                                                                       \
@@ -96,7 +96,7 @@ namespace conduit
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- basic constructor and destruction -- 
+// -- basic constructor and destruction --
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
@@ -159,7 +159,7 @@ Node::Node(const std::string &schema,
            void *data,
            bool external)
 {
-    init_defaults(); 
+    init_defaults();
     Generator g(schema,"conduit_json",data);
 
     if(external)
@@ -186,7 +186,7 @@ Node::Node(const Schema &schema,
            bool external)
 {
     init_defaults();
-    std::string json_schema =schema.to_json(); 
+    std::string json_schema =schema.to_json();
     Generator g(json_schema,"conduit_json",data);
     if(external)
     {
@@ -203,7 +203,7 @@ Node::Node(const Schema &schema,
 Node::Node(const DataType &dtype,
            void *data,
            bool external)
-{    
+{
     init_defaults();
     if(external)
     {
@@ -256,18 +256,18 @@ void
 Node::generate(const std::string &schema,
                const std::string &protocol,
                void *data)
-               
+
 {
     Generator g(schema,protocol,data);
     generate(g);
 }
-    
+
 //---------------------------------------------------------------------------//
 void
 Node::generate_external(const std::string &schema,
                         const std::string &protocol,
                         void *data)
-               
+
 {
     Generator g(schema,protocol,data);
     generate_external(g);
@@ -289,7 +289,7 @@ Node::generate_external(const std::string &schema,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::load(const std::string &stream_path,
            const Schema &schema)
 {
@@ -311,16 +311,16 @@ Node::load(const std::string &stream_path,
     // See Below
     //
     m_alloced = false;
-    
+
     m_schema->set(schema);
-    walk_schema(this,m_schema,m_data);
+    walk_schema(this,m_schema,m_data,m_allocator_id);
 
     ///
     /// TODO: Design Issue
     ///
-    /// The bookkeeping here is not very intuitive 
+    /// The bookkeeping here is not very intuitive
     /// The walk process may reset the node, which would free
-    /// our data before we can set it up. So for now, we wait  
+    /// our data before we can set it up. So for now, we wait
     /// to indicate ownership until after the node is fully setup
     m_alloced = true;
 }
@@ -406,7 +406,7 @@ Node::mmap(const std::string &stream_path)
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::mmap(const std::string &stream_path,
            const Schema &schema)
 {
@@ -418,16 +418,17 @@ Node::mmap(const std::string &stream_path,
     // See Below
     //
     m_mmaped = false;
-    
+
     m_schema->set(schema);
-    walk_schema(this,m_schema,m_data);
+#warning "I don't know if this is ok(mmap). It might need to be set to the defautl alloc_id"
+    walk_schema(this,m_schema,m_data, m_allocator_id);
 
     ///
     /// TODO: Design Issue
     ///
-    /// The bookkeeping here is not very intuitive 
+    /// The bookkeeping here is not very intuitive
     /// The walk process may reset the node, which would free
-    /// our data before we can set it up. So for now, we wait  
+    /// our data before we can set it up. So for now, we wait
     /// to indicate ownership until after the node is fully setup
     m_mmaped = true;
 }
@@ -450,14 +451,14 @@ Node::mmap(const std::string &stream_path,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_node(const Node &node)
 {
     if(node.dtype().id() == DataType::OBJECT_ID)
     {
         reset();
         init(DataType::object());
-        
+
         const std::vector<std::string> &cld_names = node.child_names();
 
         for (std::vector<std::string>::const_iterator itr = cld_names.begin();
@@ -469,11 +470,12 @@ Node::set_node(const Node &node)
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(this);
             curr_node->set(*node.m_children[idx]);
+            curr_node->set_allocator(m_allocator_id);
             this->append_node_ptr(curr_node);
         }
     }
     else if(node.dtype().id() == DataType::LIST_ID)
-    {   
+    {
         reset();
         init(DataType::list());
         for(size_t i=0;i< node.m_children.size(); i++)
@@ -495,25 +497,25 @@ Node::set_node(const Node &node)
     {
         // if passed node is empty -- reset this.
         reset();
-    }    
+    }
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const Node &node)
 {
     set_node(node);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_dtype(const DataType &dtype)
 {
     init(dtype);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const DataType &dtype)
 {
     set_dtype(dtype);
@@ -525,13 +527,13 @@ Node::set_schema(const Schema &schema)
 {
     release();
     m_schema->set(schema);
-    // allocate data 
+    // allocate data
     // for this case, we need the total bytes spanned by the schema
     size_t nbytes =(size_t) m_schema->spanned_bytes();
     allocate(nbytes);
     memset(m_data,0,nbytes);
     // call walk w/ internal data pointer
-    walk_schema(this,m_schema,m_data);
+    walk_schema(this,m_schema,m_data,m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -548,12 +550,12 @@ Node::set_data_using_schema(const Schema &schema,
                             void *data)
 {
     release();
-    m_schema->set(schema);   
+    m_schema->set(schema);
     // for this case, we need the total bytes spanned by the schema
     size_t nbytes = (size_t)m_schema->spanned_bytes();
     allocate(nbytes);
     memcpy(m_data, data, nbytes);
-    walk_schema(this,m_schema,m_data);
+    walk_schema(this,m_schema,m_data,m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -573,7 +575,7 @@ Node::set_data_using_dtype(const DataType &dtype,
     m_schema->set(dtype);
     allocate(m_schema->spanned_bytes());
     memcpy(m_data, data, (size_t) m_schema->spanned_bytes());
-    walk_schema(this,m_schema,m_data);
+    walk_schema(this,m_schema,m_data,m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -608,7 +610,7 @@ Node::set(int8 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int16(int16 data)
 {
     init(DataType::int16());
@@ -616,14 +618,14 @@ Node::set_int16(int16 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(int16 data)
 {
     set_int16(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int32(int32 data)
 {
     init(DataType::int32());
@@ -631,14 +633,14 @@ Node::set_int32(int32 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(int32 data)
 {
     set_int32(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int64(int64 data)
 {
     init(DataType::int64());
@@ -646,7 +648,7 @@ Node::set_int64(int64 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(int64 data)
 {
     set_int64(data);
@@ -657,7 +659,7 @@ Node::set(int64 data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint8(uint8 data)
 {
     init(DataType::uint8());
@@ -665,14 +667,14 @@ Node::set_uint8(uint8 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(uint8 data)
 {
     set_uint8(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint16(uint16 data)
 {
     init(DataType::uint16());
@@ -680,14 +682,14 @@ Node::set_uint16(uint16 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(uint16 data)
 {
     set_uint16(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint32(uint32 data)
 {
     init(DataType::uint32());
@@ -695,14 +697,14 @@ Node::set_uint32(uint32 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(uint32 data)
 {
     set_uint32(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint64(uint64 data)
 {
     init(DataType::uint64());
@@ -710,7 +712,7 @@ Node::set_uint64(uint64 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(uint64 data)
 {
     set_uint64(data);
@@ -721,7 +723,7 @@ Node::set(uint64 data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_float32(float32 data)
 {
     init(DataType::float32());
@@ -729,14 +731,14 @@ Node::set_float32(float32 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(float32 data)
 {
     set_float32(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_float64(float64 data)
 {
     init(DataType::float64());
@@ -744,7 +746,7 @@ Node::set_float64(float64 data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(float64 data)
 {
     set_float64(data);
@@ -892,7 +894,7 @@ Node::set(double data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int8_array(const int8_array &data)
 {
     init(DataType::int8(data.number_of_elements()));
@@ -900,14 +902,14 @@ Node::set_int8_array(const int8_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const int8_array &data)
 {
     set_int8_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int16_array(const int16_array &data)
 {
     init(DataType::int16(data.number_of_elements()));
@@ -915,14 +917,14 @@ Node::set_int16_array(const int16_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const int16_array &data)
 {
     set_int16_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int32_array(const int32_array &data)
 {
     init(DataType::int32(data.number_of_elements()));
@@ -930,14 +932,14 @@ Node::set_int32_array(const int32_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const int32_array &data)
 {
     set_int32_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int64_array(const int64_array &data)
 {
     init(DataType::int64(data.number_of_elements()));
@@ -945,7 +947,7 @@ Node::set_int64_array(const int64_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const int64_array &data)
 {
     set_int64_array(data);
@@ -956,7 +958,7 @@ Node::set(const int64_array &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint8_array(const uint8_array &data)
 {
     init(DataType::uint8(data.number_of_elements()));
@@ -964,14 +966,14 @@ Node::set_uint8_array(const uint8_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const uint8_array &data)
 {
     set_uint8_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint16_array(const uint16_array &data)
 {
     init(DataType::uint16(data.number_of_elements()));
@@ -979,14 +981,14 @@ Node::set_uint16_array(const uint16_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const uint16_array &data)
 {
     set_uint16_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint32_array(const uint32_array  &data)
 {
     init(DataType::uint32(data.number_of_elements()));
@@ -994,21 +996,21 @@ Node::set_uint32_array(const uint32_array  &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const uint32_array &data)
 {
     set_uint32_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint64_array(const uint64_array &data)
 {
     init(DataType::uint64(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
 }
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const uint64_array  &data)
 {
     set_uint64_array(data);
@@ -1020,7 +1022,7 @@ Node::set(const uint64_array  &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_float32_array(const float32_array &data)
 {
     init(DataType::float32(data.number_of_elements()));
@@ -1028,14 +1030,14 @@ Node::set_float32_array(const float32_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const float32_array &data)
 {
     set_float32_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_float64_array(const float64_array &data)
 {
     init(DataType::float64(data.number_of_elements()));
@@ -1043,7 +1045,7 @@ Node::set_float64_array(const float64_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const float64_array &data)
 {
     set_float64_array(data);
@@ -1197,7 +1199,7 @@ Node::set(const double_array &data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- set for string types -- 
+// -- set for string types --
 //-----------------------------------------------------------------------------
 
 
@@ -1207,7 +1209,7 @@ Node::set(const double_array &data)
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_string(const std::string &data)
 {
     // size including the null term
@@ -1221,7 +1223,7 @@ Node::set_string(const std::string &data)
     init(str_t);
 
     // if already compatible, init won't realloc.
-    // so we need to follow a 'compact_elements_to' style 
+    // so we need to follow a 'compact_elements_to' style
     // of copying the data
 
     index_t ele_bytes = dtype().element_bytes();
@@ -1236,14 +1238,14 @@ Node::set_string(const std::string &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::string &data)
 {
     set_string(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_char8_str(const char *data)
 {
     // size including the null term
@@ -1257,7 +1259,7 @@ Node::set_char8_str(const char *data)
     init(str_t);
 
     // if already compatible, init won't realloc.
-    // so we need to follow a 'compact_elements_to' style 
+    // so we need to follow a 'compact_elements_to' style
     // of copying the data
 
     const char *data_ptr = data;
@@ -1282,7 +1284,7 @@ Node::set_char8_str(const char *data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int8_vector(const std::vector<int8> &data)
 {
     init(DataType::int8(data.size()));
@@ -1290,14 +1292,14 @@ Node::set_int8_vector(const std::vector<int8> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<int8> &data)
 {
     set_int8_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int16_vector(const std::vector<int16> &data)
 {
     init(DataType::int16(data.size()));
@@ -1305,14 +1307,14 @@ Node::set_int16_vector(const std::vector<int16> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<int16> &data)
 {
     set_int16_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int32_vector(const std::vector<int32> &data)
 {
     init(DataType::int32(data.size()));
@@ -1320,14 +1322,14 @@ Node::set_int32_vector(const std::vector<int32> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<int32> &data)
 {
     set_int32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int64_vector(const std::vector<int64> &data)
 {
     init(DataType::int64(data.size()));
@@ -1335,7 +1337,7 @@ Node::set_int64_vector(const std::vector<int64> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<int64> &data)
 {
     set_int64_vector(data);
@@ -1346,7 +1348,7 @@ Node::set(const std::vector<int64> &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint8_vector(const std::vector<uint8> &data)
 {
     init(DataType::uint8(data.size()));
@@ -1354,14 +1356,14 @@ Node::set_uint8_vector(const std::vector<uint8> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<uint8> &data)
 {
     set_uint8_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint16_vector(const std::vector<uint16> &data)
 {
     init(DataType::uint16(data.size()));
@@ -1369,14 +1371,14 @@ Node::set_uint16_vector(const std::vector<uint16> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<uint16> &data)
 {
     set_uint16_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint32_vector(const std::vector<uint32> &data)
 {
     init(DataType::uint32(data.size()));
@@ -1384,14 +1386,14 @@ Node::set_uint32_vector(const std::vector<uint32> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<uint32> &data)
 {
     set_uint32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint64_vector(const std::vector<uint64> &data)
 {
     init(DataType::uint64(data.size()));
@@ -1399,7 +1401,7 @@ Node::set_uint64_vector(const std::vector<uint64> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<uint64> &data)
 {
      set_uint64_vector(data);
@@ -1410,7 +1412,7 @@ Node::set(const std::vector<uint64> &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_float32_vector(const std::vector<float32> &data)
 {
     init(DataType::float32(data.size()));
@@ -1418,7 +1420,7 @@ Node::set_float32_vector(const std::vector<float32> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<float32> &data)
 {
     set_float32_vector(data);
@@ -1426,7 +1428,7 @@ Node::set(const std::vector<float32> &data)
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_float64_vector(const std::vector<float64> &data)
 {
     init(DataType::float64(data.size()));
@@ -1434,7 +1436,7 @@ Node::set_float64_vector(const std::vector<float64> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const std::vector<float64> &data)
 {
     set_float64_vector(data);
@@ -1870,7 +1872,7 @@ Node::set(const std::initializer_list<signed char> &data)
         *data_ptr = val;
         data_ptr++;
     }
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1884,7 +1886,7 @@ Node::set(const std::initializer_list<unsigned char> &data)
         *data_ptr = val;
         data_ptr++;
     }
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -2061,7 +2063,7 @@ Node::set(const std::initializer_list<double> &data)
 
 
 //-----------------------------------------------------------------------------
-// -- set via pointers (scalar and array types) -- 
+// -- set via pointers (scalar and array types) --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -2069,7 +2071,7 @@ Node::set(const std::initializer_list<double> &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int8_ptr(const int8 *data,
                    index_t num_elements,
                    index_t offset,
@@ -2085,7 +2087,7 @@ Node::set_int8_ptr(const int8 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const int8 *data,
           index_t num_elements,
           index_t offset,
@@ -2097,7 +2099,7 @@ Node::set(const int8 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int16_ptr(const int16 *data,
                     index_t num_elements,
                     index_t offset,
@@ -2109,11 +2111,11 @@ Node::set_int16_ptr(const int16 *data,
                                          offset,
                                          stride,
                                          element_bytes,
-                                         endianness)));    
+                                         endianness)));
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const int16 *data,
           index_t num_elements,
           index_t offset,
@@ -2125,7 +2127,7 @@ Node::set(const int16 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int32_ptr(const int32 *data,
                     index_t num_elements,
                     index_t offset,
@@ -2137,11 +2139,11 @@ Node::set_int32_ptr(const int32 *data,
                                          offset,
                                          stride,
                                          element_bytes,
-                                         endianness)));        
+                                         endianness)));
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const int32 *data,
           index_t num_elements,
           index_t offset,
@@ -2153,7 +2155,7 @@ Node::set(const int32 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_int64_ptr(const int64 *data,
                     index_t num_elements,
                     index_t offset,
@@ -2169,7 +2171,7 @@ Node::set_int64_ptr(const int64 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const int64 *data,
           index_t num_elements,
           index_t offset,
@@ -2186,7 +2188,7 @@ Node::set(const int64 *data,
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint8_ptr(const uint8 *data,
                     index_t num_elements,
                     index_t offset,
@@ -2202,7 +2204,7 @@ Node::set_uint8_ptr(const uint8 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const uint8 *data,
           index_t num_elements,
           index_t offset,
@@ -2214,7 +2216,7 @@ Node::set(const uint8 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_uint16_ptr(const uint16 *data,
                      index_t num_elements,
                      index_t offset,
@@ -2230,7 +2232,7 @@ Node::set_uint16_ptr(const uint16 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const uint16 *data,
          index_t num_elements,
          index_t offset,
@@ -2241,8 +2243,8 @@ Node::set(const uint16 *data,
     set_uint16_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
 //---------------------------------------------------------------------------//
-void 
-Node::set_uint32_ptr(const uint32 *data, 
+void
+Node::set_uint32_ptr(const uint32 *data,
                      index_t num_elements,
                      index_t offset,
                      index_t stride,
@@ -2253,12 +2255,12 @@ Node::set_uint32_ptr(const uint32 *data,
                                            offset,
                                            stride,
                                            element_bytes,
-                                           endianness))); 
+                                           endianness)));
 }
 
 //---------------------------------------------------------------------------//
-void 
-Node::set(const uint32 *data, 
+void
+Node::set(const uint32 *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -2267,9 +2269,9 @@ Node::set(const uint32 *data,
 {
     set_uint32_ptr(data,num_elements,offset,stride,element_bytes,endianness);
 }
-               
-//---------------------------------------------------------------------------//   
-void 
+
+//---------------------------------------------------------------------------//
+void
 Node::set_uint64_ptr(const uint64 *data,
                      index_t num_elements,
                      index_t offset,
@@ -2281,12 +2283,12 @@ Node::set_uint64_ptr(const uint64 *data,
                                            offset,
                                            stride,
                                            element_bytes,
-                                           endianness)));     
-    
+                                           endianness)));
+
 }
 
-//---------------------------------------------------------------------------//   
-void 
+//---------------------------------------------------------------------------//
+void
 Node::set(const uint64 *data,
           index_t num_elements,
           index_t offset,
@@ -2302,7 +2304,7 @@ Node::set(const uint64 *data,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_float32_ptr(const float32 *data,
                       index_t num_elements,
                       index_t offset,
@@ -2318,7 +2320,7 @@ Node::set_float32_ptr(const float32 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set(const float32 *data,
           index_t num_elements,
           index_t offset,
@@ -2330,8 +2332,8 @@ Node::set(const float32 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
-Node::set_float64_ptr(const float64 *data, 
+void
+Node::set_float64_ptr(const float64 *data,
                       index_t num_elements,
                       index_t offset,
                       index_t stride,
@@ -2346,8 +2348,8 @@ Node::set_float64_ptr(const float64 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
-Node::set(const float64 *data, 
+void
+Node::set(const float64 *data,
           index_t num_elements,
           index_t offset,
           index_t stride,
@@ -2363,7 +2365,7 @@ Node::set(const float64 *data,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_char_ptr(const char *data,
                    index_t num_elements,
                    index_t offset,
@@ -2628,7 +2630,7 @@ Node::set(const double *data,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_node(const std::string &path,
-                    const Node& data) 
+                    const Node& data)
 {
     fetch(path).set_node(data);
 }
@@ -2636,7 +2638,7 @@ Node::set_path_node(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               const Node& data) 
+               const Node& data)
 {
     set_path_node(path,data);
 }
@@ -2741,7 +2743,7 @@ Node::set_path_int16(const std::string &path,
 {
     fetch(path).set_int16(data);
 }
- 
+
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
@@ -2784,7 +2786,7 @@ Node::set_path(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
-// unsigned integer scalar types 
+// unsigned integer scalar types
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
@@ -2802,7 +2804,7 @@ Node::set_path(const std::string &path,
 {
     set_path_uint8(path,data);
 }
- 
+
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint16(const std::string &path,
@@ -3155,7 +3157,7 @@ void
 Node::set_path(const std::string &path,
                const uint64_array &data)
 {
-    set_path_uint64_array(path,data);    
+    set_path_uint64_array(path,data);
 }
 
 //-----------------------------------------------------------------------------
@@ -3175,7 +3177,7 @@ void
 Node::set_path(const std::string &path,
                const float32_array &data)
 {
-    set_path_float32_array(path,data);    
+    set_path_float32_array(path,data);
 }
 
 //---------------------------------------------------------------------------//
@@ -3191,7 +3193,7 @@ void
 Node::set_path(const std::string &path,
                const float64_array &data)
 {
-    set_path_float64_array(path,data);    
+    set_path_float64_array(path,data);
 }
 
 //-----------------------------------------------------------------------------
@@ -3340,7 +3342,7 @@ Node::set_path(const std::string &path,
 
 
 //-----------------------------------------------------------------------------
-// -- set_path for string types -- 
+// -- set_path for string types --
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
@@ -3356,7 +3358,7 @@ void
 Node::set_path(const std::string &path,
                const std::string &data)
 {
-    set_path_string(path,data);    
+    set_path_string(path,data);
 }
 //---------------------------------------------------------------------------//
 void
@@ -3428,7 +3430,7 @@ void
 Node::set_path_int64_vector(const std::string &path,
                             const std::vector<int64> &data)
 {
-    fetch(path).set_int64_vector(data);    
+    fetch(path).set_int64_vector(data);
 }
 
 //---------------------------------------------------------------------------//
@@ -3690,7 +3692,7 @@ Node::set_path(const std::string &path,
 
 
 //-----------------------------------------------------------------------------
-// -- set_path via pointers (scalar and array types) -- 
+// -- set_path via pointers (scalar and array types) --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -3737,7 +3739,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int16_ptr(const std::string &path,
-                         const int16 *data, 
+                         const int16 *data,
                          index_t num_elements,
                          index_t offset,
                          index_t stride,
@@ -3755,7 +3757,7 @@ Node::set_path_int16_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               const int16 *data, 
+               const int16 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -3845,7 +3847,7 @@ Node::set_path(const std::string &path,
                        endianness);
 }
 
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 // unsigned integer pointer cases
 //-----------------------------------------------------------------------------
 
@@ -3942,7 +3944,7 @@ Node::set_path_uint32_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               const uint32 *data, 
+               const uint32 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -4008,7 +4010,7 @@ Node::set_path_float32_ptr(const std::string &path,
                            index_t stride,
                            index_t element_bytes,
                            index_t endianness)
-{   
+{
     fetch(path).set_float32_ptr(data,
                                 num_elements,
                                 offset,
@@ -4026,7 +4028,7 @@ Node::set_path(const std::string &path,
                index_t stride,
                index_t element_bytes,
                index_t endianness)
-{   
+{
     set_path_float32_ptr(path,
                          data,
                          num_elements,
@@ -4039,7 +4041,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_float64_ptr(const std::string &path,
-                           const float64 *data, 
+                           const float64 *data,
                            index_t num_elements,
                            index_t offset,
                            index_t stride,
@@ -4056,7 +4058,7 @@ Node::set_path_float64_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               const float64 *data, 
+               const float64 *data,
                index_t num_elements,
                index_t offset,
                index_t stride,
@@ -4385,7 +4387,8 @@ Node::set_external_data_using_schema(const Schema &schema,
 {
     reset();
     m_schema->set(schema);
-    walk_schema(this,m_schema,data);
+#warning "should set_external_data_using_schema inherit allocator?"
+    walk_schema(this,m_schema,data,m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -4415,7 +4418,7 @@ Node::set_external(const DataType &dtype,
 }
 
 //-----------------------------------------------------------------------------
-// -- set_external via pointers (scalar and array types) -- 
+// -- set_external via pointers (scalar and array types) --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -4423,7 +4426,7 @@ Node::set_external(const DataType &dtype,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int8_ptr(int8 *data,
                             index_t num_elements,
                             index_t offset,
@@ -4441,7 +4444,7 @@ Node::set_external_int8_ptr(int8 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(int8 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4458,7 +4461,7 @@ Node::set_external(int8 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int16_ptr(int16 *data,
                              index_t num_elements,
                              index_t offset,
@@ -4476,7 +4479,7 @@ Node::set_external_int16_ptr(int16 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(int16 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4494,7 +4497,7 @@ Node::set_external(int16 *data,
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int32_ptr(int32 *data,
                              index_t num_elements,
                              index_t offset,
@@ -4512,7 +4515,7 @@ Node::set_external_int32_ptr(int32 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(int32 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4529,7 +4532,7 @@ Node::set_external(int32 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int64_ptr(int64 *data,
                              index_t num_elements,
                              index_t offset,
@@ -4547,7 +4550,7 @@ Node::set_external_int64_ptr(int64 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(int64 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4569,7 +4572,7 @@ Node::set_external(int64 *data,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint8_ptr(uint8 *data,
                              index_t num_elements,
                              index_t offset,
@@ -4587,7 +4590,7 @@ Node::set_external_uint8_ptr(uint8 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(uint8 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4606,7 +4609,7 @@ Node::set_external(uint8 *data,
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint16_ptr(uint16 *data,
                               index_t num_elements,
                               index_t offset,
@@ -4625,7 +4628,7 @@ Node::set_external_uint16_ptr(uint16 *data,
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(uint16 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4642,7 +4645,7 @@ Node::set_external(uint16 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint32_ptr(uint32 *data,
                              index_t num_elements,
                              index_t offset,
@@ -4661,7 +4664,7 @@ Node::set_external_uint32_ptr(uint32 *data,
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(uint32 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4678,7 +4681,7 @@ Node::set_external(uint32 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint64_ptr(uint64 *data,
                               index_t num_elements,
                               index_t offset,
@@ -4697,7 +4700,7 @@ Node::set_external_uint64_ptr(uint64 *data,
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(uint64 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4717,7 +4720,7 @@ Node::set_external(uint64 *data,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_float32_ptr(float32 *data,
                                index_t num_elements,
                                index_t offset,
@@ -4735,7 +4738,7 @@ Node::set_external_float32_ptr(float32 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(float32 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4752,7 +4755,7 @@ Node::set_external(float32 *data,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_float64_ptr(float64 *data,
                                index_t num_elements,
                                index_t offset,
@@ -4768,9 +4771,9 @@ Node::set_external_float64_ptr(float64 *data,
                                     endianness));
     m_data  = data;
 }
-    
+
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(float64 *data,
                    index_t num_elements,
                    index_t offset,
@@ -4796,7 +4799,7 @@ Node::set_external_char_ptr(char *data,
                             index_t stride,
                             index_t element_bytes,
                             index_t endianness)
-{       
+{
     release();
     m_schema->set(DataType::c_char(num_elements,
                                    offset,
@@ -5069,7 +5072,7 @@ Node::set_external(double *data,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int8_array(const int8_array &data)
 {
     release();
@@ -5078,14 +5081,14 @@ Node::set_external_int8_array(const int8_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const int8_array &data)
 {
     set_external_int8_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int16_array(const int16_array &data)
 {
     release();
@@ -5094,14 +5097,14 @@ Node::set_external_int16_array(const int16_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const int16_array &data)
 {
     set_external_int16_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int32_array(const int32_array &data)
 {
     release();
@@ -5110,14 +5113,14 @@ Node::set_external_int32_array(const int32_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const int32_array &data)
 {
     set_external_int32_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int64_array(const int64_array &data)
 {
     release();
@@ -5126,7 +5129,7 @@ Node::set_external_int64_array(const int64_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const int64_array &data)
 {
     set_external_int64_array(data);
@@ -5137,7 +5140,7 @@ Node::set_external(const int64_array &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint8_array(const uint8_array &data)
 {
     release();
@@ -5146,14 +5149,14 @@ Node::set_external_uint8_array(const uint8_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const uint8_array &data)
 {
     set_external_uint8_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint16_array(const uint16_array &data)
 {
     release();
@@ -5162,14 +5165,14 @@ Node::set_external_uint16_array(const uint16_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const uint16_array &data)
 {
     set_external_uint16_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint32_array(const uint32_array &data)
 {
     release();
@@ -5178,14 +5181,14 @@ Node::set_external_uint32_array(const uint32_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const uint32_array &data)
 {
     set_external_uint32_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint64_array(const uint64_array &data)
 {
     release();
@@ -5194,7 +5197,7 @@ Node::set_external_uint64_array(const uint64_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const uint64_array &data)
 {
     set_external_uint64_array(data);
@@ -5205,7 +5208,7 @@ Node::set_external(const uint64_array &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_float32_array(const float32_array &data)
 {
     release();
@@ -5214,14 +5217,14 @@ Node::set_external_float32_array(const float32_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const float32_array &data)
 {
     set_external_float32_array(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_float64_array(const float64_array &data)
 {
     release();
@@ -5230,7 +5233,7 @@ Node::set_external_float64_array(const float64_array &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(const float64_array &data)
 {
     set_external_float64_array(data);
@@ -5238,11 +5241,11 @@ Node::set_external(const float64_array &data)
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_char8_str(char *data)
 {
     release();
-    
+
     // size including the null term
     index_t str_size_with_term = strlen(data)+1;
     DataType str_t(DataType::CHAR8_STR_ID,
@@ -5425,7 +5428,7 @@ Node::set_external(const double_array &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int8_vector(std::vector<int8> &data)
 {
     release();
@@ -5436,14 +5439,14 @@ Node::set_external_int8_vector(std::vector<int8> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<int8> &data)
 {
     set_external_int8_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int16_vector(std::vector<int16> &data)
 {
     release();
@@ -5454,14 +5457,14 @@ Node::set_external_int16_vector(std::vector<int16> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<int16> &data)
 {
     set_external_int16_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int32_vector(std::vector<int32> &data)
 {
     release();
@@ -5472,14 +5475,14 @@ Node::set_external_int32_vector(std::vector<int32> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<int32> &data)
 {
     set_external_int32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_int64_vector(std::vector<int64> &data)
 {
     release();
@@ -5490,7 +5493,7 @@ Node::set_external_int64_vector(std::vector<int64> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<int64> &data)
 {
     set_external_int64_vector(data);
@@ -5501,7 +5504,7 @@ Node::set_external(std::vector<int64> &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint8_vector(std::vector<uint8> &data)
 {
     release();
@@ -5512,14 +5515,14 @@ Node::set_external_uint8_vector(std::vector<uint8> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<uint8> &data)
 {
     set_external_uint8_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint16_vector(std::vector<uint16> &data)
 {
     release();
@@ -5530,14 +5533,14 @@ Node::set_external_uint16_vector(std::vector<uint16> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<uint16> &data)
 {
     set_external_uint16_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint32_vector(std::vector<uint32> &data)
 {
     release();
@@ -5548,14 +5551,14 @@ Node::set_external_uint32_vector(std::vector<uint32> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<uint32> &data)
 {
     set_external_uint32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_uint64_vector(std::vector<uint64> &data)
 {
     release();
@@ -5566,7 +5569,7 @@ Node::set_external_uint64_vector(std::vector<uint64> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<uint64> &data)
 {
     set_external_uint64_vector(data);
@@ -5577,7 +5580,7 @@ Node::set_external(std::vector<uint64> &data)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_float32_vector(std::vector<float32> &data)
 {
     release();
@@ -5588,14 +5591,14 @@ Node::set_external_float32_vector(std::vector<float32> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<float32> &data)
 {
     set_external_float32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external_float64_vector(std::vector<float64> &data)
 {
     release();
@@ -5606,7 +5609,7 @@ Node::set_external_float64_vector(std::vector<float64> &data)
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::set_external(std::vector<float64> &data)
 {
     set_external_float64_vector(data);
@@ -5869,7 +5872,7 @@ Node::set_path_external(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
-// -- set_path_external via pointers (scalar and array types) -- 
+// -- set_path_external via pointers (scalar and array types) --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -5916,7 +5919,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int16_ptr(const std::string &path,
-                                  int16 *data, 
+                                  int16 *data,
                                   index_t num_elements,
                                   index_t offset,
                                   index_t stride,
@@ -5934,7 +5937,7 @@ Node::set_path_external_int16_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        int16 *data, 
+                        int16 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -6104,7 +6107,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint32_ptr(const std::string &path,
-                                   uint32 *data, 
+                                   uint32 *data,
                                    index_t num_elements,
                                    index_t offset,
                                    index_t stride,
@@ -6122,7 +6125,7 @@ Node::set_path_external_uint32_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        uint32 *data, 
+                        uint32 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -6222,7 +6225,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_float64_ptr(const std::string &path,
-                                    float64 *data, 
+                                    float64 *data,
                                     index_t num_elements,
                                     index_t offset,
                                     index_t stride,
@@ -6241,7 +6244,7 @@ Node::set_path_external_float64_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        float64 *data, 
+                        float64 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -7474,7 +7477,7 @@ Node::operator=(double data)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- assignment operators for string types -- 
+// -- assignment operators for string types --
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
@@ -8298,7 +8301,7 @@ Node::serialize(std::ofstream &ofs) const
         }
         else
         {
-            // copy all elements 
+            // copy all elements
             size_t c_num_bytes = (size_t) total_bytes_compact();
             uint8 *buffer = new uint8[c_num_bytes];
             compact_elements_to(buffer);
@@ -8329,7 +8332,7 @@ Node::compact_to(Node &n_dest) const
     uint8 *n_dest_data = (uint8*)n_dest.m_data;
     compact_to(n_dest_data,0);
     // need node structure
-    walk_schema(&n_dest,n_dest.m_schema,n_dest_data);
+    walk_schema(&n_dest,n_dest.m_schema,n_dest_data,m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -8367,8 +8370,8 @@ Node::update(const Node &n_src)
         if( dtype().id() == DataType::LIST_ID)
         {
             index_t num_children = number_of_children();
-            for(index_t idx=0; 
-                (idx < num_children && idx < src_num_children); 
+            for(index_t idx=0;
+                (idx < num_children && idx < src_num_children);
                 idx++)
             {
                 child(idx).update(n_src.child(idx));
@@ -8385,21 +8388,21 @@ Node::update(const Node &n_src)
     else if(dtype_id != DataType::EMPTY_ID) // TODO: Empty nodes not propagated?
     {
         // TODO: isn't this the same as a set?
-        
+
         // don't use mem copy b/c we want to preserve striding holes
-        
+
         // if you have the same type dtype, but less elements in the
         // src, it will copy them
         if( (this->dtype().id() == n_src.dtype().id()) &&
-                 (this->dtype().number_of_elements() >=  
-                   n_src.dtype().number_of_elements())) 
+                 (this->dtype().number_of_elements() >=
+                   n_src.dtype().number_of_elements()))
         {
             for(index_t idx = 0;
                 idx < n_src.dtype().number_of_elements();
                 idx++)
             {
                 memcpy(element_ptr(idx),
-                       n_src.element_ptr(idx), 
+                       n_src.element_ptr(idx),
                        (size_t)this->dtype().element_bytes());
             }
         }
@@ -8432,15 +8435,15 @@ Node::update_compatible(const Node &n_src)
     }
     else if( dtype_id == DataType::LIST_ID)
     {
-        // if we are already a list type, then call update_compatible on 
+        // if we are already a list type, then call update_compatible on
         // the children in the list
         index_t src_idx = 0;
         index_t src_num_children = n_src.number_of_children();
         if( dtype().id() == DataType::LIST_ID)
         {
             index_t num_children = number_of_children();
-            for(index_t idx=0; 
-                (idx < num_children && idx < src_num_children); 
+            for(index_t idx=0;
+                (idx < num_children && idx < src_num_children);
                  idx++)
             {
                 child(idx).update_compatible(n_src.child(idx));
@@ -8449,21 +8452,21 @@ Node::update_compatible(const Node &n_src)
         }
     }
     else if(dtype_id != DataType::EMPTY_ID) // TODO: Empty nodes not propagated?
-    {   
+    {
         // don't use mem copy b/c we want to preserve striding holes
-        
+
         // if you have the same type dtype, but less elements in the
-        // src, it will copy them 
+        // src, it will copy them
         if( (this->dtype().id() == n_src.dtype().id()) &&
-                 (this->dtype().number_of_elements() >=  
-                   n_src.dtype().number_of_elements())) 
+                 (this->dtype().number_of_elements() >=
+                   n_src.dtype().number_of_elements()))
         {
             for(index_t idx = 0;
                 idx < n_src.dtype().number_of_elements();
                 idx++)
             {
                 memcpy(element_ptr(idx),
-                       n_src.element_ptr(idx), 
+                       n_src.element_ptr(idx),
                        (size_t)this->dtype().element_bytes());
             }
         }
@@ -8498,8 +8501,8 @@ Node::update_external(Node &n_src)
         if( dtype().id() == DataType::LIST_ID)
         {
             index_t num_children = number_of_children();
-            for(index_t idx=0; 
-                (idx < num_children && idx < src_num_children); 
+            for(index_t idx=0;
+                (idx < num_children && idx < src_num_children);
                 idx++)
             {
                 child(idx).update_external(n_src.child(idx));
@@ -8546,17 +8549,17 @@ Node::endian_swap(index_t endianness)
 
         index_t src_endian  = dtype().endianness();
         index_t dest_endian = endianness;
-    
+
         if(src_endian == Endianness::DEFAULT_ID)
         {
             src_endian = Endianness::machine_default();
         }
-    
+
         if(dest_endian == Endianness::DEFAULT_ID)
         {
             dest_endian = Endianness::machine_default();
         }
-        
+
         if(src_endian != dest_endian)
         {
             if(ele_bytes == 2)
@@ -8611,7 +8614,7 @@ Node::to_int8() const
             if(ss >> res)
                 return (int8)res;
         }
-        
+
     }
     return 0;
 }
@@ -8644,7 +8647,7 @@ Node::to_int16() const
             if(ss >> res)
                 return res;
         }
-        
+
     }
     return 0;
 }
@@ -8676,7 +8679,7 @@ Node::to_int32() const
             if(ss >> res)
                 return res;
         }
-        
+
     }
     return 0;
 }
@@ -9029,7 +9032,7 @@ Node::to_int() const
         }
     }
     return 0;
-    
+
 }
 
 //---------------------------------------------------------------------------//
@@ -9296,7 +9299,7 @@ Node::to_unsigned_char() const
             if(ss >> res)
                 return (unsigned char)res;
         }
-        
+
     }
     return 0;
 }
@@ -9328,7 +9331,7 @@ Node::to_unsigned_short() const
             if(ss >> res)
                 return res;
         }
-        
+
     }
     return 0;
 }
@@ -9360,7 +9363,7 @@ Node::to_unsigned_int() const
             if(ss >> res)
                 return res;
         }
-        
+
     }
     return 0;
 }
@@ -9392,7 +9395,7 @@ Node::to_unsigned_long() const
             if(ss >> res)
                 return res;
         }
-        
+
     }
     return 0;
 }
@@ -9549,11 +9552,11 @@ Node::to_int8_array(Node &res)  const
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -9574,7 +9577,7 @@ Node::to_int8_array(Node &res)  const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -9595,7 +9598,7 @@ Node::to_int8_array(Node &res)  const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -9603,8 +9606,8 @@ Node::to_int8_array(Node &res)  const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to int8_array.");
         }
     }
@@ -9612,22 +9615,22 @@ Node::to_int8_array(Node &res)  const
 }
 
 //---------------------------------------------------------------------------//
-void    
+void
 Node::to_int16_array(Node &res) const
 {
     res.set(DataType::int16(dtype().number_of_elements()));
- 
+
     int16_array res_array = res.as_int16_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -9648,7 +9651,7 @@ Node::to_int16_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -9669,7 +9672,7 @@ Node::to_int16_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -9677,8 +9680,8 @@ Node::to_int16_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to int16_array.");
         }
     }
@@ -9689,18 +9692,18 @@ void
 Node::to_int32_array(Node &res) const
 {
     res.set(DataType::int32(dtype().number_of_elements()));
- 
+
     int32_array res_array = res.as_int32_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -9721,7 +9724,7 @@ Node::to_int32_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -9742,7 +9745,7 @@ Node::to_int32_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -9750,8 +9753,8 @@ Node::to_int32_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to int32_array.");
         }
     }
@@ -9762,18 +9765,18 @@ void
 Node::to_int64_array(Node &res) const
 {
     res.set(DataType::int64(dtype().number_of_elements()));
- 
+
     int64_array res_array = res.as_int64_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -9794,7 +9797,7 @@ Node::to_int64_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -9815,7 +9818,7 @@ Node::to_int64_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -9823,8 +9826,8 @@ Node::to_int64_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to int64_array.");
         }
     }
@@ -9839,18 +9842,18 @@ void
 Node::to_uint8_array(Node &res)  const
 {
     res.set(DataType::uint8(dtype().number_of_elements()));
- 
+
     uint8_array res_array = res.as_uint8_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -9871,7 +9874,7 @@ Node::to_uint8_array(Node &res)  const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -9892,7 +9895,7 @@ Node::to_uint8_array(Node &res)  const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -9900,8 +9903,8 @@ Node::to_uint8_array(Node &res)  const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to uint8_array.");
         }
     }
@@ -9912,18 +9915,18 @@ void
 Node::to_uint16_array(Node &res) const
 {
     res.set(DataType::uint16(dtype().number_of_elements()));
- 
+
     uint16_array res_array = res.as_uint16_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -9944,7 +9947,7 @@ Node::to_uint16_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -9965,7 +9968,7 @@ Node::to_uint16_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -9973,8 +9976,8 @@ Node::to_uint16_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to uint16_array.");
         }
     }
@@ -9985,18 +9988,18 @@ void
 Node::to_uint32_array(Node &res) const
 {
     res.set(DataType::uint32(dtype().number_of_elements()));
- 
+
     uint32_array res_array = res.as_uint32_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10017,7 +10020,7 @@ Node::to_uint32_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10038,7 +10041,7 @@ Node::to_uint32_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10046,8 +10049,8 @@ Node::to_uint32_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to uint32_array.");
         }
     }
@@ -10059,18 +10062,18 @@ void
 Node::to_uint64_array(Node &res) const
 {
     res.set(DataType::uint64(dtype().number_of_elements()));
- 
+
     uint64_array res_array = res.as_uint64_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10091,7 +10094,7 @@ Node::to_uint64_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10112,7 +10115,7 @@ Node::to_uint64_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10120,8 +10123,8 @@ Node::to_uint64_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to uint64_array.");
         }
     }
@@ -10135,18 +10138,18 @@ void
 Node::to_float32_array(Node &res) const
 {
     res.set(DataType::float32(dtype().number_of_elements()));
- 
+
     float32_array res_array = res.as_float32_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10167,7 +10170,7 @@ Node::to_float32_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10188,7 +10191,7 @@ Node::to_float32_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10196,8 +10199,8 @@ Node::to_float32_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to float32_array.");
         }
     }
@@ -10209,18 +10212,18 @@ void
 Node::to_float64_array(Node &res) const
 {
     res.set(DataType::float64(dtype().number_of_elements()));
- 
+
     float64_array res_array = res.as_float64_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10241,7 +10244,7 @@ Node::to_float64_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10262,7 +10265,7 @@ Node::to_float64_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10270,8 +10273,8 @@ Node::to_float64_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to float64_array.");
         }
     }
@@ -10286,18 +10289,18 @@ void
 Node::to_char_array(Node &res) const
 {
     res.set(DataType::c_char(dtype().number_of_elements()));
- 
+
     char_array res_array = res.as_char_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10318,7 +10321,7 @@ Node::to_char_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10339,7 +10342,7 @@ Node::to_char_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10347,8 +10350,8 @@ Node::to_char_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to char_array.");
         }
     }
@@ -10359,18 +10362,18 @@ void
 Node::to_short_array(Node &res) const
 {
     res.set(DataType::c_short(dtype().number_of_elements()));
- 
+
     short_array res_array = res.as_short_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10391,7 +10394,7 @@ Node::to_short_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10412,7 +10415,7 @@ Node::to_short_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10420,30 +10423,30 @@ Node::to_short_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to short_array.");
         }
     }
 }
 
 //---------------------------------------------------------------------------//
-void    
+void
 Node::to_int_array(Node &res) const
 {
     res.set(DataType::c_int(dtype().number_of_elements()));
- 
+
     int_array res_array = res.as_int_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10464,7 +10467,7 @@ Node::to_int_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10485,7 +10488,7 @@ Node::to_int_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10493,8 +10496,8 @@ Node::to_int_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to int_array.");
         }
     }
@@ -10505,18 +10508,18 @@ void
 Node::to_long_array(Node &res) const
 {
     res.set(DataType::c_long(dtype().number_of_elements()));
- 
+
     long_array res_array = res.as_long_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10537,7 +10540,7 @@ Node::to_long_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10558,7 +10561,7 @@ Node::to_long_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10566,8 +10569,8 @@ Node::to_long_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to long_array.");
         }
     }
@@ -10581,18 +10584,18 @@ void
 Node::to_unsigned_char_array(Node &res) const
 {
     res.set(DataType::c_unsigned_char(dtype().number_of_elements()));
- 
+
     unsigned_char_array res_array = res.as_unsigned_char_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10613,7 +10616,7 @@ Node::to_unsigned_char_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10634,7 +10637,7 @@ Node::to_unsigned_char_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10642,8 +10645,8 @@ Node::to_unsigned_char_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to unsigned_char_array.");
         }
     }
@@ -10654,18 +10657,18 @@ void
 Node::to_unsigned_short_array(Node &res) const
 {
     res.set(DataType::c_unsigned_short(dtype().number_of_elements()));
- 
+
     unsigned_short_array res_array = res.as_unsigned_short_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10686,7 +10689,7 @@ Node::to_unsigned_short_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10707,7 +10710,7 @@ Node::to_unsigned_short_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10715,8 +10718,8 @@ Node::to_unsigned_short_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to unsigned_short_array.");
         }
     }
@@ -10727,18 +10730,18 @@ void
 Node::to_unsigned_int_array(Node &res) const
 {
     res.set(DataType::c_unsigned_int(dtype().number_of_elements()));
- 
+
     unsigned_int_array res_array = res.as_unsigned_int_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10759,7 +10762,7 @@ Node::to_unsigned_int_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10780,7 +10783,7 @@ Node::to_unsigned_int_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10788,8 +10791,8 @@ Node::to_unsigned_int_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to unsigned_int_array.");
         }
     }
@@ -10800,18 +10803,18 @@ void
 Node::to_unsigned_long_array(Node &res) const
 {
     res.set(DataType::c_unsigned_long(dtype().number_of_elements()));
- 
+
     unsigned_long_array res_array = res.as_unsigned_long_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10832,7 +10835,7 @@ Node::to_unsigned_long_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10853,7 +10856,7 @@ Node::to_unsigned_long_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10861,8 +10864,8 @@ Node::to_unsigned_long_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to unsigned_long_array.");
         }
     }
@@ -10874,18 +10877,18 @@ void
 Node::to_float_array(Node &res) const
 {
     res.set(DataType::c_float(dtype().number_of_elements()));
- 
+
     float_array res_array = res.as_float_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10906,7 +10909,7 @@ Node::to_float_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -10927,7 +10930,7 @@ Node::to_float_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -10935,8 +10938,8 @@ Node::to_float_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to float_array.");
         }
     }
@@ -10947,18 +10950,18 @@ void
 Node::to_double_array(Node &res) const
 {
     res.set(DataType::c_double(dtype().number_of_elements()));
- 
+
     double_array res_array = res.as_double_array();
- 
+
     switch(dtype().id())
     {
         /* ints */
         case DataType::INT8_ID:
-        {   
+        {
             res_array.set(this->as_int8_array());
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             res_array.set(this->as_int16_array());
             break;
@@ -10979,7 +10982,7 @@ Node::to_double_array(Node &res) const
             res_array.set(this->as_uint8_array());
             break;
         }
-        case DataType::UINT16_ID: 
+        case DataType::UINT16_ID:
         {
             res_array.set(this->as_uint16_array());
             break;
@@ -11000,7 +11003,7 @@ Node::to_double_array(Node &res) const
             res_array.set(this->as_float32_array());
             break;
         }
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
         {
             res_array.set(this->as_float64_array());
             break;
@@ -11008,8 +11011,8 @@ Node::to_double_array(Node &res) const
         default:
         {
             // error
-            CONDUIT_ERROR("Cannot convert non numeric " 
-                        << dtype().name() 
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
                         << " type to double_array.");
         }
     }
@@ -11030,7 +11033,7 @@ Node::to_data_type(index_t dtype_id, Node &res) const
             this->to_int8_array(res);
             break;
         }
-        case DataType::INT16_ID: 
+        case DataType::INT16_ID:
         {
             this->to_int16_array(res);
             break;
@@ -11096,21 +11099,21 @@ Node::Value::Value(Node *node, bool coerse)
 :m_node(node),
  m_coerse(coerse)
 {
-    
+
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::Value(const Value &value)
-:m_node(value.m_node), 
+:m_node(value.m_node),
  m_coerse(value.m_coerse)
 {
-    
+
 }
 
 //---------------------------------------------------------------------------//
 Node::Value::~Value()
 {
-    
+
 }
 
 //---------------------------------------------------------------------------//
@@ -11263,7 +11266,7 @@ Node::Value::operator long double() const
 #endif
 
 //---------------------------------------------------------------------------//
-// -- pointer casts -- 
+// -- pointer casts --
 // (no coercion)
 //---------------------------------------------------------------------------//
 
@@ -11384,7 +11387,7 @@ Node::Value::operator long double*() const
 
 
 //---------------------------------------------------------------------------//
-// -- array casts -- 
+// -- array casts --
 // (no coercion)
 //---------------------------------------------------------------------------//
 
@@ -11517,7 +11520,7 @@ Node::ConstValue::ConstValue(const Node *node, bool coerse)
 
 //---------------------------------------------------------------------------//
 Node::ConstValue::ConstValue(const ConstValue &value)
-:m_node(value.m_node), 
+:m_node(value.m_node),
  m_coerse(value.m_coerse)
 {
 
@@ -11525,7 +11528,7 @@ Node::ConstValue::ConstValue(const ConstValue &value)
 
 //---------------------------------------------------------------------------//
 Node::ConstValue::ConstValue(const Value &value)
-:m_node(value.m_node), 
+:m_node(value.m_node),
  m_coerse(value.m_coerse)
 {
 
@@ -11678,7 +11681,7 @@ Node::ConstValue::operator long double() const
 #endif
 
 //---------------------------------------------------------------------------//
-// -- pointer casts -- 
+// -- pointer casts --
 // (no coercion)
 //---------------------------------------------------------------------------//
 
@@ -11799,7 +11802,7 @@ Node::ConstValue::operator const long double*() const
 
 
 //---------------------------------------------------------------------------//
-// -- array casts -- 
+// -- array casts --
 // (no coercion)
 //---------------------------------------------------------------------------//
 
@@ -11924,8 +11927,8 @@ Node::ConstValue::operator const long_double_array() const
 
 //-----------------------------------------------------------------------------
 std::string
-Node::to_string(const std::string &protocol, 
-                index_t indent, 
+Node::to_string(const std::string &protocol,
+                index_t indent,
                 index_t depth,
                 const std::string &pad,
                 const std::string &eoe) const
@@ -11939,7 +11942,7 @@ Node::to_string(const std::string &protocol,
 void
 Node::to_string_stream(std::ostream &os,
                        const std::string &protocol,
-                       index_t indent, 
+                       index_t indent,
                        index_t depth,
                        const std::string &pad,
                        const std::string &eoe) const
@@ -11958,7 +11961,7 @@ Node::to_string_stream(std::ostream &os,
 void
 Node::to_string_stream(const std::string &stream_path,
                        const std::string &protocol,
-                       index_t indent, 
+                       index_t indent,
                        index_t depth,
                        const std::string &pad,
                        const std::string &eoe) const
@@ -11987,8 +11990,8 @@ Node::to_string_default() const
 
 //-----------------------------------------------------------------------------
 std::string
-Node::to_json(const std::string &protocol, 
-              index_t indent, 
+Node::to_json(const std::string &protocol,
+              index_t indent,
               index_t depth,
               const std::string &pad,
               const std::string &eoe) const
@@ -12008,7 +12011,7 @@ Node::to_json(const std::string &protocol,
     else
     {
         CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
-                      << "\nSupported protocols:\n" 
+                      << "\nSupported protocols:\n"
                       << " json\n"
                       << " conduit_json\n"
                       << " conduit_base64_json\n");
@@ -12021,7 +12024,7 @@ Node::to_json(const std::string &protocol,
 void
 Node::to_json_stream(const std::string &stream_path,
                      const std::string &protocol,
-                     index_t indent, 
+                     index_t indent,
                      index_t depth,
                      const std::string &pad,
                      const std::string &eoe) const
@@ -12041,7 +12044,7 @@ Node::to_json_stream(const std::string &stream_path,
     else
     {
         CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
-                      << "\nSupported protocols:\n" 
+                      << "\nSupported protocols:\n"
                       << " json\n"
                       << " conduit_json\n"
                       << " conduit_base64_json\n");
@@ -12052,7 +12055,7 @@ Node::to_json_stream(const std::string &stream_path,
 void
 Node::to_json_stream(std::ostream &os,
                      const std::string &protocol,
-                     index_t indent, 
+                     index_t indent,
                      index_t depth,
                      const std::string &pad,
                      const std::string &eoe) const
@@ -12072,7 +12075,7 @@ Node::to_json_stream(std::ostream &os,
     else
     {
         CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
-                      << "\nSupported protocols:\n" 
+                      << "\nSupported protocols:\n"
                       << " json\n"
                       << " conduit_json\n"
                       << " conduit_base64_json\n");
@@ -12092,8 +12095,8 @@ Node::to_json_default() const
 
 //-----------------------------------------------------------------------------
 std::string
-Node::to_yaml(const std::string &protocol, 
-              index_t indent, 
+Node::to_yaml(const std::string &protocol,
+              index_t indent,
               index_t depth,
               const std::string &pad,
               const std::string &eoe) const
@@ -12105,7 +12108,7 @@ Node::to_yaml(const std::string &protocol,
     else
     {
         CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
-                      << "\nSupported protocols:\n" 
+                      << "\nSupported protocols:\n"
                       << " yaml\n");
     }
 
@@ -12116,7 +12119,7 @@ Node::to_yaml(const std::string &protocol,
 void
 Node::to_yaml_stream(const std::string &stream_path,
                      const std::string &protocol,
-                     index_t indent, 
+                     index_t indent,
                      index_t depth,
                      const std::string &pad,
                      const std::string &eoe) const
@@ -12128,7 +12131,7 @@ Node::to_yaml_stream(const std::string &stream_path,
     else
     {
         CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
-                      << "\nSupported protocols:\n" 
+                      << "\nSupported protocols:\n"
                       << " yaml\n");
     }
 }
@@ -12137,7 +12140,7 @@ Node::to_yaml_stream(const std::string &stream_path,
 void
 Node::to_yaml_stream(std::ostream &os,
                      const std::string &protocol,
-                     index_t indent, 
+                     index_t indent,
                      index_t depth,
                      const std::string &pad,
                      const std::string &eoe) const
@@ -12149,7 +12152,7 @@ Node::to_yaml_stream(std::ostream &os,
     else
     {
         CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
-                      << "\nSupported protocols:\n" 
+                      << "\nSupported protocols:\n"
                       << " yaml\n");
     }
 }
@@ -12166,9 +12169,9 @@ Node::to_yaml_default() const
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-std::string 
+std::string
 Node::to_json_generic(bool detailed,
-                      index_t indent, 
+                      index_t indent,
                       index_t depth,
                       const std::string &pad,
                       const std::string &eoe) const
@@ -12182,8 +12185,8 @@ Node::to_json_generic(bool detailed,
 //---------------------------------------------------------------------------//
 void
 Node::to_json_generic(const std::string &stream_path,
-                      bool detailed, 
-                      index_t indent, 
+                      bool detailed,
+                      index_t indent,
                       index_t depth,
                       const std::string &pad,
                       const std::string &eoe) const
@@ -12203,8 +12206,8 @@ Node::to_json_generic(const std::string &stream_path,
 //---------------------------------------------------------------------------//
 void
 Node::to_json_generic(std::ostream &os,
-                      bool detailed, 
-                      index_t indent, 
+                      bool detailed,
+                      index_t indent,
                       index_t depth,
                       const std::string &pad,
                       const std::string &eoe) const
@@ -12216,7 +12219,7 @@ Node::to_json_generic(std::ostream &os,
         os << eoe;
         utils::indent(os,indent,depth,pad);
         os << "{" << eoe;
-    
+
         size_t nchildren = m_children.size();
         for(size_t i=0; i <  nchildren;i++)
         {
@@ -12240,7 +12243,7 @@ Node::to_json_generic(std::ostream &os,
         os << eoe;
         utils::indent(os,indent,depth,pad);
         os << "[" << eoe;
-        
+
         size_t nchildren = m_children.size();
         for(size_t i=0; i < nchildren;i++)
         {
@@ -12277,7 +12280,7 @@ Node::to_json_generic(std::ostream &os,
 
         switch(dtype().id())
         {
-            // ints 
+            // ints
             case DataType::INT8_ID:
                 as_int8_array().to_json_stream(os);
                 break;
@@ -12290,11 +12293,11 @@ Node::to_json_generic(std::ostream &os,
             case DataType::INT64_ID:
                 as_int64_array().to_json_stream(os);
                 break;
-            // uints 
+            // uints
             case DataType::UINT8_ID:
                 as_uint8_array().to_json_stream(os);
                 break;
-            case DataType::UINT16_ID: 
+            case DataType::UINT16_ID:
                 as_uint16_array().to_json_stream(os);
                 break;
             case DataType::UINT32_ID:
@@ -12303,7 +12306,7 @@ Node::to_json_generic(std::ostream &os,
             case DataType::UINT64_ID:
                 as_uint64_array().to_json_stream(os);
                 break;
-            // floats 
+            // floats
             case DataType::FLOAT32_ID:
                 as_float32_array().to_json_stream(os);
                 break;
@@ -12311,13 +12314,13 @@ Node::to_json_generic(std::ostream &os,
                 as_float64_array().to_json_stream(os);
                 break;
             // char8_str
-            case DataType::CHAR8_STR_ID: 
-                os << "\"" 
+            case DataType::CHAR8_STR_ID:
+                os << "\""
                    << utils::escape_special_chars(as_string())
-                   << "\""; 
+                   << "\"";
                 break;
             // empty
-            case DataType::EMPTY_ID: 
+            case DataType::EMPTY_ID:
                 os << "null";
                 break;
 
@@ -12325,11 +12328,11 @@ Node::to_json_generic(std::ostream &os,
 
         if(detailed)
         {
-            // complete json entry 
+            // complete json entry
             os << "}";
         }
-    }  
-    
+    }
+
     os.flags(prev_stream_flags);
 }
 
@@ -12375,7 +12378,7 @@ Node::to_pure_json(std::ostream &os,
 
 //---------------------------------------------------------------------------//
 std::string
-Node::to_detailed_json(index_t indent, 
+Node::to_detailed_json(index_t indent,
                        index_t depth,
                        const std::string &pad,
                        const std::string &eoe) const
@@ -12386,7 +12389,7 @@ Node::to_detailed_json(index_t indent,
 //---------------------------------------------------------------------------//
 void
 Node::to_detailed_json(const std::string &stream_path,
-                       index_t indent, 
+                       index_t indent,
                        index_t depth,
                        const std::string &pad,
                        const std::string &eoe) const
@@ -12406,7 +12409,7 @@ Node::to_detailed_json(const std::string &stream_path,
 //---------------------------------------------------------------------------//
 void
 Node::to_detailed_json(std::ostream &os,
-                       index_t indent, 
+                       index_t indent,
                        index_t depth,
                        const std::string &pad,
                        const std::string &eoe) const
@@ -12456,26 +12459,26 @@ Node::to_base64_json(std::ostream &os,
 {
     std::ios_base::fmtflags prev_stream_flags(os.flags());
     os.precision(15);
-        
+
     // we need compact data
     // TODO check if already compact + contig
     Node n;
     compact_to(n);
-    
+
     // use libb64 to encode the data
     index_t nbytes = n.schema().spanned_bytes();
     index_t enc_buff_size =  utils::base64_encode_buffer_size(nbytes);
     Node bb64_data;
     bb64_data.set(DataType::char8_str(enc_buff_size));
-    
+
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr       = (char*)bb64_data.data_ptr();
     memset(dest_ptr,0,(size_t)enc_buff_size);
 
     utils::base64_encode(src_ptr,nbytes,dest_ptr);
-    
+
     // create the resulting json
-    
+
     os << eoe;
     utils::indent(os,indent,depth,pad);
     os << "{" << eoe;
@@ -12485,7 +12488,7 @@ Node::to_base64_json(std::ostream &os,
     n.schema().to_json_stream(os,indent,depth+1,pad,eoe);
 
     os  << "," << eoe;
-    
+
     utils::indent(os,indent,depth+1,pad);
     os << "\"data\": " << eoe;
     utils::indent(os,indent,depth+1,pad);
@@ -12498,7 +12501,7 @@ Node::to_base64_json(std::ostream &os,
     os << "}" << eoe;
     utils::indent(os,indent,depth,pad);
     os << "}";
-    
+
     os.flags(prev_stream_flags);
 }
 
@@ -12508,9 +12511,9 @@ Node::to_base64_json(std::ostream &os,
 
 
 //---------------------------------------------------------------------------//
-std::string 
+std::string
 Node::to_yaml_generic(bool detailed,
-                      index_t indent, 
+                      index_t indent,
                       index_t depth,
                       const std::string &pad,
                       const std::string &eoe) const
@@ -12524,8 +12527,8 @@ Node::to_yaml_generic(bool detailed,
 //---------------------------------------------------------------------------//
 void
 Node::to_yaml_generic(const std::string &stream_path,
-                      bool detailed, 
-                      index_t indent, 
+                      bool detailed,
+                      index_t indent,
                       index_t depth,
                       const std::string &pad,
                       const std::string &eoe) const
@@ -12597,7 +12600,7 @@ Node::to_yaml_generic(std::ostream &os,
     {
         switch(dtype().id())
         {
-            // ints 
+            // ints
             case DataType::INT8_ID:
                 as_int8_array().to_json_stream(os);
                 break;
@@ -12610,11 +12613,11 @@ Node::to_yaml_generic(std::ostream &os,
             case DataType::INT64_ID:
                 as_int64_array().to_json_stream(os);
                 break;
-            // uints 
+            // uints
             case DataType::UINT8_ID:
                 as_uint8_array().to_json_stream(os);
                 break;
-            case DataType::UINT16_ID: 
+            case DataType::UINT16_ID:
                 as_uint16_array().to_json_stream(os);
                 break;
             case DataType::UINT32_ID:
@@ -12623,7 +12626,7 @@ Node::to_yaml_generic(std::ostream &os,
             case DataType::UINT64_ID:
                 as_uint64_array().to_json_stream(os);
                 break;
-            // floats 
+            // floats
             case DataType::FLOAT32_ID:
                 as_float32_array().to_json_stream(os);
                 break;
@@ -12631,13 +12634,13 @@ Node::to_yaml_generic(std::ostream &os,
                 as_float64_array().to_json_stream(os);
                 break;
             // char8_str
-            case DataType::CHAR8_STR_ID: 
-                os << "\"" 
+            case DataType::CHAR8_STR_ID:
+                os << "\""
                    << utils::escape_special_chars(as_string())
-                   << "\""; 
+                   << "\"";
                 break;
             // empty
-            case DataType::EMPTY_ID: 
+            case DataType::EMPTY_ID:
                 break;
         }
     }
@@ -12709,7 +12712,7 @@ Node::info(Node &res) const
     res.reset();
     info(res,std::string());
 
-    // add summary 
+    // add summary
     res["total_bytes_allocated"] = total_bytes_allocated();
     res["total_bytes_mmaped"]    = total_bytes_mmaped();
     res["total_bytes_compact"]   = total_bytes_compact();
@@ -12783,7 +12786,7 @@ Node::add_child(const std::string &name)
     }
 
     Schema &child_schema = m_schema->add_child(name);
-    Schema *child_ptr = &child_schema; 
+    Schema *child_ptr = &child_schema;
     Node *child_node = new Node();
     child_node->set_schema_ptr(child_ptr);
     child_node->m_parent = this;
@@ -12832,11 +12835,11 @@ Node::fetch_existing(const std::string &path) const
         CONDUIT_ERROR("Cannot fetch_existing, Node(" << this->path()
                       << ") is not an object");
     }
-    
+
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
-    
+
     // cull empty paths
     if(p_curr == "")
     {
@@ -12881,7 +12884,7 @@ Node::fetch_existing(const std::string &path)
         CONDUIT_ERROR("Cannot fetch_existing, Node(" << this->path()
                       << ") is not an object");
     }
-    
+
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
@@ -12912,7 +12915,7 @@ Node::fetch_existing(const std::string &path)
                       << this->path()
                       << ")");
     }
-    
+
     size_t idx = (size_t)m_schema->child_index(p_curr);
 
     if(p_next.empty())
@@ -12953,7 +12956,7 @@ Node::fetch(const std::string &path)
     {
         CONDUIT_ERROR("Cannot fetch empty path string");
     }
-    
+
     std::string p_curr;
     std::string p_next;
     utils::split_path(path,p_curr,p_next);
@@ -12979,7 +12982,7 @@ Node::fetch(const std::string &path)
 
     // if this node doesn't exist yet, we need to create it and
     // link it to a schema
-        
+
     size_t idx;
     if(!m_schema->has_child(p_curr))
     {
@@ -12987,6 +12990,8 @@ Node::fetch(const std::string &path)
         Node *curr_node = new Node();
         curr_node->set_schema_ptr(schema_ptr);
         curr_node->m_parent = this;
+        // current allocator is inherited
+        curr_node->set_allocator(m_allocator_id);
         m_children.push_back(curr_node);
         idx = m_children.size() - 1;
     }
@@ -13105,21 +13110,21 @@ Node::operator[](index_t idx) const
 }
 
 //---------------------------------------------------------------------------//
-index_t 
-Node::number_of_children() const 
+index_t
+Node::number_of_children() const
 {
     return m_schema->number_of_children();
 }
 
 //---------------------------------------------------------------------------//
-std::string 
+std::string
 Node::name() const
 {
     return m_schema->name();
 }
 
 //---------------------------------------------------------------------------//
-std::string 
+std::string
 Node::path() const
 {
     return m_schema->path();
@@ -13161,18 +13166,19 @@ Node::append()
     Node *res_node = new Node();
     res_node->set_schema_ptr(schema_ptr);
     res_node->m_parent=this;
+    res_node->set_allocator(m_allocator_id);
     m_children.push_back(res_node);
     return *res_node;
 }
 
 //---------------------------------------------------------------------------//
-void    
+void
 Node::remove(index_t idx)
 {
     // note: we must remove the child pointer before the
     // schema. b/c the child pointer uses the schema
     // to cleanup
-    
+
     // remove the proper list entry
     delete m_children[(size_t)idx];
     m_schema->remove(idx);
@@ -13194,7 +13200,7 @@ Node::remove(const std::string &path)
     }
     else
     {
-        remove_child(p_curr);    
+        remove_child(p_curr);
     }
 }
 
@@ -13216,17 +13222,17 @@ void
 Node::rename_child(const std::string &current_name,
                    const std::string &new_name)
 {
-    // this is a pass through to the schema, 
+    // this is a pass through to the schema,
     // which handles all the book keeping related to child rename
     m_schema->rename_child(current_name,new_name);
 }
 
 
 //---------------------------------------------------------------------------//
-// helper to create a node using Schema the describes a list of a homogenous 
+// helper to create a node using Schema the describes a list of a homogenous
 // type
 void
-Node::list_of(const Schema &schema, 
+Node::list_of(const Schema &schema,
               index_t num_entries)
 {
     reset();
@@ -13234,15 +13240,15 @@ Node::list_of(const Schema &schema,
 
     Schema s_compact;
     schema.compact_to(s_compact);
-    
+
     index_t entry_bytes = s_compact.total_bytes_compact();
     index_t total_bytes = entry_bytes * num_entries;
 
     // allocate what we need
     allocate(DataType::uint8(total_bytes));
-    
+
     uint8 *ptr =(uint8*)data_ptr();
-    
+
     for(index_t i=0; i <  num_entries ; i++)
     {
         append().set_external(s_compact,ptr);
@@ -13253,7 +13259,7 @@ Node::list_of(const Schema &schema,
 //---------------------------------------------------------------------------//
 // helper to create node that is a list of a homogenous type
 void
-Node::list_of(const DataType &dtype, 
+Node::list_of(const DataType &dtype,
               index_t num_entries)
 {
     Schema s(dtype);
@@ -13267,7 +13273,7 @@ Node::list_of(const DataType &dtype,
 // where the data is held externally.
 void
 Node::list_of_external(void *data,
-                       const Schema &schema, 
+                       const Schema &schema,
                        index_t num_entries)
 {
     release();
@@ -13275,12 +13281,12 @@ Node::list_of_external(void *data,
 
     Schema s_compact;
     schema.compact_to(s_compact);
-    
+
     index_t entry_bytes = s_compact.total_bytes_compact();
 
     m_data = data;
     uint8 *ptr = (uint8*) data;
-    
+
     for(index_t i=0; i <  num_entries ; i++)
     {
         append().set_external(s_compact,ptr);
@@ -13301,13 +13307,13 @@ Node::list_of_external(void *data,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-// signed integer scalars 
+// signed integer scalars
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 int8
 Node::as_int8()  const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT8_ID,
                         "as_int8() const",
@@ -13318,8 +13324,8 @@ Node::as_int8()  const
 //---------------------------------------------------------------------------//
 int16
 Node::as_int16() const
-{ 
-    CONDUIT_CHECK_DTYPE(this, 
+{
+    CONDUIT_CHECK_DTYPE(this,
                         DataType::INT16_ID,
                         "as_int16() const",
                         0);
@@ -13329,7 +13335,7 @@ Node::as_int16() const
 //---------------------------------------------------------------------------//
 int32
 Node::as_int32() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT32_ID,
                         "as_int32() const",
@@ -13340,7 +13346,7 @@ Node::as_int32() const
 //---------------------------------------------------------------------------//
 int64
 Node::as_int64() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT64_ID,
                         "as_int64() const",
@@ -13355,8 +13361,8 @@ Node::as_int64() const
 //---------------------------------------------------------------------------//
 uint8
 Node::as_uint8() const
-{ 
-    CONDUIT_CHECK_DTYPE(this, 
+{
+    CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT8_ID,
                         "as_uint8() const",
                         0);
@@ -13377,7 +13383,7 @@ Node::as_uint16() const
 //---------------------------------------------------------------------------//
 uint32
 Node::as_uint32() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT32_ID,
                         "as_uint32() const",
@@ -13388,7 +13394,7 @@ Node::as_uint32() const
 //---------------------------------------------------------------------------//
 uint64
 Node::as_uint64() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT64_ID,
                         "as_uint64() const",
@@ -13403,8 +13409,8 @@ Node::as_uint64() const
 //---------------------------------------------------------------------------//
 float32
 Node::as_float32() const
-{ 
-    CONDUIT_CHECK_DTYPE(this, 
+{
+    CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT32_ID,
                         "as_float32() const",
                         0);
@@ -13414,7 +13420,7 @@ Node::as_float32() const
 //---------------------------------------------------------------------------//
 float64
 Node::as_float64() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT64_ID,
                         "as_float64() const",
@@ -13429,8 +13435,8 @@ Node::as_float64() const
 //---------------------------------------------------------------------------//
 int8 *
 Node::as_int8_ptr()
-{ 
-    CONDUIT_CHECK_DTYPE(this, 
+{
+    CONDUIT_CHECK_DTYPE(this,
                         DataType::INT8_ID,
                         "as_int8_ptr()",
                         NULL);
@@ -13440,7 +13446,7 @@ Node::as_int8_ptr()
 //---------------------------------------------------------------------------//
 int16 *
 Node::as_int16_ptr()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT16_ID,
                         "as_int16_ptr()",
@@ -13451,7 +13457,7 @@ Node::as_int16_ptr()
 //---------------------------------------------------------------------------//
 int32 *
 Node::as_int32_ptr()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT32_ID,
                         "as_int32_ptr()",
@@ -13462,7 +13468,7 @@ Node::as_int32_ptr()
 //---------------------------------------------------------------------------//
 int64 *
 Node::as_int64_ptr()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT64_ID,
                         "as_int64_ptr()",
@@ -13487,8 +13493,8 @@ Node::as_uint8_ptr()
 
 //---------------------------------------------------------------------------//
 uint16 *
-Node::as_uint16_ptr()   
-{ 
+Node::as_uint16_ptr()
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT16_ID,
                         "as_uint16_ptr()",
@@ -13498,8 +13504,8 @@ Node::as_uint16_ptr()
 
 //---------------------------------------------------------------------------//
 uint32 *
-Node::as_uint32_ptr()   
-{ 
+Node::as_uint32_ptr()
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT32_ID,
                         "as_uint32_ptr()",
@@ -13509,8 +13515,8 @@ Node::as_uint32_ptr()
 
 //---------------------------------------------------------------------------//
 uint64 *
-Node::as_uint64_ptr()   
-{     
+Node::as_uint64_ptr()
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT64_ID,
                         "as_uint64_ptr()",
@@ -13524,7 +13530,7 @@ Node::as_uint64_ptr()
 
 //---------------------------------------------------------------------------//
 float32 *
-Node::as_float32_ptr()  
+Node::as_float32_ptr()
 {
     CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT32_ID,
@@ -13535,8 +13541,8 @@ Node::as_float32_ptr()
 
 //---------------------------------------------------------------------------//
 float64 *
-Node::as_float64_ptr()  
-{ 
+Node::as_float64_ptr()
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT64_ID,
                         "as_float64_ptr()",
@@ -13552,7 +13558,7 @@ Node::as_float64_ptr()
 //---------------------------------------------------------------------------//
 const int8 *
 Node::as_int8_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT8_ID,
                         "as_int8_ptr() const",
@@ -13563,7 +13569,7 @@ Node::as_int8_ptr() const
 //---------------------------------------------------------------------------//
 const int16 *
 Node::as_int16_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT16_ID,
                         "as_int16_ptr() const",
@@ -13574,7 +13580,7 @@ Node::as_int16_ptr() const
 //---------------------------------------------------------------------------//
 const int32 *
 Node::as_int32_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT32_ID,
                         "as_int32_ptr() const",
@@ -13585,7 +13591,7 @@ Node::as_int32_ptr() const
 //---------------------------------------------------------------------------//
 const int64 *
 Node::as_int64_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT64_ID,
                         "as_int64_ptr() const",
@@ -13611,7 +13617,7 @@ Node::as_uint8_ptr() const
 //---------------------------------------------------------------------------//
 const uint16 *
 Node::as_uint16_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT16_ID,
                         "as_uint16_ptr() const",
@@ -13622,7 +13628,7 @@ Node::as_uint16_ptr() const
 //---------------------------------------------------------------------------//
 const uint32 *
 Node::as_uint32_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT32_ID,
                         "as_uint32_ptr() const",
@@ -13633,7 +13639,7 @@ Node::as_uint32_ptr() const
 //---------------------------------------------------------------------------//
 const uint64 *
 Node::as_uint64_ptr() const
-{     
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT64_ID,
                         "as_uint64_ptr() const",
@@ -13659,7 +13665,7 @@ Node::as_float32_ptr() const
 //---------------------------------------------------------------------------//
 const float64 *
 Node::as_float64_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT64_ID,
                         "as_float64_ptr() const",
@@ -13675,7 +13681,7 @@ Node::as_float64_ptr() const
 //---------------------------------------------------------------------------//
 int8_array
 Node::as_int8_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT8_ID,
                         "as_int8_array()",
@@ -13686,7 +13692,7 @@ Node::as_int8_array()
 //---------------------------------------------------------------------------//
 int16_array
 Node::as_int16_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT16_ID,
                         "as_int16_array()",
@@ -13697,7 +13703,7 @@ Node::as_int16_array()
 //---------------------------------------------------------------------------//
 int32_array
 Node::as_int32_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT32_ID,
                         "as_int32_array()",
@@ -13708,7 +13714,7 @@ Node::as_int32_array()
 //---------------------------------------------------------------------------//
 int64_array
 Node::as_int64_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT64_ID,
                         "as_int64_array()",
@@ -13723,7 +13729,7 @@ Node::as_int64_array()
 //---------------------------------------------------------------------------//
 uint8_array
 Node::as_uint8_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT8_ID,
                         "as_uint8_array()",
@@ -13734,7 +13740,7 @@ Node::as_uint8_array()
 //---------------------------------------------------------------------------//
 uint16_array
 Node::as_uint16_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT16_ID,
                         "as_uint16_array()",
@@ -13745,7 +13751,7 @@ Node::as_uint16_array()
 //---------------------------------------------------------------------------//
 uint32_array
 Node::as_uint32_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT32_ID,
                         "as_uint32_array()",
@@ -13755,8 +13761,8 @@ Node::as_uint32_array()
 
 //---------------------------------------------------------------------------//
 uint64_array
-Node::as_uint64_array() 
-{ 
+Node::as_uint64_array()
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT64_ID,
                         "as_uint64_array()",
@@ -13771,7 +13777,7 @@ Node::as_uint64_array()
 //---------------------------------------------------------------------------//
 float32_array
 Node::as_float32_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT32_ID,
                         "as_float32_array()",
@@ -13782,7 +13788,7 @@ Node::as_float32_array()
 //---------------------------------------------------------------------------//
 float64_array
 Node::as_float64_array()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT64_ID,
                         "as_float64_array()",
@@ -13797,7 +13803,7 @@ Node::as_float64_array()
 //---------------------------------------------------------------------------//
 const int8_array
 Node::as_int8_array() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT8_ID,
                         "as_int8_array() const",
@@ -13807,8 +13813,8 @@ Node::as_int8_array() const
 
 //---------------------------------------------------------------------------//
 const int16_array
-Node::as_int16_array() const 
-{ 
+Node::as_int16_array() const
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT16_ID,
                         "as_int16_array() const",
@@ -13819,7 +13825,7 @@ Node::as_int16_array() const
 //---------------------------------------------------------------------------//
 const int32_array
 Node::as_int32_array() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT32_ID,
                         "as_int32_array() const",
@@ -13829,8 +13835,8 @@ Node::as_int32_array() const
 
 //---------------------------------------------------------------------------//
 const int64_array
-Node::as_int64_array() const 
-{ 
+Node::as_int64_array() const
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::INT64_ID,
                         "as_int64_array() const",
@@ -13846,7 +13852,7 @@ Node::as_int64_array() const
 //---------------------------------------------------------------------------//
 const uint8_array
 Node::as_uint8_array() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT8_ID,
                         "as_uint8_array() const",
@@ -13857,7 +13863,7 @@ Node::as_uint8_array() const
 //---------------------------------------------------------------------------//
 const uint16_array
 Node::as_uint16_array() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT16_ID,
                         "as_uint16_array() const",
@@ -13868,7 +13874,7 @@ Node::as_uint16_array() const
 //---------------------------------------------------------------------------//
 const uint32_array
 Node::as_uint32_array() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT32_ID,
                         "as_uint32_array() const",
@@ -13878,7 +13884,7 @@ Node::as_uint32_array() const
 
 //---------------------------------------------------------------------------//
 const uint64_array
-Node::as_uint64_array() const 
+Node::as_uint64_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         DataType::UINT64_ID,
@@ -13893,8 +13899,8 @@ Node::as_uint64_array() const
 
 //---------------------------------------------------------------------------//
 const float32_array
-Node::as_float32_array() const 
-{ 
+Node::as_float32_array() const
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT32_ID,
                         "as_float32_array() const",
@@ -13904,8 +13910,8 @@ Node::as_float32_array() const
 
 //---------------------------------------------------------------------------//
 const float64_array
-Node::as_float64_array() const 
-{ 
+Node::as_float64_array() const
+{
     CONDUIT_CHECK_DTYPE(this,
                         DataType::FLOAT64_ID,
                         "as_float64_array() const",
@@ -13951,9 +13957,9 @@ Node::as_string() const
 }
 
 //---------------------------------------------------------------------------//
-// direct data pointer access 
+// direct data pointer access
 void *
-Node::data_ptr() 
+Node::data_ptr()
 {
     return m_data;
 }
@@ -13969,7 +13975,7 @@ Node::data_ptr() const
 //-----------------------------------------------------------------------------
 ///  Direct access to data at leaf types (native c++ types)
 //-----------------------------------------------------------------------------
-     
+
 //---------------------------------------------------------------------------//
 // integer scalars
 //---------------------------------------------------------------------------//
@@ -14116,8 +14122,8 @@ Node::as_unsigned_char() const
 }
 
 //---------------------------------------------------------------------------//
-unsigned short 
-Node::as_unsigned_short() const 
+unsigned short
+Node::as_unsigned_short() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
@@ -14140,7 +14146,7 @@ Node::as_unsigned_int()const
 //---------------------------------------------------------------------------//
 unsigned long
 Node::as_unsigned_long() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                         "as_unsigned_long() const",
@@ -14153,7 +14159,7 @@ Node::as_unsigned_long() const
 //---------------------------------------------------------------------------//
 unsigned long long
 Node::as_unsigned_long_long() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                         "as_unsigned_long_long() const",
@@ -14170,7 +14176,7 @@ Node::as_unsigned_long_long() const
 
 //---------------------------------------------------------------------------//
 float
-Node::as_float() const 
+Node::as_float() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_FLOAT_ID,
@@ -14181,8 +14187,8 @@ Node::as_float() const
 
 //---------------------------------------------------------------------------//
 double
-Node::as_double() const 
-{ 
+Node::as_double() const
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_DOUBLE_ID,
                         "as_double() const",
@@ -14194,8 +14200,8 @@ Node::as_double() const
 #ifdef CONDUIT_USE_LONG_DOUBLE
 //---------------------------------------------------------------------------//
 long double
-Node::as_long_double() const 
-{ 
+Node::as_long_double() const
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_LONG_DOUBLE_ID,
                         "as_long_double() const",
@@ -14224,7 +14230,7 @@ Node::as_char_ptr()
 //---------------------------------------------------------------------------//
 short *
 Node::as_short_ptr()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SHORT_ID,
                         "as_short_ptr()",
@@ -14290,7 +14296,7 @@ Node::as_signed_char_ptr()
 //---------------------------------------------------------------------------//
 signed short *
 Node::as_signed_short_ptr()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SIGNED_SHORT_ID,
                         "as_signed_short_ptr()",
@@ -14355,7 +14361,7 @@ Node::as_unsigned_char_ptr()
 //---------------------------------------------------------------------------//
 unsigned short *
 Node::as_unsigned_short_ptr()
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                         "as_unsigned_short_ptr()",
@@ -14477,7 +14483,7 @@ Node::as_char_ptr() const
 //---------------------------------------------------------------------------//
 const short *
 Node::as_short_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SHORT_ID,
                         "as_short_ptr() const",
@@ -14542,7 +14548,7 @@ Node::as_signed_char_ptr() const
 //---------------------------------------------------------------------------//
 const signed short *
 Node::as_signed_short_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SIGNED_SHORT_ID,
                         "as_signed_short_ptr() const",
@@ -14607,7 +14613,7 @@ Node::as_unsigned_char_ptr() const
 //---------------------------------------------------------------------------//
 const unsigned short *
 Node::as_unsigned_short_ptr() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                         "as_unsigned_short_ptr() const",
@@ -15099,7 +15105,7 @@ Node::as_unsigned_short_array() const
 //---------------------------------------------------------------------------//
 const unsigned_int_array
 Node::as_unsigned_int_array() const
-{ 
+{
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_UNSIGNED_INT_ID,
                         "as_unsigned_int_array() const",
@@ -15185,6 +15191,19 @@ Node::as_long_double_array() const
 //
 //-----------------------------------------------------------------------------
 
+void Node::set_allocator(int32 allocator_id)
+{
+  reset();
+  // TODO: add check for allocator exists
+  m_allocator_id = allocator_id;
+}
+
+void Node::reset_allocator()
+{
+  reset();
+  m_allocator_id = 0;
+}
+
 //-----------------------------------------------------------------------------
 //
 // -- begin definition of Interface Warts --
@@ -15214,7 +15233,7 @@ Node::set_data_ptr(void *data)
     //release();
     m_data    = data;
 }
-    
+
 
 //-----------------------------------------------------------------------------
 //
@@ -15318,7 +15337,7 @@ Node::MMap::open(const std::string &path,
 
     m_data_size = data_size;
 
-    if (m_mmap_fd == -1) 
+    if (m_mmap_fd == -1)
     {
     {
         CONDUIT_ERROR("<Node::mmap> failed to open file: "
@@ -15332,7 +15351,7 @@ Node::MMap::open(const std::string &path,
                     MAP_SHARED,
                     m_mmap_fd, 0);
 
-    if (m_data == MAP_FAILED) 
+    if (m_data == MAP_FAILED)
         CONDUIT_ERROR("<Node::mmap> mmap data = MAP_FAILED" << path);
 #else
     m_file_hnd = CreateFile(path.c_str(),
@@ -15381,14 +15400,14 @@ Node::MMap::close()
     // simple return if the mmap isn't active
     if(m_data == NULL)
         return;
-    
+
 #if !defined(CONDUIT_PLATFORM_WINDOWS)
-    
-    if(munmap(m_data, m_data_size) == -1) 
+
+    if(munmap(m_data, m_data_size) == -1)
     {
         CONDUIT_ERROR("<Node::mmap> failed to unmap mmap.");
     }
-    
+
     if(::close(m_mmap_fd) == -1)
     {
         CONDUIT_ERROR("<Node::mmap> failed close mmap filed descriptor.");
@@ -15456,7 +15475,8 @@ Node::allocate(const DataType &dtype)
 void
 Node::allocate(index_t dsize)
 {
-    m_data      = calloc((size_t)dsize,(size_t)1);
+    m_data = utils::conduit_allocate((size_t)dsize, (size_t)1, m_allocator_id);
+    //  calloc((size_t)dsize,(size_t)1);
     m_data_size = dsize;
     m_alloced   = true;
     m_mmaped    = false;
@@ -15495,14 +15515,15 @@ Node::release()
         /// TODO: why do we need to check for empty here?
         ///
         if(dtype().id() != DataType::EMPTY_ID)
-        {   
+        {
             // clean up our storage
-            free(m_data);
+            //free(m_data);
+            utils::conduit_free(m_data, m_allocator_id);
             m_data = NULL;
             m_data_size = 0;
             m_alloced   = false;
         }
-    }   
+    }
     else if(m_mmaped && m_mmap)
     {
         delete m_mmap;
@@ -15536,7 +15557,7 @@ Node::init_list()
 {
     init(DataType::list());
 }
- 
+
 //---------------------------------------------------------------------------//
 void
 Node::init_object()
@@ -15560,8 +15581,9 @@ Node::init_defaults()
 
     m_schema = new Schema(DataType::EMPTY_ID);
     m_owns_schema = true;
-    
+
     m_parent = NULL;
+    m_allocator_id = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -15571,7 +15593,7 @@ Node::init_defaults()
 //-----------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
-// This method is for Node::load() and Node::save() 
+// This method is for Node::load() and Node::save()
 // Since conudit does not link to relay, only basic (non-tpl dependent)
 // cases are supported here
 void
@@ -15625,10 +15647,11 @@ Node::identify_protocol(const std::string &path,
 
 
 //---------------------------------------------------------------------------//
-void 
-Node::walk_schema(Node   *node, 
+void
+Node::walk_schema(Node   *node,
                   Schema *schema,
-                  void   *data)
+                  void   *data,
+                  int32   allocator_id)
 {
     // we can have an object, list, or leaf
     node->set_data_ptr(data);
@@ -15636,15 +15659,16 @@ Node::walk_schema(Node   *node,
     {
         for(size_t i=0;i< schema->children().size(); i++)
         {
-    
+
             std::string curr_name = schema->object_order()[i];
             Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data);
+            curr_node->set_allocator(allocator_id);
+            walk_schema(curr_node,curr_schema,data,allocator_id);
             node->append_node_ptr(curr_node);
-        }                   
+        }
     }
     else if(schema->dtype().id() == DataType::LIST_ID)
     {
@@ -15655,28 +15679,29 @@ Node::walk_schema(Node   *node,
             Node *curr_node = new Node();
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
-            walk_schema(curr_node,curr_schema,data);
+            curr_node->set_allocator(allocator_id);
+            walk_schema(curr_node,curr_schema,data,allocator_id);
             node->append_node_ptr(curr_node);
         }
     }
 
-  
+
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 Node::mirror_node(Node   *node,
                   Schema *schema,
                   const Node *src)
 {
     // we can have an object, list, or leaf
     node->set_data_ptr(src->m_data);
-    
+
     if(schema->dtype().id() == DataType::OBJECT_ID)
     {
         for(size_t i=0;i< schema->children().size(); i++)
         {
-    
+
             std::string curr_name = schema->object_order()[i];
             Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
@@ -15685,7 +15710,7 @@ Node::mirror_node(Node   *node,
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
             node->append_node_ptr(curr_node);
-        }                   
+        }
     }
     else if(schema->dtype().id() == DataType::LIST_ID)
     {
@@ -15702,7 +15727,7 @@ Node::mirror_node(Node   *node,
         }
     }
 
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -15716,7 +15741,7 @@ void
 Node::compact_to(uint8 *data, index_t curr_offset) const
 {
     CONDUIT_ASSERT( (m_schema != NULL) , "Corrupt schema found in compact_to call");
-    
+
     index_t dtype_id = dtype().id();
     if(dtype_id == DataType::OBJECT_ID ||
        dtype_id == DataType::LIST_ID)
@@ -15748,7 +15773,7 @@ Node::compact_elements_to(uint8 *data) const
     }
     else
     {
-        // copy all elements 
+        // copy all elements
         index_t num_ele   = dtype().number_of_elements();
         index_t ele_bytes = DataType::default_bytes(dtype_id);
         uint8 *data_ptr = data;
@@ -15787,10 +15812,10 @@ Node::serialize(uint8 *data,index_t curr_offset) const
         }
         else // ser as is. This copies stride * num_ele bytes
         {
-            // copy all elements 
-            compact_elements_to(&data[curr_offset]);      
+            // copy all elements
+            compact_elements_to(&data[curr_offset]);
         }
-       
+
     }
 }
 
@@ -15800,7 +15825,7 @@ index_t
 Node::total_bytes_allocated() const
 {
     index_t res = allocated_bytes();
-    
+
     NodeConstIterator itr = children();
     while(itr.has_next())
     {
@@ -15817,7 +15842,7 @@ index_t
 Node::total_bytes_mmaped() const
 {
     index_t res = mmaped_bytes();
-    
+
     NodeConstIterator itr = children();
     while(itr.has_next())
     {
@@ -15840,7 +15865,7 @@ Node::is_contiguous() const
 bool
 Node::contiguous_with(void *address) const
 {
-    // not handling NULL as input will case an issue b/c NULL 
+    // not handling NULL as input will case an issue b/c NULL
     // is used to start recursion for the is_contiguous() case.
     if(address == NULL)
     {
@@ -15848,7 +15873,7 @@ Node::contiguous_with(void *address) const
     }
 
     uint8 *end_addy= NULL;
-    
+
     return contiguous_with((uint8*)address,end_addy);
 }
 
@@ -15858,11 +15883,11 @@ bool
 Node::contiguous_with(const Node &n) const
 {
     uint8* end_addy=NULL;
-    
+
     // use check_contiguous_after to get final address from passed node
     // if the passed node isn't contiguous, this call returns false
 
-    return n.contiguous_with(NULL,end_addy) && 
+    return n.contiguous_with(NULL,end_addy) &&
            this->contiguous_with(end_addy);
 }
 
@@ -15872,9 +15897,9 @@ bool
 Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
 {
     bool res = true;
-    
+
     index_t dtype_id = dtype().id();
-    
+
     if(dtype_id == DataType::OBJECT_ID ||
        dtype_id == DataType::LIST_ID)
     {
@@ -15885,7 +15910,7 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
         {
             res = (*itr)->contiguous_with(start_addy,
                                           end_addy);
-            
+
             if(res)
             {
                 // ok, advance
@@ -15919,8 +15944,8 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
         else if(curr_addy != NULL)
         {
             // this is the first leaf that actually has data
-            // 
-            // by definition it is contiguous, so we simply 
+            //
+            // by definition it is contiguous, so we simply
             // advance the end pointer
             end_addy  = curr_addy + total_strided_bytes();
         }
@@ -15930,7 +15955,7 @@ Node::contiguous_with(uint8 *start_addy, uint8 *&end_addy) const
             end_addy = NULL;
         }
     }
-    
+
     return res;
 }
 
@@ -15942,7 +15967,7 @@ Node::contiguous_data_ptr()
     {
         return NULL;
     }
-    
+
     // if contiguous, we simply need the first non null pointer.
     // Note: use const_cast so we can share the same helper func
     return const_cast<void*>(find_first_data_ptr());
@@ -15956,7 +15981,7 @@ Node::contiguous_data_ptr() const
     {
         return NULL;
     }
-    
+
     // if contiguous, we simply need the first non null pointer.
     return find_first_data_ptr();
 }
@@ -15968,7 +15993,7 @@ Node::find_first_data_ptr() const
     const void *res = NULL;
 
     index_t dtype_id = dtype().id();
-    
+
     if(dtype_id == DataType::OBJECT_ID ||
        dtype_id == DataType::LIST_ID)
     {
@@ -15977,7 +16002,7 @@ Node::find_first_data_ptr() const
             itr < m_children.end() && res == NULL; // stop if found
             ++itr)
         {
-            // recurse 
+            // recurse
             res = (*itr)->find_first_data_ptr();
         }
     }
@@ -15987,7 +16012,7 @@ Node::find_first_data_ptr() const
     {
         res = element_ptr(0);
     }
-    
+
     return res;
 }
 
@@ -16005,10 +16030,10 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data type mismatch (" 
-            << dtype().name() 
-            << " vs " 
-            << n.dtype().name() 
+        oss << "data type mismatch ("
+            << dtype().name()
+            << " vs "
+            << n.dtype().name()
             << ")";
         log::error(info, protocol, oss.str());
         res = true;
@@ -16175,7 +16200,7 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
     if(t_dtid != n_dtid)
     {
         std::ostringstream oss;
-        oss << "data type incompatibility (" 
+        oss << "data type incompatibility ("
             << dtype().name()
             << " vs "
             << n.dtype().name()
@@ -16343,7 +16368,7 @@ Node::info(Node &res, const std::string &curr_path) const
             }
         }
     }
-    
+
     index_t dtype_id = dtype().id();
     if(dtype_id == DataType::OBJECT_ID)
     {
@@ -16373,7 +16398,7 @@ Node::info(Node &res, const std::string &curr_path) const
             oss << curr_path << "[" << i << "]";
             m_children[i]->info(res,oss.str());
         }
-    }    
+    }
 }
 
 

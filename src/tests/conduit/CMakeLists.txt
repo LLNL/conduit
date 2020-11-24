@@ -39,6 +39,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_schema
                 t_conduit_error
                 t_conduit_log
+                t_conduit_mem_allocator
                 t_conduit_utils)
 
 

@@ -12,7 +12,7 @@
 #define CONDUIT_UTILS_HPP
 
 //-----------------------------------------------------------------------------
-// -- standard lib includes -- 
+// -- standard lib includes --
 //-----------------------------------------------------------------------------
 #include <string>
 #include <vector>
@@ -22,7 +22,7 @@
 
 
 //-----------------------------------------------------------------------------
-// -- conduit includes -- 
+// -- conduit includes --
 //-----------------------------------------------------------------------------
 #include "conduit_core.hpp"
 
@@ -30,9 +30,9 @@
 //-----------------------------------------------------------------------------
 //
 /// The CONDUIT_INFO macro is the primary mechanism used to log basic messages.
-/// It calls conduit::utils::handle_info() which invokes 
+/// It calls conduit::utils::handle_info() which invokes
 ///
-/// The default info handler prints the message to std::out. 
+/// The default info handler prints the message to std::out.
 /// You can change the info handler via conduit::utils::set_info_handler().
 ///
 //-----------------------------------------------------------------------------
@@ -48,8 +48,8 @@
 //-----------------------------------------------------------------------------
 //
 /// The CONDUIT_WARN macro is the primary mechanism used to capture warnings
-/// in conduit. It calls conduit::utils::handle_warning() which invokes 
-/// the currently configured warning handler. 
+/// in conduit. It calls conduit::utils::handle_warning() which invokes
+/// the currently configured warning handler.
 ///
 /// The default warning handler throws a c++ exception, in the form of a
 /// conduit::Error instance. You can change the error handler via
@@ -67,9 +67,9 @@
 
 //-----------------------------------------------------------------------------
 //
-/// The CONDUIT_ERROR macro is the primary mechanism used to capture errors  
-/// in conduit. It calls conduit::utils::handle_error() which invokes 
-/// the currently configured error handler. 
+/// The CONDUIT_ERROR macro is the primary mechanism used to capture errors
+/// in conduit. It calls conduit::utils::handle_error() which invokes
+/// the currently configured error handler.
 ///
 /// The default error handler throws a c++ exception, in the form of a
 /// conduit::Error instance. You can change the error handler via
@@ -88,8 +88,8 @@
 //-----------------------------------------------------------------------------
 //
 /// The CONDUIT_ASSERT macro is the primary mechanism used to for asserts
-/// in conduit. It calls conduit::utils::handle_error() which invokes 
-/// the currently configured error handler. 
+/// in conduit. It calls conduit::utils::handle_error() which invokes
+/// the currently configured error handler.
 ///
 /// The default error handler throws a c++ exception, in the form of a
 /// conduit::Error instance. You can change the error handler via
@@ -111,8 +111,8 @@
 //-----------------------------------------------------------------------------
 //
 /// The CONDUIT_CHECK macro is the mechanism used for checks in conduit.
-/// It calls conduit::utils::handle_warning() which invokes 
-/// the currently configured warning handler. 
+/// It calls conduit::utils::handle_warning() which invokes
+/// the currently configured warning handler.
 ///
 /// The default warning handler throws a c++ exception, in the form of a
 /// conduit::Error instance. You can change the error handler via
@@ -144,9 +144,9 @@
 
 //-----------------------------------------------------------------------------
 //
-/// The CONDUIT_UNUSED macro is used to identify unused variables 
-/// in cases where it is difficult to avoid defining in the method signature 
-/// for methods that use optional features. 
+/// The CONDUIT_UNUSED macro is used to identify unused variables
+/// in cases where it is difficult to avoid defining in the method signature
+/// for methods that use optional features.
 ///
 //-----------------------------------------------------------------------------
 #define CONDUIT_UNUSED( var ) (void)(var)
@@ -164,7 +164,7 @@ namespace utils
 {
 
 //-----------------------------------------------------------------------------
-/// Primary interface used by the conduit API when an info message is issued 
+/// Primary interface used by the conduit API when an info message is issued
 /// This simply dispatches the message to the currently configured info handler.
 /// The default info handler prints a the message to std::cout;
 //-----------------------------------------------------------------------------
@@ -188,7 +188,7 @@ namespace utils
                                          int line);
 
 //-----------------------------------------------------------------------------
-/// Primary interface used by the conduit API when a warning is issued. 
+/// Primary interface used by the conduit API when a warning is issued.
 /// This simply dispatches the warning to the currently configured warning handler.
 /// The default warning handler throws a conduit::Error exception.
 //-----------------------------------------------------------------------------
@@ -213,7 +213,7 @@ namespace utils
 
 
 //-----------------------------------------------------------------------------
-/// Primary interface used by the conduit API when an error occurs. 
+/// Primary interface used by the conduit API when an error occurs.
 /// This simply dispatches the error to the currently configured error handler.
 /// The default error handler throws a conduit::Error exception.
 //-----------------------------------------------------------------------------
@@ -237,7 +237,18 @@ namespace utils
                                           int line);
 
 //-----------------------------------------------------------------------------
-/// Helpers for common string splitting operations. 
+/// Primary interface used by the conduit API to allocate memory.
+//-----------------------------------------------------------------------------
+
+    int32 CONDUIT_API register_mem_handler( void*(*allocate) (size_t, size_t),
+                                            void(*free)(void *));
+
+    // allocator_id 0 is the default
+    void * conduit_allocate(size_t n_items, size_t item_size, int32 allocator_id = 0);
+    void conduit_free(void *data_ptr, int32 allocator_id = 0);
+
+//-----------------------------------------------------------------------------
+/// Helpers for common string splitting operations.
 //-----------------------------------------------------------------------------
     void CONDUIT_API split_string(const std::string &str,
                                   const std::string &sep,
@@ -282,9 +293,9 @@ namespace utils
                                              std::string &next);
 
      //------------------------------------------------------------------------
-    /// `split_file_path` and `rsplit_file_path` are helpers that allows us to 
-    ///  use  ":" for subpaths even on Windows when a drive letter including 
-    ///  ":" is in the path. 
+    /// `split_file_path` and `rsplit_file_path` are helpers that allows us to
+    ///  use  ":" for subpaths even on Windows when a drive letter including
+    ///  ":" is in the path.
     //-------------------------------------------------------------------------
     void CONDUIT_API split_file_path(const std::string &str,
                                      const std::string &sep,
@@ -314,8 +325,8 @@ namespace utils
 
 //-----------------------------------------------------------------------------
 /// Creates a new directory.
-/// 
-/// Does not recursively create parent directories if they do not already 
+///
+/// Does not recursively create parent directories if they do not already
 /// exist.
 //-----------------------------------------------------------------------------
      bool CONDUIT_API create_directory(const std::string &path);
@@ -336,10 +347,10 @@ namespace utils
 //-----------------------------------------------------------------------------
 /// Helpers for escaping / unescaping special characters in strings.
 ///
-/// Our main use case for escaping is json, so we support the escape rules 
-/// outlined by the json standard (see: http://www.json.org/). 
+/// Our main use case for escaping is json, so we support the escape rules
+/// outlined by the json standard (see: http://www.json.org/).
 ///
-/// List of supported special characters. 
+/// List of supported special characters.
 ///    " (quote)
 ///    \ (backward slash)
 ///    \n (newline)
@@ -353,7 +364,7 @@ namespace utils
 ///
 /// Special chars that are not escaped or unescaped:
 ///    \u (for hex escapes: \uFFFF)
-/// 
+///
 //-----------------------------------------------------------------------------
     std::string CONDUIT_API escape_special_chars(const std::string &input);
     std::string CONDUIT_API unescape_special_chars(const std::string &input);
@@ -361,7 +372,7 @@ namespace utils
 
 
 //-----------------------------------------------------------------------------
-/// Base64 Encoding of Buffers 
+/// Base64 Encoding of Buffers
 //-----------------------------------------------------------------------------
     void CONDUIT_API base64_encode(const void *src,
                                    index_t src_nbytes,
@@ -378,8 +389,8 @@ namespace utils
 
 //-----------------------------------------------------------------------------
      std::string CONDUIT_API json_sanitize(const std::string &json);
-     
-//----------------------------------------------------------------------------- 
+
+//-----------------------------------------------------------------------------
      // declare then define to avoid icc warnings
      template< typename T >
      std::string to_hex_string(T value);
@@ -416,7 +427,7 @@ namespace utils
 
 
 //-----------------------------------------------------------------------------
-// floating point to string helper, strikes a balance of what we want 
+// floating point to string helper, strikes a balance of what we want
 // for format-wise for debug printing and json + yaml.
 //-----------------------------------------------------------------------------
     std::string CONDUIT_API float64_to_string(float64 value);
@@ -426,19 +437,19 @@ namespace utils
                              index_t indent,
                              index_t depth,
                              const std::string &pad);
-                             
+
 //-----------------------------------------------------------------------------
      void CONDUIT_API sleep(index_t milliseconds);
 
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 // String hash functions
-//----------------------------------------------------------------------------- 
-     unsigned int CONDUIT_API hash(const char *k, 
+//-----------------------------------------------------------------------------
+     unsigned int CONDUIT_API hash(const char *k,
                                    unsigned int length,
                                    unsigned int initval = 0);
-     unsigned int CONDUIT_API hash(const char *k, 
+     unsigned int CONDUIT_API hash(const char *k,
                                    unsigned int initval = 0);
-     unsigned int CONDUIT_API hash(const std::string &k, 
+     unsigned int CONDUIT_API hash(const std::string &k,
                                    unsigned int initval = 0);
 
 }
