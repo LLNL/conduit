@@ -467,10 +467,10 @@ Node::set_node(const Node &node)
             Schema *curr_schema = &this->m_schema->add_child(*itr);
             size_t idx = (size_t) this->m_schema->child_index(*itr);
             Node *curr_node = new Node();
+            curr_node->set_allocator(m_allocator_id);
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(this);
             curr_node->set(*node.m_children[idx]);
-            curr_node->set_allocator(m_allocator_id);
             this->append_node_ptr(curr_node);
         }
     }
@@ -483,6 +483,7 @@ Node::set_node(const Node &node)
             this->m_schema->append();
             Schema *curr_schema = this->m_schema->child_ptr(i);
             Node *curr_node = new Node();
+            curr_node->set_allocator(m_allocator_id);
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(this);
             curr_node->set(*node.m_children[i]);
@@ -531,7 +532,7 @@ Node::set_schema(const Schema &schema)
     // for this case, we need the total bytes spanned by the schema
     size_t nbytes =(size_t) m_schema->spanned_bytes();
     allocate(nbytes);
-    memset(m_data,0,nbytes);
+    utils::conduit_memset(m_data,0,nbytes,m_allocator_id);
     // call walk w/ internal data pointer
     walk_schema(this,m_schema,m_data,m_allocator_id);
 }
@@ -554,7 +555,7 @@ Node::set_data_using_schema(const Schema &schema,
     // for this case, we need the total bytes spanned by the schema
     size_t nbytes = (size_t)m_schema->spanned_bytes();
     allocate(nbytes);
-    memcpy(m_data, data, nbytes);
+    utils::conduit_memcpy(m_data, data, nbytes, m_allocator_id);
     walk_schema(this,m_schema,m_data,m_allocator_id);
 }
 
@@ -574,7 +575,10 @@ Node::set_data_using_dtype(const DataType &dtype,
     release();
     m_schema->set(dtype);
     allocate(m_schema->spanned_bytes());
-    memcpy(m_data, data, (size_t) m_schema->spanned_bytes());
+    utils::conduit_memcpy(m_data,
+                          data,
+                          (size_t) m_schema->spanned_bytes(),
+                          m_allocator_id);
     walk_schema(this,m_schema,m_data,m_allocator_id);
 }
 
@@ -1230,9 +1234,10 @@ Node::set_string(const std::string &data)
     const char *data_ptr = data.c_str();
     for(index_t i=0; i< (index_t) str_size_with_term; i++)
     {
-        memcpy(element_ptr(i),
-               data_ptr,
-               (size_t)ele_bytes);
+        utils::conduit_memcpy(element_ptr(i),
+                              data_ptr,
+                              (size_t)ele_bytes,
+                              m_allocator_id);
         data_ptr+=ele_bytes;
     }
 }
@@ -1267,9 +1272,10 @@ Node::set_char8_str(const char *data)
     index_t ele_bytes = dtype().element_bytes();
     for(index_t i=0; i< (index_t)str_size_with_term; i++)
     {
-        memcpy(element_ptr(i),
-               data_ptr,
-               (size_t)ele_bytes);
+        utils::conduit_memcpy(element_ptr(i),
+                              data_ptr,
+                              (size_t)ele_bytes,
+                              m_allocator_id);
         data_ptr+=ele_bytes;
     }
 }
@@ -12471,6 +12477,7 @@ Node::to_base64_json(std::ostream &os,
     Node bb64_data;
     bb64_data.set(DataType::char8_str(enc_buff_size));
 
+#warning "I don't think to_base64_json should use the allocator, but it references mem"
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr       = (char*)bb64_data.data_ptr();
     memset(dest_ptr,0,(size_t)enc_buff_size);
@@ -12788,6 +12795,7 @@ Node::add_child(const std::string &name)
     Schema &child_schema = m_schema->add_child(name);
     Schema *child_ptr = &child_schema;
     Node *child_node = new Node();
+    child_node->set_allocator(m_allocator_id);
     child_node->set_schema_ptr(child_ptr);
     child_node->m_parent = this;
     m_children.push_back(child_node);
@@ -12988,6 +12996,7 @@ Node::fetch(const std::string &path)
     {
         Schema *schema_ptr = m_schema->fetch_ptr(p_curr);
         Node *curr_node = new Node();
+        curr_node->set_allocator(m_allocator_id);
         curr_node->set_schema_ptr(schema_ptr);
         curr_node->m_parent = this;
         // current allocator is inherited
@@ -13164,9 +13173,9 @@ Node::append()
     Schema *schema_ptr = m_schema->child_ptr(idx);
 
     Node *res_node = new Node();
+    res_node->set_allocator(m_allocator_id);
     res_node->set_schema_ptr(schema_ptr);
     res_node->m_parent=this;
-    res_node->set_allocator(m_allocator_id);
     m_children.push_back(res_node);
     return *res_node;
 }
@@ -15193,17 +15202,27 @@ Node::as_long_double_array() const
 
 void Node::set_allocator(int32 allocator_id)
 {
-  reset();
-  // TODO: add check for allocator exists
-  m_allocator_id = allocator_id;
+  if(allocator_id != m_allocator_id)
+  {
+    reset();
+    // TODO: add check for allocator exists
+    m_allocator_id = allocator_id;
+  }
 }
 
 void Node::reset_allocator()
 {
-  reset();
-  m_allocator_id = 0;
+  if(m_allocator_id != 0)
+  {
+    reset();
+    m_allocator_id = 0;
+  }
 }
 
+int32 Node::get_allocator()
+{
+  return m_allocator_id;
+}
 //-----------------------------------------------------------------------------
 //
 // -- begin definition of Interface Warts --
@@ -15517,7 +15536,6 @@ Node::release()
         if(dtype().id() != DataType::EMPTY_ID)
         {
             // clean up our storage
-            //free(m_data);
             utils::conduit_free(m_data, m_allocator_id);
             m_data = NULL;
             m_data_size = 0;
@@ -15663,9 +15681,9 @@ Node::walk_schema(Node   *node,
             std::string curr_name = schema->object_order()[i];
             Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
+            curr_node->set_allocator(allocator_id);
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
-            curr_node->set_allocator(allocator_id);
             walk_schema(curr_node,curr_schema,data,allocator_id);
             node->append_node_ptr(curr_node);
         }
@@ -15677,9 +15695,9 @@ Node::walk_schema(Node   *node,
         {
             Schema *curr_schema = schema->child_ptr(i);
             Node *curr_node = new Node();
+            curr_node->set_allocator(allocator_id);
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
-            curr_node->set_allocator(allocator_id);
             walk_schema(curr_node,curr_schema,data,allocator_id);
             node->append_node_ptr(curr_node);
         }
@@ -15706,6 +15724,7 @@ Node::mirror_node(Node   *node,
             Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
             const Node *curr_src = src->child_ptr(i);
+            curr_node->set_allocator(node->get_allocator());
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
@@ -15720,6 +15739,7 @@ Node::mirror_node(Node   *node,
             Schema *curr_schema = schema->child_ptr(i);
             Node *curr_node = new Node();
             const Node *curr_src = src->child_ptr(i);
+            curr_node->set_allocator(node->get_allocator());
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
@@ -15779,9 +15799,10 @@ Node::compact_elements_to(uint8 *data) const
         uint8 *data_ptr = data;
         for(index_t i=0;i<num_ele;i++)
         {
-            memcpy(data_ptr,
-                   element_ptr(i),
-                   (size_t)ele_bytes);
+          utils::conduit_memcpy(data_ptr,
+                                element_ptr(i),
+                                (size_t)ele_bytes,
+                                m_allocator_id);
             data_ptr+=ele_bytes;
         }
     }
@@ -15806,9 +15827,10 @@ Node::serialize(uint8 *data,index_t curr_offset) const
     {
         if(is_compact())
         {
-            memcpy(&data[curr_offset],
-                   element_ptr(0),
-                   (size_t)total_bytes_compact());
+          utils::conduit_memcpy(&data[curr_offset],
+                                element_ptr(0),
+                                (size_t)total_bytes_compact(),
+                                m_allocator_id);
         }
         else // ser as is. This copies stride * num_ele bytes
         {

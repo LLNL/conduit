@@ -225,7 +225,9 @@ public:
     void mmap(const std::string &stream_path,
               const Schema &schema);
 
+    //TODO: just change this to allocator
     void set_allocator(int32 allocator_id);
+    int32 get_allocator();
     void reset_allocator();
 
 //-----------------------------------------------------------------------------

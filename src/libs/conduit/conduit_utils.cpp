@@ -85,31 +85,71 @@ default_free_handler(void *data_ptr)
   free(data_ptr);
 }
 
+void default_memset_handler(void * ptr, int value, size_t num )
+{
+  memset(ptr,value,num);
+}
+
+void default_memcpy_handler(void * destination, const void * source, size_t num)
+{
+  memcpy(destination,source,num);
+}
+
 static std::map<int32,void*(*)(size_t, size_t)> allocator_map
   = {{0, &default_alloc_handler}};
 
 static std::map<int32,void(*)(void*)> free_map
   = {{0, default_free_handler}};
 
+static std::map<int32,void(*)(void*,const void *,size_t)> memcpy_map
+  = {{0, default_memcpy_handler}};
+
+static std::map<int32,void(*)(void*,int,size_t)> memset_map
+  = {{0, default_memset_handler}};
+
+
 
 int32 register_mem_handler( void*(*allocate) (size_t, size_t),
-                            void(*free)(void *))
+                            void(*free)(void *),
+                            void(*copy)(void*,const void *,size_t),
+                            void(*memset)(void*,int,size_t))
 {
   static int32 allocator_id = 1;
   allocator_map[allocator_id] = allocate;
   free_map[allocator_id] = free;
+  memcpy_map[allocator_id] = copy;
+  memset_map[allocator_id] = memset;
   return allocator_id++;
 }
 
 void *
-conduit_allocate(size_t n_items, size_t item_size, int32 allocator_id)
+conduit_allocate(size_t n_items,
+                 size_t item_size,
+                 int32 allocator_id)
 {
   return allocator_map[allocator_id](n_items, item_size);
 }
 
-void conduit_free(void *data_ptr, int32 allocator_id)
+void conduit_free(void *data_ptr,
+                  int32 allocator_id)
 {
   free_map[allocator_id](data_ptr);
+}
+
+void conduit_memcpy(void * destination,
+                    const void * source,
+                    size_t num,
+                    int32 allocator_id)
+{
+   memcpy_map[allocator_id](destination,source,num);
+}
+
+void conduit_memset(void * ptr,
+                    int value,
+                    size_t num,
+                    int32 allocator_id)
+{
+  memset_map[allocator_id](ptr,value,num);
 }
 //-----------------------------------------------------------------------------
 // default info message handler callback, simply prints to std::cout.

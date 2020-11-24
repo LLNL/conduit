@@ -241,11 +241,29 @@ namespace utils
 //-----------------------------------------------------------------------------
 
     int32 CONDUIT_API register_mem_handler( void*(*allocate) (size_t, size_t),
-                                            void(*free)(void *));
+                                            void(*free)(void *),
+                                            void(*copy)(void*,const void *,size_t),
+                                            void(*memset)(void*,int,size_t));
 
     // allocator_id 0 is the default
-    void * conduit_allocate(size_t n_items, size_t item_size, int32 allocator_id = 0);
-    void conduit_free(void *data_ptr, int32 allocator_id = 0);
+    void * CONDUIT_API conduit_allocate(size_t n_items,
+                                        size_t item_size,
+                                        int32 allocator_id = 0);
+
+    void CONDUIT_API conduit_free(void *data_ptr,
+                                  int32 allocator_id = 0);
+
+    void CONDUIT_API conduit_memcpy(void * destination,
+                                    const void * source,
+                                    size_t num,
+                                    int32 allocator_id = 0);
+
+    // I note that the default memset returns the orig pointer, but
+    // other allocators like cuda do not
+    void CONDUIT_API conduit_memset(void * ptr,
+                                    int value,
+                                    size_t num,
+                                    int32 allocator_id = 0);
 
 //-----------------------------------------------------------------------------
 /// Helpers for common string splitting operations.

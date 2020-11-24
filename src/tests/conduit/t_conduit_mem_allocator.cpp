@@ -34,6 +34,18 @@ struct TestAllocator
     m_free_count++;
     free(data_ptr);
   }
+
+  static void banana_memset(void * ptr, int value, size_t num )
+  {
+    std::cout<<"set bananas\n";
+    memset(ptr,value,num);
+  }
+
+  static void banana_copy(void * destination, const void * source, size_t num)
+  {
+    std::cout<<"copy bananas\n";
+    memcpy(destination,source,num);
+  }
 };
 
 size_t TestAllocator::m_total_bytes_alloced = 0;
@@ -45,7 +57,9 @@ TEST(conduit_memory_allocator, test_custom_allocator)
 {
   int allocator_id
     = conduit::utils::register_mem_handler(TestAllocator::banana_alloc,
-                                           TestAllocator::free_bananas);
+                                           TestAllocator::free_bananas,
+                                           TestAllocator::banana_copy,
+                                           TestAllocator::banana_memset);
 
   conduit::Node node;
   node.set_allocator(allocator_id);
