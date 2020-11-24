@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <deque>
 #include <set>
 
 //-----------------------------------------------------------------------------
@@ -336,6 +337,24 @@ std::vector<index_t> intersect_sets(const std::set<index_t> &s1,
     std::vector<index_t>::iterator si_end = std::set_intersection(
         s1.begin(), s1.end(), s2.begin(), s2.end(), si.begin());
     return std::vector<index_t>(si.begin(), si_end);
+}
+
+//-----------------------------------------------------------------------------
+std::vector<index_t> intersect_sets(const std::vector<index_t> &v1,
+                                    const std::vector<index_t> &v2)
+{
+    std::vector<index_t> res;
+    for(index_t i1 = 0; i1 < (index_t)v1.size(); i1++)
+    {
+        for(index_t i2 = 0; i2 < (index_t)v2.size(); i2++)
+        {
+            if(v1[i1] == v2[i2])
+            {
+                res.push_back(v1[i1]);
+            }
+        }
+    }
+    return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -1081,55 +1100,51 @@ struct TopologyMetadata
 
         // Prepare Initial Values for Processing //
 
+        // Temporary nodes to manage pointers to important information (temp) and
+        // associated conversations (data).
+        Node temp, data;
+
+        // NOTE(JRC): A 'deque' is used in order to allow for queue behavior
+        // to be used in deciding the identifiers for the cascade of entities.
+        const index_t bag_num_elems = topo_num_coords + topo_num_elems;
+        std::deque< std::vector<int64> > entity_index_bag(bag_num_elems);
+        std::deque< index_t > entity_dim_bag(bag_num_elems, -1);
+        std::deque< std::vector<int64> > entity_parent_bag(bag_num_elems);
+
         // NOTE(JRC): We start with processing the points of the topology followed
         // by the top-level elements in order to ensure that order is preserved
-        // relative to the original topology for these elements.
-        const index_t bag_num_elems = topo_num_coords + topo_num_elems;
-        std::vector< std::vector<int64> > entity_index_bag(bag_num_elems);
-        std::vector< index_t > entity_dim_bag(bag_num_elems, -1);
-        std::vector< std::vector<int64> > entity_parent_bag(bag_num_elems);
-
+        // relative to the original topology for these entities.
         for(index_t pi = 0; pi < topo_num_coords; pi++)
         {
             index_t bi = pi;
             entity_index_bag[bi].push_back(bi);
             entity_dim_bag[bi] = 0;
+            // entity_parent_bag[bi] = std::vector<int64>();
         }
-
-        Node elem_node, data_node;
         for(index_t ei = 0; ei < topo_num_elems; ei++)
         {
             index_t bi = topo_num_coords + ei;
 
-            data_node.reset();
-            get_entity_data(ei, topo_shape.dim, data_node);
+            temp.reset();
+            get_entity_data(ei, topo_shape.dim, temp);
 
-            // NOTE: The index set is reversed since the use of DFS for the
-            // search below guarantee that this ordering replicates the
-            // original topology's ordering.
             std::vector<int64> &elem_indices = entity_index_bag[bi];
-            elem_indices.resize(data_node.dtype().number_of_elements());
-            elem_node.set_external(DataType::int64(elem_indices.size()),
-                &elem_indices[0]);
-            data_node.to_int64_array(elem_node);
+            elem_indices.resize(temp.dtype().number_of_elements());
+            data.set_external(DataType::int64(elem_indices.size()), &elem_indices[0]);
+            temp.to_int64_array(data);
 
             entity_dim_bag[bi] = topo_shape.dim;
+            // entity_parent_bag[bi] = std::vector<int64>();
         }
-
-        // TODO(JRC): This is really inefficient, but it makes the process a
-        // lot more legible.
-        std::reverse(entity_index_bag.begin(), entity_index_bag.end());
-        std::reverse(entity_dim_bag.begin(), entity_dim_bag.end());
-        std::reverse(entity_parent_bag.begin(), entity_parent_bag.end());
 
         while(!entity_index_bag.empty())
         {
-            std::vector<int64> entity_indices = entity_index_bag.back();
-            entity_index_bag.pop_back();
-            index_t entity_dim = entity_dim_bag.back();
-            entity_dim_bag.pop_back();
-            std::vector<int64> entity_parents = entity_parent_bag.back();
-            entity_parent_bag.pop_back();
+            std::vector<int64> entity_indices = entity_index_bag.front();
+            entity_index_bag.pop_front();
+            index_t entity_dim = entity_dim_bag.front();
+            entity_dim_bag.pop_front();
+            std::vector<int64> entity_parents = entity_parent_bag.front();
+            entity_parent_bag.pop_front();
 
             std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
             int64 &dim_offset = dim_offsets[entity_dim];
@@ -1144,63 +1159,41 @@ struct TopologyMetadata
             // and of 2D polygonal topologies, but it may not be always the
             // case for 3D polygonal topologies.
             std::set<int64> entity;
-            if(!dim_shape.is_poly())
+            if(!dim_shape.is_polyhedral())
             {
                 entity = std::set<int64>(entity_indices.begin(), entity_indices.end());
             }
-            else
+            else // if(dim_shape.is_polyhedral())
             {
-                // Number of faces()
-                const bool is_3d = dim_shape.dim == 3;
-                index_t elem_outer_count =  is_3d ? entity_indices.size() : 1;
-                Node temp;
-                for(index_t oi = 0, ooff = 0 ; oi < elem_outer_count; oi++)
+                const index_t elem_outer_count = entity_indices.size();
+                for(index_t oi = 0; oi < elem_outer_count; oi++)
                 {
-                    index_t elem_inner_count = entity_indices.size();
-                    if (is_3d)
-                    {
-                        const Node &subelem_off_const = (*topo)["subelements/offsets"];
-                        const Node &subelem_size_const = (*topo)["subelements/sizes"];
+                    temp.set_external((*topo)["subelements/offsets"]);
+                    data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
+                    const index_t elem_inner_offset = data.to_index_t();
 
-                        Node subelem_off; subelem_off.set_external(subelem_off_const);
-                        Node subelem_size; subelem_size.set_external(subelem_size_const);
-
-                        temp.set_external(int_dtype,
-                            subelem_off.element_ptr(entity_indices[oi]));
-                        ooff = temp.to_int64();
-                        temp.set_external(int_dtype,
-                            subelem_size.element_ptr(entity_indices[oi]));
-                        elem_inner_count = temp.to_int64();
-                    }
+                    temp.set_external((*topo)["subelements/sizes"]);
+                    data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
+                    const index_t elem_inner_count = data.to_index_t();
 
                     for(index_t ii = 0; ii < elem_inner_count; ii++)
                     {
-                        index_t ioff = ooff + ii;
-                        if (is_3d)
-                        {
-                            const Node &subelem_conn_const = (*topo)["subelements/connectivity"];
-                            Node subelem_conn; subelem_conn.set_external(subelem_conn_const);
-
-                            temp.set_external(int_dtype,
-                                subelem_conn.element_ptr(ioff));
-                            entity.insert(temp.to_int64());
-                        }
-                        else
-                        {
-                            entity.insert(entity_indices[ioff]);
-                        }
+                        temp.set_external((*topo)["subelements/connectivity"]);
+                        data.set_external(int_dtype, temp.element_ptr(elem_inner_offset + ii));
+                        const index_t vi = data.to_int64();
+                        entity.insert(vi);
                     }
                 }
             }
 
             if(dim_entity_map.find(entity) == dim_entity_map.end())
             {
-                index_t entity_id = dim_offset;
+                index_t entity_id = dim_offset++;
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
-                dim_entity_map[entity] = dim_offset++;
+                dim_entity_map[entity] = entity_id;
 
                 dim_assocs[entity_dim][entity_id].resize(topo_shape.dim + 1);
-                dim_assocs[entity_dim][entity_id][entity_dim].insert(entity_id);
+                dim_assocs[entity_dim][entity_id][entity_dim].push_back(entity_id);
             }
 
             // NOTE(JRC): The ID for each entity is set to be the index
@@ -1212,14 +1205,31 @@ struct TopologyMetadata
                 int64 parent_id = entity_parents[entity_parents.size() - pi - 1];
                 index_t parent_dim = entity_dim + pi + 1;
 
-                std::vector< std::set<index_t> >
+                std::vector< std::vector<index_t> >
                     &entity_assocs = dim_assocs[entity_dim][entity_id],
                     &parent_assocs = dim_assocs[parent_dim][parent_id];
                 if(entity_assocs.empty()) { entity_assocs.resize(topo_shape.dim + 1); }
                 if(parent_assocs.empty()) { parent_assocs.resize(topo_shape.dim + 1); }
 
-                entity_assocs[parent_dim].insert(parent_id);
-                parent_assocs[entity_dim].insert(entity_id);
+                // TODO(JRC): This is needed in order to prevent duplicates at
+                // the bottom from propagating upwards, but it needs to be improved
+                // substantially to be in any way efficient and/or elegant.
+                // FIXME(JRC): Is it always the case that the double counts will
+                // happen in sequence (e.g. if we go down from cell to vertex,
+                // will the cell id always be present as the last item if it
+                // exists at all?). If so, that could improve this code a lot.
+                if(std::find(entity_assocs[parent_dim].begin(),
+                             entity_assocs[parent_dim].end(),
+                             parent_id) == entity_assocs[parent_dim].end())
+                {
+                    entity_assocs[parent_dim].push_back(parent_id);
+                }
+                if(std::find(parent_assocs[entity_dim].begin(),
+                             parent_assocs[entity_dim].end(),
+                             entity_id) == parent_assocs[entity_dim].end())
+                {
+                    parent_assocs[entity_dim].push_back(entity_id);
+                }
             }
 
             // Add Embedded Elements for Further Processing //
@@ -1233,9 +1243,11 @@ struct TopologyMetadata
                 index_t elem_outer_count = dim_shape.is_poly() ?
                     entity_indices.size() : dim_shape.embed_count;
 
-                Node temp;
-                for(index_t oi = 0, ooff = 0;
-                    oi < elem_outer_count; oi++)
+                // NOTE(JRC): This is horribly complicated for the poly case and needs
+                // to be refactored so that it's legible. There's a lot of overlap in
+                // used variables where it feels unnecessary (e.g. 'poly' being
+                // shoehorned into using 'implicit' variables), for example.
+                for(index_t oi = 0, ooff = 0; oi < elem_outer_count; oi++)
                 {
                     index_t elem_inner_count = embed_shape.indices;
 
@@ -1275,7 +1287,6 @@ struct TopologyMetadata
                             embed_indices.push_back(
                                 entity_indices[ioff % entity_indices.size()]);
                         }
-
                     }
 
                     ooff += dim_shape.is_polygonal() ? 1 : 0;
@@ -1287,7 +1298,7 @@ struct TopologyMetadata
             }
         }
 
-        // Transform Topological Data to Nodes //
+        // Move Topological Data into Per-Dim Nodes //
 
         for(index_t di = 0; di <= topo_shape.dim; di++)
         {
@@ -1316,13 +1327,12 @@ struct TopologyMetadata
 
     void get_entity_data(index_t entity_id, index_t entity_dim, Node &data_node) const
     {
-        const Node &dim_conn_const = dim_topos[entity_dim]["elements/connectivity"];
-        const Node &dim_off_const = dim_topos[entity_dim]["elements/offsets"];
-
         // NOTE(JRC): This is done in order to get around 'const' casting for
         // data pointers that won't be changed by the function anyway.
-        Node dim_conn; dim_conn.set_external(dim_conn_const);
-        Node dim_off; dim_off.set_external(dim_off_const);
+        Node dim_conn;
+        dim_conn.set_external(dim_topos[entity_dim]["elements/connectivity"]);
+        Node dim_off;
+        dim_off.set_external(dim_topos[entity_dim]["elements/offsets"]);
 
         const DataType conn_dtype(dim_conn.dtype().id(), 1);
         const DataType off_dtype(dim_off.dtype().id(), 1);
@@ -1342,7 +1352,7 @@ struct TopologyMetadata
         temp_node.to_data_type(data_dtype.id(), data_node);
     }
 
-    const std::set<index_t>& get_entity_assocs(index_t entity_id, index_t entity_dim, index_t assoc_dim) const
+    const std::vector<index_t>& get_entity_assocs(index_t entity_id, index_t entity_dim, index_t assoc_dim) const
     {
         return dim_assocs[entity_dim].find(entity_id)->second[assoc_dim];
     }
@@ -1352,7 +1362,7 @@ struct TopologyMetadata
         std::vector<index_t> values, sizes, offsets;
         for(index_t sdi = 0, so = 0; sdi < (index_t)dim_assocs[src_dim].size(); sdi++, so += sizes.back())
         {
-            const std::set<index_t> &src_assocs = get_entity_assocs(sdi, src_dim, dst_dim);
+            const std::vector<index_t> &src_assocs = get_entity_assocs(sdi, src_dim, dst_dim);
             values.insert(values.end(), src_assocs.begin(), src_assocs.end());
             sizes.push_back((index_t)src_assocs.size());
             offsets.push_back(so);
@@ -1422,12 +1432,11 @@ struct TopologyMetadata
             }
             else
             {
-                const std::set<index_t> &embed_ids = get_entity_assocs(
+                const std::vector<index_t> &embed_ids = get_entity_assocs(
                     entity_index, entity_dim_back, entity_dim_back - 1);
-                for(std::set<index_t>::const_iterator embed_it = embed_ids.begin();
-                    embed_it != embed_ids.end(); embed_it++)
+                for(index_t ei = 0; ei < (index_t)embed_ids.size(); ei++)
                 {
-                    entity_index_bag.push_back(*embed_it);
+                    entity_index_bag.push_back(embed_ids[ei]);
                     entity_dim_bag.push_back(entity_dim_back - 1);
                 }
             }
@@ -1464,7 +1473,7 @@ struct TopologyMetadata
     // per-dimension maps from an entity's index set to its topological index
     std::vector< std::map< std::set<index_t>, index_t > > dim_entity_maps;
     // per-dimension maps from entity indices to per-dimension sets of associated values
-    std::vector< std::map<index_t, std::vector< std::set<index_t> > > > dim_assocs;
+    std::vector< std::map<index_t, std::vector< std::vector<index_t> > > > dim_assocs;
 };
 
 //-------------------------------------------------------------------------
@@ -3418,13 +3427,11 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 
     const DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
 
-    // polygonal topology case
     if(topo_shape.is_poly())
     {
         dest.set(topo);
     }
-    // nonpolygonal topology case
-    else
+    else // if(!topo_shape.is_poly())
     {
         const Node &topo_conn_const = topo["elements/connectivity"];
         Node topo_conn; topo_conn.set_external(topo_conn_const);
@@ -3763,20 +3770,20 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     Node &dest_conn = dest["elements/connectivity"];
     for(; elem_index < (int64)topo_num_elems; elem_index++)
     {
-        std::vector< index_t > elem_embed_stack(1, elem_index);
-        std::vector< index_t > elem_edim_stack(1, topo_shape.dim);
-        std::vector< std::vector<index_t> > elem_eparent_stack(1);
+        std::deque< index_t > elem_embed_stack(1, elem_index);
+        std::deque< index_t > elem_edim_stack(1, topo_shape.dim);
+        std::deque< std::vector<index_t> > elem_eparent_stack(1);
 
         int64 s2d_start_index = s2d_val_index;
 
         while(!elem_embed_stack.empty())
         {
-            index_t embed_index = elem_embed_stack.back();
-            elem_embed_stack.pop_back();
-            index_t embed_dim = elem_edim_stack.back();
-            elem_edim_stack.pop_back();
-            std::vector<index_t> embed_parents = elem_eparent_stack.back();
-            elem_eparent_stack.pop_back();
+            index_t embed_index = elem_embed_stack.front();
+            elem_embed_stack.pop_front();
+            index_t embed_dim = elem_edim_stack.front();
+            elem_edim_stack.pop_front();
+            std::vector<index_t> embed_parents = elem_eparent_stack.front();
+            elem_eparent_stack.pop_front();
 
             if(embed_dim == line_shape.dim)
             {
@@ -3814,12 +3821,11 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
             {
                 embed_parents.push_back(embed_index);
 
-                const std::set<index_t> &embed_set = topo_data.get_entity_assocs(
+                const std::vector<index_t> &embed_ids = topo_data.get_entity_assocs(
                     embed_index, embed_dim, embed_dim - 1);
-                for(std::set<index_t>::const_iterator embed_it = embed_set.begin();
-                    embed_it != embed_set.end(); embed_it++)
+                for(index_t ei = 0; ei < (index_t)embed_ids.size(); ei++)
                 {
-                    elem_embed_stack.push_back(*embed_it);
+                    elem_embed_stack.push_back(embed_ids[ei]);
                     elem_edim_stack.push_back(embed_dim - 1);
                     elem_eparent_stack.push_back(embed_parents);
                 }
@@ -3948,19 +3954,18 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     Node misc_data;
     for(index_t elem_index = 0, corner_index = 0; elem_index < (int64)topo_num_elems; elem_index++)
     {
-        const std::set<index_t> &elem_lines = topo_data.get_entity_assocs(
+        const std::vector<index_t> &elem_lines = topo_data.get_entity_assocs(
             elem_index, topo_shape.dim, line_shape.dim);
-        const std::set<index_t> &elem_faces = topo_data.get_entity_assocs(
+        const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
             elem_index, topo_shape.dim, face_shape.dim);
 
-        const std::set<index_t> &elem_points = topo_data.get_entity_assocs(
+        const std::vector<index_t> &elem_points = topo_data.get_entity_assocs(
             elem_index, topo_shape.dim, point_shape.dim);
         s2d_size_data_raw.push_back(elem_points.size());
-        for(std::set<index_t>::const_iterator points_it = elem_points.begin();
-            points_it != elem_points.end(); ++points_it, corner_index++)
+        for(index_t pi = 0; pi < (index_t)elem_points.size(); pi++, corner_index++)
         {
-            index_t point_index = *points_it;
-            const std::set<index_t> &point_lines = topo_data.get_entity_assocs(
+            const index_t point_index = elem_points[pi];
+            const std::vector<index_t> &point_lines = topo_data.get_entity_assocs(
                 point_index, point_shape.dim, line_shape.dim);
 
             std::vector<index_t> elem_point_lines = intersect_sets(
@@ -3971,20 +3976,19 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             for(index_t bei = 0; bei < (index_t)elem_point_lines.size(); bei++)
             {
                 index_t base_edge_index = elem_point_lines[bei];
-                const std::set<index_t> &base_faces = topo_data.get_entity_assocs(
+                const std::vector<index_t> &base_faces = topo_data.get_entity_assocs(
                     base_edge_index, line_shape.dim, face_shape.dim);
                 for(index_t dei = 1; dei == 1 || bei + dei < (index_t)elem_point_lines.size(); dei++)
                 {
                     index_t cei = bei + dei;
                     index_t check_edge_index = elem_point_lines[cei % elem_point_lines.size()];
-                    const std::set<index_t> &check_faces = topo_data.get_entity_assocs(
+                    const std::vector<index_t> &check_faces = topo_data.get_entity_assocs(
                         check_edge_index, line_shape.dim, face_shape.dim);
 
                     std::vector<index_t> edge_shared_faces = intersect_sets(
                         base_faces, check_faces);
                     std::vector<index_t> edge_shared_elem_faces = intersect_sets(
-                        elem_faces, std::set<index_t>(edge_shared_faces.begin(),
-                        edge_shared_faces.end()));
+                        elem_faces, edge_shared_faces);
                     if(!edge_shared_elem_faces.empty())
                     {
                         corner_entities[2 * (bei + 1) - 1] = edge_shared_elem_faces[0];

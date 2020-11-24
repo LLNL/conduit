@@ -32,6 +32,11 @@ using namespace conduit::utils;
 
 /// Testing Constants ///
 
+static const index_t ELEM_TYPE_TRI_ID = 0;
+static const index_t ELEM_TYPE_QUAD_ID = 1;
+static const index_t ELEM_TYPE_TET_ID = 2;
+static const index_t ELEM_TYPE_HEX_ID = 3;
+
 static const std::string ELEM_TYPE_LIST[]      = {"tris", "quads", "tets", "hexs"};
 static const index_t ELEM_TYPE_DIMS[]          = {     2,       2,      3,      3};
 static const index_t ELEM_TYPE_CELL_ELEMS[]    = {     2,       1,      6,      1};
@@ -339,7 +344,7 @@ struct GridMeshCollection
         }
 
         // HARD DEBUG
-        // meshes.push_back(GridMesh(3, npts, false));
+        // meshes.push_back(GridMesh(ELEM_TYPE_QUAD_ID, npts, false));
 
         // SOFT DEBUG
         // for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
@@ -698,12 +703,45 @@ const GridMeshCollection &get_test_grids(const index_t *npts)
 typedef GridMeshCollection::Iterator GridIterator;
 
 //-----------------------------------------------------------------------------
+// TEST(conduit_blueprint_generate_unstructured, generate_cascade)
+// {
+//     // NOTE(JRC): This is an unused test case that can be implemented in order
+//     // to help debug the current ordering being used for the topological cascade.
+//     const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID);
+//     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
+//     {
+//         GridMesh grid_mesh = *grid_it;
+//         Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
+//         Node &grid_topo = grid_mesh.mesh["topologies"].child(0);
+// 
+//         Node s2t_map, t2s_map;
+//         Node &point_topo = grid_mesh.mesh["topologies"]["points"];
+//         mesh::topology::unstructured::generate_points(grid_topo, point_topo, s2t_map, t2s_map);
+//         Node &line_topo = grid_mesh.mesh["topologies"]["lines"];
+//         mesh::topology::unstructured::generate_lines(grid_topo, line_topo, s2t_map, t2s_map);
+//         Node &face_topo = grid_mesh.mesh["topologies"]["faces"];
+//         mesh::topology::unstructured::generate_faces(grid_topo, face_topo, s2t_map, t2s_map);
+// 
+//         Node &centroid_coords = grid_mesh.mesh["coordsets"]["centroids"];
+//         Node &side_topo = grid_mesh.mesh["topologies"]["sides"];
+//         mesh::topology::unstructured::generate_sides(grid_topo, side_topo, centroid_coords, s2t_map, t2s_map);
+//         Node &corner_topo = grid_mesh.mesh["topologies"]["corners"];
+//         mesh::topology::unstructured::generate_corners(grid_topo, corner_topo, centroid_coords, s2t_map, t2s_map);
+// 
+//         grid_mesh.mesh.remove("fields");
+//         grid_mesh.mesh.remove("state");
+// 
+//         grid_mesh.mesh.print();
+//     }
+// }
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
 {
     const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
-        // NOTE(JRC): We separate polynomial and non-polynomial topologies in
+        // NOTE(JRC): We separate polytopal and non-polytopal topologies in
         // testing to make attribution and problem tracing easier.
         if(grid_it->is_poly) { continue; }
 
@@ -738,7 +776,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
     const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID);
     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
     {
-        // NOTE(JRC): We separate polynomial and non-polynomial topologies in
+        // NOTE(JRC): We separate polytopal and non-polytopal topologies in
         // testing to make attribution and problem tracing easier.
         if(!grid_it->is_poly) { continue; }
 
@@ -901,7 +939,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
 
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
         // interfaces are complicated and make counting too difficult.
-        if(grid_it->type == 2) { continue; }
+        if(grid_it->type == ELEM_TYPE_TET_ID) { continue; }
 
         for(index_t mi = 0; mi < 2; mi++)
         {
@@ -941,7 +979,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
     {
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
         // interfaces are complicated and make counting too difficult.
-        if(grid_it->type == 2) { continue; }
+        if(grid_it->type == ELEM_TYPE_TET_ID) { continue; }
 
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
@@ -1014,7 +1052,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
     {
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
         // interfaces are complicated and make counting too difficult.
-        if(grid_it->type == 2) { continue; }
+        if(grid_it->type == ELEM_TYPE_TET_ID) { continue; }
 
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
