@@ -71,6 +71,11 @@ namespace conduit { namespace blueprint { namespace mesh {
     static const std::vector<std::string> topo_shapes(topo_shape_list,
         topo_shape_list + sizeof(topo_shape_list) / sizeof(topo_shape_list[0]));
 
+    static const std::string topo_shape_id_list[8] = {"p", "l",
+        "f", "f", "c", "c", "f", "c"};
+    static const std::vector<std::string> topo_shape_ids(topo_shape_id_list,
+        topo_shape_id_list + sizeof(topo_shape_id_list) / sizeof(topo_shape_id_list[0]));
+
     static const index_t topo_shape_dim_list[8] = {0, 1,
         2, 2, 3, 3, 2, 3};
     static const std::vector<index_t> topo_shape_dims(
@@ -1191,9 +1196,7 @@ struct TopologyMetadata
                 index_t entity_id = dim_offset++;
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
                 dim_entity_map[entity] = entity_id;
-
-                dim_assocs[entity_dim][entity_id].resize(topo_shape.dim + 1);
-                dim_assocs[entity_dim][entity_id][entity_dim].push_back(entity_id);
+                add_entity_assoc(entity_id, entity_dim, entity_id, entity_dim);
             }
 
             // NOTE(JRC): The ID for each entity is set to be the index
@@ -1204,32 +1207,7 @@ struct TopologyMetadata
             {
                 int64 parent_id = entity_parents[entity_parents.size() - pi - 1];
                 index_t parent_dim = entity_dim + pi + 1;
-
-                std::vector< std::vector<index_t> >
-                    &entity_assocs = dim_assocs[entity_dim][entity_id],
-                    &parent_assocs = dim_assocs[parent_dim][parent_id];
-                if(entity_assocs.empty()) { entity_assocs.resize(topo_shape.dim + 1); }
-                if(parent_assocs.empty()) { parent_assocs.resize(topo_shape.dim + 1); }
-
-                // TODO(JRC): This is needed in order to prevent duplicates at
-                // the bottom from propagating upwards, but it needs to be improved
-                // substantially to be in any way efficient and/or elegant.
-                // FIXME(JRC): Is it always the case that the double counts will
-                // happen in sequence (e.g. if we go down from cell to vertex,
-                // will the cell id always be present as the last item if it
-                // exists at all?). If so, that could improve this code a lot.
-                if(std::find(entity_assocs[parent_dim].begin(),
-                             entity_assocs[parent_dim].end(),
-                             parent_id) == entity_assocs[parent_dim].end())
-                {
-                    entity_assocs[parent_dim].push_back(parent_id);
-                }
-                if(std::find(parent_assocs[entity_dim].begin(),
-                             parent_assocs[entity_dim].end(),
-                             entity_id) == parent_assocs[entity_dim].end())
-                {
-                    parent_assocs[entity_dim].push_back(entity_id);
-                }
+                add_entity_assoc(entity_id, entity_dim, parent_id, parent_dim);
             }
 
             // Add Embedded Elements for Further Processing //
@@ -1352,9 +1330,33 @@ struct TopologyMetadata
         temp_node.to_data_type(data_dtype.id(), data_node);
     }
 
+    void add_entity_assoc(index_t e1_id, index_t e1_dim, index_t e2_id, index_t e2_dim)
+    {
+        std::vector< std::pair< std::vector<index_t>, std::set<index_t> > >
+            &e1_assocs = dim_assocs[e1_dim][e1_id],
+            &e2_assocs = dim_assocs[e2_dim][e2_id];
+        e1_assocs.resize(topo_shape.dim + 1);
+        e2_assocs.resize(topo_shape.dim + 1);
+
+        std::pair< std::vector<index_t>, std::set<index_t> >
+            &e1e2_assocs = e1_assocs[e2_dim],
+            &e2e1_assocs = e2_assocs[e1_dim];
+
+        if(e1e2_assocs.second.find(e2_id) == e1e2_assocs.second.end())
+        {
+            e1e2_assocs.first.push_back(e2_id);
+            e1e2_assocs.second.insert(e2_id);
+        }
+        if(e2e1_assocs.second.find(e1_id) == e2e1_assocs.second.end())
+        {
+            e2e1_assocs.first.push_back(e1_id);
+            e2e1_assocs.second.insert(e1_id);
+        }
+    }
+
     const std::vector<index_t>& get_entity_assocs(index_t entity_id, index_t entity_dim, index_t assoc_dim) const
     {
-        return dim_assocs[entity_dim].find(entity_id)->second[assoc_dim];
+        return dim_assocs[entity_dim].find(entity_id)->second[assoc_dim].first;
     }
 
     void get_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const
@@ -1473,7 +1475,7 @@ struct TopologyMetadata
     // per-dimension maps from an entity's index set to its topological index
     std::vector< std::map< std::set<index_t>, index_t > > dim_entity_maps;
     // per-dimension maps from entity indices to per-dimension sets of associated values
-    std::vector< std::map<index_t, std::vector< std::vector<index_t> > > > dim_assocs;
+    std::vector< std::map<index_t, std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_assocs;
 };
 
 //-------------------------------------------------------------------------

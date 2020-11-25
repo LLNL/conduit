@@ -333,24 +333,29 @@ struct GridMeshCollection
         const GridMesh *ptr;
     };
 
-    GridMeshCollection(const index_t *npts)
+    GridMeshCollection(const index_t *npts, const bool debug=false)
     {
-        for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
+        if(debug)
         {
-            for(index_t pi = 0; pi < 2; pi++)
+            // HARD DEBUG
+            meshes.push_back(GridMesh(ELEM_TYPE_QUAD_ID, npts, false));
+
+            // SOFT DEBUG
+            // for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
+            // {
+            //     meshes.push_back(GridMesh(ti, npts, false));
+            // }
+        }
+        else
+        {
+            for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
             {
-                meshes.push_back(GridMesh(ti, npts, (bool)pi));
+                for(index_t pi = 0; pi < 2; pi++)
+                {
+                    meshes.push_back(GridMesh(ti, npts, (bool)pi));
+                }
             }
         }
-
-        // HARD DEBUG
-        // meshes.push_back(GridMesh(ELEM_TYPE_QUAD_ID, npts, false));
-
-        // SOFT DEBUG
-        // for(index_t ti = 0; ti < ELEM_TYPE_COUNT; ti++)
-        // {
-        //     meshes.push_back(GridMesh(ti, npts, false));
-        // }
     }
 
     Iterator begin() const
@@ -686,28 +691,28 @@ void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node 
 // "conduit_blueprint.cpp" source file (see: https://isocpp.org/wiki/faq/ctors#static-init-order).
 // TODO(JRC): If the test suite is ever extended to support parallel testing,
 // this function needs to be wrapped in a mutex.
-const GridMeshCollection &get_test_grids(const index_t *npts)
+const GridMeshCollection &get_test_grids(const index_t *npts, const bool debug=false)
 {
-    static std::map<GridDims, const GridMeshCollection> dims_grids_map;
+    static std::map<std::pair<GridDims, bool>, const GridMeshCollection> dims_grids_map;
 
-    GridDims dims(npts);
-    if(dims_grids_map.find(dims) == dims_grids_map.end())
+    std::pair<GridDims, bool> dims_id = std::make_pair(GridDims(npts), debug);
+    if(dims_grids_map.find(dims_id) == dims_grids_map.end())
     {
-        dims_grids_map.insert(std::pair<GridDims, const GridMeshCollection>(
-            dims, GridMeshCollection(npts)));
+        dims_grids_map.insert(std::pair<std::pair<GridDims, bool>, const GridMeshCollection>(
+            dims_id, GridMeshCollection(npts, debug)));
     }
 
-    return dims_grids_map.find(dims)->second;
+    return dims_grids_map.find(dims_id)->second;
 }
 
 typedef GridMeshCollection::Iterator GridIterator;
 
-//-----------------------------------------------------------------------------
+// //-----------------------------------------------------------------------------
 // TEST(conduit_blueprint_generate_unstructured, generate_cascade)
 // {
 //     // NOTE(JRC): This is an unused test case that can be implemented in order
 //     // to help debug the current ordering being used for the topological cascade.
-//     const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID);
+//     const GridMeshCollection &grids = get_test_grids(TRIVIAL_GRID, true);
 //     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
 //     {
 //         GridMesh grid_mesh = *grid_it;
