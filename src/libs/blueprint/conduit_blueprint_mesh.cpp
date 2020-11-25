@@ -1303,31 +1303,29 @@ struct TopologyMetadata
         }
     }
 
-    void get_entity_data(index_t entity_id, index_t entity_dim, Node &data_node) const
+    void get_entity_data(index_t entity_id, index_t entity_dim, Node &data) const
     {
         // NOTE(JRC): This is done in order to get around 'const' casting for
         // data pointers that won't be changed by the function anyway.
-        Node dim_conn;
-        dim_conn.set_external(dim_topos[entity_dim]["elements/connectivity"]);
-        Node dim_off;
-        dim_off.set_external(dim_topos[entity_dim]["elements/offsets"]);
+        Node dim_conn; dim_conn.set_external(dim_topos[entity_dim]["elements/connectivity"]);
+        Node dim_off; dim_off.set_external(dim_topos[entity_dim]["elements/offsets"]);
 
         const DataType conn_dtype(dim_conn.dtype().id(), 1);
         const DataType off_dtype(dim_off.dtype().id(), 1);
-        const DataType data_dtype = data_node.dtype().is_number() ?
-            data_node.dtype() : DataType::int64(1);
+        const DataType data_dtype = data.dtype().is_number() ?
+            data.dtype() : DataType::int64(1);
 
-        Node temp_node;
-        temp_node.set_external(off_dtype, dim_off.element_ptr(entity_id));
-        index_t entity_start_index = temp_node.to_int64();
-        temp_node.set_external(off_dtype, dim_off.element_ptr(entity_id + 1));
+        Node temp;
+        temp.set_external(off_dtype, dim_off.element_ptr(entity_id));
+        index_t entity_start_index = temp.to_int64();
+        temp.set_external(off_dtype, dim_off.element_ptr(entity_id + 1));
         index_t entity_end_index = (entity_id < get_length(entity_dim) - 1) ?
-            temp_node.to_int64() : dim_conn.dtype().number_of_elements();
+            temp.to_int64() : dim_conn.dtype().number_of_elements();
 
         index_t entity_size = entity_end_index - entity_start_index;
-        temp_node.set_external(DataType(conn_dtype.id(), entity_size),
+        temp.set_external(DataType(conn_dtype.id(), entity_size),
             dim_conn.element_ptr(entity_start_index));
-        temp_node.to_data_type(data_dtype.id(), data_node);
+        temp.to_data_type(data_dtype.id(), data);
     }
 
     void add_entity_assoc(index_t e1_id, index_t e1_dim, index_t e2_id, index_t e2_dim)
@@ -3419,14 +3417,8 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 {
     dest.reset();
 
-    // TODO(JRC): Write a note here about why the topology shape is the same
-    // as the embedding shape in <3D (has to do with self-embedding process
-    // for 1D/2D polygonal and full embedding for 3D polyhedral).
     const ShapeCascade topo_cascade(topo);
-    ShapeType topo_shape(topo_cascade.get_shape());
-    ShapeType embed_shape(topo_shape.dim == 3 ?
-        topo_cascade.get_shape(topo_shape.dim - 1) : topo_shape);
-
+    const ShapeType topo_shape(topo_cascade.get_shape());
     const DataType int_dtype = find_widest_dtype(topo, blueprint::mesh::default_int_dtypes);
 
     if(topo_shape.is_poly())
@@ -3442,106 +3434,91 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
         const index_t topo_elems = topo_indices / topo_shape.indices;
         const bool is_topo_3d = topo_shape.dim == 3;
 
-        // NOTE(JRC): In order to make iterations consistent, <3D topologies
-        // are self-embedded (which follows polygonal definition) and thus
-        // have only one embedding per element.
-        topo_shape.embed_count = is_topo_3d ? topo_shape.embed_count : 1;
-
         Node topo_templ;
         topo_templ.set_external(topo);
         topo_templ.remove("elements");
         dest.set(topo_templ);
         dest["elements/shape"].set(is_topo_3d ? "polyhedral" : "polygonal");
 
-        // Polygonal case
-        if (!is_topo_3d)
+        Node temp;
+        if (!is_topo_3d) // polygonal
         {
-            Node poly_size;
-            std::vector<int64> poly_size_data(topo_elems, topo_shape.indices);
-            poly_size.set_external(poly_size_data);
-            poly_size.to_data_type(int_dtype.id(), dest["elements/sizes"]);
+            // NOTE(JRC): The derived polygonal topology simply inherits the
+            // original implicit connectivity and adds sizes/offsets, which
+            // means that it inherits the orientation/winding of the source as well.
+            temp.set_external(topo_conn);
+            temp.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
 
-            Node poly_conn;
-            poly_conn.set_external(topo_conn);
-            poly_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
+            std::vector<int64> poly_size_data(topo_elems, topo_shape.indices);
+            temp.set_external(poly_size_data);
+            temp.to_data_type(int_dtype.id(), dest["elements/sizes"]);
 
             generate_offsets(dest, dest["elements/offsets"]);
         }
-
-        // Polyhedral case
-        else
+        else // if(is_topo_3d) // polyhedral
         {
-            Node data_node;
+            // NOTE(JRC): Polyhedral topologies are a bit more complicated
+            // because the derivation comes from the embedding. The embedding
+            // is statically RHR positive, but this can be turned negative by
+            // an initially RHR negative element.
+            const ShapeType embed_shape = topo_cascade.get_shape(topo_shape.dim - 1);
+
             std::vector<int64> polyhedral_conn_data(topo_elems * topo_shape.embed_count);
             std::vector<int64> polygonal_conn_data;
             std::vector<int64> face_indices(embed_shape.indices);
 
-            // Element iteration
             for (index_t ei = 0; ei < topo_elems; ei++)
             {
                 index_t data_off = topo_shape.indices * ei;
                 index_t polyhedral_off = topo_shape.embed_count * ei;
 
-                // Face iteration
                 for (index_t fi = 0; fi < topo_shape.embed_count; fi++)
                 {
-                    // Indices iteration
                     for (index_t ii = 0; ii < embed_shape.indices; ii++)
                     {
-                        index_t inner_data_off =  data_off +
+                        index_t inner_data_off = data_off +
                           topo_shape.embedding[fi * embed_shape.indices + ii];
-
-                        data_node.set_external(topo_dtype, topo_conn.element_ptr(inner_data_off));
-                        face_indices[ii] = data_node.to_int64();
+                        temp.set_external(topo_dtype,
+                            topo_conn.element_ptr(inner_data_off));
+                        face_indices[ii] = temp.to_int64();
                     }
 
-                    // Check if face already exists
                     bool face_exists = false;
                     index_t face_index = polygonal_conn_data.size() / embed_shape.indices;
-                    for (index_t poly_i = 0; poly_i < face_index; poly_i++ )
+                    for (index_t poly_i = 0; poly_i < face_index; poly_i++)
                     {
                         index_t face_off = poly_i * embed_shape.indices;
                         face_exists |= std::is_permutation(polygonal_conn_data.begin() + face_off,
                                                            polygonal_conn_data.begin() + face_off + embed_shape.indices,
                                                            face_indices.begin());
-                        if (face_exists)
-                        {
-                            face_index = poly_i;
-                            continue;
-                        }
+                        face_index = face_exists ? poly_i : face_index;
                     }
 
-                    // Add face index to polyhedral indices
                     polyhedral_conn_data[polyhedral_off + fi] = face_index;
-
-                    // Add face indices to polygonal data if no permutation exists
                     if (!face_exists)
                     {
-                        polygonal_conn_data.insert(polygonal_conn_data.end(), face_indices.begin(), face_indices.end());
+                        polygonal_conn_data.insert(polygonal_conn_data.end(),
+                            face_indices.begin(), face_indices.end());
                     }
                 }
             }
 
-            Node polyhedral_conn;
-            polyhedral_conn.set_external(polyhedral_conn_data);
-            polyhedral_conn.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
+            temp.set_external(polyhedral_conn_data);
+            temp.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
 
-            Node polyhedral_size;
             std::vector<int64> polyhedral_size_data(topo_elems, topo_shape.embed_count);
-            polyhedral_size.set_external(polyhedral_size_data);
-            polyhedral_size.to_data_type(int_dtype.id(), dest["elements/sizes"]);
+            temp.set_external(polyhedral_size_data);
+            temp.to_data_type(int_dtype.id(), dest["elements/sizes"]);
 
-            dest["subelements/shape"].set("polygonal");
+            temp.set_external(polygonal_conn_data);
+            temp.to_data_type(int_dtype.id(), dest["subelements/connectivity"]);
 
-            Node polygonal_conn;
-            polygonal_conn.set_external(polygonal_conn_data);
-            polygonal_conn.to_data_type(int_dtype.id(), dest["subelements/connectivity"]);
-
-            Node polygonal_size;
             std::vector<int64> polygonal_size_data(polygonal_conn_data.size() / embed_shape.indices,
                                                    embed_shape.indices);
-            polygonal_size.set_external(polygonal_size_data);
-            polygonal_size.to_data_type(int_dtype.id(), dest["subelements/sizes"]);
+            temp.set_external(polygonal_size_data);
+            temp.to_data_type(int_dtype.id(), dest["subelements/sizes"]);
+
+            dest["subelements/shape"].set("polygonal");
 
             // BHAN - For polyhedral, writes offsets for
             // "elements/offsets" and "subelements/offsets"
