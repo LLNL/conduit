@@ -712,7 +712,7 @@ typedef GridMeshCollection::Iterator GridIterator;
 // {
 //     // NOTE(JRC): This is an unused test case that can be implemented in order
 //     // to help debug the current ordering being used for the topological cascade.
-//     const GridMeshCollection &grids = get_test_grids(TRIVIAL_GRID, true);
+//     const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID, true);
 //     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
 //     {
 //         GridMesh grid_mesh = *grid_it;
@@ -727,11 +727,12 @@ typedef GridMeshCollection::Iterator GridIterator;
 //         Node &face_topo = grid_mesh.mesh["topologies"]["faces"];
 //         mesh::topology::unstructured::generate_faces(grid_topo, face_topo, s2t_map, t2s_map);
 // 
-//         Node &centroid_coords = grid_mesh.mesh["coordsets"]["centroids"];
+//         Node &side_coords = grid_mesh.mesh["coordsets"]["sides"];
 //         Node &side_topo = grid_mesh.mesh["topologies"]["sides"];
-//         mesh::topology::unstructured::generate_sides(grid_topo, side_topo, centroid_coords, s2t_map, t2s_map);
+//         mesh::topology::unstructured::generate_sides(grid_topo, side_topo, side_coords, s2t_map, t2s_map);
+//         Node &corner_coords = grid_mesh.mesh["coordsets"]["corners"];
 //         Node &corner_topo = grid_mesh.mesh["topologies"]["corners"];
-//         mesh::topology::unstructured::generate_corners(grid_topo, corner_topo, centroid_coords, s2t_map, t2s_map);
+//         mesh::topology::unstructured::generate_corners(grid_topo, corner_topo, corner_coords, s2t_map, t2s_map);
 // 
 //         grid_mesh.mesh.remove("fields");
 //         grid_mesh.mesh.remove("state");
