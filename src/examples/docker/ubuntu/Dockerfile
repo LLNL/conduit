@@ -54,7 +54,7 @@ RUN tar -xf conduit.docker.src.tar
 #  will not run for the root user
 RUN cd conduit && python scripts/uberenv/uberenv.py \
     -k \
-    --spec "%gcc+mpi~doc~silo ^mpich ^cmake@3.9.6" \
+    --spec "%gcc+mpi~doc~silo ^mpich" \
     --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
 
 # configure a debug build with cmake
