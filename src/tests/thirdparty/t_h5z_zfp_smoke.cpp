@@ -33,8 +33,9 @@ TEST(h5z_zfp_smoke, basic_use)
     // example 2d array
     dims[0] = chunks[0] * 2;
     dims[1] = chunks[1] * 3;
-    
+
     hsize_t ntotal = dims[0] * dims[1];
+
     double * vals = new double[ntotal];
 
     for (hsize_t i = 0; i < ntotal; i++)
@@ -45,14 +46,18 @@ TEST(h5z_zfp_smoke, basic_use)
     /* Create a new file using default properties. */
     file_id = H5Fcreate("h5zzfp_smoke_test.hdf5",
                         H5F_ACC_TRUNC,
-                        H5P_DEFAULT, H5P_DEFAULT);
+                        H5P_DEFAULT,
+                        H5P_DEFAULT);
+
+    EXPECT_TRUE (file_id >= 0 );
 
     /* Create the data space for the dataset. */
     dataspace_id = H5Screate_simple(2, dims, NULL);
+    EXPECT_TRUE (dataspace_id >= 0 );
 
     /* setup dataset creation properties */
     dataset_cprops_id = H5Pcreate(H5P_DATASET_CREATE);
-    EXPECT_TRUE(dataset_cprops_id > 0);
+    EXPECT_TRUE(dataset_cprops_id >= 0);
 
     status = H5Pset_chunk(dataset_cprops_id, 2, chunks);
     EXPECT_TRUE(status >= 0);
@@ -72,7 +77,7 @@ TEST(h5z_zfp_smoke, basic_use)
                             dataset_cprops_id,
                             H5P_DEFAULT);
 
-    EXPECT_TRUE (0 >= dataset_id);
+    EXPECT_TRUE (dataset_id >= 0);
 
     /* write our data */
     status = H5Dwrite(dataset_id,
@@ -82,10 +87,6 @@ TEST(h5z_zfp_smoke, basic_use)
                       H5P_DEFAULT,
                       vals);
 
-    EXPECT_TRUE(status >= 0 );
-
-    /* End access to the dataset and release resources used by it. */
-    status = H5Dclose(dataset_id);
     EXPECT_TRUE(status >= 0 );
 
     /* End access to the prop list and release resources used by it. */
