@@ -51,10 +51,10 @@ stages:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0
     variables:
-      COMPILER_CC: gcc-5
-      COMPILER_CXX: g++-5
-      COMPILER_FC: gfortran-5
-      COMPILER_SPEC: gcc@5
+      COMPILER_CC: gcc
+      COMPILER_CXX: g++
+      COMPILER_FC: gfortran
+      COMPILER_SPEC: gcc
     strategy:
       matrix:
         shared_minimal:
@@ -348,7 +348,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.6.3
-          CMAKE_VERSION: 3.9.4
+          CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
     steps:
       - checkout: self
