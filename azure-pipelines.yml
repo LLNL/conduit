@@ -197,7 +197,8 @@ stages:
            # fix constraint issue for python 2
            if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
-           if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"; fi
+           # turn off hdf5 mpi support
+           export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
@@ -422,7 +423,8 @@ stages:
            # fix constraint issue for python 2
            if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
-           if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"; fi
+           # turn off hdf5 mpi support
+           export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
