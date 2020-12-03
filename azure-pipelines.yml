@@ -78,7 +78,8 @@ stages:
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
-          PYTHON_VERSION: 2.7.14
+          PYTHON_VERSION: 2.7.18
+          PYSETUPTOOLS_VERSION: 44.1.0
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
 
@@ -117,7 +118,8 @@ stages:
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
-          PYTHON_VERSION: 2.7.14
+          PYTHON_VERSION: 2.7.18
+          PYSETUPTOOLS_VERSION: 44.1.0
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
     steps:
@@ -187,6 +189,9 @@ stages:
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
+           # fix constraint issue for python 2 (and hopefully 3 ...)
+           if [ -z "$PYSETUPTOOLS_VERSION" ] then echo ""; else export SPACK_SPEC="${SPACK_SPEC} ^py-setuptools@${PYSETUPTOOLS_VERSION}"; fi
+           if [ $ENABLE_PYTHON = 'ON' ]; then 
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # show final spec
            echo $SPACK_SPEC
@@ -409,6 +414,8 @@ stages:
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
+           # fix constraint issue for python 2 (and hopefully 3 ...)
+           if [ -z "$PYSETUPTOOLS_VERSION" ] then echo ""; else export SPACK_SPEC="${SPACK_SPEC} ^py-setuptools@${PYSETUPTOOLS_VERSION}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # show final spec
            echo $SPACK_SPEC
