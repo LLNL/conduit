@@ -196,7 +196,6 @@ stages:
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
            # fix constraint issue for python 2
            if [ $ENABLE_PYSETUPTOOLS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^py-setuptools@${PYSETUPTOOLS_VERSION}"; fi
-           if [ $ENABLE_PYTHON = 'ON' ]; then 
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # show final spec
            echo $SPACK_SPEC
