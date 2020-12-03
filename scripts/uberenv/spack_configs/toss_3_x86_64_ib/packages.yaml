@@ -50,8 +50,6 @@ packages:
       - cuda/10.1.168
       spec: cuda@10.1.168
 # LLNL toss3 mvapich2
-  mpi:
-    buildable: false
   mvapich2:
     buildable: false
     externals:
