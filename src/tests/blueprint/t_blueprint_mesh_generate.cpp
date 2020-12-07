@@ -712,7 +712,7 @@ typedef GridMeshCollection::Iterator GridIterator;
 // {
 //     // NOTE(JRC): This is an unused test case that can be implemented in order
 //     // to help debug the current ordering being used for the topological cascade.
-//     const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID, true);
+//     const GridMeshCollection &grids = get_test_grids(TRIVIAL_GRID, true);
 //     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
 //     {
 //         GridMesh grid_mesh = *grid_it;
