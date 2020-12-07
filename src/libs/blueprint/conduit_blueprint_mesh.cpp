@@ -1089,6 +1089,8 @@ index_t get_topology_length(const std::string &type,
 //---------------------------------------------------------------------------//
 struct TopologyMetadata
 {
+    enum IndexType { GLOBAL = 0, LOCAL = 1 };
+
     // NOTE(JRC): This type current only works at forming associations within
     // an unstructured topology's hierarchy.
     TopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset) :
@@ -1109,7 +1111,6 @@ struct TopologyMetadata
         dim_geassocs_maps.resize(topo_shape.dim + 1);
         dim_leassocs_maps.resize(topo_shape.dim + 1);
         dim_le2ge_maps.resize(topo_shape.dim + 1);
-        dim_ge2le_maps.resize(topo_shape.dim + 1);
 
         for(index_t di = 0; di < topo_shape.dim; di++)
         {
@@ -1153,7 +1154,7 @@ struct TopologyMetadata
             index_t bi = topo_num_coords + ei;
 
             temp.reset();
-            get_entity_data(ei, topo_shape.dim, temp);
+            get_entity_data(TopologyMetadata::GLOBAL, ei, topo_shape.dim, temp);
 
             std::vector<int64> &elem_indices = entity_index_bag[bi];
             elem_indices.resize(temp.dtype().number_of_elements());
@@ -1177,7 +1178,6 @@ struct TopologyMetadata
             auto &dim_geassocs = dim_geassocs_maps[entity_dim];
             auto &dim_leassocs = dim_leassocs_maps[entity_dim];
             std::vector<index_t> &dim_le2ge_map = dim_le2ge_maps[entity_dim];
-            std::vector< std::set<index_t> > &dim_ge2le_map = dim_ge2le_maps[entity_dim];
             ShapeType dim_shape = topo_cascade.get_shape(entity_dim);
 
             // Add Element to Topology/Associations //
@@ -1224,24 +1224,21 @@ struct TopologyMetadata
             }
             const index_t global_id = dim_geid_map.find(vert_ids)->second;
 
-            if((index_t)dim_geassocs.size() <= global_id)
-            {
-                dim_geassocs.resize(global_id + 1);
+            { // create_entity(global_id, local_id, entity_dim)
+                if((index_t)dim_geassocs.size() <= global_id)
+                {
+                    dim_geassocs.resize(global_id + 1);
+                }
+                if((index_t)dim_leassocs.size() <= local_id)
+                {
+                    dim_leassocs.resize(local_id + 1);
+                }
+                if((index_t)dim_le2ge_map.size() <= local_id)
+                {
+                    dim_le2ge_map.resize(local_id + 1);
+                }
+                dim_le2ge_map[local_id] = global_id;
             }
-            if((index_t)dim_leassocs.size() <= local_id)
-            {
-                dim_leassocs.resize(local_id + 1);
-            }
-            if((index_t)dim_ge2le_map.size() <= global_id)
-            {
-                dim_ge2le_map.resize(global_id + 1);
-            }
-            dim_ge2le_map[global_id].insert(local_id);
-            if((index_t)dim_le2ge_map.size() <= local_id)
-            {
-                dim_le2ge_map.resize(local_id + 1);
-            }
-            dim_le2ge_map[local_id] = global_id;
 
             add_entity_assoc(global_id, local_id, entity_dim, global_id, local_id, entity_dim);
             for(index_t pi = 0; pi < (index_t)entity_parents.size(); pi++)
@@ -1346,52 +1343,9 @@ struct TopologyMetadata
         }
     }
 
-    void get_entity_data(index_t entity_id, index_t entity_dim, Node &data, bool local = false) const
-    {
-        Node temp;
-
-        // NOTE(JRC): This is done in order to get around 'const' casting for
-        // data pointers that won't be changed by the function anyway.
-        Node dim_conn; dim_conn.set_external(dim_topos[entity_dim]["elements/connectivity"]);
-        Node dim_off; dim_off.set_external(dim_topos[entity_dim]["elements/offsets"]);
-
-        const DataType conn_dtype(dim_conn.dtype().id(), 1);
-        const DataType off_dtype(dim_off.dtype().id(), 1);
-        const DataType data_dtype = data.dtype().is_number() ? data.dtype() : DataType::int64(1);
-
-        const index_t entity_gid = local ? dim_le2ge_maps[entity_dim][entity_id] : entity_id;
-        temp.set_external(off_dtype, dim_off.element_ptr(entity_gid));
-        index_t entity_start_index = temp.to_int64();
-        temp.set_external(off_dtype, dim_off.element_ptr(entity_gid + 1));
-        index_t entity_end_index = (entity_gid < get_length(entity_dim) - 1) ?
-            temp.to_int64() : dim_conn.dtype().number_of_elements();
-
-        index_t entity_size = entity_end_index - entity_start_index;
-        temp.set_external(DataType(conn_dtype.id(), entity_size),
-            dim_conn.element_ptr(entity_start_index));
-        temp.to_data_type(data_dtype.id(), data);
-    }
-
-    void get_point_data(index_t point_id, Node &data) const
-    {
-        if(data.dtype().is_empty())
-        {
-            data.set(DataType::float64(3));
-        }
-        const DataType data_dtype(data.dtype().id(), 1);
-
-        Node temp1, temp2;
-        const std::vector<std::string> csys_axes = identify_coordset_axes(*cset);
-        for(index_t di = 0; di < topo_shape.dim; di++)
-        {
-            temp1.set_external(float_dtype,
-                (void*)(*cset)["values"][csys_axes[di]].element_ptr(point_id));
-            temp2.set_external(data_dtype, data.element_ptr(di));
-            temp1.to_data_type(data_dtype.id(), temp2);
-        }
-    }
-
-    void add_entity_assoc(index_t e1_gid, index_t e1_lid, index_t e1_dim, index_t e2_gid, index_t e2_lid, index_t e2_dim)
+    void add_entity_assoc(
+        index_t e1_gid, index_t e1_lid, index_t e1_dim,
+        index_t e2_gid, index_t e2_lid, index_t e2_dim)
     {
         std::vector< std::pair< std::vector<index_t>, std::set<index_t> > >
             &e1_geassocs = dim_geassocs_maps[e1_dim][e1_gid],
@@ -1431,20 +1385,22 @@ struct TopologyMetadata
         }
     }
 
-    const std::vector<index_t>& get_entity_assocs(index_t entity_id, index_t entity_dim, index_t assoc_dim, bool local = false) const
+    const std::vector<index_t>& get_entity_assocs(IndexType type,
+        index_t entity_id, index_t entity_dim, index_t assoc_dim) const
     {
-        auto &dim_assocs = local ? dim_leassocs_maps : dim_geassocs_maps;
+        auto &dim_assocs = (type == IndexType::LOCAL) ? dim_leassocs_maps : dim_geassocs_maps;
         return dim_assocs[entity_dim][entity_id][assoc_dim].first;
     }
 
-    void get_dim_map(index_t src_dim, index_t dst_dim, Node &map_node, bool local = false) const
+    void get_dim_map(IndexType type,
+        index_t src_dim, index_t dst_dim, Node &map_node) const
     {
-        auto &dim_assocs = local ? dim_leassocs_maps : dim_geassocs_maps;
+        auto &dim_assocs = (type == IndexType::LOCAL) ? dim_leassocs_maps : dim_geassocs_maps;
 
         std::vector<index_t> values, sizes, offsets;
         for(index_t sdi = 0, so = 0; sdi < (index_t)dim_assocs[src_dim].size(); sdi++, so += sizes.back())
         {
-            const std::vector<index_t> &src_assocs = get_entity_assocs(sdi, src_dim, dst_dim, local);
+            const std::vector<index_t> &src_assocs = get_entity_assocs(type, sdi, src_dim, dst_dim);
             values.insert(values.end(), src_assocs.begin(), src_assocs.end());
             sizes.push_back((index_t)src_assocs.size());
             offsets.push_back(so);
@@ -1458,6 +1414,57 @@ struct TopologyMetadata
             Node data;
             data.set(*path_data[pi]);
             data.to_data_type(int_dtype.id(), map_node[path_names[pi]]);
+        }
+    }
+
+    void get_entity_data(IndexType type,
+        index_t entity_id, index_t entity_dim, Node &data) const
+    {
+        Node temp;
+
+        // NOTE(JRC): This is done in order to get around 'const' casting for
+        // data pointers that won't be changed by the function anyway.
+        Node dim_conn; dim_conn.set_external(dim_topos[entity_dim]["elements/connectivity"]);
+        Node dim_off; dim_off.set_external(dim_topos[entity_dim]["elements/offsets"]);
+
+        const DataType conn_dtype(dim_conn.dtype().id(), 1);
+        const DataType off_dtype(dim_off.dtype().id(), 1);
+        const DataType data_dtype = data.dtype().is_number() ? data.dtype() : DataType::int64(1);
+
+        const index_t entity_gid = (type == IndexType::LOCAL) ?
+            dim_le2ge_maps[entity_dim][entity_id] : entity_id;
+        temp.set_external(off_dtype, dim_off.element_ptr(entity_gid));
+        index_t entity_start_index = temp.to_int64();
+        temp.set_external(off_dtype, dim_off.element_ptr(entity_gid + 1));
+        index_t entity_end_index = (entity_gid < get_length(entity_dim) - 1) ?
+            temp.to_int64() : dim_conn.dtype().number_of_elements();
+
+        index_t entity_size = entity_end_index - entity_start_index;
+        temp.set_external(DataType(conn_dtype.id(), entity_size),
+            dim_conn.element_ptr(entity_start_index));
+        temp.to_data_type(data_dtype.id(), data);
+    }
+
+    void get_point_data(IndexType type,
+        index_t point_id, Node &data) const
+    {
+        const index_t point_gid = (type == IndexType::LOCAL) ?
+            dim_le2ge_maps[0][point_id] : point_id;
+
+        if(data.dtype().is_empty())
+        {
+            data.set(DataType::float64(3));
+        }
+        const DataType data_dtype(data.dtype().id(), 1);
+
+        Node temp1, temp2;
+        const std::vector<std::string> csys_axes = identify_coordset_axes(*cset);
+        for(index_t di = 0; di < topo_shape.dim; di++)
+        {
+            temp1.set_external(float_dtype,
+                (void*)(*cset)["values"][csys_axes[di]].element_ptr(point_gid));
+            temp2.set_external(data_dtype, data.element_ptr(di));
+            temp1.to_data_type(data_dtype.id(), temp2);
         }
     }
 
@@ -1479,7 +1486,7 @@ struct TopologyMetadata
         return topo_length;
     }
 
-    index_t get_embed_length(index_t entity_dim, index_t embed_dim, bool local = true) const
+    index_t get_embed_length(index_t entity_dim, index_t embed_dim) const
     {
         // NOTE: The default version of 'get_embed_length' gets the total number of
         // embeddings for each entity at the top level to the embedding level. The
@@ -1494,7 +1501,6 @@ struct TopologyMetadata
             entity_dim_bag.push_back(entity_dim);
         }
 
-        // FIXME(JRC): Can probably just use local/global association maps instead.
         std::set<index_t> embed_set;
         index_t embed_length = 0;
         while(!entity_index_bag.empty())
@@ -1506,8 +1512,7 @@ struct TopologyMetadata
 
             if(entity_dim_back == embed_dim)
             {
-                bool embed_exists = embed_set.find(entity_index) == embed_set.end();
-                if(local || !embed_exists)
+                if(embed_set.find(entity_index) == embed_set.end())
                 {
                     embed_length++;
                 }
@@ -1516,7 +1521,7 @@ struct TopologyMetadata
             else
             {
                 const std::vector<index_t> &embed_ids = get_entity_assocs(
-                    entity_index, entity_dim_back, entity_dim_back - 1);
+                    TopologyMetadata::LOCAL, entity_index, entity_dim_back, entity_dim_back - 1);
                 for(index_t ei = 0; ei < (index_t)embed_ids.size(); ei++)
                 {
                     entity_index_bag.push_back(embed_ids[ei]);
@@ -1559,8 +1564,6 @@ struct TopologyMetadata
     std::vector< std::vector< std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_geassocs_maps;
     // per-dimension maps from local entity ids to per-dimension local associate ids
     std::vector< std::vector< std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_leassocs_maps;
-    // per-dimension mapping from global entity ids to local entity ids (unique per-elem vals)
-    std::vector< std::vector< std::set<index_t> > > dim_ge2le_maps;
     // per-dimension mapping from local entity ids to global entity ids (delegates)
     std::vector< std::vector<index_t> > dim_le2ge_maps;
 };
@@ -3533,12 +3536,12 @@ mesh::topology::unstructured::orientation(const Node &topo,
     for(index_t ei = 0; ei < 2/*topo_num_elems*/; ei++)
     {
         const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
-            ei, topo_shape.dim, face_shape.dim);
+            TopologyMetadata::GLOBAL, ei, topo_shape.dim, face_shape.dim);
         for(index_t fi = 0; fi < (index_t)elem_faces.size(); fi++)
         {
             // get the vertices for this face
             const std::vector<index_t> &face_verts = topo_data.get_entity_assocs(
-                fi, face_shape.dim, point_shape.dim);
+                TopologyMetadata::GLOBAL, fi, face_shape.dim, point_shape.dim);
 
             index_t min_vert_id = 0;
             index_t min_vert_index = 0;
@@ -3546,7 +3549,7 @@ mesh::topology::unstructured::orientation(const Node &topo,
                 float64 min_vert[3] = {inf, inf, inf};
                 for(index_t vi = 0; vi < (index_t)face_verts.size(); vi++)
                 {
-                    topo_data.get_point_data(face_verts[vi], data);
+                    topo_data.get_point_data(TopologyMetadata::GLOBAL, face_verts[vi], data);
 
                     float64* vert = data.as_float64_ptr();
                     for(index_t di = 0; di < topo_shape.dim && vert[di] <= min_vert[di]; di++)
@@ -3584,13 +3587,13 @@ mesh::topology::unstructured::orientation(const Node &topo,
 
                 // a = min_vert_adjs[0]
                 data.set_external(DataType::float64(3), face_verts[0]);
-                topo_data.get_point_data(min_vert_adjs[0], data);
+                topo_data.get_point_data(TopologyMetadata::GLOBAL, min_vert_adjs[0], data);
                 // b = min_vert_id
                 data.set_external(DataType::float64(3), face_verts[1]);
-                topo_data.get_point_data(min_vert_id, data);
+                topo_data.get_point_data(TopologyMetadata::GLOBAL, min_vert_id, data);
                 // c = min_vert_adjs[1]
                 data.set_external(DataType::float64(3), face_verts[2]);
-                topo_data.get_point_data(min_vert_adjs[1], data);
+                topo_data.get_point_data(TopologyMetadata::GLOBAL, min_vert_adjs[1], data);
 
                 if(topo_shape.dim == 2)
                 {
@@ -3762,8 +3765,8 @@ mesh::topology::unstructured::generate_points(const Node &topo,
     dest.set(topo_data.dim_topos[0]);
 
     const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 0;
-    topo_data.get_dim_map(src_dim, dst_dim, s2dmap);
-    topo_data.get_dim_map(dst_dim, src_dim, d2smap);
+    topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
+    topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
 
 //-----------------------------------------------------------------------------
@@ -3783,8 +3786,8 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
     dest.set(topo_data.dim_topos[1]);
 
     const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 1;
-    topo_data.get_dim_map(src_dim, dst_dim, s2dmap);
-    topo_data.get_dim_map(dst_dim, src_dim, d2smap);
+    topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
+    topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
 
 //-----------------------------------------------------------------------------
@@ -3804,8 +3807,8 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
     dest.set(topo_data.dim_topos[2]);
 
     const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 2;
-    topo_data.get_dim_map(src_dim, dst_dim, s2dmap);
-    topo_data.get_dim_map(dst_dim, src_dim, d2smap);
+    topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
+    topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
 
 //-----------------------------------------------------------------------------
@@ -3988,7 +3991,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
             // NOTE(JRC): We iterate using local index values so that we
             // get the correct orientations for per-element edges.
             const std::vector<index_t> &embed_ids = topo_data.get_entity_assocs(
-                embed_index, embed_dim, embed_dim - 1, true);
+                TopologyMetadata::LOCAL, embed_index, embed_dim, embed_dim - 1);
             if(embed_dim > line_shape.dim)
             {
                 embed_parents.push_back(embed_index);
@@ -4164,21 +4167,21 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         std::map< std::pair<index_t, index_t>, std::pair<index_t, index_t> > elem_orient;
         { // establish the element's internal edge constraints
             const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
-                elem_index, topo_shape.dim, face_shape.dim, true);
+                TopologyMetadata::LOCAL, elem_index, topo_shape.dim, face_shape.dim);
             for(index_t fi = 0; fi < (index_t)elem_faces.size(); fi++)
             {
                 const index_t face_lid = elem_faces[fi];
                 const index_t face_gid = topo_data.dim_le2ge_maps[face_shape.dim][face_lid];
 
                 const std::vector<index_t> &face_lines = topo_data.get_entity_assocs(
-                    face_lid, face_shape.dim, line_shape.dim, true);
+                    TopologyMetadata::LOCAL, face_lid, face_shape.dim, line_shape.dim);
                 for(index_t li = 0; li < (index_t)face_lines.size(); li++)
                 {
                     const index_t line_lid = face_lines[li];
                     const index_t line_gid = topo_data.dim_le2ge_maps[line_shape.dim][line_lid];
 
                     const std::vector<index_t> &line_points = topo_data.get_entity_assocs(
-                        line_lid, line_shape.dim, point_shape.dim, true);
+                        TopologyMetadata::LOCAL, line_lid, line_shape.dim, point_shape.dim);
                     const index_t start_gid = topo_data.dim_le2ge_maps[point_shape.dim][line_points[0]];
                     const index_t end_gid = topo_data.dim_le2ge_maps[point_shape.dim][line_points[1]];
 
@@ -4189,20 +4192,20 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         }
 
         const std::vector<index_t> &elem_lines = topo_data.get_entity_assocs(
-            elem_index, topo_shape.dim, line_shape.dim);
+            TopologyMetadata::GLOBAL, elem_index, topo_shape.dim, line_shape.dim);
         const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
-            elem_index, topo_shape.dim, face_shape.dim);
+            TopologyMetadata::GLOBAL, elem_index, topo_shape.dim, face_shape.dim);
 
         const std::vector<index_t> &elem_points = topo_data.get_entity_assocs(
-            elem_index, topo_shape.dim, point_shape.dim);
+            TopologyMetadata::GLOBAL, elem_index, topo_shape.dim, point_shape.dim);
         for(index_t pi = 0; pi < (index_t)elem_points.size(); pi++, corner_index++)
         {
             const index_t point_index = elem_points[pi];
 
             const std::vector<index_t> &point_faces = topo_data.get_entity_assocs(
-                point_index, point_shape.dim, face_shape.dim);
+                TopologyMetadata::GLOBAL, point_index, point_shape.dim, face_shape.dim);
             const std::vector<index_t> &point_lines = topo_data.get_entity_assocs(
-                point_index, point_shape.dim, line_shape.dim);
+                TopologyMetadata::GLOBAL, point_index, point_shape.dim, line_shape.dim);
             const std::vector<index_t> elem_point_faces = intersect_sets(
                 elem_faces, point_faces);
             const std::vector<index_t> elem_point_lines = intersect_sets(
@@ -4226,7 +4229,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                 const index_t face_index = elem_point_faces[fi];
 
                 const std::vector<index_t> &elem_face_lines = topo_data.get_entity_assocs(
-                    face_index, face_shape.dim, line_shape.dim);
+                    TopologyMetadata::GLOBAL, face_index, face_shape.dim, line_shape.dim);
                 const std::vector<index_t> corner_face_lines = intersect_sets(
                     elem_face_lines, point_lines);
 
@@ -4260,7 +4263,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                 const index_t line_index = elem_point_lines[li];
 
                 const std::vector<index_t> &line_faces = topo_data.get_entity_assocs(
-                    line_index, line_shape.dim, face_shape.dim);
+                    TopologyMetadata::GLOBAL, line_index, line_shape.dim, face_shape.dim);
                 const std::vector<index_t> corner_line_faces = intersect_sets(
                     elem_faces, line_faces);
 
@@ -4329,6 +4332,17 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     Node raw_data, info;
     {
+        raw_data.set_external(
+            DataType::int64(conn_data_raw.size()),
+            conn_data_raw.data());
+        raw_data.to_data_type(int_dtype.id(),
+            dest["elements/connectivity"]);
+        raw_data.set_external(
+            DataType::int64(size_data_raw.size()),
+            size_data_raw.data());
+        raw_data.to_data_type(int_dtype.id(),
+            dest["elements/sizes"]);
+
         if (is_topo_3d)
         {
             raw_data.set_external(
@@ -4342,15 +4356,6 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             raw_data.to_data_type(int_dtype.id(),
                 dest["subelements/sizes"]);
         }
-
-        raw_data.set_external(
-            DataType::int64(conn_data_raw.size()),
-            conn_data_raw.data());
-        raw_data.to_data_type(int_dtype.id(), dest["elements/connectivity"]);
-        raw_data.set_external(
-            DataType::int64(size_data_raw.size()),
-            size_data_raw.data());
-        raw_data.to_data_type(int_dtype.id(), dest["elements/sizes"]);
 
         raw_data.set_external(
             DataType::int64(s2d_idx_data_raw.size()),
