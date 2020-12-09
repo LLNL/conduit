@@ -304,10 +304,6 @@ namespace topology
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                           conduit::Node &info);
 
-        //---------------------------------------------------------------------
-        int CONDUIT_BLUEPRINT_API orientation(const conduit::Node &n,
-                                              conduit::Node &info);
-
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &n,
                                                 conduit::Node &dest);

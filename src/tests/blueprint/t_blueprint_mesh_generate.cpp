@@ -21,6 +21,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
+#include <limits>
 #include <map>
 #include <vector>
 #include <string>
@@ -93,7 +95,6 @@ std::vector<index_list> calc_combinations(const index_t combo_length, const inde
     return (combo_length > 0) ? combinations : std::vector<index_list>(1);
 }
 
-// std::vector<index_list> expand_ilarray(const Node &ilarray)
 std::vector<index_list> expand_o2mrelation(const Node &o2m)
 {
     // TODO(JRC): This is to get around annoying const correctness... there
@@ -106,7 +107,7 @@ std::vector<index_list> expand_o2mrelation(const Node &o2m)
 
     std::vector<index_list> o2m_list;
     o2mrelation::O2MIterator o2m_iter(o2m);
-    while(o2m_iter.has_next(o2mrelation::ONE))
+    while(o2m_iter.has_next(o2mrelation::DATA))
     {
         o2m_iter.next(o2mrelation::ONE);
         o2m_iter.to_front(o2mrelation::MANY);
@@ -114,10 +115,10 @@ std::vector<index_list> expand_o2mrelation(const Node &o2m)
         index_list one_list(o2m_iter.elements(o2mrelation::MANY));
         while(o2m_iter.has_next(o2mrelation::MANY))
         {
-          index_t many_index = o2m_iter.next(o2mrelation::MANY);
-          index_t data_index = o2m_iter.index(o2mrelation::DATA);
-          data.set_external(o2m_dtype, o2m_temp["values"].element_ptr(data_index));
-          one_list[many_index] = data.to_index_t();
+            index_t many_index = o2m_iter.next(o2mrelation::MANY);
+            index_t data_index = o2m_iter.index(o2mrelation::DATA);
+            data.set_external(o2m_dtype, o2m_temp["values"].element_ptr(data_index));
+            one_list[many_index] = data.to_index_t();
         }
 
         o2m_list.push_back(one_list);
@@ -126,12 +127,41 @@ std::vector<index_list> expand_o2mrelation(const Node &o2m)
     return o2m_list;
 }
 
+// NOTE(JRC): This function isn't really used by the 'generate_{sides|corners}'
+// checker functions because there are floating-point differences between the
+// manually and procedurally calculated field vectors, which makes vector comparison
+// via 'EXPECT_EQ' untenable, and thus 'conduit::Node:diff' is used instead.
+std::vector<float64> expand_field(const Node &field)
+{
+    // TODO(JRC): This is to get around annoying const correctness... there
+    // really ought to be a better way.
+    Node field_temp;
+    field_temp.set_external(field);
+
+    Node data;
+    Node &field_vals = field_temp["values"];
+    const DataType field_dtype(field_vals.dtype().id(), 1);
+    const index_t field_length = field_vals.dtype().number_of_elements();
+
+    std::vector<float64> field_list(field_length);
+    for(index_t fi = 0; fi < field_length; fi++)
+    {
+        data.set_external(field_dtype, field_vals.element_ptr(fi));
+        field_list[fi] = data.to_float64();
+    }
+
+    return field_list;
+}
+
 struct GridMesh
 {
     GridMesh(index_t type, const index_t *npts, bool poly = false)
     {
         Node info;
         mesh::examples::braid(ELEM_TYPE_LIST[type], npts[0], npts[1], npts[2], mesh);
+
+        Node &topo = mesh["topologies"].child(0);
+        mesh::topology::unstructured::generate_offsets(topo, topo["elements/offsets"]);
 
         this->type = type;
         for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
@@ -146,12 +176,9 @@ struct GridMesh
         is_poly = poly;
         if(is_poly)
         {
-            Node &topo = mesh["topologies"].child(0);
             const std::string topo_name = topo.name();
-
             Node &poly_topo = mesh["topologies"]["poly_" + topo_name];
             mesh::topology::unstructured::to_polygonal(topo, poly_topo);
-
             mesh["topologies"].remove(topo_name);
         }
     }
@@ -396,6 +423,25 @@ struct GridDims
     index_t dims[3];
 };
 
+void query_point(const Node &coordset, index_t point_index, Node &data)
+{
+    if(data.dtype().is_empty())
+    {
+        data.set(DataType::float64(3));
+    }
+    const DataType cset_dtype(coordset["values"].child(0).dtype().id(), 1);
+    const DataType data_dtype(data.dtype().id(), 1);
+
+    Node temp1, temp2;
+    for(index_t di = 0; di < coordset["values"].number_of_children(); di++)
+    {
+        temp1.set_external(cset_dtype,
+            (void*)coordset["values"][CSET_AXES[di]].element_ptr(point_index));
+        temp2.set_external(data_dtype, data.element_ptr(di));
+        temp1.to_data_type(data_dtype.id(), temp2);
+    }
+}
+
 // TODO(JRC): The fact that there isn't a standard C++ library for simple
 // linear algebra operations and that this is the ~20th time I've had to
 // write such operations makes me sad indeed.
@@ -451,9 +497,6 @@ void calc_inversion_field(index_t type, const Node &topo, const Node &coords, No
     // between source entities and the resulting lines (and vice versa).
     // TODO(JRC): If the type is 3D, then this field isn't absolutely correct about
     // the number of inversions because line-plane intersections aren't calculated.
-    const index_t elem_npts[] = {2, 2, 2};
-    const std::string elem_axes[] = {"x", "y", "z"};
-
     const Node &topo_conn = topo["elements/connectivity"];
     const Node &topo_off = topo["elements/offsets"];
     const DataType conn_dtype(topo_conn.dtype().id(), 1);
@@ -567,7 +610,7 @@ void calc_inversion_field(index_t type, const Node &topo, const Node &coords, No
 
                         for(index_t di = 0; di < ELEM_TYPE_DIMS[type]; di++)
                         {
-                            const Node &axis_coords = coords["values"][elem_axes[di]];
+                            const Node &axis_coords = coords["values"][CSET_AXES[di]];
                             const DataType axis_dtype(axis_coords.dtype().id(), 1);
 
                             Node axis_data;
@@ -621,14 +664,140 @@ void calc_inversion_field(index_t type, const Node &topo, const Node &coords, No
     }
 }
 
+void calc_orientation_field(index_t type, const Node &topo, const Node &coords, Node &dest)
+{
+    // NOTE(JRC): This function assumes the existence of an offsets field in
+    // the source topology, which is true for all callees in this test suite.
+    // TODO(JRC): This currently is only capable of calculating the orientations
+    // of 2D topologies.
+    const Node &topo_conn = topo["elements/connectivity"];
+    const Node &topo_off = topo["elements/offsets"];
+    const DataType conn_dtype(topo_conn.dtype().id(), 1);
+    const DataType off_dtype(topo_off.dtype().id(), 1);
+
+    const bool is_topo_3d = type == ELEM_TYPE_TET_ID || type == ELEM_TYPE_HEX_ID;
+    const index_t topo_num_elems = topo_off.dtype().number_of_elements();
+    const float64 inf = std::numeric_limits<float64>::infinity();
+
+    dest.reset();
+    dest["association"].set("element");
+    dest["volume_dependent"].set("false");
+    dest["topology"].set(topo.name());
+    dest["values"].set(DataType::float64(topo_num_elems));
+
+    // TODO(JRC): Only need to poly if the incoming geometry is 3D; otherwise,
+    // we are guaranteed that the input is end-to-end anyway
+
+    // +1: RHR positive (CCW 2D, out-normal 3D)
+    // -1: RHR negative (CW 2D, in-normal 3D)
+    // 0: unoriented (inconsistent orientation)
+    Node temp, data;
+    float64_array dest_vals = dest["values"].as_float64_array();
+    for(index_t ei = 0; ei < topo_num_elems; ei++)
+    {
+        std::vector< std::vector<int64> > elem_faces(ELEM_TYPE_FACES[type]);
+        if(!is_topo_3d)
+        {
+            temp.set_external(off_dtype, (void*)topo_off.element_ptr(ei));
+            const index_t estart = temp.to_index_t();
+            const index_t elength = ELEM_TYPE_FACE_INDICES[type];
+
+            elem_faces[0].resize(elength);
+            data.set_external(DataType::int64(elength),
+                elem_faces.back().data());
+            temp.set_external(DataType(conn_dtype.id(), elength),
+                (void*)topo_conn.element_ptr(estart));
+            temp.to_data_type(DataType::int64(1).id(), data);
+        }
+        else // if(is_topo_3d)
+        {
+            // TODO(JRC): Construct polyhedral faces using 'subelements/connectivity'.
+        }
+
+        int elem_orientation = 0;
+        for(index_t fi = 0; fi < (index_t)elem_faces.size(); fi++)
+        {
+            const std::vector<int64> &face_verts = elem_faces[fi];
+
+            index_t min_vert_id = 0;
+            index_t min_vert_index = 0;
+            { // locate the min vertex (i.e. min(x, y, z))
+                float64 min_vert[3] = {inf, inf, inf};
+                float64 vert[3] = {0.0f, 0.0f, 0.0f};
+                data.set_external(DataType::float64(3), &vert[0]);
+                for(index_t vi = 0; vi < (index_t)face_verts.size(); vi++)
+                {
+                    query_point(coords, face_verts[vi], data);
+                    for(index_t di = 0; di < ELEM_TYPE_DIMS[type] && vert[di] <= min_vert[di]; di++)
+                    {
+                        if(vert[di] < min_vert[di])
+                        {
+                            min_vert_id = face_verts[vi];
+                            min_vert_index = vi;
+                            std::memcpy(&min_vert[0], &vert[0], sizeof(min_vert));
+                        }
+                    }
+                }
+            }
+
+            std::vector<index_t> min_vert_adjs;
+            { // calculate adjacent vertices along the face
+                // FIXME(JRC): The 'algorithm' below depends on the fact that
+                // the face is oriented end-to-end wrt vertices (i.e. MFEM/VTK style).
+                const index_t prev_vert_index = (min_vert_index == 0) ?
+                    (face_verts.size() - 1) : (min_vert_index - 1);
+                const index_t next_vert_index =
+                    (min_vert_index + 1) % face_verts.size();
+
+                min_vert_adjs.push_back(face_verts[prev_vert_index]);
+                min_vert_adjs.push_back(face_verts[next_vert_index]);
+            }
+
+            int face_orientation = 0;
+            { // calculate determinant in 2d and cross product in 3d
+                float64 face_verts[3][3] = {
+                    {0.0f, 0.0f, 0.0f},
+                    {0.0f, 0.0f, 0.0f},
+                    {0.0f, 0.0f, 0.0f}
+                };
+
+                // a = min_vert_adjs[0]
+                data.set_external(DataType::float64(3), &face_verts[0][0]);
+                query_point(coords, min_vert_adjs[0], data);
+                // b = min_vert_id
+                data.set_external(DataType::float64(3), &face_verts[1][0]);
+                query_point(coords, min_vert_id, data);
+                // c = min_vert_adjs[1]
+                data.set_external(DataType::float64(3), &face_verts[2][0]);
+                query_point(coords, min_vert_adjs[1], data);
+
+                // det = (xb - xa) * (yc - ya) - (xc - xa) * (yb - ya)
+                float64 det =
+                    (face_verts[1][0] - face_verts[0][0]) * (face_verts[2][1] - face_verts[0][1]) -
+                    (face_verts[2][0] - face_verts[0][0]) * (face_verts[1][1] - face_verts[0][1]);
+                face_orientation = ((det > 0) ? 1 : ((det < 0) ? -1 : 0));
+            }
+
+            if(fi == 0)
+            {
+                elem_orientation = face_orientation;
+            }
+            else if(elem_orientation != 0 && elem_orientation != face_orientation)
+            {
+                elem_orientation = 0;
+            }
+        }
+
+        dest_vals[ei] = static_cast<float64>(elem_orientation);
+    }
+}
+
 void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node &dest)
 {
     // NOTE(JRC): This function assumes the existence of an offsets field in
     // the source topology, which is true for all callees in this test suite.
     // TODO(JRC): This currently is only capable of calculating the hypervolume
     // of 2D topologies.
-    const std::string elem_axes[] = {"x", "y", "z"};
-
     const Node &topo_conn = topo["elements/connectivity"];
     const Node &topo_off = topo["elements/offsets"];
     const DataType conn_dtype(topo_conn.dtype().id(), 1);
@@ -659,21 +828,15 @@ void calc_volume_field(index_t type, const Node &topo, const Node &coords, Node 
         dest_vals[ei] = 0.0;
         for(index_t eci = 0; eci < elem_size; eci++)
         {
-            float64 coord_vals[2][2] = {{0.0, 0.0}, {0.0, 0.0}};
+            float64 coord_vals[2][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
             for(index_t cdi = 0; cdi < 2; cdi++)
             {
                 index_t ci = ((eci + cdi) % elem_size) + elem_start_index;
                 data_node.set_external(conn_dtype, (void*)topo_conn.element_ptr(ci));
                 index_t icoord = data_node.to_int64();
 
-                float64 *cvals = &coord_vals[cdi][0];
-                for(index_t di = 0; di < 2; di++)
-                {
-                    const Node &axis_coords = coords["values"][elem_axes[di]];
-                    data_node.set_external(DataType(axis_coords.dtype().id(), 1),
-                        (void*)axis_coords.element_ptr(icoord));
-                    cvals[di] = data_node.to_float64();
-                }
+                data_node.set_external(DataType::float64(3), &coord_vals[cdi][0]);
+                query_point(coords, icoord, data_node);
             }
 
             dest_vals[ei] += coord_vals[0][0] * coord_vals[1][1];
@@ -712,7 +875,7 @@ typedef GridMeshCollection::Iterator GridIterator;
 // {
 //     // NOTE(JRC): This is an unused test case that can be implemented in order
 //     // to help debug the current ordering being used for the topological cascade.
-//     const GridMeshCollection &grids = get_test_grids(TRIVIAL_GRID, true);
+//     const GridMeshCollection &grids = get_test_grids(SIMPLE_GRID, true);
 //     for(GridIterator grid_it = grids.begin(); grid_it != grids.end(); ++grid_it)
 //     {
 //         GridMesh grid_mesh = *grid_it;
@@ -736,6 +899,9 @@ typedef GridMeshCollection::Iterator GridIterator;
 // 
 //         grid_mesh.mesh.remove("fields");
 //         grid_mesh.mesh.remove("state");
+// 
+//         calc_orientation_field(grid_mesh.type, grid_topo, grid_coords, grid_mesh.mesh["fields"]["orientations"]);
+//         calc_volume_field(grid_mesh.type, grid_topo, grid_coords, grid_mesh.mesh["fields"]["volumes"]);
 // 
 //         grid_mesh.mesh.print();
 //     }
@@ -1140,7 +1306,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
     {
         // NOTE(JRC): Skip testing for tetrahedral meshes because their element
         // interfaces are complicated and make counting too difficult.
-        if(grid_it->type == 2) { continue; }
+        if(grid_it->type == ELEM_TYPE_TET_ID) { continue; }
 
         const GridMesh &grid_mesh = *grid_it;
         const Node &grid_coords = grid_mesh.mesh["coordsets"].child(0);
@@ -1149,7 +1315,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         const index_t grid_elems = grid_mesh.elems();
         const index_t grid_faces = grid_mesh.faces();
 
-        const std::string side_type = (grid_mesh.dims() == 2) ? "tri" : "tet";
+        const index_t side_type = (grid_mesh.dims() == 2) ? ELEM_TYPE_TRI_ID : ELEM_TYPE_TET_ID;
+        const std::string side_type_name = (grid_mesh.dims() == 2) ? "tri" : "tet";
         const index_t sides_per_elem = grid_mesh.faces_per_elem() * grid_mesh.points_per_face();
         const index_t grid_sides = grid_elems * sides_per_elem;
         const float64 side_volume = grid_mesh.elem_volume() / sides_per_elem;
@@ -1188,7 +1355,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         mesh::topology::unstructured::generate_offsets(side_topo, side_off);
 
         EXPECT_EQ(side_topo["coordset"].as_string(), SIDE_COORDSET_NAME);
-        EXPECT_EQ(side_topo["elements/shape"].as_string(), side_type);
+        EXPECT_EQ(side_topo["elements/shape"].as_string(), side_type_name);
         EXPECT_EQ(side_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(side_off.dtype().number_of_elements(), grid_sides);
 
@@ -1197,7 +1364,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         if(grid_mesh.dims() < 3)
         {
             Node side_vols;
-            calc_volume_field(grid_mesh.type, side_topo, side_coords, side_vols);
+            calc_volume_field(side_type, side_topo, side_coords, side_vols);
 
             std::vector<float64> expected_vols_vec(grid_sides, side_volume);
             Node expected_vols(DataType::float64(expected_vols_vec.size()),
@@ -1259,6 +1426,30 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         }
         std::vector<index_list> actual_side_elem_lists = expand_o2mrelation(s2t_map);
         EXPECT_EQ(actual_side_elem_lists, expected_side_elem_lists);
+
+        // Verify Correctness of Element Orientations //
+
+        if(grid_mesh.dims() < 3)
+        {
+            Node grid_orients, side_orients;
+            calc_orientation_field(grid_mesh.type, grid_topo, grid_coords, grid_orients);
+            calc_orientation_field(side_type, side_topo, side_coords, side_orients);
+
+            std::vector<float64> expected_orients_vec(grid_sides);
+            for(index_t ei = 0; ei < grid_mesh.elems(); ei++)
+            {
+                Node data(DataType::float64(1), grid_orients["values"].element_ptr(ei), true);
+                const float64 elem_orient = data.to_float64();
+                for(index_t si = 0; si < sides_per_elem; si++)
+                {
+                    expected_orients_vec[sides_per_elem * ei + si] = elem_orient;
+                }
+            }
+
+            Node expected_orients(DataType::float64(expected_orients_vec.size()),
+                expected_orients_vec.data(), true);
+            EXPECT_FALSE(side_orients["values"].diff(expected_orients, info));
+        }
     }
 }
 
@@ -1284,7 +1475,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         const index_t grid_faces = grid_mesh.faces();
         const index_t grid_lines = grid_mesh.lines();
 
-        const std::string corner_type = (grid_mesh.dims() == 2) ? "polygonal" : "polyhedral";
+        const index_t corner_type = (grid_mesh.dims() == 2) ? ELEM_TYPE_QUAD_ID : ELEM_TYPE_HEX_ID;
+        const std::string corner_type_name = (grid_mesh.dims() == 2) ? "polygonal" : "polyhedral";
         const index_t corners_per_elem = grid_mesh.points_per_elem();
         const index_t grid_corners = grid_elems * corners_per_elem;
         const float64 corner_volume = grid_mesh.elem_volume() / corners_per_elem;
@@ -1323,7 +1515,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         mesh::topology::unstructured::generate_offsets(corner_topo, corner_off);
 
         EXPECT_EQ(corner_topo["coordset"].as_string(), CORNER_COORDSET_NAME);
-        EXPECT_EQ(corner_topo["elements/shape"].as_string(), corner_type);
+        EXPECT_EQ(corner_topo["elements/shape"].as_string(), corner_type_name);
         EXPECT_EQ(corner_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(corner_off.dtype().number_of_elements(), grid_corners);
 
@@ -1332,7 +1524,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         if(grid_mesh.dims() < 3)
         {
             Node corner_vols;
-            calc_volume_field(grid_mesh.type, corner_topo, corner_coords, corner_vols);
+            calc_volume_field(corner_type, corner_topo, corner_coords, corner_vols);
 
             std::vector<float64> expected_vols_vec(grid_corners, corner_volume);
             Node expected_vols(DataType::float64(expected_vols_vec.size()),
@@ -1390,5 +1582,29 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         }
         std::vector<index_list> actual_corner_elem_lists = expand_o2mrelation(c2t_map);
         EXPECT_EQ(actual_corner_elem_lists, expected_corner_elem_lists);
+
+        // Verify Correctness of Element Orientations //
+
+        if(grid_mesh.dims() < 3)
+        {
+            Node grid_orients, corner_orients;
+            calc_orientation_field(grid_mesh.type, grid_topo, grid_coords, grid_orients);
+            calc_orientation_field(corner_type, corner_topo, corner_coords, corner_orients);
+
+            std::vector<float64> expected_orients_vec(grid_corners);
+            for(index_t ei = 0; ei < grid_mesh.elems(); ei++)
+            {
+                Node data(DataType::float64(1), grid_orients["values"].element_ptr(ei), true);
+                const float64 elem_orient = data.to_float64();
+                for(index_t si = 0; si < corners_per_elem; si++)
+                {
+                    expected_orients_vec[corners_per_elem * ei + si] = elem_orient;
+                }
+            }
+
+            Node expected_orients(DataType::float64(expected_orients_vec.size()),
+                expected_orients_vec.data(), true);
+            EXPECT_FALSE(corner_orients["values"].diff(expected_orients, info));
+        }
     }
 }

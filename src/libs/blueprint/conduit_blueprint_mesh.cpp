@@ -1240,14 +1240,16 @@ struct TopologyMetadata
                 dim_le2ge_map[local_id] = global_id;
             }
 
-            add_entity_assoc(global_id, local_id, entity_dim, global_id, local_id, entity_dim);
+            add_entity_assoc(IndexType::GLOBAL, global_id, entity_dim, global_id, entity_dim);
+            add_entity_assoc(IndexType::LOCAL, local_id, entity_dim, local_id, entity_dim);
             for(index_t pi = 0; pi < (index_t)entity_parents.size(); pi++)
             {
                 index_t plevel = entity_parents.size() - pi - 1;
                 const index_t parent_global_id = entity_parents[plevel].first;
                 const index_t parent_local_id = entity_parents[plevel].second;
                 const index_t parent_dim = entity_dim + pi + 1;
-                add_entity_assoc(global_id, local_id, entity_dim, parent_global_id, parent_local_id, parent_dim);
+                add_entity_assoc(IndexType::GLOBAL, global_id, entity_dim, parent_global_id, parent_dim);
+                add_entity_assoc(IndexType::LOCAL, local_id, entity_dim, parent_local_id, parent_dim);
             }
 
             // Add Embedded Elements for Further Processing //
@@ -1343,45 +1345,29 @@ struct TopologyMetadata
         }
     }
 
-    void add_entity_assoc(
-        index_t e1_gid, index_t e1_lid, index_t e1_dim,
-        index_t e2_gid, index_t e2_lid, index_t e2_dim)
+    void add_entity_assoc(IndexType type,
+        index_t e0_id, index_t e0_dim,
+        index_t e1_id, index_t e1_dim)
     {
-        std::vector< std::pair< std::vector<index_t>, std::set<index_t> > >
-            &e1_geassocs = dim_geassocs_maps[e1_dim][e1_gid],
-            &e1_leassocs = dim_leassocs_maps[e1_dim][e1_lid],
-            &e2_geassocs = dim_geassocs_maps[e2_dim][e2_gid],
-            &e2_leassocs = dim_leassocs_maps[e2_dim][e2_lid];
-        e1_geassocs.resize(topo_shape.dim + 1);
-        e1_leassocs.resize(topo_shape.dim + 1);
-        e2_geassocs.resize(topo_shape.dim + 1);
-        e2_leassocs.resize(topo_shape.dim + 1);
+        auto &assoc_maps = (type == IndexType::LOCAL) ? dim_leassocs_maps : dim_geassocs_maps;
+        std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > *entity_assocs[2] = {
+            &assoc_maps[e0_dim][e0_id],
+            &assoc_maps[e1_dim][e1_id]
+        };
 
-        std::pair< std::vector<index_t>, std::set<index_t> >
-            &e1e2_geassocs = e1_geassocs[e2_dim],
-            &e1e2_leassocs = e1_leassocs[e2_dim],
-            &e2e1_geassocs = e2_geassocs[e1_dim],
-            &e2e1_leassocs = e2_leassocs[e1_dim];
+        for(index_t ai = 0; ai < 2; ai++)
+        {
+            auto &curr_assocs = *entity_assocs[ai];
+            curr_assocs.resize(topo_shape.dim + 1);
 
-        if(e1e2_geassocs.second.find(e2_gid) == e1e2_geassocs.second.end())
-        {
-            e1e2_geassocs.first.push_back(e2_gid);
-            e1e2_geassocs.second.insert(e2_gid);
-        }
-        if(e1e2_leassocs.second.find(e2_lid) == e1e2_leassocs.second.end())
-        {
-            e1e2_leassocs.first.push_back(e2_lid);
-            e1e2_leassocs.second.insert(e2_lid);
-        }
-        if(e2e1_geassocs.second.find(e1_gid) == e2e1_geassocs.second.end())
-        {
-            e2e1_geassocs.first.push_back(e1_gid);
-            e2e1_geassocs.second.insert(e1_gid);
-        }
-        if(e2e1_leassocs.second.find(e1_lid) == e2e1_leassocs.second.end())
-        {
-            e2e1_leassocs.first.push_back(e1_lid);
-            e2e1_leassocs.second.insert(e1_lid);
+            const index_t cross_id = (ai == 0) ? e1_id : e0_id;
+            const index_t cross_dim = (ai == 0) ? e1_dim : e0_dim;
+            auto &cross_assocs = curr_assocs[cross_dim];
+            if(cross_assocs.second.find(cross_id) == cross_assocs.second.end())
+            {
+                cross_assocs.first.push_back(cross_id);
+                cross_assocs.second.insert(cross_id);
+            }
         }
     }
 
@@ -3503,134 +3489,6 @@ mesh::topology::unstructured::verify(const Node &topo,
 }
 
 //-----------------------------------------------------------------------------
-int
-mesh::topology::unstructured::orientation(const Node &topo,
-                                          Node &info)
-{
-    // +1: RHR positive (CCW 2D, out-normal 3D)
-    // -1: RHR negative (CW 2D, in-normal 3D)
-    // 0: unoriented (inconsistent orientation)
-    const std::string protocol = "mesh::topology::unstructured::orientation";
-    int res = 0;
-    info.reset();
-
-    // TODO(JRC): Supply a version of this function that doesn't analyze
-    // the entire topology (either just uses first element as reference
-    // or has optional parameter to indicate whether or not to do a scan).
-    Node coordset;
-    find_reference_node(topo, "coordset", coordset);
-
-    const ShapeCascade topo_cascade(topo);
-    const ShapeType topo_shape = topo_cascade.get_shape();
-    const ShapeType point_shape = topo_cascade.get_shape(0);
-    const ShapeType line_shape = topo_cascade.get_shape(1);
-    const ShapeType face_shape = topo_cascade.get_shape(2);
-
-    const TopologyMetadata topo_data(topo, coordset);
-    const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
-    const float64 inf = std::numeric_limits<float64>::infinity();
-
-    Node temp, data;
-    int &ref_orientation = res;
-    bool is_consistent = true;
-    for(index_t ei = 0; ei < 2/*topo_num_elems*/; ei++)
-    {
-        const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
-            TopologyMetadata::GLOBAL, ei, topo_shape.dim, face_shape.dim);
-        for(index_t fi = 0; fi < (index_t)elem_faces.size(); fi++)
-        {
-            // get the vertices for this face
-            const std::vector<index_t> &face_verts = topo_data.get_entity_assocs(
-                TopologyMetadata::GLOBAL, fi, face_shape.dim, point_shape.dim);
-
-            index_t min_vert_id = 0;
-            index_t min_vert_index = 0;
-            { // locate the min vertex (i.e. min(x, y, z))
-                float64 min_vert[3] = {inf, inf, inf};
-                for(index_t vi = 0; vi < (index_t)face_verts.size(); vi++)
-                {
-                    topo_data.get_point_data(TopologyMetadata::GLOBAL, face_verts[vi], data);
-
-                    float64* vert = data.as_float64_ptr();
-                    for(index_t di = 0; di < topo_shape.dim && vert[di] <= min_vert[di]; di++)
-                    {
-                        if(vert[di] < min_vert[di])
-                        {
-                            min_vert_id = face_verts[vi];
-                            min_vert_index = vi;
-                            std::memcpy(&min_vert[0], &vert[0], sizeof(min_vert));
-                        }
-                    }
-                }
-            }
-
-            std::vector<index_t> min_vert_adjs;
-            { // calculate adjacent vertices along the face
-                // FIXME(JRC): The 'algorithm' below depends on the fact that
-                // the face is oriented end-to-end wrt vertices (i.e. MFEM/VTK style).
-                const index_t prev_vert_index = (min_vert_index == 0) ?
-                    (face_verts.size() - 1) : (min_vert_index - 1);
-                const index_t next_vert_index =
-                    (min_vert_index + 1) % face_verts.size();
-
-                min_vert_adjs.push_back(face_verts[prev_vert_index]);
-                min_vert_adjs.push_back(face_verts[next_vert_index]);
-            }
-
-            int face_orientation = 0;
-            { // calculate determinant in 2d and cross product in 3d
-                float64 face_verts[3][3] = {
-                    {0.0f, 0.0f, 0.0f},
-                    {0.0f, 0.0f, 0.0f},
-                    {0.0f, 0.0f, 0.0f}
-                };
-
-                // a = min_vert_adjs[0]
-                data.set_external(DataType::float64(3), face_verts[0]);
-                topo_data.get_point_data(TopologyMetadata::GLOBAL, min_vert_adjs[0], data);
-                // b = min_vert_id
-                data.set_external(DataType::float64(3), face_verts[1]);
-                topo_data.get_point_data(TopologyMetadata::GLOBAL, min_vert_id, data);
-                // c = min_vert_adjs[1]
-                data.set_external(DataType::float64(3), face_verts[2]);
-                topo_data.get_point_data(TopologyMetadata::GLOBAL, min_vert_adjs[1], data);
-
-                if(topo_shape.dim == 2)
-                {
-                    // det = (xb - xa) * (yc - ya) - (xc - xa) * (yb - ya)
-                    float64 det =
-                        (face_verts[1][0] - face_verts[0][0]) * (face_verts[2][1] - face_verts[0][1]) -
-                        (face_verts[2][0] - face_verts[0][0]) * (face_verts[1][1] - face_verts[0][1]);
-                    face_orientation = ((det > 0) ? 1 : ((det < 0) ? -1 : 0));
-                }
-                else // if(topo_shape.dim == 3)
-                {
-                    // TODO(JRC): Need to calculate cross product and compare orientation
-                    // (against vector to centroid of element?).
-                }
-            }
-
-            if(ei == 0)
-            {
-                ref_orientation = face_orientation;
-                log::info(info, protocol,
-                    "reference orientation is " + std::to_string(ref_orientation));
-            }
-            else if(ref_orientation != 0 && ref_orientation != face_orientation)
-            {
-                is_consistent = false;
-                log::info(info, protocol,
-                    "conflicting orientation at element " + std::to_string(ei) + "; " +
-                    "reference orientation is " + std::to_string(ref_orientation) + " " +
-                    "and element orientation is " + std::to_string(face_orientation));
-            }
-        }
-    }
-
-    return is_consistent ? ref_orientation : 0;
-}
-
-//-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::to_polygonal(const Node &topo,
                                            Node &dest)
@@ -3887,12 +3745,6 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
-    // NOTE(JRC): If the orientation for the given topology is undefined, then
-    // we arbitrarily choose a positive (RHR CCW) orientation for the derived
-    // elements.
-    Node info;
-    // const int topo_orient = mesh::topology::unstructured::orientation(topo, info) || 1;
-
     // Allocate Data Templates for Outputs //
 
     const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
@@ -4051,6 +3903,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     // TODO(JRC): Implement these counts in-line instead of being lazy and
     // taking care of it at the end of the function w/ a helper.
+    Node info;
     blueprint::o2mrelation::generate_offsets(s2dmap, info);
     blueprint::o2mrelation::generate_offsets(d2smap, info);
 }
