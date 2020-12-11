@@ -28,6 +28,9 @@ set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_slab
                      t_relay_io_hdf5_opts)
 
+set(RELAY_H5ZZFP_TESTS t_relay_io_hdf5_h5zzfp)
+
+
 set(RELAY_ADIOS_TESTS t_relay_io_adios)
 set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios)
 set(RELAY_ZFP_TESTS t_relay_zfp)
@@ -63,6 +66,15 @@ else()
     message(STATUS "HDF5 disabled: Skipping conduit_relay hdf5 tests")
 endif()
 
+if(H5ZZFP_FOUND)
+    foreach(TEST ${RELAY_H5ZZFP_TESTS})
+        add_cpp_test(TEST ${TEST}
+                     DEPENDS_ON conduit conduit_relay
+                     FOLDER tests/relay)
+    endforeach()
+else()
+    message(STATUS "h5z-zfp disabled: Skipping conduit_relay h5z-zfp tests")
+endif()
 
 if(SILO_FOUND)
     message(STATUS "Silo enabled: Adding conduit_relay Silo unit tests")

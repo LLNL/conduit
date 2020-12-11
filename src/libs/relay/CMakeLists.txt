@@ -175,6 +175,10 @@ if(HDF5_FOUND)
     endif()
 endif()
 
+if(H5ZZFP_FOUND)
+    list(APPEND conduit_relay_deps h5zzfp)
+endif()
+
 if(ADIOS_FOUND AND NOT MPI_FOUND)
     # Link with the serial ADIOS libraries.
     list(APPEND conduit_relay_deps adios_nompi)
