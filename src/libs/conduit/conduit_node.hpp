@@ -3708,9 +3708,17 @@ public:
     /// info() creates a node that contains metadata about the current
     /// node's memory properties
     void             info(Node &nres) const;
+
     /// TODO: this is inefficient w/o move semantics, but is very
     /// convenient for testing and example programs.
     Node             info() const;
+
+    ///
+    /// describe() creates a node that replaces each leaf with
+    ///  descriptive statistics (count, mean, min, max) and a string repd 
+    ///  values summary
+    void             describe(Node &nres) const;
+    void             describe(const Node &opts, Node &nres) const;
 
 //-----------------------------------------------------------------------------
 // -- stdout print methods ---
