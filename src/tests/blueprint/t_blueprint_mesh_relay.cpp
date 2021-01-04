@@ -105,7 +105,7 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh)
     bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
     if(!hdf5_enabled)
     {
-        CONDUIT_INFO("HDF5 disabled, skipping spiral_multi_file test");
+        CONDUIT_INFO("HDF5 disabled, skipping save_read_mesh test");
         return;
     }
 
@@ -123,7 +123,9 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh)
     opts["number_of_files"] = -1;
 
     remove_path_if_exists(output_base + ".cycle_000000.root");
-    remove_path_if_exists(output_base + ".cycle_000000");
+    remove_path_if_exists(output_base + ".cycle_000000/file_000000.hdf5");
+    remove_path_if_exists(output_base + ".cycle_000000/file_000001.hdf5");
+    remove_path_if_exists(output_base + ".cycle_000000/file_000002.hdf5");
 
     relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
 
@@ -139,6 +141,94 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh)
     data.child(1).diff(n_read.child(1),info);
     data.child(2).diff(n_read.child(2),info);
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping save_read_mesh_truncate test");
+        return;
+    }
+
+    std::string output_base = "tout_relay_mesh_save_load_truncate";
+    
+    Node data;
+
+    // 3 doms
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     data.append());
+
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     data.append());
+
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     data.append());
+
+    // set the domain ids
+    data.child(0)["state/domain_id"] = 0;
+    data.child(1)["state/domain_id"] = 1;
+    data.child(2)["state/domain_id"] = 2;
+
+    // 3 doms 2 files
+    Node opts;
+    opts["number_of_files"] = 2;
+
+    remove_path_if_exists(output_base + ".cycle_000100.root");
+    remove_path_if_exists(output_base + ".cycle_000100/file_000000.hdf5");
+    remove_path_if_exists(output_base + ".cycle_000100/file_000001.hdf5");
+
+    relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
+
+    // now save diff mesh to same file set, will fail with write_mesh
+    // b/c hdf5 paths won't be compat
+
+    data.reset();
+    // 3 doms
+    blueprint::mesh::examples::braid("uniform",
+                                     5,
+                                     5,
+                                     0,
+                                     data.append());
+
+    blueprint::mesh::examples::braid("uniform",
+                                     5,
+                                     5,
+                                     0,
+                                     data.append());
+
+    blueprint::mesh::examples::braid("uniform",
+                                     5,
+                                     5,
+                                     0,
+                                     data.append());
+
+    // set the domain ids
+    data.child(0)["state/domain_id"] = 0;
+    data.child(1)["state/domain_id"] = 1;
+    data.child(2)["state/domain_id"] = 2;
+
+    // non-trunk will error b/c leaf sizes aren't compat
+    EXPECT_THROW( relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts),Error);
+
+    // trunc will work
+    relay::io::blueprint::save_mesh(data, output_base, "hdf5", opts);
+
+}
+
+
 
 
 //-----------------------------------------------------------------------------

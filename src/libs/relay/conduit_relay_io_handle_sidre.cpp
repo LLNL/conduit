@@ -82,7 +82,7 @@ SidreIOHandle::open()
     // and processes standard options (mode = "rw", etc)
     HandleInterface::open();
 
-    if( open_mode() == "w" )
+    if( open_mode_write_only() )
         CONDUIT_ERROR("SidreIOHandle does not support write mode "
                       "(open_mode = 'w')");
 
@@ -173,11 +173,7 @@ SidreIOHandle::is_open() const
 void 
 SidreIOHandle::read(Node &node)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     std::vector<std::string> child_names;
     list_child_names(child_names);
@@ -193,11 +189,7 @@ void
 SidreIOHandle::read(const std::string &path,
                     Node &node)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     // if blank path or "/", use other method and early exist.
     if(path.empty() || path == "/")
@@ -265,12 +257,7 @@ SidreIOHandle::read(const std::string &path,
 void 
 SidreIOHandle::write(const Node & /*node*/) // node is unused
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
-                      " (mode = 'r')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     // not supported yet, so throw a fatal error
     CONDUIT_ERROR("IOHandle: sidre write support not implemented");
@@ -282,12 +269,7 @@ void
 SidreIOHandle::write(const Node & /*node*/, // node is unused
                    const std::string & /*path*/ ) // path is unused
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
-                      " (mode = 'r')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     // not supported yet, so throw a fatal error
     CONDUIT_ERROR("IOHandle: sidre write support not implemented");
@@ -298,11 +280,7 @@ SidreIOHandle::write(const Node & /*node*/, // node is unused
 void
 SidreIOHandle::list_child_names(std::vector<std::string> &res)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     if(m_has_spio_index)
     {
@@ -330,14 +308,10 @@ void
 SidreIOHandle::list_child_names(const std::string &path,
                                 std::vector<std::string> &res)
 {
+    // note: wrong mode errors are handled before dispatch to interface
+
     // note: if the path is bad, we return an empty list
     res.clear();
-
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
-                      " (mode = 'w')");
-    }
 
     if(m_has_spio_index)
     {
@@ -380,12 +354,7 @@ SidreIOHandle::list_child_names(const std::string &path,
 void 
 SidreIOHandle::remove(const std::string &/*path*/) // path is unused
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot remove path, handle is read only"
-                      " (mode = 'r')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     // not supported yet, so throw a fatal error
     CONDUIT_ERROR("IOHandle: sidre write support not implemented");
@@ -395,11 +364,7 @@ SidreIOHandle::remove(const std::string &/*path*/) // path is unused
 bool 
 SidreIOHandle::has_path(const std::string &path)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot call has_path, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     bool res = false;
 
