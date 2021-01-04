@@ -13,6 +13,8 @@
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
+#include "conduit_fmt/conduit_fmt.h"
+
 #include <math.h>
 #include <iostream>
 #include "gtest/gtest.h"
@@ -83,12 +85,21 @@ TEST(conduit_blueprint_mesh_relay, spiral_multi_file)
                 // domain_
                 fprefix = "domain_";
             }
-            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",i);
-            oss.str("");
-            oss << join_file_path(output_base + ".cycle_000000",
-                                  fprefix)
-                << fmt_buff << ".hdf5";
-            std::string fcheck = oss.str();
+            
+            // std::string fcheck = conduit_fmt::format("{}.cycle_000000");
+            
+            // snprintf(fmt_buff, sizeof(fmt_buff), "%06d",i);
+            // oss.str("");
+            // oss << join_file_path(output_base + ".cycle_000000",
+            //                       fprefix)
+            //     << fmt_buff << ".hdf5";
+            // std::string fcheck = oss.str();
+            
+            std::string fcheck = conduit_fmt::format("{}{:06d}.hdf5",
+                            join_file_path(output_base + ".cycle_000000",
+                                           fprefix),
+                            i);
+
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(is_file(fcheck));
         }
