@@ -447,20 +447,11 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
                 fprefix = "domain_";
             }
 
-            // snprintf(fmt_buff, sizeof(fmt_buff), "%06d",i);
-            // oss.str("");
-            // oss << conduit::utils::join_file_path(output_base + ".cycle_000000",
-            //                                       fprefix)
-            //     << fmt_buff << ".hdf5";
-            //
-            // std::string fcheck = oss.str();
-
             std::string fcheck = conduit_fmt::format("{}{:06d}.hdf5",
                             join_file_path(output_base + ".cycle_000000",
                                            fprefix),
                             i);
 
-            // std::string fcheck = oss.str();
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
