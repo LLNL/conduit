@@ -10,9 +10,9 @@
 
 #include "conduit_relay_io.hpp"
 #include "conduit_relay_io_handle.hpp"
+#include "conduit_blueprint.hpp"
 
 #include "conduit_fmt/conduit_fmt.h"
-#include "conduit_blueprint.hpp"
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     #include "conduit_relay_mpi.hpp"
@@ -113,76 +113,37 @@ public:
                        int idx) const
     {
         //
-        // Note: This currently only handles format strings:
-        // "%03d" "%04d" "%05d" "%06d" "%07d" "%08d"
+        // This currently handles format strings:
+        // "%d" "%02d" "%03d" "%04d" "%05d" "%06d" "%07d" "%08d" "%09d"
         //
 
-        std::size_t pattern_idx = pattern.find("%03d");
+        std::size_t pattern_idx = pattern.find("%d");
 
         if(pattern_idx != std::string::npos)
         {
             std::string res = pattern;
             res.replace(pattern_idx,
                         4,
-                        conduit_fmt::format("{:03d}",idx));
+                        conduit_fmt::format("{:d}",idx));
             return res;
         }
 
-        pattern_idx = pattern.find("%04d");
-
-        if(pattern_idx != std::string::npos)
+        for(int i=2; i<10; i++)
         {
-            std::string res = pattern;
-            res.replace(pattern_idx,
-                        4,
-                        conduit_fmt::format("{:04d}",idx));
-            return res;
+            std::string pat = "%0" + conduit_fmt::format("{:d}",i) + "d";
+            pattern_idx = pattern.find(pat);
+
+            if(pattern_idx != std::string::npos)
+            {
+                pat = "{:0" + conduit_fmt::format("{:d}",i) + "d}";
+
+                std::string res = pattern;
+                res.replace(pattern_idx,
+                            4,
+                            conduit_fmt::format(pat,idx));
+                return res;
+            }
         }
-
-        pattern_idx = pattern.find("%05d");
-
-        if(pattern_idx != std::string::npos)
-        {
-            std::string res = pattern;
-            res.replace(pattern_idx,
-                        4,
-                        conduit_fmt::format("{:06d}",idx));
-            return res;
-        }
-
-        pattern_idx = pattern.find("%06d");
-
-        if(pattern_idx != std::string::npos)
-        {
-            std::string res = pattern;
-            res.replace(pattern_idx,
-                        4,
-                        conduit_fmt::format("{:06d}",idx));
-            return res;
-        }
-
-        pattern_idx = pattern.find("%07d");
-
-        if(pattern_idx != std::string::npos)
-        {
-            std::string res = pattern;
-            res.replace(pattern_idx,
-                        4,
-                        conduit_fmt::format("{:07d}",idx));
-            return res;
-        }
-
-        pattern_idx = pattern.find("%08d");
-
-        if(pattern_idx != std::string::npos)
-        {
-            std::string res = pattern;
-            res.replace(pattern_idx,
-                        4,
-                        conduit_fmt::format("{:07d}",idx));
-            return res;
-        }
-
 
         return pattern;
     }

@@ -20,6 +20,7 @@
 #include "conduit_relay_io_identify_protocol.hpp"
 #include "conduit_relay_io_handle_sidre.hpp"
 
+#include "conduit_fmt/conduit_fmt.h"
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -469,41 +470,44 @@ SidreIOHandle::detect_root_protocol() const
 //              ascent, hola, BlueprintTreePathGenerator
 std::string 
 SidreIOHandle::expand_pattern(const std::string pattern,
-                            int idx) const
+                              int idx) const
 {
     //
-    // Note: This currently handles format strings:
+    // This currently handles format strings:
     // "%d" "%02d" "%03d" "%04d" "%05d" "%06d" "%07d" "%08d" "%09d"
     //
 
     std::size_t pattern_idx = pattern.find("%d");
-    char buff[16] = {0};
 
     if(pattern_idx != std::string::npos)
     {
-        snprintf(buff,16,"%d",idx);
         std::string res = pattern;
-        res.replace(pattern_idx,2,std::string(buff));
+        res.replace(pattern_idx,
+                    4,
+                    conduit_fmt::format("{:d}",idx));
         return res;
     }
 
-    std::ostringstream oss;
-    for(int i=2;i<9;i++)
+    for(int i=2; i<10; i++)
     {
-        oss.str("");
-        oss << "%0"  << i << "d";
-        pattern_idx = pattern.find(oss.str());
+        std::string pat = "%0" + conduit_fmt::format("{:d}",i) + "d";
+        pattern_idx = pattern.find(pat);
+
         if(pattern_idx != std::string::npos)
         {
-            snprintf(buff,16,oss.str().c_str(),idx);
+            pat = "{:0" + conduit_fmt::format("{:d}",i) + "d}";
+
             std::string res = pattern;
-            res.replace(pattern_idx,4,std::string(buff));
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format(pat,idx));
             return res;
         }
     }
 
     return pattern;
 }
+
 
 //-------------------------------------------------------------------//
 // adapted from VisIt, avtBlueprintTreeCache
