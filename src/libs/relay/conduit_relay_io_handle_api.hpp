@@ -110,6 +110,27 @@ public:
         virtual bool has_path(const std::string &path) = 0;
         virtual void close() = 0;
 
+        // access to common state
+        const std::string &path()      const;
+        const std::string &protocol()  const;
+        const Node        &options()   const;
+        const std::string &open_mode() const;
+
+        bool              open_mode_append() const
+                            { return m_open_mode_append;}
+        bool              open_mode_truncate() const
+                            { return m_open_mode_truncate;}
+
+        bool              open_mode_read() const
+                            { return m_open_mode_read;}
+        bool              open_mode_write() const
+                            { return m_open_mode_write;}
+        
+        bool              open_mode_read_only() const 
+                            { return m_open_mode_read && ! m_open_mode_write;}
+        bool              open_mode_write_only() const
+                            { return m_open_mode_write && ! m_open_mode_read;}
+
         // factory helper methods used by interface class 
         static HandleInterface *create(const std::string &path);
 
@@ -122,19 +143,17 @@ public:
         static HandleInterface *create(const std::string &path,
                                        const std::string &protocol,
                                        const Node &options);
-    protected:
-        // access to common state
-        const std::string &path()      const;
-        const std::string &protocol()  const;
-        const std::string &open_mode() const;
-        const Node        &options()   const;
 
     private:
-
         std::string m_path;
         std::string m_protocol;
         std::string m_open_mode;
         Node        m_options;
+
+        bool        m_open_mode_read;
+        bool        m_open_mode_write;
+        bool        m_open_mode_append;
+        bool        m_open_mode_truncate;
     };
 
 private:

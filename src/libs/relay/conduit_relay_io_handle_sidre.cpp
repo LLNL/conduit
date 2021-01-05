@@ -20,6 +20,7 @@
 #include "conduit_relay_io_identify_protocol.hpp"
 #include "conduit_relay_io_handle_sidre.hpp"
 
+#include "conduit_fmt/conduit_fmt.h"
 
 //-----------------------------------------------------------------------------
 // standard lib includes
@@ -82,7 +83,7 @@ SidreIOHandle::open()
     // and processes standard options (mode = "rw", etc)
     HandleInterface::open();
 
-    if( open_mode() == "w" )
+    if( open_mode_write_only() )
         CONDUIT_ERROR("SidreIOHandle does not support write mode "
                       "(open_mode = 'w')");
 
@@ -173,11 +174,7 @@ SidreIOHandle::is_open() const
 void 
 SidreIOHandle::read(Node &node)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     std::vector<std::string> child_names;
     list_child_names(child_names);
@@ -193,11 +190,7 @@ void
 SidreIOHandle::read(const std::string &path,
                     Node &node)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     // if blank path or "/", use other method and early exist.
     if(path.empty() || path == "/")
@@ -265,12 +258,7 @@ SidreIOHandle::read(const std::string &path,
 void 
 SidreIOHandle::write(const Node & /*node*/) // node is unused
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
-                      " (mode = 'r')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     // not supported yet, so throw a fatal error
     CONDUIT_ERROR("IOHandle: sidre write support not implemented");
@@ -282,12 +270,7 @@ void
 SidreIOHandle::write(const Node & /*node*/, // node is unused
                    const std::string & /*path*/ ) // path is unused
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
-                      " (mode = 'r')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     // not supported yet, so throw a fatal error
     CONDUIT_ERROR("IOHandle: sidre write support not implemented");
@@ -298,11 +281,7 @@ SidreIOHandle::write(const Node & /*node*/, // node is unused
 void
 SidreIOHandle::list_child_names(std::vector<std::string> &res)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     if(m_has_spio_index)
     {
@@ -330,14 +309,10 @@ void
 SidreIOHandle::list_child_names(const std::string &path,
                                 std::vector<std::string> &res)
 {
+    // note: wrong mode errors are handled before dispatch to interface
+
     // note: if the path is bad, we return an empty list
     res.clear();
-
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
-                      " (mode = 'w')");
-    }
 
     if(m_has_spio_index)
     {
@@ -380,12 +355,7 @@ SidreIOHandle::list_child_names(const std::string &path,
 void 
 SidreIOHandle::remove(const std::string &/*path*/) // path is unused
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot remove path, handle is read only"
-                      " (mode = 'r')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     // not supported yet, so throw a fatal error
     CONDUIT_ERROR("IOHandle: sidre write support not implemented");
@@ -395,11 +365,7 @@ SidreIOHandle::remove(const std::string &/*path*/) // path is unused
 bool 
 SidreIOHandle::has_path(const std::string &path)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot call has_path, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     bool res = false;
 
@@ -504,41 +470,44 @@ SidreIOHandle::detect_root_protocol() const
 //              ascent, hola, BlueprintTreePathGenerator
 std::string 
 SidreIOHandle::expand_pattern(const std::string pattern,
-                            int idx) const
+                              int idx) const
 {
     //
-    // Note: This currently handles format strings:
+    // This currently handles format strings:
     // "%d" "%02d" "%03d" "%04d" "%05d" "%06d" "%07d" "%08d" "%09d"
     //
 
     std::size_t pattern_idx = pattern.find("%d");
-    char buff[16] = {0};
 
     if(pattern_idx != std::string::npos)
     {
-        snprintf(buff,16,"%d",idx);
         std::string res = pattern;
-        res.replace(pattern_idx,2,std::string(buff));
+        res.replace(pattern_idx,
+                    4,
+                    conduit_fmt::format("{:d}",idx));
         return res;
     }
 
-    std::ostringstream oss;
-    for(int i=2;i<9;i++)
+    for(int i=2; i<10; i++)
     {
-        oss.str("");
-        oss << "%0"  << i << "d";
-        pattern_idx = pattern.find(oss.str());
+        std::string pat = "%0" + conduit_fmt::format("{:d}",i) + "d";
+        pattern_idx = pattern.find(pat);
+
         if(pattern_idx != std::string::npos)
         {
-            snprintf(buff,16,oss.str().c_str(),idx);
+            pat = "{:0" + conduit_fmt::format("{:d}",i) + "d}";
+
             std::string res = pattern;
-            res.replace(pattern_idx,4,std::string(buff));
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format(pat,idx));
             return res;
         }
     }
 
     return pattern;
 }
+
 
 //-------------------------------------------------------------------//
 // adapted from VisIt, avtBlueprintTreeCache

@@ -10,8 +10,9 @@
 
 #include "conduit_relay_io.hpp"
 #include "conduit_relay_io_handle.hpp"
-
 #include "conduit_blueprint.hpp"
+
+#include "conduit_fmt/conduit_fmt.h"
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     #include "conduit_relay_mpi.hpp"
@@ -112,42 +113,38 @@ public:
                        int idx) const
     {
         //
-        // Note: This currently only handles format strings:
-        // "%05d" "%06d" "%07d"
+        // This currently handles format strings:
+        // "%d" "%02d" "%03d" "%04d" "%05d" "%06d" "%07d" "%08d" "%09d"
         //
 
-        std::size_t pattern_idx = pattern.find("%05d");
+        std::size_t pattern_idx = pattern.find("%d");
 
         if(pattern_idx != std::string::npos)
         {
-            char buff[16];
-            snprintf(buff,16,"%05d",idx);
             std::string res = pattern;
-            res.replace(pattern_idx,4,std::string(buff));
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format("{:d}",idx));
             return res;
         }
 
-        pattern_idx = pattern.find("%06d");
-
-        if(pattern_idx != std::string::npos)
+        for(int i=2; i<10; i++)
         {
-            char buff[16];
-            snprintf(buff,16,"%06d",idx);
-            std::string res = pattern;
-            res.replace(pattern_idx,4,std::string(buff));
-            return res;
+            std::string pat = "%0" + conduit_fmt::format("{:d}",i) + "d";
+            pattern_idx = pattern.find(pat);
+
+            if(pattern_idx != std::string::npos)
+            {
+                pat = "{:0" + conduit_fmt::format("{:d}",i) + "d}";
+
+                std::string res = pattern;
+                res.replace(pattern_idx,
+                            4,
+                            conduit_fmt::format(pat,idx));
+                return res;
+            }
         }
 
-        pattern_idx = pattern.find("%07d");
-
-        if(pattern_idx != std::string::npos)
-        {
-            char buff[16];
-            snprintf(buff,16,"%07d",idx);
-            std::string res = pattern;
-            res.replace(pattern_idx,4,std::string(buff));
-            return res;
-        }
         return pattern;
     }
 
@@ -513,6 +510,101 @@ void gen_domain_to_file_map(int num_domains,
 
 
 //-----------------------------------------------------------------------------
+// Sig variants of save_mesh
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void save_mesh(const Node &mesh,
+                const std::string &path
+                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+    // empty opts
+    Node opts;
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    save_mesh(mesh,
+              path,
+              detail::identify_protocol(path),
+              opts,
+              mpi_comm);
+#else
+    save_mesh(mesh,
+              path,
+              detail::identify_protocol(path),
+              opts);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void save_mesh(const Node &mesh,
+                const std::string &path,
+                const std::string &protocol
+                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+    // empty opts
+    Node opts;
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    save_mesh(mesh,
+              path,
+              protocol,
+              opts,
+              mpi_comm);
+#else
+    save_mesh(mesh,
+              path,
+              protocol,
+              opts);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+// Main Mesh Blueprint Save, taken from Ascent
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      file_style: "default", "root_only", "multi_file"
+///            when # of domains == 1,  "default"   ==> "root_only"
+///            else,                    "default"   ==> "multi_file"
+///
+///      suffix: "default", "cycle", "none" 
+///            when # of domains == 1,  "default"   ==> "none"
+///            else,                    "default"   ==> "cycle"
+///
+///      mesh_name:  (used if present, default ==> "mesh")
+///
+///      number_of_files:  {# of files}
+///            when "multi_file":
+///                 <= 0, use # of files == # of domains
+///                  > 0, # of files == number_of_files
+///
+//-----------------------------------------------------------------------------
+void save_mesh(const Node &mesh,
+                const std::string &path,
+                const std::string &protocol,
+                const Node &opts
+                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+    // we force overwrite to true, so we need a copy of the const opts passed.
+    Node save_opts;
+    save_opts.set(opts);
+    save_opts["truncate"] = "true";
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    write_mesh(mesh,
+               path,
+               protocol,
+               save_opts,
+               mpi_comm);
+#else
+    write_mesh(mesh,
+               path,
+               protocol,
+               save_opts);
+#endif
+}
+
+//-----------------------------------------------------------------------------
 // Sig variants of write_mesh
 //-----------------------------------------------------------------------------
 
@@ -559,6 +651,7 @@ void write_mesh(const Node &mesh,
 #endif
 }
 
+
 //-----------------------------------------------------------------------------
 // Main Mesh Blueprint Save, taken from Ascent
 //-----------------------------------------------------------------------------
@@ -594,6 +687,7 @@ void write_mesh(const Node &mesh,
     std::string opts_suffix     = "default";
     std::string opts_mesh_name  = "mesh";
     int         opts_num_files  = -1;
+    bool        opts_truncate   = false;
 
     // check for + validate file_style option
     if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
@@ -638,6 +732,14 @@ void write_mesh(const Node &mesh,
     if(opts.has_child("number_of_files") && opts["number_of_files"].dtype().is_integer())
     {
         opts_num_files = (int) opts["number_of_files"].to_int();
+    }
+
+    // check for truncate (overwrite)
+    if(opts.has_child("truncate") && opts["truncate"].dtype().is_string())
+    {
+        const std::string ow_string = opts["truncate"].as_string();
+        if(ow_string == "true")
+            opts_truncate = true;
     }
 
     int num_files = opts_num_files;
@@ -753,9 +855,6 @@ void write_mesh(const Node &mesh,
       return;
     }
 
-    // TODO FMT
-    char fmt_buff[64] = {0};
-    std::ostringstream oss;
     std::string output_dir = "";
 
     // resolve file_style == default
@@ -779,17 +878,14 @@ void write_mesh(const Node &mesh,
     if(opts_file_style == "multi_file")
     {
         // setup the directory
-        oss << path;
+        output_dir = path;
         // at this point for suffix, we should only see
         // cycle or none -- default has been resolved
         if(opts_suffix == "cycle")
         {
-            // TODO: FMT ?
-            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-            oss << ".cycle_" << fmt_buff;
+            output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
         }
 
-        output_dir  =  oss.str();
         bool dir_ok = false;
 
         // let rank zero handle dir creation
@@ -827,19 +923,19 @@ void write_mesh(const Node &mesh,
     // ----------------------------------------------------
     // setup root file name
     // ----------------------------------------------------
-    // TODO FMT
-    oss.str("");
-    oss << path;
+    std::string root_filename = path;
+
     // at this point for suffix, we should only see 
     // cycle or none -- default has been resolved
     if(opts_suffix == "cycle")
     {
-        snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-        oss << ".cycle_" << fmt_buff;
+        root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
     }
-    oss << ".root";
 
-    std::string root_filename = oss.str();
+    root_filename += ".root";
+    // oss << ".root";
+
+    // std::string root_filename = oss.str();
 
     // zero or negative (default cases), use one file per domain
     if(num_files <= 0)
@@ -889,11 +985,9 @@ void write_mesh(const Node &mesh,
                     {
                         // multiple domains, we need to use a domain prefix
                         uint64 domain = dom["state/domain_id"].to_uint64();
-                        // TODO FMT
-                        snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
-                        oss.str("");
-                        oss << "domain_" << fmt_buff << "/" << opts_mesh_name;
-                        mesh_path = oss.str();
+                        mesh_path = conduit_fmt::format("domain_{:06d}/{}",
+                                                        domain,
+                                                        opts_mesh_name);
                     }
                     hnd.write(dom,mesh_path);
                 }
@@ -914,11 +1008,11 @@ void write_mesh(const Node &mesh,
             const Node &dom = multi_dom.child(i);
             uint64 domain = dom["state/domain_id"].to_uint64();
 
-            // TODO FMT
-            snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
-            oss.str("");
-            oss << "domain_" << fmt_buff << "." << file_protocol << ":" << opts_mesh_name;
-            std::string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
+            std::string output_file  = conduit::utils::join_file_path(output_dir,
+                                                conduit_fmt::format("domain_{:06d}.{}:{}",
+                                                                    domain,
+                                                                    file_protocol,
+                                                                    opts_mesh_name));
             relay::io::save(dom, output_file);
         }
     }
@@ -933,21 +1027,32 @@ void write_mesh(const Node &mesh,
         Node books;
         books["local_domain_to_file"].set(DataType::int32(local_num_domains));
         books["local_domain_status"].set(DataType::int32(local_num_domains));
+
+        // batons
         books["local_file_batons"].set(DataType::int32(num_files));
         books["global_file_batons"].set(DataType::int32(num_files));
 
-        // local # of domains
+        // used to track first touch
+        books["local_file_created"].set(DataType::int32(num_files));
+        books["global_file_created"].set(DataType::int32(num_files));
+
+        // size local # of domains
         int32_array local_domain_to_file = books["local_domain_to_file"].value();
         int32_array local_domain_status  = books["local_domain_status"].value();
-        // num total files
+
+        // size num total files
+        /// batons
         int32_array local_file_batons    = books["local_file_batons"].value();
         int32_array global_file_batons   = books["global_file_batons"].value();
+        /// file created flags
+        int32_array local_file_created    = books["local_file_created"].value();
+        int32_array global_file_created   = books["global_file_created"].value();
+
 
         Node d2f_map;
         detail::gen_domain_to_file_map(global_num_domains,
                                        num_files,
                                        books);
-
         int32_array global_d2f = books["global_domain_to_file"].value();
 
         // init our local map and status array
@@ -979,6 +1084,15 @@ void write_mesh(const Node &mesh,
 
         bool another_twirl = true;
         int twirls = 0;
+
+        int local_all_is_good  = 1;
+        int global_all_is_good = 1;
+
+        books["local_all_is_good"].set_external(&local_all_is_good,1);
+        books["global_all_is_good"].set_external(&global_all_is_good,1);
+
+        std::string local_io_exception_msg = "";
+
         while(another_twirl)
         {
             // update baton requests
@@ -1002,14 +1116,24 @@ void write_mesh(const Node &mesh,
                 global_file_batons.set(local_file_batons);
             #endif
 
+            // mpi max file created array
+            #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+                mpi::max_all_reduce(books["local_file_created"],
+                                    books["global_file_created"],
+                                    mpi_comm);
+            #else
+                global_file_created.set(local_file_created);
+            #endif
+
+
             // we now have valid batons (global_file_batons)
-            for(int f = 0; f < num_files; ++f)
+            for(int f = 0; f < num_files && local_all_is_good == 1 ; ++f)
             {
                 // check if this rank has the global baton for this file
                 if( global_file_batons[f] == par_rank )
                 {
                     // check the domains this rank has pending
-                    for(int d = 0; d < local_num_domains; ++d)
+                    for(int d = 0; d < local_num_domains && local_all_is_good == 1; ++d)
                     {
                         // reuse this handle for all domains in the file
                         relay::io::IOHandle hnd;
@@ -1023,39 +1147,76 @@ void write_mesh(const Node &mesh,
                             uint64 domain_id = dom["state/domain_id"].to_uint64();
 
                             // construct file name
-                            // TODO FMT
-                            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",f);
-                            oss.str("");
-                            oss << "file_" << fmt_buff << "." << file_protocol;
-                            std::string file_name = oss.str();
+                            std::string file_name = conduit_fmt::format(
+                                                        "file_{:06d}.{}",
+                                                        f,
+                                                        file_protocol);
+
                             std::string output_file = conduit::utils::join_file_path(output_dir,
                                                                                      file_name);
 
-                            // now the path in the file,
-                            oss.str("");
-                            // and domain id
-                            // TODO FMT
-                            snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain_id);
-                            oss << "domain_" << fmt_buff << "/" << opts_mesh_name;
-                            std::string curr_path = oss.str();
-   
+                            // now the path in the file, and domain id
+                            std::string curr_path = conduit_fmt::format(
+                                                            "domain_{:06d}/{}",
+                                                             domain_id,
+                                                             opts_mesh_name);
 
-                            if(!hnd.is_open())
+                            try
                             {
-                                hnd.open(output_file);
+                                // if truncate == true check if this is the first time we are
+                                // touching file, and use wt
+                                Node open_opts;
+                                if(opts_truncate && global_file_created[f] == 0)
+                                {
+                                   open_opts["mode"] = "wt";
+
+                                   local_file_created[f]  = 1;
+                                   global_file_created[f] = 1;
+                                }
+
+                                if(!hnd.is_open())
+                                {
+                                    hnd.open(output_file, open_opts);
+                                }
+
+                                hnd.write(dom, curr_path);
+                                // CONDUIT_INFO("rank " << par_rank << " output_file"
+                                //              << output_file << " path " << path);
+
+                                // update status, we are done with this doman
+                                local_domain_status[d] = 0;
                             }
-
-                            hnd.write(dom, curr_path);
-                            // CONDUIT_INFO("rank " << par_rank << " output_file"
-                            //              << output_file << " path " << path);
-
-                            // update status, we are done with this doman
-                            local_domain_status[d] = 0;
+                            catch(conduit::Error e)
+                            {
+                                local_all_is_good = 0;
+                                local_io_exception_msg = e.message();
+                            }
                         }
                     }
                 }
             }
 
+            // if any I/O errors happened stop and have all
+            // tasks bail out with an exception (to avoid hangs)
+            #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+                mpi::min_all_reduce(books["local_all_is_good"],
+                                    books["global_all_is_good"],
+                                    mpi_comm);
+            #else
+                global_all_is_good = local_all_is_good;
+            #endif
+
+            if(global_all_is_good == 0)
+            {
+                std::string emsg = "Failed to write mesh data on one more more ranks.";
+
+                if(!local_io_exception_msg.empty())
+                {
+                     emsg += conduit_fmt::format("Exception details from rank {}: {}.",
+                                                 par_rank, local_io_exception_msg);
+                }
+                CONDUIT_ERROR(emsg);
+            }
             // If you  need to debug the baton alog:
             // std::cout << "[" << par_rank << "] "
             //              << " twirls: " << twirls
@@ -1065,6 +1226,7 @@ void write_mesh(const Node &mesh,
             // check if we have another round
             // stop when all batons are -1
             another_twirl = false;
+
             for(int f = 0; f < num_files && !another_twirl; ++f)
             {
                 // if any entry is not -1, we still have more work to do
@@ -1371,12 +1533,6 @@ void read_mesh(const std::string &root_file_path,
         relay::io::IOHandle hnd;
         for(int i = domain_start ; i < domain_end; i++)
         {
-            // TODO FMT
-            char domain_fmt_buff[64];
-            snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
-            oss.str("");
-            oss << "domain_" << std::string(domain_fmt_buff);
-
             std::string current, next;
             utils::rsplit_file_path (root_fname, current, next);
             std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
@@ -1385,7 +1541,10 @@ void read_mesh(const std::string &root_file_path,
 
             // also need the tree path
             std::string tree_path = gen.GenerateTreePath(i);
-            Node &mesh_out = mesh[oss.str()];
+
+            std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
+
+            Node &mesh_out = mesh[mesh_path];
 
             // read components of the mesh according to the mesh index
             // for each child in the index

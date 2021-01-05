@@ -16,6 +16,7 @@
 #include "conduit_relay_mpi_io.hpp"
 #include "conduit_relay_mpi_io_blueprint.hpp"
 #include "conduit_utils.hpp"
+#include "conduit_fmt/conduit_fmt.h"
 
 #include <mpi.h>
 #include <iostream>
@@ -445,18 +446,122 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
                 // domain_
                 fprefix = "domain_";
             }
-            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",i);
-            oss.str("");
-            oss << conduit::utils::join_file_path(output_base + ".cycle_000000",
-                                                  fprefix)
-                << fmt_buff << ".hdf5";
-            std::string fcheck = oss.str();
+
+            std::string fcheck = conduit_fmt::format("{}{:06d}.hdf5",
+                            join_file_path(output_base + ".cycle_000000",
+                                           fprefix),
+                            i);
+
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
     }
 
     // read this back using read_mesh
+}
+
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_relay, test_write_error_hang)
+{
+
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping save_read_mesh_truncate test");
+        return;
+    }
+
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+
+    std::string output_base = "tout_relay_mpi_mesh_save_load_truncate";
+    
+    Node data;
+
+    // 6 doms (2 per mpi task)
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     data.append());
+
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     data.append());
+
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     data.append());
+
+    // set the domain ids
+    data.child(0)["state/domain_id"] = 0;
+    data.child(1)["state/domain_id"] = 1;
+    data.child(2)["state/domain_id"] = 2;
+
+    // use 2 files
+    Node opts;
+    opts["number_of_files"] = 2;
+
+    remove_path_if_exists(output_base + ".cycle_000100.root");
+    remove_path_if_exists(output_base + ".cycle_000100/file_000000.hdf5");
+    remove_path_if_exists(output_base + ".cycle_000100/file_000001.hdf5");
+
+    conduit::relay::mpi::io::blueprint::write_mesh(data,
+                                                   output_base,
+                                                   "hdf5",
+                                                   opts,
+                                                   comm);
+
+    // now save diff mesh to same file set, will fail with write_mesh
+    // b/c hdf5 paths won't be compat
+
+    data.reset();
+
+    // 6 doms (2 per mpi task)
+    blueprint::mesh::examples::braid("uniform",
+                                     5,
+                                     5,
+                                     0,
+                                     data.append());
+
+    blueprint::mesh::examples::braid("uniform",
+                                     5,
+                                     5,
+                                     0,
+                                     data.append());
+
+    blueprint::mesh::examples::braid("uniform",
+                                     5,
+                                     5,
+                                     0,
+                                     data.append());
+
+    // set the domain ids
+    data.child(0)["state/domain_id"] = 0;
+    data.child(1)["state/domain_id"] = 1;
+    data.child(2)["state/domain_id"] = 2;
+
+    // non-trunk will error b/c leaf sizes aren't compat
+    EXPECT_THROW( conduit::relay::mpi::io::blueprint::write_mesh(data,
+                                                                 output_base,
+                                                                 "hdf5",
+                                                                 opts,
+                                                                 comm),Error);
+
+    // trunc will work
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                  output_base,
+                                                  "hdf5",
+                                                  opts,
+                                                  comm);
 }
 
 
