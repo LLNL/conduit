@@ -114,17 +114,39 @@ public:
     {
         //
         // Note: This currently only handles format strings:
-        // "%05d" "%06d" "%07d"
+        // "%03d" "%04d" "%05d" "%06d" "%07d" "%08d"
         //
 
-        std::size_t pattern_idx = pattern.find("%05d");
+        std::size_t pattern_idx = pattern.find("%03d");
 
         if(pattern_idx != std::string::npos)
         {
-            char buff[16];
-            snprintf(buff,16,"%05d",idx);
             std::string res = pattern;
-            res.replace(pattern_idx,4,std::string(buff));
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format("{:03d}",idx));
+            return res;
+        }
+
+        pattern_idx = pattern.find("%04d");
+
+        if(pattern_idx != std::string::npos)
+        {
+            std::string res = pattern;
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format("{:04d}",idx));
+            return res;
+        }
+
+        pattern_idx = pattern.find("%05d");
+
+        if(pattern_idx != std::string::npos)
+        {
+            std::string res = pattern;
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format("{:06d}",idx));
             return res;
         }
 
@@ -132,10 +154,10 @@ public:
 
         if(pattern_idx != std::string::npos)
         {
-            char buff[16];
-            snprintf(buff,16,"%06d",idx);
             std::string res = pattern;
-            res.replace(pattern_idx,4,std::string(buff));
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format("{:06d}",idx));
             return res;
         }
 
@@ -143,12 +165,25 @@ public:
 
         if(pattern_idx != std::string::npos)
         {
-            char buff[16];
-            snprintf(buff,16,"%07d",idx);
             std::string res = pattern;
-            res.replace(pattern_idx,4,std::string(buff));
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format("{:07d}",idx));
             return res;
         }
+
+        pattern_idx = pattern.find("%08d");
+
+        if(pattern_idx != std::string::npos)
+        {
+            std::string res = pattern;
+            res.replace(pattern_idx,
+                        4,
+                        conduit_fmt::format("{:07d}",idx));
+            return res;
+        }
+
+
         return pattern;
     }
 
@@ -859,10 +894,6 @@ void write_mesh(const Node &mesh,
       return;
     }
 
-
-    // TODO FMT
-    // char fmt_buff[64] = {0};
-    // std::ostringstream oss;
     std::string output_dir = "";
 
     // resolve file_style == default
@@ -891,25 +922,9 @@ void write_mesh(const Node &mesh,
         // cycle or none -- default has been resolved
         if(opts_suffix == "cycle")
         {
-            // TODO: FMT ?
-            
-            // std::string res = conduit_fmt::format("The answer is {}.", 42);
-            // std::cout << res << std::endl;
-            // EXPECT_EQ(res, "The answer is 42.");
-            //
-            // res = conduit_fmt::format("The answer is {answer:0.2f}.",
-            //             conduit_fmt::arg("answer",3.14));
-            // std::cout << res << std::endl;
-            
-            
-            // snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-            
             output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
-            // oss <<
-            // oss << ".cycle_" << fmt_buff;
         }
 
-        // output_dir  =  oss.str();
         bool dir_ok = false;
 
         // let rank zero handle dir creation
@@ -947,9 +962,6 @@ void write_mesh(const Node &mesh,
     // ----------------------------------------------------
     // setup root file name
     // ----------------------------------------------------
-    // TODO FMT
-    // oss.str("");
-    // oss << path;
     std::string root_filename = path;
 
     // at this point for suffix, we should only see 
@@ -957,8 +969,6 @@ void write_mesh(const Node &mesh,
     if(opts_suffix == "cycle")
     {
         root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
-        // snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-        // oss << ".cycle_" << fmt_buff;
     }
 
     root_filename += ".root";
@@ -1012,12 +1022,6 @@ void write_mesh(const Node &mesh,
                     }
                     else
                     {
-
-                        // // TODO FMT
-                        // snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
-                        // oss.str("");
-                        // oss << "domain_" << fmt_buff << "/" << opts_mesh_name;
-                        // mesh_path = oss.str();
                         // multiple domains, we need to use a domain prefix
                         uint64 domain = dom["state/domain_id"].to_uint64();
                         mesh_path = conduit_fmt::format("domain_{:06d}/{}",
@@ -1043,17 +1047,6 @@ void write_mesh(const Node &mesh,
             const Node &dom = multi_dom.child(i);
             uint64 domain = dom["state/domain_id"].to_uint64();
 
-            // // TODO FMT
-            // snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
-            // oss.str("");
-            // oss << "domain_" << fmt_buff << "." << file_protocol << ":" << opts_mesh_name;
-            //
-            // std::string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
-            // // TODO FMT
-            // snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
-            // oss.str("");
-            // oss << "domain_" << fmt_buff << "." << file_protocol << ":" << opts_mesh_name;
-            //
             std::string output_file  = conduit::utils::join_file_path(output_dir,
                                                 conduit_fmt::format("domain_{:06d}.{}:{}",
                                                                     domain,
@@ -1073,6 +1066,8 @@ void write_mesh(const Node &mesh,
         Node books;
         books["local_domain_to_file"].set(DataType::int32(local_num_domains));
         books["local_domain_status"].set(DataType::int32(local_num_domains));
+
+        // batons
         books["local_file_batons"].set(DataType::int32(num_files));
         books["global_file_batons"].set(DataType::int32(num_files));
 
@@ -1080,13 +1075,15 @@ void write_mesh(const Node &mesh,
         books["local_file_created"].set(DataType::int32(num_files));
         books["global_file_created"].set(DataType::int32(num_files));
 
-        // local # of domains
+        // size local # of domains
         int32_array local_domain_to_file = books["local_domain_to_file"].value();
         int32_array local_domain_status  = books["local_domain_status"].value();
-        // num total files
+
+        // size num total files
+        /// batons
         int32_array local_file_batons    = books["local_file_batons"].value();
         int32_array global_file_batons   = books["global_file_batons"].value();
-
+        /// file created flags
         int32_array local_file_created    = books["local_file_created"].value();
         int32_array global_file_created   = books["global_file_created"].value();
 
@@ -1095,9 +1092,6 @@ void write_mesh(const Node &mesh,
         detail::gen_domain_to_file_map(global_num_domains,
                                        num_files,
                                        books);
-
-        // global first domain per file is important, b/c for save semantics
-        // we need to overwrite the file the first time we write
         int32_array global_d2f = books["global_domain_to_file"].value();
 
         // init our local map and status array
@@ -1192,12 +1186,6 @@ void write_mesh(const Node &mesh,
                             uint64 domain_id = dom["state/domain_id"].to_uint64();
 
                             // construct file name
-                            // TODO FMT
-                            // snprintf(fmt_buff, sizeof(fmt_buff), "%06d",f);
-                            // oss.str("");
-                            // oss << "file_" << fmt_buff << "." << file_protocol;
-                            // std::string file_name = oss.str();
-
                             std::string file_name = conduit_fmt::format(
                                                         "file_{:06d}.{}",
                                                         f,
@@ -1206,14 +1194,7 @@ void write_mesh(const Node &mesh,
                             std::string output_file = conduit::utils::join_file_path(output_dir,
                                                                                      file_name);
 
-                            // // now the path in the file,
-                            // oss.str("");
-                            // // and domain id
-                            // // TODO FMT
-                            // snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain_id);
-                            // oss << "domain_" << fmt_buff << "/" << opts_mesh_name;
-                            // std::string curr_path = oss.str();
-
+                            // now the path in the file, and domain id
                             std::string curr_path = conduit_fmt::format(
                                                             "domain_{:06d}/{}",
                                                              domain_id,
@@ -1591,12 +1572,6 @@ void read_mesh(const std::string &root_file_path,
         relay::io::IOHandle hnd;
         for(int i = domain_start ; i < domain_end; i++)
         {
-            // TODO FMT
-            // char domain_fmt_buff[64];
-            // snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
-            // oss.str("");
-            // oss << "domain_" << std::string(domain_fmt_buff);
-
             std::string current, next;
             utils::rsplit_file_path (root_fname, current, next);
             std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
