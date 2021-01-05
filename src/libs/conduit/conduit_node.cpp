@@ -12745,10 +12745,8 @@ Node::describe(const Node &opts, Node &res) const
         }
 
         res["dtype"] = DataType::id_to_name(dtype_id);
-        //  TODO: 
-        //  Should we use `number_of_elements` instead of `count`
-        //  I think so, but count also matches r and pandas ...
-        //
+        // The term `count` is used in r and pandas world
+        // so we prefer it over `number_of_elements`
         res["count"] = dtype().number_of_elements();
 
         if(dtype().is_int8())
