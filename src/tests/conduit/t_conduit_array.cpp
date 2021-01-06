@@ -610,6 +610,109 @@ TEST(conduit_array, print_bells_and_whistles)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+TEST(conduit_array, summary_stats)
+{
+    std::vector<int64> v_int64(3,-64);
+    std::vector<uint64> v_uint64(3,64);
+    std::vector<float64>  v_float64(3,64.0);
+
+    int64_array   va_int64(&v_int64[0],DataType::int64(3));
+    uint64_array  va_uint64(&v_uint64[0],DataType::uint64(3));
+    float64_array  va_float64(&v_float64[0],DataType::float64(3));
+    
+    va_int64.set({-1,0,1});
+    va_uint64.set({1,2,3});
+    va_float64.set({-1.0,0.0,1.0});
+
+    EXPECT_EQ(va_int64.min(),-1);
+    EXPECT_EQ(va_int64.max(),1);
+    EXPECT_EQ(va_int64.mean(),0);
+    EXPECT_EQ(va_int64.sum(),0);
+
+    EXPECT_EQ(va_uint64.min(),1);
+    EXPECT_EQ(va_uint64.max(),3);
+    EXPECT_EQ(va_uint64.mean(),2);
+    EXPECT_EQ(va_uint64.sum(),6);
+
+    EXPECT_EQ(va_float64.min(),-1.0);
+    EXPECT_EQ(va_float64.max(),1.0);
+    EXPECT_EQ(va_float64.mean(),0.0);
+    EXPECT_EQ(va_float64.sum(),0.0);
+
+}
+//-----------------------------------------------------------------------------
+TEST(conduit_array, summary_print)
+{
+    std::vector<int64> v_int64(5,-64);
+    int64_array   va_int64(&v_int64[0],DataType::int64(5));
+
+    va_int64.set({1,2,3,4,5});
+
+    // default (thresh is 5)
+    std::string v = va_int64.to_summary_string();
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"[1, 2, 3, 4, 5]");
+
+    // above threshold, even # to display
+    v = va_int64.to_summary_string(2);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"[1, ..., 5]");
+
+    // above threshold, od # to display
+    v = va_int64.to_summary_string(3);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"[1, 2, ..., 5]");
+
+    // above threshold, threshold is much larger than # of eles
+    v = va_int64.to_summary_string(64);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"[1, 2, 3, 4, 5]");
+
+    // above threshold, threshold is negative
+    v = va_int64.to_summary_string(-1);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"[1, 2, 3, 4, 5]");
+
+
+    // single ele array
+    std::vector<int64> v_int64_single(1,-1);
+    int64_array   va_int64_single(&v_int64[0],DataType::int64(1));
+
+    va_int64_single.set({1});
+
+    v = va_int64_single.to_summary_string();
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"1");
+
+    v = va_int64_single.to_summary_string(64);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"1");
+
+    v = va_int64_single.to_summary_string(-1);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"1");
+
+
+    // single empty array
+    std::vector<int64> v_int64_empty(0,0);
+    int64_array   va_int64_empty(&v_int64[0],DataType::int64(0));
+
+    v = va_int64_empty.to_summary_string();
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"");
+
+    v = va_int64_empty.to_summary_string(64);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"");
+
+    v = va_int64_empty.to_summary_string(-1);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"");
+
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_array, cxx_11_init_lists)
 {
     std::vector<int8>  v_int8(3,-8);

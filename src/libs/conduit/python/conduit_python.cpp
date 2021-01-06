@@ -5060,6 +5060,55 @@ PyConduit_Node_info(PyConduit_Node *self)
     return (PyObject*)retval;
 }
 
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Node_describe(PyConduit_Node *self,
+                        PyObject* args,
+                        PyObject* kwargs)
+{
+    PyObject *py_opts = NULL;
+    static const char *kwlist[] = {"opts", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &py_opts))
+    {
+        return (NULL);
+    }
+
+    Node *node_opts_ptr = NULL;
+
+    if(py_opts != NULL)
+    {
+        if(!PyConduit_Node_Check(py_opts))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Node::describe 'opts' argument must be a "
+                            "Conduit::Node");
+            return NULL;
+        }
+
+        node_opts_ptr = ((PyConduit_Node*)py_opts)->node;
+    }
+
+    PyConduit_Node *retval = (PyConduit_Node*)PyConduit_Node_Python_Create();
+    if(node_opts_ptr == NULL)
+    {
+        self->node->describe(*retval->node);
+    }
+    else
+    {
+        self->node->describe(*node_opts_ptr,
+                             *retval->node);
+    }
+
+    return (PyObject*)retval;
+}
+
+
 //---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Node_print_detailed(PyConduit_Node *self)
@@ -5782,6 +5831,12 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_info,
      METH_VARARGS, 
      "Returns a node populated with the memory space details for this node"},
+    //-----------------------------------------------------------------------//
+    {"describe",
+     (PyCFunction)PyConduit_Node_describe,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Returns a node that mirrors the current Node, however each leaf is"
+     " replaced by summary stats and a truncated display of the values."},
     //-----------------------------------------------------------------------//
     {"print_detailed",
      (PyCFunction)PyConduit_Node_print_detailed,

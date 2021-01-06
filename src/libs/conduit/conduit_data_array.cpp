@@ -280,6 +280,81 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
 }
 
 //---------------------------------------------------------------------------// 
+///
+/// Summary Stats Helpers
+///
+//---------------------------------------------------------------------------// 
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataArray<T>::min()  const
+{
+    T res = std::numeric_limits<T>::max();
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        if(val < res)
+        {
+            res = val;
+        }
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataArray<T>::max()  const
+{
+    T res = std::numeric_limits<T>::min();
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        if(val > res)
+        {
+            res = val;
+        }
+    }
+
+    return res;
+}
+
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataArray<T>::sum()  const
+{
+    T res =0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        res += val;
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+float64
+DataArray<T>::mean()  const
+{
+    float64 res =0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        res += val;
+    }
+
+    res = res / float64(number_of_elements());
+    return res;
+}
+
+
+//---------------------------------------------------------------------------// 
 template <typename T>
 std::string 
 DataArray<T>::to_string(const std::string &protocol) const
@@ -1434,6 +1509,133 @@ DataArray<T>::compact_elements_to(uint8 *data) const
         data_ptr+=ele_bytes;
     }
 }
+
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+std::string
+DataArray<T>::to_summary_string_default() const
+{ 
+    return to_summary_string();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+std::string
+DataArray<T>::to_summary_string(index_t threshold) const
+{ 
+    std::ostringstream oss;
+    to_summary_string_stream(oss, threshold);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::to_summary_string_stream(std::ostream &os,
+                                       index_t threshold) const
+{ 
+    // if we are less than or equal to threshold, we use to_yaml
+    index_t nele = number_of_elements();
+
+    if(nele <= threshold)
+    {
+        to_yaml_stream(os);
+    }
+    else
+    {
+        // if above threshold only show threshold # of values
+        int half = threshold / 2;
+        int bottom = half;
+        int top = half;
+
+        //
+        // if odd, show 1/2 +1 first
+        //
+
+        if( (threshold % 2) > 0)
+        {
+            bottom++;
+        }
+
+        if(nele > 1)
+            os << "[";
+
+        bool done  = (nele == 0);
+        int idx = 0;
+
+        while(!done)
+        {
+            // if not first, add a comma prefix
+            if(idx > 0 )
+                os << ", ";
+
+            switch(m_dtype.id())
+            {
+                // ints
+                case DataType::INT8_ID:
+                case DataType::INT16_ID:
+                case DataType::INT32_ID:
+                case DataType::INT64_ID:
+                {
+                     os << (int64) element(idx);
+                     break;
+                }
+                // uints
+                case DataType::UINT8_ID:
+                case DataType::UINT16_ID:
+                case DataType::UINT32_ID:
+                case DataType::UINT64_ID:
+                {
+                    os << (uint64) element(idx);
+                    break;
+                }
+                // floats
+                case DataType::FLOAT32_ID:
+                case DataType::FLOAT64_ID:
+                {
+                    std::string fs = utils::float64_to_string((float64)element(idx));
+                    //check for inf and nan
+                    // looking for 'n' covers inf and nan
+                    bool inf_or_nan = fs.find('n') != std::string::npos;
+
+                    if(inf_or_nan)
+                        os << "\"";
+
+                    os << fs;
+
+                    if(inf_or_nan)
+                        os << "\"";
+                    break;
+                }
+                default:
+                {
+                    CONDUIT_ERROR("Leaf type \""
+                                  <<  m_dtype.name()
+                                  << "\""
+                                  << "is not supported in conduit::DataArray.")
+                }
+            }
+
+            idx++;
+
+            if(idx == bottom)
+            {
+                idx = nele - top;
+                os << ", ...";
+            }
+
+            if(idx == nele)
+            {
+                done = true;
+            }
+        }
+
+        if(nele > 1)
+            os << "]";
+    }
+}
+
 
 
 //-----------------------------------------------------------------------------

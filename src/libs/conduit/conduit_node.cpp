@@ -12700,6 +12700,143 @@ Node::to_pure_yaml(std::ostream &os,
 //
 //-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
+void
+Node::describe(Node &res) const
+{
+    Node opts;
+    describe(opts,res);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::describe(const Node &opts, Node &res) const
+{
+    res.reset();
+    index_t dtype_id = dtype().id();
+    if(dtype_id == DataType::OBJECT_ID)
+    {
+        NodeConstIterator itr = children();
+        while(itr.has_next())
+        {
+            const Node &cld = itr.next();
+            std::string cld_name = itr.name();
+            Node &cld_des = res[cld_name];
+            cld.describe(opts,cld_des);
+        }
+    }
+    else if(dtype_id == DataType::LIST_ID)
+    {
+        NodeConstIterator itr = children();
+        while(itr.has_next())
+        {
+            const Node &cld = itr.next();
+            Node &cld_des = res.append();
+            cld.describe(opts,cld_des);
+        }
+    }
+    else // leaves!
+    {
+        index_t thresh = 5;
+
+        if(opts.has_child("threshold"))
+        {
+            thresh = (index_t) opts["threshold"].to_int();
+        }
+
+        res["dtype"] = DataType::id_to_name(dtype_id);
+        // The term `count` is used in r and pandas world
+        // so we prefer it over `number_of_elements`
+        res["count"] = dtype().number_of_elements();
+
+        if(dtype().is_int8())
+        {
+            int8_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_int16())
+        {
+            int16_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_int32())
+        {
+            int32_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_int64())
+        {
+            int64_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_uint8())
+        {
+            uint8_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_uint16())
+        {
+            uint16_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_uint32())
+        {
+            uint32_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_uint64())
+        {
+            uint64_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_float32())
+        {
+            float32_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_float64())
+        {
+            float64_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_char8_str())
+        {
+            res["values"].set_external(*this);
+        }
+    }
+}
+
+
 // NOTE: several other Node information methods are inlined in Node.h
 
 //---------------------------------------------------------------------------//
