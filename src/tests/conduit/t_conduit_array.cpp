@@ -648,17 +648,66 @@ TEST(conduit_array, summary_print)
 
     va_int64.set({1,2,3,4,5});
 
+    // default (thresh is 5)
     std::string v = va_int64.to_summary_string();
     std::cout << v << std::endl;
     EXPECT_EQ(v,"[1, 2, 3, 4, 5]");
 
+    // above threshold, even # to display
     v = va_int64.to_summary_string(2);
     std::cout << v << std::endl;
     EXPECT_EQ(v,"[1, ..., 5]");
 
+    // above threshold, od # to display
     v = va_int64.to_summary_string(3);
     std::cout << v << std::endl;
     EXPECT_EQ(v,"[1, 2, ..., 5]");
+
+    // above threshold, threshold is much larger than # of eles
+    v = va_int64.to_summary_string(64);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"[1, 2, 3, 4, 5]");
+
+    // above threshold, threshold is negative
+    v = va_int64.to_summary_string(-1);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"[1, 2, 3, 4, 5]");
+
+
+    // single ele array
+    std::vector<int64> v_int64_single(1,-1);
+    int64_array   va_int64_single(&v_int64[0],DataType::int64(1));
+
+    va_int64_single.set({1});
+
+    v = va_int64_single.to_summary_string();
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"1");
+
+    v = va_int64_single.to_summary_string(64);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"1");
+
+    v = va_int64_single.to_summary_string(-1);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"1");
+
+
+    // single empty array
+    std::vector<int64> v_int64_empty(0,0);
+    int64_array   va_int64_empty(&v_int64[0],DataType::int64(0));
+
+    v = va_int64_empty.to_summary_string();
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"");
+
+    v = va_int64_empty.to_summary_string(64);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"");
+
+    v = va_int64_empty.to_summary_string(-1);
+    std::cout << v << std::endl;
+    EXPECT_EQ(v,"");
 
 }
 

@@ -1200,8 +1200,13 @@ TEST(conduit_node, describe)
     EXPECT_EQ(d["e/max"].to_int(),12);
     EXPECT_EQ(d["f/max"].to_float(),7.0);
 
+    EXPECT_EQ(d["a/mean"].to_float(),3.0);
+    EXPECT_EQ(d["b/mean"].to_float(),2.0);
+    EXPECT_EQ(d["c/mean"].to_float(),3.5);
+    EXPECT_EQ(d["d/mean"].to_float(),4.0);
+    EXPECT_EQ(d["e/mean"].to_float(),6.5);
+    EXPECT_EQ(d["f/mean"].to_float(),4.0);
     EXPECT_EQ(d["g/mean"].to_float(),3.0);
-
 
     n["a"] = {1,2,3,4,5};
     n["b"] = {1,2,3};

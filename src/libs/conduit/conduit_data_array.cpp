@@ -1561,13 +1561,13 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
         if(nele > 1)
             os << "[";
 
-        bool first = true;
-        bool done  = false;
+        bool done  = (nele == 0);
         int idx = 0;
 
         while(!done)
         {
-            if(!first)
+            // if not first, add a comma prefix
+            if(idx > 0 )
                 os << ", ";
 
             switch(m_dtype.id())
@@ -1616,8 +1616,6 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
                                   << "is not supported in conduit::DataArray.")
                 }
             }
-
-            first=false;
 
             idx++;
 
