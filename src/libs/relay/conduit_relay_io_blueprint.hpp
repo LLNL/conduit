@@ -153,6 +153,28 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,
                                  conduit::Node &mesh);
 
+
+//-----------------------------------------------------------------------------
+// The load semantics, the mesh node is reset before reading.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+                                 conduit::Node &mesh);
+
+
+//-----------------------------------------------------------------------------
+///
+/// opts:
+///      mesh_name: "{name}"
+///          provide explicit mesh name, for cases where bp data includes
+///           more than one mesh.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+                                 const conduit::Node &opts,
+                                 conduit::Node &mesh);
+
+
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------

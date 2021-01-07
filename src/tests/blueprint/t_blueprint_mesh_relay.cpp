@@ -55,14 +55,6 @@ TEST(conduit_blueprint_mesh_relay, spiral_multi_file)
         std::string output_dir  = output_base + ".cycle_000000";
         std::string output_root = output_base + ".cycle_000000.root";
 
-        // remove existing directory
-        remove_path_if_exists(output_dir);
-        remove_path_if_exists(output_root);
-
-        Node opts;
-        opts["number_of_files"] = nfiles;
-        relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
-
         // count the files
         //  file_%06llu.{protocol}:/domain_%06llu/...
         int nfiles_to_check = nfiles;
@@ -70,6 +62,32 @@ TEST(conduit_blueprint_mesh_relay, spiral_multi_file)
         {
             nfiles_to_check = 7;
         }
+
+        // remove existing root file, directory and any output files
+        remove_path_if_exists(output_root);
+        for(int i=0;i<nfiles_to_check;i++)
+        {
+
+            std::string fprefix = "file_";
+            if(nfiles_to_check == 7)
+            {
+                // in the n domains == n files case, the file prefix is
+                // domain_
+                fprefix = "domain_";
+            }
+
+            std::string output_file = conduit_fmt::format("{}{:06d}.hdf5",
+                            join_file_path(output_base + ".cycle_000000",
+                                           fprefix),
+                            i);
+            remove_path_if_exists(output_file);
+        }
+
+        remove_path_if_exists(output_dir);
+
+        Node opts;
+        opts["number_of_files"] = nfiles;
+        relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
 
         EXPECT_TRUE(is_directory(output_dir));
         EXPECT_TRUE(is_file(output_root));
@@ -94,9 +112,19 @@ TEST(conduit_blueprint_mesh_relay, spiral_multi_file)
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(is_file(fcheck));
         }
+
+        // read the mesh back in diff to make sure we have the same data
+        Node n_read, info;
+        relay::io::blueprint::read_mesh(output_base + ".cycle_000000.root",
+                                        n_read);
+
+        // in all cases we expect 7 domains to match 
+        for(int dom_idx =0; dom_idx <7; dom_idx++)
+        {
+            EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
+        }
     }
 }
-
 
 
 //-----------------------------------------------------------------------------
@@ -139,9 +167,9 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh)
     n_read.print();
     // reading back in will add domain_zzzzzz names, check children of read
 
-    data.child(0).diff(n_read.child(0),info);
-    data.child(1).diff(n_read.child(1),info);
-    data.child(2).diff(n_read.child(2),info);
+    EXPECT_FALSE(data.child(0).diff(n_read.child(0),info));
+    EXPECT_FALSE(data.child(1).diff(n_read.child(1),info));
+    EXPECT_FALSE(data.child(2).diff(n_read.child(2),info));
 }
 
 //-----------------------------------------------------------------------------
@@ -194,6 +222,16 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate)
 
     relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
 
+    // load mesh back back in and diff to check values
+    Node n_read, info;
+    relay::io::blueprint::load_mesh(output_base + ".cycle_000100.root",
+                                    n_read);
+
+    for(int dom_idx=0; dom_idx < 3; dom_idx++)
+    {
+        data.child(dom_idx).diff(n_read.child(dom_idx),info);
+    }
+
     // now save diff mesh to same file set, will fail with write_mesh
     // b/c hdf5 paths won't be compat
 
@@ -227,7 +265,16 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate)
 
     // trunc will work
     relay::io::blueprint::save_mesh(data, output_base, "hdf5", opts);
+    
+    // load mesh back back in and diff to check values
+    relay::io::blueprint::load_mesh(output_base + ".cycle_000100.root",
+                                    n_read);
 
+    for(int dom_idx=0; dom_idx < 3; dom_idx++)
+    {
+        EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
+        info.print();
+    }
 }
 
 
@@ -252,6 +299,9 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
                                      2,
                                      data);
 
+    // add a domain_id since one will come back
+    data["state/domain_id"] = 0;
+
     //
     // suffix
     //
@@ -261,6 +311,7 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     std::string tout_base = "tout_relay_bp_mesh_opts_suffix";
 
     Node opts;
+    Node n_read, info;
     opts["file_style"] = "root_only";
 
     //
@@ -270,6 +321,13 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file(tout_base + ".cycle_000100.root"));
 
+    // load mesh back back in and diff to check values
+    relay::io::blueprint::load_mesh(tout_base + ".cycle_000100.root",
+                                    n_read);
+    EXPECT_FALSE(data.diff(n_read.child(0),info));
+    data.print();
+    n_read.print();
+    info.print();
 
     // remove cycle from braid, default behavior will be diff
     data.remove("state/cycle");
@@ -278,6 +336,12 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
 
+    // load mesh back back in and diff to check values
+    relay::io::blueprint::load_mesh(tout_base + ".root",
+                                    n_read);
+    EXPECT_FALSE(data.diff(n_read.child(0),info));
+
+
     //
     opts["suffix"] = "cycle";
 
@@ -285,12 +349,20 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".cycle_000000.root"));
 
+    relay::io::blueprint::load_mesh(tout_base + ".cycle_000000.root",
+                                    n_read);
+    EXPECT_FALSE(data.diff(n_read.child(0),info));
+
     //
     opts["suffix"] = "none";
 
     remove_path_if_exists(tout_base + ".root");
     relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
+
+    relay::io::blueprint::load_mesh(tout_base + ".root",
+                                    n_read);
+    EXPECT_FALSE(data.diff(n_read.child(0),info));
 
     // this should error
     opts["suffix"] = "garbage";
@@ -311,11 +383,22 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
 
+    // load mesh back back in and diff to check values
+    relay::io::blueprint::load_mesh(tout_base + ".root",
+                                    n_read);
+    EXPECT_FALSE(data.diff(n_read.child(0),info));
+
     opts["file_style"] = "root_only";
 
     remove_path_if_exists(tout_base + ".root");
     relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
+
+    // load mesh back back in and diff to check values
+    relay::io::blueprint::load_mesh(tout_base + ".root",
+                                    n_read);
+    EXPECT_FALSE(data.diff(n_read.child(0),info));
+
 
 
     opts["file_style"] = "multi_file";
@@ -327,6 +410,12 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     EXPECT_TRUE(is_directory(tout_base));
     EXPECT_TRUE(is_file(join_file_path(tout_base,
                                        "domain_000000.hdf5")));
+
+    // load mesh back back in and diff to check values
+    relay::io::blueprint::load_mesh(tout_base + ".root",
+                                    n_read);
+    EXPECT_FALSE(data.diff(n_read.child(0),info));
+
 
     opts["file_style"] = "garbage";
 
@@ -345,25 +434,27 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
 
-    Node n_read, load_opts;
     // even custom name should work just fine with default
     // (it will pick the first mesh)
-    relay::io::blueprint::read_mesh(tout_base + ".root", n_read);
+    relay::io::blueprint::load_mesh(tout_base + ".root", n_read);
 
+    Node load_opts;
     // now test bad name
     load_opts["mesh_name"] = "garbage";
-    EXPECT_THROW(relay::io::blueprint::read_mesh(tout_base + ".root",
+    EXPECT_THROW(relay::io::blueprint::load_mesh(tout_base + ".root",
                                                  load_opts,
                                                  n_read),
                  Error);
 
     // now test expected name
     load_opts["mesh_name"] = "bananas";
-    relay::io::blueprint::read_mesh(tout_base + ".root", load_opts, n_read);
-
-
-
-
+    relay::io::blueprint::load_mesh(tout_base + ".root", load_opts, n_read);
+    
+    // check that 
+    // load mesh back back in and diff to check values
+    relay::io::blueprint::load_mesh(tout_base + ".root",
+                                    n_read);
+    EXPECT_FALSE(data.diff(n_read.child(0),info));
 }
 
 
