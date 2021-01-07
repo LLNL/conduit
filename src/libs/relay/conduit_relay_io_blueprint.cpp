@@ -86,20 +86,73 @@ namespace blueprint
 namespace detail
 {
 
+//-----------------------------------------------------------------------------
+void gen_domain_to_file_map(int num_domains,
+                            int num_files,
+                            Node &out)
+{
+    int num_domains_per_file = num_domains / num_files;
+    int left_overs = num_domains % num_files;
+
+    out["global_domains_per_file"].set(DataType::int32(num_files));
+    out["global_domain_offsets"].set(DataType::int32(num_files));
+    out["global_domain_to_file"].set(DataType::int32(num_domains));
+
+    int32_array v_domains_per_file = out["global_domains_per_file"].value();
+    int32_array v_domains_offsets  = out["global_domain_offsets"].value();
+    int32_array v_domain_to_file   = out["global_domain_to_file"].value();
+
+    // setup domains per file
+    for(int f=0; f < num_files; f++)
+    {
+        v_domains_per_file[f] = num_domains_per_file;
+        if( f < left_overs)
+            v_domains_per_file[f]+=1;
+    }
+
+    // prefix sum to calc offsets
+    for(int f=0; f < num_files; f++)
+    {
+        v_domains_offsets[f] = v_domains_per_file[f];
+        if(f > 0)
+            v_domains_offsets[f] += v_domains_offsets[f-1];
+    }
+
+    // do assignment, create simple map
+    int f_idx = 0;
+    for(int d=0; d < num_domains; d++)
+    {
+        if(d >= v_domains_offsets[f_idx])
+            f_idx++;
+        v_domain_to_file[d] = f_idx;
+    }
+}
+
+
 class BlueprintTreePathGenerator
 {
 public:
     //-------------------------------------------------------------------//
     BlueprintTreePathGenerator(const std::string &file_pattern,
                                const std::string &tree_pattern,
+                               index_t num_files,
+                               index_t num_trees,
                                const std::string &protocol,
                                const Node &mesh_index)
     : m_file_pattern(file_pattern),
       m_tree_pattern(tree_pattern),
+      m_num_files(num_files),
+      m_num_trees(num_trees),
       m_protocol(protocol),
       m_mesh_index(mesh_index)
     {
-
+        // if we need domain to file map, gen it
+        if( m_num_files > 1 && (m_num_trees != m_num_files) )
+        {
+            gen_domain_to_file_map(m_num_trees,
+                                   m_num_files,
+                                   m_d2f_map);
+        }
     }
 
     //-------------------------------------------------------------------//
@@ -148,12 +201,25 @@ public:
         return pattern;
     }
 
-
     //-------------------------------------------------------------------//
     std::string GenerateFilePath(int tree_id) const
     {
-        // for now, we only support 1 tree per file.
-        int file_id = tree_id;
+        int file_id = -1;
+
+        if(m_num_trees == m_num_files)
+        {
+            file_id = tree_id;
+        }
+        else if(m_num_files == 1)
+        {
+            file_id = 0;
+        }
+        else
+        {
+            int32_array v_d2f = m_d2f_map["global_domain_to_file"].value();
+            file_id = v_d2f[tree_id];
+        }
+
         return Expand(m_file_pattern,file_id);
     }
 
@@ -172,9 +238,11 @@ public:
 private:
     std::string m_file_pattern;
     std::string m_tree_pattern;
+    index_t     m_num_files;
+    index_t     m_num_trees;
     std::string m_protocol;
-    Node m_mesh_index;
-
+    Node        m_mesh_index;
+    Node        m_d2f_map;
 };
 
 bool global_someone_agrees(bool vote
@@ -458,49 +526,6 @@ identify_protocol(const std::string &path)
 
     return io_type;
 }
-
-//-----------------------------------------------------------------------------
-void gen_domain_to_file_map(int num_domains,
-                            int num_files,
-                            Node &out)
-{
-    int num_domains_per_file = num_domains / num_files;
-    int left_overs = num_domains % num_files;
-
-    out["global_domains_per_file"].set(DataType::int32(num_files));
-    out["global_domain_offsets"].set(DataType::int32(num_files));
-    out["global_domain_to_file"].set(DataType::int32(num_domains));
-
-    int32_array v_domains_per_file = out["global_domains_per_file"].value();
-    int32_array v_domains_offsets  = out["global_domain_offsets"].value();
-    int32_array v_domain_to_file   = out["global_domain_to_file"].value();
-
-    // setup domains per file
-    for(int f=0; f < num_files; f++)
-    {
-        v_domains_per_file[f] = num_domains_per_file;
-        if( f < left_overs)
-            v_domains_per_file[f]+=1;
-    }
-
-    // prefix sum to calc offsets
-    for(int f=0; f < num_files; f++)
-    {
-        v_domains_offsets[f] = v_domains_per_file[f];
-        if(f > 0)
-            v_domains_offsets[f] += v_domains_offsets[f-1];
-    }
-
-    // do assignment, create simple map
-    int f_idx = 0;
-    for(int d=0; d < num_domains; d++)
-    {
-        if(d >= v_domains_offsets[f_idx])
-            f_idx++;
-        v_domain_to_file[d] = f_idx;
-    }
-}
-
 
 
 //-----------------------------------------------------------------------------
@@ -1357,6 +1382,47 @@ void write_mesh(const Node &mesh,
 }
 
 //-----------------------------------------------------------------------------
+// The load semantics, the mesh node is reset before reading.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void load_mesh(const std::string &root_file_path,
+               conduit::Node &mesh
+               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+    mesh.reset();
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    read_mesh(root_file_path,
+              mesh,
+              mpi_comm);
+#else
+    read_mesh(root_file_path,
+              mesh);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void load_mesh(const std::string &root_file_path,
+               const conduit::Node &opts,
+               conduit::Node &mesh
+               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+    mesh.reset();
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    read_mesh(root_file_path,
+              opts,
+              mesh,
+              mpi_comm);
+#else
+    read_mesh(root_file_path,
+              opts,
+              mesh);
+#endif
+}
+
+//-----------------------------------------------------------------------------
 void read_mesh(const std::string &root_file_path,
                Node &mesh
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
@@ -1475,10 +1541,25 @@ void read_mesh(const std::string &root_file_path,
         data_protocol = root_node["protocol/name"].as_string();
     }
 
+    // NOTE: future cases (per mesh maps, won't need these)
+    // but they are needed for all current cases
+    if(!root_node.has_child("number_of_trees"))
+    {
+        CONDUIT_ERROR("Root missing `number_of_trees`");
+    }
+
+    if(!root_node.has_child("number_of_files"))
+    {
+        CONDUIT_ERROR("Root missing `number_of_files`");
+    }
+
     // read all domains for given mesh
     int num_domains = root_node["number_of_trees"].to_int();
+    int num_files   = root_node["number_of_files"].to_int();
     detail::BlueprintTreePathGenerator gen(root_node["file_pattern"].as_string(),
                                            root_node["tree_pattern"].as_string(),
+                                           num_files,
+                                           num_domains,
                                            data_protocol,
                                            mesh_index);
 

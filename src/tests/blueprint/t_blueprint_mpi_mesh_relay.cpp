@@ -195,9 +195,6 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
     }
     MPI_Barrier(comm);
 
-
-    // what we want:
-    // relay::mpi::io::blueprint::write_mesh(dset, output_path,"hdf5");
     conduit::relay::mpi::io::blueprint::write_mesh(dset,
                                                   output_base,
                                                   "hdf5",
@@ -407,11 +404,35 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
         string output_dir  = output_base + ".cycle_000000";
         string output_root = output_base + ".cycle_000000.root";
 
+        int nfiles_to_check = nfiles;
+        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
+        {
+            nfiles_to_check = 7;
+        }
+
         if(par_rank == 0)
         {
-            // remove existing directory
-            remove_path_if_exists(output_dir);
+            // remove existing root, output files and directory
             remove_path_if_exists(output_root);
+            for(int i=0;i<nfiles_to_check;i++)
+            {
+
+                std::string fprefix = "file_";
+                if(nfiles_to_check == 7)
+                {
+                    // in the n domains == n files case, the file prefix is
+                    // domain_
+                    fprefix = "domain_";
+                }
+
+                std::string output_file = conduit_fmt::format("{}{:06d}.hdf5",
+                                join_file_path(output_base + ".cycle_000000",
+                                               fprefix),
+                                i);
+                remove_path_if_exists(output_file);
+            }
+
+            remove_path_if_exists(output_dir);
         }
 
         MPI_Barrier(comm);
@@ -426,16 +447,11 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
 
         // count the files
         //  file_%06llu.{protocol}:/domain_%06llu/...
-        int nfiles_to_check = nfiles;
-        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
-        {
-            nfiles_to_check = 7;
-        }
+
 
         EXPECT_TRUE(conduit::utils::is_directory(output_dir));
         EXPECT_TRUE(conduit::utils::is_file(output_root));
 
-        char fmt_buff[64] = {0};
         for(int i=0;i<nfiles_to_check;i++)
         {
 
@@ -455,6 +471,30 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
+        
+        // read the mesh back in diff to make sure we have the same data
+        Node n_read, info;
+        relay::mpi::io::blueprint::read_mesh(output_base + ".cycle_000000.root",
+                                             n_read,
+                                             comm);
+
+        // rank 0 will have 4, rank 1 wil have 3
+        int num_local_domains = 4;
+        if(par_rank != 0)
+        {
+            num_local_domains = 3;
+        }
+
+        // total doms should be 7
+        EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read, comm), 7);
+
+        std::cout << "par_rank " << par_rank << "  read # of children " << n_read.number_of_children();
+        // in all cases we expect 7 domains to match 
+        for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
+        {
+            EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
+        }
+        
     }
 
     // read this back using read_mesh
@@ -502,9 +542,9 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
                                      data.append());
 
     // set the domain ids
-    data.child(0)["state/domain_id"] = 0;
-    data.child(1)["state/domain_id"] = 1;
-    data.child(2)["state/domain_id"] = 2;
+    data.child(0)["state/domain_id"] = 0 + (1 * par_rank);
+    data.child(1)["state/domain_id"] = 1 + (1 * par_rank);
+    data.child(2)["state/domain_id"] = 2 + (1 * par_rank);
 
     // use 2 files
     Node opts;
@@ -545,9 +585,9 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
                                      data.append());
 
     // set the domain ids
-    data.child(0)["state/domain_id"] = 0;
-    data.child(1)["state/domain_id"] = 1;
-    data.child(2)["state/domain_id"] = 2;
+    data.child(0)["state/domain_id"] = 0 + (1 * par_rank);
+    data.child(1)["state/domain_id"] = 1 + (1 * par_rank);
+    data.child(2)["state/domain_id"] = 2 + (1 * par_rank);
 
     // non-trunk will error b/c leaf sizes aren't compat
     EXPECT_THROW( conduit::relay::mpi::io::blueprint::write_mesh(data,
@@ -562,6 +602,23 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
                                                   "hdf5",
                                                   opts,
                                                   comm);
+
+    Node n_read, info;
+    // load mesh back back in and diff to check values
+    relay::mpi::io::blueprint::load_mesh(output_base + ".cycle_000100.root",
+                                         n_read,
+                                         comm);
+
+    // total doms should be 6,
+    EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read,comm), 6);
+
+    // each task has 3 local doms, check them 
+    for(int dom_idx=0; dom_idx < 3; dom_idx++)
+    {
+        EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
+        info.print();
+    }
+
 }
 
 
