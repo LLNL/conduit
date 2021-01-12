@@ -19,7 +19,7 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mesh_relay
                     t_blueprint_mesh_generate
                     t_blueprint_mesh_examples
-                    t_blueprint_util_mesh)
+                    t_blueprint_mesh_matset_xforms)
 
 ################################
 # Add our Main Unit Tests

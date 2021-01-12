@@ -467,20 +467,33 @@ TEST(conduit_blueprint_mesh_examples, check_gen_index_state_prop)
     EXPECT_TRUE(idx.has_path("state/time"));
 }
 
+
+
 //-----------------------------------------------------------------------------
 void venn_test_small_yaml(const std::string &venn_type)
 {
     // provide small example save to yaml for folks to look at
-    const int nx = 25, ny = 25;
+    const int nx = 4, ny = 4;
     const double radius = 0.25;
 
     Node res, info, n_idx;
     blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
-    blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
+
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
     blueprint::mesh::generate_index(res,"",1,n_idx);
     EXPECT_TRUE(blueprint::verify("mesh/index",n_idx,info));
-    res.save("venn_small_example_" + venn_type + ".yaml");
+    
+    std::string ofbase= "venn_small_example_" + venn_type;
+
+    // save yaml and hdf5 versions
+    relay::io::blueprint::save_mesh(res,
+                                    ofbase + ".yaml",
+                                    "yaml");
+
+    relay::io::blueprint::save_mesh(res,
+                                    ofbase+ ".blueprint_root",
+                                    "hdf5");
+
 }
 
 //-----------------------------------------------------------------------------
@@ -499,7 +512,17 @@ void venn_test(const std::string &venn_type)
 
     std::string ofbase = "venn_example_" + venn_type;
     std::cout << "[Saving " << ofbase << "]" << std::endl;
-    relay::io_blueprint::save(res, ofbase + ".blueprint_root");
+
+    std::string ofile_root= "venn_small_example_" + venn_type;
+
+    // save yaml and hdf5 versions
+    relay::io::blueprint::save_mesh(res,
+                                    ofbase + ".yaml",
+                                    "yaml");
+
+    relay::io::blueprint::save_mesh(res,
+                                    ofbase+ ".blueprint_root",
+                                    "hdf5");
 
     {
         std::cout << "[Verifying field area is correct]" << std::endl;

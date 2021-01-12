@@ -408,6 +408,17 @@ namespace matset
     bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
+    // Converts a blueprint matset to the silo style sparse mixed slot 
+    // representation.
+    //
+    // For details about the silo format, see documentation for 
+    // 'DBPutMaterial' at:
+    // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
+    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &n,
+                                       conduit::Node &dest,
+                                       const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::matset::index protocol interface
     //-------------------------------------------------------------------------
     namespace index

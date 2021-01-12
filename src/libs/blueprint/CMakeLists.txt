@@ -22,7 +22,6 @@ set(blueprint_headers
     conduit_blueprint_mesh_examples.hpp
     conduit_blueprint_mesh_examples_julia.hpp
     conduit_blueprint_mesh_examples_venn.hpp
-    conduit_blueprint_util_mesh.hpp
     conduit_blueprint_mcarray.hpp
     conduit_blueprint_mcarray_examples.hpp
     conduit_blueprint_o2mrelation.hpp
@@ -48,10 +47,10 @@ set(blueprint_c_headers
 set(blueprint_sources
     conduit_blueprint.cpp
     conduit_blueprint_mesh.cpp
+    conduit_blueprint_mesh_matset_xforms.cpp
     conduit_blueprint_mesh_examples.cpp
     conduit_blueprint_mesh_examples_julia.cpp
     conduit_blueprint_mesh_examples_venn.cpp
-    conduit_blueprint_util_mesh.cpp
     conduit_blueprint_mcarray.cpp
     conduit_blueprint_mcarray_examples.cpp
     conduit_blueprint_o2mrelation.cpp

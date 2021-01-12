@@ -4,7 +4,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_blueprint_util_mesh.cpp
+/// file: t_blueprint_mesh_matset_xforms.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ TEST(conduit_blueprint_util_mesh, mesh_util_to_silo_basic)
     Node &mset = mesh["matsets/matset"];
 
     Node silo, info;
-    blueprint::util::mesh::matset::to_silo(mset, silo);
+    blueprint::mesh::matset::to_silo(mset, silo);
     std::cout << silo.to_yaml() << std::endl;
 
     { // Check General Contents //
@@ -65,4 +65,52 @@ TEST(conduit_blueprint_util_mesh, mesh_util_to_silo_basic)
 
     //     EXPECT_FALSE(actual_matlist.diff(expected_matlist, info));
     // }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo)
+{
+    const int nx = 4, ny = 4;
+    const double radius = 0.25;
+
+    CONDUIT_INFO("FULL VFS");
+    {
+        Node mesh, info;
+        blueprint::mesh::examples::venn("full", nx, ny, radius, mesh);
+        const Node &mset = mesh["matsets/matset"];
+
+        std::cout << mset.to_yaml() << std::endl;
+
+        Node mset_silo;
+        blueprint::mesh::matset::to_silo(mset, mset_silo);
+        std::cout << mset_silo.to_yaml() << std::endl;
+    }
+
+    CONDUIT_INFO("SPARSE BY MAT VFS");
+    {
+        Node mesh, info;
+        blueprint::mesh::examples::venn("sparse_by_material", nx, ny, radius, mesh);
+        const Node &mset = mesh["matsets/matset"];
+
+        std::cout << mset.to_yaml() << std::endl;
+
+        Node mset_silo;
+        blueprint::mesh::matset::to_silo(mset, mset_silo);
+        std::cout << mset_silo.to_yaml() << std::endl;
+    }
+
+    CONDUIT_INFO("SPARSE BY ELE VFS");
+    {
+        Node mesh, info;
+        blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh);
+        const Node &mset = mesh["matsets/matset"];
+
+        std::cout << mset.to_yaml() << std::endl;
+
+        Node mset_silo;
+        blueprint::mesh::matset::to_silo(mset, mset_silo);
+        std::cout << mset_silo.to_yaml() << std::endl;
+    }
+
 }
