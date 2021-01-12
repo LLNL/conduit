@@ -4,38 +4,21 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint.hpp
+/// file: conduit_blueprint_util_mesh.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_HPP
-#define CONDUIT_BLUEPRINT_HPP
+#ifndef CONDUIT_BLUEPRINT_UTIL_MESH_HPP
+#define CONDUIT_BLUEPRINT_UTIL_MESH_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
 #include "conduit_blueprint_exports.h"
 
-#include "conduit_blueprint_mesh.hpp"
-#include "conduit_blueprint_mesh_examples.hpp"
-#include "conduit_blueprint_mesh_examples_julia.hpp"
-#include "conduit_blueprint_mesh_examples_venn.hpp"
-
-#include "conduit_blueprint_util_mesh.hpp"
-
-#include "conduit_blueprint_o2mrelation.hpp"
-#include "conduit_blueprint_o2mrelation_examples.hpp"
-#include "conduit_blueprint_o2mrelation_iterator.hpp"
-
-#include "conduit_blueprint_mcarray.hpp"
-#include "conduit_blueprint_mcarray_examples.hpp"
-
-#include "conduit_blueprint_zfparray.hpp"
-
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin conduit --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
@@ -47,30 +30,49 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
+// -- begin conduit::blueprint::util --
 //-----------------------------------------------------------------------------
-std::string CONDUIT_BLUEPRINT_API about();
-void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
+namespace util
+{
 
 //-----------------------------------------------------------------------------
-/// blueprint verify interface
+// -- begin conduit::blueprint::util::mesh --
 //-----------------------------------------------------------------------------
+namespace mesh
+{
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
+// -- begin conduit::blueprint::util::mesh::matset --
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
-                                  const conduit::Node &n,
-                                  conduit::Node &info);
+namespace matset
+{
+    //-------------------------------------------------------------------------
+    // See documentation for 'DBPutMaterial' at:
+    // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
+    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &n,
+                                       conduit::Node &dest,
+                                       const float64 epsilon = CONDUIT_EPSILON);
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::util::mesh::matset --
+//-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::util::mesh --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint --
+// -- end conduit::blueprint::util --
 //-----------------------------------------------------------------------------
 
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
@@ -78,7 +80,7 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
 //-----------------------------------------------------------------------------
 
 
-#endif
+#endif 
 
 
 

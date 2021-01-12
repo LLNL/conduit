@@ -449,16 +449,15 @@ The following diagram illustrates a simple **uni-buffer** material set example:
       matsets:
         matset:
           topology: topology
-          volume_fractions:
-            values: [0, a0, b2, b1, b0, 0, a1, 0]
-            material_ids: [0, 1, 2, 2, 2, 0, 1, 0]
-            material_map:
-              a: 1
-              b: 2
-              c: 0
-            sizes: [2, 2, 1]
-            offsets: [0, 2, 4]
-            indices: [1, 4, 6, 3, 2]
+          material_map:
+            a: 1
+            b: 2
+            c: 0
+          material_ids: [0, 1, 2, 2, 2, 0, 1, 0]
+          volume_fractions: [0, a0, b2, b1, b0, 0, a1, 0]
+          sizes: [2, 2, 1]
+          offsets: [0, 2, 4]
+          indices: [1, 4, 6, 3, 2]
 
 
 Multi-Buffer Material Sets
