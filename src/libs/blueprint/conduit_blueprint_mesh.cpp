@@ -23,6 +23,7 @@
 #include <cstring>
 #include <deque>
 #include <limits>
+#include <memory>
 #include <set>
 
 //-----------------------------------------------------------------------------
@@ -360,7 +361,7 @@ std::vector<index_t> intersect_sets(const std::vector<index_t> &v1,
             }
         }
     }
-    return res;
+    return std::vector<index_t>(std::move(res));
 }
 
 //-----------------------------------------------------------------------------
@@ -381,7 +382,7 @@ std::vector<index_t> subtract_sets(const std::vector<index_t> &v1,
             res.push_back(v1[i1]);
         }
     }
-    return res;
+    return std::vector<index_t>(std::move(res));
 }
 
 //-----------------------------------------------------------------------------
@@ -1089,6 +1090,50 @@ index_t get_topology_length(const std::string &type,
 //---------------------------------------------------------------------------//
 struct TopologyMetadata
 {
+    // The 'IndexType' indicates the index space to be used when referring to
+    // entities within this topological cascade. The types have the following
+    // meanings:
+    //
+    // - GLOBAL: The unique index for the entity relative to the entire topology.
+    //   Though a point may be shared by many lines/faces/cells, it will only
+    //   have one global index. This is most commonly used for entity identification.
+    // - LOCAL: The index of the entity relative to a cascade context. A point
+    //   will have one local index for each line/face/cell that it participates
+    //   in along the cascade. This is most commonly used to determine entity orientation.
+    //
+    // To clarify, consider the following example, with the following local and
+    // global identifiers:
+    //
+    // - GLOBAL Scheme: Each entity has 1 unique identifier depending on FIFO
+    //   cascade iteration:
+    //
+    //   p3               p4              p5
+    //   +----------------+----------------+
+    //   |       l2       |       l6       |
+    //   |                |                |
+    //   |                |                |
+    //   |l3     f0       |l1     f1     l5|
+    //   |                |                |
+    //   |                |                |
+    //   |       l0       |       l4       |
+    //   +----------------+----------------+
+    //   p0               p1              p2
+    //
+    // - LOCAL Scheme: Each entity has an identifier for each occurence within
+    //   the cascade:
+    //
+    //    p5            p4 p13          p12
+    //   +----------------+----------------+
+    //   |p6     l2     p3|p14    l6    p11|
+    //   |                |                |
+    //   |                |                |
+    //   |l3     f0     l1|l7     f1     l5|
+    //   |                |                |
+    //   |                |                |
+    //   |p7     l0     p2|p15    l4    p10|
+    //   +----------------+----------------+
+    //    p0            p1 p8            p9
+    //
     enum IndexType { GLOBAL = 0, LOCAL = 1 };
 
     // NOTE(JRC): This type current only works at forming associations within
@@ -1133,8 +1178,9 @@ struct TopologyMetadata
         // associated conversations (data).
         Node temp, data;
 
-        // NOTE(JRC): A 'deque' is used in order to allow for queue behavior
-        // to be used in deciding the identifiers for the cascade of entities.
+        // NOTE(JRC): A 'deque' is used so that queue behavior (FIFO)
+        // is responsible for ordering the identifiers in the cascade of entities,
+        // which more closely follows the average intuition.
         const index_t bag_num_elems = topo_num_coords + topo_num_elems;
         std::deque< std::vector<int64> > entity_index_bag(bag_num_elems);
         std::deque< index_t > entity_dim_bag(bag_num_elems, -1);
@@ -1180,7 +1226,7 @@ struct TopologyMetadata
             std::vector<index_t> &dim_le2ge_map = dim_le2ge_maps[entity_dim];
             ShapeType dim_shape = topo_cascade.get_shape(entity_dim);
 
-            // Add Element to Topology/Associations //
+            // Add Element to Topology //
 
             // NOTE: This code assumes that all entities can be uniquely
             // identified by the list of coordinate indices of which they
@@ -1239,6 +1285,8 @@ struct TopologyMetadata
                 }
                 dim_le2ge_map[local_id] = global_id;
             }
+
+            // Add Element to Associations //
 
             add_entity_assoc(IndexType::GLOBAL, global_id, entity_dim, global_id, entity_dim);
             add_entity_assoc(IndexType::LOCAL, local_id, entity_dim, local_id, entity_dim);
@@ -3545,6 +3593,10 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
             std::vector<int64> polygonal_conn_data;
             std::vector<int64> face_indices(embed_shape.indices);
 
+            // Generate each polyhedral element by generating its constituent
+            // polygonal faces. Also, make sure that faces connecting the same
+            // set of vertices aren't duplicated; reuse the ID generated by the
+            // first polyhedral element to create the polygonal face.
             for (index_t ei = 0; ei < topo_elems; ei++)
             {
                 index_t data_off = topo_shape.indices * ei;
@@ -3841,7 +3893,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
             elem_eparent_stack.pop_front();
 
             // NOTE(JRC): We iterate using local index values so that we
-            // get the correct orientations for per-element edges.
+            // get the correct orientations for per-element lines.
             const std::vector<index_t> &embed_ids = topo_data.get_entity_assocs(
                 TopologyMetadata::LOCAL, embed_index, embed_dim, embed_dim - 1);
             if(embed_dim > line_shape.dim)
@@ -3856,9 +3908,10 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
             }
             else // if(embed_dim == line_shape.dim)
             {
-                // NOTE(JRC): Side ordering retains original ordering by using:
-                // - 2D: Side Start => Side End => Side Center
-                // - 3D: Side Start => Side End => Face Center => Cell Center
+                // NOTE(JRC): Side ordering retains original element orientation
+                // by creating elements as follows:
+                // - 2D: Face-Line Start => Face-Line End => Face Center
+                // - 3D: Cell-Face-Line Start => Cell-Face-Line End => Cell-Face Center => Cell Center
                 for(index_t ei = 0; ei < (index_t)embed_ids.size(); ei++)
                 {
                     index_t point_id = topo_data.dim_le2ge_maps[embed_dim - 1][embed_ids[ei]];
@@ -4016,9 +4069,9 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     for(index_t elem_index = 0, corner_index = 0; elem_index < topo_num_elems; elem_index++)
     {
-        // per-face, per-edge orientations for this element, i.e. {(f_gi, l_gj) => (v_gk, v_gl)}
+        // per-face, per-line orientations for this element, i.e. {(f_gi, l_gj) => (v_gk, v_gl)}
         std::map< std::pair<index_t, index_t>, std::pair<index_t, index_t> > elem_orient;
-        { // establish the element's internal edge constraints
+        { // establish the element's internal line constraints
             const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
                 TopologyMetadata::LOCAL, elem_index, topo_shape.dim, face_shape.dim);
             for(index_t fi = 0; fi < (index_t)elem_faces.size(); fi++)
@@ -4049,6 +4102,63 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
             TopologyMetadata::GLOBAL, elem_index, topo_shape.dim, face_shape.dim);
 
+        // NOTE(JRC): Corner ordering retains original element orientation
+        // by creating elements as follows:
+        //
+        // - for a given element, determine how its co-faces and co-lines are
+        //   oriented, and set these as constraints
+        // - based on these constraints, create the co-line/co-face centroid
+        //   corner lines, which add a new set of contraints
+        // - finally, if the topology is 3D, create the co-face/cell centroid
+        //   corner lines based on all previous constraints, and then collect
+        //   these final lines into corner faces
+        //
+        // To better demonstrate this algorithm, here's a simple 2D example:
+        //
+        // - Top-Level Element/Constraints (See Arrows)
+        //
+        //   p2      l2      p3
+        //   +<---------------+
+        //   |                ^
+        //   |                |
+        //   |                |
+        // l3|       f0       |l1
+        //   |                |
+        //   |                |
+        //   v                |
+        //   +--------------->+
+        //   p0      l0      p1
+        //
+        // - Consider Corner f0/p0 and Centroids; Impose Top-Level Constraints
+        //
+        //   p2      l2      p3
+        //   +----------------+
+        //   |                |
+        //   |                |
+        //   |       f0       |
+        // l3+       +        |l1
+        //   |                |
+        //   |                |
+        //   v                |
+        //   +------>+--------+
+        //   p0      l0      p1
+        //
+        // - Create Face/Line Connections Based on Top-Level Constraints
+        //
+        //   p2      l2      p3
+        //   +----------------+
+        //   |                |
+        //   |                |
+        //   |       f0       |
+        // l3+<------+        |l1
+        //   |       ^        |
+        //   |       |        |
+        //   v       |        |
+        //   +------>+--------+
+        //   p0      l0      p1
+        //
+
+        // per-elem, per-point corners, informed by cell-face-line orientation constraints
         const std::vector<index_t> &elem_points = topo_data.get_entity_assocs(
             TopologyMetadata::GLOBAL, elem_index, topo_shape.dim, point_shape.dim);
         for(index_t pi = 0; pi < (index_t)elem_points.size(); pi++, corner_index++)
@@ -4070,10 +4180,10 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                 elem_point_faces.size() * (is_topo_3d ? 2 : 1),
                 // # of vertices per face: 4 (all faces are quads in corner topology)
                 std::vector<index_t>(corners_face_degree, 0));
-            // per-face, per-edge orientations for this corner, i.e. {(f_gi, l_gj) => bool}
+            // per-face, per-line orientations for this corner, i.e. {(f_gi, l_gj) => bool}
             std::map< std::pair<index_t, index_t>, bool > corner_orient;
-            // flags for the 'corner_orient' map; if TO_FACE, edge is (l_gj, f_gi);
-            // if FROM_FACE, edge is (f_gi, l_gj)
+            // flags for the 'corner_orient' map; if TO_FACE, line is (l_gj, f_gi);
+            // if FROM_FACE, line is (f_gi, l_gj)
             const static bool TO_FACE = true, FROM_FACE = false;
 
             // generate oriented corner-to-face faces using internal line constraints
@@ -4110,7 +4220,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                     corner_face[2] += dim_coord_offsets[face_shape.dim];
                 }
             }
-            // generate oriented line-to-cell faces using corner-to-face constraints
+            // generate oriented line-to-cell faces using corner-to-face constraints from above
             for(index_t li = 0; li < (index_t)elem_point_lines.size() && is_topo_3d; li++)
             {
                 const index_t line_index = elem_point_lines[li];
