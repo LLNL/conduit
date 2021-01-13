@@ -490,9 +490,16 @@ void venn_test_small_yaml(const std::string &venn_type)
                                     ofbase + ".yaml",
                                     "yaml");
 
-    relay::io::blueprint::save_mesh(res,
-                                    ofbase+ ".blueprint_root",
-                                    "hdf5");
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled =io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    if(hdf5_enabled)
+    {
+        relay::io::blueprint::save_mesh(res,
+                                        ofbase+ ".blueprint_root",
+                                        "hdf5");
+    }
 
 }
 
@@ -520,9 +527,16 @@ void venn_test(const std::string &venn_type)
                                     ofbase + ".yaml",
                                     "yaml");
 
-    relay::io::blueprint::save_mesh(res,
-                                    ofbase+ ".blueprint_root",
-                                    "hdf5");
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled =io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    if(hdf5_enabled)
+    {
+        relay::io::blueprint::save_mesh(res,
+                                        ofbase+ ".blueprint_root",
+                                        "hdf5");
+    }
 
     {
         std::cout << "[Verifying field area is correct]" << std::endl;

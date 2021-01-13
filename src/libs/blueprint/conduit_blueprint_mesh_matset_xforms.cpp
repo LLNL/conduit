@@ -200,6 +200,7 @@ to_silo(const conduit::Node &n,
             }
         }
 
+        // TODO, IS THIS CORRECT?
         blueprint::o2mrelation::O2MIterator mat_iter(mat_vfs);
         matset_num_elems = mat_iter.elements(O2MIndex::ONE);
     }
