@@ -185,7 +185,7 @@ to_silo(const conduit::Node &n,
         Node mat_vfs;
         if(mset_is_unibuffer)
         {
-            mat_vfs["values"].set_external(n["volume_fractions"]);
+            mat_vfs.set_external(n);
         }
         else
         {
@@ -200,7 +200,6 @@ to_silo(const conduit::Node &n,
             }
         }
 
-        // TODO, IS THIS CORRECT?
         blueprint::o2mrelation::O2MIterator mat_iter(mat_vfs);
         matset_num_elems = mat_iter.elements(O2MIndex::ONE);
     }
