@@ -1452,7 +1452,10 @@ void read_mesh(const std::string &root_file_path,
 
     // assume hdf5, but check for json file
     std::string root_protocol = "hdf5";
-    char buff[5] = {0,0,0,0,0};
+    // we will read the first 5 bytes, but
+    // make sure our buff is null termed, unless you
+    // want a random chance at sadness.
+    char buff[6] = {0,0,0,0,0,0};
 
     // heuristic, if json, we expect to see "{" in the first 5 chars of the file.
     std::ifstream ifs;

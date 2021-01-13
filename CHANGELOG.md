@@ -27,6 +27,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `truncate` option to `conduit::relay::io::blueprint::write_mesh`, this is used by `save_mesh`.
 - Improve capture and reporting of I/O errors in `conduit::relay::[mpi::]io::blueprint::{save_mesh|write_mesh}`. Now in the MPI case, If any rank fails to open or write to a file all ranks will throw an exception.
 
+#### Blueprint
+- Added `conduit::blueprint::mesh::matset::to_silo()` which converts a valid blueprint matset to a node that contains arrays that follow Silo's sparse mix slot volume fraction representation.
+
 
 ## [0.6.0] - Released 2020-11-02
 

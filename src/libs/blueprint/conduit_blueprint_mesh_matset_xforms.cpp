@@ -4,7 +4,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_util_mesh.cpp
+/// file: conduit_blueprint_mesh_matset_xforms.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -22,7 +22,6 @@
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
-#include "conduit_blueprint_util_mesh.hpp"
 
 // FIXME(JRC): The helper functions below are hackily copied over from
 // 'conduit_blueprint_mesh.cpp'; these helpers should ultimately be abstracted
@@ -118,19 +117,13 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util --
-//-----------------------------------------------------------------------------
-namespace util
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::mesh --
+// -- begin conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
 namespace mesh
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::mesh::matset --
+// -- begin conduit::blueprint::mesh::matset --
 //-----------------------------------------------------------------------------
 namespace matset
 {
@@ -154,7 +147,7 @@ to_silo(const conduit::Node &n,
     Node matset_mat_map;
     if(mset_is_unibuffer)
     {
-        matset_mat_map.set_external(n["volume_fractions/material_map"]);
+        matset_mat_map.set_external(n["material_map"]);
     }
     else // if(!mset_is_unibuffer)
     {
@@ -187,12 +180,12 @@ to_silo(const conduit::Node &n,
     }
     else // if(!mset_is_matdom)
     {
-        // may need to do a bit of sculping here; embed the base array into
+        // may need to do a bit of sculpting here; embed the base array into
         // something w/ "values" child, as below
         Node mat_vfs;
         if(mset_is_unibuffer)
         {
-            mat_vfs["values"].set_external(n["volume_fractions/values"]);
+            mat_vfs.set_external(n);
         }
         else
         {
@@ -253,8 +246,8 @@ to_silo(const conduit::Node &n,
                     (void*)mat_mids.element_ptr(mat_ind_index));
                 const index_t mat_id = temp.to_index_t();
 
-                // if this elem has a non-zero (or non-trival) volume fraction for this
-                // materal, add it do the map
+                // if this elem has a non-zero (or non-trivial) volume fraction for this
+                // material, add it do the map
                 if(mat_vf > epsilon)
                 {
                     elem_mat_maps[elem_index][mat_id] = mat_vf;
@@ -312,8 +305,8 @@ to_silo(const conduit::Node &n,
                 }
                 const index_t mat_elem = mset_is_matdom ? temp.to_index_t() : mat_index;
 
-                // if this elem has a non-zero (or non-trival) volume fraction for this
-                // materal, add it do the map
+                // if this elem has a non-zero (or non-trivial) volume fraction for this
+                // material, add it do the map
                 if(mat_vf > epsilon)
                 {
                     elem_mat_maps[mat_elem][mat_id] = mat_vf;
@@ -333,6 +326,9 @@ to_silo(const conduit::Node &n,
 
     dest.reset();
     dest["topology"].set(n["topology"]);
+    // in some cases, this method will sort the material names
+    // so always include the material map
+    dest["material_map"].set(matset_mat_map);
     dest["matlist"].set(DataType(int_dtype.id(), mset_num_elems));
     dest["mix_next"].set(DataType(int_dtype.id(), mset_num_slots));
     dest["mix_mat"].set(DataType(int_dtype.id(), mset_num_slots));
@@ -388,7 +384,7 @@ to_silo(const conduit::Node &n,
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util::mesh::matset --
+// -- end conduit::blueprint::mesh::matset --
 //-----------------------------------------------------------------------------
 
 
@@ -396,13 +392,6 @@ to_silo(const conduit::Node &n,
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::util::mesh --
 //-----------------------------------------------------------------------------
-
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util --
-//-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------

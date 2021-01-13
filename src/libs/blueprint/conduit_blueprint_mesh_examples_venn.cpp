@@ -356,10 +356,10 @@ void venn_sparse_by_element_matset(Node &res)
     // Build the rest of the single-buffer matset
     res["matsets/matset/topology"] = "topo";
     // This is the "key" that tells what material each volume fraction refers to
-    res["matsets/matset/material_map/cir_a"] = 1;
-    res["matsets/matset/material_map/cir_b"] = 2;
-    res["matsets/matset/material_map/cir_c"] = 3;
-    res["matsets/matset/material_map/bg"] = 0;
+    res["matsets/matset/material_map/circle_a"] = 1;
+    res["matsets/matset/material_map/circle_b"] = 2;
+    res["matsets/matset/material_map/circle_c"] = 3;
+    res["matsets/matset/material_map/background"] = 0;
 
     // All the volume fractions go here ("one big buffer")
     res["matsets/matset/volume_fractions"].set(DataType::float64(vfcount));
