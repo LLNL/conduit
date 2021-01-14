@@ -26,7 +26,6 @@
 //-----------------------------------------------------------------------------
 #include "conduit_core.hpp"
 
-
 //-----------------------------------------------------------------------------
 //
 /// The CONDUIT_INFO macro is the primary mechanism used to log basic messages.
@@ -156,6 +155,9 @@
 //-----------------------------------------------------------------------------
 namespace conduit
 {
+
+// fwd declare Node
+class Node;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::utils --
@@ -359,6 +361,16 @@ namespace utils
     std::string CONDUIT_API unescape_special_chars(const std::string &input);
 
 
+//-----------------------------------------------------------------------------
+/// fmt style string formatting helpers
+//-----------------------------------------------------------------------------    
+
+    std::string CONDUIT_API format(const std::string &s,
+                                   const conduit::Node &args);
+
+    std::string CONDUIT_API format(const std::string &s,
+                                   const conduit::Node &maps,
+                                   index_t map_index);
 
 //-----------------------------------------------------------------------------
 /// Base64 Encoding of Buffers
