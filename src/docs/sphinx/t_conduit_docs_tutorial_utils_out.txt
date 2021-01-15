@@ -1,0 +1,45 @@
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from conduit_tutorial_utils
+[ RUN      ] conduit_tutorial_utils.using_fmt
+BEGIN_EXAMPLE("using_fmt")
+The answer is 42.
+The answer is 3.1415.
+END_EXAMPLE("using_fmt")
+[       OK ] conduit_tutorial_utils.using_fmt (0 ms)
+[ RUN      ] conduit_tutorial_utils.using_utils_fmt_args_obj
+BEGIN_EXAMPLE("using_utils_fmt_args_obj")
+The answer is 0042.
+The other answer is 3.1415.
+END_EXAMPLE("using_utils_fmt_args_obj")
+[       OK ] conduit_tutorial_utils.using_utils_fmt_args_obj (1 ms)
+[ RUN      ] conduit_tutorial_utils.using_utils_fmt_args_list
+BEGIN_EXAMPLE("using_utils_fmt_args_list")
+The answer is 42.
+The other answer is 3.1415.
+END_EXAMPLE("using_utils_fmt_args_list")
+[       OK ] conduit_tutorial_utils.using_utils_fmt_args_list (0 ms)
+[ RUN      ] conduit_tutorial_utils.using_utils_fmt_maps_obj
+BEGIN_EXAMPLE("using_utils_fmt_maps_obj")
+The answer is 0042.
+The answer is 3.1415.
+
+The first answer is 42.0000.
+The second answer is 3.1415.
+END_EXAMPLE("using_utils_fmt_maps_obj")
+[       OK ] conduit_tutorial_utils.using_utils_fmt_maps_obj (0 ms)
+[ RUN      ] conduit_tutorial_utils.using_utils_fmt_maps_list
+BEGIN_EXAMPLE("using_utils_fmt_maps_list")
+The answer is 42.
+The answer is 3.1415.
+
+The first answer is 42.0000.
+The second answer is 3.1415.
+END_EXAMPLE("using_utils_fmt_maps_list")
+[       OK ] conduit_tutorial_utils.using_utils_fmt_maps_list (0 ms)
+[----------] 5 tests from conduit_tutorial_utils (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (1 ms total)
+[  PASSED  ] 5 tests.

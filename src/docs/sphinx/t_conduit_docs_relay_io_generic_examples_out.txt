@@ -21,7 +21,7 @@ a:
     my_string: "value"
 
 END_EXAMPLE("relay_io_example_1_json")
-[       OK ] conduit_docs.relay_io_example_1_json (1 ms)
+[       OK ] conduit_docs.relay_io_example_1_json (2 ms)
 [ RUN      ] conduit_docs.relay_io_example_1_hdf5
 BEGIN_EXAMPLE("relay_io_example_1_hdf5")
 
@@ -41,7 +41,7 @@ a:
     my_string: "value"
 
 END_EXAMPLE("relay_io_example_1_hdf5")
-[       OK ] conduit_docs.relay_io_example_1_hdf5 (33 ms)
+[       OK ] conduit_docs.relay_io_example_1_hdf5 (31 ms)
 [ RUN      ] conduit_docs.relay_io_example_2_hdf5
 BEGIN_EXAMPLE("relay_io_example_2_hdf5")
 
@@ -69,7 +69,7 @@ a:
     new_data: 42.0
 
 END_EXAMPLE("relay_io_example_2_hdf5")
-[       OK ] conduit_docs.relay_io_example_2_hdf5 (3 ms)
+[       OK ] conduit_docs.relay_io_example_2_hdf5 (4 ms)
 [ RUN      ] conduit_docs.relay_io_example_3_hdf5
 BEGIN_EXAMPLE("relay_io_example_3_hdf5")
 
@@ -129,8 +129,8 @@ path:
     my_data: 1.0
 
 END_EXAMPLE("relay_io_example_5_hdf5")
-[       OK ] conduit_docs.relay_io_example_5_hdf5 (1 ms)
-[----------] 6 tests from conduit_docs (42 ms total)
+[       OK ] conduit_docs.relay_io_example_5_hdf5 (2 ms)
+[----------] 6 tests from conduit_docs (43 ms total)
 
 [----------] Global test environment tear-down
 [==========] 6 tests from 1 test suite ran. (43 ms total)
