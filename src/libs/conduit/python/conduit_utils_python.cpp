@@ -197,7 +197,7 @@ conduit_utils_python_clear(PyObject *m)
 static struct PyModuleDef conduit_utils_python_module_def = 
 {
         PyModuleDef_HEAD_INIT,
-        "conduut_utils_python",
+        "conduit_utils_python",
         NULL,
         sizeof(struct module_state),
         conduit_utils_python_funcs,
@@ -240,7 +240,7 @@ CONDUIT_PYTHON_API void initconduit_conduit_utils_python(void)
     PyObject *utils_module = PyModule_Create(&conduit_utils_python_module_def);
 #else
     PyObject *utils_module = Py_InitModule((char*)"conduit_utils_python",
-                                             conduut_utils_python_funcs);
+                                             conduit_utils_python_funcs);
 #endif
 
     if(utils_module == NULL)
