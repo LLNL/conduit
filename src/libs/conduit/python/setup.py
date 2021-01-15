@@ -53,7 +53,8 @@ class SkipEggInfo(install_egg_info):
 setup (name = 'conduit',
        description = 'conduit',
        package_dir = {'conduit':'py_src'},
-       packages=['conduit'],
+       packages=['conduit',
+                 'conduit.utils'],
        cmdclass={'install_egg_info': SkipEggInfo})
 
 

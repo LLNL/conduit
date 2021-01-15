@@ -979,7 +979,9 @@ format(const std::string &pattern,
         !args.dtype().is_list())
     {
         CONDUIT_ERROR("conduit::utils::format args Node must be "
-                      << " an `object`, or `list`");
+                      << " an `object`, or `list`.\n"
+                      << "Passed node type: "
+                      << "`" << args.dtype().name() << "`.");
     }
 
     // if we have an object, we used named args for fmt
@@ -1158,9 +1160,9 @@ format(const std::string &pattern,
                 // ERROR -- list, object, or empty
                 CONDUIT_ERROR("conduit::utils::format does not support"
                               << " `object`, `list`, or `empty` Nodes"
-                              << " as arguments."
-                              << "'" << itr.name() << "' is a "
-                              << curr.dtype().name() << ".");
+                              << " as arguments.\n"
+                              << "'" << itr.name() << "' type: "
+                              << "`" << curr.dtype().name() << "`.");
             }
         }
     }
@@ -1173,7 +1175,9 @@ format(const std::string &pattern,
     }
     catch(const std::runtime_error& re)
     {
-        CONDUIT_ERROR("conduit::utils::format error: " << re.what());
+        CONDUIT_ERROR("conduit::utils::format error: "
+                      << "fmt error message:\n"
+                      << re.what());
     }
 
     return res;
@@ -1196,8 +1200,9 @@ format(const std::string &pattern,
         !maps.dtype().is_list())
     {
         CONDUIT_ERROR("conduit::utils::format maps Node must be "
-                      << " an `object`, or `list`");
-
+                      << " an `object`, or `list`\n."
+                      << " Passed node type: "
+                      << "`" << maps.dtype().name() << "`.");
     }
 
     // if we have an object, we used named args for fmt
@@ -1221,7 +1226,7 @@ format(const std::string &pattern,
                                << " is out of bounds."
                                << " Number of children = " 
                                << curr.number_of_children()
-                               << " valid range is [0," 
+                               << ". Valid range is [0," 
                                << curr.number_of_children() << ").");
             }
         }
@@ -1236,7 +1241,7 @@ format(const std::string &pattern,
                                << " is out of bounds."
                                << " Number of elements = " 
                                << curr.dtype().number_of_elements()
-                               << " valid range is [0," 
+                               << ". Valid range is [0," 
                                << curr.dtype().number_of_elements() << ").");
             }
         }
@@ -1395,8 +1400,8 @@ format(const std::string &pattern,
                     CONDUIT_ERROR("conduit::utils::format (maps) only supports "
                                   << " the list maps case for strings."
                                   << "'" << itr.name() << "' entry at index "
-                                  << map_index << " is a "
-                                  << lst_ent.dtype().name() << ".");
+                                  << map_index << " type: "
+                                   << "`" << lst_ent.dtype().name() << "`.");
                 }
 
                 std::string val = lst_ent.as_string();
@@ -1418,8 +1423,8 @@ format(const std::string &pattern,
                 CONDUIT_ERROR("conduit::utils::format (maps) does not support"
                               << " `object`, `string, or `empty` Nodes"
                               << " as arguments."
-                              << "'" << itr.name() << "' is a "
-                              << curr.dtype().name() << ".");
+                              << "'" << itr.name() << "' type: "
+                              << "`" << curr.dtype().name() << "`.");
             }
         }
     }
@@ -1432,7 +1437,9 @@ format(const std::string &pattern,
     }
     catch(const std::runtime_error& re)
     {
-        CONDUIT_ERROR("conduit::utils::format error: " << re.what());
+        CONDUIT_ERROR("conduit::utils::format error: "
+                      << "fmt error message:\n"
+                      << re.what());
     }
 
     return res;
