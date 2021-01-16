@@ -228,7 +228,7 @@ extern "C"
 #if defined(IS_PY3K)
 CONDUIT_PYTHON_API PyObject * PyInit_conduit_utils_python(void)
 #else
-CONDUIT_PYTHON_API void initconduit_conduit_utils_python(void)
+CONDUIT_PYTHON_API void initconduit_utils_python(void)
 #endif
 //---------------------------------------------------------------------------//
 {    
