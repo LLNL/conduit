@@ -19,7 +19,11 @@
 
 #cmakedefine CONDUIT_WINDOWS_DLL_EXPORTS "${CONDUIT_WINDOWS_DLL_EXPORTS}"
 
-#if defined(CONDUIT_PYTHON_EXPORTS) || defined(conduit_python_EXPORTS)
+#if defined(CONDUIT_PYTHON_EXPORTS) || \
+    defined(conduit_python_EXPORTS) || \
+    defined(CONDUIT_PYTHON_UTILS_EXPORTS) || \
+    defined(conduit_python_utils_EXPORTS)
+
     /* define catch all def */
     #define CONDUIT_PYTHON_EXPORTS_DEFINED 1
 #endif
