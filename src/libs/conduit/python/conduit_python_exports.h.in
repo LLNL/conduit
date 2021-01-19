@@ -21,9 +21,8 @@
 
 #if defined(CONDUIT_PYTHON_EXPORTS) || \
     defined(conduit_python_EXPORTS) || \
-    defined(CONDUIT_PYTHON_UTILS_EXPORTS) || \
-    defined(conduit_python_utils_EXPORTS)
-
+    defined(CONDUIT_UTILS_PYTHON_EXPORTS) || \
+    defined(conduit_utils_python_EXPORTS)
     /* define catch all def */
     #define CONDUIT_PYTHON_EXPORTS_DEFINED 1
 #endif
