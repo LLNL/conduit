@@ -50,6 +50,9 @@
 
 static const std::string file_path_sep_string(CONDUIT_UTILS_FILE_PATH_SEPARATOR);
 
+#include "conduit.hpp"
+#include "conduit_fmt/conduit_fmt.h"
+
 
 //-----------------------------------------------------------------------------
 // -- libb64 includes --
@@ -962,6 +965,486 @@ float64_to_string(float64 value)
 
     return res;
 }
+
+//-----------------------------------------------------------------------------
+/// fmt style string formatting helpers
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+std::string
+format(const std::string &pattern,
+       const conduit::Node &args)
+{
+    if( !args.dtype().is_object() &&
+        !args.dtype().is_list())
+    {
+        CONDUIT_ERROR("conduit::utils::format args Node must be "
+                      << " an `object`, or `list`.\n"
+                      << "Passed node type: "
+                      << "`" << args.dtype().name() << "`.");
+    }
+
+    // if we have an object, we used named args for fmt
+    // if we have an list, we don't use named args for fmt
+    bool is_obj = args.dtype().is_object();
+
+    conduit_fmt::dynamic_format_arg_store<conduit_fmt::format_context> store;
+    conduit::NodeConstIterator itr  = args.children();
+
+    while(itr.has_next())
+    {
+        const conduit::Node &curr = itr.next();
+        switch(curr.dtype().id())
+        {
+            /* ints */
+            case conduit::DataType::INT8_ID:
+            {
+                int8 val = curr.as_int8();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::INT16_ID:
+            {
+                int16 val = curr.as_int16();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::INT32_ID:
+            {
+                int32 val = curr.as_int32();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::INT64_ID:
+            {
+                int64 val = curr.as_int64();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            /* uints */
+            case conduit::DataType::UINT8_ID:
+            {
+                uint8 val = curr.as_uint8();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::UINT16_ID:
+            {
+                uint16 val = curr.as_uint16();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::UINT32_ID:
+            {
+                uint32 val = curr.as_uint32();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::UINT64_ID:
+            {
+                uint64 val = curr.as_uint64();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            /* floats */
+            case conduit::DataType::FLOAT32_ID:
+            {
+                float32 val = curr.as_float32();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::FLOAT64_ID:
+            {
+                float64 val = curr.as_float64();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            // string case
+            case conduit::DataType::CHAR8_STR_ID:
+            {
+                std::string val = curr.as_string();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+
+                break;
+            }
+            default:
+            {
+                // ERROR -- list, object, or empty
+                CONDUIT_ERROR("conduit::utils::format does not support"
+                              << " `object`, `list`, or `empty` Nodes"
+                              << " as arguments.\n"
+                              << "'" << itr.name() << "' type: "
+                              << "`" << curr.dtype().name() << "`.");
+            }
+        }
+    }
+
+    std::string res = "";
+
+    try
+    {
+        res = conduit_fmt::vformat(pattern,store);
+    }
+    catch(const std::runtime_error& re)
+    {
+        CONDUIT_ERROR("conduit::utils::format error: "
+                      << "fmt error message:\n"
+                      << re.what());
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+std::string
+format(const std::string &pattern,
+       const conduit::Node &maps,
+       index_t map_index)
+{
+    // neg bounds check
+    if(map_index < 0)
+    {
+         CONDUIT_ERROR("conduit::utils::format map_index must be positive "
+                   << " (map_index = " << map_index <<  ")");
+    }
+
+    if( !maps.dtype().is_object() &&
+        !maps.dtype().is_list())
+    {
+        CONDUIT_ERROR("conduit::utils::format maps Node must be "
+                      << " an `object`, or `list`\n."
+                      << " Passed node type: "
+                      << "`" << maps.dtype().name() << "`.");
+    }
+
+    // if we have an object, we used named args for fmt
+    // if we have an list, we don't use named args for fmt
+    bool is_obj = maps.dtype().is_object();
+
+    conduit_fmt::dynamic_format_arg_store<conduit_fmt::format_context> store;
+    conduit::NodeConstIterator itr  = maps.children();
+    while(itr.has_next())
+    {
+        const conduit::Node &curr = itr.next();
+        // map bounds checks
+        if(curr.dtype().is_list())
+        {
+            if(map_index >= curr.number_of_children())
+            {
+                 CONDUIT_ERROR("conduit::utils::format map_index " 
+                               << "(value = " << map_index  << ")"
+                               << " for '" << itr.name() << "'"
+                               << " list map entry "
+                               << " is out of bounds."
+                               << " Number of children = " 
+                               << curr.number_of_children()
+                               << ". Valid range is [0," 
+                               << curr.number_of_children() << ").");
+            }
+        }
+        else if(curr.dtype().is_number())
+        {            
+            if(map_index >= curr.dtype().number_of_elements())
+            {
+                 CONDUIT_ERROR("conduit::utils::format map_index " 
+                               << "(value = " << map_index  << ")"
+                               << " for '" << itr.name() << "'"
+                               << " array map entry "
+                               << " is out of bounds."
+                               << " Number of elements = " 
+                               << curr.dtype().number_of_elements()
+                               << ". Valid range is [0," 
+                               << curr.dtype().number_of_elements() << ").");
+            }
+        }
+
+        switch(curr.dtype().id())
+        {
+            /* ints */
+            case conduit::DataType::INT8_ID:
+            {
+                int8 val = curr.as_int8_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::INT16_ID:
+            {
+                int16 val = curr.as_int16_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::INT32_ID:
+            {
+                int32 val = curr.as_int32_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::INT64_ID:
+            {
+                int64 val = curr.as_int64_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            /* uints */
+            case conduit::DataType::UINT8_ID:
+            {
+                uint8 val = curr.as_uint8_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::UINT16_ID:
+            {
+                uint16 val = curr.as_uint16_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::UINT32_ID:
+            {
+                uint32 val = curr.as_uint32_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::UINT64_ID:
+            {
+                uint64 val = curr.as_uint64_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            /* floats */
+            case conduit::DataType::FLOAT32_ID:
+            {
+                float32 val = curr.as_float32_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            case conduit::DataType::FLOAT64_ID:
+            {
+                float64 val = curr.as_float64_ptr()[map_index];
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                break;
+            }
+            // support lists of strings ONLY ... 
+            case conduit::DataType::LIST_ID:
+            {
+                const Node &lst_ent = curr[map_index];
+                if(!lst_ent.dtype().is_string())
+                {
+                    CONDUIT_ERROR("conduit::utils::format (maps) only supports "
+                                  << " the list maps case for strings."
+                                  << "'" << itr.name() << "' entry at index "
+                                  << map_index << " type: "
+                                   << "`" << lst_ent.dtype().name() << "`.");
+                }
+
+                std::string val = lst_ent.as_string();
+                if(is_obj)
+                {
+                    store.push_back(conduit_fmt::arg(itr.name().c_str(),
+                                                     val));
+                }
+                else
+                {
+                    store.push_back(val);
+                }
+                
+                break;
+            }
+            default:
+            {
+                // ERROR --  object, string, or empty
+                CONDUIT_ERROR("conduit::utils::format (maps) does not support"
+                              << " `object`, `string, or `empty` Nodes"
+                              << " as arguments."
+                              << "'" << itr.name() << "' type: "
+                              << "`" << curr.dtype().name() << "`.");
+            }
+        }
+    }
+
+    std::string res = "";
+
+    try
+    {
+        res = conduit_fmt::vformat(pattern,store);
+    }
+    catch(const std::runtime_error& re)
+    {
+        CONDUIT_ERROR("conduit::utils::format error: "
+                      << "fmt error message:\n"
+                      << re.what());
+    }
+
+    return res;
+}
+
 
 //-----------------------------------------------------------------------------
 // String hash functions

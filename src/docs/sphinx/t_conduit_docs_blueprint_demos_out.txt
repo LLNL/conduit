@@ -31,7 +31,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_uniform")
 [/g/g19/ciurej1/projects/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'uniform'
-[       OK ] conduit_docs.blueprint_demo_basic_uniform (8 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_uniform (11 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_rectilinear
 BEGIN_EXAMPLE("blueprint_demo_basic_rectilinear")
 
@@ -55,7 +55,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_rectilinear")
 [/g/g19/ciurej1/projects/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'rectilinear'
-[       OK ] conduit_docs.blueprint_demo_basic_rectilinear (6 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_rectilinear (4 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_structured
 BEGIN_EXAMPLE("blueprint_demo_basic_structured")
 
@@ -83,7 +83,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_structured")
 [/g/g19/ciurej1/projects/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'structured'
-[       OK ] conduit_docs.blueprint_demo_basic_structured (6 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_structured (7 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_tris
 BEGIN_EXAMPLE("blueprint_demo_basic_tris")
 
@@ -137,7 +137,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_quads")
 [/g/g19/ciurej1/projects/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 67]
  Testing Basic Example 'quads'
-[       OK ] conduit_docs.blueprint_demo_basic_quads (6 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_quads (7 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_tets
 BEGIN_EXAMPLE("blueprint_demo_basic_tets")
 
@@ -288,9 +288,9 @@ fields:
     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
 
 END_EXAMPLE("blueprint_demo_basic_uniform_complete")
-[       OK ] conduit_docs.blueprint_demo_basic_uniform_complete (10 ms)
-[----------] 10 tests from conduit_docs (71 ms total)
+[       OK ] conduit_docs.blueprint_demo_basic_uniform_complete (7 ms)
+[----------] 10 tests from conduit_docs (74 ms total)
 
 [----------] Global test environment tear-down
-[==========] 10 tests from 1 test suite ran. (71 ms total)
+[==========] 10 tests from 1 test suite ran. (74 ms total)
 [  PASSED  ] 10 tests.

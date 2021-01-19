@@ -6,7 +6,8 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_python_exports.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_python_exports.h")
 
 # Specify the sources of the pure python and compiled portions of our module.
-SET(conduit_py_python_sources  py_src/__init__.py)
+SET(conduit_py_python_sources  py_src/__init__.py
+                                py_src/utils/__init__.py)
 
 SET(conduit_py_headers         conduit_python.hpp
                                ${CMAKE_CURRENT_BINARY_DIR}/conduit_python_exports.h)
@@ -28,6 +29,22 @@ PYTHON_ADD_HYBRID_MODULE(NAME          conduit_python
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_python conduit)
+
+
+#############################################################
+# conduit.utils
+#############################################################
+
+# add utils submodule
+PYTHON_ADD_COMPILED_MODULE(NAME          conduit_utils_python
+                           DEST_DIR      python-modules
+                           PY_MODULE_DIR conduit/utils
+                           SOURCES       conduit_utils_python.cpp
+                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_python_exports.h
+                           FOLDER        libs/python)
+
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_utils_python conduit)
 
 # install the capi header so other python modules can use it
 # support alt install dir for python module via PYTHON_MODULE_INSTALL_PREFIX
