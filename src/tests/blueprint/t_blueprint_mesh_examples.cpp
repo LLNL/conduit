@@ -497,7 +497,7 @@ void venn_test_small_yaml(const std::string &venn_type)
     if(hdf5_enabled)
     {
         relay::io::blueprint::save_mesh(res,
-                                        ofbase+ ".blueprint_root",
+                                        ofbase,
                                         "hdf5");
     }
 
@@ -534,7 +534,7 @@ void venn_test(const std::string &venn_type)
     if(hdf5_enabled)
     {
         relay::io::blueprint::save_mesh(res,
-                                        ofbase+ ".blueprint_root",
+                                        ofbase,
                                         "hdf5");
     }
 
