@@ -146,7 +146,7 @@ if(H5ZZFP_DIR)
     include(cmake/thirdparty/SetupH5zZfp.cmake)
     include_directories(${H5ZZFP_INCLUDE_DIR})
     # if we don't find h5z-zfp, throw a fatal error
-    if(NOT ZFP_FOUND)
+    if(NOT H5ZZFP_DIR)
         message(FATAL_ERROR "H5ZZFP_DIR is set, but h5z-zfp wasn't found.")
     endif()
 endif()
