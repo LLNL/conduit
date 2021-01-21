@@ -1,19 +1,3 @@
-
-# -------------------------------------------------------------------------
-# This file controls default concretization preferences for Spack.
-#
-# Settings here are versioned with Spack and are intended to provide
-# sensible defaults out of the box. Spack maintainers should edit this
-# file to keep it current.
-#
-# Users can override these settings by editing the following files.
-#
-# Per-spack-instance settings (overrides defaults):
-#   $SPACK_ROOT/etc/spack/packages.yaml
-#
-# Per-user settings (overrides default and site settings):
-#   ~/.spack/packages.yaml
-# -------------------------------------------------------------------------
 packages:
   all:
     variants: cuda_arch=60
@@ -42,28 +26,36 @@ packages:
   python:
     variants: ~dbm
   cmake:
-    paths:
-      cmake@3.14.5: /usr/tce/packages/cmake/cmake-3.14.5/
-    buildable: False
+    buildable: false
+    externals:
+    - prefix: /usr/tce/packages/cmake/cmake-3.14.5/
+      spec: cmake@3.14.5
     #modules:
     #  cmake@3.14.5: cmake/3.14.5
   perl:
-    buildable: False
-    paths:
-      perl: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: perl
   pkg-config:
-      buildable: False
-      paths:
-          pkg-config: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: pkg-config
 # LLNL toss3 CUDA
   cuda:
-    modules:
-       cuda@10.1.168: cuda/10.1.168
-    buildable: False
+    buildable: false
+    externals:
+    - modules:
+      - cuda/10.1.168
+      spec: cuda@10.1.168
 # LLNL toss3 mvapich2
   mvapich2:
-    paths:
-      mvapich2@2.2%gcc@4.9.3:  /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
-      mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
-      mvapich2@2.2%clang@4.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
-    buildable: False
+    buildable: false
+    externals:
+    - prefix: /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      spec: mvapich2@2.2%gcc@4.9.3
+    - prefix: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
+      spec: mvapich2@2.2%intel@17.0.0
+    - prefix: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
+      spec: mvapich2@2.2%clang@4.0.0

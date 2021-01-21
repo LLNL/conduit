@@ -28,6 +28,7 @@ set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_slab
                      t_relay_io_hdf5_opts)
 
+
 set(RELAY_ADIOS_TESTS t_relay_io_adios)
 set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios)
 set(RELAY_ZFP_TESTS t_relay_zfp)
@@ -62,7 +63,6 @@ if(HDF5_FOUND)
 else()
     message(STATUS "HDF5 disabled: Skipping conduit_relay hdf5 tests")
 endif()
-
 
 if(SILO_FOUND)
     message(STATUS "Silo enabled: Adding conduit_relay Silo unit tests")
