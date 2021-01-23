@@ -4,6 +4,7 @@ packages:
       mpi: [mpich]
       blas: [intel-mkl]
       lapack: [intel-mkl]
+      uuid: [util-linux-uuid, libuuid]
     compiler: [gcc@7.3.0]
     variants: +mpi~shared~python
   openssl:

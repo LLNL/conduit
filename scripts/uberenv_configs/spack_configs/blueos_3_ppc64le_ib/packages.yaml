@@ -20,6 +20,7 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       jpeg: [libjpeg-turbo, libjpeg]
+      uuid: [util-linux-uuid, libuuid]
   conduit:
     version: [develop]
 # LLNL blueos CUDA

@@ -4,6 +4,7 @@ packages:
     providers:
       blas: [netlib-lapack]
       lapack: [netlib-lapack]
+      uuid: [util-linux-uuid, libuuid]
   netlib-lapack:
     buildable: false
     externals:

@@ -28,6 +28,7 @@ packages:
       szip: [libszip, libaec]
       tbb: [intel-tbb]
       unwind: [libunwind]
+      uuid: [apple-libuuid]
     permissions:
       read: world
       write: user

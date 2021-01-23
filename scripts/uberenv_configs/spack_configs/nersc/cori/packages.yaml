@@ -5,6 +5,7 @@ packages:
       mpi: [mpich]
       blas: [intel-mkl, openblas]
       lapack: [intel-mkl, openblas]
+      uuid: [util-linux-uuid, libuuid]
     variants: +mpi
   mpich:
     version: [7.7.0]

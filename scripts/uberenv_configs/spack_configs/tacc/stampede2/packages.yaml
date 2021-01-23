@@ -9,6 +9,7 @@ packages:
       - intel-mkl
       lapack:
       - intel-mkl
+      uuid: [util-linux-uuid, libuuid]
   mvapich2:
     buildable: false
     externals:
