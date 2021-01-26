@@ -125,3 +125,77 @@ TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo)
     }
 
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo_matset_values)
+{
+    const int nx = 4, ny = 4;
+    const double radius = 0.25;
+
+    Node mset_silo_baseline;
+    
+    // all of these cases should create the same silo output
+    // we diff the 2 and 3 cases with the 1 to test this
+
+    CONDUIT_INFO("venn full to silo");
+    {
+        Node mesh;
+        blueprint::mesh::examples::venn("full", nx, ny, radius, mesh);
+        const Node &mset = mesh["matsets/matset"];
+        const Node &mset_values_area = mesh["fields/area/matset_values"];
+
+        std::cout << mset.to_yaml() << std::endl;
+        std::cout << mset_values_area.to_yaml() << std::endl;
+
+        Node mset_silo;
+        blueprint::mesh::matset::to_silo(mset,
+                                         mset_values_area,
+                                         mset_silo);
+        std::cout << mset_silo.to_yaml() << std::endl;
+
+        mset_silo_baseline.set(mset_silo);
+    }
+
+    CONDUIT_INFO("venn sparse_by_material to silo");
+    {
+        Node mesh, info;
+        blueprint::mesh::examples::venn("sparse_by_material", nx, ny, radius, mesh);
+        const Node &mset = mesh["matsets/matset"];
+        const Node &mset_values_area = mesh["fields/area/matset_values"];
+
+        std::cout << mset.to_yaml() << std::endl;
+        std::cout << mset_values_area.to_yaml() << std::endl;
+
+        Node mset_silo;
+        blueprint::mesh::matset::to_silo(mset,
+                                         mset_values_area,
+                                         mset_silo);
+        std::cout << mset_silo.to_yaml() << std::endl;
+
+        EXPECT_FALSE(mset_silo.diff(mset_silo_baseline,info));
+    }
+
+    CONDUIT_INFO("venn sparse_by_element to silo");
+    {
+        Node mesh, info;
+        blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh);
+        const Node &mset = mesh["matsets/matset"];
+        const Node &mset_values_area = mesh["fields/area/matset_values"];
+
+        std::cout << mset.to_yaml() << std::endl;
+        std::cout << mset_values_area.to_yaml() << std::endl;
+
+        Node mset_silo;
+        blueprint::mesh::matset::to_silo(mset,
+                                         mset_values_area,
+                                         mset_silo);
+
+
+        std::cout << mset_silo.to_yaml() << std::endl;
+
+        EXPECT_FALSE(mset_silo.diff(mset_silo_baseline,info));
+    }
+
+}
+

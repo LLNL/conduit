@@ -414,7 +414,19 @@ namespace matset
     // For details about the silo format, see documentation for 
     // 'DBPutMaterial' at:
     // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
-    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &n,
+    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &matset,
+                                       conduit::Node &dest,
+                                       const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
+    // Given a blueprint matset and matset_values for a field, converts the
+    // matset values to the silo style sparse mixed slot representation.
+    //
+    // For details about the silo format, see documentation for 
+    // 'DBPutZZZVar' methods `mixvar` / `mixlen` params at:
+    // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
+    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &matset,
+                                       const conduit::Node &matset_values,
                                        conduit::Node &dest,
                                        const float64 epsilon = CONDUIT_EPSILON);
 
