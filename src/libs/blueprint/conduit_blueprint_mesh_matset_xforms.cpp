@@ -433,7 +433,7 @@ to_silo(const conduit::Node &matset,
                 blueprint::o2mrelation::O2MIterator o2m_iter(o2m);
                 for(index_t o2m_index = 0; o2m_iter.has_next(); o2m_index++)
                 {
-                    const index_t mat_itr_index = mat_iter.next();
+                    const index_t o2m_access_index = o2m_iter.next();
 
                     // if material dominant:
                     //  we use indirection array to find the element index.
@@ -460,7 +460,7 @@ to_silo(const conduit::Node &matset,
                     {
                         temp.set_external(
                           DataType(matset_values_data.dtype().id(), 1),
-                          (void*)matset_values_data.element_ptr(mat_itr_index));
+                          (void*)matset_values_data.element_ptr(o2m_access_index));
                         const float64 curr_matset_value  = temp.to_float64();
                         elem_matset_values_maps[mat_elem][mat_id] = curr_matset_value;
                     }
