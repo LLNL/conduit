@@ -4681,7 +4681,7 @@ mesh::matset::index::verify(const Node &matset_idx,
     res &= verify_string_field(protocol, matset_idx, info, "topology");
 
     // 2021-1-29 cyrush:
-    // prefer new "material_map" index spec, vs old materials
+    // prefer new "material_map" index spec, vs old "materials"
     if(matset_idx.has_child("material_map"))
     {
         res &= verify_object_field(protocol, matset_idx, info, "material_map");

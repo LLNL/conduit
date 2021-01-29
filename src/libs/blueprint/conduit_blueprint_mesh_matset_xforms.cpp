@@ -139,7 +139,13 @@ namespace detail
 //-----------------------------------------------------------------------------
 // Single implementation that supports the case where just matset
 // is passed, and the case where the field is passed.
-
+//
+// This is in the detail name space b/c the calling convention is a little
+// strange:
+//   empty field  node -- first arg, triggers one path, non empty another
+//
+// We smooth this out for the API by providing the non detail variants,
+// which error when passed empty nodes.
 //-----------------------------------------------------------------------------
 void
 to_silo(const conduit::Node &field,
@@ -152,13 +158,12 @@ to_silo(const conduit::Node &field,
                                             blueprint::mesh::default_int_dtypes);
     const DataType float_dtype = find_widest_dtype2(matset,
                                             blueprint::mesh::default_float_dtype);
-
-    // TODO:
-    // matset_values data type
-
     // if matset_values is not empty, we will
     // apply the same xform to it as we do to the volume fractions.
     const bool xform_matset_values = field.has_child("matset_values");
+
+    // NOTE: matset values are always treated as a float64.
+    // we could map to the widest int or float type in the future.
 
     // Extract Material Set Metadata //
     const bool mset_is_unibuffer = blueprint::mesh::matset::is_uni_buffer(matset);
@@ -191,17 +196,6 @@ to_silo(const conduit::Node &field,
 
             mat_index++;
         }
-    
-        // // for other cases, we sort the material names to give a
-        // // consistent order
-        // std::vector<std::string> mat_vec = matset["volume_fractions"].child_names();
-        // std::sort(mat_vec.begin(), mat_vec.end());
-        // for(int64 mat_index = 0; mat_index < (index_t)mat_vec.size(); mat_index++)
-        // {
-        //     const std::string &mat_name = mat_vec[mat_index];
-        //     temp.set_external(DataType::int64(1), &mat_index);
-        //     temp.to_data_type(int_dtype.id(), matset_mat_map[mat_name]);
-        // }
     }
     
     const Node mset_mat_map(matset_mat_map);
@@ -584,7 +578,15 @@ to_silo(const conduit::Node &matset,
         conduit::Node &dest,
         const float64 epsilon)
 {
+    // extra seat belt here b/c we want to avoid folks entering
+    // the detail version of to_silo with surprising results. 
 
+    if(!matset.dtype().is_object() )
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::to_silo passed matset node"
+                      " must be a valid matset tree.");
+    }
+    
     conduit::Node field;
 
     detail::to_silo(field,
@@ -615,6 +617,21 @@ to_silo(const conduit::Node &field,
         conduit::Node &dest,
         const float64 epsilon)
 {
+    // extra seat belts here b/c we want to avoid folks entering
+    // the detail version of to_silo with surprising results.
+
+    if(!field.dtype().is_object() )
+    {
+        CONDUIT_ERROR("blueprint::mesh::field::to_silo passed field node"
+                      " must be a valid matset tree.");
+    }
+
+    if(!matset.dtype().is_object() )
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::to_silo passed matset node"
+                      " must be a valid matset tree.");
+    }
+
     conduit::blueprint::mesh::matset::detail::to_silo(field,
                                                       matset,
                                                       dest,
