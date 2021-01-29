@@ -1705,6 +1705,7 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
             CHECK_MESH(verify_matset_index,mindex,info,true);
         }
 
+        if(mindex.has_child("materials"))
         { // Materials Field Tests //
             mindex.remove("materials");
             CHECK_MESH(verify_matset_index,mindex,info,false);
@@ -1715,6 +1716,20 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
             mindex["materials/mat1"].set(1);
             CHECK_MESH(verify_matset_index,mindex,info,true);
             mindex["materials/mat2"].set(2);
+            CHECK_MESH(verify_matset_index,mindex,info,true);
+        }
+
+        if(mindex.has_child("material_maps"))
+        { // Materials Field Tests //
+            mindex.remove("material_map");
+            CHECK_MESH(verify_matset_index,mindex,info,false);
+
+            mindex["material_map"];
+            CHECK_MESH(verify_matset_index,mindex,info,false);
+
+            mindex["material_map/mat1"].set(1);
+            CHECK_MESH(verify_matset_index,mindex,info,true);
+            mindex["material_map/mat2"].set(2);
             CHECK_MESH(verify_matset_index,mindex,info,true);
         }
 

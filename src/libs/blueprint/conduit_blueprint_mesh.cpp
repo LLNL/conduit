@@ -2670,17 +2670,16 @@ mesh::generate_index(const Node &mesh,
             idx_matset["topology"] = matset["topology"].as_string();
 
             // support different flavors of valid matset protos
+            //
+            // if we have material_map (node with names to ids)
+            // use it in the index
             if(matset.has_child("material_map"))
             {
-                NodeConstIterator mats_itr = matset["material_map"].children();
-                while(mats_itr.has_next())
-                {
-                    mats_itr.next();
-                    idx_matset["materials"][mats_itr.name()];
-                }
+                idx_matset["material_map"] = matset["material_map"];
             }
             else if(matset.has_child("materials"))
             {
+                // NOTE: I believe path is deprecated ... 
                 NodeConstIterator mats_itr = matset["materials"].children();
                 while(mats_itr.has_next())
                 {
@@ -2690,11 +2689,16 @@ mesh::generate_index(const Node &mesh,
             }
             else if(matset.has_child("volume_fractions"))
             {
+                // we don't have material_map (node with names to ids)
+                // so mapping is implied from node order, construct
+                // an actual map that follows the implicit order
                 NodeConstIterator mats_itr = matset["volume_fractions"].children();
+                index_t mat_id = 0;
                 while(mats_itr.has_next())
                 {
                     mats_itr.next();
-                    idx_matset["materials"][mats_itr.name()];
+                    idx_matset["material_map"][mats_itr.name()] = mat_id;
+                    mat_id ++;
                 }
             }
             else // surprise!
@@ -4675,7 +4679,18 @@ mesh::matset::index::verify(const Node &matset_idx,
     // performed on the "materials" field.
 
     res &= verify_string_field(protocol, matset_idx, info, "topology");
-    res &= verify_object_field(protocol, matset_idx, info, "materials");
+
+    // 2021-1-29 cyrush:
+    // prefer new "material_map" index spec, vs old materials
+    if(matset_idx.has_child("material_map"))
+    {
+        res &= verify_object_field(protocol, matset_idx, info, "material_map");
+    }
+    else
+    {
+        res &= verify_object_field(protocol, matset_idx, info, "materials");
+    }
+
     res &= verify_string_field(protocol, matset_idx, info, "path");
 
     log::validation(info, res);

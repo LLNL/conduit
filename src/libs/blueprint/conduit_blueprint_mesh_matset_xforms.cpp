@@ -130,25 +130,20 @@ namespace matset
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void
-to_silo(const conduit::Node &matset,
-        conduit::Node &dest,
-        const float64 epsilon)
+// -- begin conduit::blueprint::mesh::matset::detail --
+//-----------------------------------------------------------------------------
+namespace detail
 {
+//-----------------------------------------------------------------------------
 
-    conduit::Node matset_values;
-
-    to_silo(matset,
-            matset_values,
-            dest,
-            epsilon);
-}
+//-----------------------------------------------------------------------------
+// Single implementation that supports the case where just matset
+// is passed, and the case where the field is passed.
 
 //-----------------------------------------------------------------------------
 void
-to_silo(const conduit::Node &matset,
-        //  mesh/field/matset_values entry
-        const conduit::Node &matset_values,
+to_silo(const conduit::Node &field,
+        const conduit::Node &matset,
         conduit::Node &dest,
         const float64 epsilon)
 {
@@ -158,9 +153,12 @@ to_silo(const conduit::Node &matset,
     const DataType float_dtype = find_widest_dtype2(matset,
                                             blueprint::mesh::default_float_dtype);
 
+    // TODO:
+    // matset_values data type
+
     // if matset_values is not empty, we will
     // apply the same xform to it as we do to the volume fractions.
-    const bool xform_matset_values = !matset_values.dtype().is_empty();
+    const bool xform_matset_values = field.has_child("matset_values");
 
     // Extract Material Set Metadata //
     const bool mset_is_unibuffer = blueprint::mesh::matset::is_uni_buffer(matset);
@@ -169,23 +167,41 @@ to_silo(const conduit::Node &matset,
     // setup the material map, which provides a map from material names
     // to to material numbers
     Node matset_mat_map;
-    if(mset_is_unibuffer)
+    
+    // mset_is_unibuffer will always have the material_map, other cases
+    // it is optional. If not given, the map from material names to ids
+    // is implied by the order the materials are presented in the matset node
+    if(matset.has_child("material_map") )
     {
         // uni-buffer case provides the map we are looking for
         matset_mat_map.set_external(matset["material_map"]);
     }
     else // if(!mset_is_unibuffer)
     {
-        // for other cases, we sort the material names to give a 
-        // consistent order
-        std::vector<std::string> mat_vec = matset["volume_fractions"].child_names();
-        std::sort(mat_vec.begin(), mat_vec.end());
-        for(int64 mat_index = 0; mat_index < (index_t)mat_vec.size(); mat_index++)
+        // material_map is implied, construct it here for use and output
+        NodeConstIterator vf_itr = matset["volume_fractions"].children();
+        index_t mat_index = 0;
+        while(vf_itr.has_next())
         {
-            const std::string &mat_name = mat_vec[mat_index];
+            vf_itr.next();
+            std::string curr_mat_name = vf_itr.name();
+
             temp.set_external(DataType::int64(1), &mat_index);
-            temp.to_data_type(int_dtype.id(), matset_mat_map[mat_name]);
+            temp.to_data_type(int_dtype.id(), matset_mat_map[curr_mat_name]);
+
+            mat_index++;
         }
+    
+        // // for other cases, we sort the material names to give a
+        // // consistent order
+        // std::vector<std::string> mat_vec = matset["volume_fractions"].child_names();
+        // std::sort(mat_vec.begin(), mat_vec.end());
+        // for(int64 mat_index = 0; mat_index < (index_t)mat_vec.size(); mat_index++)
+        // {
+        //     const std::string &mat_name = mat_vec[mat_index];
+        //     temp.set_external(DataType::int64(1), &mat_index);
+        //     temp.to_data_type(int_dtype.id(), matset_mat_map[mat_name]);
+        // }
     }
     
     const Node mset_mat_map(matset_mat_map);
@@ -290,6 +306,7 @@ to_silo(const conduit::Node &matset,
                 // process matset values if passed and convert it to a float64
                 if(xform_matset_values)
                 {
+                    const Node matset_values = field["matset_values"];
                     temp.set_external(
                         DataType(matset_values.dtype().id(), 1),
                         (void*)matset_values.element_ptr(mat_ind_index));
@@ -394,7 +411,7 @@ to_silo(const conduit::Node &matset,
         /// this requires another o2m traversal
         if(xform_matset_values)
         {
-            NodeConstIterator matset_values_iter = matset_values.children();
+            NodeConstIterator matset_values_iter = field["matset_values"].children();
             while(matset_values_iter.has_next())
             {
                 const Node& curr_node = matset_values_iter.next();
@@ -490,7 +507,11 @@ to_silo(const conduit::Node &matset,
 
     if(xform_matset_values)
     {
-        dest["mixvar_values"].set(DataType(float_dtype.id(), mset_num_slots));
+        dest["field_mixvar_values"].set(DataType(float_dtype.id(), mset_num_slots));
+        if(field.has_child("values"))
+        {
+            dest["field_values"].set(field["values"]);
+        }
     }
 
     for(index_t elem_index = 0, slot_index = 0; elem_index < mset_num_elems; elem_index++)
@@ -524,7 +545,7 @@ to_silo(const conduit::Node &matset,
                 if(xform_matset_values)
                 {
                     temp.set(elem_matset_values_maps[elem_index][zone_mix_mat.first]);
-                    data.set_external(float_dtype, dest["mixvar_values"].element_ptr(next_slot_index));
+                    data.set_external(float_dtype, dest["field_mixvar_values"].element_ptr(next_slot_index));
                     temp.to_data_type(float_dtype.id(), data);
                 }
 
@@ -551,11 +572,60 @@ to_silo(const conduit::Node &matset,
     }
 }
 
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::matset::detail --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+void
+to_silo(const conduit::Node &matset,
+        conduit::Node &dest,
+        const float64 epsilon)
+{
+
+    conduit::Node field;
+
+    detail::to_silo(field,
+                    matset,
+                    dest,
+                    epsilon);
+}
+
+
 //-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::matset --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::matset --
+//-----------------------------------------------------------------------------
+namespace field
+{
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void
+to_silo(const conduit::Node &field,
+        const conduit::Node &matset,
+        conduit::Node &dest,
+        const float64 epsilon)
+{
+    conduit::blueprint::mesh::matset::detail::to_silo(field,
+                                                      matset,
+                                                      dest,
+                                                      epsilon);
+}
+
+//-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::field --
 //-----------------------------------------------------------------------------
 
 }

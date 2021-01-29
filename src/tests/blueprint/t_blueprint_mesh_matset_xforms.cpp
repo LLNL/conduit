@@ -142,16 +142,17 @@ TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo_matset_values)
     {
         Node mesh;
         blueprint::mesh::examples::venn("full", nx, ny, radius, mesh);
+        const Node &field = mesh["fields/mat_check"];
         const Node &mset = mesh["matsets/matset"];
-        const Node &mset_values_area = mesh["fields/area/matset_values"];
 
         std::cout << mset.to_yaml() << std::endl;
-        std::cout << mset_values_area.to_yaml() << std::endl;
+        std::cout << field.to_yaml() << std::endl;
 
         Node mset_silo;
-        blueprint::mesh::matset::to_silo(mset,
-                                         mset_values_area,
+        blueprint::mesh::field::to_silo(field,
+                                         mset,
                                          mset_silo);
+
         std::cout << mset_silo.to_yaml() << std::endl;
 
         mset_silo_baseline.set(mset_silo);
@@ -161,16 +162,18 @@ TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo_matset_values)
     {
         Node mesh, info;
         blueprint::mesh::examples::venn("sparse_by_material", nx, ny, radius, mesh);
+        const Node &field = mesh["fields/mat_check"];
         const Node &mset = mesh["matsets/matset"];
-        const Node &mset_values_area = mesh["fields/area/matset_values"];
+
 
         std::cout << mset.to_yaml() << std::endl;
-        std::cout << mset_values_area.to_yaml() << std::endl;
+        std::cout << field.to_yaml() << std::endl;
 
         Node mset_silo;
-        blueprint::mesh::matset::to_silo(mset,
-                                         mset_values_area,
+        blueprint::mesh::field::to_silo(field,
+                                         mset,
                                          mset_silo);
+
         std::cout << mset_silo.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_silo.diff(mset_silo_baseline,info));
@@ -180,17 +183,17 @@ TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo_matset_values)
     {
         Node mesh, info;
         blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh);
+        const Node &field = mesh["fields/mat_check"];
         const Node &mset = mesh["matsets/matset"];
-        const Node &mset_values_area = mesh["fields/area/matset_values"];
+
 
         std::cout << mset.to_yaml() << std::endl;
-        std::cout << mset_values_area.to_yaml() << std::endl;
+        std::cout << field.to_yaml() << std::endl;
 
         Node mset_silo;
-        blueprint::mesh::matset::to_silo(mset,
-                                         mset_values_area,
-                                         mset_silo);
-
+        blueprint::mesh::field::to_silo(field,
+                                        mset,
+                                        mset_silo);
 
         std::cout << mset_silo.to_yaml() << std::endl;
 

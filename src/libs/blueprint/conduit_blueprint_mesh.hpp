@@ -419,18 +419,6 @@ namespace matset
                                        const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
-    // Given a blueprint matset and matset_values for a field, converts the
-    // matset values to the silo style sparse mixed slot representation.
-    //
-    // For details about the silo format, see documentation for 
-    // 'DBPutZZZVar' methods `mixvar` / `mixlen` params at:
-    // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
-    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &matset,
-                                       const conduit::Node &matset_values,
-                                       conduit::Node &dest,
-                                       const float64 epsilon = CONDUIT_EPSILON);
-
-    //-------------------------------------------------------------------------
     // blueprint::mesh::matset::index protocol interface
     //-------------------------------------------------------------------------
     namespace index
@@ -452,6 +440,19 @@ namespace field
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    // Given a blueprint field and matset, converts the matset and the field
+    // values + matset_values to the silo style sparse mixed slot
+    // representation.
+    //
+    // For details about the silo format, see documentation for 
+    // 'DBPutZZZVar' methods `mixvar` / `mixlen` params at:
+    // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
+    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &field,
+                                       const conduit::Node &matset,
+                                       conduit::Node &dest,
+                                       const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::field::index protocol interface
