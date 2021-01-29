@@ -2693,12 +2693,10 @@ mesh::generate_index(const Node &mesh,
                 // so mapping is implied from node order, construct
                 // an actual map that follows the implicit order
                 NodeConstIterator mats_itr = matset["volume_fractions"].children();
-                index_t mat_id = 0;
                 while(mats_itr.has_next())
                 {
                     mats_itr.next();
-                    idx_matset["material_map"][mats_itr.name()] = mat_id;
-                    mat_id ++;
+                    idx_matset["material_map"][mats_itr.name()] = mats_itr.index();
                 }
             }
             else // surprise!
@@ -4516,12 +4514,48 @@ mesh::topology::shape::verify(const Node &shape,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// helper to verify a matset material_map
+//-----------------------------------------------------------------------------
+bool verify_matset_material_map(const std::string &protocol,
+                                const conduit::Node &matset,
+                                conduit::Node &info)
+{
+    bool res = verify_object_field(protocol, matset, info, "material_map");
+
+    if(res)
+    {
+        // we already know we have an object, children should be 
+        // integer scalars
+        NodeConstIterator itr = matset["material_map"].children();
+        while(itr.has_next())
+        {
+            const Node &curr_child = itr.next();
+            if(!curr_child.dtype().is_integer())
+            {
+                log::error(info,
+                           protocol,
+                           log::quote("material_map") +
+                           "child " +
+                           log::quote(itr.name()) +
+                           " is not an integer leaf.");
+                res = false;
+            }
+        }
+    }
+
+    log::validation(info, res);
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
 bool
 mesh::matset::verify(const Node &matset,
                      Node &info)
 {
     const std::string protocol = "mesh::matset";
     bool res = true, vfs_res = true;
+    bool mat_map_is_optional = true;
     info.reset();
 
     res &= verify_string_field(protocol, matset, info, "topology");
@@ -4539,12 +4573,12 @@ mesh::matset::verify(const Node &matset,
             verify_number_field(protocol, matset, info, "volume_fractions"))
         {
             log::info(info, protocol, "detected uni-buffer matset");
+            // materials_map is not optional in this case, signal
+            // for opt check down the line
+            mat_map_is_optional = false;
 
             vfs_res &= verify_integer_field(protocol, matset, info, "material_ids");
-            // TODO(JRC): Add a more in-depth verifier for 'material_map' that
-            // verifies that it's one level deep and that each child child houses
-            // an integer-style array.
-            vfs_res &= verify_object_field(protocol, matset, info, "material_map");
+            vfs_res &= verify_matset_material_map(protocol,matset,info);
             vfs_res &= blueprint::o2mrelation::verify(matset, info);
 
             res &= vfs_res;
@@ -4575,6 +4609,27 @@ mesh::matset::verify(const Node &matset,
 
             res &= vfs_res;
             log::validation(vfs_info, vfs_res);
+        }
+    }
+
+    if(mat_map_is_optional && matset.has_child("material_map"))
+    {
+        log::optional(info, protocol, "includes material_map");
+        res &= verify_matset_material_map(protocol,matset,info);
+
+        // for cases where vfs are an object, we expect the material_map names to match
+        if(matset.has_child("volume_fractions") &&
+           matset["volume_fractions"].dtype().is_object())
+        {
+            const std::vector<std::string> &vf_mats  = matset["volume_fractions"].child_names();
+            const std::vector<std::string> &map_mats = matset["material_map"].child_names();
+            const std::set<std::string> vf_matset(vf_mats.begin(), vf_mats.end());
+            const std::set<std::string> map_matset(map_mats.begin(), map_mats.end());
+            if(vf_matset != map_matset)
+            {
+                log::error(info, protocol, "'material_map' hierarchy must match 'volume_fractions'");
+                res &= false;
+            }
         }
     }
 
@@ -4684,7 +4739,7 @@ mesh::matset::index::verify(const Node &matset_idx,
     // prefer new "material_map" index spec, vs old "materials"
     if(matset_idx.has_child("material_map"))
     {
-        res &= verify_object_field(protocol, matset_idx, info, "material_map");
+        res &= verify_matset_material_map(protocol,matset_idx,info);
     }
     else
     {

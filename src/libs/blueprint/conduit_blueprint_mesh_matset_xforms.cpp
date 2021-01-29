@@ -185,16 +185,12 @@ to_silo(const conduit::Node &field,
     {
         // material_map is implied, construct it here for use and output
         NodeConstIterator vf_itr = matset["volume_fractions"].children();
-        index_t mat_index = 0;
         while(vf_itr.has_next())
         {
             vf_itr.next();
             std::string curr_mat_name = vf_itr.name();
-
-            temp.set_external(DataType::int64(1), &mat_index);
+            temp.set(vf_itr.index());
             temp.to_data_type(int_dtype.id(), matset_mat_map[curr_mat_name]);
-
-            mat_index++;
         }
     }
     

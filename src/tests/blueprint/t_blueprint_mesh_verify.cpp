@@ -216,6 +216,17 @@ bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
 
 #define CHECK_MESH(verify, n, info, expected)    \
 {                                                \
+                                                 \
+    if(verify(n, info) != expected)              \
+    {                                            \
+        std::cout << "[verify test failed!]\n"   \
+                  << "[expected result: "        \
+                  << expected << "]\n"           \
+                  << "[details:]\n";             \
+        n.print();                               \
+        info.print();                            \
+    }                                            \
+                                                 \
     EXPECT_EQ(verify(n, info), expected);        \
     EXPECT_TRUE(has_consistent_validity(info));  \
 }                                                \
@@ -1051,6 +1062,25 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 n["offsets"].set(DataType::uint32(5));
                 CHECK_MESH(verify_matset,n,info,true);
                 CHECK_MATSET(n,is_uni_buffer,is_element_dominant);
+
+                //--------------------------------------//
+                // check for bad material_maps
+                //--------------------------------------//
+
+                // - bad material_maps - //
+
+                //  not an object (empty)
+                n["material_map"].reset();
+                CHECK_MESH(verify_matset,n,info,false);
+
+                //  not an object (leaf)
+                n["material_map"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // child leaves not an integer
+                n["material_map"].reset();
+                n["material_map/m1"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
             }
 
             { // Multi-Buffer Tests //
@@ -1078,6 +1108,48 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 n["volume_fractions"]["m4"]["test"]["values"].set(DataType::uint32(3));
                 CHECK_MESH(verify_matset,n,info,false);
                 n["volume_fractions"]["m4"]["indices"].set(DataType::uint32(5));
+                CHECK_MESH(verify_matset,n,info,false);
+                
+                // make sure we are in good shape for opt material_map checks
+                n["volume_fractions"].remove("m4");
+                CHECK_MESH(verify_matset,n,info,true);
+
+                //--------------------------------------//
+                // check for optional use of material_map
+                //--------------------------------------//
+
+                // - good material_map - //
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = 1;
+                n["material_map/m3"] = 2;
+
+                CHECK_MESH(verify_matset,n,info,true);
+
+                // - bad material_maps - //
+
+                //  not an object (empty)
+                n["material_map"].reset();
+                CHECK_MESH(verify_matset,n,info,false);
+
+                //  not an object (leaf)
+                n["material_map"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // child leaves not an integer
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = "bananas";
+                n["material_map/m3"] = "mangoes";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // material_map ents don't match vfs
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = 1;
+                n["material_map/m3"] = 2;
+                n["material_map/m4"] = 4;
+
                 CHECK_MESH(verify_matset,n,info,false);
             }
 
@@ -1110,6 +1182,42 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 CHECK_MESH(verify_matset,n,info,true);
                 CHECK_MATSET(n,is_multi_buffer,is_material_dominant);
 
+                //--------------------------------------//
+                // check for optional use of material_map
+                //--------------------------------------//
+
+                // - good material_map - //
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = 1;
+                CHECK_MESH(verify_matset,n,info,true);
+
+                // - bad material_maps - //
+
+                //  not an object (empty)
+                n["material_map"].reset();
+                CHECK_MESH(verify_matset,n,info,false);
+
+                //  not an object (leaf)
+                n["material_map"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // child leaves not an integer
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = "bananas";
+                n["material_map/m3"] = "mangoes";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // material_map ents don't match vfs
+                n["material_map"].reset();
+                n["material_map/banana"] = 0;
+                n["material_map/mango"] = 1;
+                CHECK_MESH(verify_matset,n,info,false);
+
+
+                n.remove("material_map");
+
                 // Uni-Buffer Volume Fractions //
                 n["volume_fractions"].reset();
                 n["volume_fractions"].set(DataType::float64(5));
@@ -1127,6 +1235,34 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 n["element_ids"].set(DataType::int32(5));
                 CHECK_MESH(verify_matset,n,info,true);
                 CHECK_MATSET(n,is_uni_buffer,is_material_dominant);
+                
+                //--------------------------------------//
+                // check for optional use of material_map
+                //--------------------------------------//
+
+                // - good material_map - //
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = 1;
+                CHECK_MESH(verify_matset,n,info,true);
+
+                // - bad material_maps - //
+
+                //  not an object (empty)
+                n["material_map"].reset();
+                CHECK_MESH(verify_matset,n,info,false);
+
+                //  not an object (leaf)
+                n["material_map"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // child leaves not an integer
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = "bananas";
+                n["material_map/m3"] = "mangoes";
+                CHECK_MESH(verify_matset,n,info,false);
+
             }
 
             n.reset();
