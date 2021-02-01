@@ -679,8 +679,8 @@ TEST(conduit_array, fill)
     va_uint32.fill((uint32) 1);
     va_uint64.fill((uint32) 1);
 
-    va_float32.fill((int32) 1.0);
-    va_float64.fill((int32) 1.0);
+    va_float32.fill((float32) 1.0);
+    va_float64.fill((float64) 1.0);
 
     n.print();
 
