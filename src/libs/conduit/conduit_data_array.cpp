@@ -1066,6 +1066,133 @@ DataArray<T>::set(const std::initializer_list<double> &values)
 //---------------------------------------------------------------------------//
 
 
+
+//-----------------------------------------------------------------------------
+// fill
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+/// signed integer fill
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::fill(int8 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(int16 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(int32 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(int64 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+/// unsigned integer fill
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::fill(uint8 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(uint16 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(uint32 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(uint64 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+/// floating point fill
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::fill(float32 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(float64 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
 //---------------------------------------------------------------------------//
 // assign operator overloads for initializer_list
 //---------------------------------------------------------------------------//

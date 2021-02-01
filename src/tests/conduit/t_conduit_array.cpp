@@ -604,6 +604,105 @@ TEST(conduit_array, print_bells_and_whistles)
     std::cout << std::endl;
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_array, fill)
+{
+    int num_ele = 5;
+
+    std::vector<int8>  v_int8(num_ele,-8);
+    std::vector<int16> v_int16(num_ele,-16);
+    std::vector<int32> v_int32(num_ele,-32);
+    std::vector<int64> v_int64(num_ele,-64);
+
+    std::vector<uint8>  v_uint8(num_ele,8);
+    std::vector<uint16> v_uint16(num_ele,16);
+    std::vector<uint32> v_uint32(num_ele,32);
+    std::vector<uint64> v_uint64(num_ele,64);
+
+    std::vector<float32>  v_float32(num_ele,32.0);
+    std::vector<float64>  v_float64(num_ele,64.0);
+
+    Node n;
+    n["v_int8"].set(v_int8);
+    n["v_int16"].set(v_int16);
+    n["v_int32"].set(v_int32);
+    n["v_int64"].set(v_int64);
+
+    n["v_uint8"].set(v_uint8);
+    n["v_uint16"].set(v_uint16);
+    n["v_uint32"].set(v_uint32);
+    n["v_uint64"].set(v_uint64);
+
+    n["v_float32"].set(v_float32);
+    n["v_float64"].set(v_float64);
+
+    n.print();
+
+    int8_array   va_int8  = n["v_int8"].value();
+    int16_array  va_int16 = n["v_int16"].value();
+    int32_array  va_int32 = n["v_int32"].value();
+    int64_array  va_int64 = n["v_int64"].value();
+
+    uint8_array  va_uint8  = n["v_uint8"].value();
+    uint16_array va_uint16 = n["v_uint16"].value();
+    uint32_array va_uint32 = n["v_uint32"].value();
+    uint64_array va_uint64 = n["v_uint64"].value();
+
+    float32_array va_float32 = n["v_float32"].value();
+    float64_array va_float64 = n["v_float64"].value();
+
+    for(size_t i=0;i<num_ele; i++)
+    {
+        EXPECT_NE(va_int8[i],-1);
+        EXPECT_NE(va_int16[i],-1);
+        EXPECT_NE(va_int32[i],-1);
+        EXPECT_NE(va_int64[i],-1);
+
+        EXPECT_NE(va_uint8[i],1);
+        EXPECT_NE(va_uint16[i],1);
+        EXPECT_NE(va_uint32[i],1);
+        EXPECT_NE(va_uint64[i],1);
+
+        EXPECT_NE(va_float32[i],1.0);
+        EXPECT_NE(va_float64[i],1.0);
+    }
+
+
+    // not all combos of src to dest, but all combos of src.
+    va_int8.fill((int8)   -1);
+    va_int16.fill((int16) -1);
+    va_int32.fill((int32) -1);
+    va_int64.fill((int32) -1);
+
+    va_uint8.fill((uint8)   1);
+    va_uint16.fill((uint16) 1);
+    va_uint32.fill((uint32) 1);
+    va_uint64.fill((uint32) 1);
+
+    va_float32.fill((float32) 1.0);
+    va_float64.fill((float64) 1.0);
+
+    n.print();
+
+    for(size_t i=0;i<num_ele; i++)
+    {
+        EXPECT_EQ(va_int8[i],-1);
+        EXPECT_EQ(va_int16[i],-1);
+        EXPECT_EQ(va_int32[i],-1);
+        EXPECT_EQ(va_int64[i],-1);
+
+        EXPECT_EQ(va_uint8[i],1);
+        EXPECT_EQ(va_uint16[i],1);
+        EXPECT_EQ(va_uint32[i],1);
+        EXPECT_EQ(va_uint64[i],1);
+
+        EXPECT_EQ(va_float32[i],1.0);
+        EXPECT_EQ(va_float64[i],1.0);
+    }
+
+}
+
+
 
 //-----------------------------------------------------------------------------
 #ifdef CONDUIT_USE_CXX11
@@ -1320,5 +1419,8 @@ TEST(conduit_array, cxx_11_init_lists)
 //-----------------------------------------------------------------------------
 #endif // end CONDUIT_USE_CXX11
 //-----------------------------------------------------------------------------
+
+
+
 
 
