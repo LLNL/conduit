@@ -682,6 +682,236 @@ void to_polygonal(const Node &n,
 
 
 //-----------------------------------------------------------------------------
+
+void match_nbr_elems(PolyBndry& pbnd,
+    std::map<int, blueprint::mesh::connectivity::ElemType> nbr_elems,
+                const Node& ref_topo,
+                const Node& ref_win,
+                const Node& nbr_win,
+                int64_t nbr_iwidth, int64_t nbr_jwidth,
+                int64_t ni_lo, int64_t nj_lo, int64_t nk_lo,
+                int64_t ratio_i, int64_t ratio_j, int64_t ratio_k)
+{
+    int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
+    int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+    int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
+
+    int64_t ri_lo = ref_topo["elements/origin/i0"].as_int64();
+    int64_t rj_lo = ref_topo["elements/origin/j0"].as_int64();
+    int64_t rk_lo = ref_topo["elements/origin/k0"].as_int64();
+
+    int64_t ref_iwidth = ref_topo["elements/dims/i"].as_int64();
+    int64_t ref_jwidth = ref_topo["elements/dims/j"].as_int64();
+
+    int64_t ref_origin_i = ref_win["origin/i"].as_int64();
+    int64_t ref_origin_j = ref_win["origin/j"].as_int64();
+    int64_t ref_origin_k = ref_win["origin/k"].as_int64();
+
+    int64_t origin_i = nbr_win["origin/i"].as_int64();
+    int64_t origin_j = nbr_win["origin/j"].as_int64();
+    int64_t origin_k = nbr_win["origin/k"].as_int64();
+
+    int side = pbnd.side;
+
+    if (side == 0 || side == 1)
+    {
+        int nside = (side+1)%2;     //nbr side counterpart to  ref side
+        int64_t shift = -(nside%2); //0 on low side, -1 on high side
+        int64_t icnst = origin_i - ni_lo + shift;
+        int64_t jstart = origin_j;
+        int64_t jend = jstart + nbr_size_j - 1;
+        int64_t kstart = origin_k;
+        int64_t kend = kstart + nbr_size_k - 1;
+
+        int64_t rshift = -(side%2); 
+        int64_t ricnst = ref_origin_i - ri_lo + rshift;
+
+        for (int64_t kidx = kstart; kidx < kend; ++kidx)
+        {
+            int64_t rkidx = kidx/ratio_k;
+            int64_t nk = kidx - nk_lo;
+            int64_t rk = rkidx - rk_lo;
+            int64_t nkoffset = icnst + nk*nbr_iwidth*nbr_jwidth;
+            int64_t rkoffset = ricnst + rk*ref_iwidth*ref_jwidth;
+            for (int64_t jidx = jstart; jidx < jend; ++jidx)
+            {
+                int64_t rjidx = jidx/ratio_j;
+                int64_t nj = jidx - nj_lo;
+                int64_t rj = rjidx - rj_lo;
+                int64_t noffset = nkoffset + nj*nbr_iwidth;
+                int64_t roffset = rkoffset + rj*ref_iwidth;
+
+                pbnd.m_nbr_elems[roffset].push_back(noffset);
+
+                auto& nbr_elem = nbr_elems[noffset];
+                pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                    nside == 0 ?
+                    nbr_elem[0] :
+                    nbr_elem[1];
+            }
+        }
+    }
+    else if (side == 2 || side == 3)
+    {
+        int nside = (side+1)%2;     //nbr side counterpart to  ref side
+        int64_t shift = -(nside%2); //0 on low side, -1 on high side
+        int64_t jcnst = origin_j - nj_lo + shift;
+        int64_t istart = origin_i;
+        int64_t iend = istart + nbr_size_i - 1;
+        int64_t kstart = origin_k;
+        int64_t kend = kstart + nbr_size_k - 1;
+
+        int64_t rshift = -(side%2); 
+        int64_t rjcnst = ref_origin_j - rj_lo + rshift;
+
+        for (int64_t kidx = kstart; kidx < kend; ++kidx)
+        {
+            int64_t rkidx = kidx/ratio_k;
+            int64_t nk = kidx - nk_lo;
+            int64_t rk = rkidx - rk_lo;
+            int64_t nkoffset = nk*nbr_iwidth*nbr_jwidth;
+            int64_t rkoffset = rk*ref_iwidth*ref_jwidth;
+            for (int64_t iidx = istart; iidx < iend; ++iidx)
+            {
+                int64_t riidx = iidx/ratio_i;
+                int64_t ni = iidx - ni_lo;
+                int64_t ri = riidx - ri_lo;
+                int64_t noffset = nkoffset + jcnst*nbr_iwidth + ni;
+                int64_t roffset = rkoffset + rjcnst*ref_iwidth + ri;
+
+                pbnd.m_nbr_elems[roffset].push_back(noffset);
+                auto& nbr_elem = nbr_elems[noffset];
+                pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                    nside == 2 ?
+                    nbr_elem[2] :
+                    nbr_elem[3];
+            }
+        }
+    }
+    else if (side == 4 || side == 5)
+    {
+        int nside = (side+1)%2;     //nbr side counterpart to  ref side
+        int64_t shift = -(nside%2); //0 on low side, -1 on high side
+        int64_t kcnst = origin_k - nk_lo + shift;
+        int64_t jstart = origin_j;
+        int64_t jend = jstart + nbr_size_j - 1;
+        int64_t istart = origin_i;
+        int64_t iend = istart + nbr_size_i - 1;
+
+        int64_t rshift = -(side%2); 
+        int64_t rkcnst = ref_origin_k - rk_lo + rshift;
+
+        for (int64_t jidx = jstart; jidx < jend; ++jidx)
+        {
+            int64_t rjidx = jidx/ratio_j;
+            int64_t nj = jidx - nj_lo;
+            int64_t rj = rjidx - rj_lo;
+            int64_t njoffset = kcnst*nbr_iwidth*nbr_jwidth + nj*nbr_iwidth;
+            int64_t rjoffset = rkcnst*ref_iwidth*ref_jwidth + rj*ref_iwidth;
+            for (int64_t iidx = istart; iidx < iend; ++iidx)
+            {
+                int64_t riidx = iidx/ratio_i;
+                int64_t ni = iidx - ni_lo;
+                int64_t ri = riidx - ri_lo;
+                int64_t noffset = njoffset + ni;
+                int64_t roffset = rjoffset + ri;
+
+                pbnd.m_nbr_elems[roffset].push_back(noffset);
+                auto& nbr_elem = nbr_elems[noffset];
+                pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                    nside == 4 ?
+                    nbr_elem[4] :
+                    nbr_elem[5];
+            }
+        }
+    }
+    else
+    {
+        //not a side
+    }
+
+    if (side == 0 || side == 1)
+    {
+        int64_t icnst = origin_i - ni_lo;
+        int64_t jstart = origin_j;
+        int64_t jend = jstart + nbr_size_j;
+        int64_t kstart = origin_k;
+        int64_t kend = kstart + nbr_size_k;
+
+        int64_t nbr_viwidth = nbr_iwidth+1;
+        int64_t nbr_vjwidth = nbr_jwidth+1;
+
+
+        for (int64_t kidx = kstart; kidx < kend; ++kidx) {
+            if (kidx % ratio_k == 0)
+            {
+                for (int64_t jidx = jstart; jidx < jend; ++jidx) {
+                    if (jidx % ratio_j == 0)
+                    {
+                        int64_t npnt = icnst + jidx*nbr_viwidth +
+                                       kidx*nbr_viwidth*nbr_vjwidth;
+                        pbnd.m_shared_fine.insert(npnt);
+                    }
+                }
+            }
+        }
+    }
+    else if (side == 2 || side == 3)
+    {
+        int64_t jcnst = origin_j - nj_lo;
+        int64_t istart = origin_i;
+        int64_t iend = istart + nbr_size_i;
+        int64_t kstart = origin_k;
+        int64_t kend = kstart + nbr_size_k;
+
+        int64_t nbr_viwidth = nbr_iwidth+1;
+        int64_t nbr_vjwidth = nbr_jwidth+1;
+
+        for (int64_t kidx = kstart; kidx < kend; ++kidx) {
+            if (kidx % ratio_k == 0)
+            {
+                for (int64_t iidx = istart; iidx < iend; ++iidx) {
+                    if (iidx % ratio_i == 0)
+                    {
+                        int64_t npnt = iidx + jcnst*nbr_viwidth +
+                                       kidx*nbr_viwidth*nbr_vjwidth;
+                        pbnd.m_shared_fine.insert(npnt);
+                    }
+                }
+            }
+        }
+    }
+    else if (side == 4 || side == 5)
+    {
+        int64_t kcnst = origin_k - nk_lo;
+        int64_t istart = origin_i;
+        int64_t iend = istart + nbr_size_i;
+        int64_t jstart = origin_j;
+        int64_t jend = jstart + nbr_size_j;
+
+        int64_t nbr_viwidth = nbr_iwidth+1;
+        int64_t nbr_vjwidth = nbr_jwidth+1;
+
+        for (int64_t jidx = jstart; jidx < jend; ++jidx) {
+            if (jidx % ratio_j == 0)
+            {
+                for (int64_t iidx = istart; iidx < iend; ++iidx) {
+                    if (iidx % ratio_i == 0)
+                    {
+                        int64_t npnt = iidx +jidx*nbr_viwidth +
+                                       kcnst*nbr_viwidth*nbr_vjwidth;
+                        pbnd.m_shared_fine.insert(npnt);
+                    }
+                }
+            }
+        }
+    } 
+    else
+    {
+       //not a side
+    }
+}
+
 void to_polyhedral(const Node &n,
                          Node &dest,
                          const std::string& name)
@@ -689,12 +919,19 @@ void to_polyhedral(const Node &n,
 
     dest.reset();
 
+    int64_t par_rank = relay::mpi::rank(MPI_COMM_WORLD);
+
     NodeConstIterator itr = n.children();
 
-    std::map<int, std::map<int, blueprint::mesh::connectivity::PolyElemType> > poly_elems_map;
-    std::map<int, std::map<int, std::vector<int64_t> > > ifaces_map;
-    std::map<int, std::map<int, std::vector<int64_t> > > jfaces_map;
-    std::map<int, std::map<int, std::vector<int64_t> > > kfaces_map;
+    std::map<int, std::map<int, blueprint::mesh::connectivity::ElemType> > poly_elems_map;
+    std::map<int, blueprint::mesh::connectivity::SubelemMap> allfaces_map;
+
+    std::map<int, std::vector<int64_t> > elem_connect;
+    std::map<int, std::vector<int64_t> > elem_sizes;
+    std::map<int, std::vector<int64_t> > elem_offsets;
+    std::map<int, std::vector<int64_t> > subelem_connect;
+    std::map<int, std::vector<int64_t> > subelem_sizes;
+    std::map<int, std::vector<int64_t> > subelem_offsets;
 
     while(itr.has_next())
     {
@@ -724,9 +961,7 @@ void to_polyhedral(const Node &n,
         }
 
         auto& poly_elems = poly_elems_map[domain_id];
-        auto& ifaces = ifaces_map[domain_id];
-        auto& jfaces = jfaces_map[domain_id];
-        auto& kfaces = kfaces_map[domain_id];
+        auto& allfaces = allfaces_map[domain_id];
 
         int64_t elemsize = iwidth*jwidth*kwidth;
 
@@ -735,65 +970,688 @@ void to_polyhedral(const Node &n,
             blueprint::mesh::connectivity::make_element_3d(
                     poly_elems[elem], elem,
                     iwidth, jwidth, kwidth,
-                    ifaces, jfaces, kfaces);
+                    allfaces);
         }
+    }
 
-        std::vector<int64_t> elem_connect;
-        std::vector<int64_t> elem_sizes;
-        std::vector<int64_t> elem_offsets;
-        std::vector<int64_t> subelem_connect;
-        std::vector<int64_t> subelem_sizes;
-        std::vector<int64_t> subelem_offsets;
+    itr = n.children();
+    while(itr.has_next())
+    {
+        const Node& chld = itr.next();
+        std::string domain_name = itr.name();
+
+        int64_t domain_id = chld["state/domain_id"].as_int64();
+
+        const Node& in_topo = chld["topologies"][name];
+
+        const Node* in_parent = chld.parent();
+
+        std::ostringstream win_oss;
+        win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
+        std::string win_name = win_oss.str();
+
+        if (chld.has_path("adjsets/adjset/groups"))
+        {
+            const Node& in_groups = chld["adjsets/adjset/groups"];
+            NodeConstIterator grp_itr = in_groups.children();
+            while(grp_itr.has_next())
+            {
+                const Node& group = grp_itr.next();
+                if (group.has_child("neighbors") && group.has_child("windows"))
+                {
+                    int64_array neighbors = group["neighbors"].as_int64_array();
+
+                    int64_t nbr_id = neighbors[1];
+                    const Node& in_windows = group["windows"];
+                    std::ostringstream nw_oss;
+                    nw_oss << "window_" << std::setw(6)
+                            << std::setfill('0') << nbr_id;
+                    std::string nbr_win_name = nw_oss.str();
+
+                    const Node& ref_win = in_windows[win_name];
+                    const Node& nbr_win = in_windows[nbr_win_name];
+
+                    if (nbr_win["level_id"].as_int64() < ref_win["level_id"].as_int64())
+                    {
+                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size_k = ref_win["dims/k"].as_int64();
+                        int64_t ref_size = ref_size_i*ref_size_j*ref_size_k;
+
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
+                        int64_t nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
+
+                        if (nbr_size < ref_size)
+                        {
+                            std::ostringstream nbr_oss;
+                            nbr_oss << "domain_" << std::setw(6)
+                                    << std::setfill('0') << nbr_id;
+                            std::string nbr_name = nbr_oss.str();
+
+                            bool is_side = true;
+                            if (nbr_size_i * nbr_size_j == 1 ||
+                                nbr_size_i * nbr_size_k == 1 ||
+                                nbr_size_j * nbr_size_k == 1)
+                            {
+                                is_side = false;
+                            }
+
+                            if (is_side && !in_parent->has_child(nbr_name))
+                            {
+                                int64_t buffer[5];
+                                buffer[0] = in_topo["elements/dims/i"].as_int64();
+                                buffer[1] = in_topo["elements/dims/j"].as_int64();
+                                buffer[2] = in_topo["elements/origin/i0"].as_int64();
+                                buffer[3] = in_topo["elements/origin/j0"].as_int64();
+                                buffer[4] = in_topo["elements/origin/k0"].as_int64();
+
+                                int64_t nbr_rank = group["rank"].as_int64();
+                                MPI_Send(buffer,
+                                         5,
+                                         MPI_INT64_T,
+                                         nbr_rank,
+                                         domain_id,
+                                         MPI_COMM_WORLD);
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //Outer map: domain_id, inner map: nbr_id to PolyBndry
+    std::map<int, std::map<int, PolyBndry> > poly_bndry_map;
+
+    itr = n.children();
+    while(itr.has_next())
+    {
+        const Node& chld = itr.next();
+        std::string domain_name = itr.name();
+
+        int64_t domain_id = chld["state/domain_id"].as_int64();
+
+        auto& poly_elems = poly_elems_map[domain_id];
+
+        const Node& in_topo = chld["topologies"][name];
+
+        int64_t iwidth = in_topo["elements/dims/i"].as_int64();
+        int64_t jwidth = in_topo["elements/dims/j"].as_int64();
+
+        int64_t i_lo = in_topo["elements/origin/i0"].as_int64();
+        int64_t j_lo = in_topo["elements/origin/j0"].as_int64();
+        int64_t k_lo = in_topo["elements/origin/k0"].as_int64();
+
+        const Node* in_parent = chld.parent();
+
+        std::ostringstream win_oss;
+        win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
+        std::string win_name = win_oss.str();
+
+        if (chld.has_path("adjsets/adjset/groups"))
+        {
+            const Node& in_groups = chld["adjsets/adjset/groups"];
+            NodeConstIterator grp_itr = in_groups.children();
+            while(grp_itr.has_next())
+            {
+                const Node& group = grp_itr.next();
+
+                if (group.has_child("neighbors") && group.has_child("windows"))
+                {
+                    int64_array neighbors = group["neighbors"].as_int64_array();
+
+                    int64_t nbr_id = neighbors[1];
+                    const Node& in_windows = group["windows"];
+                    std::ostringstream nw_oss;
+                    nw_oss << "window_" << std::setw(6)
+                            << std::setfill('0') << nbr_id;
+                    std::string nbr_win_name = nw_oss.str();
+
+                    const Node& ref_win = in_windows[win_name];
+                    const Node& nbr_win = in_windows[nbr_win_name];
+                    if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
+                    {
+                        int64_t ratio_i = nbr_win["ratio/i"].as_int64();
+                        int64_t ratio_j = nbr_win["ratio/j"].as_int64();
+                        int64_t ratio_k = nbr_win["ratio/k"].as_int64();
+
+                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size_k = ref_win["dims/k"].as_int64();
+                        int64_t ref_size = ref_size_i*ref_size_j*ref_size_k;
+
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
+                        int64_t nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
+
+                        if (nbr_size > ref_size)
+                        {
+                            int64_t origin_i = ref_win["origin/i"].as_int64();
+                            int64_t origin_j = ref_win["origin/j"].as_int64();
+                            int64_t origin_k = ref_win["origin/k"].as_int64();
+
+                            PolyBndry& pbnd = poly_bndry_map[domain_id][nbr_id];
+
+                            if (ref_size_i == 1 && ref_size_j != 1 &&
+                                ref_size_k != 1)
+                            {
+                                int64_t shift = 0;
+                                if (origin_i == i_lo)
+                                {
+                                    pbnd.side = 0;
+                                }
+                                else
+                                {
+                                    pbnd.side = 1;
+                                    shift = -1;
+                                }
+                                int64_t icnst = origin_i - i_lo + shift;
+                                int64_t jstart = origin_j - j_lo;
+                                int64_t jend = jstart + ref_size_j - 1;
+                                int64_t kstart = origin_k - k_lo;
+                                int64_t kend = kstart + ref_size_k - 1;
+                                for (int64_t kidx = kstart; kidx < kend; ++kidx)
+                                    {
+                                    int64_t koffset = icnst + kidx*iwidth*jwidth;
+                                    for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                    {
+                                        int64_t offset = koffset + jidx*iwidth;
+                                        pbnd.m_elems.push_back(offset);
+                                        pbnd.m_bface[offset] =
+                                            pbnd.side == 0 ?
+                                            poly_elems[offset][0] :
+                                            poly_elems[offset][1];
+                                    }
+                                }
+                            }
+                            else if (ref_size_j == 1 && ref_size_i != 1 &&
+                                     ref_size_k != 1)
+                            {
+                                int64_t shift = 0;
+                                if (origin_j == j_lo)
+                                {
+                                    pbnd.side = 2;
+                                }
+                                else
+                                {
+                                    pbnd.side = 3;
+                                    shift = -1;
+                                }
+                                int64_t jcnst = origin_j - j_lo + shift;
+                                int64_t istart = origin_i - i_lo;
+                                int64_t iend = istart + ref_size_i - 1;
+                                int64_t kstart = origin_k - k_lo;
+                                int64_t kend = kstart + ref_size_k - 1;
+                                for (int64_t kidx = kstart; kidx < kend; ++kidx)
+                                {
+                                    int64_t koffset = jcnst*jwidth + kidx*iwidth*jwidth;
+                                    for (int64_t iidx = istart; iidx < iend; ++iidx)
+                                    {
+                                        int64_t offset = koffset + iidx;
+                                        pbnd.m_elems.push_back(offset);
+                                        pbnd.m_bface[offset] =
+                                            pbnd.side == 2 ?
+                                            poly_elems[offset][2] :
+                                            poly_elems[offset][3];
+                                    }
+                                }
+                            }
+                            else if (ref_size_k == 1 && ref_size_i != 1 &&
+                                     ref_size_j != 1)
+                            {
+                                int64_t shift = 0; 
+                                if (origin_k == k_lo)
+                                {
+                                    pbnd.side = 4;
+                                }
+                                else
+                                {
+                                    pbnd.side = 5;
+                                    shift = -1;
+                                }
+                                int64_t kcnst = origin_k - k_lo + shift;
+                                int64_t istart = origin_i - i_lo;
+                                int64_t iend = istart + ref_size_i - 1;
+                                int64_t jstart = origin_j - j_lo;
+                                int64_t jend = jstart + ref_size_j - 1;
+                                for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                {
+                                    int64_t joffset = jidx*iwidth + kcnst*iwidth*jwidth;
+                                    for (int64_t iidx = istart; iidx < iend; ++iidx)
+                                    {
+                                        int64_t offset = joffset + iidx;
+                                        pbnd.m_elems.push_back(offset);
+                                        pbnd.m_bface[offset] =
+                                            pbnd.side == 4 ?
+                                            poly_elems[offset][4] :
+                                            poly_elems[offset][5];
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                pbnd.side = -1;
+                            }
+
+
+                            std::ostringstream nbr_oss;
+                            nbr_oss << "domain_" << std::setw(6)
+                                    << std::setfill('0') << nbr_id;
+                            std::string nbr_name = nbr_oss.str();
+
+                            if (!in_parent->has_child(nbr_name))
+                            {
+                                if (pbnd.side >= 0)
+                                {
+                                    int64_t nbr_rank = group["rank"].as_int64();
+                                    int64_t buffer[5];
+
+                                    MPI_Recv(buffer,
+                                             5,
+                                             MPI_INT64_T,
+                                             nbr_rank,
+                                             nbr_id,
+                                             MPI_COMM_WORLD,
+                                             MPI_STATUS_IGNORE);
+
+                                    int64_t nbr_iwidth = buffer[0]; 
+                                    int64_t nbr_jwidth = buffer[1];
+                                    int64_t ni_lo = buffer[2]; 
+                                    int64_t nj_lo = buffer[3]; 
+                                    int64_t nk_lo = buffer[4]; 
+
+                                    auto& nbr_elems = poly_elems_map[nbr_id];
+
+                                    pbnd.m_nbr_rank = nbr_rank;
+                                    pbnd.m_nbr_id = nbr_id;
+                                    match_nbr_elems(pbnd, nbr_elems, in_topo,
+                                                    ref_win, nbr_win,
+                                                    nbr_iwidth, nbr_jwidth,
+                                                    ni_lo, nj_lo, nk_lo,
+                                                    ratio_i,ratio_j,ratio_k);
+                                }
+
+                            }
+                            else
+                            {
+                                const Node& nbr_dom =
+                                   (*in_parent)[nbr_name];
+
+                                const Node& ntopo =
+                                   nbr_dom["topologies"][name];
+
+                                int64_t ni_lo = ntopo["elements/origin/i0"].as_int64();
+                                int64_t nj_lo = ntopo["elements/origin/j0"].as_int64();
+                                int64_t nk_lo = ntopo["elements/origin/k0"].as_int64();
+
+                                int64_t nbr_iwidth =
+                                   ntopo["elements/dims/i"].as_int64();
+                                int64_t nbr_jwidth =
+                                   ntopo["elements/dims/j"].as_int64();
+
+                                auto& nbr_elems = poly_elems_map[nbr_id];
+
+                                if (pbnd.side >= 0)
+                                {
+                                    pbnd.m_nbr_rank = par_rank;
+                                    pbnd.m_nbr_id = nbr_id;
+                                    match_nbr_elems(pbnd, nbr_elems, in_topo,
+                                                    ref_win, nbr_win,
+                                                    nbr_iwidth, nbr_jwidth,
+                                                    ni_lo, nj_lo, nk_lo,
+                                                    ratio_i,ratio_j,ratio_k);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    std::map<int64_t, std::map<int64_t, std::map<int64_t,int64_t> > > dom_to_nbr_to_buffidx;
+    std::map<int64_t, std::map<int64_t, std::vector<double> > > dom_to_nbr_to_xbuffer;
+    std::map<int64_t, std::map<int64_t, std::vector<double> > > dom_to_nbr_to_ybuffer;
+    std::map<int64_t, std::map<int64_t, std::vector<double> > > dom_to_nbr_to_zbuffer;
+
+    itr = n.children();
+    while(itr.has_next())
+    {
+        const Node& chld = itr.next();
+        std::string domain_name = itr.name();
+
+        int64_t domain_id = chld["state/domain_id"].as_int64();
+
+        std::ostringstream win_oss;
+        win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
+        std::string win_name = win_oss.str();
+
+        const Node* in_parent = chld.parent();
+
+        auto& nbr_to_buffidx = dom_to_nbr_to_buffidx[domain_id];
+        auto& nbr_to_xbuffer = dom_to_nbr_to_xbuffer[domain_id];
+        auto& nbr_to_ybuffer = dom_to_nbr_to_ybuffer[domain_id];
+        auto& nbr_to_zbuffer = dom_to_nbr_to_zbuffer[domain_id];
+
+        if (chld.has_path("adjsets/adjset/groups"))
+        {
+            const Node& in_groups = chld["adjsets/adjset/groups"];
+            NodeConstIterator grp_itr = in_groups.children();
+            while(grp_itr.has_next())
+            {
+                const Node& group = grp_itr.next();
+
+                if (group.has_child("neighbors") && group.has_child("windows"))
+                {
+                    int64_array neighbors = group["neighbors"].as_int64_array();
+
+                    int nbr_id = neighbors[1];
+                    const Node& in_windows = group["windows"];
+                    std::ostringstream nw_oss;
+                    nw_oss << "window_" << std::setw(6)
+                            << std::setfill('0') << nbr_id;
+                    std::string nbr_win_name = nw_oss.str();
+
+                    const Node& ref_win = in_windows[win_name];
+                    const Node& nbr_win = in_windows[nbr_win_name];
+                    if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
+                    {
+                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
+                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
+                        int64_t ref_size_k = ref_win["dims/k"].as_int64();
+                        int64_t ref_size = ref_size_i*ref_size_j*ref_size_k;
+
+                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
+                        int64_t nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
+
+                        if (nbr_size > ref_size)
+                        {
+                            auto& buffidx = nbr_to_buffidx[nbr_id];
+                            auto& xbuffer = nbr_to_xbuffer[nbr_id];
+                            auto& ybuffer = nbr_to_ybuffer[nbr_id];
+                            auto& zbuffer = nbr_to_zbuffer[nbr_id];
+
+                            std::ostringstream nbr_oss;
+                            nbr_oss << "domain_" << std::setw(6)
+                                    << std::setfill('0') << nbr_id;
+                            std::string nbr_name = nbr_oss.str();
+
+                            if (!in_parent->has_child(nbr_name))
+                            {
+                            }
+                            else
+                            {
+                                const Node& nbr_dom =
+                                   (*in_parent)[nbr_name];
+                                const Node& nbr_coords =
+                                   nbr_dom["coordsets/coords"];
+
+                                const Node& ntopo =
+                                   nbr_dom["topologies"][name];
+                                int64_t ni_lo =
+                                   ntopo["elements/origin/i0"].as_int64();
+                                int64_t nj_lo =
+                                   ntopo["elements/origin/j0"].as_int64();
+                                int64_t nk_lo =
+                                   ntopo["elements/origin/k0"].as_int64();
+                                int64_t nbr_iwidth =
+                                   ntopo["elements/dims/i"].as_int64() + 1;
+                                int64_t nbr_jwidth =
+                                   ntopo["elements/dims/j"].as_int64() + 1;
+
+                                const Node& fcoords =
+                                   nbr_coords["values"];
+                                const double_array& xarray =
+                                   fcoords["x"].as_double_array();
+                                const double_array& yarray =
+                                   fcoords["y"].as_double_array();
+                                const double_array& zarray =
+                                   fcoords["z"].as_double_array();
+
+                                int64_t origin_i = nbr_win["origin/i"].as_int64();
+                                int64_t origin_j = nbr_win["origin/j"].as_int64();
+                                int64_t origin_k = nbr_win["origin/k"].as_int64();
+
+                                int64_t istart = origin_i - ni_lo;
+                                int64_t jstart = origin_j - nj_lo;
+                                int64_t kstart = origin_k - nk_lo;
+                                int64_t iend = istart + nbr_size_i;
+                                int64_t jend = jstart + nbr_size_j;
+                                int64_t kend = jstart + nbr_size_k;
+                                for (int64_t kidx = kstart; kidx < kend; ++kidx)
+                                {
+                                    int64_t koffset = kidx*nbr_iwidth*nbr_jwidth;
+                                    for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                    {
+                                        int64_t joffset = jidx*nbr_iwidth;
+                                        for (int64_t iidx = istart; iidx < iend; ++iidx)
+                                        {
+                                            int64_t offset = koffset+joffset+iidx;
+                                            buffidx[offset] = xbuffer.size();
+                                            xbuffer.push_back(xarray[offset]);
+                                            ybuffer.push_back(yarray[offset]);
+                                            zbuffer.push_back(zarray[offset]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    itr = n.children();
+    while(itr.has_next())
+    {
+        const Node& chld = itr.next();
+        std::string domain_name = itr.name();
+
+        int64_t domain_id = chld["state/domain_id"].as_int64();
+
+        auto& poly_elems = poly_elems_map[domain_id];
+        auto& allfaces = allfaces_map[domain_id];
+
+        auto& nbr_to_buffidx = dom_to_nbr_to_buffidx[domain_id];
+        auto& nbr_to_xbuffer = dom_to_nbr_to_xbuffer[domain_id];
+        auto& nbr_to_ybuffer = dom_to_nbr_to_ybuffer[domain_id];
+        auto& nbr_to_zbuffer = dom_to_nbr_to_zbuffer[domain_id];
+
+        if (poly_bndry_map.find(domain_id) != poly_bndry_map.end())
+        {
+            //std::map<int64_t, PolyBndry>
+            auto& bndries = poly_bndry_map[domain_id];
+            for (auto bitr = bndries.begin(); bitr != bndries.end(); ++bitr)
+            {
+                //One PolyBndry for each fine neighbor
+                PolyBndry& pbnd = bitr->second;
+                int64_t nbr_id = pbnd.m_nbr_id; //domain id of nbr.
+                auto& nbr_faces = allfaces_map[nbr_id];
+
+                auto& buffidx = nbr_to_buffidx[nbr_id];
+                auto& xbuffer = nbr_to_xbuffer[nbr_id];
+                auto& ybuffer = nbr_to_ybuffer[nbr_id];
+                auto& zbuffer = nbr_to_zbuffer[nbr_id];
+
+//                std::vector<int64_t> face_verts;
+                std::map<int64_t, std::map<int64_t, std::vector<int64_t> > >fv_map;
+                //Map from domain elems that touch neighbor to  
+                //vector holding the neighbor elems
+                auto& nbr_elems = pbnd.m_nbr_elems;
+                for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr) 
+                {
+                    //offset for a single domain elem
+                    int64_t ref_offset = eitr->first;
+
+                    //Holds neighbor elem offsets
+                    std::vector<int64_t>& nbrs = eitr->second;
+                    size_t num_nbrs = nbrs.size();
+                    for (size_t n = 0; n < num_nbrs; ++n)
+                    {
+                        int64_t nbr_elem = nbrs[n];
+                        //nbr_face is subelem offset for the face of
+                        //nbr_elem touching the boundary
+                        int64_t nbr_face = pbnd.m_nbr_faces[ref_offset][nbr_elem].m_face_id;
+                        //face_subelem holds the vertices for the nbr_face
+                        auto& face_subelem = nbr_faces[nbr_face];
+                        //subelem at ref/nbr interface
+                        fv_map[ref_offset][nbr_face] = face_subelem;
+                    }
+                }
+
+                //Above:: replace face_verts with some kind of map
+                //from coarse subelems to its fine subelems;
+                //
+                //Below:: map from coarse subelems to xyz values.
+
+                std::ostringstream nbr_oss;
+                nbr_oss << "domain_" << std::setw(6)
+                        << std::setfill('0') << nbr_id;
+                std::string nbr_name = nbr_oss.str();
+
+                std::map<int64_t, std::map< int64_t, std::vector<double> > > xv_map;
+                std::map<int64_t, std::map< int64_t, std::vector<double> > > yv_map;
+                std::map<int64_t, std::map< int64_t, std::vector<double> > > zv_map;
+                //loop over fv_map, fill xyz doubles into these maps
+                for (auto fitr = fv_map.begin(); fitr != fv_map.end(); ++fitr)
+                {
+                    int64_t ref_offset = fitr->first;
+                    auto& xnbrs = xv_map[ref_offset];
+                    auto& ynbrs = yv_map[ref_offset];
+                    auto& znbrs = zv_map[ref_offset];
+
+                    auto& nbrs = fitr->second;
+                    for (auto nitr = nbrs.begin(); nitr != nbrs.end(); ++nitr)
+                    {
+                        int64_t nbr_face = nitr->first;
+                        auto& xv = xnbrs[nbr_face];
+                        auto& yv = ynbrs[nbr_face];
+                        auto& zv = znbrs[nbr_face];
+
+                        auto& verts = nitr->second;
+                        for (auto vitr = verts.begin(); vitr != verts.end(); ++vitr)
+                        {
+                            int64_t idx = buffidx[*vitr];
+                            xv.push_back(xbuffer[idx]);
+                            yv.push_back(ybuffer[idx]);
+                            zv.push_back(zbuffer[idx]);
+                        }
+                    }
+                }
+
+                //Get map_subelem, the coarse face touching the boundary.
+                //Need to change it to new subelems.
+                for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr)
+                {
+                    int64_t ref_offset = eitr->first;
+                    blueprint::mesh::connectivity::ElemType& ref_elem =
+                        poly_elems[ref_offset];
+//                    int64_t ref_face = ref_elem[pbnd.side];
+//                    auto& map_subelem = allfaces[ref_face];
+//                    map_subelem.push_back(-32);
+
+                    auto& nbr_subelems = fv_map[ref_offset];
+                    int64_t new_offset = allfaces.size();
+                    size_t num_nbrs = nbr_subelems.size();
+                    for (size_t nb = 0; nb < num_nbrs; ++nb)
+                    {
+                        std::vector<int64_t> new_face;
+//                        new_face.push_back(-64);
+                        allfaces[new_offset] = new_face;
+                        ref_elem.push_back(new_offset);
+                        ++new_offset;
+                    }
+                }
+            }
+        }
+    }
+
+
+    itr = n.children();
+    while(itr.has_next())
+    {
+        const Node& chld = itr.next();
+        std::string domain_name = itr.name();
+
+        int64_t domain_id = chld["state/domain_id"].as_int64();
+
+        const Node& in_topo = chld["topologies"][name];
+
+        int64_t iwidth = in_topo["elements/dims/i"].as_int64();
+        int64_t jwidth = in_topo["elements/dims/j"].as_int64();
+        int64_t kwidth = in_topo["elements/dims/k"].as_int64();
+
+        auto& poly_elems = poly_elems_map[domain_id];
+        auto& allfaces = allfaces_map[domain_id];
+
+        int64_t elemsize = iwidth*jwidth*kwidth;
+
+        std::vector<int64_t>& e_connect = elem_connect[domain_id];
+        std::vector<int64_t>& e_sizes = elem_sizes[domain_id];
+        std::vector<int64_t>& e_offsets = elem_offsets[domain_id];
+        std::vector<int64_t>& sub_connect = subelem_connect[domain_id];
+        std::vector<int64_t>& sub_sizes = subelem_sizes[domain_id];
+        std::vector<int64_t>& sub_offsets = subelem_offsets[domain_id];
         int64_t elem_offset_sum = 0;
         int64_t subelem_offset_sum = 0;
         for (int elem = 0; elem < elemsize; ++elem)
         {
-            auto& poly_elem = poly_elems[elem].m_elems;
-            elem_connect.insert(elem_connect.end(), poly_elem.begin(), poly_elem.end());
-            elem_sizes.push_back(poly_elem.size());
-            elem_offsets.push_back(elem_offset_sum);
-            elem_offset_sum += elem_sizes.back();
+            auto& poly_elem = poly_elems[elem];
+            e_connect.insert(e_connect.end(), poly_elem.begin(), poly_elem.end());
+            e_sizes.push_back(poly_elem.size());
+            e_offsets.push_back(elem_offset_sum);
+            elem_offset_sum += e_sizes.back();
         }
-        for (auto if_itr = ifaces.begin(); if_itr != ifaces.end(); ++if_itr)
+        for (auto if_itr = allfaces.begin(); if_itr != allfaces.end(); ++if_itr)
         {
             auto& if_elem = if_itr->second;
-            subelem_connect.insert(subelem_connect.end(), if_elem.begin(), if_elem.end());
-            subelem_sizes.push_back(if_elem.size());
-            subelem_offsets.push_back(subelem_offset_sum);
-            subelem_offset_sum += subelem_sizes.back();
+            sub_connect.insert(sub_connect.end(), if_elem.begin(), if_elem.end());
+            sub_sizes.push_back(if_elem.size());
+            sub_offsets.push_back(subelem_offset_sum);
+            subelem_offset_sum += sub_sizes.back();
         }
-        for (auto jf_itr = jfaces.begin(); jf_itr != jfaces.end(); ++jf_itr)
-        {
-            auto& jf_elem = jf_itr->second;
-            subelem_connect.insert(subelem_connect.end(), jf_elem.begin(), jf_elem.end());
-            subelem_sizes.push_back(jf_elem.size());
-            subelem_offsets.push_back(subelem_offset_sum);
-            subelem_offset_sum += subelem_sizes.back();
-        }
-        for (auto kf_itr = kfaces.begin(); kf_itr != kfaces.end(); ++kf_itr)
-        {
-            auto& kf_elem = kf_itr->second;
-            subelem_connect.insert(subelem_connect.end(), kf_elem.begin(), kf_elem.end());
-            subelem_sizes.push_back(kf_elem.size());
-            subelem_offsets.push_back(subelem_offset_sum);
-            subelem_offset_sum += subelem_sizes.back();
-        }
+    }
+
+    itr = n.children();
+    while(itr.has_next())
+    {
+        const Node& chld = itr.next();
+        std::string domain_name = itr.name();
+
+        int64_t domain_id = chld["state/domain_id"].as_int64();
+
+        std::vector<int64_t>& e_connect = elem_connect[domain_id];
+        std::vector<int64_t>& e_sizes = elem_sizes[domain_id];
+        std::vector<int64_t>& e_offsets = elem_offsets[domain_id];
+        std::vector<int64_t>& sub_connect = subelem_connect[domain_id];
+        std::vector<int64_t>& sub_sizes = subelem_sizes[domain_id];
+        std::vector<int64_t>& sub_offsets = subelem_offsets[domain_id];
 
         Node& topo = dest[domain_name]["topologies"][name];
+        const Node& in_topo = chld["topologies"][name];
 
         topo["coordset"] = in_topo["coordset"];
 
         topo["type"] = "unstructured";
         topo["elements/shape"] = "polyhedral";
         topo["elements/shape"].set_string("polyhedral");
-        topo["elements/connectivity"].set(elem_connect);
-        topo["elements/sizes"].set(elem_sizes);
-        topo["elements/offsets"].set(elem_offsets);
+        topo["elements/connectivity"].set(e_connect);
+        topo["elements/sizes"].set(e_sizes);
+        topo["elements/offsets"].set(e_offsets);
         topo["subelements/shape"].set_string("polygonal");
-        topo["subelements/connectivity"].set(subelem_connect);
-        topo["subelements/sizes"].set(subelem_sizes);
-        topo["subelements/offsets"].set(subelem_offsets);
+        topo["subelements/connectivity"].set(sub_connect);
+        topo["subelements/sizes"].set(sub_sizes);
+        topo["subelements/offsets"].set(sub_offsets);
+
     }
+
 
 }
 
