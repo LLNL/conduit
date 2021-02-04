@@ -306,6 +306,15 @@ void make_domain_ids(conduit::Node &domains
     dom["state/domain_id"] = domain_offset + i;
   }
 }
+
+
+
+bool quick_mesh_check(const conduit::Node &n)
+{
+    return n.has_child("topologies") &&
+           n["topologies"].number_of_children() > 0;
+}
+
 //
 // This expects a single or multi_domain blueprint mesh and will iterate
 // through all domains to see if they are valid. Returns true
@@ -334,9 +343,14 @@ bool clean_mesh(const conduit::Node &data,
     // check all the children for valid domains
     for(int i = 0; i < potential_doms; ++i)
     {
+      // we expect folks to use their best behaivor
+      // (mesh bp verify is true before passing data)
+      // so we can assume we have valid mesh bp.
+      // if a child looks like a mesh, we have one
       conduit::Node info;
       const conduit::Node &child = data.child(i);
-      bool is_valid = ::conduit::blueprint::mesh::verify(child, info);
+      
+      bool is_valid = quick_mesh_check(child);
       if(is_valid)
       {
         conduit::Node &dest_dom = output.append();
@@ -350,7 +364,7 @@ bool clean_mesh(const conduit::Node &data,
   {
     // check to see if this is a single valid domain
     conduit::Node info;
-    bool is_valid = ::conduit::blueprint::mesh::verify(data, info);
+    bool is_valid = quick_mesh_check(data);
     if(is_valid)
     {
       conduit::Node &dest_dom = output.append();
