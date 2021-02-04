@@ -27,6 +27,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `conduit::relay::io::blueprint::load_mesh` variants, these reset the passed node before reading mesh data (providing relay load semantics). We recommend using  `load_mesh` for most uses cases.
 - Added `truncate` option to `conduit::relay::io::blueprint::write_mesh`, this is used by `save_mesh`.
 - Improve capture and reporting of I/O errors in `conduit::relay::[mpi::]io::blueprint::{save_mesh|write_mesh}`. Now in the MPI case, If any rank fails to open or write to a file all ranks will throw an exception.
+- Added yaml detection support to `conduit::relay::io:identify_file_type`.
 
 #### Blueprint
 - Added `conduit::blueprint::mesh::matset::to_silo()` which converts a valid blueprint matset to a node that contains arrays that follow Silo's sparse mix slot volume fraction representation.
@@ -38,6 +39,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Fixed bug in the Relay IOHandle Basic that would create unnecessary "_json" schema files to be written to disk upon open().
+
+### Removed
+
+#### Relay
+- `conduit::relay::io_blueprint::save` methods were removed for v0.7.0. (Deprecated in v0.6.0)
+
 
 
 ## [0.6.0] - Released 2020-11-02
