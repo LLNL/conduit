@@ -87,8 +87,8 @@ void validate_basic_example(const std::string &name,
         CONDUIT_INFO(info.to_json());
     }
 
-    conduit::relay::io_blueprint::save(mesh, "basic_"+name+".blueprint_root");
-    // conduit::relay::io_blueprint::save(mesh, "basic_"+name+".blueprint_root_hdf5");
+
+    relay::io::blueprint::save_mesh(mesh, "basic_" + name + "_yaml", "yaml");
 }
 
 /// Test Functions ///
@@ -671,9 +671,9 @@ TEST(conduit_docs, blueprint_demo_basic_uniform_complete)
     //
     // this will create the file: complete_uniform_mesh_example.root
     // which includes the mesh blueprint index and the mesh data
-    conduit::relay::io::blueprint::write_mesh(mesh,
-                                              "complete_uniform_mesh_example",
-                                              "json");
+    conduit::relay::io::blueprint::save_mesh(mesh,
+                                             "complete_uniform_mesh_example",
+                                             "json");
 
     END_EXAMPLE("blueprint_demo_basic_uniform_complete");
 }
