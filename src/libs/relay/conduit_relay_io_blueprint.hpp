@@ -50,8 +50,10 @@ namespace blueprint
 //-----------------------------------------------------------------------------
 // Save a blueprint mesh to root + file set
 //-----------------------------------------------------------------------------
+/// These methods assume `mesh` is a valid blueprint mesh.
+///
 /// Note: These methods use "save" semantics, they will overwrite existing
-///       files. 
+///       files.
 ///
 ///
 //-----------------------------------------------------------------------------
@@ -91,8 +93,10 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 //-----------------------------------------------------------------------------
 // Write a blueprint mesh to root + file set
 //-----------------------------------------------------------------------------
+/// These methods assume `mesh` is a valid blueprint mesh.
+///
 /// Note: These methods use "write" semantics, they will append to existing
-///       files. 
+///       files.
 ///
 ///
 //-----------------------------------------------------------------------------
