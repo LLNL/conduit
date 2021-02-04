@@ -480,6 +480,7 @@ void venn_test_small_yaml(const std::string &venn_type)
     blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
 
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    info.print();
     blueprint::mesh::generate_index(res,"",1,n_idx);
     EXPECT_TRUE(blueprint::verify("mesh/index",n_idx,info));
     
@@ -487,7 +488,7 @@ void venn_test_small_yaml(const std::string &venn_type)
 
     // save yaml and hdf5 versions
     relay::io::blueprint::save_mesh(res,
-                                    ofbase + ".yaml",
+                                    ofbase + "_yaml",
                                     "yaml");
 
     Node io_protos;
@@ -497,7 +498,7 @@ void venn_test_small_yaml(const std::string &venn_type)
     if(hdf5_enabled)
     {
         relay::io::blueprint::save_mesh(res,
-                                        ofbase,
+                                        ofbase + "_hdf5",
                                         "hdf5");
     }
 
@@ -524,7 +525,7 @@ void venn_test(const std::string &venn_type)
 
     // save yaml and hdf5 versions
     relay::io::blueprint::save_mesh(res,
-                                    ofbase + ".yaml",
+                                    ofbase + "_yaml",
                                     "yaml");
 
     Node io_protos;
@@ -534,7 +535,7 @@ void venn_test(const std::string &venn_type)
     if(hdf5_enabled)
     {
         relay::io::blueprint::save_mesh(res,
-                                        ofbase,
+                                        ofbase + "_hdf5",
                                         "hdf5");
     }
 

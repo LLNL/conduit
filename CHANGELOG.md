@@ -31,6 +31,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 - Added `conduit::blueprint::mesh::matset::to_silo()` which converts a valid blueprint matset to a node that contains arrays that follow Silo's sparse mix slot volume fraction representation.
+- Added `conduit::blueprint::mesh::field::to_silo()` which converts a valid blueprint field and matset to a node that contains arrays that follow Silo's sparse mix slot volume fraction representation.
+- Added `material_map` to `conduit::blueprint::mesh:matset::index`, to provide an explicit material name to id mapping.
+- Added `mat_check` field to `blueprint::mesh::examples::venn`. This field encodes the material info in a scalar field and in the `matset_values` in a way that can be used to easily compare and verify proper construction in other tools.
+
+### Fixed
+
+#### Relay
+- Fixed bug in the Relay IOHandle Basic that would create unnecessary "_json" schema files to be written to disk upon open().
 
 
 ## [0.6.0] - Released 2020-11-02

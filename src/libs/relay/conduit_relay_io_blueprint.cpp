@@ -981,17 +981,36 @@ void write_mesh(const Node &mesh,
     //   root_only, multi_file
     if(opts_file_style == "root_only")
     {
+        // if truncate, first touch needs to open the file with
+        //          open_opts["mode"] = "wt";
+
         // write out local domains, since all tasks will
         // write to single file in this case, we need baton.
         // the outer loop + par_rank == current_writer implements
         // the baton.
         relay::io::IOHandle hnd;
+        
+        Node local_root_file_created;
+        Node global_root_file_created;
+        local_root_file_created.set((int)0);
+        global_root_file_created.set((int)0);
+
         for(int current_writer=0; current_writer < par_size; current_writer++)
         {
             if(par_rank == current_writer)
             {
                 for(int i = 0; i < local_num_domains; ++i)
                 {
+                    // if truncate, first rank to touch the file needs
+                    // to open at
+                    Node open_opts;
+                    if( (global_root_file_created.as_int() == 0) 
+                        && opts_truncate)
+                    {
+                        Node open_opts;
+                        local_root_file_created.set((int)1);
+                    }
+                    
                     if(!hnd.is_open())
                     {
                         hnd.open(root_filename,file_protocol);
@@ -1018,10 +1037,14 @@ void write_mesh(const Node &mesh,
                 }
             }
 
-    #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-        MPI_Barrier(mpi_comm);
-    #endif
-
+        // Reduce to sync up (like a barrier) and solve first writer need
+        #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+            mpi::max_all_reduce(local_root_file_created,
+                                global_root_file_created,
+                                mpi_comm);
+        #else
+            global_root_file_created.set(local_root_file_created);
+        #endif
         }
     }
     else if(global_num_domains == num_files)
@@ -1038,7 +1061,15 @@ void write_mesh(const Node &mesh,
                                                                     domain,
                                                                     file_protocol,
                                                                     opts_mesh_name));
-            relay::io::save(dom, output_file);
+            // properly support truncate vs non truncate
+            if(opts_truncate)
+            {
+                relay::io::save(dom, output_file);
+            }
+            else
+            {
+                relay::io::save_merged(dom, output_file);
+            }
         }
     }
     else // more complex case, N domains to M files
@@ -1204,10 +1235,11 @@ void write_mesh(const Node &mesh,
                                     hnd.open(output_file, open_opts);
                                 }
 
-                                hnd.write(dom, curr_path);
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
                                 //              << output_file << " path " << path);
 
+                                hnd.write(dom, curr_path);
+                                
                                 // update status, we are done with this doman
                                 local_domain_status[d] = 0;
                             }
@@ -1366,7 +1398,16 @@ void write_mesh(const Node &mesh,
         root["tree_pattern"]     = output_tree_pattern;
 
         relay::io::IOHandle hnd;
-        hnd.open(root_filename, file_protocol);
+
+        // if not root only, this is the first time we are writing 
+        // to the root file -- make sure to properly support truncate
+        Node open_opts;
+        if(opts_file_style != "root_only" && opts_truncate)
+        {
+            open_opts["mode"] = "wt";
+        }
+
+        hnd.open(root_filename, file_protocol, open_opts);
         hnd.write(root);
         hnd.close();
     }
