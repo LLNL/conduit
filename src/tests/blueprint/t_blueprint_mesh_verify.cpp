@@ -1144,6 +1144,7 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 CHECK_MESH(verify_matset,n,info,false);
 
                 // material_map ents don't match vfs
+                // (more mat map ents than vfs)
                 n["material_map"].reset();
                 n["material_map/m1"] = 0;
                 n["material_map/m2"] = 1;
@@ -1151,6 +1152,13 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 n["material_map/m4"] = 4;
 
                 CHECK_MESH(verify_matset,n,info,false);
+
+                // material_map ents are subset of vfs
+                // (should be true)
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m3"] = 2;
+                CHECK_MESH(verify_matset,n,info,true);
             }
 
             { // Element ID Tests //

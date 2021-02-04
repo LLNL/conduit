@@ -4578,7 +4578,6 @@ mesh::matset::verify(const Node &matset,
             mat_map_is_optional = false;
 
             vfs_res &= verify_integer_field(protocol, matset, info, "material_ids");
-            vfs_res &= verify_matset_material_map(protocol,matset,info);
             vfs_res &= blueprint::o2mrelation::verify(matset, info);
 
             res &= vfs_res;
@@ -4612,23 +4611,43 @@ mesh::matset::verify(const Node &matset,
         }
     }
 
-    if(mat_map_is_optional && matset.has_child("material_map"))
+    if(!mat_map_is_optional && !matset.has_child("material_map"))
     {
-        log::optional(info, protocol, "includes material_map");
+        log::error(info, protocol,
+            "'material_map' is missing (required for uni-buffer matsets) ");
+        res &= false;
+    }
+
+    if(matset.has_child("material_map"))
+    {
+        if(mat_map_is_optional)
+        {
+            log::optional(info, protocol, "includes material_map");
+        }
+
         res &= verify_matset_material_map(protocol,matset,info);
 
-        // for cases where vfs are an object, we expect the material_map names to match
+        // for cases where vfs are an object, we expect the material_map child 
+        // names to be a subset of the volume_fractions child names
         if(matset.has_child("volume_fractions") &&
            matset["volume_fractions"].dtype().is_object())
         {
-            const std::vector<std::string> &vf_mats  = matset["volume_fractions"].child_names();
-            const std::vector<std::string> &map_mats = matset["material_map"].child_names();
-            const std::set<std::string> vf_matset(vf_mats.begin(), vf_mats.end());
-            const std::set<std::string> map_matset(map_mats.begin(), map_mats.end());
-            if(vf_matset != map_matset)
+            NodeConstIterator itr =  matset["material_map"].children();
+            while(itr.has_next())
             {
-                log::error(info, protocol, "'material_map' hierarchy must match 'volume_fractions'");
-                res &= false;
+                itr.next();
+                std::string curr_name = itr.name();
+                if(!matset["volume_fractions"].has_child(curr_name))
+                {
+                    std::ostringstream oss;
+                    oss << "'material_map' hierarchy must be a subset of "
+                           "'volume_fractions'. " 
+                           " 'volume_fractions' is missing child '"
+                           << curr_name 
+                           <<"' which exists in 'material_map`" ;
+                    log::error(info, protocol,oss.str());
+                    res &= false;
+                }
             }
         }
     }
