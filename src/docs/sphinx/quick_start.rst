@@ -34,12 +34,12 @@ The install includes examples that demonstrate how to use Conduit in a CMake-bas
 CMake-based build system example (see: ``examples/conduit/using-with-cmake``):
 
 .. literalinclude:: ../../examples/using-with-cmake/CMakeLists.txt 
-   :lines: 4-93
+   :lines: 4-
 
 Makefile-based build system example (see: ``examples/conduit/using-with-make``):
 
 .. literalinclude:: ../../examples/using-with-make/Makefile
-   :lines: 4-37
+   :lines: 4-
 
 
 Learning Conduit

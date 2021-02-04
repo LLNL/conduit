@@ -5,51 +5,62 @@ packages:
       blas: [netlib-lapack]
       lapack: [netlib-lapack]
   netlib-lapack:
-    buildable: False
-    paths:
-      netlib-lapack: /usr/
+    buildable: false
+    externals:
+    - prefix: /usr/
+      spec: netlib-lapack
   openmpi:
-    buildable: False
-    paths:
-      openmpi: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: openmpi
   gdbm:
-    buildable: False
-    paths:
-      gdbm: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: gdbm
   bzip2:
-    buildable: False
-    paths:
-      bzip2: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: bzip2
   readline:
-    buildable: False
-    paths:
-      readline: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: readline
   sqlite:
-    buildable: False
-    paths:
-      sqlite: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: sqlite
   ncurses:
-    buildable: False
-    paths:
-      ncurses: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: ncurses
   pkg-confg:
-    buildable: False
-    paths:
-      pkg-confg: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: pkg-confg
   openssl:
-    buildable: False
-    paths:
-      openssl: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: openssl
   perl:
-    buildable: False
-    paths:
-      perl: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: perl
   tar:
-    buildable: False
-    paths:
-      tar: /usr
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: tar
   conduit:
-    version: [master]
+    version: [develop]
   # python 2 constraints
   py-sphinx:
     version: [1.8.4]

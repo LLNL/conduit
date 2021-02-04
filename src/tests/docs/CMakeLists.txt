@@ -14,6 +14,7 @@ set(DOCS_TESTS
     t_conduit_docs_tutorial_numeric
     t_conduit_docs_tutorial_parse
     t_conduit_docs_tutorial_ownership
+    t_conduit_docs_tutorial_utils
     t_conduit_docs_tutorial_errors
     t_conduit_docs_relay_io_generic_examples
     t_conduit_docs_blueprint_examples
@@ -29,6 +30,7 @@ set(DOCS_PYTHON_TESTS
     t_conduit_docs_tutorial_python_numeric
     t_conduit_docs_tutorial_python_parse
     t_conduit_docs_tutorial_python_ownership
+    t_conduit_docs_tutorial_python_utils
     t_conduit_docs_tutorial_python_relay_io_handle_examples)
 
 set(DOCS_PYTHON_MPI_TESTS  

@@ -4177,9 +4177,7 @@ PyConduit_Node_str(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_repr(PyConduit_Node* self)
 {
-   std::ostringstream oss;
-   self->node->to_json_stream(oss,"conduit_json");
-   return (Py_BuildValue("s", oss.str().c_str()));
+    return PyConduit_Node_str(self);
 }
 
 //---------------------------------------------------------------------------//
@@ -4380,15 +4378,16 @@ PyConduit_Node_save(PyConduit_Node *self,
     {
         return NULL;
     }
-    
+
     std::string path_str(path);
-    std::string protocol_str("conduit_bin");
-    
+    // keep blank, allow conduit to detect based on file name
+    std::string protocol_str("");
+
     if(protocol != NULL)
     {
         protocol_str = std::string(protocol);
     }
-    
+
     try
     {
         self->node->save(path_str,protocol_str);
@@ -4399,8 +4398,8 @@ PyConduit_Node_save(PyConduit_Node *self,
                         e.message().c_str());
         return NULL;
     }
-    
-    
+
+
     Py_RETURN_NONE;
 }
 
@@ -4462,7 +4461,8 @@ PyConduit_Node_load(PyConduit_Node *self,
     }
     else
     {
-        std::string protocol_str("conduit_bin");
+    // keep blank, allow conduit to detect based on file name
+        std::string protocol_str("");
 
         if( protocol != NULL)
         {
@@ -5059,6 +5059,55 @@ PyConduit_Node_info(PyConduit_Node *self)
     self->node->info(*retval->node);
     return (PyObject*)retval;
 }
+
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Node_describe(PyConduit_Node *self,
+                        PyObject* args,
+                        PyObject* kwargs)
+{
+    PyObject *py_opts = NULL;
+    static const char *kwlist[] = {"opts", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &py_opts))
+    {
+        return (NULL);
+    }
+
+    Node *node_opts_ptr = NULL;
+
+    if(py_opts != NULL)
+    {
+        if(!PyConduit_Node_Check(py_opts))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Node::describe 'opts' argument must be a "
+                            "Conduit::Node");
+            return NULL;
+        }
+
+        node_opts_ptr = ((PyConduit_Node*)py_opts)->node;
+    }
+
+    PyConduit_Node *retval = (PyConduit_Node*)PyConduit_Node_Python_Create();
+    if(node_opts_ptr == NULL)
+    {
+        self->node->describe(*retval->node);
+    }
+    else
+    {
+        self->node->describe(*node_opts_ptr,
+                             *retval->node);
+    }
+
+    return (PyObject*)retval;
+}
+
 
 //---------------------------------------------------------------------------//
 static PyObject * 
@@ -5783,6 +5832,12 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_VARARGS, 
      "Returns a node populated with the memory space details for this node"},
     //-----------------------------------------------------------------------//
+    {"describe",
+     (PyCFunction)PyConduit_Node_describe,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Returns a node that mirrors the current Node, however each leaf is"
+     " replaced by summary stats and a truncated display of the values."},
+    //-----------------------------------------------------------------------//
     {"print_detailed",
      (PyCFunction)PyConduit_Node_print_detailed,
      METH_NOARGS, 
@@ -6347,9 +6402,9 @@ PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
 
         // get unicode data and construct a python unicode object from it
         void *unicode_buffer_ptr = PyArray_GETPTR1(py_arr,i);
-        
+        int unicode_str_len = ((int)(buffer_len)) / 4;
         PyObject *py_temp_unicode = PyUnicode_From_UTF32_Unicode_Buffer((const char*)unicode_buffer_ptr,
-                                                                        buffer_len/4);
+                                                                        unicode_str_len);
             
         if(py_temp_unicode == NULL)
         {

@@ -34,14 +34,23 @@ if(CONDUIT_HDF5_DIR)
     get_filename_component(HDF5_DIR_REAL "${HDF5_DIR}" REALPATH)
     message(STATUS "Looking for HDF5 at: " ${HDF5_DIR_REAL})
 
+    if(POLICY CMP0074)
+        #policy for <PackageName>_ROOT variables
+        cmake_policy(PUSH)
+        cmake_policy(SET CMP0074 NEW)
+    endif()
+
     # CMake's FindHDF5 module uses the HDF5_ROOT env var
     set(HDF5_ROOT ${HDF5_DIR_REAL})
 
     if(NOT WIN32)
-        set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
-        # Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
-        # all the info about the hdf5 install
-        include(FindHDF5)
+        # use HDF5_ROOT env var for FindHDF5 with older versions of cmake
+        if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+            set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
+        endif()
+
+        # Use CMake's FindHDF5 module to locate hdf5 and setup hdf5
+        find_package(HDF5 REQUIRED)
     else()
         # CMake's FindHDF5 module is buggy on windows and will put the dll
         # in HDF5_LIBRARY.  Instead, use the 'CONFIG' signature of find_package
@@ -52,6 +61,11 @@ if(CONDUIT_HDF5_DIR)
                            ${HDF5_DIR}/lib/cmake/hdf5
                            ${HDF5_DIR}/share/cmake/hdf5
                            ${HDF5_DIR}/cmake)
+    endif()
+
+    if(POLICY CMP0074)
+        # clear CMP0074
+        cmake_policy(POP)
     endif()
 
     # FindHDF5/find_package sets HDF5_DIR to it's installed CMake info if it exists
@@ -99,6 +113,12 @@ if(CONDUIT_HDF5_DIR)
             message(STATUS " ${IDIR_REAL} includes HDF5_DIR (${HDF5_DIR})")
             set(check_hdf5_inc_dir_ok 1)
         endif()
+
+        if("${IDIR_REAL}" MATCHES "${HDF5_REAL_DIR}")
+            message(STATUS " ${IDIR_REAL} includes HDF5_REAL_DIR (${HDF5_REAL_DIR})")
+            set(check_hdf5_inc_dir_ok 1)
+        endif()
+
     endforeach()
 
     if(NOT check_hdf5_inc_dir_ok)

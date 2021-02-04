@@ -45,6 +45,20 @@ add_subdirectory(thirdparty_builtin/civetweb-0a95342/)
 include_directories(thirdparty_builtin/civetweb-0a95342/include)
 
 ################################
+# Setup includes for fmt
+################################
+# this cmake var used to signal fmt support for downstream users
+set(CONDUIT_USE_FMT TRUE)
+
+# setup include dirs used during conduit build
+include_directories(thirdparty_builtin/fmt-7.1.0/)
+
+# setup install of fmt headers for downstream users
+install(DIRECTORY 
+        thirdparty_builtin/fmt-7.1.0/conduit_fmt
+        DESTINATION include/conduit/)
+
+################################
 # Optional Features
 ################################
 
@@ -121,5 +135,18 @@ if(ZFP_DIR)
     # if we don't find Zfp, throw a fatal error
     if(NOT ZFP_FOUND)
         message(FATAL_ERROR "ZFP_DIR is set, but Zfp wasn't found.")
+    endif()
+endif()
+
+
+################################
+# Setup h5z-zfp if available
+################################
+if(H5ZZFP_DIR)
+    include(cmake/thirdparty/SetupH5zZfp.cmake)
+    include_directories(${H5ZZFP_INCLUDE_DIR})
+    # if we don't find h5z-zfp, throw a fatal error
+    if(NOT H5ZZFP_DIR)
+        message(FATAL_ERROR "H5ZZFP_DIR is set, but h5z-zfp wasn't found.")
     endif()
 endif()

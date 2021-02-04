@@ -21,6 +21,9 @@ add_cpp_test(TEST t_libyaml_smoke
             SOURCES $<TARGET_OBJECTS:conduit_libyaml>
             FOLDER tests/thirdparty)
 
+add_cpp_test(TEST t_fmt_smoke
+             FOLDER tests/thirdparty)
+
 
 set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
 
@@ -100,3 +103,23 @@ if(FORTRAN_FOUND)
 else()
     message(STATUS "Fortran disabled: Skipping related tests")
 endif()
+
+
+if(ZFP_FOUND)
+    message(STATUS "Zfp enabled: Adding related unit tests")
+    add_cpp_test(TEST t_zfp_smoke
+                 DEPENDS_ON zfp
+                 FOLDER tests/thirdparty)
+else()
+    message(STATUS "Zfp disabled: Skipping related tests")
+endif()
+
+if(H5ZZFP_FOUND)
+    message(STATUS "h5z-zfp enabled: Adding related unit tests")
+    add_cpp_test(TEST t_h5z_zfp_smoke
+                 DEPENDS_ON h5zzfp zfp hdf5
+                 FOLDER tests/thirdparty)
+else()
+    message(STATUS "h5z-zfp disabled: Skipping related tests")
+endif()
+

@@ -51,10 +51,11 @@ if(WIN32 AND BUILD_SHARED_LIBS)
 endif()
 
 if( BLT_CXX_STD STREQUAL "c++98" )
-    message(STATUS "C++11 support disabled")
+    message(FATAL_ERROR "Conduit now requires C++11 support."
+                        "\nPlease set BLT_CXX_STD to c++11 or newer.")
 else()
-    set(CONDUIT_USE_CXX11 1)
-    message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == 1)")
+    set(CONDUIT_USE_CXX11 TRUE)
+    message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == TRUE)")
 endif()
 
 ################################
@@ -117,13 +118,42 @@ endif()
 ##############################################################################
 find_package(Git)
 if(GIT_FOUND)
-  message(STATUS "git executable: ${GIT_EXECUTABLE}")
-  execute_process(COMMAND
-    "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    OUTPUT_VARIABLE CONDUIT_GIT_SHA1
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message(STATUS "Repo SHA1:" ${CONDUIT_GIT_SHA1})
+    message(STATUS "git executable: ${GIT_EXECUTABLE}")
+    # try to get sha1
+    execute_process(COMMAND
+        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE CONDUIT_GIT_SHA1
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if("${CONDUIT_GIT_SHA1}" STREQUAL "")
+       set(CONDUIT_GIT_SHA1 "unknown")
+    endif()
+    message(STATUS "git SHA1: " ${CONDUIT_GIT_SHA1})
+
+    execute_process(COMMAND
+        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=5 --dirty
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE CONDUIT_GIT_SHA1_ABBREV
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if("${CONDUIT_GIT_SHA1_ABBREV}" STREQUAL "")
+       set(CONDUIT_GIT_SHA1_ABBREV "unknown")
+    endif()
+    message(STATUS "git SHA1-abbrev: " ${CONDUIT_GIT_SHA1_ABBREV})
+
+    # try to get tag
+    execute_process(COMMAND
+            "${GIT_EXECUTABLE}" describe --exact-match --tags
+            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+            OUTPUT_VARIABLE CONDUIT_GIT_TAG
+            ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if("${CONDUIT_GIT_TAG}" STREQUAL "")
+       set(CONDUIT_GIT_TAG "unknown")
+    endif()
+    message(STATUS "git tag: " ${CONDUIT_GIT_TAG})
+  
 endif()
 
 

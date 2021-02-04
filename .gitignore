@@ -12,3 +12,4 @@ conduit.docker.src.tar
 conduit.docker.src.tar.gz
 Testing/
 .idea
+.vscode/settings.json

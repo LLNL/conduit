@@ -2841,7 +2841,7 @@ misc(const std::string &mesh_type,
 void
 adjset_uniform(Node &res)
 {
-    for(index_t i = 0; i < 8; i++)
+    for(int32 i = 0; i < 8; i++)
     {
         std::ostringstream oss;
         oss << "domain_" << std::setfill('0') << std::setw(6) << i;

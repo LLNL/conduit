@@ -137,7 +137,7 @@ add_compiled_library(NAME   conduit
 #################################
 if(FORTRAN_FOUND)
     if("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
-         # disable c <-> fortran binding warnings for gfortran 
+         # disable c <-> fortran binding warnings for gfortran
          message(STATUS "Disabling c <-> fortran binding warnings for "
                          "conduit "
                          "(Adding Fortran compiler flag: -Wno-c-binding-type)")
@@ -157,7 +157,7 @@ endif()
 
 
 ####################################################################
-# Special install targets for conduit fortran modules 
+# Special install targets for conduit fortran modules
 ####################################################################
 if(FORTRAN_FOUND)
     set(conduit_fortran_modules
@@ -168,8 +168,8 @@ if(FORTRAN_FOUND)
                     ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod)
     endif()
 
-    # Setup install to copy the fortran modules 
-    install(FILES 
+    # Setup install to copy the fortran modules
+    install(FILES
             ${conduit_fortran_modules}
             DESTINATION include/conduit)
 endif()

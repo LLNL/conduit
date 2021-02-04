@@ -33,4 +33,8 @@ PackageName: libyaml
 PackageHomePage: https://github.com/yaml/libyaml
 PackageLicenseDeclared: MIT
 
+PackageName: fmt
+PackageHomePage: https://fmt.dev/
+PackageLicenseDeclared: MIT
+
 

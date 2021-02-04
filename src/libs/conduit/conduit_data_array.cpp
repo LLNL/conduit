@@ -280,6 +280,81 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
 }
 
 //---------------------------------------------------------------------------// 
+///
+/// Summary Stats Helpers
+///
+//---------------------------------------------------------------------------// 
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataArray<T>::min()  const
+{
+    T res = std::numeric_limits<T>::max();
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        if(val < res)
+        {
+            res = val;
+        }
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataArray<T>::max()  const
+{
+    T res = std::numeric_limits<T>::min();
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        if(val > res)
+        {
+            res = val;
+        }
+    }
+
+    return res;
+}
+
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataArray<T>::sum()  const
+{
+    T res =0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        res += val;
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+float64
+DataArray<T>::mean()  const
+{
+    float64 res =0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        res += val;
+    }
+
+    res = res / float64(number_of_elements());
+    return res;
+}
+
+
+//---------------------------------------------------------------------------// 
 template <typename T>
 std::string 
 DataArray<T>::to_string(const std::string &protocol) const
@@ -536,6 +611,877 @@ DataArray<T>::set(const float64 *values, index_t num_elements)
 }
 
 //---------------------------------------------------------------------------//
+// Set from std::initializer_list 
+//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
+#ifdef CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<int8> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<int8>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<int16> &values)
+{
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<int16>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<int32> &values)
+{
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<int32>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<int64> &values)
+{
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<int64>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<uint8> &values)
+{
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<uint8>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<uint16> &values)
+{
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<uint16>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<uint32> &values)
+{
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<uint32>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<uint64> &values)
+{
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<uint64>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<float32> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<float32>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(const std::initializer_list<float64> &values)
+{
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<float64>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Set from std::initializer_list  c native gap methods
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<char> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<char>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_CHAR
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<signed char> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<signed char>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<unsigned char> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<unsigned char>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_CHAR
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_SHORT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<short> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<short>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<unsigned short> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<unsigned short>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_SHORT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_INT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<int> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<int>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<unsigned int> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<unsigned int>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_INT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_LONG
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<long> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<long>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<unsigned long> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<unsigned long>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_LONG
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<long long> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<long long>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<unsigned long long> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<unsigned long long>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_FLOAT
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<float> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<float>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_FLOAT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_DOUBLE
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const std::initializer_list<double> &values)
+{ 
+    index_t idx = 0;
+    index_t num_elems = m_dtype.number_of_elements();
+    // iterate and set up to the number of elements of this array
+    std::initializer_list<double>::const_iterator itr;
+    for( itr = values.begin();
+         idx < num_elems && itr != values.end();
+         ++itr, idx++)
+    {
+        this->element(idx) = (T)*itr;
+    }
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_DOUBLE
+//---------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------
+// fill
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+/// signed integer fill
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::fill(int8 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(int16 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(int32 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(int64 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+/// unsigned integer fill
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::fill(uint8 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(uint16 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(uint32 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(uint64 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+/// floating point fill
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::fill(float32 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T> 
+void
+DataArray<T>::fill(float64 value)
+{ 
+    for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+    {
+        this->element(i) = (T)value;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// assign operator overloads for initializer_list
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<int8> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<int16> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<int32> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<int64> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<uint8> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<uint16> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<uint32> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<uint64> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<float32> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<float64> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+// Set from std::initializer_list  c native gap methods
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<char> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_CHAR
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<signed char> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<unsigned char> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_CHAR
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_SHORT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<short> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<unsigned short> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_SHORT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_INT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<int> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<unsigned int> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_INT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_LONG
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<long> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<unsigned long> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_LONG
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+#if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<long long> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<unsigned long long> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_LONG_LONG
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_FLOAT
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<float> &values)
+{
+    set(values);
+    return *this;
+}
+
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_FLOAT
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+#ifndef CONDUIT_USE_DOUBLE
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+template <typename T>
+DataArray<T> &
+DataArray<T>::operator=(const std::initializer_list<double> &values)
+{
+    set(values);
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+#endif // CONDUIT_USE_DOUBLE
+//---------------------------------------------------------------------------//
+
+//-----------------------------------------------------------------------------
+#endif // end CONDUIT_USE_CXX11
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
 // Set from DataArray
 //---------------------------------------------------------------------------//
 
@@ -690,6 +1636,133 @@ DataArray<T>::compact_elements_to(uint8 *data) const
         data_ptr+=ele_bytes;
     }
 }
+
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+std::string
+DataArray<T>::to_summary_string_default() const
+{ 
+    return to_summary_string();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+std::string
+DataArray<T>::to_summary_string(index_t threshold) const
+{ 
+    std::ostringstream oss;
+    to_summary_string_stream(oss, threshold);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::to_summary_string_stream(std::ostream &os,
+                                       index_t threshold) const
+{ 
+    // if we are less than or equal to threshold, we use to_yaml
+    index_t nele = number_of_elements();
+
+    if(nele <= threshold)
+    {
+        to_yaml_stream(os);
+    }
+    else
+    {
+        // if above threshold only show threshold # of values
+        int half = threshold / 2;
+        int bottom = half;
+        int top = half;
+
+        //
+        // if odd, show 1/2 +1 first
+        //
+
+        if( (threshold % 2) > 0)
+        {
+            bottom++;
+        }
+
+        if(nele > 1)
+            os << "[";
+
+        bool done  = (nele == 0);
+        int idx = 0;
+
+        while(!done)
+        {
+            // if not first, add a comma prefix
+            if(idx > 0 )
+                os << ", ";
+
+            switch(m_dtype.id())
+            {
+                // ints
+                case DataType::INT8_ID:
+                case DataType::INT16_ID:
+                case DataType::INT32_ID:
+                case DataType::INT64_ID:
+                {
+                     os << (int64) element(idx);
+                     break;
+                }
+                // uints
+                case DataType::UINT8_ID:
+                case DataType::UINT16_ID:
+                case DataType::UINT32_ID:
+                case DataType::UINT64_ID:
+                {
+                    os << (uint64) element(idx);
+                    break;
+                }
+                // floats
+                case DataType::FLOAT32_ID:
+                case DataType::FLOAT64_ID:
+                {
+                    std::string fs = utils::float64_to_string((float64)element(idx));
+                    //check for inf and nan
+                    // looking for 'n' covers inf and nan
+                    bool inf_or_nan = fs.find('n') != std::string::npos;
+
+                    if(inf_or_nan)
+                        os << "\"";
+
+                    os << fs;
+
+                    if(inf_or_nan)
+                        os << "\"";
+                    break;
+                }
+                default:
+                {
+                    CONDUIT_ERROR("Leaf type \""
+                                  <<  m_dtype.name()
+                                  << "\""
+                                  << "is not supported in conduit::DataArray.")
+                }
+            }
+
+            idx++;
+
+            if(idx == bottom)
+            {
+                idx = nele - top;
+                os << ", ...";
+            }
+
+            if(idx == nele)
+            {
+                done = true;
+            }
+        }
+
+        if(nele > 1)
+            os << "]";
+    }
+}
+
 
 
 //-----------------------------------------------------------------------------

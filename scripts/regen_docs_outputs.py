@@ -9,6 +9,7 @@ tests = ["t_conduit_docs_tutorial_basics",
          "t_conduit_docs_tutorial_numeric",
          "t_conduit_docs_tutorial_parse",
          "t_conduit_docs_tutorial_ownership",
+         "t_conduit_docs_tutorial_utils",
          "t_conduit_docs_tutorial_errors",
          # bp
          "t_conduit_docs_blueprint_demos",
@@ -21,6 +22,7 @@ tests = ["t_conduit_docs_tutorial_basics",
          "t_conduit_docs_tutorial_python_numeric",
          "t_conduit_docs_tutorial_python_ownership",
          "t_conduit_docs_tutorial_python_parse",
+         "t_conduit_docs_tutorial_python_utils",
          "t_conduit_docs_tutorial_python_relay_io_handle_examples",
          "t_conduit_docs_tutorial_python_relay_mpi_examples"]
 

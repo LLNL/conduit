@@ -1241,11 +1241,11 @@ Schema::name() const
         if(p->dtype().is_object())
         {
             // use name
-            std::string name = p->child_name(idx);
+            std::string cld_name = p->child_name(idx);
             
             // check if name() includes "/", if so we need to escape
             bool escape = false;
-            if(name.find('/') != std::string::npos)
+            if(cld_name.find('/') != std::string::npos)
             {
                 escape = true;
             }
@@ -1255,7 +1255,7 @@ Schema::name() const
                 oss << "{";
             }
 
-            oss << name;
+            oss << cld_name;
 
             if(escape)
             {

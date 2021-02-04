@@ -179,7 +179,7 @@ void build_material_sparse(Node & src, index_t len,
     {
         if (src_val[idx] > 0)
         {
-            sparse_element_ids[sparse_idx] = idx;
+            sparse_element_ids[sparse_idx] = (int32)idx;
             sparse_val[sparse_idx] = src_val[idx];
 
             matset_area_val[sparse_idx] = element_area;
@@ -304,7 +304,7 @@ void venn_sparse_by_material_matset(Node &res)
         float64 fgvf = cir_a[idx] + cir_b[idx] + cir_c[idx];
         if (fgvf < 1.)
         {
-            bg_idx[nidx] = idx;
+            bg_idx[nidx] = (int32)idx;
 
             bg_val[nidx] = 1. - fgvf;
 
@@ -356,10 +356,10 @@ void venn_sparse_by_element_matset(Node &res)
     // Build the rest of the single-buffer matset
     res["matsets/matset/topology"] = "topo";
     // This is the "key" that tells what material each volume fraction refers to
-    res["matsets/matset/material_map/cir_a"] = 1;
-    res["matsets/matset/material_map/cir_b"] = 2;
-    res["matsets/matset/material_map/cir_c"] = 3;
-    res["matsets/matset/material_map/bg"] = 0;
+    res["matsets/matset/material_map/circle_a"] = 1;
+    res["matsets/matset/material_map/circle_b"] = 2;
+    res["matsets/matset/material_map/circle_c"] = 3;
+    res["matsets/matset/material_map/background"] = 0;
 
     // All the volume fractions go here ("one big buffer")
     res["matsets/matset/volume_fractions"].set(DataType::float64(vfcount));
@@ -433,7 +433,7 @@ void venn_sparse_by_element_matset(Node &res)
         }
 
         sizes[idx] = size;
-        offsets[idx] = vfidx;
+        offsets[idx] = (int32) vfidx;
         vfidx += size;
     }
 }

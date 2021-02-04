@@ -77,6 +77,12 @@ foreach(IDIR ${HDF5_INCLUDE_DIRS})
         message(STATUS " ${IDIR_REAL} includes HDF5_DIR (${HDF5_DIR})")
         set(check_hdf5_inc_dir_ok 1)
     endif()
+
+    if("${IDIR_REAL}" MATCHES "${HDF5_REAL_DIR}")
+        message(STATUS " ${IDIR_REAL} includes HDF5_REAL_DIR (${HDF5_REAL_DIR})")
+        set(check_hdf5_inc_dir_ok 1)
+    endif()
+
 endforeach()
 
 if(NOT check_hdf5_inc_dir_ok)

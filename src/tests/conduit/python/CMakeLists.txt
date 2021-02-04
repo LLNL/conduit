@@ -7,6 +7,7 @@
 ####################################
 set(PYTHON_MODULE_TESTS t_python_conduit_smoke
                         t_python_conduit_node
+                        t_python_conduit_utils
                         t_python_conduit_schema
                         t_python_conduit_datatype
                         t_python_conduit_generator

@@ -4,7 +4,36 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased 
+## Unreleased
+
+### Changed
+
+#### General 
+- Conduit now requires C++11 support.
+
+### Added
+- CMake: Added extra check for include dir vs fully resolved hdf5 path.
+
+#### General 
+- Added a builtin sandboxed header-only version of fmt. The namespace and directory paths were changed to `conduit_fmt` to avoid potential symbol collisions with other codes using fmt. Downstream software can use by including `conduit_fmt/conduit_fmt.h`.
+- Added support for using C++11 initializer lists to set Node and DataArray values from numeric arrays. See C++ tutorial docs (https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_numeric.html#c-11-initializer-lists) for more details.
+- Added a Node::describe() method. This method creates a new node that mirrors the current Node, however each leaf is replaced by summary stats and a truncated display of the values. For use cases with large leaves, printing the describe() output Node is much more helpful for debugging and understanding vs wall of text from other to_string() methods. 
+- Added conduit::utils::format methods. These methods use fmt to format strings that include fmt style patterns. The formatting arguments are passed as a conduit::Node tree. The `args` case allows named arguments (args passed as object) or ordered args (args passed as list). The `maps` case also supports named or ordered args and works in conjunction with a `map_index`. The `map_index` is used to fetch a value from an array, or list of strings, which is then passed to fmt. The `maps` style of indexed indirection supports generating path strings for non-trivial domain partition mappings in Blueprint. This functionality is also available in Python, via the  `conduit.utils.format` method.
+- Added DataArray::fill method, which set all elements of a DataArray to a given value.
+
+
+#### Relay
+- Added Relay IO Handle mode support for `a` (append) and `t` (truncate).  Truncate allows you to overwrite files when the handle is opened. The default is append, which preserves prior IO Handle behavior.
+- Added `conduit::relay::io::blueprint::save_mesh` variants, these overwrite existing files (providing relay save semantics) instead of adding mesh data to existing files. We recommend using  `save_mesh` for most uses cases, b/c in many cases `write_mesh` to an existing HDF5 file set can fail due to conflicts with the current HDF5 tree.
+- Added `conduit::relay::io::blueprint::load_mesh` variants, these reset the passed node before reading mesh data (providing relay load semantics). We recommend using  `load_mesh` for most uses cases.
+- Added `truncate` option to `conduit::relay::io::blueprint::write_mesh`, this is used by `save_mesh`.
+- Improve capture and reporting of I/O errors in `conduit::relay::[mpi::]io::blueprint::{save_mesh|write_mesh}`. Now in the MPI case, If any rank fails to open or write to a file all ranks will throw an exception.
+
+#### Blueprint
+- Added `conduit::blueprint::mesh::matset::to_silo()` which converts a valid blueprint matset to a node that contains arrays that follow Silo's sparse mix slot volume fraction representation.
+
+
+## [0.6.0] - Released 2020-11-02
 
 ### Added
 
@@ -12,7 +41,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for children with names that include `/`. Since slashes are part of Conduit's hierarchical path mechanism, you must use explicit methods (add_child(), child(), etc) to create and access children with these types of names. These names are also supported in all basic i/o cases (JSON, YAML, Conduit Binary).
 - Added Node::child and Schema::child methods, which provide access to existing children by name.
 - Added Node::fetch_existing and Schema::fetch_existing methods, which provide access to existing paths or error when given a bad path.
-- Added Node::add_child() and Node::remove_child() to support direct operations and cases where names have `/`s.
+- Added Node::add_child() and Node::remove_child() to support direct operations and cases where names have `/` s.
 - Added a set of conduit::utils::log::remove_* filtering functions, which process conduit log/info nodes and strip out the requested information (useful for focusing the often verbose output in log/info nodes).
 - Added to_string() and to_string_default() methods to Node, Schema, DataType, and DataArray. These methods alias either to_yaml() or to_json(). Long term yaml will be preferred over json.
 - Added helper script (scripts/regen_docs_outputs.py) that regenerates all example outputs used Conduit's Sphinx docs.
@@ -25,7 +54,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support to write and read Conduit lists to HDF5 files. Since HDF5 Groups do not support unnamed indexed children, each list child is written using a string name that represents its index and a special attribute is written to the HDF5 group to mark the list case. On read, the special attribute is used to detect and read this style of group back into a Conduit list.
 - Added preliminary support to read Sidre Datastore-style HDF5 using Relay IOHandle,  those grouped with a root file.
 - Added `conduit::relay::io::blueprint::read_mesh` functions, were pulled in from Ascent's Blueprint import logic.
-- Added `conduit::relay::mpi::wait` and `conduit::relay::mpi::wait_all`functions. These functions consolidate the logic supporting both `isend` and `irecv` requests. `wait_all` supports cases where both sends and receives were posted, which is a common for non-trivial point-to-point communication use cases.
+- Added `conduit::relay::mpi::wait` and `conduit::relay::mpi::wait_all` functions. These functions consolidate the logic supporting both `isend` and `irecv` requests. `wait_all` supports cases where both sends and receives were posted, which is a common for non-trivial point-to-point communication use cases.
 
 
 #### Blueprint
@@ -49,7 +78,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Updated to newer BLT to resolve BLT/FindMPI issues with rpath linking commands when using OpenMPI.
 - Fixed internal object name string for the Python Iterator object. It used to report `Schema`, which triggered both puzzling and concerned emotions.
 - Fixed a bug with `Node.set` in the Python API that undermined setting NumPy arrays with sliced views and complex striding. General slices should now work with `set`. No changes to the `set_external` case, which requires 1-D effective striding and throws an exception when more complex strides are presented.
-  
+- Fixed a bug with auto detect of protocol for Node.load
+- Fixed bugs with auto detect of protocol for Node.load and Node.save in the Python interface
+
 
 #### Relay
 - Use H5F_ACC_RDONLY in relay::io::is_hdf5_file to avoid errors when checking files that already have open HDF5 handles.
@@ -58,6 +89,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 #### General 
+- Conduit's main git branch was renamed from `master` to `develop`. To allow time for folks to migrate, the `master` branch is active but frozen and will be removed during the `0.7.0` release.
+- We recommend a C++11 (or newer) compiler, support for older C++ standards is deprecated and will be removed in a future release. 
 - Node::fetch_child and Schema::fetch_child are deprecated in favor of the more clearly named Node::fetch_existing and Schema::fetch_existing. fetch_child variants still exist, but will be removed in a future release.
 - Python str() methods for Node, Schema, and DataType now use their new to_string() methods.
 - DataArray<T>::to_json(std::ostring &) is deprecated in favor DataArray<T>::to_json_stream. to_json(std::ostring &) will be removed in a future release.
@@ -66,6 +99,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - The string return variants of `about` methods now return yaml strings instead of json strings.
 - Sphinx Docs code examples and outputs are now included using start-after and end-before style includes.
 - Schema to_json() and to_json_stream() methods were expanded to support indent, depth, pad and end-of-element args.
+- In Python, conduit.Node() repr now returns the YAML string representation of the Node. Perviously verbose `conduit_json` was used, which was overwhelming.
+- conduit.about() now reports the git tag if found, and `version` was changed to add git sha and status (dirty) info to avoid confusion between release and development installs.
 
 #### Relay
 - Provide more context when a Conduit Node cannot be written to a HDF5 file because it is incompatible with the existing HDF5 tree. Error messages now provide the full path and details about the incompatibility.

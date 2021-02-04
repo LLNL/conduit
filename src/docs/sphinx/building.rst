@@ -246,7 +246,7 @@ Default invocation on OSX:
                                       --spack-config-dir scripts/uberenv/spack_configs/darwin/
 
 
-The uberenv `--install` installs conduit\@master (not just the development dependencies):
+The uberenv `--install` installs conduit\@develop (not just the development dependencies):
 
 .. code:: bash
 
@@ -315,11 +315,11 @@ To install the latest released version of Conduit with all options (and also bui
   
   spack install conduit
 
-To build and install Conduit's github master branch run:
+To build and install Conduit's github develop branch run:
   
 .. code:: bash
   
-  spack install conduit@master
+  spack install conduit@develop
 
 
 The Conduit Spack package provides several `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ that customize the options and dependencies used to build Conduit:
@@ -357,8 +357,7 @@ You can specify specific versions of a dependency using ``^``. For Example, to b
 
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We recommend CMake 3.9 or newer. We test building Conduit with CMake 3.3.1, 3.8.1 and 3.9.4. Other versions of CMake may work, however CMake 3.4.x to 3.7.x have specific issues with finding and using HDF5 and Python and C++11 support.
-
+We recommend CMake 3.9 or newer. We test building Conduit with CMake 3.9 and 3.14. Other versions of CMake may work, however CMake 3.18.0 and 3.18.1 have known issues that impact HDF5 support. CMake 3.18.2 resolved the HDF5 issues.
 
 
 Using Conduit in Another Project

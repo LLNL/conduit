@@ -88,13 +88,13 @@ We are using a **Github Flow** model, which is a simpler variant of the confusin
 
 Here are the basics: 
 
-- Development is done on topic branches off the master.
+- Development is done on topic branches off the develop.
 
-- Merge to master is only done via a pull request.
+- Merge to develop is only done via a pull request.
 
-- The master should always compile and pass all tests.
+- The develop should always compile and pass all tests.
 
-- Releases are tagged off of master.
+- Releases are tagged off of develop.
 
 More details on GitHub Flow:
 
@@ -104,7 +104,7 @@ Here are some other rules to abide by:
 
 - If you have write permissions for the Conduit repo, you *can* merge your own pull requests.
 
-- After completing all intended work on branch, please delete the remote branch after merging to master. (Github has an option to do this after you merge a pull request.)
+- After completing all intended work on branch, please delete the remote branch after merging to develop. (Github has an option to do this after you merge a pull request.)
 
 
 

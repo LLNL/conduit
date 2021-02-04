@@ -350,6 +350,8 @@ def main():
         uberenv_pkg_name = project_opts["package_name"]
     else:
         uberenv_pkg_name = project_opts["uberenv_package_name"]
+    if "mirror_url" in project_opts.keys() and not opts["create_mirror"]:
+        opts["mirror"] = project_opts["mirror_url"]
     print("[uberenv project settings: {}]".format(str(project_opts)))
     print("[uberenv options: {}]".format(str(opts)))
     if "darwin" in platform.system().lower():
@@ -402,9 +404,15 @@ def main():
             os.chdir(pjoin(dest_dir,"spack"))
             sexe("git checkout %s" % sha1,echo=True)
 
+        # We should now have spack, but double check
+        # in case clone failed
+        if not os.path.isdir(dest_spack):
+            print("[ERROR: failed to clone spack to {}]".format(dest_spack))
+            return -1
+
     if opts["spack_pull"]:
         # do a pull to make sure we have the latest
-        os.chdir(pjoin(dest_dir,"spack"))
+        os.chdir(dest_spack)
         sexe("git stash", echo=True)
         sexe("git pull", echo=True)
 

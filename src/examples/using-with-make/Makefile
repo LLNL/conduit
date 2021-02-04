@@ -26,11 +26,13 @@ CONDUIT_DIR ?= ../../..
 # See $(CONDUIT_DIR)/share/conduit/conduit_config.mk for detailed linking info
 include $(CONDUIT_DIR)/share/conduit/conduit_config.mk
 
+# If Conduit was built with c++11 support, make sure we enable it
+CXX_FLAGS = $(if $(CONDUIT_USE_CXX11),-std=c++11)
 INC_FLAGS = $(CONDUIT_INCLUDE_FLAGS)
 LNK_FLAGS = $(CONDUIT_LINK_RPATH) $(CONDUIT_LIB_FLAGS)
 
 main:
-	$(CXX) $(INC_FLAGS) conduit_example.cpp $(LNK_FLAGS) -o conduit_example
+	$(CXX) $(CXX_FLAGS) $(INC_FLAGS) conduit_example.cpp $(LNK_FLAGS) -o conduit_example
 
 clean:
 	rm -f conduit_example

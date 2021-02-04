@@ -30,6 +30,8 @@
 #define CONDUIT_VERSION "@PROJECT_VERSION@"
 
 #cmakedefine CONDUIT_GIT_SHA1 "${CONDUIT_GIT_SHA1}"
+#cmakedefine CONDUIT_GIT_SHA1_ABBREV "${CONDUIT_GIT_SHA1_ABBREV}"
+#cmakedefine CONDUIT_GIT_TAG "${CONDUIT_GIT_TAG}"
 
 #define CONDUIT_SYSTEM_TYPE "@CMAKE_SYSTEM@"
 
@@ -37,7 +39,22 @@
 
 #cmakedefine CONDUIT_FORTRAN_COMPILER "${CONDUIT_FORTRAN_COMPILER}"
 
-#cmakedefine CONDUIT_USE_CXX11 ${CONDUIT_USE_CXX11}
+#cmakedefine CONDUIT_USE_FMT
+
+#cmakedefine CONDUIT_USE_CXX11
+
+//-----------------------------------------------------------------------------
+// if built with c++11 support, make sure a c++11 compiler is used
+//-----------------------------------------------------------------------------
+#if defined(CONDUIT_USE_CXX11)
+    #if defined(_MSC_VER)
+        #if _MSC_VER < 1900
+            #error Conduit was built with c++11 support, please use a c++11 compliant compiler
+        #endif
+    #elif __cplusplus <= 199711L
+        #error Conduit was built with c++11 support, please use a c++11 compliant compiler
+    #endif
+#endif
 
 #endif
 
