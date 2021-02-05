@@ -19,8 +19,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for using C++11 initializer lists to set Node and DataArray values from numeric arrays. See C++ tutorial docs (https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_numeric.html#c-11-initializer-lists) for more details.
 - Added a Node::describe() method. This method creates a new node that mirrors the current Node, however each leaf is replaced by summary stats and a truncated display of the values. For use cases with large leaves, printing the describe() output Node is much more helpful for debugging and understanding vs wall of text from other to_string() methods. 
 - Added conduit::utils::format methods. These methods use fmt to format strings that include fmt style patterns. The formatting arguments are passed as a conduit::Node tree. The `args` case allows named arguments (args passed as object) or ordered args (args passed as list). The `maps` case also supports named or ordered args and works in conjunction with a `map_index`. The `map_index` is used to fetch a value from an array, or list of strings, which is then passed to fmt. The `maps` style of indexed indirection supports generating path strings for non-trivial domain partition mappings in Blueprint. This functionality is also available in Python, via the  `conduit.utils.format` method.
-- Added DataArray::fill method, which set all elements of a DataArray to a given value.
-
+- Added `DataArray::fill` method, which set all elements of a DataArray to a given value.
+- Added `Node::to_summary_string` methods, which allow you to create truncated strings that describe a node tree, control the max number of children and max number of elements shown.
 
 #### Relay
 - Added Relay IO Handle mode support for `a` (append) and `t` (truncate).  Truncate allows you to overwrite files when the handle is opened. The default is append, which preserves prior IO Handle behavior.
@@ -43,8 +43,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Removed
 
+#### General
+- Removed `Node::fetch_child` and `Schema::fetch_child` methods for v0.7.0. (Deprecated in v0.6.0 -- prefer `fetch_existing`)
+- Removed `Schema::to_json` method variants with `detailed` for v0.7.0. (Deprecated in v0.6.0 -- prefer standard `to_json`)
+- Removed `Schema::save` method variant with `detailed` for v0.7.0. (Deprecated in v0.6.0 -- prefer standard `save`)
+
 #### Relay
-- `conduit::relay::io_blueprint::save` methods were removed for v0.7.0. (Deprecated in v0.6.0)
+- Removed `conduit::relay::io_blueprint::save` methods for v0.7.0. (Deprecated in v0.6.0 -- prefer `conduit::relay::io::blueprint::save_mesh`)
 
 
 
