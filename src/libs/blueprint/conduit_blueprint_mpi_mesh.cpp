@@ -121,6 +121,35 @@ generate_index(const conduit::Node &mesh,
         }
     }
 
+    // determine if a partition map is needed:  must be multi-domain
+    // and have state/domain_id in the right location on selected_rank.
+    Node do_par_map;
+    do_par_map.set_uint8(0);
+    if(par_rank == selected_rank &&
+       ::conduit::blueprint::mesh::is_multi_domain(mesh))
+    {
+        if(mesh.child(0).has_child("state") &&
+           mesh.child(0)["state"].has_child("domain_id"))
+        {   
+            do_par_map.set_uint8(1);
+        }
+    }
+
+    relay::mpi::broadcast(do_par_map, selected_rank, comm);
+
+    // generate the partition map if needed.    
+    Node partition;
+    if(do_par_map.as_uint8())
+    {
+        generate_partition(mesh, partition, comm);
+    }
+
+    if(par_rank == selected_rank && !partition.dtype().is_empty())
+    {
+        index_out["state/partition_size"].set(par_size);
+        index_out["state/domain_to_partition_map"].set(partition);
+    }
+
     // broadcast the resulting index to all other ranks
     relay::mpi::broadcast_using_schema(index_out,
                                        selected_rank,
@@ -133,7 +162,7 @@ void generate_partition(const conduit::Node &mesh,
                         Node &partition,
                         MPI_Comm comm)
 {
-    int7 par_rank = relay::mpi::rank(comm);
+    int par_rank = relay::mpi::rank(comm);
 
     std::vector<conduit::int64> local_domains;
 
