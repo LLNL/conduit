@@ -3770,13 +3770,6 @@ public:
     Node             &fetch_existing(const std::string &path);
     const Node       &fetch_existing(const std::string &path) const;
 
-    /// DEPRECATED: `fetch_child` is deprecated in favor of `fetch_existing`
-    ///
-    /// the `fetch_child' methods don't modify map structure, if a path
-    /// doesn't exist they will throw an exception
-    Node             &fetch_child(const std::string &path);
-    const Node       &fetch_child(const std::string &path) const;
-
     // add_child will not try to parse the name as a path. "foo/bar.png" is
     // a legal name.
     Node             &add_child(const std::string &name);

@@ -13062,20 +13062,6 @@ Node::fetch_existing(const std::string &path)
     }
 }
 
-
-//---------------------------------------------------------------------------//
-Node&
-Node::fetch_child(const std::string &path)
-{
-    return fetch_existing(path);
-}
-//---------------------------------------------------------------------------//
-const Node&
-Node::fetch_child(const std::string &path) const
-{
-    return fetch_existing(path);
-}
-
 //---------------------------------------------------------------------------//
 Node&
 Node::fetch(const std::string &path)
