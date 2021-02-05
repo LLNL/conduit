@@ -8,6 +8,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include <string>
+#include <cstring>
 #include "conduit_utils.hpp"
 #include "conduit_relay_config.h"
 
@@ -16,7 +17,6 @@
 #else
     #include "conduit_relay_io_identify_protocol.hpp"
 #endif
-
 
 // includes for optional features
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
@@ -132,7 +132,7 @@ identify_file_type(const std::string &path,
     {
         // read up to 256 bytes
         char buff[257];
-        memset(buff,0,257);
+        std::memset(buff,0,257);
         std::ifstream ifs;
         ifs.open(path.c_str());
         if(ifs.is_open())
