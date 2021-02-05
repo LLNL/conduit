@@ -43,8 +43,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Removed
 
+#### General
+- Removed `Node::fetch_child` and `Schema::fetch_child` methods for v0.7.0. (Deprecated in v0.6.0 -- prefer `fetch_existing`)
+- Removed `Schema::to_json` method variants with `detailed` for v0.7.0. (Deprecated in v0.6.0 -- prefer standard `to_json`)
+- Removed `Schema::save` method variant with `detailed` for v0.7.0. (Deprecated in v0.6.0 -- prefer standard `save`)
+
 #### Relay
-- `conduit::relay::io_blueprint::save` methods were removed for v0.7.0. (Deprecated in v0.6.0)
+- Removed `conduit::relay::io_blueprint::save` methods for v0.7.0. (Deprecated in v0.6.0 -- prefer `conduit::relay::io::blueprint::save_mesh`)
 
 
 
