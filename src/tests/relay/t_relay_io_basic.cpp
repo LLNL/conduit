@@ -175,6 +175,7 @@ TEST(conduit_relay_io_basic, identify_protocol)
     EXPECT_EQ(protocol,"adios");
 }
 
+
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, identify_file_type)
 {
@@ -204,7 +205,7 @@ TEST(conduit_relay_io_basic, identify_file_type)
     remove_path_if_exists("tout_ident_identify.yaml");
 
     Node n;
-    n["answer"] = 42;
+    n["answer/is"] = 42;
 
     // create json and yaml files
     n.save("tout_identify_ftype.json");
@@ -213,9 +214,8 @@ TEST(conduit_relay_io_basic, identify_file_type)
     io::identify_file_type("tout_identify_ftype.json",protocol);
     EXPECT_EQ(protocol,"json");
 
-    // TODO: add YAML heurstic
     io::identify_file_type("tout_identify_ftype.yaml",protocol);
-    EXPECT_EQ(protocol,"unknown");
+    EXPECT_EQ(protocol,"yaml");
 
     Node io_protos;
     relay::io::about(io_protos["io"]);
