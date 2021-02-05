@@ -129,6 +129,48 @@ generate_index(const conduit::Node &mesh,
 
 
 //-----------------------------------------------------------------------------
+void generate_partition(const conduit::Node &mesh,
+                        Node &partition,
+                        MPI_Comm comm)
+{
+    int7 par_rank = relay::mpi::rank(comm);
+
+    std::vector<conduit::int64> local_domains;
+
+    conduit::NodeConstIterator itr = mesh.children();
+    while (itr.has_next())
+    {
+        const conduit::Node &chld = itr.next();
+        if (chld.has_child("state"))
+        {
+            const conduit::Node &state = chld["state"];
+            if (state.has_child("domain_id"))
+            {
+                 conduit::int64 dom_id = state["domain_id"].as_int64();
+                 local_domains.push_back(dom_id);
+            }
+        }
+    }
+
+    Node num_local, num_global;
+    num_local.set_int64(local_domains.size());
+    num_global.set_int64(0);
+    relay::mpi::sum_all_reduce(num_local, num_global, comm);
+
+    std::vector<int64> local_partition(num_global.as_int64(), 0);
+    for (auto m_itr = local_domains.begin(); m_itr != local_domains.end();
+         ++m_itr)
+    {
+         local_partition[*m_itr] = par_rank;
+    }
+
+    Node local_par;
+    local_par.set_external(&local_partition[0], local_partition.size());
+
+    relay::mpi::max_all_reduce(local_par, partition, comm);
+}
+
+//-----------------------------------------------------------------------------
 index_t
 number_of_domains(const conduit::Node &n,
                   MPI_Comm comm)
