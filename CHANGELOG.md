@@ -21,6 +21,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added conduit::utils::format methods. These methods use fmt to format strings that include fmt style patterns. The formatting arguments are passed as a conduit::Node tree. The `args` case allows named arguments (args passed as object) or ordered args (args passed as list). The `maps` case also supports named or ordered args and works in conjunction with a `map_index`. The `map_index` is used to fetch a value from an array, or list of strings, which is then passed to fmt. The `maps` style of indexed indirection supports generating path strings for non-trivial domain partition mappings in Blueprint. This functionality is also available in Python, via the  `conduit.utils.format` method.
 - Added `DataArray::fill` method, which set all elements of a DataArray to a given value.
 - Added `Node::to_summary_string` methods, which allow you to create truncated strings that describe a node tree, control the max number of children and max number of elements shown.
+- Added python support for `Node.to_summary_string`
 
 #### Relay
 - Added Relay IO Handle mode support for `a` (append) and `t` (truncate).  Truncate allows you to overwrite files when the handle is opened. The default is append, which preserves prior IO Handle behavior.
@@ -35,6 +36,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `conduit::blueprint::mesh::field::to_silo()` which converts a valid blueprint field and matset to a node that contains arrays that follow Silo's sparse mix slot volume fraction representation.
 - Added `material_map` to `conduit::blueprint::mesh:matset::index`, to provide an explicit material name to id mapping.
 - Added `mat_check` field to `blueprint::mesh::examples::venn`. This field encodes the material info in a scalar field and in the `matset_values` in a way that can be used to easily compare and verify proper construction in other tools.
+
+### Changed
+
+#### General
+- Python Node repr string construction now uses `Node.to_summary_string()`
+
 
 ### Fixed
 
