@@ -3509,6 +3509,42 @@ public:
     std::string         to_string_default() const;
 
 //-----------------------------------------------------------------------------
+// -- Summary string construction methods ---
+//-----------------------------------------------------------------------------
+    /// Creates a summary string representation of a node.
+    ///
+    /// `opts` Node is used to pass formatting params.
+    ///
+    /// Supported `opts` entries: 
+    ///  
+    ///  num_children_threshold: max number of children to print for a list or object
+    ///    (default: 7)
+    ///  num_elements_threshold: max number of elements to print for a leaf
+    ///    (default: 5)
+    ///  indent: indention amount (default: 2 instances of pad)
+    ///  depth: indention level (default: 0)
+    ///  pad:  padding string (default: " ")
+    //   eoe:  end of element string (default: "\n")
+    ///
+    /// formatting details:
+    ///   these methods prefix entries with indent strings created using
+    ///      utils::indent(...,indent, depth, pad)
+    ///   adds the `eoe` (end-of-entry) suffix where necessary.
+
+    std::string         to_summary_string() const;
+    std::string         to_summary_string(const conduit::Node &opts) const;
+    void                to_summary_string_stream(std::ostream &os,
+                                                 const conduit::Node &opts) const;
+    void                to_summary_string_stream(const std::string &stream_path,
+                                                 const conduit::Node &opts) const;
+
+    // NOTE(cyrush): In this case to_summary_string() is easily callable
+    // in debugging tools, but still provide the to_summary_string_default()
+    // variant to present a similar interface to other `to_` methods.
+    std::string         to_summary_string_default() const;
+
+
+//-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------
     /// Creates a JSON string representation of a node.
@@ -4475,6 +4511,18 @@ private:
                                   index_t depth=0,
                                   const std::string &pad=" ",
                                   const std::string &eoe="\n") const;
+
+    //-------------------------------------------------------------------------
+    // private summary string helper
+    // (public interface methods bundle options in a node)
+    //-------------------------------------------------------------------------
+    void             to_summary_string_stream(std::ostream &os,
+                                              index_t num_children_threshold,
+                                              index_t num_elements_threshold,
+                                              index_t indent,
+                                              index_t depth,
+                                              const std::string &pad,
+                                              const std::string &eoe) const;
 
 //-----------------------------------------------------------------------------
 //
