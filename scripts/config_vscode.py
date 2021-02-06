@@ -6,6 +6,7 @@ import sys
 import json
 import os
 
+
 from optparse import OptionParser
 
 def parse_args():
@@ -24,6 +25,10 @@ def parse_args():
     opts = vars(opts)
     return opts, extras
 
+##################################
+# Ref for vscode cmake settings:
+##################################
+# https://vector-of-bool.github.io/docs/vscode-cmake-tools/settings.html
 
 def write_vscode_settings(settings):
     settings_file = os.path.abspath(".vscode/settings.json")
