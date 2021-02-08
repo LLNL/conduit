@@ -140,7 +140,7 @@ Node::Node(const Schema &schema)
 
 //---------------------------------------------------------------------------//
 Node::Node(const Generator &gen,
-           bool external)
+           const bool external)
 {
     init_defaults();
     if(external)
@@ -156,8 +156,8 @@ Node::Node(const Generator &gen,
 
 //---------------------------------------------------------------------------//
 Node::Node(const std::string &schema,
-           void *data,
-           bool external)
+           const void *data,
+           const bool external)
 {
     init_defaults(); 
     Generator g(schema,"conduit_json",data);
@@ -182,11 +182,11 @@ Node::Node(const DataType &dtype)
 
 //---------------------------------------------------------------------------//
 Node::Node(const Schema &schema,
-           void *data,
-           bool external)
+           const void *data,
+           const bool external)
 {
     init_defaults();
-    std::string json_schema =schema.to_json(); 
+    std::string json_schema = schema.to_json();
     Generator g(json_schema,"conduit_json",data);
     if(external)
     {
@@ -201,8 +201,8 @@ Node::Node(const Schema &schema,
 
 //---------------------------------------------------------------------------//
 Node::Node(const DataType &dtype,
-           void *data,
-           bool external)
+           const void *data,
+           const bool external)
 {    
     init_defaults();
     if(external)
@@ -255,7 +255,7 @@ Node::generate_external(const Generator &gen)
 void
 Node::generate(const std::string &schema,
                const std::string &protocol,
-               void *data)
+               const void *data)
                
 {
     Generator g(schema,protocol,data);
@@ -266,7 +266,7 @@ Node::generate(const std::string &schema,
 void
 Node::generate_external(const std::string &schema,
                         const std::string &protocol,
-                        void *data)
+                        const void *data)
                
 {
     Generator g(schema,protocol,data);
@@ -545,7 +545,7 @@ Node::set(const Schema &schema)
 //---------------------------------------------------------------------------//
 void
 Node::set_data_using_schema(const Schema &schema,
-                            void *data)
+                            const void *data)
 {
     release();
     m_schema->set(schema);   
@@ -559,7 +559,7 @@ Node::set_data_using_schema(const Schema &schema,
 //---------------------------------------------------------------------------//
 void
 Node::set(const Schema &schema,
-          void *data)
+          const void *data)
 {
     set_data_using_schema(schema,data);
 }
@@ -567,7 +567,7 @@ Node::set(const Schema &schema,
 //---------------------------------------------------------------------------//
 void
 Node::set_data_using_dtype(const DataType &dtype,
-                           void *data)
+                           const void *data)
 {
     release();
     m_schema->set(dtype);
@@ -578,7 +578,7 @@ Node::set_data_using_dtype(const DataType &dtype,
 
 //---------------------------------------------------------------------------//
 void
-Node::set(const DataType &dtype, void *data)
+Node::set(const DataType &dtype, const void *data)
 {
     set_data_using_dtype(dtype,data);
 }
@@ -593,7 +593,7 @@ Node::set(const DataType &dtype, void *data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_int8(int8 data)
+Node::set_int8(const int8 data)
 {
     init(DataType::int8());
     // TODO IMP: use element_ptr() ?
@@ -602,14 +602,14 @@ Node::set_int8(int8 data)
 
 //---------------------------------------------------------------------------//
 void
-Node::set(int8 data)
+Node::set(const int8 data)
 {
     set_int8(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int16(int16 data)
+Node::set_int16(const int16 data)
 {
     init(DataType::int16());
     *(int16*)((char*)m_data + schema().element_index(0)) = data;
@@ -617,14 +617,14 @@ Node::set_int16(int16 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int16 data)
+Node::set(const int16 data)
 {
     set_int16(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int32(int32 data)
+Node::set_int32(const int32 data)
 {
     init(DataType::int32());
     *(int32*)((char*)m_data + schema().element_index(0)) = data;
@@ -632,14 +632,14 @@ Node::set_int32(int32 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int32 data)
+Node::set(const int32 data)
 {
     set_int32(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_int64(int64 data)
+Node::set_int64(const int64 data)
 {
     init(DataType::int64());
     *(int64*)((char*)m_data + schema().element_index(0)) = data;
@@ -647,7 +647,7 @@ Node::set_int64(int64 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(int64 data)
+Node::set(const int64 data)
 {
     set_int64(data);
 }
@@ -658,7 +658,7 @@ Node::set(int64 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_uint8(uint8 data)
+Node::set_uint8(const uint8 data)
 {
     init(DataType::uint8());
     *(uint8*)((char*)m_data + schema().element_index(0)) = data;
@@ -666,14 +666,14 @@ Node::set_uint8(uint8 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint8 data)
+Node::set(const uint8 data)
 {
     set_uint8(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_uint16(uint16 data)
+Node::set_uint16(const uint16 data)
 {
     init(DataType::uint16());
     *(uint16*)((char*)m_data + schema().element_index(0)) = data;
@@ -681,14 +681,14 @@ Node::set_uint16(uint16 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint16 data)
+Node::set(const uint16 data)
 {
     set_uint16(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_uint32(uint32 data)
+Node::set_uint32(const uint32 data)
 {
     init(DataType::uint32());
     *(uint32*)((char*)m_data + schema().element_index(0)) = data;
@@ -696,14 +696,14 @@ Node::set_uint32(uint32 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint32 data)
+Node::set(const uint32 data)
 {
     set_uint32(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_uint64(uint64 data)
+Node::set_uint64(const uint64 data)
 {
     init(DataType::uint64());
     *(uint64*)((char*)m_data + schema().element_index(0)) = data;
@@ -711,7 +711,7 @@ Node::set_uint64(uint64 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(uint64 data)
+Node::set(const uint64 data)
 {
     set_uint64(data);
 }
@@ -722,7 +722,7 @@ Node::set(uint64 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_float32(float32 data)
+Node::set_float32(const float32 data)
 {
     init(DataType::float32());
     *(float32*)((char*)m_data + schema().element_index(0)) = data;
@@ -730,14 +730,14 @@ Node::set_float32(float32 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(float32 data)
+Node::set(const float32 data)
 {
     set_float32(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_float64(float64 data)
+Node::set_float64(const float64 data)
 {
     init(DataType::float64());
     *(float64*)((char*)m_data + schema().element_index(0)) = data;
@@ -745,7 +745,7 @@ Node::set_float64(float64 data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set(float64 data)
+Node::set(const float64 data)
 {
     set_float64(data);
 }
@@ -757,7 +757,7 @@ Node::set(float64 data)
 
 //-----------------------------------------------------------------------------
 void
-Node::set(char data)
+Node::set(const char data)
 {
     set((CONDUIT_NATIVE_CHAR)data);
 }
@@ -767,14 +767,14 @@ Node::set(char data)
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-Node::set(signed char data)
+Node::set(const signed char data)
 {
     set((CONDUIT_NATIVE_SIGNED_CHAR)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned char data)
+Node::set(const unsigned char data)
 {
     set((CONDUIT_NATIVE_UNSIGNED_CHAR)data);
 }
@@ -786,14 +786,14 @@ Node::set(unsigned char data)
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 void
-Node::set(short data)
+Node::set(const short data)
 {
     set((CONDUIT_NATIVE_SHORT)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned short data)
+Node::set(const unsigned short data)
 {
     set((CONDUIT_NATIVE_UNSIGNED_SHORT)data);
 }
@@ -805,14 +805,14 @@ Node::set(unsigned short data)
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 void
-Node::set(int data)
+Node::set(const int data)
 {
     set((CONDUIT_NATIVE_INT)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned int data)
+Node::set(const unsigned int data)
 {
     set((CONDUIT_NATIVE_UNSIGNED_INT)data);
 }
@@ -824,14 +824,14 @@ Node::set(unsigned int data)
 #ifndef CONDUIT_USE_LONG
 //-----------------------------------------------------------------------------
 void
-Node::set(long data)
+Node::set(const long data)
 {
     set((CONDUIT_NATIVE_LONG)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned long data)
+Node::set(const unsigned long data)
 {
     set((CONDUIT_NATIVE_UNSIGNED_LONG)data);
 }
@@ -843,14 +843,14 @@ Node::set(unsigned long data)
 #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
 //-----------------------------------------------------------------------------
 void
-Node::set(long long data)
+Node::set(const long long data)
 {
     set((CONDUIT_NATIVE_LONG_LONG)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set(unsigned long long data)
+Node::set(const unsigned long long data)
 {
     set((CONDUIT_NATIVE_UNSIGNED_LONG_LONG)data);
 }
@@ -862,7 +862,7 @@ Node::set(unsigned long long data)
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
-Node::set(float data)
+Node::set(const float data)
 {
     set((CONDUIT_NATIVE_FLOAT)data);
 }
@@ -874,7 +874,7 @@ Node::set(float data)
 #ifndef CONDUIT_USE_DOUBLE
 //-----------------------------------------------------------------------------
 void
-Node::set(double data)
+Node::set(const double data)
 {
     set((CONDUIT_NATIVE_DOUBLE)data);
 }
@@ -2204,7 +2204,7 @@ Node::set_path(const std::string &path,
 void
 Node::set_path_data_using_schema(const std::string &path,
                                  const Schema &schema,
-                                 void *data)
+                                 const void *data)
 {
     fetch(path).set_data_using_schema(schema,data);
 }
@@ -2213,7 +2213,7 @@ Node::set_path_data_using_schema(const std::string &path,
 void
 Node::set_path(const std::string &path,
                const Schema &schema,
-               void *data)
+               const void *data)
 {
     set_path_data_using_schema(path,schema,data);
 }
@@ -2222,7 +2222,7 @@ Node::set_path(const std::string &path,
 void
 Node::set_path_data_using_dtype(const std::string &path,
                                 const DataType &dtype,
-                                void *data)
+                                const void *data)
 {
     fetch(path).set_data_using_dtype(dtype,data);
 }
@@ -2231,7 +2231,7 @@ Node::set_path_data_using_dtype(const std::string &path,
 void
 Node::set_path(const std::string &path,
                const DataType &dtype,
-               void *data)
+               const void *data)
 {
     set_path_data_using_dtype(path,dtype,data);
 }
@@ -2247,7 +2247,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int8(const std::string &path,
-                    int8 data)
+                    const int8 data)
 {
     fetch(path).set_int8(data);
 }
@@ -2255,7 +2255,7 @@ Node::set_path_int8(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               int8 data)
+               const int8 data)
 {
     set_path_int8(path,data);
 }
@@ -2263,7 +2263,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int16(const std::string &path,
-                     int16 data)
+                     const int16 data)
 {
     fetch(path).set_int16(data);
 }
@@ -2271,7 +2271,7 @@ Node::set_path_int16(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               int16 data)
+               const int16 data)
 {
     set_path_int16(path,data);
 }
@@ -2280,7 +2280,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int32(const std::string &path,
-                     int32 data)
+                     const int32 data)
 {
     fetch(path).set_int32(data);
 }
@@ -2288,7 +2288,7 @@ Node::set_path_int32(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               int32 data)
+               const int32 data)
 {
     set_path_int32(path,data);
 }
@@ -2296,7 +2296,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_int64(const std::string &path,
-                     int64 data)
+                     const int64 data)
 {
     fetch(path).set_int64(data);
 }
@@ -2304,7 +2304,7 @@ Node::set_path_int64(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               int64 data)
+               const int64 data)
 {
     fetch(path).set(data);
 }
@@ -2316,7 +2316,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint8(const std::string &path,
-                     uint8 data)
+                     const uint8 data)
 {
     fetch(path).set_uint8(data);
 }
@@ -2324,7 +2324,7 @@ Node::set_path_uint8(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               uint8 data)
+               const uint8 data)
 {
     set_path_uint8(path,data);
 }
@@ -2332,7 +2332,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint16(const std::string &path,
-                      uint16 data)
+                      const uint16 data)
 {
     fetch(path).set_uint16(data);
 }
@@ -2340,7 +2340,7 @@ Node::set_path_uint16(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               uint16 data)
+               const uint16 data)
 {
     set_path_uint16(path,data);
 }
@@ -2348,7 +2348,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint32(const std::string &path,
-                      uint32 data)
+                      const uint32 data)
 {
     fetch(path).set_uint32(data);
 }
@@ -2356,7 +2356,7 @@ Node::set_path_uint32(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               uint32 data)
+               const uint32 data)
 {
     set_path_uint32(path,data);
 }
@@ -2364,7 +2364,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_uint64(const std::string &path,
-                      uint64 data)
+                      const uint64 data)
 {
     fetch(path).set_uint64(data);
 }
@@ -2372,7 +2372,7 @@ Node::set_path_uint64(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               uint64 data)
+               const uint64 data)
 {
     set_path_uint64(path,data);
 }
@@ -2384,7 +2384,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_float32(const std::string &path,
-                       float32 data)
+                       const float32 data)
 {
     fetch(path).set_float32(data);
 }
@@ -2392,7 +2392,7 @@ Node::set_path_float32(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               float32 data)
+               const float32 data)
 {
     set_path_float32(path,data);
 }
@@ -2400,7 +2400,7 @@ Node::set_path(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_float64(const std::string &path,
-                       float64 data)
+                       const float64 data)
 {
     fetch(path).set_float64(data);
 }
@@ -2408,7 +2408,7 @@ Node::set_path_float64(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path(const std::string &path,
-               float64 data)
+               const float64 data)
 {
     set_path_float64(path,data);
 }
@@ -2419,7 +2419,7 @@ Node::set_path(const std::string &path,
 
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, char data)
+Node::set_path(const std::string &path, const char data)
 {
     set_path(path,(CONDUIT_NATIVE_CHAR)data);
 }
@@ -2428,14 +2428,14 @@ Node::set_path(const std::string &path, char data)
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, signed char data)
+Node::set_path(const std::string &path, const signed char data)
 {
     set_path(path,(CONDUIT_NATIVE_SIGNED_CHAR)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, unsigned char data)
+Node::set_path(const std::string &path, const unsigned char data)
 {
     set_path(path,(CONDUIT_NATIVE_UNSIGNED_CHAR)data);
 }
@@ -2447,14 +2447,14 @@ Node::set_path(const std::string &path, unsigned char data)
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, short data)
+Node::set_path(const std::string &path, const short data)
 {
     set_path(path,(CONDUIT_NATIVE_SHORT)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, unsigned short data)
+Node::set_path(const std::string &path, const unsigned short data)
 {
     set_path(path,(CONDUIT_NATIVE_UNSIGNED_SHORT)data);
 }
@@ -2466,14 +2466,14 @@ Node::set_path(const std::string &path, unsigned short data)
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, int data)
+Node::set_path(const std::string &path, const int data)
 {
     set_path(path,(CONDUIT_NATIVE_INT)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, unsigned int data)
+Node::set_path(const std::string &path, const unsigned int data)
 {
     set_path(path,(CONDUIT_NATIVE_UNSIGNED_INT)data);
 }
@@ -2485,14 +2485,14 @@ Node::set_path(const std::string &path, unsigned int data)
 #ifndef CONDUIT_USE_LONG
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, long data)
+Node::set_path(const std::string &path, const long data)
 {
     set_path(path,(CONDUIT_NATIVE_LONG)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, unsigned long data)
+Node::set_path(const std::string &path, const unsigned long data)
 {
     set_path(path,(CONDUIT_NATIVE_UNSIGNED_LONG)data);
 }
@@ -2504,14 +2504,14 @@ Node::set_path(const std::string &path, unsigned long data)
 #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, long long data)
+Node::set_path(const std::string &path, const long long data)
 {
     set_path(path,(CONDUIT_NATIVE_LONG_LONG)data);
 }
 
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, unsigned long long data)
+Node::set_path(const std::string &path, const unsigned long long data)
 {
     set_path(path,(CONDUIT_NATIVE_UNSIGNED_LONG_LONG)data);
 }
@@ -2523,7 +2523,7 @@ Node::set_path(const std::string &path, unsigned long long data)
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, float data)
+Node::set_path(const std::string &path, const float data)
 {
     set_path(path,(CONDUIT_NATIVE_FLOAT)data);
 }
@@ -2535,7 +2535,7 @@ Node::set_path(const std::string &path, float data)
 #ifndef CONDUIT_USE_DOUBLE
 //-----------------------------------------------------------------------------
 void
-Node::set_path(const std::string &path, double data)
+Node::set_path(const std::string &path, const double data)
 {
     set_path(path, (CONDUIT_NATIVE_DOUBLE)data);
 }
@@ -3907,7 +3907,7 @@ Node::set_external(const Node &node)
 //---------------------------------------------------------------------------//
 void
 Node::set_external_data_using_schema(const Schema &schema,
-                                     void *data)
+                                     const void *data)
 {
     reset();
     m_schema->set(schema);
@@ -3917,7 +3917,7 @@ Node::set_external_data_using_schema(const Schema &schema,
 //---------------------------------------------------------------------------//
 void
 Node::set_external(const Schema &schema,
-                   void *data)
+                   const void *data)
 {
     set_external_data_using_schema(schema,data);
 }
@@ -3925,7 +3925,7 @@ Node::set_external(const Schema &schema,
 //---------------------------------------------------------------------------//
 void
 Node::set_external_data_using_dtype(const DataType &dtype,
-                                    void *data)
+                                    const void *data)
 {
     reset();
     m_data    = data;
@@ -3935,7 +3935,7 @@ Node::set_external_data_using_dtype(const DataType &dtype,
 //---------------------------------------------------------------------------//
 void
 Node::set_external(const DataType &dtype,
-                   void *data)
+                   const void *data)
 {
     set_external_data_using_dtype(dtype,data);
 }
@@ -3950,7 +3950,7 @@ Node::set_external(const DataType &dtype,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_int8_ptr(int8 *data,
+Node::set_external_int8_ptr(const int8 *data,
                             index_t num_elements,
                             index_t offset,
                             index_t stride,
@@ -3968,7 +3968,7 @@ Node::set_external_int8_ptr(int8 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(int8 *data,
+Node::set_external(const int8 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -3985,7 +3985,7 @@ Node::set_external(int8 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_int16_ptr(int16 *data,
+Node::set_external_int16_ptr(const int16 *data,
                              index_t num_elements,
                              index_t offset,
                              index_t stride,
@@ -4003,7 +4003,7 @@ Node::set_external_int16_ptr(int16 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(int16 *data,
+Node::set_external(const int16 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4021,7 +4021,7 @@ Node::set_external(int16 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_int32_ptr(int32 *data,
+Node::set_external_int32_ptr(const int32 *data,
                              index_t num_elements,
                              index_t offset,
                              index_t stride,
@@ -4039,7 +4039,7 @@ Node::set_external_int32_ptr(int32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(int32 *data,
+Node::set_external(const int32 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4056,7 +4056,7 @@ Node::set_external(int32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_int64_ptr(int64 *data,
+Node::set_external_int64_ptr(const int64 *data,
                              index_t num_elements,
                              index_t offset,
                              index_t stride,
@@ -4074,7 +4074,7 @@ Node::set_external_int64_ptr(int64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(int64 *data,
+Node::set_external(const int64 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4096,7 +4096,7 @@ Node::set_external(int64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_uint8_ptr(uint8 *data,
+Node::set_external_uint8_ptr(const uint8 *data,
                              index_t num_elements,
                              index_t offset,
                              index_t stride,
@@ -4114,7 +4114,7 @@ Node::set_external_uint8_ptr(uint8 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(uint8 *data,
+Node::set_external(const uint8 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4133,7 +4133,7 @@ Node::set_external(uint8 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_uint16_ptr(uint16 *data,
+Node::set_external_uint16_ptr(const uint16 *data,
                               index_t num_elements,
                               index_t offset,
                               index_t stride,
@@ -4152,7 +4152,7 @@ Node::set_external_uint16_ptr(uint16 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(uint16 *data,
+Node::set_external(const uint16 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4169,7 +4169,7 @@ Node::set_external(uint16 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_uint32_ptr(uint32 *data,
+Node::set_external_uint32_ptr(const uint32 *data,
                              index_t num_elements,
                              index_t offset,
                              index_t stride,
@@ -4188,7 +4188,7 @@ Node::set_external_uint32_ptr(uint32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(uint32 *data,
+Node::set_external(const uint32 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4205,7 +4205,7 @@ Node::set_external(uint32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_uint64_ptr(uint64 *data,
+Node::set_external_uint64_ptr(const uint64 *data,
                               index_t num_elements,
                               index_t offset,
                               index_t stride,
@@ -4224,7 +4224,7 @@ Node::set_external_uint64_ptr(uint64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(uint64 *data,
+Node::set_external(const uint64 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4244,7 +4244,7 @@ Node::set_external(uint64 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_float32_ptr(float32 *data,
+Node::set_external_float32_ptr(const float32 *data,
                                index_t num_elements,
                                index_t offset,
                                index_t stride,
@@ -4262,7 +4262,7 @@ Node::set_external_float32_ptr(float32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(float32 *data,
+Node::set_external(const float32 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4279,7 +4279,7 @@ Node::set_external(float32 *data,
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_float64_ptr(float64 *data,
+Node::set_external_float64_ptr(const float64 *data,
                                index_t num_elements,
                                index_t offset,
                                index_t stride,
@@ -4297,7 +4297,7 @@ Node::set_external_float64_ptr(float64 *data,
     
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(float64 *data,
+Node::set_external(const float64 *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4316,7 +4316,7 @@ Node::set_external(float64 *data,
 // set pointer gap methods for c-native types
 //-----------------------------------------------------------------------------
 void
-Node::set_external_char_ptr(char *data,
+Node::set_external_char_ptr(const char *data,
                             index_t num_elements,
                             index_t offset,
                             index_t stride,
@@ -4337,7 +4337,7 @@ Node::set_external_char_ptr(char *data,
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 void
-Node::set_external(signed char *data,
+Node::set_external(const signed char *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4355,7 +4355,7 @@ Node::set_external(signed char *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set_external(unsigned char *data,
+Node::set_external(const unsigned char *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4378,7 +4378,7 @@ Node::set_external(unsigned char *data,
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 void
-Node::set_external(short *data,
+Node::set_external(const short *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4396,7 +4396,7 @@ Node::set_external(short *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set_external(unsigned short *data,
+Node::set_external(const unsigned short *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4419,7 +4419,7 @@ Node::set_external(unsigned short *data,
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 void
-Node::set_external(int *data,
+Node::set_external(const int *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4437,7 +4437,7 @@ Node::set_external(int *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set_external(unsigned int *data,
+Node::set_external(const unsigned int *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4460,7 +4460,7 @@ Node::set_external(unsigned int *data,
 #ifndef CONDUIT_USE_LONG
 //-----------------------------------------------------------------------------
 void
-Node::set_external(long *data,
+Node::set_external(const long *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4478,7 +4478,7 @@ Node::set_external(long *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set_external(unsigned long *data,
+Node::set_external(const unsigned long *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4502,7 +4502,7 @@ Node::set_external(unsigned long *data,
 #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
 //-----------------------------------------------------------------------------
 void
-Node::set_external(long long *data,
+Node::set_external(const long long *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4520,7 +4520,7 @@ Node::set_external(long long *data,
 
 //-----------------------------------------------------------------------------
 void
-Node::set_external(unsigned long long *data,
+Node::set_external(const unsigned long long *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4543,7 +4543,7 @@ Node::set_external(unsigned long long *data,
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 void
-Node::set_external(float *data,
+Node::set_external(const float *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4566,7 +4566,7 @@ Node::set_external(float *data,
 #ifndef CONDUIT_USE_DOUBLE
 //-----------------------------------------------------------------------------
 void
-Node::set_external(double *data,
+Node::set_external(const double *data,
                    index_t num_elements,
                    index_t offset,
                    index_t stride,
@@ -4765,7 +4765,7 @@ Node::set_external(const float64_array &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_char8_str(char *data)
+Node::set_external_char8_str(const char *data)
 {
     release();
     
@@ -4952,7 +4952,7 @@ Node::set_external(const double_array &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_int8_vector(std::vector<int8> &data)
+Node::set_external_int8_vector(const std::vector<int8> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -4963,14 +4963,14 @@ Node::set_external_int8_vector(std::vector<int8> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<int8> &data)
+Node::set_external(const std::vector<int8> &data)
 {
     set_external_int8_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_int16_vector(std::vector<int16> &data)
+Node::set_external_int16_vector(const std::vector<int16> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -4981,14 +4981,14 @@ Node::set_external_int16_vector(std::vector<int16> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<int16> &data)
+Node::set_external(const std::vector<int16> &data)
 {
     set_external_int16_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_int32_vector(std::vector<int32> &data)
+Node::set_external_int32_vector(const std::vector<int32> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -4999,14 +4999,14 @@ Node::set_external_int32_vector(std::vector<int32> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<int32> &data)
+Node::set_external(const std::vector<int32> &data)
 {
     set_external_int32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_int64_vector(std::vector<int64> &data)
+Node::set_external_int64_vector(const std::vector<int64> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -5017,7 +5017,7 @@ Node::set_external_int64_vector(std::vector<int64> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<int64> &data)
+Node::set_external(const std::vector<int64> &data)
 {
     set_external_int64_vector(data);
 }
@@ -5028,7 +5028,7 @@ Node::set_external(std::vector<int64> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_uint8_vector(std::vector<uint8> &data)
+Node::set_external_uint8_vector(const std::vector<uint8> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -5039,14 +5039,14 @@ Node::set_external_uint8_vector(std::vector<uint8> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<uint8> &data)
+Node::set_external(const std::vector<uint8> &data)
 {
     set_external_uint8_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_uint16_vector(std::vector<uint16> &data)
+Node::set_external_uint16_vector(const std::vector<uint16> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -5057,14 +5057,14 @@ Node::set_external_uint16_vector(std::vector<uint16> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<uint16> &data)
+Node::set_external(const std::vector<uint16> &data)
 {
     set_external_uint16_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_uint32_vector(std::vector<uint32> &data)
+Node::set_external_uint32_vector(const std::vector<uint32> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -5075,14 +5075,14 @@ Node::set_external_uint32_vector(std::vector<uint32> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<uint32> &data)
+Node::set_external(const std::vector<uint32> &data)
 {
     set_external_uint32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_uint64_vector(std::vector<uint64> &data)
+Node::set_external_uint64_vector(const std::vector<uint64> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -5093,7 +5093,7 @@ Node::set_external_uint64_vector(std::vector<uint64> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<uint64> &data)
+Node::set_external(const std::vector<uint64> &data)
 {
     set_external_uint64_vector(data);
 }
@@ -5104,7 +5104,7 @@ Node::set_external(std::vector<uint64> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_float32_vector(std::vector<float32> &data)
+Node::set_external_float32_vector(const std::vector<float32> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -5115,14 +5115,14 @@ Node::set_external_float32_vector(std::vector<float32> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<float32> &data)
+Node::set_external(const std::vector<float32> &data)
 {
     set_external_float32_vector(data);
 }
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external_float64_vector(std::vector<float64> &data)
+Node::set_external_float64_vector(const std::vector<float64> &data)
 {
     release();
     index_t data_num_ele = (index_t)data.size();
@@ -5133,7 +5133,7 @@ Node::set_external_float64_vector(std::vector<float64> &data)
 
 //---------------------------------------------------------------------------//
 void 
-Node::set_external(std::vector<float64> &data)
+Node::set_external(const std::vector<float64> &data)
 {
     set_external_float64_vector(data);
 }
@@ -5362,7 +5362,7 @@ Node::set_path_external(const std::string &path,
 void
 Node::set_path_external_data_using_schema(const std::string &path,
                                           const Schema &schema,
-                                          void *data)
+                                          const void *data)
 {
     fetch(path).set_external_data_using_schema(schema,data);
 }
@@ -5371,7 +5371,7 @@ Node::set_path_external_data_using_schema(const std::string &path,
 void
 Node::set_path_external(const std::string &path,
                         const Schema &schema,
-                        void *data)
+                        const void *data)
 {
     set_path_external_data_using_schema(path,schema,data);
 }
@@ -5380,7 +5380,7 @@ Node::set_path_external(const std::string &path,
 void
 Node::set_path_external_data_using_dtype(const std::string &path,
                                          const DataType &dtype,
-                                         void *data)
+                                         const void *data)
 {
     fetch(path).set_external_data_using_dtype(dtype,data);
 }
@@ -5389,7 +5389,7 @@ Node::set_path_external_data_using_dtype(const std::string &path,
 void
 Node::set_path_external(const std::string &path,
                         const DataType &dtype,
-                        void *data)
+                        const void *data)
 {
     set_path_external_data_using_dtype(path,dtype,data);
 }
@@ -5405,7 +5405,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int8_ptr(const std::string &path,
-                                 int8  *data,
+                                 const int8  *data,
                                  index_t num_elements,
                                  index_t offset,
                                  index_t stride,
@@ -5423,7 +5423,7 @@ Node::set_path_external_int8_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        int8  *data,
+                        const int8  *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5442,7 +5442,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int16_ptr(const std::string &path,
-                                  int16 *data, 
+                                  const int16 *data,
                                   index_t num_elements,
                                   index_t offset,
                                   index_t stride,
@@ -5460,7 +5460,7 @@ Node::set_path_external_int16_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        int16 *data, 
+                        const int16 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5479,7 +5479,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int32_ptr(const std::string &path,
-                                  int32 *data,
+                                  const int32 *data,
                                   index_t num_elements,
                                   index_t offset,
                                   index_t stride,
@@ -5497,7 +5497,7 @@ Node::set_path_external_int32_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-           int32 *data,
+           const int32 *data,
            index_t num_elements,
            index_t offset,
            index_t stride,
@@ -5516,7 +5516,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int64_ptr(const std::string &path,
-                                  int64 *data,
+                                  const int64 *data,
                                   index_t num_elements,
                                   index_t offset,
                                   index_t stride,
@@ -5534,7 +5534,7 @@ Node::set_path_external_int64_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        int64 *data,
+                        const int64 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5557,7 +5557,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint8_ptr(const std::string &path,
-                                  uint8  *data,
+                                  const uint8  *data,
                                   index_t num_elements,
                                   index_t offset,
                                   index_t stride,
@@ -5574,7 +5574,7 @@ Node::set_path_external_uint8_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        uint8  *data,
+                        const uint8  *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5593,7 +5593,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint16_ptr(const std::string &path,
-                                   uint16 *data,
+                                   const uint16 *data,
                                    index_t num_elements,
                                    index_t offset,
                                    index_t stride,
@@ -5611,7 +5611,7 @@ Node::set_path_external_uint16_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        uint16 *data,
+                        const uint16 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5630,7 +5630,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint32_ptr(const std::string &path,
-                                   uint32 *data, 
+                                   const uint32 *data,
                                    index_t num_elements,
                                    index_t offset,
                                    index_t stride,
@@ -5648,7 +5648,7 @@ Node::set_path_external_uint32_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        uint32 *data, 
+                        const uint32 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5668,7 +5668,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint64_ptr(const std::string &path,
-                                   uint64 *data,
+                                   const uint64 *data,
                                    index_t num_elements,
                                    index_t offset,
                                    index_t stride,
@@ -5686,7 +5686,7 @@ Node::set_path_external_uint64_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        uint64 *data,
+                        const uint64 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5709,7 +5709,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_float32_ptr(const std::string &path,
-                                    float32 *data,
+                                    const float32 *data,
                                     index_t num_elements,
                                     index_t offset,
                                     index_t stride,
@@ -5727,7 +5727,7 @@ Node::set_path_external_float32_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                       float32 *data,
+                       const float32 *data,
                        index_t num_elements,
                        index_t offset,
                        index_t stride,
@@ -5748,7 +5748,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_float64_ptr(const std::string &path,
-                                    float64 *data, 
+                                    const float64 *data,
                                     index_t num_elements,
                                     index_t offset,
                                     index_t stride,
@@ -5767,7 +5767,7 @@ Node::set_path_external_float64_ptr(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        float64 *data, 
+                        const float64 *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5789,7 +5789,7 @@ Node::set_path_external(const std::string &path,
 
 void
 Node::set_path_external_char_ptr(const std::string &path,
-                                 char *data,
+                                 const char *data,
                                  index_t num_elements,
                                  index_t offset,
                                  index_t stride,
@@ -5810,7 +5810,7 @@ Node::set_path_external_char_ptr(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        signed char *data,
+                        const signed char *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5828,7 +5828,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        unsigned char *data,
+                        const unsigned char *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5851,7 +5851,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        short *data,
+                        const short *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5869,7 +5869,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        unsigned short *data,
+                        const unsigned short *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5892,7 +5892,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        int *data,
+                        const int *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5910,7 +5910,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        unsigned int *data,
+                        const unsigned int *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5933,7 +5933,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        long *data,
+                        const long *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5951,7 +5951,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        unsigned long *data,
+                        const unsigned long *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5974,7 +5974,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        long long *data,
+                        const long long *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -5992,7 +5992,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        unsigned long long *data,
+                        const unsigned long long *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -6015,7 +6015,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        float *data,
+                        const float *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -6038,7 +6038,7 @@ Node::set_path_external(const std::string &path,
 //-----------------------------------------------------------------------------
 void
 Node::set_path_external(const std::string &path,
-                        double *data,
+                        const double *data,
                         index_t num_elements,
                         index_t offset,
                         index_t stride,
@@ -6193,7 +6193,7 @@ Node::set_path_external_uint64_array(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                       const uint64_array &data)
+                        const uint64_array &data)
 {
     set_path_external_uint64_array(path,data);
 }
@@ -6387,7 +6387,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_char8_str(const std::string &path,
-                                 char *data)
+                                  const char *data)
 {
     fetch(path).set_external_char8_str(data);
 }
@@ -6403,7 +6403,7 @@ Node::set_path_external_char8_str(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int8_vector(const std::string &path,
-                                   std::vector<int8> &data)
+                                    const std::vector<int8> &data)
 {
     fetch(path).set_external_int8_vector(data);
 }
@@ -6411,7 +6411,7 @@ Node::set_path_external_int8_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<int8> &data)
+                        const std::vector<int8> &data)
 {
     set_path_external_int8_vector(path,data);
 }
@@ -6419,7 +6419,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int16_vector(const std::string &path,
-                                     std::vector<int16> &data)
+                                     const std::vector<int16> &data)
 {
     fetch(path).set_external_int16_vector(data);
 }
@@ -6427,7 +6427,7 @@ Node::set_path_external_int16_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<int16> &data)
+                        const std::vector<int16> &data)
 {
     set_path_external_int16_vector(path,data);
 }
@@ -6435,7 +6435,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int32_vector(const std::string &path,
-                                     std::vector<int32> &data)
+                                     const std::vector<int32> &data)
 {
     fetch(path).set_external_int32_vector(data);
 }
@@ -6443,7 +6443,7 @@ Node::set_path_external_int32_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<int32> &data)
+                        const std::vector<int32> &data)
 {
     set_path_external_int32_vector(path,data);
 }
@@ -6451,7 +6451,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_int64_vector(const std::string &path,
-                        std::vector<int64> &data)
+                                     const std::vector<int64> &data)
 {
     fetch(path).set_external_int64_vector(data);
 }
@@ -6459,7 +6459,7 @@ Node::set_path_external_int64_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<int64> &data)
+                        const std::vector<int64> &data)
 {
     set_path_external_int64_vector(path,data);
 }
@@ -6471,7 +6471,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint8_vector(const std::string &path,
-                                     std::vector<uint8> &data)
+                                     const std::vector<uint8> &data)
 {
     fetch(path).set_external_uint8_vector(data);
 }
@@ -6479,7 +6479,7 @@ Node::set_path_external_uint8_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<uint8> &data)
+                        const std::vector<uint8> &data)
 {
     set_path_external_uint8_vector(path,data);
 }
@@ -6487,7 +6487,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint16_vector(const std::string &path,
-                                      std::vector<uint16> &data)
+                                      const std::vector<uint16> &data)
 {
     fetch(path).set_external_uint16_vector(data);
 }
@@ -6495,7 +6495,7 @@ Node::set_path_external_uint16_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<uint16> &data)
+                        const std::vector<uint16> &data)
 {
     set_path_external_uint16_vector(path,data);
 }
@@ -6503,7 +6503,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint32_vector(const std::string &path,
-                                      std::vector<uint32> &data)
+                                      const std::vector<uint32> &data)
 {
     fetch(path).set_external_uint32_vector(data);
 }
@@ -6511,7 +6511,7 @@ Node::set_path_external_uint32_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<uint32> &data)
+                        const std::vector<uint32> &data)
 {
     set_path_external_uint32_vector(path,data);
 }
@@ -6520,7 +6520,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_uint64_vector(const std::string &path,
-                                      std::vector<uint64> &data)
+                                      const std::vector<uint64> &data)
 {
     fetch(path).set_external_uint64_vector(data);
 }
@@ -6528,7 +6528,7 @@ Node::set_path_external_uint64_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<uint64> &data)
+                        const std::vector<uint64> &data)
 {
     set_path_external_uint64_vector(path,data);
 }
@@ -6540,7 +6540,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_float32_vector(const std::string &path,
-                                       std::vector<float32> &data)
+                                       const std::vector<float32> &data)
 {
     fetch(path).set_external_float32_vector(data);
 }
@@ -6548,7 +6548,7 @@ Node::set_path_external_float32_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<float32> &data)
+                        const std::vector<float32> &data)
 {
     set_path_external_float32_vector(path,data);
 }
@@ -6556,7 +6556,7 @@ Node::set_path_external(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external_float64_vector(const std::string &path,
-                                       std::vector<float64> &data)
+                                       const std::vector<float64> &data)
 {
     fetch(path).set_external_float64_vector(data);
 }
@@ -6564,7 +6564,7 @@ Node::set_path_external_float64_vector(const std::string &path,
 //---------------------------------------------------------------------------//
 void
 Node::set_path_external(const std::string &path,
-                        std::vector<float64> &data)
+                        const std::vector<float64> &data)
 {
     set_path_external_float64_vector(path,data);
 }
@@ -6768,7 +6768,7 @@ Node::operator=(const Schema &schema)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(int8 data)
+Node::operator=(const int8 data)
 {
     set(data);
     return *this;
@@ -6776,7 +6776,7 @@ Node::operator=(int8 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(int16 data)
+Node::operator=(const int16 data)
 {
     set(data);
     return *this;
@@ -6784,7 +6784,7 @@ Node::operator=(int16 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(int32 data)
+Node::operator=(const int32 data)
 {
     set(data);
     return *this;
@@ -6792,7 +6792,7 @@ Node::operator=(int32 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(int64 data)
+Node::operator=(const int64 data)
 {
     set(data);
     return *this;
@@ -6805,7 +6805,7 @@ Node::operator=(int64 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(uint8 data)
+Node::operator=(const uint8 data)
 {
     set(data);
     return *this;
@@ -6813,7 +6813,7 @@ Node::operator=(uint8 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(uint16 data)
+Node::operator=(const uint16 data)
 {
     set(data);
     return *this;
@@ -6821,7 +6821,7 @@ Node::operator=(uint16 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(uint32 data)
+Node::operator=(const uint32 data)
 {
     set(data);
     return *this;
@@ -6829,7 +6829,7 @@ Node::operator=(uint32 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(uint64 data)
+Node::operator=(const uint64 data)
 {
     set(data);
     return *this;
@@ -6841,7 +6841,7 @@ Node::operator=(uint64 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(float32 data)
+Node::operator=(const float32 data)
 {
     set(data);
     return *this;
@@ -6849,7 +6849,7 @@ Node::operator=(float32 data)
 
 //---------------------------------------------------------------------------//
 Node &
-Node::operator=(float64 data)
+Node::operator=(const float64 data)
 {
     set(data);
     return *this;
@@ -6861,7 +6861,7 @@ Node::operator=(float64 data)
 
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(char data)
+Node::operator=(const char data)
 {
     set(data);
     return *this;
@@ -6871,7 +6871,7 @@ Node::operator=(char data)
 #ifndef CONDUIT_USE_CHAR
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(signed char data)
+Node::operator=(const signed char data)
 {
     set(data);
     return *this;
@@ -6893,7 +6893,7 @@ Node::operator=(unsigned char data)
 #ifndef CONDUIT_USE_SHORT
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(short data)
+Node::operator=(const short data)
 {
     set(data);
     return *this;
@@ -6901,7 +6901,7 @@ Node::operator=(short data)
 
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(unsigned short data)
+Node::operator=(const unsigned short data)
 {
     set(data);
     return *this;
@@ -6914,7 +6914,7 @@ Node::operator=(unsigned short data)
 #ifndef CONDUIT_USE_INT
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(int data)
+Node::operator=(const int data)
 {
     set(data);
     return *this;
@@ -6922,7 +6922,7 @@ Node::operator=(int data)
 
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(unsigned int data)
+Node::operator=(const unsigned int data)
 {
     set(data);
     return *this;
@@ -6935,7 +6935,7 @@ Node::operator=(unsigned int data)
 #ifndef CONDUIT_USE_LONG
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(long data)
+Node::operator=(const long data)
 {
     set(data);
     return *this;
@@ -6943,7 +6943,7 @@ Node::operator=(long data)
 
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(unsigned long data)
+Node::operator=(const unsigned long data)
 {
     set(data);
     return *this;
@@ -6956,7 +6956,7 @@ Node::operator=(unsigned long data)
 #if defined(CONDUIT_HAS_LONG_LONG) && !defined(CONDUIT_USE_LONG_LONG)
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(long long data)
+Node::operator=(const long long data)
 {
     set(data);
     return *this;
@@ -6964,7 +6964,7 @@ Node::operator=(long long data)
 
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(unsigned long long data)
+Node::operator=(const unsigned long long data)
 {
     set(data);
     return *this;
@@ -6977,7 +6977,7 @@ Node::operator=(unsigned long long data)
 #ifndef CONDUIT_USE_FLOAT
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(float data)
+Node::operator=(const float data)
 {
     set(data);
     return *this;
@@ -6990,7 +6990,7 @@ Node::operator=(float data)
 #ifndef CONDUIT_USE_DOUBLE
 //-----------------------------------------------------------------------------
 Node &
-Node::operator=(double data)
+Node::operator=(const double data)
 {
     set(data);
     return *this;
@@ -7516,7 +7516,7 @@ Node::operator=(const std::vector<double> &data)
 
 //---------------------------------------------------------------------------//
 void
-Node::serialize(std::vector<uint8> &data) const
+Node::serialize(const std::vector<uint8> &data) const
 {
     data = std::vector<uint8>((size_t)total_bytes_compact(),0);
     serialize(&data[0],0);
@@ -14474,7 +14474,7 @@ Node::set_schema_ptr(Schema *schema_ptr)
 
 //---------------------------------------------------------------------------//
 void
-Node::set_data_ptr(void *data)
+Node::set_data_ptr(const void *data)
 {
     /// TODO: We need to audit where we actually need release
     //release();
@@ -14894,7 +14894,7 @@ Node::identify_protocol(const std::string &path,
 void 
 Node::walk_schema(Node   *node, 
                   Schema *schema,
-                  void   *data)
+                  const void   *data)
 {
     // we can have an object, list, or leaf
     node->set_data_ptr(data);

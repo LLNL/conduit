@@ -156,7 +156,7 @@ public:
 
     static void    walk_json_schema(Node   *node,
                                     Schema *schema,
-                                    void   *data,
+                                    const void *data,
                                     const rapidjson::Value &jvalue,
                                     index_t curr_offset);
     
@@ -1168,7 +1168,7 @@ Generator::Parser::JSON::walk_pure_json_schema(Node *node,
 void 
 Generator::Parser::JSON::walk_json_schema(Node   *node,
                                           Schema *schema,
-                                          void   *data,
+                                          const void *data,
                                           const rapidjson::Value &jvalue,
                                           index_t curr_offset)
 {
@@ -2074,7 +2074,7 @@ Generator::Generator()
 //---------------------------------------------------------------------------//
 Generator::Generator(const std::string &schema,
                      const std::string &protocol,
-                     void *data)
+                     const void *data)
 :m_schema(schema),
  m_protocol(protocol),
  m_data(data)
@@ -2096,7 +2096,7 @@ Generator::set_protocol(const std::string &protocol)
 
 //---------------------------------------------------------------------------//
 void
-Generator::set_data_ptr(void *data_ptr)
+Generator::set_data_ptr(const void *data_ptr)
 {
     m_data = data_ptr;
 }
@@ -2116,7 +2116,7 @@ Generator::protocol() const
 }
 
 //---------------------------------------------------------------------------//
-void *
+const void *
 Generator::data_ptr() const
 {
     return m_data;
