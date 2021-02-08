@@ -11,7 +11,6 @@
 #include "conduit.hpp"
 
 #include <iostream>
-#include <regex>
 #include "gtest/gtest.h"
 #include "rapidjson/document.h"
 using namespace conduit;
@@ -1191,16 +1190,18 @@ TEST(conduit_node, to_string_and_indent_check_all_protos)
     {
         const std::string& txt_case = txt_cases[ti];
         const std::string& txt_type = txt_types[ti];
+        std::vector<std::string> txt_lines;
+        conduit::utils::split_string(txt_case, '\n', txt_lines);
 
         for(const auto& key_pair : schema_key_depths)
         {
             const std::string& key_string = key_pair.first;
             const index_t key_depth = key_pair.second + ((txt_type == "json") ? 1 : 0);
 
-            std::regex key_regex;
+            std::string key_line;
             {
                 std::ostringstream oss;
-                oss << "([ ]*)(";
+                oss << std::string(2 * key_depth, ' ');
                 if(txt_type == "json")
                 {
                     oss << "\"";
@@ -1210,16 +1211,16 @@ TEST(conduit_node, to_string_and_indent_check_all_protos)
                 {
                     oss << "\"";
                 }
-                oss << "):\s*";
-                key_regex = std::regex(oss.str());
+                oss << ":";
+                key_line = oss.str();
             }
 
-            std::smatch key_match;
-            ASSERT_TRUE(std::regex_search(txt_case, key_match, key_regex));
-
-            const std::string schema_padding = key_match[1].str();
-            const std::string expected_padding(2 * key_depth, ' ');
-            ASSERT_EQ(schema_padding, expected_padding);
+            bool key_found = false;
+            for(index_t li = 0; li < (index_t)txt_lines.size() && !key_found; li++)
+            {
+                key_found |= txt_lines[li].rfind(key_line) == 0;
+            }
+            ASSERT_TRUE(key_found);
         }
     }
 }
