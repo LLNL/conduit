@@ -22,6 +22,9 @@ TEST(blueprint_mpi_smoke, basic_verify)
 {
     conduit::Node mesh, info;
 
+    int par_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &par_size);
+
     // empty on all domains should return false ... 
     EXPECT_FALSE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
         
@@ -32,7 +35,15 @@ TEST(blueprint_mpi_smoke, basic_verify)
                                       mesh);
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
-    EXPECT_EQ(conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD),2);
+    EXPECT_EQ(conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD),par_size);
+
+    conduit::Node partition;
+    conduit::blueprint::mpi::mesh::generate_partition(mesh,partition,MPI_COMM_WORLD);
+
+    EXPECT_TRUE(partition.dtype().is_int64());
+
+    EXPECT_EQ(partition.dtype().number_of_elements(),par_size);
+
 }
 
 
@@ -76,6 +87,7 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
 
         // all ranks should have index data.
         EXPECT_TRUE(bp_index["mesh"].dtype().is_object());
+
     }
 }
 
@@ -141,6 +153,13 @@ TEST(blueprint_mpi_smoke, multi_domain)
 
     // all ranks should have index data.
     EXPECT_TRUE(bp_index["mesh"].dtype().is_object());
+
+    conduit::Node partition;
+    conduit::blueprint::mpi::mesh::generate_partition(mesh,partition,MPI_COMM_WORLD);
+
+    EXPECT_TRUE(partition.dtype().is_int64());
+
+    EXPECT_EQ(partition.dtype().number_of_elements(), num_domains);
 }
 
 
