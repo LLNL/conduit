@@ -224,7 +224,6 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
     // this should succeed
     io::hdf5_write(n,h5_dset_id);
 
-
     // this should also succeed
     vals[1] = 16;
 
@@ -248,6 +247,126 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
 
 
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle_with_offset)
+{
+    std::string ofname = "tout_hdf5_wr_conduit_leaf_to_hdf5_dataset_handle_with_offset.hdf5";
+
+    hid_t h5_file_id = H5Fcreate(ofname.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 H5P_DEFAULT,
+                                 H5P_DEFAULT);
+
+    // create a dataset for a 16-bit signed integer  array with 2 elements
+
+
+    hid_t h5_dtype = H5T_NATIVE_SHORT;
+
+    hsize_t num_eles = 2;
+    hsize_t dims[1] = {H5S_UNLIMITED};
+
+    hid_t   h5_dspace_id = H5Screate_simple(1,
+                                            &num_eles,
+                                            dims);
+
+    /*
+     * Modify dataset creation properties, i.e. enable chunking.
+     */
+    hid_t cparms;
+    hsize_t chunk_dims[1] = {1};
+
+    cparms = H5Pcreate (H5P_DATASET_CREATE);
+    H5Pset_chunk(cparms, 1, chunk_dims);
+
+
+    // create new dataset
+    hid_t h5_dset_id  = H5Dcreate1(h5_file_id,
+                                   "mydata",
+                                   h5_dtype,
+                                   h5_dspace_id,
+                                   cparms);
+
+    Node n, opts;
+    n.set(DataType::c_short(2));
+    short_array vals = n.value();
+
+    vals[0] = -16;
+    vals[1] = -15;
+
+    // this should succeed
+    io::hdf5_write(n,h5_dset_id);
+
+    vals[0] = 1;
+    vals[1] = 2;
+    opts["offset"] = 2;
+    opts["stride"] = 1;
+
+    io::hdf5_write(n,h5_dset_id,opts);
+
+    Node n_read, opts_read;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // // check values of data
+    short_array read_vals = n_read.value();
+    EXPECT_EQ(-16,read_vals[0]);
+    EXPECT_EQ(-15,read_vals[1]);
+    EXPECT_EQ(1,read_vals[2]);
+    EXPECT_EQ(2,read_vals[3]);
+
+    opts_read["offset"] = 2;
+    opts_read["stride"] = 1;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // // check values of data
+    read_vals = n_read.value();
+    EXPECT_EQ(1,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+
+    vals[0] = -1;
+    vals[1] = -3;
+    opts["offset"] = 0;
+    opts["stride"] = 2;
+
+    io::hdf5_write(n,h5_dset_id,opts);
+
+    opts_read["offset"] = 0;
+    opts_read["stride"] = 1;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // // check values of data
+    read_vals = n_read.value();
+    EXPECT_EQ(-1,read_vals[0]);
+    EXPECT_EQ(-15,read_vals[1]);
+    EXPECT_EQ(-3,read_vals[2]);
+    EXPECT_EQ(2,read_vals[3]);
+
+    opts["offset"] = -1;
+    opts["stride"] = 2;
+    opts_read["offset"] = -1;
+    opts_read["stride"] = 2;
+
+    //this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
+    EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
+
+    opts["offset"] = 0;
+    opts["stride"] = 0;
+    opts_read["offset"] = 0;
+    opts_read["stride"] = 0;
+
+    //this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
+    // EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
+
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+    H5Fclose(h5_file_id);
+
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle)
@@ -1348,7 +1467,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
 TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
 {
     std::string tout_std = "tout_hdf5_empty_compat.hdf5";
-    
+
     Node n;
     n["myval"] = 42;
     io::save(n,tout_std);
@@ -1361,8 +1480,6 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
     Node n_load, n_diff_info;
     io::load(tout_std,"hdf5",n_load);
     n_load.print();
-    
+
     EXPECT_FALSE(n.diff(n_load,n_diff_info));
 }
-
-

@@ -31,51 +31,51 @@
 /// When writing a node to a HDF5 hierarchy there are two steps:
 /// (1) Given a destination path, find (or create) the proper HDF5 parent group
 /// (2) Write the node's data into the parent group
-/// 
+///
 ///
 /// 1) To find (or create) the parent group there are two cases to finalize
 ///    the desired parent's HDF5 path:
 ///
-///  A) If the input node is a leaf type, the last part of the path 
-///     (the portion after the last slash '/', or the entire path if 
+///  A) If the input node is a leaf type, the last part of the path
+///     (the portion after the last slash '/', or the entire path if
 ///     the path doesn't contain any slashes '/') is reserved for the
-///     name of the HDF5 dataset that will be used to store the node's data. 
-///     The rest of the path will be used to find or create the proper parent 
+///     name of the HDF5 dataset that will be used to store the node's data.
+///     The rest of the path will be used to find or create the proper parent
 ///     group.
-/// 
-///  B) If the input node is an Object, the full input path will be used to 
+///
+///  B) If the input node is an Object, the full input path will be used to
 ///     find or create the proper parent group.
 ///
-///  Given the desired parent path: 
-/// 
-///  If the desired parent path exists in the HDF5 tree and resolves to 
+///  Given the desired parent path:
+///
+///  If the desired parent path exists in the HDF5 tree and resolves to
 ///  a group, that group will be used as the parent.
 ///
-///  If the desired parent path does not exist, or partially exists 
+///  If the desired parent path does not exist, or partially exists
 ///  relay will attempt to create a hierarchy of HDF5 groups to represent it.
 ///
-///  During this process, if any part of the path exists and is not a HDF5 
+///  During this process, if any part of the path exists and is not a HDF5
 ///  group, an error is thrown and nothing will be modified.
 ///  (This error check happens before anything is modified in HDF5)
 ///
 ///
 /// 2) For writing the data, there are two cases:
 ///   A) If the input node is an Object, the children of the node will be
-///      written to the parent group. If children correspond to existing 
+///      written to the parent group. If children correspond to existing
 ///      HDF5 entires and they are incompatible (e.g. a group vs a dataset)
 //       an error is thrown and nothing will be written.
 ///      (This error check happens before anything is modified in HDF5)
 ///
-///   B) If the input node is a leaf type, the last part of the path will be 
-///      used as the name for a HDF5 dataset that will hold the node's data. 
+///   B) If the input node is a leaf type, the last part of the path will be
+///      used as the name for a HDF5 dataset that will hold the node's data.
 ///      If a child with this name already exists in in the parent group, and
-///      it is not compatible (e.g. a group vs a dataset) an error is thrown 
+///      it is not compatible (e.g. a group vs a dataset) an error is thrown
 ///     and nothing will be written.
 ///
 //-----------------------------------------------------------------------------
 ///  Note: HDF5 I/O is not implemented for Conduit Nodes in the List role.
 ///        We believe this will require a non-standard HDF5 convention, and
-///        we want to focus on the Object and Leave cases since they are 
+///        we want to focus on the Object and Leave cases since they are
 ///        compatible with HDF5's data model.
 //-----------------------------------------------------------------------------
 
@@ -94,49 +94,67 @@ void CONDUIT_RELAY_API hdf5_close_file(hid_t hdf5_id);
 /// Save node data to a given path.
 ///
 /// Save Semantics: Existing file will be overwritten
-/// /// Calls hdf5_write(node,path,false);
+/// /// Calls hdf5_write(node,path,opts,false);
 ///
 ///
 /// This methods supports a file system and hdf5 path, joined using a ":"
 ///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
-/// 
+///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_save(const Node &node,
                                  const std::string &path);
+
+void CONDUIT_RELAY_API hdf5_save(const Node &node,
+                                 const std::string &path,
+                                 const Node &opts);
 
 //-----------------------------------------------------------------------------
 /// Save node data to given file system path and internal hdf5 path
 ///
 /// Save Semantics: Existing file will be overwritten
-/// Calls hdf5_write(node,file_path,hdf5_path,false);
+/// Calls hdf5_write(node,file_path,hdf5_path,opts,false);
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_save(const Node &node,
                                  const std::string &file_path,
                                  const std::string &hdf5_path);
 
+void CONDUIT_RELAY_API hdf5_save(const Node &node,
+                                 const std::string &file_path,
+                                 const std::string &hdf5_path,
+                                 const Node &opts);
+
 //-----------------------------------------------------------------------------
 /// Write node data to a given path.
 ///
 /// Append Semantics: Append to existing file
-/// Calls hdf5_write(node,path,true);
+/// Calls hdf5_write(node,path,opts,true);
 ///
 ///
 /// This methods supports a file system and hdf5 path, joined using a ":"
 ///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
-/// 
+///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_append(const Node &node,
                                    const std::string &path);
+
+void CONDUIT_RELAY_API hdf5_append(const Node &node,
+                                   const std::string &path,
+                                   const Node &opts);
 
 //-----------------------------------------------------------------------------
 /// Write node data to given file system path and internal hdf5 path
 ///
 /// Append Semantics: Append to existing file
-/// Calls hdf5_write(node,file_path,hdf5_path,true);
+/// Calls hdf5_write(node,file_path,hdf5_path,opts,true);
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_append(const Node &node,
                                    const std::string &file_path,
                                    const std::string &hdf5_path);
+
+void CONDUIT_RELAY_API hdf5_append(const Node &node,
+                                   const std::string &file_path,
+                                   const std::string &hdf5_path,
+                                   const Node &opts);
 
 
 //-----------------------------------------------------------------------------
@@ -144,10 +162,15 @@ void CONDUIT_RELAY_API hdf5_append(const Node &node,
 ///
 /// This methods supports a file system and hdf5 path, joined using a ":"
 ///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
-/// 
+///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   const std::string &path,
+                                  bool append=false);
+
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  const std::string &path,
+                                  const Node &opts,
                                   bool append=false);
 
 //-----------------------------------------------------------------------------
@@ -158,22 +181,37 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   const std::string &hdf5_path,
                                   bool append=false);
 
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  const std::string &file_path,
+                                  const std::string &hdf5_path,
+                                  const Node &opts,
+                                  bool append=false);
+
 //-----------------------------------------------------------------------------
-/// Write node data to the hdf5_path relative to group represented  by 
-/// hdf5_id 
+/// Write node data to the hdf5_path relative to group represented  by
+/// hdf5_id
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id,
                                   const std::string &hdf5_path);
 
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  hid_t hdf5_id,
+                                  const std::string &hdf5_path,
+                                  const Node &opts);
+
 //-----------------------------------------------------------------------------
 /// Write node data to group represented by hdf5_id
-/// 
+///
 /// Note: this only works for Conduit Nodes in the Object role.
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id);
+
+void CONDUIT_RELAY_API hdf5_write(const Node &node,
+                                  hid_t hdf5_id,
+                                  const Node &opts);
 
 
 //-----------------------------------------------------------------------------
@@ -183,8 +221,8 @@ hid_t CONDUIT_RELAY_API hdf5_open_file_for_read(const std::string &file_path);
 hid_t CONDUIT_RELAY_API hdf5_open_file_for_read_write(const std::string &file_path);
 
 //-----------------------------------------------------------------------------
-/// Read hdf5 data from given path into the output node 
-/// 
+/// Read hdf5 data from given path into the output node
+///
 /// This methods supports a file system and hdf5 path, joined using a ":"
 ///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
 ///
@@ -192,12 +230,21 @@ hid_t CONDUIT_RELAY_API hdf5_open_file_for_read_write(const std::string &file_pa
 void CONDUIT_RELAY_API hdf5_read(const std::string &path,
                                  Node &node);
 
+void CONDUIT_RELAY_API hdf5_read(const std::string &path,
+                                 const Node &opts,
+                                 Node &node);
+
 //-----------------------------------------------------------------------------
-/// Read hdf5 data from given file system path and internal hdf5 path into 
+/// Read hdf5 data from given file system path and internal hdf5 path into
 /// the output node
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_read(const std::string &file_path,
                                  const std::string &hdf5_path,
+                                 Node &node);
+
+void CONDUIT_RELAY_API hdf5_read(const std::string &file_path,
+                                 const std::string &hdf5_path,
+                                 const Node &opts,
                                  Node &node);
 
 //-----------------------------------------------------------------------------
@@ -206,31 +253,35 @@ void CONDUIT_RELAY_API hdf5_read(const std::string &file_path,
 void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
                                  const std::string &hdf5_path,
                                  Node &node);
-//-----------------------------------------------------------------------------
-/// Read from hdf5 id into the output node
-//-----------------------------------------------------------------------------
+
 void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
+                                 const std::string &hdf5_path,
+                                 const Node &opts,
                                  Node &node);
 
 //-----------------------------------------------------------------------------
 /// Read from hdf5 id into the output node
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
+                                 Node &node);
+
+void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
+                                 const Node &opts,
                                  Node &node);
 
 //-----------------------------------------------------------------------------
 /// Helpers for converting between hdf5 dtypes and conduit dtypes
-/// 
+///
 ///  Throughout the relay hdf5 implementation, we use DataType::Empty when
 ///  the hdf5 data space is H5S_NULL, regardless of what the hdf5 data type is.
 ///  That isn't reflected in these helper functions, they handle
 ///  mapping of endianness and leaf types other than empty.
-/// 
-///  conduit_dtype_to_hdf5_dtype uses default HDF5 datatypes except for 
+///
+///  conduit_dtype_to_hdf5_dtype uses default HDF5 datatypes except for
 ///  the string case. String case result needs to be cleaned up with
-///  H5Tclose(). You can use conduit_dtype_to_hdf5_dtype_cleanup() to 
-///  properly cleanup in all cases. 
-/// 
+///  H5Tclose(). You can use conduit_dtype_to_hdf5_dtype_cleanup() to
+///  properly cleanup in all cases.
+///
 ///  You also can detect the custom string type case with:
 ///
 ///    if(  ! H5Tequal(hdf5_dtype_id, H5T_C_S1) &&
@@ -278,7 +329,7 @@ bool CONDUIT_RELAY_API hdf5_has_path(hid_t hdf5_id, const std::string &path);
 /// Remove a hdf5 path, if it exists
 ///
 /// Note: This does not necessarily reclaim the space used, however
-/// it does allow you to write new data to this path, avoiding errors 
+/// it does allow you to write new data to this path, avoiding errors
 /// related to incompatible groups or data sets.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_remove_path(hid_t hdf5_id, const std::string &path);
