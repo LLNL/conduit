@@ -9,7 +9,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 
 #### Blueprint
-- Fixed a bug with `blueprint::mesh::matset::to_silo` and `blueprint::mesh::field::to_silo` that could input values.
+- Fixed a bug with `blueprint::mesh::matset::to_silo` and `blueprint::mesh::field::to_silo` that could modify input values.
 
 ## [0.7.0] - Released 2021-02-08
 
