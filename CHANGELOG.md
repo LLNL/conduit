@@ -8,6 +8,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 
+#### General
+- Fixed a bug with Conduit's C interface including C++ headers.
+
 #### Blueprint
 - Fixed a bug with `blueprint::mesh::matset::to_silo` and `blueprint::mesh::field::to_silo` that could modify input values.
 
