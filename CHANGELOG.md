@@ -4,6 +4,13 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+#### Blueprint
+- Fixed a bug with `blueprint::mesh::matset::to_silo` and `blueprint::mesh::field::to_silo` that could modify input values.
+
 ## [0.7.0] - Released 2021-02-08
 
 ### Changed
