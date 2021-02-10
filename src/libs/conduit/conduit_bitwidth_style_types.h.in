@@ -4,7 +4,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: Bitwidth_Style_Types.hpp
+/// file: conduit_bitwidth_style_types.h
 ///
 //-----------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@
 #define CONDUIT_BITWIDTH_STYLE_TYPES_H
 
 #include "conduit_config.h"
-#include <climits>
+#include <limits.h>
 
 //-----------------------------------------------------------------------------
 // byte len of native types
@@ -91,7 +91,18 @@ typedef double              conduit_double;
 #endif
 #endif
 
+
+//-----------------------------------------------------------------------------
+//  signed vs unsigned determination
+//-----------------------------------------------------------------------------
+
+// --- char -- //
 // char can be signed or unsigned
+#ifndef CHAR_MIN
+#error Bitwidth Style Types: native mapping requires CHAR_MIN def
+#endif
+
+
 #if (CHAR_MIN==0)
 #define CONDUIT_CHAR_IS_UNSIGNED
 #else
@@ -101,10 +112,20 @@ typedef double              conduit_double;
 // per standard, the rest of types w/o
 // signed-ness should never be unsigned
 
+// --- short -- //
+#ifndef SHRT_MIN
+#error Bitwidth Style Types: native mapping requires SHRT_MIN def
+#endif
+
 #if (SHRT_MIN==0)
 #define CONDUIT_SHORT_IS_UNSIGNED
 #else
 #define CONDUIT_SHORT_IS_SIGNED
+#endif
+
+// --- int -- //
+#ifndef INT_MIN
+#error Bitwidth Style Types: native mapping requires INT_MIN def
 #endif
 
 #if (INT_MIN==0)
@@ -113,18 +134,30 @@ typedef double              conduit_double;
 #define CONDUIT_INT_IS_SIGNED
 #endif
 
+// --- long -- //
+#ifndef LONG_MIN
+#error Bitwidth Style Types: native mapping requires LONG_MIN def
+#endif
+
 #if (LONG_MIN==0)
 #define CONDUIT_LONG_IS_UNSIGNED
 #else
 #define CONDUIT_LONG_IS_SIGNED
 #endif
 
+// --- long long -- //
 #ifdef CONDUIT_HAS_LONG_LONG
+
+#ifndef LLONG_MIN
+#error Bitwidth Style Types: native mapping requires LLONG_MIN def
+#endif
+
 #if (LLONG_MIN==0)
 #define CONDUIT_LONG_LONG_IS_UNSIGNED
 #else
 #define CONDUIT_LONG_LONG_IS_SIGNED
 #endif
+
 #endif
 
 
