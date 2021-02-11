@@ -13,6 +13,30 @@ https://github.com/LLNL/conduit/releases
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
 
+v0.7.1
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.1/conduit-v0.7.1-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * Fixed a bug with Conduit's C interface including C++ headers.
+
+* **Blueprint**
+
+ * Fixed a bug with ``blueprint::mesh::matset::to_silo`` and ``blueprint::mesh::field::to_silo`` that could modify input values.
+ 
+
 v0.7.0
 ---------------------------------
 
