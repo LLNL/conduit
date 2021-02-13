@@ -269,6 +269,57 @@ void CONDUIT_RELAY_API hdf5_read(hid_t hdf5_id,
                                  const Node &opts,
                                  Node &node);
 
+// here change
+
+//-----------------------------------------------------------------------------
+/// Read hdf5 info from given path into the output node
+///
+/// This methods supports a file system and hdf5 path, joined using a ":"
+///  ex: "/path/on/file/system.hdf5:/path/inside/hdf5/file"
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_read_info(const std::string &path,
+                                 Node &node);
+
+void CONDUIT_RELAY_API hdf5_read_info(const std::string &path,
+                                 const Node &opts,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+/// Read hdf5 info from given file system path and internal hdf5 path into
+/// the output node
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_read_info(const std::string &file_path,
+                                 const std::string &hdf5_path,
+                                 Node &node);
+
+void CONDUIT_RELAY_API hdf5_read_info(const std::string &file_path,
+                                 const std::string &hdf5_path,
+                                 const Node &opts,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+/// Read info from hdf5 path relative to the hdf5 id into the output node
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_read_info(hid_t hdf5_id,
+                                 const std::string &hdf5_path,
+                                 Node &node);
+
+void CONDUIT_RELAY_API hdf5_read_info(hid_t hdf5_id,
+                                 const std::string &hdf5_path,
+                                 const Node &opts,
+                                 Node &node);
+
+//-----------------------------------------------------------------------------
+/// Read info from hdf5 id into the output node
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_read_info(hid_t hdf5_id,
+                                 Node &node);
+
+void CONDUIT_RELAY_API hdf5_read_info(hid_t hdf5_id,
+                                 const Node &opts,
+                                 Node &node);
+
 //-----------------------------------------------------------------------------
 /// Helpers for converting between hdf5 dtypes and conduit dtypes
 ///
