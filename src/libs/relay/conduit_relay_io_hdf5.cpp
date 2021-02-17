@@ -1264,6 +1264,11 @@ create_hdf5_dataset_for_conduit_leaf(const DataType &dtype,
 
     bool unlimited_dim = false;
 
+    if (extendible && !HDF5Options::chunking_enabled)
+    {
+        CONDUIT_ERROR("Chunking must be enabled to create an extendible array.");
+    }
+
     // if an offset is supplied, we will default to creating an extendible array
     if( !extendible && HDF5Options::compact_storage_enabled &&
         dtype.bytes_compact() <= HDF5Options::compact_storage_threshold)
@@ -1578,6 +1583,12 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
         // convert the fixed dataset to an extendible dataset if necessary
         if (dataset_max_dims[0] != H5S_UNLIMITED)
         {
+
+            if (!HDF5Options::chunking_enabled)
+            {
+                CONDUIT_ERROR("Chunking must be enabled to create an "
+                    << "extendible array.");
+            }
 
             // read the hdf5 dataset into memory since node may only contain
             // part of the hdf5 dataset
