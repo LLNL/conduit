@@ -42,65 +42,32 @@ using ::conduit::utils::join_path;
 
 //-----------------------------------------------------------------------------
 namespace conduit { namespace blueprint { namespace mesh {
-//-----------------------------------------------------------------------------
+    static const DataType default_int_dtype(DataType::INT32_ID, 1);
+    static const DataType default_uint_dtype(DataType::UINT32_ID, 1);
+    static const DataType default_float_dtype(DataType::FLOAT64_ID, 1);
+    static const std::vector<DataType> default_int_dtypes = {default_int_dtype, default_uint_dtype};
+    static const std::vector<DataType> default_number_dtypes = {default_float_dtype, default_int_dtype, default_uint_dtype};
 
-    bool verify_single_domain(const conduit::Node &n, conduit::Node &info);
-    bool verify_multi_domain(const conduit::Node &n, conduit::Node &info);
+    static const std::vector<std::string> associations = {"vertex", "element"};
+    static const std::vector<std::string> booleans = {"true", "false"};
+    static const std::vector<std::string> nestset_types = {"parent", "child"};
 
-    static const std::string association_list[2] = {"vertex", "element"};
-    static const std::vector<std::string> associations(association_list,
-        association_list + sizeof(association_list) / sizeof(association_list[0]));
+    static const std::vector<std::string> coordinate_axes = {"x", "y", "z", "r", "z", "theta", "phi"};
+    static const std::vector<std::string> cartesian_axes = {"x", "y", "z"};
+    static const std::vector<std::string> cylindrical_axes = {"r", "z"};
+    static const std::vector<std::string> spherical_axes = {"r", "theta", "phi"};
+    static const std::vector<std::string> logical_axes = {"i", "j", "k"};
 
-    static const std::string boolean_list[2] = {"true", "false"};
-    static const std::vector<std::string> booleans(boolean_list,
-        boolean_list + sizeof(boolean_list) / sizeof(boolean_list[0]));
+    static const std::vector<std::string> coord_types = {"uniform", "rectilinear", "explicit"};
+    static const std::vector<std::string> coord_systems = {"cartesian", "cylindrical", "spherical"};
 
-    static const std::string coord_type_list[3] = {"uniform", "rectilinear", "explicit"};
-    static const std::vector<std::string> coord_types(coord_type_list,
-        coord_type_list + sizeof(coord_type_list) / sizeof(coord_type_list[0]));
-
-    static const std::string coord_system_list[3] = {"cartesian", "cylindrical", "spherical"};
-    static const std::vector<std::string> coord_systems(coord_system_list,
-        coord_system_list + sizeof(coord_system_list) / sizeof(coord_system_list[0]));
-
-    static const std::string topo_type_list[5] = {"points", "uniform",
-        "rectilinear", "structured", "unstructured"};
-    static const std::vector<std::string> topo_types(topo_type_list,
-        topo_type_list + sizeof(topo_type_list) / sizeof(topo_type_list[0]));
-
-    static const std::string topo_shape_list[8] = {"point", "line",
-        "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
-    static const std::vector<std::string> topo_shapes(topo_shape_list,
-        topo_shape_list + sizeof(topo_shape_list) / sizeof(topo_shape_list[0]));
-
-    static const std::string topo_shape_id_list[8] = {"p", "l",
-        "f", "f", "c", "c", "f", "c"};
-    static const std::vector<std::string> topo_shape_ids(topo_shape_id_list,
-        topo_shape_id_list + sizeof(topo_shape_id_list) / sizeof(topo_shape_id_list[0]));
-
-    static const index_t topo_shape_dim_list[8] = {0, 1,
-        2, 2, 3, 3, 2, 3};
-    static const std::vector<index_t> topo_shape_dims(
-        topo_shape_dim_list, topo_shape_dim_list +
-        sizeof(topo_shape_dim_list) / sizeof(topo_shape_dim_list[0]));
-
-    static const index_t topo_shape_index_count_list[8] = {1, 2,
-        3, 4, 4, 8, -1, -1};
-    static const std::vector<index_t> topo_shape_index_counts(
-        topo_shape_index_count_list, topo_shape_index_count_list +
-        sizeof(topo_shape_index_count_list) / sizeof(topo_shape_index_count_list[0]));
-
-    static const index_t topo_shape_embed_type_list[8] = {-1, 0,
-        1, 1, 2, 3, 1, 6};
-    static const std::vector<index_t> topo_shape_embed_types(
-        topo_shape_embed_type_list, topo_shape_embed_type_list +
-        sizeof(topo_shape_embed_type_list) / sizeof(topo_shape_embed_type_list[0]));
-
-    static const index_t topo_shape_embed_count_list[8] = {0, 2,
-        3, 4, 4, 6, -1, -1};
-    static const std::vector<index_t> topo_shape_embed_counts(
-        topo_shape_embed_count_list, topo_shape_embed_count_list +
-        sizeof(topo_shape_embed_count_list) / sizeof(topo_shape_embed_count_list[0]));
+    static const std::vector<std::string> topo_types = {"points", "uniform", "rectilinear", "structured", "unstructured"};
+    static const std::vector<std::string> topo_shapes = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
+    static const std::vector<std::string> topo_shape_ids = {"p", "l", "f", "f", "c", "c", "f", "c"};
+    static const std::vector<index_t> topo_shape_dims = {0, 1, 2, 2, 3, 3, 2, 3};
+    static const std::vector<index_t> topo_shape_index_counts = {1, 2, 3, 4, 4, 8, -1, -1};
+    static const std::vector<index_t> topo_shape_embed_types = {-1, 0, 1, 1, 2, 3, 1, 6};
+    static const std::vector<index_t> topo_shape_embed_counts = {0, 2, 3, 4, 4, 6, -1, -1};
 
     // TODO(JRC): These orientations currently assume the default Conduit-Blueprit
     // windings are used for the input geometry, which happens to be the case
@@ -121,53 +88,14 @@ namespace conduit { namespace blueprint { namespace mesh {
     static const index_t topo_hex_embedding[6][4] = {
         {0, 3, 2, 1}, {0, 1, 5, 4}, {1, 2, 6, 5},
         {2, 3, 7, 6}, {3, 0, 4, 7}, {4, 5, 6, 7}};
-
-    static const index_t* topo_shape_embedding_list[8] = {
+    static const std::vector<const index_t*> topo_shape_embeddings = {
         &topo_point_embedding[0][0], &topo_line_embedding[0][0],
         &topo_tri_embedding[0][0], &topo_quad_embedding[0][0],
         &topo_tet_embedding[0][0], &topo_hex_embedding[0][0],
         NULL, NULL};
-    static const std::vector<const index_t*> topo_shape_embeddings(
-        topo_shape_embedding_list, topo_shape_embedding_list +
-        sizeof(topo_shape_embedding_list) / sizeof(topo_shape_embedding_list[0]));
 
-    static const std::string coordinate_axis_list[7] = {"x", "y", "z", "r", "z", "theta", "phi"};
-    static const std::vector<std::string> coordinate_axes(coordinate_axis_list,
-        coordinate_axis_list + sizeof(coordinate_axis_list) / sizeof(coordinate_axis_list[0]));
-
-    static const std::string cartesian_axis_list[3] = {"x", "y", "z"};
-    static const std::vector<std::string> cartesian_axes(cartesian_axis_list,
-        cartesian_axis_list + sizeof(cartesian_axis_list) / sizeof(cartesian_axis_list[0]));
-
-    static const std::string cylindrical_axis_list[2] = {"r", "z"};
-    static const std::vector<std::string> cylindrical_axes(cylindrical_axis_list,
-        cylindrical_axis_list + sizeof(cylindrical_axis_list) / sizeof(cylindrical_axis_list[0]));
-
-    static const std::string spherical_axis_list[7] = {"r", "theta", "phi"};
-    static const std::vector<std::string> spherical_axes(spherical_axis_list,
-        spherical_axis_list + sizeof(spherical_axis_list) / sizeof(spherical_axis_list[0]));
-
-    static const std::string logical_axis_list[3] = {"i", "j", "k"};
-    static const std::vector<std::string> logical_axes(logical_axis_list,
-        logical_axis_list + sizeof(logical_axis_list) / sizeof(logical_axis_list[0]));
-
-    static const std::string nestset_type_list[4] = {"parent", "child"};
-    static const std::vector<std::string> nestset_types(nestset_type_list,
-        nestset_type_list + sizeof(nestset_type_list) / sizeof(nestset_type_list[0]));
-
-    static const DataType default_int_dtype(DataType::INT32_ID, 1);
-    static const DataType default_uint_dtype(DataType::UINT32_ID, 1);
-    static const DataType default_float_dtype(DataType::FLOAT64_ID, 1);
-
-    static const DataType default_int_dtype_list[2] = {default_int_dtype, default_uint_dtype};
-    static const std::vector<DataType> default_int_dtypes(default_int_dtype_list,
-        default_int_dtype_list + sizeof(default_int_dtype_list) / sizeof(default_int_dtype_list[0]));
-
-    static const DataType default_number_dtype_list[3] = {default_float_dtype,
-        default_int_dtype, default_uint_dtype};
-    static const std::vector<DataType> default_number_dtypes(default_number_dtype_list,
-        default_number_dtype_list + sizeof(default_number_dtype_list) /
-        sizeof(default_number_dtype_list[0]));
+    bool verify_single_domain(const Node &n, Node &info);
+    bool verify_multi_domain(const Node &n, Node &info);
 } } }
 
 //-----------------------------------------------------------------------------
