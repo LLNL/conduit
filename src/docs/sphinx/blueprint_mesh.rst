@@ -669,18 +669,20 @@ The Blueprint schema for each entry in the ``nestsets`` section matches the foll
 
    .. code:: cpp
 
-       conduit::Node &global_origin = // path to nestset/windows/window/origin
+       // 'window_origin': starts out as a global index, but is transformed into
+       // a domain-local index through this procedure
+       conduit::Node &window_origin = // path to nestset/windows/window/origin
        conduit::Node &topo_origin = // loaded from client code; {i, j, k} structure
 
-       conduit::NodeIterator origin_it = global_origin.children();
+       conduit::NodeIterator origin_it = window_origin.children();
        while(origin_it.has_next())
        {
-           conduit::Node &global_dim = origin_it.next();
+           conduit::Node &window_dim = origin_it.next();
            conduit::Node &topo_dim = topo_origin[origin_it.name()];
 
-           conduit::int64 new_dim_val = global_dim.to_int64() - topo_dim.to_int64();
+           conduit::int64 new_dim_val = window_dim.to_int64() - topo_dim.to_int64();
            conduit::Node &new_dim(conduit::DataType::int64(1), &new_dim_val, true);
-           new_dim.to_data_type(global_dim.dtype().id(), global_dim);
+           new_dim.to_data_type(window_dim.dtype().id(), window_dim);
        }
 
 Each domain that contains a Nesting Sets section must also update its State section to include the domain's global nesting level.
