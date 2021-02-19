@@ -119,6 +119,9 @@ namespace coordset
     index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
     //-------------------------------------------------------------------------
     namespace uniform
@@ -224,6 +227,12 @@ namespace topology
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::points protocol interface
