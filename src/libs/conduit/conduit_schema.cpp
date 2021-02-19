@@ -515,44 +515,6 @@ Schema::to_string_default() const
     return to_string();
 }
 
-//---------------------------------------------------------------------------//
-// note: variants with detailed arg (which hasn't been used) are deprecated
-std::string
-Schema::to_json(bool /* detailed */, // unused
-                index_t indent,
-                index_t depth,
-                const std::string &pad,
-                const std::string &eoe) const
-{
-    return to_json(indent,depth,pad,eoe);
-}
-
-//---------------------------------------------------------------------------//
-// note: variants with detailed arg (which hasn't been used) are deprecated
-void
-Schema::to_json_stream(std::ostream &os,
-                       bool /* detailed */, // unused
-                       index_t indent,
-                       index_t depth,
-                       const std::string &pad,
-                       const std::string &eoe) const
-{
-    to_json_stream(os,indent,depth,pad,eoe);
-}
-
-//---------------------------------------------------------------------------//
-// note: variants with detailed arg (which hasn't been used) are deprecated
-void
-Schema::to_json_stream(const std::string &stream_path,
-                       bool /* detailed */, // unused
-                       index_t indent,
-                       index_t depth,
-                       const std::string &pad,
-                       const std::string &eoe) const
-{
-    to_json_stream(stream_path,indent,depth,pad,eoe);
-}
-
 
 //---------------------------------------------------------------------------//
 std::string
@@ -739,20 +701,6 @@ Schema::to_yaml_default() const
 /// Basic I/O methods
 //
 //-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-// 
-// note: variants with detailed arg (which hasn't been used) are deprecated
-void
-Schema::save(const std::string &ofname,
-             bool  /* detailed*/, // unused
-             index_t indent,
-             index_t depth,
-             const std::string &pad,
-             const std::string &eoe) const
-{
-    save(ofname,indent,depth,pad,eoe);
-}
 
 //---------------------------------------------------------------------------//
 void
@@ -1032,19 +980,6 @@ Schema::fetch_existing(const std::string &path) const
     }
 }
 
-//---------------------------------------------------------------------------//
-Schema&
-Schema::fetch_child(const std::string &path)
-{
-    return fetch_existing(path);
-}
-
-//---------------------------------------------------------------------------//
-const Schema &
-Schema::fetch_child(const std::string &path) const
-{
-    return fetch_existing(path);
-}
 
 //---------------------------------------------------------------------------//
 index_t

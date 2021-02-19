@@ -25,6 +25,91 @@ index_t OUTPUT_NUM_AXIS_POINTS = 5;
 std::string PROTOCOL_VER = CONDUIT_VERSION;
 
 //-----------------------------------------------------------------------------
+bool
+check_if_hdf5_enabled()
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    return io_protos["io/protocols/hdf5"].as_string() == "enabled";
+}
+
+//-----------------------------------------------------------------------------
+void
+test_save_mesh_helper(const conduit::Node &dsets,
+                      const std::string &base_name)
+{
+    Node opts;
+    opts["file_style"] = "root_only";
+    opts["suffix"] = "none";
+
+    relay::io::blueprint::save_mesh(dsets, base_name + "_yaml", "yaml", opts);
+
+    if(check_if_hdf5_enabled())
+    {
+        relay::io::blueprint::save_mesh(dsets, base_name + "_hdf5", "hdf5", opts);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void
+braid_save_helper(const conduit::Node &dsets,
+                  const std::string &base_name)
+{
+    Node root, info;
+    root["data"].set_external(dsets);
+
+    Node bpindex;
+    NodeConstIterator itr = dsets.children();
+    while(itr.has_next())
+    {
+        const Node &mesh = itr.next();
+        const std::string mesh_name = itr.name();
+
+        // NOTE: Skip all domains containing one or more mixed-shape topologies
+        // because this type of mesh isn't fully supported yet.
+        bool is_domain_index_valid = true;
+        NodeConstIterator topo_iter = mesh["topologies"].children();
+        while(topo_iter.has_next())
+        {
+            const Node &topo = topo_iter.next();
+            is_domain_index_valid &= (
+                !::conduit::blueprint::mesh::topology::unstructured::verify(topo, info) ||
+                !topo["elements"].has_child("element_types"));
+        }
+
+        if(is_domain_index_valid)
+        {
+            ::conduit::blueprint::mesh::generate_index(mesh,
+                                                       mesh_name,
+                                                       1,
+                                                       bpindex[mesh_name]);
+        }
+    }
+
+    std::string ofile = base_name + "_yaml.root";
+    root["blueprint_index"] = bpindex;
+    root["protocol/name"].set("yaml");
+    root["protocol/version"].set(CONDUIT_VERSION);
+
+    root["number_of_files"].set(1);
+    root["number_of_trees"].set(1);
+    root["file_pattern"].set(ofile);
+    root["tree_pattern"].set("/data");
+
+    relay::io::save(root,ofile,"yaml");
+
+    if(check_if_hdf5_enabled())
+    {
+        ofile = base_name + "_hdf5.root";
+        root["protocol/name"].set("hdf5");
+        root["file_pattern"].set(ofile);
+        relay::io::save(root,ofile,"hdf5");
+    }
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_2d)
 {
     Node io_protos;
@@ -115,11 +200,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     dsets.remove("quads_and_tris_offsets");
     dsets.remove("points_implicit");
 
-    relay::io_blueprint::save(dsets, "braid_2d_examples.blueprint_root");
-    if(hdf5_enabled)
-    {
-        relay::io_blueprint::save(dsets, "braid_2d_examples.blueprint_root_hdf5");
-    }
+    braid_save_helper(dsets,"braid_2d_examples");
+
     if(silo_enabled)
     {
         // we removed datasets above, so we need an updated iterator
@@ -235,11 +317,8 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     dsets.remove("hexs_and_tets");
     dsets.remove("points_implicit");
 
-    relay::io_blueprint::save(dsets, "braid_3d_examples.blueprint_root");
-    if(hdf5_enabled)
-    {
-        relay::io_blueprint::save(dsets, "braid_3d_examples.blueprint_root_hdf5");
-    }
+    braid_save_helper(dsets,"braid_3d_examples");
+
     if(silo_enabled)
     {
         // we removed datasets above, so we need an updated iterator
@@ -335,7 +414,7 @@ TEST(conduit_blueprint_mesh_examples, julia)
     EXPECT_TRUE(blueprint::mesh::verify(res,info));
     CONDUIT_INFO(info.to_yaml());
 
-    relay::io_blueprint::save(res, "julia_example.blueprint_root");
+    test_save_mesh_helper(res,"julia_example");
 }
 
 
@@ -381,7 +460,7 @@ TEST(conduit_blueprint_mesh_examples, polytess)
     EXPECT_TRUE(blueprint::mesh::verify(res,info));
     CONDUIT_INFO(info.to_yaml());
 
-    relay::io_blueprint::save(res, "polytess_example.blueprint_root");
+    test_save_mesh_helper(res,"polytess_example");
 }
 
 
@@ -480,14 +559,15 @@ void venn_test_small_yaml(const std::string &venn_type)
     blueprint::mesh::examples::venn(venn_type, nx, ny, radius, res);
 
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    info.print();
     blueprint::mesh::generate_index(res,"",1,n_idx);
     EXPECT_TRUE(blueprint::verify("mesh/index",n_idx,info));
-    
+
     std::string ofbase= "venn_small_example_" + venn_type;
 
     // save yaml and hdf5 versions
     relay::io::blueprint::save_mesh(res,
-                                    ofbase + ".yaml",
+                                    ofbase + "_yaml",
                                     "yaml");
 
     Node io_protos;
@@ -497,7 +577,7 @@ void venn_test_small_yaml(const std::string &venn_type)
     if(hdf5_enabled)
     {
         relay::io::blueprint::save_mesh(res,
-                                        ofbase,
+                                        ofbase + "_hdf5",
                                         "hdf5");
     }
 
@@ -524,7 +604,7 @@ void venn_test(const std::string &venn_type)
 
     // save yaml and hdf5 versions
     relay::io::blueprint::save_mesh(res,
-                                    ofbase + ".yaml",
+                                    ofbase + "_yaml",
                                     "yaml");
 
     Node io_protos;
@@ -534,7 +614,7 @@ void venn_test(const std::string &venn_type)
     if(hdf5_enabled)
     {
         relay::io::blueprint::save_mesh(res,
-                                        ofbase,
+                                        ofbase + "_hdf5",
                                         "hdf5");
     }
 
@@ -845,16 +925,16 @@ TEST(conduit_blueprint_mesh_examples, braid_diff_dims)
 {
     Node mesh;
     conduit::blueprint::mesh::examples::braid("quads", 2, 3, 0, mesh);
-    conduit::relay::io_blueprint::save(mesh, "braid_quads_2_3.blueprint_root");
+    test_save_mesh_helper(mesh,"braid_quads_2_3");
 
     conduit::blueprint::mesh::examples::braid("tris", 2, 3, 0, mesh);
-    conduit::relay::io_blueprint::save(mesh, "braid_tris_2_3.blueprint_root");
+    test_save_mesh_helper(mesh,"braid_tris_2_3");
 
     conduit::blueprint::mesh::examples::braid("tets", 2, 3, 4, mesh);
-    conduit::relay::io_blueprint::save(mesh, "braid_tets_2_3_4.blueprint_root");
+    test_save_mesh_helper(mesh,"braid_tets_2_3_4");
 
     conduit::blueprint::mesh::examples::braid("hexs", 2, 3, 4, mesh);
-    conduit::relay::io_blueprint::save(mesh, "braid_hexs_2_3_4.blueprint_root");
+    test_save_mesh_helper(mesh,"braid_hexs_2_3_4");
 
 }
 

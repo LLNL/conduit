@@ -8,6 +8,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include <string>
+#include <cstring>
 #include "conduit_utils.hpp"
 #include "conduit_relay_config.h"
 
@@ -16,7 +17,6 @@
 #else
     #include "conduit_relay_io_identify_protocol.hpp"
 #endif
-
 
 // includes for optional features
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
@@ -130,24 +130,33 @@ identify_file_type(const std::string &path,
     else
 #endif 
     {
-        char buff[5] = {0,0,0,0,0};
-        // heuristic:
-        //  if json, we expect to see "{" in the first 5 chars of the file.
+        // read up to 256 bytes
+        char buff[257];
+        std::memset(buff,0,257);
         std::ifstream ifs;
         ifs.open(path.c_str());
         if(ifs.is_open())
         {
-            ifs.read((char *)buff,5);
+            ifs.read((char *)buff,256);
+            int nbytes_read = ifs.gcount();
             ifs.close();
 
-            std::string test_str(buff);
+            std::string test_str(buff,nbytes_read);
 
-            if(test_str.find("{") != std::string::npos)
+            // for json or yaml, lets make sure a new line exists
+            if(test_str.find("\n") != std::string::npos)
             {
-               file_type = "json";
+                // for yaml look for ":" 
+                // for json, look for "{"
+                if(test_str.find(":") != std::string::npos)
+                {
+                   file_type = "yaml";
+                }
+                if(test_str.find("{") != std::string::npos)
+                {
+                   file_type = "json";
+                }
             }
-
-            // TODO Add YAML heuristic
         }
     }
 }

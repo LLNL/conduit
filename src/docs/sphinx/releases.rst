@@ -12,6 +12,106 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+
+v0.7.1
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.1/conduit-v0.7.1-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * Fixed a bug with Conduit's C interface including C++ headers.
+
+* **Blueprint**
+
+ * Fixed a bug with ``blueprint::mesh::matset::to_silo`` and ``blueprint::mesh::field::to_silo`` that could modify input values.
+ 
+
+v0.7.0
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.0/conduit-v0.7.0-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Changed
+~~~~~~~
+
+
+* **General**
+
+ * Conduit now requires C++11 support.
+ * Python Node repr string construction now uses ``Node.to_summary_string()``
+
+Added
+~~~~~
+
+ * CMake: Added extra check for include dir vs fully resolved hdf5 path.
+
+* **General**
+
+ * Added a builtin sandboxed header-only version of fmt. The namespace and directory paths were changed to ``conduit_fmt`` to avoid potential symbol collisions with other codes using fmt. Downstream software can use by including ``conduit_fmt/conduit_fmt.h``.
+ * Added support for using C++11 initializer lists to set Node and DataArray values from numeric arrays. See C++ tutorial docs (https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_numeric.html#c-11-initializer-lists) for more details.
+ * Added a Node::describe() method. This method creates a new node that mirrors the current Node, however each leaf is replaced by summary stats and a truncated display of the values. For use cases with large leaves, printing the describe() output Node is much more helpful for debugging and understanding vs wall of text from other to_string() methods.
+ * Added conduit::utils::format methods. These methods use fmt to format strings that include fmt style patterns. The formatting arguments are passed as a conduit::Node tree. The ``args`` case allows named arguments (args passed as object) or ordered args (args passed as list). The ``maps`` case also supports named or ordered args and works in conjunction with a ``map_index``. The ``map_index`` is used to fetch a value from an array, or list of strings, which is then passed to fmt. The ``maps`` style of indexed indirection supports generating path strings for non-trivial domain partition mappings in Blueprint. This functionality is also available in Python, via the  ``conduit.utils.format`` method.
+ * Added ``DataArray::fill`` method, which set all elements of a DataArray to a given value.
+ * Added ``Node::to_summary_string`` methods, which allow you to create truncated strings that describe a node tree, control the max number of children and max number of elements shown.
+ * Added python support for ``Node.to_summary_string``
+
+* **Relay**
+
+ * Added Relay IO Handle mode support for ``a`` (append) and ``t`` (truncate).  Truncate allows you to overwrite files when the handle is opened. The default is append, which preserves prior IO Handle behavior.
+ * Added ``conduit::relay::io::blueprint::save_mesh`` variants, these overwrite existing files (providing relay save semantics) instead of adding mesh data to existing files. We recommend using  ``save_mesh`` for most uses cases, b/c in many cases ``write_mesh`` to an existing HDF5 file set can fail due to conflicts with the current HDF5 tree.
+ * Added ``conduit::relay::io::blueprint::load_mesh`` variants, these reset the passed node before reading mesh data (providing relay load semantics). We recommend using  ``load_mesh`` for most uses cases.
+ * Added ``truncate`` option to ``conduit::relay::io::blueprint::write_mesh``, this is used by ``save_mesh``.
+ * Improve capture and reporting of I/O errors in ``conduit::relay::[mpi::]io::blueprint::{save_mesh|write_mesh}``. Now in the MPI case, If any rank fails to open or write to a file all ranks will throw an exception.
+ * Added yaml detection support to ``conduit::relay::io:identify_file_type``.
+
+* **Blueprint**
+
+ * Added ``conduit::blueprint::mesh::matset::to_silo()`` which converts a valid blueprint matset to a node that contains arrays that follow Silo's sparse mix slot volume fraction representation.
+ * Added ``conduit::blueprint::mesh::field::to_silo()`` which converts a valid blueprint field and matset to a node that contains arrays that follow Silo's sparse mix slot volume fraction representation.
+ * Added ``material_map`` to ``conduit::blueprint::mesh:matset::index``, to provide an explicit material name to id mapping.
+ * Added ``mat_check`` field to ``blueprint::mesh::examples::venn``. This field encodes the material info in a scalar field and in the ``matset_values`` in a way that can be used to easily compare and verify proper construction in other tools.
+
+Fixed
+~~~~~
+
+
+* **Relay**
+
+ * Fixed bug in the Relay IOHandle Basic that would create unnecessary "_json" schema files to be written to disk upon open().
+
+Removed
+~~~~~~~
+
+
+* **General**
+
+ * Removed ``Node::fetch_child`` and ``Schema::fetch_child`` methods for v0.7.0. (Deprecated in v0.6.0 -- prefer ``fetch_existing``)
+ * Removed ``Schema::to_json`` method variants with ``detailed`` for v0.7.0. (Deprecated in v0.6.0 -- prefer standard ``to_json``)
+ * Removed ``Schema::save`` method variant with ``detailed`` for v0.7.0. (Deprecated in v0.6.0 -- prefer standard ``save``)
+ * The ``master`` branch was removed from GitHub (Deprecated in v0.6.0 -- replaced by the ``develop`` branch)
+
+* **Relay**
+
+ * Removed ``conduit::relay::io_blueprint::save`` methods for v0.7.0. (Deprecated in v0.6.0 -- prefer ``conduit::relay::io::blueprint::save_mesh``)
+
+
 v0.6.0
 ---------------------------------
 
