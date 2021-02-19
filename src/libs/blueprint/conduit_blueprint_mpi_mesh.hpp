@@ -67,8 +67,9 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           MPI_Comm comm);
 
 //-------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API generate_partition(const conduit::Node &mesh,
-                                              Node &partition,
+void CONDUIT_BLUEPRINT_API generate_domain_to_rank_map(
+                                              const conduit::Node &mesh,
+                                              Node &domain_to_rank_map,
                                               MPI_Comm comm);
 
 //-------------------------------------------------------------------------

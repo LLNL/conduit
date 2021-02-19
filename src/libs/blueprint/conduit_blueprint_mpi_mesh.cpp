@@ -129,9 +129,9 @@ generate_index(const conduit::Node &mesh,
 
 
 //-----------------------------------------------------------------------------
-void generate_partition(const conduit::Node &mesh,
-                        Node &partition,
-                        MPI_Comm comm)
+void generate_domain_to_rank_map(const conduit::Node &mesh,
+                                 Node &domain_to_rank_map,
+                                 MPI_Comm comm)
 {
     if (::conduit::blueprint::mesh::is_multi_domain(mesh))
     {
@@ -159,23 +159,23 @@ void generate_partition(const conduit::Node &mesh,
         num_global.set_int64(0);
         relay::mpi::sum_all_reduce(num_local, num_global, comm);
 
-        std::vector<int64> local_partition(num_global.as_int64(), 0);
+        std::vector<int64> local_map(num_global.as_int64(), 0);
         for (auto m_itr = local_domains.begin(); m_itr != local_domains.end();
              ++m_itr)
         {
-            local_partition[*m_itr] = par_rank;
+            local_map[*m_itr] = par_rank;
         }
 
         Node local_par;
-        local_par.set_external(&local_partition[0], local_partition.size());
+        local_par.set_external(&local_map[0], local_map.size());
 
-        relay::mpi::max_all_reduce(local_par, partition, comm);
+        relay::mpi::max_all_reduce(local_par, domain_to_rank_map, comm);
     }
     else
     {
         int par_size = relay::mpi::size(comm);
-        partition.set_dtype(conduit::DataType::int64(par_size));
-        conduit::int64_array part_array = partition.as_int64_array();
+        domain_to_rank_map.set_dtype(conduit::DataType::int64(par_size));
+        conduit::int64_array part_array = domain_to_rank_map.as_int64_array();
         for (int i = 0; i < par_size; ++i)
         {
             part_array[i] = i;
