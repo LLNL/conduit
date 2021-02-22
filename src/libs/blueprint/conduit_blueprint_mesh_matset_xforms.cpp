@@ -189,6 +189,7 @@ to_silo(const conduit::Node &field,
         {
             vf_itr.next();
             std::string curr_mat_name = vf_itr.name();
+            temp.reset();
             temp.set(vf_itr.index());
             temp.to_data_type(int_dtype.id(), matset_mat_map[curr_mat_name]);
         }
@@ -509,12 +510,14 @@ to_silo(const conduit::Node &field,
         const std::map<index_t, float64>& elem_mat_map = elem_mat_maps[elem_index];
         if(elem_mat_map.size() == 0)
         {
+            temp.reset();
             temp.set(0);
             data.set_external(int_dtype, dest["matlist"].element_ptr(elem_index));
             temp.to_data_type(int_dtype.id(), data);
         }
         else if(elem_mat_map.size() == 1)
         {
+            temp.reset();
             temp.set(elem_mat_map.begin()->first + 1);
             data.set_external(int_dtype, dest["matlist"].element_ptr(elem_index));
             temp.to_data_type(int_dtype.id(), data);
@@ -524,6 +527,7 @@ to_silo(const conduit::Node &field,
             index_t next_slot_index = slot_index;
             for(const auto& zone_mix_mat : elem_mat_map)
             {
+                temp.reset();
                 temp.set(zone_mix_mat.first);
                 data.set_external(int_dtype, dest["mix_mat"].element_ptr(next_slot_index));
                 temp.to_data_type(int_dtype.id(), data);
@@ -534,25 +538,32 @@ to_silo(const conduit::Node &field,
                 // process matset values if passed
                 if(xform_matset_values)
                 {
+                    temp.reset();
                     temp.set(elem_matset_values_maps[elem_index][zone_mix_mat.first]);
                     data.set_external(float_dtype, dest["field_mixvar_values"].element_ptr(next_slot_index));
                     temp.to_data_type(float_dtype.id(), data);
                 }
 
+                temp.reset();
                 temp.set(zone_mix_mat.second);
                 data.set_external(float_dtype, dest["mix_vf"].element_ptr(next_slot_index));
                 temp.to_data_type(float_dtype.id(), data);
 
+                temp.reset();
                 temp.set(next_slot_index + 1 + 1);
                 data.set_external(int_dtype, dest["mix_next"].element_ptr(next_slot_index));
                 temp.to_data_type(int_dtype.id(), data);
 
                 ++next_slot_index;
             }
+
+            temp.reset();
             temp.set(0);
             data.set_external(int_dtype, dest["mix_next"].element_ptr(next_slot_index - 1));
             temp.to_data_type(int_dtype.id(), data);
 
+
+            temp.reset();
             temp.set(~slot_index);
             data.set_external(int_dtype, dest["matlist"].element_ptr(elem_index));
             temp.to_data_type(int_dtype.id(), data);

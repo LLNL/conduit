@@ -12597,17 +12597,25 @@ Node::to_json_generic(std::ostream &os,
     {
         if(detailed)
         {
-            std::string dtype_json = dtype().to_json();
-            std::string dtype_open;
-            std::string dtype_rest;
+            std::string dtype_json = dtype().to_json(indent, depth, pad, eoe);
+            std::string dtype_content;
+            std::string dtype_unused;
 
-            // trim the last "}"
+            // trim the last "}" and whitspace
             utils::split_string(dtype_json,
                                 "}",
-                                dtype_open,
-                                dtype_rest);
-            os<< dtype_open;
-            os << ", \"value\": ";
+                                dtype_content,
+                                dtype_unused);
+            dtype_json = dtype_content;
+            utils::rsplit_string(dtype_json,
+                                "\"",
+                                dtype_unused,
+                                dtype_content);
+
+            os << dtype_content;
+            os << "\"," << eoe;
+            utils::indent(os,indent,depth+1,pad);
+            os << "\"value\": ";
         }
 
         switch(dtype().id())
@@ -12661,6 +12669,8 @@ Node::to_json_generic(std::ostream &os,
         if(detailed)
         {
             // complete json entry
+            os << eoe;
+            utils::indent(os,indent,depth,pad);
             os << "}";
         }
     }

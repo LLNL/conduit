@@ -1289,25 +1289,25 @@ DataType::to_json_stream(std::ostream &os,
     os << eoe;
     utils::indent(os,indent,depth,pad);
     os << "{" << eoe;
-    utils::indent(os,indent,depth,pad);
+    utils::indent(os,indent,depth+1,pad);
     os << "\"dtype\":" << "\"" << id_to_name(m_id) << "\"";
 
     if(is_number() || is_string())
     {
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"number_of_elements\": " << m_num_ele;
 
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"offset\": " << m_offset;
 
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"stride\": " << m_stride;
 
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"element_bytes\": " << m_ele_bytes;
 
         std::string endian_str;
@@ -1322,7 +1322,7 @@ DataType::to_json_stream(std::ostream &os,
         }
 
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"endianness\": \"" << endian_str << "\"";
     }
     os << eoe;

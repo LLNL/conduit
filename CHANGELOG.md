@@ -4,12 +4,23 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.7.1] - Released 2021-02-11
+
+### Fixed
+
+#### General
+- Fixed a bug with Conduit's C interface including C++ headers.
+
+#### Blueprint
+- Fixed a bug with `blueprint::mesh::matset::to_silo` and `blueprint::mesh::field::to_silo` that could modify input values.
+
+## [0.7.0] - Released 2021-02-08
 
 ### Changed
 
 #### General
 - Conduit now requires C++11 support.
+- Python Node repr string construction now uses `Node.to_summary_string()`
 
 ### Added
 - CMake: Added extra check for include dir vs fully resolved hdf5 path.
@@ -39,12 +50,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `material_map` to `conduit::blueprint::mesh:matset::index`, to provide an explicit material name to id mapping.
 - Added `mat_check` field to `blueprint::mesh::examples::venn`. This field encodes the material info in a scalar field and in the `matset_values` in a way that can be used to easily compare and verify proper construction in other tools.
 
-### Changed
-
-#### General
-- Python Node repr string construction now uses `Node.to_summary_string()`
-
-
 ### Fixed
 
 #### Relay
@@ -56,10 +61,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Removed `Node::fetch_child` and `Schema::fetch_child` methods for v0.7.0. (Deprecated in v0.6.0 -- prefer `fetch_existing`)
 - Removed `Schema::to_json` method variants with `detailed` for v0.7.0. (Deprecated in v0.6.0 -- prefer standard `to_json`)
 - Removed `Schema::save` method variant with `detailed` for v0.7.0. (Deprecated in v0.6.0 -- prefer standard `save`)
+- The `master` branch was removed from GitHub (Deprecated in v0.6.0 -- replaced by the `develop` branch)
 
 #### Relay
 - Removed `conduit::relay::io_blueprint::save` methods for v0.7.0. (Deprecated in v0.6.0 -- prefer `conduit::relay::io::blueprint::save_mesh`)
-
 
 
 ## [0.6.0] - Released 2020-11-02
@@ -451,7 +456,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/llnl/conduit/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/llnl/conduit/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/llnl/conduit/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/llnl/conduit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/llnl/conduit/compare/v0.3.1...v0.4.0
