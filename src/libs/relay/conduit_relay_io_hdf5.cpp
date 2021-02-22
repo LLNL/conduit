@@ -2514,16 +2514,31 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             CONDUIT_ERROR("Stride must be greater than zero.");
         }
 
-        int nelems_to_read = (nelems - offset) / stride;
+        // get the number of elements in the dataset given the offset and stride
+        int nelems_from_offset = (nelems - offset) / stride;
         if ((nelems - offset) % stride != 0)
         {
-            nelems_to_read++;
+            nelems_from_offset++;
+        }
+
+        int nelems_to_read = -1;
+        if(opts.has_child("size"))
+        {
+            nelems_to_read = opts["size"].to_value();
+            if (nelems_to_read < 1)
+            {
+                CONDUIT_ERROR("Size must be greater than zero.");
+            }
+        }
+        else
+        {
+            nelems_to_read = nelems_from_offset;
         }
 
         // copy metadata to the node under hard-coded keys
         if (only_get_metadata)
         {
-            dest["num_elements"] = (int) nelems_to_read;
+            dest["num_elements"] = (int) nelems_from_offset;
         }
         else
         {
