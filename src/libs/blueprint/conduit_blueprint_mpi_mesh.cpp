@@ -133,9 +133,11 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
                                  Node &domain_to_rank_map,
                                  MPI_Comm comm)
 {
-    if (::conduit::blueprint::mesh::is_multi_domain(mesh))
+    int64 par_rank = relay::mpi::rank(comm);
+
+    if (!mesh.dtype().is_empty() &&
+        ::conduit::blueprint::mesh::is_multi_domain(mesh))
     {
-        int par_rank = relay::mpi::rank(comm);
 
         std::vector<conduit::int64> local_domains;
 
@@ -173,13 +175,35 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
     }
     else
     {
-        int par_size = relay::mpi::size(comm);
-        domain_to_rank_map.set_dtype(conduit::DataType::int64(par_size));
-        conduit::int64_array part_array = domain_to_rank_map.as_int64_array();
+        int64 par_size = relay::mpi::size(comm);
+
+        std::vector<int64> local_map(par_size, 0);
+        if (mesh.dtype().is_empty())
+        {
+            local_map[par_rank] = -1;
+        }
+        else
+        {
+            local_map[par_rank] = par_rank; 
+        }
+
+        Node local_full;
+        local_full.set_external(&local_map[0], local_map.size());
+
+        Node global_full;
+        relay::mpi::sum_all_reduce(local_full, global_full, comm);
+
+        conduit::int64_array global_array = global_full.as_int64_array();
+        std::vector<int64> compact_map;
         for (int i = 0; i < par_size; ++i)
         {
-            part_array[i] = i;
-        }
+            if (global_array[i] != -1)
+            {
+                compact_map.push_back(i);
+            }
+        } 
+
+        domain_to_rank_map.set(compact_map);
     }
 }
 
