@@ -1777,6 +1777,84 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_list_with_offset)
+{
+    std::string tout_std = "tout_hdf5_list_with_offset.hdf5";
+
+    Node n, opts;
+    n.append() = DataType::c_short(1);
+    short_array vals = n[0].value();
+    vals[0] = 1;
+    io::save(n,tout_std, "hdf5");
+
+    vals[0] = 2;
+    opts["offset"] = 1;
+    io::save(n,tout_std, "hdf5",opts);
+
+    Node n_load, info;
+    io::load(tout_std,"hdf5",n_load);
+
+    // check values of data
+    // since we didn't use save_merged, the first value should be overwritten
+    short_array read_vals = n_load[0].value();
+    EXPECT_EQ(0,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+
+    // let's try again
+    vals[0] = 1;
+    io::save(n,tout_std, "hdf5");
+
+    vals[0] = 2;
+    opts["offset"] = 1;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    io::load(tout_std,"hdf5",n_load);
+
+    read_vals = n_load[0].value();
+    EXPECT_EQ(1,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+
+    vals[0] = 3;
+    opts["offset"] = 2;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    vals[0] = 4;
+    opts["offset"] = 3;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    vals[0] = 5;
+    opts["offset"] = 4;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    vals[0] = 6;
+    opts["offset"] = 5;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    io::load_merged(tout_std,"hdf5",n_load);
+
+    read_vals = n_load[0].value();
+    EXPECT_EQ(1,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+    EXPECT_EQ(3,read_vals[2]);
+    EXPECT_EQ(4,read_vals[3]);
+    EXPECT_EQ(5,read_vals[4]);
+    EXPECT_EQ(6,read_vals[5]);
+
+    // try loading with offset and size
+    Node opts_read;
+    opts_read["offset"] = 2;
+    opts_read["size"] = 2;
+    io::load(tout_std,"hdf5",opts_read,n_load);
+
+    read_vals = n_load[0].value();
+    EXPECT_EQ(3,read_vals[0]);
+    EXPECT_EQ(4,read_vals[1]);
+    EXPECT_EQ(2, read_vals.number_of_elements());
+
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
 {
     std::string tout_std = "tout_hdf5_empty_compat.hdf5";

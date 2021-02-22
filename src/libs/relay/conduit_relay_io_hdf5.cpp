@@ -2544,7 +2544,7 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         {
             // Note: string case is handed properly in hdf5_dtype_to_conduit_dtype
             DataType dt        = hdf5_dtype_to_conduit_dtype(h5_dtype_id,
-                                                             nelems,
+                                                             nelems_to_read,
                                                              ref_path);
 
             // if the endianness of the dset in the file doesn't
