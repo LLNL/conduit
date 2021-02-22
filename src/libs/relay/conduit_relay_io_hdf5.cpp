@@ -2521,7 +2521,7 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             nelems_from_offset++;
         }
 
-        int nelems_to_read = -1;
+        int nelems_to_read = nelems_from_offset;
         if(opts.has_child("size"))
         {
             nelems_to_read = opts["size"].to_value();
@@ -2529,10 +2529,6 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             {
                 CONDUIT_ERROR("Size must be greater than zero.");
             }
-        }
-        else
-        {
-            nelems_to_read = nelems_from_offset;
         }
 
         // copy metadata to the node under hard-coded keys
