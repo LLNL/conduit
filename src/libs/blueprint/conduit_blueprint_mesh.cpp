@@ -39,7 +39,6 @@ using namespace conduit;
 using namespace conduit::utils;
 // access conduit path helper
 using ::conduit::utils::join_path;
-
 // access conduit blueprint mesh utilities
 namespace bputils = conduit::blueprint::util::mesh;
 typedef bputils::ShapeType ShapeType;

@@ -17,6 +17,7 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_util_mesh.hpp"
+#include "conduit_blueprint_util_o2mrelation.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
@@ -33,6 +34,7 @@ using namespace conduit;
 using namespace conduit::blueprint;
 using namespace conduit::utils;
 namespace bputils = conduit::blueprint::util::mesh;
+namespace o2mutils = conduit::blueprint::util::o2mrelation;
 
 /// Testing Constants ///
 
@@ -52,6 +54,9 @@ static const index_t ELEM_TYPE_FACE_INDICES[]  = {     3,       4,      3,      
 static const index_t ELEM_TYPE_COUNT = sizeof(ELEM_TYPE_LIST) / sizeof(ELEM_TYPE_LIST[0]);
 
 static const std::vector<std::string> CSET_AXES = bputils::CARTESIAN_AXES;
+// FIXME(JRC): Why don't the 'generate' functions have an 'indices' component?
+// This should be required, alongside 'sizes'.
+// static const std::vector<std::string> O2M_PATHS = o2mutils::O2M_PATHS;
 static const std::vector<std::string> O2M_PATHS = {"sizes", "offsets", "values"};
 
 const static index_t TRIVIAL_GRID[] = {2, 2, 2};
