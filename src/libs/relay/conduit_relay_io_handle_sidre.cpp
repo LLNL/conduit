@@ -201,7 +201,7 @@ SidreIOHandle::read(const std::string &path,
                     Node &node)
 {
     Node opts;
-    read(path,node);
+    read(path,node,opts);
 }
 
 //-----------------------------------------------------------------------------
