@@ -98,9 +98,9 @@ ShapeType::init(const std::string &type_name)
 {
     init(-1);
 
-    for(index_t i = 0; i < (index_t)topo_shapes.size(); i++)
+    for(index_t i = 0; i < (index_t)TOPO_SHAPES.size(); i++)
     {
-        if(type_name == topo_shapes[i])
+        if(type_name == TOPO_SHAPES[i])
         {
             init(i);
         }
@@ -112,7 +112,7 @@ ShapeType::init(const std::string &type_name)
 void
 ShapeType::init(const index_t type_id)
 {
-    if(type_id < 0 || type_id >= (index_t)topo_shapes.size())
+    if(type_id < 0 || type_id >= (index_t)TOPO_SHAPES.size())
     {
         type = "";
         id = dim = indices = embed_id = embed_count = -1;
@@ -120,14 +120,14 @@ ShapeType::init(const index_t type_id)
     }
     else
     {
-        type = topo_shapes[type_id];
+        type = TOPO_SHAPES[type_id];
         id = type_id;
-        dim = topo_shape_dims[type_id];
-        indices = topo_shape_index_counts[type_id];
+        dim = TOPO_SHAPE_DIMS[type_id];
+        indices = TOPO_SHAPE_INDEX_COUNTS[type_id];
 
-        embed_id = topo_shape_embed_types[type_id];
-        embed_count = topo_shape_embed_counts[type_id];
-        embedding = const_cast<index_t*>(topo_shape_embeddings[type_id]);
+        embed_id = TOPO_SHAPE_EMBED_TYPES[type_id];
+        embed_count = TOPO_SHAPE_EMBED_COUNTS[type_id];
+        embedding = const_cast<index_t*>(TOPO_SHAPE_EMBEDDINGS[type_id]);
     }
 }
 
@@ -208,8 +208,8 @@ ShapeCascade::get_shape(const index_t level) const
 //---------------------------------------------------------------------------//
 TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset) :
     topo(&topology), cset(&coordset),
-    int_dtype(find_widest_dtype(link_nodes(topology, coordset), default_int_dtypes)),
-    float_dtype(find_widest_dtype(link_nodes(topology, coordset), default_float_dtype)),
+    int_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_INT_DTYPES)),
+    float_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_FLOAT_DTYPE)),
     topo_cascade(topology), topo_shape(topology)
 {
     // NOTE(JRC): This type current only works at forming associations within
@@ -782,16 +782,15 @@ find_reference_node(const Node &node, const std::string &ref_key, Node &ref)
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void
-coordset::coords(const Node &n,
-                 Node &dest)
+std::pair<std::string, std::vector<std::string>>
+get_coordset_info(const Node &n)
 {
+    std::pair<std::string, std::vector<std::string>> info;
+    std::string &cset_coordsys = info.first;
+    std::vector<std::string> &cset_axes = info.second;
+
     std::string coords_path = "";
-    if(n.has_child("coord_system")) // index
-    {
-        coords_path = "coord_system/axes";
-    }
-    else if(n["type"].as_string() == "uniform")
+    if(n["type"].as_string() == "uniform")
     {
         if(n.has_child("origin"))
         {
@@ -811,17 +810,8 @@ coordset::coords(const Node &n,
         coords_path = "values";
     }
 
-    dest.reset();
-    dest.set_external(n[coords_path]);
-}
-
-
-//-----------------------------------------------------------------------------
-std::string
-coordset::coordsys(const Node &n)
-{
-    Node cset_axes, cset_coords;
-    coords(n, cset_coords);
+    Node axis_names;
+    const Node &cset_coords = n[coords_path];
     NodeConstIterator itr = cset_coords.children();
     while(itr.has_next())
     {
@@ -830,61 +820,54 @@ coordset::coordsys(const Node &n)
 
         if(axis_name[0] == 'd' && axis_name.size() > 1)
         {
-            cset_axes[axis_name.substr(1, axis_name.length())];
+            axis_names[axis_name.substr(1, axis_name.length())];
         }
         else
         {
-            cset_axes[axis_name];
+            axis_names[axis_name];
         }
     }
 
-    std::string cset_coordsys = "unknown";
-    if(cset_axes.has_child("theta") || cset_axes.has_child("phi"))
+    std::vector<std::string> cset_base_axes;
+    cset_coordsys = "unknown";
+    if(axis_names.has_child("theta") || axis_names.has_child("phi"))
     {
         cset_coordsys = "spherical";
+        cset_base_axes = SPHERICAL_AXES;
     }
-    else if(cset_axes.has_child("r")) // rz, or r w/o theta, phi
+    else if(axis_names.has_child("r")) // rz, or r w/o theta, phi
     {
         cset_coordsys = "cylindrical";
+        cset_base_axes = CYLINDRICAL_AXES;
     }
-    else if(cset_axes.has_child("x") || cset_axes.has_child("y") || cset_axes.has_child("z"))
+    else if(axis_names.has_child("x") || axis_names.has_child("y") || axis_names.has_child("z"))
     {
         cset_coordsys = "cartesian";
+        cset_base_axes = CARTESIAN_AXES;
     }
-    else if(cset_axes.has_child("i") || cset_axes.has_child("j") || cset_axes.has_child("k"))
+    else if(axis_names.has_child("i") || axis_names.has_child("j") || axis_names.has_child("k"))
     {
         cset_coordsys = "logical";
+        cset_base_axes = LOGICAL_AXES;
     }
-    return cset_coordsys;
-}
 
-
-//-----------------------------------------------------------------------------
-std::vector<std::string>
-coordset::axes(const Node &n)
-{
-    // TODO(JRC): This whole set of coordinate system identification functions
-    // could be revised to allow different combinations of axes to be specified
-    // (e.g. (x, z), or even something like (z)).
-    Node cset_coords;
-    coords(n, cset_coords);
-    const std::string cset_coordsys = coordsys(n);
-
-    std::vector<std::string> cset_axes;
-    if(cset_coordsys == "cartesian" || cset_coordsys == "logical")
+    // intersect 'cset_base_axes' and 'axis_names.child_names()'
+    for(const std::string &base_axis : cset_base_axes)
     {
-        cset_axes = cartesian_axes;
-    }
-    else if(cset_coordsys == "cylindrical")
-    {
-        cset_axes = cylindrical_axes;
-    }
-    else if(cset_coordsys == "spherical")
-    {
-        cset_axes = spherical_axes;
+        for(const std::string &cset_axis : axis_names.child_names())
+        {
+            if(base_axis == cset_axis)
+            {
+                cset_axes.push_back(cset_axis);
+                break;
+            }
+        }
     }
 
-    return std::vector<std::string>(cset_axes.begin(), cset_axes.begin() + cset_coords.number_of_children());
+    // TODO(JRC): The following is an alterate (though potentially more error-prone) solution:
+    // std::vector<std::string>(cset_axes.begin(), cset_axes.begin() + cset_coords.number_of_children());
+
+    return info;
 }
 
 
@@ -909,7 +892,7 @@ coordset::length(const Node &n)
     {
         if(csys_type == "uniform")
         {
-            coordset_length *= n["dims"][logical_axes[i]].to_int64();
+            coordset_length *= n["dims"][LOGICAL_AXES[i]].to_index_t();
         }
         else if(csys_type == "rectilinear")
         {
@@ -922,6 +905,22 @@ coordset::length(const Node &n)
     }
 
     return coordset_length;
+}
+
+
+//-----------------------------------------------------------------------------
+std::vector<std::string>
+coordset::axes(const Node &n)
+{
+    return get_coordset_info(n).second;
+}
+
+
+//-----------------------------------------------------------------------------
+std::string
+coordset::coordsys(const Node &n)
+{
+    return get_coordset_info(n).first;
 }
 
 //-----------------------------------------------------------------------------
@@ -957,7 +956,7 @@ topology::length(const Node &n)
         for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
         {
             topology_length *= ((type == "uniform") ?
-                coordset["dims"][logical_axes[i]].to_index_t() :
+                coordset["dims"][LOGICAL_AXES[i]].to_index_t() :
                 coordset["values"][csys_axes[i]].dtype().number_of_elements()) - 1;
         }
     }
@@ -967,7 +966,7 @@ topology::length(const Node &n)
 
         for(index_t i = 0; i < (index_t)dims.number_of_children(); i++)
         {
-            topology_length *= dims[logical_axes[i]].to_index_t();
+            topology_length *= dims[LOGICAL_AXES[i]].to_index_t();
         }
     }
     else // if(type == "unstructured")
@@ -1023,7 +1022,7 @@ topology::unstructured::generate_offsets(const Node &n,
                                          Node &dest)
 {
     const ShapeType topo_shape(n);
-    const DataType int_dtype = find_widest_dtype(n, default_int_dtypes);
+    const DataType int_dtype = find_widest_dtype(n, DEFAULT_INT_DTYPES);
     const Node &topo_conn = n["elements/connectivity"];
 
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
@@ -1076,7 +1075,7 @@ topology::unstructured::generate_offsets(const Node &n,
         Node elem_node;
         Node subelem_node;
 
-        std::vector<int64> shape_array;
+        std::vector<index_t> shape_array;
         index_t ei = 0;
         index_t es = 0;
         while(ei < topo_elem_size.dtype().number_of_elements())
@@ -1084,7 +1083,7 @@ topology::unstructured::generate_offsets(const Node &n,
             const Node index_node(int_dtype,
                 const_cast<void*>(topo_elem_size.element_ptr(ei)), true);
             shape_array.push_back(es);
-            es += index_node.to_int64();
+            es += index_node.to_index_t();
             ei++;
         }
 
@@ -1100,7 +1099,7 @@ topology::unstructured::generate_offsets(const Node &n,
             const Node index_node(int_dtype,
                 const_cast<void*>(topo_subelem_size.element_ptr(ei)), true);
             shape_array.push_back(es);
-            es += index_node.to_int64();
+            es += index_node.to_index_t();
             ei++;
         }
 

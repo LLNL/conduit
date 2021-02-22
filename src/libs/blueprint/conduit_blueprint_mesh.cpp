@@ -41,10 +41,10 @@ using namespace conduit::utils;
 using ::conduit::utils::join_path;
 
 // access conduit blueprint mesh utilities
-namespace bputil = conduit::blueprint::util::mesh;
-typedef bputil::ShapeType ShapeType;
-typedef bputil::ShapeCascade ShapeCascade;
-typedef bputil::TopologyMetadata TopologyMetadata;
+namespace bputils = conduit::blueprint::util::mesh;
+typedef bputils::ShapeType ShapeType;
+typedef bputils::ShapeCascade ShapeCascade;
+typedef bputils::TopologyMetadata TopologyMetadata;
 
 //-----------------------------------------------------------------------------
 // -- begin internal helpers --
@@ -812,10 +812,10 @@ convert_coordset_to_rectilinear(const std::string &/*base_type*/,
     dest.reset();
     dest["type"].set("rectilinear");
 
-    DataType float_dtype = bputil::find_widest_dtype(coordset, bputil::default_float_dtype);
+    DataType float_dtype = bputils::find_widest_dtype(coordset, bputils::DEFAULT_FLOAT_DTYPE);
 
-    const std::vector<std::string> csys_axes = bputil::coordset::axes(coordset);
-    const std::vector<std::string> &logical_axes = bputil::logical_axes;
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const std::vector<std::string> &logical_axes = bputils::LOGICAL_AXES;
     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
     {
         const std::string& csys_axis = csys_axes[i];
@@ -852,10 +852,10 @@ convert_coordset_to_explicit(const std::string &base_type,
     dest.reset();
     dest["type"].set("explicit");
 
-    DataType float_dtype = bputil::find_widest_dtype(coordset, bputil::default_float_dtype);
+    DataType float_dtype = bputils::find_widest_dtype(coordset, bputils::DEFAULT_FLOAT_DTYPE);
 
-    const std::vector<std::string> csys_axes = bputil::coordset::axes(coordset);
-    const std::vector<std::string> &logical_axes = bputil::logical_axes;
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const std::vector<std::string> &logical_axes = bputils::LOGICAL_AXES;
 
     index_t dim_lens[3] = {0, 0, 0}, coords_len = 1;
     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
@@ -943,7 +943,7 @@ convert_topology_to_rectilinear(const std::string &/*base_type*/,
     cdest.reset();
 
     Node coordset;
-    bputil::find_reference_node(topo, "coordset", coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
     blueprint::mesh::coordset::uniform::to_rectilinear(coordset, cdest);
 
     dest.set(topo);
@@ -965,7 +965,7 @@ convert_topology_to_structured(const std::string &base_type,
     cdest.reset();
 
     Node coordset;
-    bputil::find_reference_node(topo, "coordset", coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
     if(is_base_rectilinear)
     {
         blueprint::mesh::coordset::rectilinear::to_explicit(coordset, cdest);
@@ -984,10 +984,10 @@ convert_topology_to_structured(const std::string &base_type,
 
     // TODO(JRC): In this case, should we reach back into the coordset
     // and use its types to inform those of the topology?
-    DataType int_dtype = bputil::find_widest_dtype(topo, bputil::default_int_dtypes);
+    DataType int_dtype = bputils::find_widest_dtype(topo, bputils::DEFAULT_INT_DTYPES);
 
-    const std::vector<std::string> csys_axes = bputil::coordset::axes(coordset);
-    const std::vector<std::string> &logical_axes = bputil::logical_axes;
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const std::vector<std::string> &logical_axes = bputils::LOGICAL_AXES;
     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
     {
         Node src_dlen_node;
@@ -1018,7 +1018,7 @@ convert_topology_to_unstructured(const std::string &base_type,
     cdest.reset();
 
     Node coordset;
-    bputil::find_reference_node(topo, "coordset", coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
     if(is_base_structured)
     {
         cdest.set(coordset);
@@ -1041,14 +1041,14 @@ convert_topology_to_unstructured(const std::string &base_type,
 
     // TODO(JRC): In this case, should we reach back into the coordset
     // and use its types to inform those of the topology?
-    DataType int_dtype = bputil::find_widest_dtype(topo, bputil::default_int_dtypes);
+    DataType int_dtype = bputils::find_widest_dtype(topo, bputils::DEFAULT_INT_DTYPES);
 
-    const std::vector<std::string> csys_axes = bputil::coordset::axes(coordset);
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
     dest["elements/shape"].set(
         (csys_axes.size() == 1) ? "line" : (
         (csys_axes.size() == 2) ? "quad" : (
         (csys_axes.size() == 3) ? "hex"  : "")));
-    const std::vector<std::string> &logical_axes = bputil::logical_axes;
+    const std::vector<std::string> &logical_axes = bputils::LOGICAL_AXES;
 
     index_t edims_axes[3] = {1, 1, 1};
     if(is_base_structured)
@@ -1150,13 +1150,13 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     // NOTE(JRC): This is a stand-in implementation for the method
     // 'mesh::topology::unstructured::generate_centroids' that exists because there
     // is currently no good way in Blueprint to create mappings with sparse data.
-    const std::vector<std::string> csys_axes = bputil::coordset::axes(coordset);
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
 
     Node topo_offsets;
-    bputil::topology::unstructured::offsets(topo, topo_offsets);
+    bputils::topology::unstructured::offsets(topo, topo_offsets);
     if(topo_offsets.dtype().is_empty())
     {
-        bputil::topology::unstructured::generate_offsets(topo, topo_offsets);
+        bputils::topology::unstructured::generate_offsets(topo, topo_offsets);
     }
     const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
 
@@ -1187,8 +1187,8 @@ calculate_unstructured_centroids(const conduit::Node &topo,
         conduit::Node src_node;
         src_node["topology"].set_external(topo);
         src_node["coordset"].set_external(coordset);
-        int_dtype = bputil::find_widest_dtype(src_node, bputil::default_int_dtypes);
-        float_dtype = bputil::find_widest_dtype(src_node, bputil::default_float_dtype);
+        int_dtype = bputils::find_widest_dtype(src_node, bputils::DEFAULT_INT_DTYPES);
+        float_dtype = bputils::find_widest_dtype(src_node, bputils::DEFAULT_FLOAT_DTYPE);
     }
 
     const Node &topo_conn_const = topo["elements/connectivity"];
@@ -1577,7 +1577,7 @@ mesh::generate_index(const Node &mesh,
             }
         }
 
-        idx_coordset["coord_system/type"] = bputil::coordset::coordsys(idx_coordset);
+        idx_coordset["coord_system/type"] = bputils::coordset::coordsys(coordset);
 
         std::string cs_ref_path = join_path(ref_path, "coordsets");
         cs_ref_path = join_path(cs_ref_path, coordset_name);
@@ -1819,7 +1819,7 @@ mesh::association::verify(const Node &assoc,
     bool res = true;
     info.reset();
 
-    res &= verify_enum_field(protocol, assoc, info, "", bputil::associations);
+    res &= verify_enum_field(protocol, assoc, info, "", bputils::ASSOCIATIONS);
 
     log::validation(info, res);
 
@@ -1845,9 +1845,9 @@ mesh::coordset::uniform::origin::verify(const Node &origin,
     bool res = true;
     info.reset();
 
-    for(size_t i = 0; i < bputil::coordinate_axes.size(); i++)
+    for(size_t i = 0; i < bputils::COORDINATE_AXES.size(); i++)
     {
-        const std::string &coord_axis = bputil::coordinate_axes[i];
+        const std::string &coord_axis = bputils::COORDINATE_AXES[i];
         if(origin.has_child(coord_axis))
         {
             res &= verify_number_field(protocol, origin, info, coord_axis);
@@ -1870,9 +1870,9 @@ mesh::coordset::uniform::spacing::verify(const Node &spacing,
     bool res = true;
     info.reset();
 
-    for(size_t i = 0; i < bputil::coordinate_axes.size(); i++)
+    for(size_t i = 0; i < bputils::COORDINATE_AXES.size(); i++)
     {
-        const std::string &coord_axis = bputil::coordinate_axes[i];
+        const std::string &coord_axis = bputils::COORDINATE_AXES[i];
         const std::string coord_axis_spacing = "d" + coord_axis;
         if(spacing.has_child(coord_axis_spacing))
         {
@@ -2017,7 +2017,7 @@ mesh::coordset::verify(const Node &coordset,
 index_t
 mesh::coordset::dims(const Node &coordset)
 {
-    return bputil::coordset::dims(coordset);
+    return bputils::coordset::dims(coordset);
 }
 
 
@@ -2025,7 +2025,7 @@ mesh::coordset::dims(const Node &coordset)
 index_t
 mesh::coordset::length(const Node &coordset)
 {
-    return bputil::coordset::length(coordset);
+    return bputils::coordset::length(coordset);
 }
 
 
@@ -2069,7 +2069,7 @@ mesh::coordset::type::verify(const Node &type,
     bool res = true;
     info.reset();
 
-    res &= verify_enum_field(protocol, type, info, "", bputil::coord_types);
+    res &= verify_enum_field(protocol, type, info, "", bputils::COORD_TYPES);
 
     log::validation(info,res);
 
@@ -2091,7 +2091,7 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
     info.reset();
 
     std::string coord_sys_str = "unknown";
-    if(!verify_enum_field(protocol, coord_sys, info, "type", bputil::coord_systems))
+    if(!verify_enum_field(protocol, coord_sys, info, "type", bputils::COORD_SYSTEMS))
     {
         res = false;
     }
@@ -2229,7 +2229,7 @@ mesh::topology::verify(const Node &topo,
 index_t
 mesh::topology::dims(const Node &topology)
 {
-    return bputil::topology::dims(topology);
+    return bputils::topology::dims(topology);
 }
 
 
@@ -2237,7 +2237,7 @@ mesh::topology::dims(const Node &topology)
 index_t
 mesh::topology::length(const Node &topology)
 {
-    return bputil::topology::length(topology);
+    return bputils::topology::length(topology);
 }
 
 //-----------------------------------------------------------------------------
@@ -2516,7 +2516,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 
     const ShapeCascade topo_cascade(topo);
     const ShapeType topo_shape(topo_cascade.get_shape());
-    const DataType int_dtype = bputil::find_widest_dtype(topo, bputil::default_int_dtypes);
+    const DataType int_dtype = bputils::find_widest_dtype(topo, bputils::DEFAULT_INT_DTYPES);
 
     if(topo_shape.is_poly())
     {
@@ -2639,7 +2639,7 @@ mesh::topology::unstructured::generate_points(const Node &topo,
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
     Node coordset;
 
-    bputil::find_reference_node(topo, "coordset", coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
 
     TopologyMetadata topo_data(topo, coordset);
     dest.reset();
@@ -2660,7 +2660,7 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
     Node coordset;
-    bputil::find_reference_node(topo, "coordset", coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
 
     TopologyMetadata topo_data(topo, coordset);
     dest.reset();
@@ -2681,7 +2681,7 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
     Node coordset;
-    bputil::find_reference_node(topo, "coordset", coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
 
     TopologyMetadata topo_data(topo, coordset);
     dest.reset();
@@ -2703,20 +2703,20 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_centroids".
     Node coordset;
-    bputil::find_reference_node(topo, "coordset", coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
 
     calculate_unstructured_centroids(topo, coordset, dest, cdest);
 
     Node map_node;
     std::vector<index_t> map_vec;
-    for(index_t ei = 0; ei < bputil::topology::length(topo); ei++)
+    for(index_t ei = 0; ei < bputils::topology::length(topo); ei++)
     {
         map_vec.push_back(1);
         map_vec.push_back(ei);
     }
     map_node.set(map_vec);
 
-    DataType int_dtype = bputil::find_widest_dtype(bputil::link_nodes(topo, coordset), bputil::default_int_dtypes);
+    DataType int_dtype = bputils::find_widest_dtype(bputils::link_nodes(topo, coordset), bputils::DEFAULT_INT_DTYPES);
     s2dmap.reset();
     d2smap.reset();
     map_node.to_data_type(int_dtype.id(), s2dmap);
@@ -2734,8 +2734,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     // Retrieve Relevent Coordinate/Topology Metadata //
 
     Node coordset;
-    bputil::find_reference_node(topo, "coordset", coordset);
-    const std::vector<std::string> csys_axes = bputil::coordset::axes(coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
 
     const ShapeCascade topo_cascade(topo);
     const ShapeType topo_shape = topo_cascade.get_shape();
@@ -2942,8 +2942,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     // Retrieve Relevent Coordinate/Topology Metadata //
 
     Node coordset;
-    bputil::find_reference_node(topo, "coordset", coordset);
-    const std::vector<std::string> csys_axes = bputil::coordset::axes(coordset);
+    bputils::find_reference_node(topo, "coordset", coordset);
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
 
     const ShapeCascade topo_cascade(topo);
     const ShapeType topo_shape = topo_cascade.get_shape();
@@ -3321,7 +3321,7 @@ void
 mesh::topology::unstructured::generate_offsets(const Node &topo,
                                                Node &dest)
 {
-    return bputil::topology::unstructured::generate_offsets(topo, dest);
+    return bputils::topology::unstructured::generate_offsets(topo, dest);
 }
 
 //-----------------------------------------------------------------------------
@@ -3366,7 +3366,7 @@ mesh::topology::type::verify(const Node &type,
     bool res = true;
     info.reset();
 
-    res &= verify_enum_field(protocol, type, info, "", bputil::topo_types);
+    res &= verify_enum_field(protocol, type, info, "", bputils::TOPO_TYPES);
 
     log::validation(info,res);
 
@@ -3386,7 +3386,7 @@ mesh::topology::shape::verify(const Node &shape,
     bool res = true;
     info.reset();
 
-    res &= verify_enum_field(protocol, shape, info, "", bputil::topo_shapes);
+    res &= verify_enum_field(protocol, shape, info, "", bputils::TOPO_SHAPES);
 
     log::validation(info,res);
 
@@ -3729,7 +3729,7 @@ mesh::field::verify(const Node &field,
 
     // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
     // entry for fields.
-    // res &= verify_enum_field(protocol, field, info, "volume_dependent", mesh::booleans);
+    // res &= verify_enum_field(protocol, field, info, "volume_dependent", bputils::BOOLEANS);
 
     log::validation(info, res);
 
@@ -3824,7 +3824,7 @@ mesh::specset::verify(const Node &specset,
 
     // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
     // entry for specsets.
-    // res &= verify_enum_field(protocol, specset, info, "volume_dependent", mesh::booleans);
+    // res &= verify_enum_field(protocol, specset, info, "volume_dependent", bputils::BOOLEANS);
     res &= verify_string_field(protocol, specset, info, "matset");
     if(!verify_object_field(protocol, specset, info, "matset_values"))
     {
@@ -4129,7 +4129,7 @@ mesh::nestset::type::verify(const Node &type,
     bool res = true;
     info.reset();
 
-    res &= verify_enum_field(protocol, type, info, "", bputil::nestset_types);
+    res &= verify_enum_field(protocol, type, info, "", bputils::NESTSET_TYPES);
 
     log::validation(info,res);
 

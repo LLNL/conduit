@@ -53,56 +53,59 @@ namespace mesh
 /// blueprint mesh utility constants
 //-----------------------------------------------------------------------------
 
-static const DataType default_int_dtype = DataType::int32(1);
-static const DataType default_uint_dtype = DataType::uint32(1);
-static const DataType default_float_dtype = DataType::float32(1);
-static const std::vector<DataType> default_int_dtypes = {default_int_dtype, default_uint_dtype};
-static const std::vector<DataType> default_number_dtypes = {default_float_dtype, default_int_dtype, default_uint_dtype};
+static const DataType DEFAULT_INT_DTYPE = DataType::int32(1);
+static const DataType DEFAULT_UINT_DTYPE = DataType::uint32(1);
+static const DataType DEFAULT_FLOAT_DTYPE = DataType::float32(1);
+static const std::vector<DataType> DEFAULT_INT_DTYPES = {DEFAULT_INT_DTYPE, DEFAULT_UINT_DTYPE};
+static const std::vector<DataType> DEFAULT_NUMBER_DTYPES = {DEFAULT_FLOAT_DTYPE, DEFAULT_INT_DTYPE, DEFAULT_UINT_DTYPE};
 
-static const std::vector<std::string> associations = {"vertex", "element"};
-static const std::vector<std::string> booleans = {"true", "false"};
-static const std::vector<std::string> nestset_types = {"parent", "child"};
+static const std::vector<DataType> INT_DTYPES = {DataType::int32(1), DataType::int64(1)};
+static const std::vector<DataType> FLOAT_DTYPES = {DataType::float32(1), DataType::float64(1)};
 
-static const std::vector<std::string> coordinate_axes = {"x", "y", "z", "r", "z", "theta", "phi"};
-static const std::vector<std::string> cartesian_axes = {"x", "y", "z"};
-static const std::vector<std::string> cylindrical_axes = {"r", "z"};
-static const std::vector<std::string> spherical_axes = {"r", "theta", "phi"};
-static const std::vector<std::string> logical_axes = {"i", "j", "k"};
+static const std::vector<std::string> ASSOCIATIONS = {"vertex", "element"};
+static const std::vector<std::string> BOOLEANS = {"true", "false"};
+static const std::vector<std::string> NESTSET_TYPES = {"parent", "child"};
 
-static const std::vector<std::string> coord_types = {"uniform", "rectilinear", "explicit"};
-static const std::vector<std::string> coord_systems = {"cartesian", "cylindrical", "spherical"};
+static const std::vector<std::string> COORDINATE_AXES = {"x", "y", "z", "r", "z", "theta", "phi"};
+static const std::vector<std::string> CARTESIAN_AXES = {"x", "y", "z"};
+static const std::vector<std::string> CYLINDRICAL_AXES = {"r", "z"};
+static const std::vector<std::string> SPHERICAL_AXES = {"r", "theta", "phi"};
+static const std::vector<std::string> LOGICAL_AXES = {"i", "j", "k"};
 
-static const std::vector<std::string> topo_types = {"points", "uniform", "rectilinear", "structured", "unstructured"};
-static const std::vector<std::string> topo_shapes = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
-static const std::vector<std::string> topo_shape_ids = {"p", "l", "f", "f", "c", "c", "f", "c"};
-static const std::vector<index_t> topo_shape_dims = {0, 1, 2, 2, 3, 3, 2, 3};
-static const std::vector<index_t> topo_shape_index_counts = {1, 2, 3, 4, 4, 8, -1, -1};
-static const std::vector<index_t> topo_shape_embed_types = {-1, 0, 1, 1, 2, 3, 1, 6};
-static const std::vector<index_t> topo_shape_embed_counts = {0, 2, 3, 4, 4, 6, -1, -1};
+static const std::vector<std::string> COORD_TYPES = {"uniform", "rectilinear", "explicit"};
+static const std::vector<std::string> COORD_SYSTEMS = {"cartesian", "cylindrical", "spherical"};
+
+static const std::vector<std::string> TOPO_TYPES = {"points", "uniform", "rectilinear", "structured", "unstructured"};
+static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
+static const std::vector<std::string> TOPO_SHAPE_IDS = {"p", "l", "f", "f", "c", "c", "f", "c"};
+static const std::vector<index_t> TOPO_SHAPE_DIMS = {0, 1, 2, 2, 3, 3, 2, 3};
+static const std::vector<index_t> TOPO_SHAPE_INDEX_COUNTS = {1, 2, 3, 4, 4, 8, -1, -1};
+static const std::vector<index_t> TOPO_SHAPE_EMBED_TYPES = {-1, 0, 1, 1, 2, 3, 1, 6};
+static const std::vector<index_t> TOPO_SHAPE_EMBED_COUNTS = {0, 2, 3, 4, 4, 6, -1, -1};
 
 // TODO(JRC): These orientations currently assume the default Conduit-Blueprit
 // windings are used for the input geometry, which happens to be the case
 // for all example geometry but cannot be assumed for all inputs. In order
 // for these arrangements to be used generally, the winding feature needs to
 // be implemented and used to perform index space transforms.
-static const index_t topo_point_embedding[1][1] = {
+static const index_t TOPO_POINT_EMBEDDING[1][1] = {
     {0}};
-static const index_t topo_line_embedding[2][1] = {
+static const index_t TOPO_LINE_EMBEDDING[2][1] = {
     {0}, {1}};
-static const index_t topo_tri_embedding[3][2] = {
+static const index_t TOPO_TRI_EMBEDDING[3][2] = {
     {0, 1}, {1, 2}, {2, 0}};
-static const index_t topo_quad_embedding[4][2] = {
+static const index_t TOPO_QUAD_EMBEDDING[4][2] = {
     {0, 1}, {1, 2}, {2, 3}, {3, 0}};
-static const index_t topo_tet_embedding[4][3] = {
+static const index_t TOPO_TET_EMBEDDING[4][3] = {
     {0, 2, 1}, {0, 1, 3},
     {0, 3, 2}, {1, 2, 3}};
-static const index_t topo_hex_embedding[6][4] = {
+static const index_t TOPO_HEX_EMBEDDING[6][4] = {
     {0, 3, 2, 1}, {0, 1, 5, 4}, {1, 2, 6, 5},
     {2, 3, 7, 6}, {3, 0, 4, 7}, {4, 5, 6, 7}};
-static const std::vector<const index_t*> topo_shape_embeddings = {
-    &topo_point_embedding[0][0], &topo_line_embedding[0][0],
-    &topo_tri_embedding[0][0], &topo_quad_embedding[0][0],
-    &topo_tet_embedding[0][0], &topo_hex_embedding[0][0],
+static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
+    &TOPO_POINT_EMBEDDING[0][0], &TOPO_LINE_EMBEDDING[0][0],
+    &TOPO_TRI_EMBEDDING[0][0], &TOPO_QUAD_EMBEDDING[0][0],
+    &TOPO_TET_EMBEDDING[0][0], &TOPO_HEX_EMBEDDING[0][0],
     NULL, NULL};
 
 //-----------------------------------------------------------------------------
@@ -244,21 +247,17 @@ bool find_reference_node(const Node &node, const std::string &ref_key, Node &ref
 //-----------------------------------------------------------------------------
 namespace coordset
 {
-    //-----------------------------------------------------------------------------
-    void coords(const Node &n,
-                Node &dest);
-
-    //-----------------------------------------------------------------------------
-    std::string coordsys(const Node &n);
-
-    //-----------------------------------------------------------------------------
-    std::vector<std::string> axes(const Node &n);
-
     //-------------------------------------------------------------------------
     index_t dims(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
     index_t length(const conduit::Node &n);
+
+    //-----------------------------------------------------------------------------
+    std::vector<std::string> axes(const Node &n);
+
+    //-----------------------------------------------------------------------------
+    std::string coordsys(const Node &n);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::util::mesh::coorset --
