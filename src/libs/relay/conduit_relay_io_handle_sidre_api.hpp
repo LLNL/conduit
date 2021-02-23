@@ -26,12 +26,20 @@ public:
 
     // main interface methods
     void read(Node &node);
+    void read(Node &node, const Node &opts);
     void read(const std::string &path,
               Node &node);
+    void read(const std::string &path,
+              Node &node,
+              const Node &opts);
 
     void write(const Node &node);
+    void write(const Node &node, const Node &opts);
     void write(const Node &node,
                const std::string &path);
+    void write(const Node &node,
+               const std::string &path,
+               const Node &opts);
 
     void remove(const std::string &path);
 
@@ -139,5 +147,5 @@ private:
     std::map<int,IOHandle>   m_file_handles;
     // holds cached sidre meta date for each tree
     std::map<int,Node>       m_sidre_meta;
-    
+
 };
