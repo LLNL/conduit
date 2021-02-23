@@ -524,7 +524,6 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_fixed_hdf5_dataset_ha
     H5Dclose(h5_dset_id);
     H5Fclose(h5_file_id);
 
-
 }
 
 
