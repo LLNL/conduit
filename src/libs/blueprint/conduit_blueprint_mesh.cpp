@@ -1152,11 +1152,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
 
     Node topo_offsets;
-    bputils::topology::unstructured::offsets(topo, topo_offsets);
-    if(topo_offsets.dtype().is_empty())
-    {
-        bputils::topology::unstructured::generate_offsets(topo, topo_offsets);
-    }
+    bputils::topology::unstructured::generate_offsets(topo, topo_offsets);
     const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
 
     const ShapeCascade topo_cascade(topo);

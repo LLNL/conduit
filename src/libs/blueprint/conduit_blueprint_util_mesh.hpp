@@ -279,13 +279,10 @@ namespace topology
     //-------------------------------------------------------------------------
     namespace unstructured
     {
+        // TODO(JRC): Expose this 'cache' version of the function publicly?
         //-------------------------------------------------------------------------
-        void offsets(Node &n,
-                     Node &dest);
-
-        //-------------------------------------------------------------------------
-        void offsets(const Node &n,
-                     Node &dest);
+        void generate_offsets(Node &n,
+                              Node &dest);
 
         //-------------------------------------------------------------------------
         void generate_offsets(const Node &n,

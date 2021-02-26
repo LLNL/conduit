@@ -207,11 +207,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
     // NOTE(JRC): This type current only works at forming associations within
     // an unstructured topology's hierarchy.
     Node topo_offsets;
-    topology::unstructured::offsets(*topo, topo_offsets);
-    if(topo_offsets.dtype().is_empty())
-    {
-        topology::unstructured::generate_offsets(*topo, topo_offsets);
-    }
+    topology::unstructured::generate_offsets(*topo, topo_offsets);
     const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
     const index_t topo_num_coords = coordset::length(coordset);
 
@@ -456,7 +452,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         }
 
         Node dim_topo_offsets;
-        topology::unstructured::offsets(dim_topos[di], dim_topo_offsets);
+        topology::unstructured::generate_offsets(dim_topos[di], dim_topo_offsets);
     }
 }
 
@@ -927,8 +923,22 @@ coordset::coordsys(const Node &n)
 index_t
 topology::dims(const Node &n)
 {
-    ShapeType shape(n);
-    return (index_t)shape.dim;
+    index_t topology_dims = 1;
+
+    const std::string type = n["type"].as_string();
+    if(type != "unstructured")
+    {
+        Node coordset;
+        find_reference_node(n, "coordset", coordset);
+        topology_dims = coordset::dims(coordset);
+    }
+    else // if(type == "unstructured")
+    {
+        ShapeType shape(n);
+        topology_dims = (index_t)shape.dim;
+    }
+
+    return topology_dims;
 }
 
 
@@ -976,34 +986,27 @@ topology::length(const Node &n)
 
 //-----------------------------------------------------------------------------
 void
-topology::unstructured::offsets(Node &n,
-                                Node &dest)
+topology::unstructured::generate_offsets(Node &n,
+                                         Node &dest)
 {
     dest.reset();
 
     if(n["elements"].has_child("offsets") && !n["elements/offsets"].dtype().is_empty())
     {
-        dest.set_external(n["elements/offsets"]);
+        if(&dest != &n["elements/offsets"])
+        {
+            dest.set_external(n["elements/offsets"]);
+        }
     }
     else
     {
+        const Node &n_const = n;
         Node &offsets = n["elements/offsets"];
-        blueprint::util::mesh::topology::unstructured::generate_offsets(n, offsets);
-        dest.set_external(offsets);
-    }
-}
-
-
-//-----------------------------------------------------------------------------
-void
-topology::unstructured::offsets(const Node &n,
-                                Node &dest)
-{
-    dest.reset();
-
-    if(n["elements"].has_child("offsets") && !n["elements/offsets"].dtype().is_empty())
-    {
-        dest.set_external(n["elements/offsets"]);
+        blueprint::util::mesh::topology::unstructured::generate_offsets(n_const, offsets);
+        if(&dest != &offsets)
+        {
+            dest.set_external(offsets);
+        }
     }
 }
 
@@ -1020,7 +1023,14 @@ topology::unstructured::generate_offsets(const Node &n,
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
-    if(!topo_shape.is_poly())
+    if(n["elements"].has_child("offsets") && !n["elements/offsets"].dtype().is_empty())
+    {
+        if(&dest != &n["elements/offsets"])
+        {
+            dest.set_external(n["elements/offsets"]);
+        }
+    }
+    else if(!topo_shape.is_poly())
     {
         dest.reset();
 
