@@ -425,7 +425,7 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             }
             else
             {
-                poly_subconn = topo_poly["elements/connectivity"];   
+                poly_subconn = topo_poly["elements/connectivity"];
             }
             EXPECT_EQ(poly_conn.dtype().id(), topo_conn.dtype().id());
 
@@ -444,7 +444,7 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             const conduit::int64_array topo_data = topo_conn_array.as_int64_array();
             const conduit::int64_array poly_data = poly_conn_array.as_int64_array();
             const conduit::int64_array poly_subdata = poly_subconn_array.as_int64_array();
-            
+
             conduit::Node poly_size;
             poly_size = topo_poly["elements/sizes"];
 
@@ -455,7 +455,7 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             {
                 poly_subsize = topo_poly["subelements/sizes"];
             }
-            else 
+            else
             {
                 poly_subsize = topo_poly["elements/sizes"];
             }
@@ -499,7 +499,7 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
                         std::set<index_t> polygonal_index_set(
                             &poly_data[efo],
                             &poly_data[efo + topo_findices]);
-                        
+
                         poly_index_set = polygonal_index_set;
                     }
                     // set of face indices is completely unique (no duplicates)

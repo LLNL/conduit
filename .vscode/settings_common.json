@@ -1,0 +1,5 @@
+{
+    "cmake.configureOnOpen": true,
+    "cmake.buildDirectory" : "${workspaceFolder}/build-vscode",
+    "cmake.sourceDirectory": "${workspaceFolder}/src"
+}

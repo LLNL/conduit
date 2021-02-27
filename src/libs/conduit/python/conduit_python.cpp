@@ -1696,6 +1696,7 @@ PyConduit_DataType_to_string(PyConduit_DataType* self,
     return (Py_BuildValue("s", oss.str().c_str()));
 }
 
+
 //---------------------------------------------------------------------------//
 static PyObject *
 PyConduit_DataType_to_json(PyConduit_DataType* self,
@@ -4177,7 +4178,7 @@ PyConduit_Node_str(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_repr(PyConduit_Node* self)
 {
-    return PyConduit_Node_str(self);
+   return (Py_BuildValue("s", self->node->to_summary_string().c_str()));
 }
 
 //---------------------------------------------------------------------------//
@@ -5060,6 +5061,55 @@ PyConduit_Node_info(PyConduit_Node *self)
     return (PyObject*)retval;
 }
 
+
+//---------------------------------------------------------------------------//
+static PyObject * 
+PyConduit_Node_describe(PyConduit_Node *self,
+                        PyObject* args,
+                        PyObject* kwargs)
+{
+    PyObject *py_opts = NULL;
+    static const char *kwlist[] = {"opts", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &py_opts))
+    {
+        return (NULL);
+    }
+
+    Node *node_opts_ptr = NULL;
+
+    if(py_opts != NULL)
+    {
+        if(!PyConduit_Node_Check(py_opts))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Node::describe 'opts' argument must be a "
+                            "Conduit::Node");
+            return NULL;
+        }
+
+        node_opts_ptr = ((PyConduit_Node*)py_opts)->node;
+    }
+
+    PyConduit_Node *retval = (PyConduit_Node*)PyConduit_Node_Python_Create();
+    if(node_opts_ptr == NULL)
+    {
+        self->node->describe(*retval->node);
+    }
+    else
+    {
+        self->node->describe(*node_opts_ptr,
+                             *retval->node);
+    }
+
+    return (PyObject*)retval;
+}
+
+
 //---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Node_print_detailed(PyConduit_Node *self)
@@ -5490,6 +5540,59 @@ PyConduit_Node_to_string(PyConduit_Node* self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_to_summary_string(PyConduit_Node* self,
+                                 PyObject* args,
+                                 PyObject* kwargs)
+{
+    PyObject   *py_opts  = NULL;
+    static const char *kwlist[] = {"opts",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "|O",
+                                     const_cast<char**>(kwlist),
+                                     &py_opts))
+    {
+        return (NULL);
+    }
+    
+    if(py_opts != NULL && !PyConduit_Node_Check(py_opts))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'opts' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node opts;
+    Node *opts_ptr = &opts;
+    
+    if(py_opts != NULL)
+    {
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_opts);
+    }
+
+    std::ostringstream oss;
+
+    try
+    {
+        self->node->to_summary_string_stream(oss,
+                                             *opts_ptr);
+
+    }
+    catch(conduit::Error e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    return (Py_BuildValue("s", oss.str().c_str()));
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_to_json(PyConduit_Node* self,
                        PyObject* args,
                        PyObject* kwargs)
@@ -5783,6 +5886,12 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      METH_VARARGS, 
      "Returns a node populated with the memory space details for this node"},
     //-----------------------------------------------------------------------//
+    {"describe",
+     (PyCFunction)PyConduit_Node_describe,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Returns a node that mirrors the current Node, however each leaf is"
+     " replaced by summary stats and a truncated display of the values."},
+    //-----------------------------------------------------------------------//
     {"print_detailed",
      (PyCFunction)PyConduit_Node_print_detailed,
      METH_NOARGS, 
@@ -5904,6 +6013,12 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
       "Returns a string representation of the node. "
       "Optionally takes protocol and spacing options. "
       "(Default protocol='yaml'.)"},
+     //------------------------------------------------------------t-----------//
+     {"to_summary_string",
+      (PyCFunction)PyConduit_Node_to_summary_string, 
+      METH_VARARGS| METH_KEYWORDS,
+      "Returns a summary string representation of the node. "
+      "Optionally takes a Node that provides spacing and threshold options. "},
      //-----------------------------------------------------------------------//
      {"to_json",
       (PyCFunction)PyConduit_Node_to_json, 

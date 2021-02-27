@@ -87,8 +87,8 @@ void validate_basic_example(const std::string &name,
         CONDUIT_INFO(info.to_json());
     }
 
-    conduit::relay::io_blueprint::save(mesh, "basic_"+name+".blueprint_root");
-    // conduit::relay::io_blueprint::save(mesh, "basic_"+name+".blueprint_root_hdf5");
+
+    relay::io::blueprint::save_mesh(mesh, "basic_" + name + "_yaml", "yaml");
 }
 
 /// Test Functions ///
@@ -580,10 +580,10 @@ TEST(conduit_docs, blueprint_demo_basic_polyhedra)
             "sizes": [6, 6, 6, 6, 6, 6, 6, 6],
             "offsets": [0, 6, 12, 18, 24, 30, 36, 42]
           },
-          "subelements":
+          "subelements": 
           {
             "shape": "polygonal",
-            "connectivity": [0, 1, 4, 3, 0, 1, 10, 9, 1, 4, 13, 10, 4, 3, 12, 13, 3, 0, 9, 12, 9, 10, 13, 12, 1, 2, 5, 4, 1, 2, 11, 10, 2, 5, 14, 11, 5, 4, 13, 14, 10, 11, 14, 13, 3, 4, 7, 6, 4, 7, 16, 13, 7, 6, 15, 16, 6, 3, 12, 15, 12, 13, 16, 15, 4, 5, 8, 7, 5, 8, 17, 14, 8, 7, 16, 17, 13, 14, 17, 16, 9, 10, 19, 18, 10, 13, 22, 19, 13, 12, 21, 22, 12, 9, 18, 21, 18, 19, 22, 21, 10, 11, 20, 19, 11, 14, 23, 20, 14, 13, 22, 23, 19, 20, 23, 22, 13, 16, 25, 22, 16, 15, 24, 25, 15, 12, 21, 24, 21, 22, 25, 24, 14, 17, 26, 23, 17, 16, 25, 26, 22, 23, 26, 25],
+            "connectivity": [0, 3, 4, 1, 0, 1, 10, 9, 1, 4, 13, 10, 4, 3, 12, 13, 3, 0, 9, 12, 9, 10, 13, 12, 1, 4, 5, 2, 1, 2, 11, 10, 2, 5, 14, 11, 5, 4, 13, 14, 10, 11, 14, 13, 3, 6, 7, 4, 4, 7, 16, 13, 7, 6, 15, 16, 6, 3, 12, 15, 12, 13, 16, 15, 4, 7, 8, 5, 5, 8, 17, 14, 8, 7, 16, 17, 13, 14, 17, 16, 9, 10, 19, 18, 10, 13, 22, 19, 13, 12, 21, 22, 12, 9, 18, 21, 18, 19, 22, 21, 10, 11, 20, 19, 11, 14, 23, 20, 14, 13, 22, 23, 19, 20, 23, 22, 13, 16, 25, 22, 16, 15, 24, 25, 15, 12, 21, 24, 21, 22, 25, 24, 14, 17, 26, 23, 17, 16, 25, 26, 22, 23, 26, 25],
             "sizes": [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
             "offsets": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140]
           }
@@ -671,9 +671,9 @@ TEST(conduit_docs, blueprint_demo_basic_uniform_complete)
     //
     // this will create the file: complete_uniform_mesh_example.root
     // which includes the mesh blueprint index and the mesh data
-    conduit::relay::io::blueprint::write_mesh(mesh,
-                                              "complete_uniform_mesh_example",
-                                              "json");
+    conduit::relay::io::blueprint::save_mesh(mesh,
+                                             "complete_uniform_mesh_example",
+                                             "json");
 
     END_EXAMPLE("blueprint_demo_basic_uniform_complete");
 }

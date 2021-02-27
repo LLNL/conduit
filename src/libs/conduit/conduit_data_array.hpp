@@ -103,6 +103,14 @@ public:
                                     Node &info,
                                     const float64 epsilon = CONDUIT_EPSILON) const;
 
+    ///
+    /// Summary Stats Helpers
+    ///
+    T               min()  const;
+    T               max()  const;
+    T               sum() const;
+    float64         mean() const;
+
 //-----------------------------------------------------------------------------
 // Setters
 //-----------------------------------------------------------------------------
@@ -207,7 +215,7 @@ public:
     #endif
 
     #ifndef CONDUIT_USE_DOUBLE
-       void setconst std::initializer_list<double> &values);
+       void set(const std::initializer_list<double> &values);
     #endif
 
     //-------------------------------------------------------------------------
@@ -289,6 +297,25 @@ public:
     void            set(const DataArray<float64>  &values);
 
 //-----------------------------------------------------------------------------
+// fill
+//-----------------------------------------------------------------------------
+    /// signed integer fill
+    void            fill(int8  value);
+    void            fill(int16 value);
+    void            fill(int32 value);
+    void            fill(int64 value);
+
+    /// unsigned integer fill
+    void            fill(uint8  value);
+    void            fill(uint16 value);
+    void            fill(uint32 value);
+    void            fill(uint64 value);
+
+    /// floating point fill
+    void            fill(float32 value);
+    void            fill(float64 value);
+
+//-----------------------------------------------------------------------------
 // Transforms
 //-----------------------------------------------------------------------------
     std::string     to_string(const std::string &protocol="json") const;
@@ -311,7 +338,14 @@ public:
     void            to_yaml_stream(std::ostream &os) const;
 
     void            compact_elements_to(uint8 *data) const;
-    
+
+    /// Creates a string repression for printing that limits
+    /// the number of elements shown to a max number
+    std::string     to_summary_string_default() const;
+    std::string     to_summary_string(index_t threshold=5) const;
+    void            to_summary_string_stream(std::ostream &os,
+                                             index_t threshold=5) const;
+
 //-----------------------------------------------------------------------------
 // -- stdout print methods ---
 //-----------------------------------------------------------------------------

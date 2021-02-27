@@ -149,7 +149,6 @@ TEST(conduit_utils, override_error)
 
 }
 
-
 //-----------------------------------------------------------------------------
 TEST(conduit_utils, escape_special_chars)
 {
@@ -544,6 +543,159 @@ TEST(conduit_utils, split_tests)
     utils::rsplit_string(p," ",curr,next);
     EXPECT_EQ(curr,std::string(""));
     p = next;
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, format_args)
+{
+    Node args;
+
+    // args not an obj or list, throw exception
+    {
+        args.reset();
+        EXPECT_THROW(conduit::utils::format("{a} {b} {c} {d} {e} {f}",args),
+                     conduit::Error);
+
+        args = 32;
+        EXPECT_THROW(conduit::utils::format("{a} {b} {c} {d} {e} {f}",args),
+                     conduit::Error);
+    }
+
+    // named args test
+    args["a"] = "something about";
+    args["b"] = "and";
+    args["c"] = 3.1415;
+    args["d"] = 42;
+
+    std::string t = conduit::utils::format("{a} {c:0.3} {b} {d:04}", args);
+    std::cout << t << std::endl;
+
+    EXPECT_EQ("something about 3.14 and 0042",t);
+
+    // not enough args to exec format, throw exception
+    EXPECT_THROW(conduit::utils::format("{a} {b} {c} {d} {e} {f}",args),
+                 conduit::Error);
+
+    // ordered args test
+    args.reset();
+    args.append() = "something about";
+    args.append() = 3.1415;
+    args.append() = "and";
+    args.append() = 42;
+
+    t = conduit::utils::format("{} {:0.3} {} {:04}", args);
+    std::cout << t << std::endl;
+    EXPECT_EQ("something about 3.14 and 0042",t);
+
+
+    // mis match args to format req, throw exception
+    args.reset();
+    args.append() = "something about";
+    args.append() = "and";
+    args.append() = 3.1415;
+    args.append() = 42;
+
+    EXPECT_THROW(conduit::utils::format("{} {:0.3} {} {:04}", args),
+                 conduit::Error);
+
+    // not enough args to exec format, throw exception
+    EXPECT_THROW(conduit::utils::format("{} {} {} {} {} {}",args),
+                 conduit::Error);
+
+}
+
+
+// //-----------------------------------------------------------------------------
+TEST(conduit_utils, format_maps)
+{
+    Node maps;
+
+    // args not an obj or list, throw exception
+    {
+        maps.reset();
+        EXPECT_THROW(conduit::utils::format("{a} {b} {c} {d} {e} {f}",
+                                            maps,
+                                            0),
+                     conduit::Error);
+
+        maps = 32;
+        EXPECT_THROW(conduit::utils::format("{a} {b} {c} {d} {e} {f}",
+                                            maps,
+                                            0),
+                     conduit::Error);
+    }
+
+    // named args test
+    maps["a"] = {1.1415, 2.1415, 3.1415};
+    maps["b"] = {0,0,42};
+
+    std::string t = conduit::utils::format("something about {a:0.3} and {b:04}",
+                                           maps,
+                                           2);
+    std::cout << t << std::endl;
+    EXPECT_EQ("something about 3.14 and 0042",t);
+
+
+    // bad map index, (too small)
+    {
+        EXPECT_THROW(conduit::utils::format("{a} {b} {c}",maps,-100),
+                     conduit::Error);
+                 
+        EXPECT_THROW(conduit::utils::format("{a} {b} {c}",maps,-1),
+                     conduit::Error);
+    }
+
+    // bad map index, (too big)
+    {
+        EXPECT_THROW(conduit::utils::format("{a} {b} {c}",maps,4),
+                     conduit::Error);
+
+        EXPECT_THROW(conduit::utils::format("{a} {b} {c}",maps,100),
+                     conduit::Error);
+    }
+
+
+    // not enough args to exec format, throw exception
+    EXPECT_THROW(conduit::utils::format("{a} {b} {c}",maps,2),
+                 conduit::Error);
+
+    // // ordered args test
+    maps.reset();
+    maps.append() = {1.1415, 2.1415, 3.1415};
+    maps.append() = {0,0,42};
+
+    t = conduit::utils::format("something about {:0.3} and {:04}",
+                               maps,
+                               2);
+    std::cout << t << std::endl;
+    EXPECT_EQ("something about 3.14 and 0042",t);
+
+    // string list case
+    maps.reset();
+    Node &slist = maps.append();
+
+    slist.append() = "hi 0";
+    slist.append() = "hi 1";
+    slist.append() = "hi 2";
+
+    t = conduit::utils::format("{} is it",maps,0);
+    std::cout << t << std::endl;
+    EXPECT_EQ("hi 0 is it",t);
+
+    t = conduit::utils::format("{} is it",maps,1);
+    std::cout << t << std::endl;
+    EXPECT_EQ("hi 1 is it",t);
+
+    t = conduit::utils::format("{} is it",maps,2);
+    std::cout << t << std::endl;
+    EXPECT_EQ("hi 2 is it",t);
+
+    // not enough args to exec format, throw exception
+    EXPECT_THROW(conduit::utils::format("{} {} {} {} {} {}",maps),
+                 conduit::Error);
 
 }
 

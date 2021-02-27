@@ -1147,6 +1147,86 @@ TEST(conduit_node, to_string_and_parse_all_protos)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_node, to_string_and_indent_check_all_protos)
+{
+    Node n;
+
+    n["a/b/c"] = (int64) 10;
+    n["a/b/d"] = (float64) 42.2;
+    n["a/b/e"] = " string !";
+
+    const std::map<std::string, index_t> schema_key_depths =
+        {{"a", 0}, {"b", 1}, {"c", 2}, {"d", 2}, {"e", 2}};
+
+    std::ostringstream oss;
+
+    std::vector<std::string> txt_cases, txt_types;
+    txt_cases.push_back(n.to_string()); // yaml
+    txt_types.push_back("yaml");
+    txt_cases.push_back(n.to_string_default()); // yaml
+    txt_types.push_back("yaml");
+
+    n.to_string_stream(oss);
+    txt_cases.push_back(oss.str()); // yaml
+    txt_types.push_back("yaml");
+
+    txt_cases.push_back(n.to_string("yaml"));
+    txt_types.push_back("yaml");
+
+    oss.str("");
+    n.to_string_stream(oss,"json");
+    txt_cases.push_back(oss.str()); // json
+    txt_types.push_back("json");
+
+    txt_cases.push_back(n.to_string("json"));
+    txt_types.push_back("json");
+    txt_cases.push_back(n.to_string("conduit_json"));
+    txt_types.push_back("json");
+    // TODO: Eventually should test this case, but it's too different at present.
+    // txt_cases.push_back(n.to_string("conduit_base64_json"));
+    // txt_types.push_back("json");
+
+    for(index_t ti = 0; ti < (index_t)txt_cases.size(); ti++)
+    {
+        const std::string& txt_case = txt_cases[ti];
+        const std::string& txt_type = txt_types[ti];
+        std::vector<std::string> txt_lines;
+        conduit::utils::split_string(txt_case, '\n', txt_lines);
+
+        for(const auto& key_pair : schema_key_depths)
+        {
+            const std::string& key_string = key_pair.first;
+            const index_t key_depth = key_pair.second + ((txt_type == "json") ? 1 : 0);
+
+            std::string key_line;
+            {
+                std::ostringstream oss;
+                oss << std::string(2 * key_depth, ' ');
+                if(txt_type == "json")
+                {
+                    oss << "\"";
+                }
+                oss << key_string;
+                if(txt_type == "json")
+                {
+                    oss << "\"";
+                }
+                oss << ":";
+                key_line = oss.str();
+            }
+
+            bool key_found = false;
+            for(index_t li = 0; li < (index_t)txt_lines.size() && !key_found; li++)
+            {
+                key_found |= txt_lines[li].rfind(key_line) == 0;
+            }
+            ASSERT_TRUE(key_found);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_node, add_child)
 {
     Node n;
@@ -1158,6 +1238,68 @@ TEST(conduit_node, add_child)
     Node *n_ptr = &n.add_child("a");
     // if you add again, you should get the same ref bac.
     EXPECT_EQ(&n_a,n_ptr);
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, describe)
+{
+    Node n;
+
+    n["a"] = {1,2,3,4,5};
+    n["b"] = {1,2,3};
+    n["c"] = {1,2,3,4,5,6};
+    n["d"] = {1,2,3,4,5,6,7};
+    n["e"] = {1,2,3,4,5,6,7,8,9,10,11,12};
+    n["f"] = {1.0,2.0,3.0,4.0,5.0,6.0,7.0};
+    n["g"] = {2.0,4.0};
+
+    Node d;
+    n.describe(d);
+    d.print();
+
+    EXPECT_EQ(d["a/count"].to_int(),5);
+    EXPECT_EQ(d["b/count"].to_int(),3);
+    EXPECT_EQ(d["c/count"].to_int(),6);
+    EXPECT_EQ(d["d/count"].to_int(),7);
+    EXPECT_EQ(d["e/count"].to_int(),12);
+    EXPECT_EQ(d["f/count"].to_int(),7);
+
+    EXPECT_EQ(d["a/min"].to_int(),1);
+    EXPECT_EQ(d["b/min"].to_int(),1);
+    EXPECT_EQ(d["c/min"].to_int(),1);
+    EXPECT_EQ(d["d/min"].to_int(),1);
+    EXPECT_EQ(d["e/min"].to_int(),1);
+    EXPECT_EQ(d["f/min"].to_float(),1.0);
+
+    EXPECT_EQ(d["a/max"].to_int(),5);
+    EXPECT_EQ(d["b/max"].to_int(),3);
+    EXPECT_EQ(d["c/max"].to_int(),6);
+    EXPECT_EQ(d["d/max"].to_int(),7);
+    EXPECT_EQ(d["e/max"].to_int(),12);
+    EXPECT_EQ(d["f/max"].to_float(),7.0);
+
+    EXPECT_EQ(d["a/mean"].to_float(),3.0);
+    EXPECT_EQ(d["b/mean"].to_float(),2.0);
+    EXPECT_EQ(d["c/mean"].to_float(),3.5);
+    EXPECT_EQ(d["d/mean"].to_float(),4.0);
+    EXPECT_EQ(d["e/mean"].to_float(),6.5);
+    EXPECT_EQ(d["f/mean"].to_float(),4.0);
+    EXPECT_EQ(d["g/mean"].to_float(),3.0);
+
+    n["a"] = {1,2,3,4,5};
+    n["b"] = {1,2,3};
+    n["c"] = {1,2,3,4,5,6};
+    n["d"] = {1,2,3,4,5,6,7};
+    n["e"] = {1,2,3,4,5,6,7,8,9,10,11,12};
+    n["f"] = {1.0,2.0,3.0,4.0,5.0,6.0,7.0};
+
+    Node opts;
+    opts["threshold"] = 10;
+    n.describe(opts,d);
+    d.print();
+
 }
 
 

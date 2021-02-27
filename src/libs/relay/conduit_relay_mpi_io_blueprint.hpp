@@ -58,11 +58,53 @@ namespace blueprint
 //-----------------------------------------------------------------------------
 // Save a blueprint mesh to root + file set
 //-----------------------------------------------------------------------------
+/// Note: These methods use "save" semantics, they will overwrite existing
+///       files. 
+///
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+                                 const std::string &path,
+                                 MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+                                 const std::string &path,
+                                 const std::string &protocol,
+                                 MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      file_style: "default", "root_only", "multi_file"
+///            when # of domains == 1,  "default"   ==> "root_only"
+///            else,                    "default"   ==> "multi_file"
+///
+///      suffix: "default", "cycle", "none" 
+///            when # of domains == 1,  "default"   ==> "none"
+///            else,                    "default"   ==> "cycle"
+///
+///      mesh_name:  (used if present, default ==> "mesh")
+///
+///      number_of_files:  {# of files}
+///            when "multi_file":
+///                 <= 0, use # of files == # of domains
+///                  > 0, # of files == number_of_files
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+                                 const std::string &path,
+                                 const std::string &protocol,
+                                 const conduit::Node &opts,
+                                 MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+// Save a blueprint mesh to root + file set
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /// Note: These methods use "write" semantics, they will append to existing
 ///       files. 
-///
-///  TODO: Provide those with "save" sematics?
 ///
 //-----------------------------------------------------------------------------
 
@@ -97,6 +139,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
+///      truncate: "false", "true" (used if present, default ==> "false")
+///           when "true" overwrites existing files (relay 'save' semantics)
+///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
@@ -122,6 +167,24 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
 ///           more than one mesh.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
+                                 const conduit::Node &opts,
+                                 conduit::Node &mesh,
+                                 MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+                                 conduit::Node &mesh,
+                                 MPI_Comm comm);
+
+
+//-----------------------------------------------------------------------------
+///
+/// opts:
+///      mesh_name: "{name}"
+///          provide explicit mesh name, for cases where bp data includes
+///           more than one mesh.
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,
                                  conduit::Node &mesh,
                                  MPI_Comm comm);

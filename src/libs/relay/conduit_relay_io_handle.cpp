@@ -70,17 +70,25 @@ public:
     virtual ~BasicHandle();
 
     void open();
-    
+
     bool is_open() const;
-    
+
     // main interface methods
     void read(Node &node);
+    void read(Node &node, const Node &opts);
     void read(const std::string &path,
               Node &node);
+    void read(const std::string &path,
+              Node &node,
+              const Node &opts);
 
     void write(const Node &node);
+    void write(const Node &node, const Node &opts);
     void write(const Node &node,
                const std::string &path);
+    void write(const Node &node,
+               const std::string &path,
+               const Node &opts);
 
     void remove(const std::string &path);
 
@@ -89,9 +97,9 @@ public:
                           std::vector<std::string> &res);
 
     bool has_path(const std::string &path);
-    
+
     void close();
-    
+
 private:
     Node m_node;
     bool m_open;
@@ -118,12 +126,20 @@ public:
 
     // main interface methods
     void read(Node &node);
+    void read(Node &node, const Node &opts);
     void read(const std::string &path,
               Node &node);
+    void read(const std::string &path,
+              Node &node,
+              const Node &opts);
 
     void write(const Node &node);
+    void write(const Node &node, const Node &opts);
     void write(const Node &node,
                const std::string &path);
+    void write(const Node &node,
+               const std::string &path,
+               const Node &opts);
 
     void remove(const std::string &path);
 
@@ -132,12 +148,12 @@ public:
                           std::vector<std::string> &res);
 
     bool has_path(const std::string &path);
-    
+
     void close();
-    
+
 private:
     hid_t m_h5_id;
-    
+
 };
 //-----------------------------------------------------------------------------
 #endif
@@ -145,7 +161,7 @@ private:
 
 
 //-----------------------------------------------------------------------------
-// HandleInterface Implementation 
+// HandleInterface Implementation
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -170,8 +186,8 @@ IOHandle::HandleInterface::~HandleInterface()
 void
 IOHandle::HandleInterface::open()
 {
-    // checks for subpaths, which we don't currently support 
-    
+    // checks for subpaths, which we don't currently support
+
     std::string file_path;
     std::string subpath;
 
@@ -182,12 +198,17 @@ IOHandle::HandleInterface::open()
                                     subpath);
     if( !subpath.empty() )
     {
-        CONDUIT_ERROR("IOHandle does not (yet) support opening paths with "
+        CONDUIT_ERROR("IOHandle does not support opening paths with "
                       "subpaths specified: \"" << path() << "\"");
     }
 
-    m_open_mode = "rw"; // default to rw
-   
+    m_open_mode = "rwa"; // default to rw, append
+
+    m_open_mode_read     = true;
+    m_open_mode_write    = true;
+    m_open_mode_append   = true;
+    m_open_mode_truncate = false;
+
     // check if options includes open mode
     if(options().has_child("mode") && options()["mode"].dtype().is_string())
     {
@@ -195,20 +216,62 @@ IOHandle::HandleInterface::open()
 
         m_open_mode = "";
 
+        m_open_mode_read     = false;
+        m_open_mode_write    = false;
+        m_open_mode_append   = false;
+        m_open_mode_truncate = false;
+
         if(opts_mode.find("r") != std::string::npos)
         {
             m_open_mode += "r";
+            m_open_mode_read = true;
         }
 
         if(opts_mode.find("w") != std::string::npos)
         {
             m_open_mode += "w";
+            m_open_mode_write = true;
         }
 
-        if(m_open_mode == "")
+        // we need at least read or write
+        if(! m_open_mode_read && ! m_open_mode_write)
         {
-            CONDUIT_ERROR("IOHandle: invalid open mode: \""
-                          <<  open_mode() << "\"");
+            CONDUIT_ERROR("IOHandle: invalid open mode:"
+                          << "\"" << opts_mode << "\"."
+                          << " 'mode' string must provide"
+                          << " 'r' (read) and/or 'w' (write)."
+                          << " Expected string: {rw}{a|t}");
+        }
+
+        // note append and truncate are mut-ex.
+        if(opts_mode.find("a") != std::string::npos)
+        {
+            if( opts_mode.find("t") != std::string::npos )
+            {
+                CONDUIT_ERROR("IOHandle: invalid open mode:"
+                              << "\"" << opts_mode << "\"."
+                              << " In 'mode' string "
+                              << " 'a' (append) and 't' (truncate)"
+                              << " cannot be used together."
+                              << " Expected string: {rw}{a|t}");
+            }
+            m_open_mode += "a";
+            m_open_mode_append = true;
+        }
+
+        // we checked for both above, so it's safe just check for t here
+        if(opts_mode.find("t") != std::string::npos)
+        {
+            m_open_mode += "t";
+            m_open_mode_truncate = true;
+        }
+
+        if( !m_open_mode_append && !m_open_mode_truncate)
+        {
+            // if neither append or truncate were specified,
+            // default to append
+            m_open_mode += "a";
+            m_open_mode_append = true;
         }
     }
 }
@@ -249,7 +312,7 @@ IOHandle::HandleInterface::create(const std::string &path,
 {
     HandleInterface *res = NULL;
     std::string protocol = protocol_;
-    
+
     // allow empty protocol to be used for auto detect
     if(protocol.empty())
     {
@@ -275,13 +338,13 @@ IOHandle::HandleInterface::create(const std::string &path,
     #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         res = new HDF5Handle(path, protocol, options);
     #else
-        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " <<
                       "Cannot create Relay I/O Handle for HDF5" << path);
     #endif
     }
     else
     {
-        CONDUIT_ERROR("Relay I/O Handle does not support the protocol: " 
+        CONDUIT_ERROR("Relay I/O Handle does not support the protocol: "
                       << protocol);
     }
     return res;
@@ -317,7 +380,7 @@ IOHandle::HandleInterface::options() const
 
 
 //-----------------------------------------------------------------------------
-// BasicHandle Implementation 
+// BasicHandle Implementation
 //-----------------------------------------------------------------------------
 BasicHandle::BasicHandle(const std::string &path,
                          const std::string &protocol,
@@ -335,7 +398,7 @@ BasicHandle::~BasicHandle()
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 BasicHandle::open()
 {
     close();
@@ -346,28 +409,36 @@ BasicHandle::open()
     // we start out with a blank slate
     if( utils::is_file( path() ) )
     {
-        // read if handle is not 'write' only
-        if( open_mode() != "w")
+        // read if handle is not 'write' only and we aren't truncating
+        if( open_mode_read() && !open_mode_truncate() )
         {
-            // read from file 
+            // read from file
             io::load(path(),
                      protocol(),
                      options(),
                      m_node);
         }
+        else
+        {
+            m_node.reset();
+        }
     }
-    else if( open_mode() == "r" ) // fail on read only if file doesn't exist
+    else if( open_mode_read_only() ) // fail on read only if file doesn't exist
     {
-        CONDUIT_ERROR("path: \"" 
+        CONDUIT_ERROR("path: \""
                       << path()
-                      << "\" does not exist, cannot open read only (mode = 'r')");
+                      << "\" does not exist, cannot open read only "
+                      << "(mode = '" << open_mode() << "')");
     }
     else
     {
         // make sure we can actually write to this location
-        // we don't want to fail on close if the path 
+        // we don't want to fail on close if the path
         // is bogus
-        relay::io::save(m_node, path());
+        io::save(m_node,
+                 path(),
+                 protocol(),
+                 options());
     }
 
     m_open = true;
@@ -381,29 +452,41 @@ BasicHandle::is_open() const
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 BasicHandle::read(Node &node)
 {
-    // throw an error if we opened in "w" mode
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
-                      " (mode = 'w')");
-    }
+    Node opts;
+    read(node, opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+BasicHandle::read(Node &node, const Node& opts)
+{
+    CONDUIT_UNUSED(opts);
+    // note: wrong mode errors are handled before dispatch to interface
+
     node.update(m_node);
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 BasicHandle::read(const std::string &path,
                   Node &node)
 {
-    // throw an error if we opened in "w" mode
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
-                      " (mode = 'w')");
-    }
+    Node opts;
+    read(path, node, opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+BasicHandle::read(const std::string &path,
+                  Node &node,
+                  const Node &opts)
+{
+    CONDUIT_UNUSED(opts);
+    // note: wrong mode errors are handled before dispatch to interface
+
     if(m_node.has_path(path))
     {
         node.update(m_node[path]);
@@ -411,30 +494,43 @@ BasicHandle::read(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 BasicHandle::write(const Node &node)
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
-                      " (mode = 'r')");
-    }
+    Node opts;
+    write(node, opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+BasicHandle::write(const Node &node,
+                   const Node &opts)
+{
+    CONDUIT_UNUSED(opts);
+    // note: wrong mode errors are handled before dispatch to interface
+
     m_node.update(node);
 }
 
 
 //-----------------------------------------------------------------------------
-void 
+void
 BasicHandle::write(const Node &node,
                    const std::string &path)
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
-                      " (mode = 'r')");
-    }
+    Node opts;
+    write(node, path, opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+BasicHandle::write(const Node &node,
+                   const std::string &path,
+                   const Node& opts)
+{
+    CONDUIT_UNUSED(opts);
+    // note: wrong mode errors are handled before dispatch to interface
+
     m_node[path].update(node);
 }
 
@@ -442,11 +538,8 @@ BasicHandle::write(const Node &node,
 void
 BasicHandle::list_child_names(std::vector<std::string> &res)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
+
     res = m_node.child_names();
 }
 
@@ -455,47 +548,36 @@ void
 BasicHandle::list_child_names(const std::string &path,
                               std::vector<std::string> &res)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
+
     res.clear();
     if(m_node.has_path(path))
         res = m_node[path].child_names();
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 BasicHandle::remove(const std::string &path)
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot remove path, handle is read only"
-                      " (mode = 'r')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
 
     m_node.remove(path);
 }
 
 //-----------------------------------------------------------------------------
-bool 
+bool
 BasicHandle::has_path(const std::string &path)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot call has_path, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
+
     return m_node.has_path(path);
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 BasicHandle::close()
 {
-    if(m_open && open_mode() != "r")
+    if(m_open && !open_mode_read_only() )
     {
         // here is where it actually gets realized on disk
         io::save(m_node,
@@ -509,7 +591,7 @@ BasicHandle::close()
 
 
 //-----------------------------------------------------------------------------
-// HDF5Handle Implementation 
+// HDF5Handle Implementation
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -532,7 +614,7 @@ HDF5Handle::~HDF5Handle()
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 HDF5Handle::open()
 {
     close();
@@ -544,24 +626,28 @@ HDF5Handle::open()
     if( utils::is_file( path() ) )
     {
         // check open mode to select proper hdf5 call
-        if( open_mode() == "r" )
+
+        if( open_mode_read_only() )
         {
             m_h5_id = hdf5_open_file_for_read( path() );
-        }
-        else
+        } // support write with append
+        else if ( open_mode_append() )
         {
             m_h5_id = hdf5_open_file_for_read_write( path() );
+        } // support write with truncate
+        else if ( open_mode_truncate() )
+        {
+            m_h5_id = hdf5_create_file( path() );
         }
     }
-    else if( open_mode() == "r" )
+    else if(  open_mode_read_only() )
     {
-        CONDUIT_ERROR("path: \"" 
+        CONDUIT_ERROR("path: \""
                       << path()
                       << "\" does not exist, cannot open read only (mode = 'r')");
     }
     else
     {
-
         m_h5_id = hdf5_create_file( path() );
     }
 }
@@ -575,41 +661,59 @@ HDF5Handle::is_open() const
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 HDF5Handle::read(Node &node)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
-                      " (mode = 'w')");
-    }
-    hdf5_read(m_h5_id,node);
+    Node opts;
+    read(node, opts);
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
+HDF5Handle::read(Node &node,
+                 const Node &opts)
+{
+    // note: wrong mode errors are handled before dispatch to interface
+
+    hdf5_read(m_h5_id,opts,node);
+}
+
+//-----------------------------------------------------------------------------
+void
 HDF5Handle::read(const std::string &path,
                  Node &node)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
-                      " (mode = 'w')");
-    }
-    hdf5_read(m_h5_id,path,node);
+    Node opts;
+    read(path, node, opts);
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
+HDF5Handle::read(const std::string &path,
+                 Node &node,
+                 const Node &opts)
+{
+    // note: wrong mode errors are handled before dispatch to interface
+
+    hdf5_read(m_h5_id,path,opts,node);
+}
+
+//-----------------------------------------------------------------------------
+void
 HDF5Handle::write(const Node &node)
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
-                      " (mode = 'r')");
-    }
-    
+    Node opts;
+    write(node, opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+HDF5Handle::write(const Node &node,
+                  const Node &opts)
+{
+    CONDUIT_UNUSED(opts);
+    // note: wrong mode errors are handled before dispatch to interface
+
     // Options Push / Pop (only needed for write, since hdf5 only supports
     // write options
     Node prev_options;
@@ -628,17 +732,23 @@ HDF5Handle::write(const Node &node)
 }
 
 
+
 //-----------------------------------------------------------------------------
-void 
+void
 HDF5Handle::write(const Node &node,
                   const std::string &path)
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
-                      " (mode = 'r')");
-    }
+    Node opts;
+    write(node, path, opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+HDF5Handle::write(const Node &node,
+                  const std::string &path,
+                  const Node &opts)
+{
+    // note: wrong mode errors are handled before dispatch to interface
 
     // Options Push / Pop (only needed for write, since hdf5 only supports
     // write options
@@ -649,8 +759,8 @@ HDF5Handle::write(const Node &node,
         hdf5_set_options(options()["hdf5"]);
     }
 
-    hdf5_write(node,m_h5_id,path);
-    
+    hdf5_write(node,m_h5_id,path,opts);
+
     if(!prev_options.dtype().is_empty())
     {
         hdf5_set_options(prev_options);
@@ -661,11 +771,8 @@ HDF5Handle::write(const Node &node,
 void
 HDF5Handle::list_child_names(std::vector<std::string> &res)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
+
     hdf5_group_list_child_names(m_h5_id, "/", res);
 }
 
@@ -674,43 +781,32 @@ void
 HDF5Handle::list_child_names(const std::string &path,
                              std::vector<std::string> &res)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
+
     hdf5_group_list_child_names(m_h5_id, path, res);
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 HDF5Handle::remove(const std::string &path)
 {
-    // throw an error if we opened in "r" mode
-    if( open_mode() == "r")
-    {
-        CONDUIT_ERROR("IOHandle: cannot remove path, handle is read only"
-                      " (mode = 'r')");
-    }
-    
+    // note: wrong mode errors are handled before dispatch to interface
+
     hdf5_remove_path(m_h5_id,path);
 }
 
 //-----------------------------------------------------------------------------
-bool 
-HDF5Handle::has_path(const std::string &path) 
+bool
+HDF5Handle::has_path(const std::string &path)
 {
-    if( open_mode() == "w")
-    {
-        CONDUIT_ERROR("IOHandle: cannot call has_path, handle is write only"
-                      " (mode = 'w')");
-    }
+    // note: wrong mode errors are handled before dispatch to interface
+
     return hdf5_has_path(m_h5_id,path);
 }
 
 
 //-----------------------------------------------------------------------------
-void 
+void
 HDF5Handle::close()
 {
     if(m_h5_id >= 0)
@@ -728,7 +824,7 @@ HDF5Handle::close()
 
 
 //-----------------------------------------------------------------------------
-// IOHandle Implementation 
+// IOHandle Implementation
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -813,10 +909,25 @@ IOHandle::is_open() const
 //-----------------------------------------------------------------------------
 void
 IOHandle::read(Node &node)
-{    
+{
+    Node opts;
+    read(node,opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+IOHandle::read(Node &node,
+               const Node &opts)
+{
     if(m_handle != NULL)
     {
-        m_handle->read(node);
+        if( m_handle->open_mode_write_only() )
+        {
+            CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
+                          " (mode = '" << m_handle->open_mode() << "')");
+        }
+
+        m_handle->read(node,opts);
     }
     else
     {
@@ -829,15 +940,31 @@ void
 IOHandle::read(const std::string &path,
                Node &node)
 {
+    Node opts;
+    read(path,node,opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+IOHandle::read(const std::string &path,
+               Node &node,
+               const Node &opts)
+{
     if(m_handle != NULL)
     {
+        if( m_handle->open_mode_write_only() )
+        {
+            CONDUIT_ERROR("IOHandle: cannot read, handle is write only"
+                          " (mode = '" << m_handle->open_mode() << "')");
+        }
+
         if(path.empty())
         {
-            m_handle->read(node);
+            m_handle->read(node, opts);
         }
         else
         {
-            m_handle->read(path, node);
+            m_handle->read(path, node, opts);
         }
     }
     else
@@ -850,9 +977,24 @@ IOHandle::read(const std::string &path,
 void
 IOHandle::write(const Node &node)
 {
+    Node opts;
+    write(node,opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+IOHandle::write(const Node &node,
+                const Node &opts)
+{
     if(m_handle != NULL)
     {
-        m_handle->write(node);
+        if( m_handle->open_mode_read_only() )
+        {
+            CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
+                          " (mode = '" << m_handle->open_mode() << "')");
+        }
+
+        m_handle->write(node, opts);
     }
     else
     {
@@ -865,15 +1007,31 @@ void
 IOHandle::write(const Node &node,
                 const std::string &path)
 {
+    Node opts;
+    write(node,path,opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+IOHandle::write(const Node &node,
+                const std::string &path,
+                const Node &opts)
+{
     if(m_handle != NULL)
     {
-        m_handle->write(node, path);
+        if( m_handle->open_mode_read_only() )
+        {
+            CONDUIT_ERROR("IOHandle: cannot write, handle is read only"
+                          " (mode = '" << m_handle->open_mode() << "')");
+        }
+
+        m_handle->write(node, path, opts);
     }
     else
     {
         CONDUIT_ERROR("Invalid or closed handle.");
     }
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -882,6 +1040,12 @@ IOHandle::remove(const std::string &path)
 {
     if(m_handle != NULL)
     {
+         if( m_handle->open_mode_read_only() )
+         {
+             CONDUIT_ERROR("IOHandle: cannot remove path, handle is read only"
+                           " (mode = '" << m_handle->open_mode() << "')");
+         }
+
         m_handle->remove(path);
     }
     else
@@ -897,6 +1061,13 @@ IOHandle::list_child_names(std::vector<std::string> &names)
     names.clear();
     if(m_handle != NULL)
     {
+         if( m_handle->open_mode_write_only() )
+         {
+             CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is"
+                           " write only"
+                           " (mode = '" << m_handle->open_mode() << "')");
+         }
+
         return m_handle->list_child_names(names);
     }
     else
@@ -914,6 +1085,13 @@ IOHandle::list_child_names(const std::string &path,
     names.clear();
     if(m_handle != NULL)
     {
+         if( m_handle->open_mode_write_only() )
+         {
+             CONDUIT_ERROR("IOHandle: cannot list_child_names, handle is"
+                           " write only"
+                           " (mode = '" << m_handle->open_mode() << "')");
+         }
+
         return m_handle->list_child_names(path, names);
     }
     else
@@ -928,13 +1106,19 @@ IOHandle::has_path(const std::string &path)
 {
     if(m_handle != NULL)
     {
+        if( m_handle->open_mode_write_only() )
+        {
+            CONDUIT_ERROR("IOHandle: cannot call has_path, handle is write"
+                           " only"
+                           " (mode = '" << m_handle->open_mode() << "')");
+        }
         return m_handle->has_path(path);
     }
     else
     {
         CONDUIT_ERROR("Invalid or closed handle.");
     }
-    
+
     return false;
 }
 
@@ -948,7 +1132,7 @@ IOHandle::close()
         delete m_handle;
         m_handle = NULL;
     }
-    // else, ignore ... 
+    // else, ignore ...
 }
 
 

@@ -425,12 +425,12 @@ Uni-Buffer Material Sets
 *********************************
 
 A **uni-buffer** material set is one that presents all of its volume fraction data in a single data buffer.
-In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associating each volume with a material identifier, and an *Object* mapping of human-readable material names to each unique material identifier.
+In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associating each volume with a material identifier, and an *Object* that maps human-readable material names to unique integer material identifiers.
 Additionally, the top-level of this schema is an **o2mrelation** that sources from the volume fraction/material identifier buffers and targets the material topology.
 To conform to protocol, each ``matsets`` child of this type must be an *Object* that contains the following information:
 
    * matsets/matset/topology: "topo"
-   * matsets/matset/material_map: (integer object)
+   * matsets/matset/material_map: (object with integer leaves)
    * matsets/matset/material_ids: (integer array)
    * matsets/matset/volume_fractions: (floating-point array)
 
@@ -449,16 +449,15 @@ The following diagram illustrates a simple **uni-buffer** material set example:
       matsets:
         matset:
           topology: topology
-          volume_fractions:
-            values: [0, a0, b2, b1, b0, 0, a1, 0]
-            material_ids: [0, 1, 2, 2, 2, 0, 1, 0]
-            material_map:
-              a: 1
-              b: 2
-              c: 0
-            sizes: [2, 2, 1]
-            offsets: [0, 2, 4]
-            indices: [1, 4, 6, 3, 2]
+          material_map:
+            a: 1
+            b: 2
+            c: 0
+          material_ids: [0, 1, 2, 2, 2, 0, 1, 0]
+          volume_fractions: [0, a0, b2, b1, b0, 0, a1, 0]
+          sizes: [2, 2, 1]
+          offsets: [0, 2, 4]
+          indices: [1, 4, 6, 3, 2]
 
 
 Multi-Buffer Material Sets
@@ -466,11 +465,15 @@ Multi-Buffer Material Sets
 
 A **multi-buffer** material set is a material set variant wherein the volume fraction data is split such that one buffer exists per material.
 The schema for this variant dictates that each material be presented as an *Object* entry of the ``volume_fractions`` field with the material name as the entry key and the material volume fractions as the entry value.
+**Multi-buffer** material sets also support an optional ``material_map``, which is an *Object* that maps human-readable material names to unique integer material identifiers. 
+If omitted, the map from material names to ids is inferred from the order of the material names in the ``volume_fractions`` node.
+
 Optionally, the value for each such entry can be specified as an **o2mrelation** instead of a flat array to enable greater specification flexibility.
 To conform to protocol, each ``matsets`` child of this type must be an *Object* that contains the following information:
 
    * matsets/matset/topology: "topo"
    * matsets/matset/volume_fractions: (object)
+   * matsets/matset/material_map: (optional, object with integer leaves)
 
 The following diagram illustrates a simple **multi-buffer** material set example:
 
@@ -494,6 +497,9 @@ The following diagram illustrates a simple **multi-buffer** material set example
             b:
               values: [0, b0, b2, b1, 0]
               indices: [1, 3, 2]
+          material_map: # (optional)
+            a: 0
+            b: 1
 
 
 Material Set Indexing Variants
@@ -530,6 +536,10 @@ The following diagram illustrates a simple **element-dominant** material set exa
             a: [a0, a1, 0]
             b: [b0, b1, b2]
             c: [0, 0, c2]
+          material_map: # (optional)
+            a: 0
+            b: 1
+            c: 2
 
 
 Material-Dominant Material Sets
@@ -563,6 +573,10 @@ The following diagram illustrates a simple **material-dominant** material set ex
             a: [0, 1]
             b: [0, 1, 2]
             c: [2]
+          material_map: # (optional)
+            a: 0
+            b: 1
+            c: 2
 
 
 Fields

@@ -19,6 +19,7 @@ with C++ and Python examples.
    tutorial_cpp_parse
    tutorial_cpp_ownership
    tutorial_cpp_update
+   tutorial_cpp_utils
    tutorial_cpp_errors
 
 

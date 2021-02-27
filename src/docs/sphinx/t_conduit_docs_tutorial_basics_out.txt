@@ -36,7 +36,7 @@ list_example:
   - 4
 
 END_EXAMPLE("basics_object_and_list")
-[       OK ] conduit_tutorial.basics_object_and_list (1 ms)
+[       OK ] conduit_tutorial.basics_object_and_list (0 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list_itr
 BEGIN_EXAMPLE("basics_object_and_list_itr")
 
@@ -61,20 +61,20 @@ val3: 3.1415
 3
 4
 END_EXAMPLE("basics_object_and_list_itr")
-[       OK ] conduit_tutorial.basics_object_and_list_itr (1 ms)
+[       OK ] conduit_tutorial.basics_object_and_list_itr (0 ms)
 [ RUN      ] conduit_tutorial.basics_mem_spaces
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7f7fee4006a0: 
+  0x7fcad7c04c00: 
     path: "my"
     type: "allocated"
     bytes: 5
-  0x7f7fee401bc0: 
+  0x7fcad7c04440: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
-  0x7f7fee401bb0: 
+  0x7fcad7c04430: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8
@@ -84,7 +84,7 @@ total_bytes_compact: 15
 total_strided_bytes: 15
 
 END_EXAMPLE("basics_mem_spaces")
-[       OK ] conduit_tutorial.basics_mem_spaces (0 ms)
+[       OK ] conduit_tutorial.basics_mem_spaces (1 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style
 BEGIN_EXAMPLE("basics_bw_style")
 
@@ -103,7 +103,7 @@ test: 100
 , "value": 100}
 }
 END_EXAMPLE("basics_bw_style")
-[       OK ] conduit_tutorial.basics_bw_style (1 ms)
+[       OK ] conduit_tutorial.basics_bw_style (0 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style_from_native
 BEGIN_EXAMPLE("basics_bw_style_from_native")
 
@@ -185,7 +185,7 @@ my:
 
 
 file: /Users/harrison37/Work/github/llnl/conduit/src/libs/conduit/conduit_node.cpp
-line: 12913
+line: 13050
 message: 
 Cannot fetch non-existent child "data" from Node(my/important)
 
@@ -201,8 +201,8 @@ my:
 
 END_EXAMPLE("basics_const_vs_non_const")
 [       OK ] conduit_tutorial.basics_const_vs_non_const (1 ms)
-[----------] 10 tests from conduit_tutorial (8 ms total)
+[----------] 10 tests from conduit_tutorial (6 ms total)
 
 [----------] Global test environment tear-down
-[==========] 10 tests from 1 test suite ran. (8 ms total)
+[==========] 10 tests from 1 test suite ran. (6 ms total)
 [  PASSED  ] 10 tests.

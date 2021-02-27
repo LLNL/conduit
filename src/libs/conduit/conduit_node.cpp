@@ -11990,6 +11990,341 @@ Node::to_string_default() const
     return to_string();
 }
 
+
+
+//-----------------------------------------------------------------------------
+// -- Summary string construction methods ---
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_summary_string()const
+{
+    Node opts;
+    return to_summary_string(opts);
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_summary_string(const conduit::Node &opts)const
+{
+    std::ostringstream oss;
+    to_summary_string_stream(oss,opts);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_summary_string_stream(std::ostream &os,
+                               const conduit::Node &opts) const
+{
+    // unpack options and enforce defaults
+    index_t num_children_threshold = 7;
+    index_t num_elements_threshold = 5;
+    index_t indent = 2;
+    index_t depth = 0;
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    if(opts.has_child("num_children_threshold") &&
+       opts["num_children_threshold"].dtype().is_number())
+    {
+       num_children_threshold = (index_t)opts["num_children_threshold"].to_int32();
+    }
+
+    if(opts.has_child("num_elements_threshold") &&
+       opts["num_elements_threshold"].dtype().is_number())
+    {
+       num_elements_threshold = (index_t)opts["num_elements_threshold"].to_int32();
+    }
+
+    if(opts.has_child("indent") &&
+       opts["indent"].dtype().is_number())
+    {
+       indent = (index_t)opts["indent"].to_int32();
+    }
+
+    if(opts.has_child("depth") &&
+       opts["depth"].dtype().is_number())
+    {
+       depth = (index_t)opts["depth"].to_int32();
+    }
+
+    if(opts.has_child("pad") &&
+       opts["pad"].dtype().is_string())
+    {
+       pad = opts["pad"].as_string();
+    }
+
+    if(opts.has_child("eoe") &&
+       opts["eoe"].dtype().is_string())
+    {
+       eoe = opts["eoe"].as_string();
+    }
+
+    to_summary_string_stream(os,
+                             num_children_threshold,
+                             num_elements_threshold,
+                             indent,
+                             depth,
+                             pad,
+                             eoe);
+}
+
+
+//-----------------------------------------------------------------------------
+//-- (private interface)
+//-----------------------------------------------------------------------------
+void
+Node::to_summary_string_stream(const std::string &stream_path,
+                               const conduit::Node &opts) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_summary_string_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_summary_string_stream(ofs,opts);
+    ofs.close();
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_summary_string_default() const
+{
+    return to_summary_string();
+}
+
+
+//-----------------------------------------------------------------------------
+//-- (private interface)
+//-----------------------------------------------------------------------------
+void
+Node::to_summary_string_stream(std::ostream &os,
+                               index_t num_children_threshold,
+                               index_t num_elements_threshold,
+                               index_t indent,
+                               index_t depth,
+                               const std::string &pad,
+                               const std::string &eoe) const
+{
+    // rubber, say hello to the road:
+
+    std::ios_base::fmtflags prev_stream_flags(os.flags());
+    os.precision(15);
+    if(dtype().id() == DataType::OBJECT_ID)
+    {
+        os << eoe;
+        int nchildren = m_children.size();
+        int threshold = num_children_threshold;
+
+        // if we are neg or zero, show all children
+        if(threshold <=0)
+        {
+           threshold = nchildren;
+        }
+
+        // if above threshold only show threshold # of values
+        int half = threshold / 2;
+        int bottom = half;
+        int top = half;
+        int num_skipped = m_children.size() - threshold;
+
+        //
+        // if odd, show 1/2 +1 first
+        //
+
+        if( (threshold % 2) > 0)
+        {
+            bottom++;
+        }
+
+        bool done  = (nchildren == 0);
+        int idx = 0;
+
+        while(!done)
+        {
+            utils::indent(os,indent,depth,pad);
+            os << m_schema->object_order()[idx] << ": ";
+            m_children[idx]->to_summary_string_stream(os,
+                                                      num_children_threshold,
+                                                      num_elements_threshold,
+                                                      indent,
+                                                      depth+1,
+                                                      pad,
+                                                      eoe);
+
+            // if the child is a leaf, we need eoe
+            if(m_children[idx]->number_of_children() == 0)
+                os << eoe;
+
+            idx++;
+
+            if(idx == bottom && num_skipped > 0)
+            {
+                utils::indent(os,indent,depth,pad);
+                idx = nchildren - top;
+                os << "... ( skipped "
+                   << num_skipped;
+                if( num_skipped == 1)
+                {
+                   os << " child )";
+                }
+                else
+                {
+                   os << " children )";
+                }
+                os << eoe;
+            }
+
+            if(idx == nchildren)
+            {
+                done = true;
+            }
+        }
+    }
+    else if(dtype().id() == DataType::LIST_ID)
+    {
+        os << eoe;
+        int nchildren = m_children.size();
+        int threshold = num_children_threshold;
+
+        // if we are neg or zero, show all children
+        if(threshold <=0)
+        {
+           threshold = nchildren;
+        }
+
+        // if above threshold only show threshold # of values
+        int half = threshold / 2;
+        int bottom = half;
+        int top = half;
+        int num_skipped = m_children.size() - threshold;
+
+        //
+        // if odd, show 1/2 +1 first
+        //
+
+        if( (threshold % 2) > 0)
+        {
+            bottom++;
+        }
+
+        bool done  = (nchildren == 0);
+        int idx = 0;
+
+        while(!done)
+        {
+            utils::indent(os,indent,depth,pad);
+            os << "- ";
+            m_children[idx]->to_summary_string_stream(os,
+                                                      num_children_threshold,
+                                                      num_elements_threshold,
+                                                      indent,
+                                                      depth+1,
+                                                      pad,
+                                                      eoe);
+
+            // if the child is a leaf, we need eoe
+            if(m_children[idx]->number_of_children() == 0)
+                os << eoe;
+
+            idx++;
+
+            if(idx == bottom && num_skipped > 0)
+            {
+                utils::indent(os,indent,depth,pad);
+                idx = nchildren - top;
+                os << "... ( skipped "
+                   << num_skipped;
+                if( num_skipped == 1)
+                {
+                   os << " child )";
+                }
+                else
+                {
+                   os << " children )";
+                }
+                os << eoe;
+            }
+
+            if(idx == nchildren)
+            {
+                done = true;
+            }
+        }
+    }
+    else // assume leaf data type
+    {
+        // if we are neg or zero, show full array
+        //
+        if(num_elements_threshold <= 0)
+        {
+            num_elements_threshold = dtype().number_of_elements();
+        }
+
+        switch(dtype().id())
+        {
+            // ints
+            case DataType::INT8_ID:
+                as_int8_array().to_summary_string_stream(os,
+                                                         num_elements_threshold);
+                break;
+            case DataType::INT16_ID:
+                as_int16_array().to_summary_string_stream(os,
+                                                          num_elements_threshold);
+                break;
+            case DataType::INT32_ID:
+                as_int32_array().to_summary_string_stream(os,
+                                                          num_elements_threshold);
+                break;
+            case DataType::INT64_ID:
+                as_int64_array().to_summary_string_stream(os,
+                                                          num_elements_threshold);
+                break;
+            // uints
+            case DataType::UINT8_ID:
+                as_uint8_array().to_summary_string_stream(os,
+                                                          num_elements_threshold);
+                break;
+            case DataType::UINT16_ID:
+                as_uint16_array().to_summary_string_stream(os,
+                                                           num_elements_threshold);
+                break;
+            case DataType::UINT32_ID:
+                as_uint32_array().to_summary_string_stream(os,
+                                                           num_elements_threshold);
+                break;
+            case DataType::UINT64_ID:
+                as_uint64_array().to_summary_string_stream(os,
+                                                           num_elements_threshold);
+                break;
+            // floats
+            case DataType::FLOAT32_ID:
+                as_float32_array().to_summary_string_stream(os,
+                                                           num_elements_threshold);
+                break;
+            case DataType::FLOAT64_ID:
+                as_float64_array().to_summary_string_stream(os,
+                                                           num_elements_threshold);
+                break;
+            // char8_str
+            case DataType::CHAR8_STR_ID:
+                os << "\""
+                   << utils::escape_special_chars(as_string())
+                   << "\"";
+                break;
+            // empty
+            case DataType::EMPTY_ID:
+                break;
+        }
+    }
+
+    os.flags(prev_stream_flags);
+}
+
 //-----------------------------------------------------------------------------
 // -- JSON construction methods ---
 //-----------------------------------------------------------------------------
@@ -12271,17 +12606,25 @@ Node::to_json_generic(std::ostream &os,
     {
         if(detailed)
         {
-            std::string dtype_json = dtype().to_json();
-            std::string dtype_open;
-            std::string dtype_rest;
+            std::string dtype_json = dtype().to_json(indent, depth, pad, eoe);
+            std::string dtype_content;
+            std::string dtype_unused;
 
-            // trim the last "}"
+            // trim the last "}" and whitspace
             utils::split_string(dtype_json,
                                 "}",
-                                dtype_open,
-                                dtype_rest);
-            os<< dtype_open;
-            os << ", \"value\": ";
+                                dtype_content,
+                                dtype_unused);
+            dtype_json = dtype_content;
+            utils::rsplit_string(dtype_json,
+                                "\"",
+                                dtype_unused,
+                                dtype_content);
+
+            os << dtype_content;
+            os << "\"," << eoe;
+            utils::indent(os,indent,depth+1,pad);
+            os << "\"value\": ";
         }
 
         switch(dtype().id())
@@ -12335,6 +12678,8 @@ Node::to_json_generic(std::ostream &os,
         if(detailed)
         {
             // complete json entry
+            os << eoe;
+            utils::indent(os,indent,depth,pad);
             os << "}";
         }
     }
@@ -12710,6 +13055,143 @@ Node::to_pure_yaml(std::ostream &os,
 //
 //-----------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------//
+void
+Node::describe(Node &res) const
+{
+    Node opts;
+    describe(opts,res);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::describe(const Node &opts, Node &res) const
+{
+    res.reset();
+    index_t dtype_id = dtype().id();
+    if(dtype_id == DataType::OBJECT_ID)
+    {
+        NodeConstIterator itr = children();
+        while(itr.has_next())
+        {
+            const Node &cld = itr.next();
+            std::string cld_name = itr.name();
+            Node &cld_des = res[cld_name];
+            cld.describe(opts,cld_des);
+        }
+    }
+    else if(dtype_id == DataType::LIST_ID)
+    {
+        NodeConstIterator itr = children();
+        while(itr.has_next())
+        {
+            const Node &cld = itr.next();
+            Node &cld_des = res.append();
+            cld.describe(opts,cld_des);
+        }
+    }
+    else // leaves!
+    {
+        index_t thresh = 5;
+
+        if(opts.has_child("threshold"))
+        {
+            thresh = (index_t) opts["threshold"].to_int();
+        }
+
+        res["dtype"] = DataType::id_to_name(dtype_id);
+        // The term `count` is used in r and pandas world
+        // so we prefer it over `number_of_elements`
+        res["count"] = dtype().number_of_elements();
+
+        if(dtype().is_int8())
+        {
+            int8_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_int16())
+        {
+            int16_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_int32())
+        {
+            int32_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_int64())
+        {
+            int64_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_uint8())
+        {
+            uint8_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_uint16())
+        {
+            uint16_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_uint32())
+        {
+            uint32_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_uint64())
+        {
+            uint64_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_float32())
+        {
+            float32_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_float64())
+        {
+            float64_array t_array = value();
+            res["mean"] = t_array.mean();
+            res["min"]  = t_array.min();
+            res["max"]  = t_array.max();
+            res["values"] = t_array.to_summary_string(thresh);
+        }
+        else if(dtype().is_char8_str())
+        {
+            res["values"].set_external(*this);
+        }
+    }
+}
+
+
 // NOTE: several other Node information methods are inlined in Node.h
 
 //---------------------------------------------------------------------------//
@@ -12934,20 +13416,6 @@ Node::fetch_existing(const std::string &path)
     {
         return m_children[idx]->fetch_existing(p_next);
     }
-}
-
-
-//---------------------------------------------------------------------------//
-Node&
-Node::fetch_child(const std::string &path)
-{
-    return fetch_existing(path);
-}
-//---------------------------------------------------------------------------//
-const Node&
-Node::fetch_child(const std::string &path) const
-{
-    return fetch_existing(path);
 }
 
 //---------------------------------------------------------------------------//

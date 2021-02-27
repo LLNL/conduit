@@ -30,7 +30,7 @@ TEST(conduit_relay_io_handle, test_active_protos)
 
     Node n_about;
     io::about(n_about);
-    
+
     if(n_about["protocols/hdf5"].as_string() == "enabled")
         protocols.push_back("hdf5");
 
@@ -38,7 +38,7 @@ TEST(conduit_relay_io_handle, test_active_protos)
              itr < protocols.end(); ++itr)
     {
         std::string protocol = *itr;
-        CONDUIT_INFO("Testing Relay IO Handle with protocol: " 
+        CONDUIT_INFO("Testing Relay IO Handle with protocol: "
                      << protocol );
         std::string test_file_name = tfile_base  + protocol;
 
@@ -129,7 +129,7 @@ TEST(conduit_relay_io_handle, test_is_open)
                      conduit::Error);
 
         EXPECT_FALSE(h.is_open());
-        
+
         h.open("tout_conduit_relay_io_handle_is_open.hdf5");
 
         EXPECT_TRUE(h.is_open());
@@ -137,15 +137,15 @@ TEST(conduit_relay_io_handle, test_is_open)
         h.close();
 
         EXPECT_FALSE(h.is_open());
-        
+
     }
-    
+
     // test subpath for exceptions
     EXPECT_THROW(h.open("file.json:here/is/a/subpath/to/data"),
                  conduit::Error);
 
     EXPECT_FALSE(h.is_open());
-    
+
     h.open("tout_conduit_relay_io_handle_is_open.conduit_json");
 
     EXPECT_TRUE(h.is_open());
@@ -222,7 +222,7 @@ TEST(conduit_relay_io_handle, test_exceptions)
 
     // check throw on methods called on not open handle
     Node n;
-    
+
     EXPECT_THROW(h.write(n), conduit::Error);
     EXPECT_THROW(h.read(n), conduit::Error);
     EXPECT_THROW(h.has_path("here"), conduit::Error);
@@ -242,7 +242,7 @@ TEST(conduit_relay_io_handle, test_exceptions)
         EXPECT_THROW(h.open("here/is/a/garbage/file/path.hdf5"),
                      conduit::Error);
     }
-    
+
     // test subpath for exceptions
     EXPECT_THROW(h.open("file.json:here/is/a/subpath/to/data"),
                  conduit::Error);
@@ -276,14 +276,14 @@ TEST(conduit_relay_io_handle, test_mode)
 
     Node n_about;
     io::about(n_about);
-    
+
     if(n_about["protocols/hdf5"].as_string() == "enabled")
         protocols.push_back("hdf5");
 
     for (std::vector<std::string>::const_iterator itr = protocols.begin();
              itr < protocols.end(); ++itr)
     {
-        
+
         std::string protocol = *itr;
         CONDUIT_INFO("Testing Relay IO Handle Open Mode 'r' with protocol: "
                      << protocol );
@@ -313,13 +313,13 @@ TEST(conduit_relay_io_handle, test_mode)
         EXPECT_THROW(h_ro.write(n,"super"), conduit::Error);
         // read only, fail to remove:
         EXPECT_THROW(h_ro.remove("super"), conduit::Error);
-    
+
         // make sure we can read something
         Node n_read;
         h_ro.read("d/here",n_read);
         EXPECT_EQ(n["d/here"].as_int64(),n_read.as_int64());
 
-        CONDUIT_INFO("Testing Relay IO Handle Open Mode 'w' with protocol: " 
+        CONDUIT_INFO("Testing Relay IO Handle Open Mode 'w' with protocol: "
                      << protocol );
         test_file_name = "tout_conduit_relay_io_handle_mode_wo."
                          + protocol;
@@ -327,7 +327,7 @@ TEST(conduit_relay_io_handle, test_mode)
         /// write only
         Node opts_wonly;
         opts_wonly["mode"] = "w";
-        
+
         io::IOHandle h_wo;
         h_wo.open(test_file_name,opts_wonly);
 
@@ -343,14 +343,14 @@ TEST(conduit_relay_io_handle, test_mode)
 
         h_wo.write(n);
         h_wo.close();
-        
+
         // lets read what wrote to make sure the handled actually wrote
         // something
         n_read.reset();
         relay::io::load(test_file_name,n_read);
         EXPECT_EQ(n["d/here"].as_int64(),n_read["d/here"].to_int64());
     }
-    
+
     //
     // io::IOHandle h(opts);
     // // if read only, it will fail to open a file that doesn't exist
@@ -363,7 +363,7 @@ TEST(conduit_relay_io_handle, test_mode)
     // // read only, fail to write:
     // EXPECT_THROW(h.write(n), conduit::Error);
 
-    
+
 
 }
 
@@ -414,6 +414,118 @@ TEST(conduit_relay_io_handle, test_reuse_handle)
 
     EXPECT_FALSE(n.diff(nread, info, 0.0));
 
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_handle_trunc)
+{
+    int64 a_val = 20;
+    int64 b_val = 8;
+    int64 c_val = 13;
+    int64 here_val = 10;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["d/here"] = here_val;
+
+    // remove files if they already exist
+    utils::remove_path_if_exists("tout_conduit_relay_io_handle_trunc_1.conduit_bin");
+    utils::remove_path_if_exists("tout_conduit_relay_io_handle_trunc_1.conduit_json");
+
+    io::IOHandle h;
+    h.open("tout_conduit_relay_io_handle_trunc_1.conduit_bin");
+    h.write(n);
+    h.close();
+
+    // test truncate
+    n.reset();
+    n["a"] = a_val;
+
+    Node opts;
+    opts["mode"] = "wt";
+    h.open("tout_conduit_relay_io_handle_trunc_1.conduit_bin",opts);
+    h.write(n);
+    h.close();
+
+    Node nread;
+    opts["mode"] = "r";
+    h.open("tout_conduit_relay_io_handle_trunc_1.conduit_bin",opts);
+    h.read(nread);
+
+    Node info;
+    EXPECT_FALSE(n.diff(nread, info, 0.0));
+
+    nread.print();
+    info.print();
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_hdf5_trunc)
+{
+    std::string tfile_out = "tout_conduit_relay_io_handle_hdf5_trunc.hdf5";
+    Node n_about;
+    io::about(n_about);
+
+    // skip test if hdf5 isn't enabled
+    if(n_about["protocols/hdf5"].as_string() != "enabled")
+        return;
+
+    int64 a_val = 20;
+    int64 b_val = 8;
+    int64 c_val = 13;
+    int64 here_val = 10;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+    n["d/here"] = here_val;
+
+    // remove files if they already exist
+    utils::remove_path_if_exists(tfile_out);
+
+    io::IOHandle h;
+    h.open(tfile_out);
+    h.write(n);
+    h.close();
+
+    // test truncate
+    n.reset();
+    n["a"] = a_val;
+
+    Node opts;
+    opts["mode"] = "wt";
+    h.open(tfile_out,opts);
+    h.write(n);
+    h.close();
+
+    Node nread;
+    opts["mode"] = "r";
+    h.open(tfile_out,opts);
+    h.read(nread);
+
+    Node info;
+    EXPECT_FALSE(n.diff(nread, info, 0.0));
+
+    nread.print();
+    info.print();
+
+    h.open(tfile_out);
+    h.write(n,"b/c/d/e/f");
+    h.close();
+
+    n["b/c/d/e/f/a"] = a_val;
+
+    opts["mode"] = "r";
+    h.open(tfile_out,opts);
+    h.read(nread);
+
+    EXPECT_FALSE(n.diff(nread, info, 0.0));
+
+    nread.print();
+    info.print();
 }
 
 

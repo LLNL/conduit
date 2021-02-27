@@ -56,6 +56,12 @@ about(Node &n)
     
     n["web_client_root"] =  web_root;
 
+#ifdef CONDUIT_RELAY_ZFP_ENABLED
+    n["zfp"] = "enabled";
+#else
+    n["zfp"] = "disabled";
+#endif
+
 #ifdef CONDUIT_RELAY_MPI_ENABLED
     n["mpi"] = "enabled";
 #else

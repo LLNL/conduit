@@ -47,6 +47,7 @@ set(blueprint_c_headers
 set(blueprint_sources
     conduit_blueprint.cpp
     conduit_blueprint_mesh.cpp
+    conduit_blueprint_mesh_matset_xforms.cpp
     conduit_blueprint_mesh_examples.cpp
     conduit_blueprint_mesh_examples_julia.cpp
     conduit_blueprint_mesh_examples_venn.cpp

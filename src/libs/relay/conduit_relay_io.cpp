@@ -81,19 +81,25 @@ about(Node &n)
     io_protos["conduit_bin"] = "enabled";
 
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-    // hdf5 
+    // hdf5
     io_protos["hdf5"] = "enabled";
-    
+
     hdf5_options(n["options/hdf5"]);
 
     io_protos["sidre_hdf5"] = "enabled";
 
 #else
-    // hdf5 
+    // hdf5
     io_protos["hdf5"] = "disabled";
     io_protos["sidre_hdf5"] = "enabled";
 #endif
-    
+
+#ifdef CONDUIT_RELAY_IO_H5ZZFP_ENABLED
+    io_protos["h5z-zfp"] = "enabled";
+#else
+    io_protos["h5z-zfp"] = "disabled";
+#endif
+
     // silo
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
     // node is packed into two silo objects
@@ -102,7 +108,7 @@ about(Node &n)
     // node is packed into two silo objects
     io_protos["conduit_silo"] = "disabled";
 #endif
-    
+
     // silo mesh aware
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
     io_protos["conduit_silo_mesh"] = "enabled";
@@ -138,23 +144,43 @@ finalize()
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 save(const Node &node,
      const std::string &path)
 {
-    std::string protocol;
-    identify_protocol(path,protocol);
-    save(node,path,protocol);
+    Node options;
+    save(node, path, options);
 }
 
 //---------------------------------------------------------------------------//
-void 
-save_merged(const Node &node,
-            const std::string &path)
+void
+save(const Node &node,
+     const std::string &path,
+     const Node &options)
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    save_merged(node,path,protocol);
+    save(node,path,protocol,options);
+}
+
+//---------------------------------------------------------------------------//
+void
+save_merged(const Node &node,
+            const std::string &path)
+{
+    Node options;
+    save_merged(node, path, options);
+}
+
+//---------------------------------------------------------------------------//
+void
+save_merged(const Node &node,
+            const std::string &path,
+            const Node &options)
+{
+    std::string protocol;
+    identify_protocol(path,protocol);
+    save_merged(node,path,protocol,options);
 }
 
 
@@ -194,7 +220,7 @@ add_step(const Node &node,
     {
         identify_protocol(path,protocol);
     }
-    
+
     if(protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
@@ -204,9 +230,9 @@ add_step(const Node &node,
             adios_options(prev_options);
             adios_set_options(options["adios"]);
         }
-        
+
         adios_add_step(node, path);
-        
+
         if(!prev_options.dtype().is_empty())
         {
             adios_set_options(prev_options);
@@ -214,7 +240,7 @@ add_step(const Node &node,
 #else
         CONDUIT_UNUSED(node);
         CONDUIT_UNUSED(options);
-        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " <<
                       "Failed to add_step");
 #endif
     }
@@ -224,7 +250,7 @@ add_step(const Node &node,
                       << protocol);
 
         // Future idea: make path be some type of filename generator object
-        //              that can make the next filename in a time series 
+        //              that can make the next filename in a time series
         //              and call save(node,generatedpath)
     }
 }
@@ -232,27 +258,47 @@ add_step(const Node &node,
 
 
 //---------------------------------------------------------------------------//
-void 
+void
 load(const std::string &path,
+     Node &node)
+{
+    Node options;
+    load(path,options,node);
+}
+
+//---------------------------------------------------------------------------//
+void
+load(const std::string &path,
+     const Node &options,
      Node &node)
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    load(path,protocol,node);
+    load(path,protocol,options,node);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 load_merged(const std::string &path,
+            Node &node)
+{
+    Node options;
+    load_merged(path,options,node);
+}
+
+//---------------------------------------------------------------------------//
+void
+load_merged(const std::string &path,
+            const Node &options,
             Node &node)
 {
     std::string protocol;
     identify_protocol(path,protocol);
-    load_merged(path,protocol,node);
+    load_merged(path,protocol,options,node);
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 save(const Node &node,
      const std::string &path,
      const std::string &protocol)
@@ -262,7 +308,7 @@ save(const Node &node,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 save(const Node &node,
      const std::string &path,
      const std::string &protocol_,
@@ -299,7 +345,7 @@ save(const Node &node,
             hdf5_set_options(options["hdf5"]);
         }
 
-        hdf5_save(node,path);
+        hdf5_save(node,path,options);
 
         if(!prev_options.dtype().is_empty())
         {
@@ -307,7 +353,7 @@ save(const Node &node,
         }
 
 #else
-        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " <<
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -316,7 +362,7 @@ save(const Node &node,
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " <<
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -325,7 +371,7 @@ save(const Node &node,
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_mesh_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " <<
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
@@ -346,7 +392,7 @@ save(const Node &node,
             adios_set_options(prev_options);
         }
 #else
-        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " <<
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -357,7 +403,7 @@ save(const Node &node,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 save_merged(const Node &node,
             const std::string &path,
             const std::string &protocol)
@@ -367,7 +413,7 @@ save_merged(const Node &node,
 }
 
 //---------------------------------------------------------------------------//
-void 
+void
 save_merged(const Node &node,
             const std::string &path,
             const std::string &protocol_,
@@ -383,7 +429,7 @@ save_merged(const Node &node,
     {
         identify_protocol(path,protocol);
     }
-    
+
     // support conduit::Node's basic save cases
     if(protocol == "conduit_bin" ||
        protocol == "json" ||
@@ -410,15 +456,15 @@ save_merged(const Node &node,
             hdf5_options(prev_options);
             hdf5_set_options(options["hdf5"]);
         }
-        
-        hdf5_append(node,path);
-        
+
+        hdf5_append(node,path,options);
+
         if(!prev_options.dtype().is_empty())
         {
             hdf5_set_options(prev_options);
         }
 #else
-        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " <<
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -434,7 +480,7 @@ save_merged(const Node &node,
         n.update(node);
         silo_write(n,path);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " <<
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -444,7 +490,7 @@ save_merged(const Node &node,
         /// TODO .. ?
         silo_mesh_write(node,path);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " <<
                       "Failed to save conduit mesh node to path " << path);
 #endif
     }
@@ -465,7 +511,7 @@ save_merged(const Node &node,
             adios_set_options(prev_options);
         }
 #else
-        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " <<
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -492,7 +538,7 @@ load(const std::string &path,
     {
         identify_protocol(path,protocol);
     }
-    
+
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" ||
@@ -505,9 +551,9 @@ load(const std::string &path,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        hdf5_read(path,node);
+        hdf5_read(path,options,node);
 #else
-        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay lacks HDF5 support: " <<
                       "Failed to load conduit node from path " << path);
 #endif
     }
@@ -516,7 +562,7 @@ load(const std::string &path,
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         IOHandle hnd;
         // split path to get file and sub path part
-        // check for ":" split    
+        // check for ":" split
         std::string file_path;
         std::string sub_base;
         conduit::utils::split_file_path(path,
@@ -528,7 +574,7 @@ load(const std::string &path,
         hnd.read(sub_base,node);
         hnd.close();
 #else
-        CONDUIT_ERROR("conduit_relay lacks Sidre HDF5 support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Sidre HDF5 support: " <<
                       "Failed to save conduit node to path " << path);
 #endif
     }
@@ -537,7 +583,7 @@ load(const std::string &path,
 #ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         silo_read(path,node);
 #else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " << 
+        CONDUIT_ERROR("conduit_relay lacks Silo support: " <<
                     "Failed to load conduit node from path " << path);
 #endif
     }
@@ -567,14 +613,14 @@ load(const std::string &path,
         CONDUIT_UNUSED(step);
         CONDUIT_UNUSED(domain);
         CONDUIT_UNUSED(options);
-        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("conduit_relay lacks ADIOS support: " <<
                     "Failed to load conduit node from path " << path);
 #endif
     }
     else
     {
         CONDUIT_ERROR("unknown conduit_relay protocol: " << protocol);
-        
+
     }
 }
 
@@ -616,13 +662,24 @@ load_merged(const std::string &path,
             const std::string &protocol_,
             Node &node)
 {
+    Node options;
+    load_merged(path,protocol_,options,node);
+}
+
+//---------------------------------------------------------------------------//
+void
+load_merged(const std::string &path,
+            const std::string &protocol_,
+            const Node &options,
+            Node &node)
+{
     std::string protocol = protocol_;
     // allow empty protocol to be used for auto detect
     if(protocol.empty())
     {
         identify_protocol(path,protocol);
     }
-    
+
     // support conduit::Node's basic load cases
     if(protocol == "conduit_bin" ||
        protocol == "json" ||
@@ -639,9 +696,9 @@ load_merged(const std::string &path,
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
-        hdf5_read(path,node);
+        hdf5_read(path,options,node);
 #else
-        CONDUIT_ERROR("relay lacks HDF5 support: " << 
+        CONDUIT_ERROR("relay lacks HDF5 support: " <<
                       "Failed to read conduit node from path " << path);
 #endif
     }
@@ -652,7 +709,7 @@ load_merged(const std::string &path,
         silo_read(path,n);
         node.update(n);
 #else
-        CONDUIT_ERROR("relay lacks Silo support: " << 
+        CONDUIT_ERROR("relay lacks Silo support: " <<
                     "Failed to load conduit node from path " << path);
 #endif
     }
@@ -668,14 +725,14 @@ load_merged(const std::string &path,
         adios_load(path,n);
         node.update(n);
 #else
-        CONDUIT_ERROR("relay lacks ADIOS support: " << 
+        CONDUIT_ERROR("relay lacks ADIOS support: " <<
                       "Failed to read conduit node from path " << path);
 #endif
     }
     else
     {
         CONDUIT_ERROR("relay unknown protocol: " << protocol);
-        
+
     }
 
 }
@@ -732,5 +789,3 @@ query_number_of_domains(const std::string &path)
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
-
-
