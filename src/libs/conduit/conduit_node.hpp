@@ -4307,6 +4307,35 @@ private:
     // setup node to act as an object
     void              init_object();
 
+    //
+    // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
+    //
+    // allocator aware helpers that move data
+//     // copy from possibly strided to a compact allocation
+//     void              compact_to(const void *src,
+//                                  index_t source_num_elements,
+//                                  index_t source_bytes_per_element,
+//                                  index_t source_byte_stride_per_element,
+//                                  void *dest,
+//                                  int allocator_id);
+//
+//     // copy from possibly strided to a compact allocation
+//     void              compact_to(const void *src,
+//                                  const DataType &src_dtype,
+//                                  void *dest,
+//                                  int allocator_id);
+// s
+//     // copy from possibly strided to strided allocation
+//     void              strided_copy(const void *src,
+//                                    index_t source_num_elements,
+//                                    index_t source_bytes_per_element
+//                                    index_t source_byte_stride_per_element,
+//                                    void *dest,
+//                                    index_t dest_num_elements,
+//                                    index_t dest_bytes_per_element,
+//                                    index_t dest_byte_stride_per_element,
+//                                    int allocator_id);
+
 //-----------------------------------------------------------------------------
 //
 // -- private methods that help with protocol detection for load and save  --

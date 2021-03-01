@@ -732,6 +732,15 @@ Node::set_float32(float32 data)
 {
     init(DataType::float32());
     *(float32*)((char*)m_data + schema().element_index(0)) = data;
+
+    //
+    // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
+    //
+    // utils::conduit_memcpy(element_ptr(0),
+    //                       &data,
+    //                       sizeof(float32),
+    //                       m_allocator_id);
+
 }
 
 //---------------------------------------------------------------------------//
@@ -1031,6 +1040,30 @@ Node::set_float32_array(const float32_array &data)
 {
     init(DataType::float32(data.number_of_elements()));
     data.compact_elements_to((uint8*)m_data);
+
+    //
+    // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
+    //
+    // // Note: The dest in this case will always be compact.
+    //
+    // const DataType dtype = data.dtype();
+    // compact_to(data.data_ptr(),            // src
+    //            dtype.number_of_elements(), // source_num_elements,
+    //            dtype.element_bytes(),      // source_bytes_per_element,
+    //            dtype.stride(),             // source_byte_stride_per_element,
+    //            m_data,                     // dest
+    //            m_allocator_id);            // alloc_id
+    //
+    // // or:
+    //
+    // const DataType dtype = data.dtype();
+    // compact_to(data.data_ptr(),   // src
+    //            data.dtype(),      // dtype
+    //             m_data,           // dest
+    //             m_allocator_id);  // alloc_id
+    //
+
+
 }
 
 //---------------------------------------------------------------------------//
@@ -1423,6 +1456,16 @@ Node::set_float32_vector(const std::vector<float32> &data)
 {
     init(DataType::float32(data.size()));
     memcpy(m_data,&data[0],sizeof(float32)*data.size());
+
+    //
+    // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
+    //
+    // // Note: The source AND dest in this case will always be compact.
+    // // This is a basic memcpy case
+    // utils::conduit_memcpy(m_data,
+    //                       &data[0],
+    //                       sizeof(float32)*data.size(),
+    //                       m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1811,12 +1854,34 @@ void
 Node::set_float32_initializer_list(const std::initializer_list<float32> &data)
 {
     init(DataType::float32(data.size()));
+
     float32 *data_ptr = (float32*)m_data;
     for (auto val : data)
     {
         *data_ptr = val;
         data_ptr++;
     }
+
+    //
+    // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
+    //
+
+    // initializer_list case:
+    // this is always be a compact src and dest case.
+    // so we should be able to do a single dispatch to memcpy
+    //
+    // i think this is how it would work :
+    //
+    // float32 *data_ptr = (float32*)m_data;
+    // for (auto val : data)
+    // {
+    //    utils::conduit_memcpy(m_data,
+    //                          (void*)data.begin(),
+    //                          sizeof(float32) * data.size(),
+    //                          m_allocator_id);
+    //     *data_ptr = val;
+    //     data_ptr++;
+    // }
 }
 
 //-----------------------------------------------------------------------------
@@ -16833,6 +16898,10 @@ Node::info(Node &res, const std::string &curr_path) const
     // extract
     // mem_spaces:
     //  node path, pointer, alloced, mmaped or external, bytes
+    
+    // 
+    // TODO ADD ALLOCATOR ID INFO
+    //
 
     if(m_data != NULL)
     {
