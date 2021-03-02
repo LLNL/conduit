@@ -910,7 +910,15 @@ void
 Node::set_int8_array(const int8_array &data)
 {
     init(DataType::int8(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -925,7 +933,15 @@ void
 Node::set_int16_array(const int16_array &data)
 {
     init(DataType::int16(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -940,7 +956,15 @@ void
 Node::set_int32_array(const int32_array &data)
 {
     init(DataType::int32(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -955,7 +979,15 @@ void
 Node::set_int64_array(const int64_array &data)
 {
     init(DataType::int64(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -974,7 +1006,15 @@ void
 Node::set_uint8_array(const uint8_array &data)
 {
     init(DataType::uint8(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -989,7 +1029,15 @@ void
 Node::set_uint16_array(const uint16_array &data)
 {
     init(DataType::uint16(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -1004,7 +1052,15 @@ void
 Node::set_uint32_array(const uint32_array  &data)
 {
     init(DataType::uint32(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -1019,7 +1075,15 @@ void
 Node::set_uint64_array(const uint64_array &data)
 {
     init(DataType::uint64(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 //---------------------------------------------------------------------------//
 void
@@ -1032,102 +1096,20 @@ Node::set(const uint64_array  &data)
 //-----------------------------------------------------------------------------
 // floating point array types via conduit::DataArray
 //-----------------------------------------------------------------------------
-
-// //---------------------------------------------------------------------------//
-// TODO REMOVE!
-// //---------------------------------------------------------------------------//
-// void memcpy_compact_to(void *dest,
-//                        void *src,
-//                        size_t number_of_elements,
-//                        size_t ele_bytes,
-//                        size_t stride,
-//                        int allocator_id)
-// {
-//     // source is compact
-//
-//     if(stride == ele_bytes)
-//     {
-//         utils::conduit_memcpy(dest,
-//                               src,
-//                               ele_bytes * number_of_elements,
-//                               allocator_id);
-//     }
-//     else // the source is strided in a non-compact way
-//     {
-//         char *src_data_ptr  = (char*) src;
-//         char *dest_data_ptr = (char*) dest;
-//         for(size_t i=0; i< number_of_elements; i++)
-//         {
-//             utils::conduit_memcpy(dest_data_ptr,
-//                                   src_data_ptr,
-//                                   ele_bytes,
-//                                   allocator_id);
-//             // dest is compact
-//             src_data_ptr  += ele_bytes;
-//             // source is strided differently
-//             dest_data_ptr += stride;
-//         }
-//     }
-// }
-// TODO REMOVE!
-// //---------------------------------------------------------------------------//
-// void memcpy_strided(void *dest,
-//                     size_t number_of_elements, // amount to copy
-//                     size_t ele_bytes,          // bytes to copy per ele
-//                     size_t dest_stride,
-//                     void *src,
-//                     size_t src_stride,
-//                     int allocator_id)
-// {
-//     // source and dest are compact
-//     if( dest_stride == ele_bytes && src_stride == ele_bytes)
-//     {
-//         utils::conduit_memcpy(dest,
-//                               src,
-//                               ele_bytes * number_of_elements,
-//                               allocator_id);
-//     }
-//     else // the source or dest are strided in a non compact way
-//     {
-//         char *src_data_ptr  = (char*) src;
-//         char *dest_data_ptr = (char*) dest;
-//         for(size_t i=0; i< number_of_elements; i++)
-//         {
-//             utils::conduit_memcpy(dest_data_ptr,
-//                                   src_data_ptr,
-//                                   ele_bytes,
-//                                   allocator_id);
-//             // dest is compact
-//             src_data_ptr  += src_stride;
-//             // source is strided differently
-//             dest_data_ptr += dest_stride;
-//         }
-//     }
-// }
-
-
-
 //---------------------------------------------------------------------------//
 void
 Node::set_float32_array(const float32_array &data)
 {
     init(DataType::float32(data.number_of_elements()));
-    // data.compact_elements_to((uint8*)m_data);
-
-    //
-    // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
-    //
-    // Note: The dest in this case will always be compact.
-    // conduit_memcpy_strided_elements will handle the case where
-    // both src and dest are compact, and issue one memcpy 
-    const DataType dtype = data.dtype();
-    utils::conduit_memcpy_strided_elements(m_data,  // dest
-                (size_t)dtype.number_of_elements(), // num elements to copy
-                (size_t)dtype.element_bytes(),      // bytes per element
-                (size_t)dtype.element_bytes(),      // dest stride per element
-                data.data_ptr(),                    // src
-                (size_t)dtype.stride(),             // src stride per element
-                m_allocator_id);                    // alloc_id
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -1142,7 +1124,15 @@ void
 Node::set_float64_array(const float64_array &data)
 {
     init(DataType::float64(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -1161,7 +1151,15 @@ void
 Node::set(const char_array &data)
 {
     init(DataType::c_char(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 
@@ -1174,7 +1172,15 @@ void
 Node::set(const signed_char_array &data)
 {
     init(DataType::c_signed_char(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 
@@ -1183,7 +1189,15 @@ void
 Node::set(const unsigned_char_array &data)
 {
     init(DataType::c_unsigned_char(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 //-----------------------------------------------------------------------------
 #endif // end use char check
@@ -1196,7 +1210,15 @@ void
 Node::set(const short_array &data)
 {
     init(DataType::c_short(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //-----------------------------------------------------------------------------
@@ -1204,7 +1226,15 @@ void
 Node::set(const unsigned_short_array&data)
 {
     init(DataType::c_unsigned_short(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 //-----------------------------------------------------------------------------
 #endif // end use short check
@@ -1217,7 +1247,15 @@ void
 Node::set(const int_array &data)
 {
     init(DataType::c_int(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //-----------------------------------------------------------------------------
@@ -1225,7 +1263,15 @@ void
 Node::set(const unsigned_int_array &data)
 {
     init(DataType::c_unsigned_int(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 //-----------------------------------------------------------------------------
 #endif // end use int check
@@ -1238,7 +1284,15 @@ void
 Node::set(const long_array &data)
 {
     init(DataType::c_long(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //-----------------------------------------------------------------------------
@@ -1246,7 +1300,15 @@ void
 Node::set(const unsigned_long_array &data)
 {
     init(DataType::c_unsigned_long(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 //-----------------------------------------------------------------------------
 #endif // end use long check
@@ -1259,7 +1321,15 @@ void
 Node::set(const long_long_array &data)
 {
     init(DataType::c_long_long(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 
 //-----------------------------------------------------------------------------
@@ -1267,7 +1337,15 @@ void
 Node::set(const unsigned_long_long_array &data)
 {
     init(DataType::c_unsigned_long_long(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 //-----------------------------------------------------------------------------
 #endif // end use long long check
@@ -1280,7 +1358,15 @@ void
 Node::set(const float_array &data)
 {
     init(DataType::c_float(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 //-----------------------------------------------------------------------------
 #endif // end use float check
@@ -1293,7 +1379,15 @@ void
 Node::set(const double_array &data)
 {
     init(DataType::c_double(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    const DataType dest_dtype = dtype();
+    const DataType src_dtype  = data.dtype();
+    utils::conduit_memcpy_strided_elements(element_ptr(0),   // dest
+            (size_t)dest_dtype.number_of_elements(), // num eles to copy
+            (size_t)dest_dtype.element_bytes(),      // bytes per element
+            (size_t)dest_dtype.stride(),             // dest stride per ele
+            data.element_ptr(0),                     // src
+            (size_t)src_dtype.stride(),              // src stride per ele
+            m_allocator_id);                         // alloc_id
 }
 //-----------------------------------------------------------------------------
 #endif // end use double check
