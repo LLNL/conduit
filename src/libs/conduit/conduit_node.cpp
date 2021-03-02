@@ -731,16 +731,15 @@ void
 Node::set_float32(float32 data)
 {
     init(DataType::float32());
-    *(float32*)((char*)m_data + schema().element_index(0)) = data;
+    // *(float32*)((char*)m_data + schema().element_index(0)) = data;
 
     //
     // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
     //
-    // utils::conduit_memcpy(element_ptr(0),
-    //                       &data,
-    //                       sizeof(float32),
-    //                       m_allocator_id);
-
+    utils::conduit_memcpy(element_ptr(0),
+                          &data,
+                          sizeof(float32),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1034,36 +1033,101 @@ Node::set(const uint64_array  &data)
 // floating point array types via conduit::DataArray
 //-----------------------------------------------------------------------------
 
+// //---------------------------------------------------------------------------//
+// TODO REMOVE!
+// //---------------------------------------------------------------------------//
+// void memcpy_compact_to(void *dest,
+//                        void *src,
+//                        size_t number_of_elements,
+//                        size_t ele_bytes,
+//                        size_t stride,
+//                        int allocator_id)
+// {
+//     // source is compact
+//
+//     if(stride == ele_bytes)
+//     {
+//         utils::conduit_memcpy(dest,
+//                               src,
+//                               ele_bytes * number_of_elements,
+//                               allocator_id);
+//     }
+//     else // the source is strided in a non-compact way
+//     {
+//         char *src_data_ptr  = (char*) src;
+//         char *dest_data_ptr = (char*) dest;
+//         for(size_t i=0; i< number_of_elements; i++)
+//         {
+//             utils::conduit_memcpy(dest_data_ptr,
+//                                   src_data_ptr,
+//                                   ele_bytes,
+//                                   allocator_id);
+//             // dest is compact
+//             src_data_ptr  += ele_bytes;
+//             // source is strided differently
+//             dest_data_ptr += stride;
+//         }
+//     }
+// }
+// TODO REMOVE!
+// //---------------------------------------------------------------------------//
+// void memcpy_strided(void *dest,
+//                     size_t number_of_elements, // amount to copy
+//                     size_t ele_bytes,          // bytes to copy per ele
+//                     size_t dest_stride,
+//                     void *src,
+//                     size_t src_stride,
+//                     int allocator_id)
+// {
+//     // source and dest are compact
+//     if( dest_stride == ele_bytes && src_stride == ele_bytes)
+//     {
+//         utils::conduit_memcpy(dest,
+//                               src,
+//                               ele_bytes * number_of_elements,
+//                               allocator_id);
+//     }
+//     else // the source or dest are strided in a non compact way
+//     {
+//         char *src_data_ptr  = (char*) src;
+//         char *dest_data_ptr = (char*) dest;
+//         for(size_t i=0; i< number_of_elements; i++)
+//         {
+//             utils::conduit_memcpy(dest_data_ptr,
+//                                   src_data_ptr,
+//                                   ele_bytes,
+//                                   allocator_id);
+//             // dest is compact
+//             src_data_ptr  += src_stride;
+//             // source is strided differently
+//             dest_data_ptr += dest_stride;
+//         }
+//     }
+// }
+
+
+
 //---------------------------------------------------------------------------//
 void
 Node::set_float32_array(const float32_array &data)
 {
     init(DataType::float32(data.number_of_elements()));
-    data.compact_elements_to((uint8*)m_data);
+    // data.compact_elements_to((uint8*)m_data);
 
     //
     // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
     //
-    // // Note: The dest in this case will always be compact.
-    //
-    // const DataType dtype = data.dtype();
-    // compact_to(data.data_ptr(),            // src
-    //            dtype.number_of_elements(), // source_num_elements,
-    //            dtype.element_bytes(),      // source_bytes_per_element,
-    //            dtype.stride(),             // source_byte_stride_per_element,
-    //            m_data,                     // dest
-    //            m_allocator_id);            // alloc_id
-    //
-    // // or:
-    //
-    // const DataType dtype = data.dtype();
-    // compact_to(data.data_ptr(),   // src
-    //            data.dtype(),      // dtype
-    //             m_data,           // dest
-    //             m_allocator_id);  // alloc_id
-    //
-
-
+    // Note: The dest in this case will always be compact.
+    // conduit_memcpy_strided_elements will handle the case where
+    // both src and dest are compact, and issue one memcpy 
+    const DataType dtype = data.dtype();
+    utils::conduit_memcpy_strided_elements(m_data,  // dest
+                (size_t)dtype.number_of_elements(), // num elements to copy
+                (size_t)dtype.element_bytes(),      // bytes per element
+                (size_t)dtype.element_bytes(),      // dest stride per element
+                data.data_ptr(),                    // src
+                (size_t)dtype.stride(),             // src stride per element
+                m_allocator_id);                    // alloc_id
 }
 
 //---------------------------------------------------------------------------//
@@ -1263,16 +1327,31 @@ Node::set_string(const std::string &data)
     // so we need to follow a 'compact_elements_to' style
     // of copying the data
 
-    index_t ele_bytes = dtype().element_bytes();
+    size_t ele_bytes = (size_t) dtype().element_bytes();
+    size_t stride    = (size_t) dtype().stride();
     const char *data_ptr = data.c_str();
-    for(index_t i=0; i< (index_t) str_size_with_term; i++)
-    {
-        utils::conduit_memcpy(element_ptr(i),
-                              data_ptr,
-                              (size_t)ele_bytes,
-                              m_allocator_id);
-        data_ptr+=ele_bytes;
-    }
+    
+    // Note: 
+    // conduit_memcpy_strided_elements will use a single 
+    // conduit_memcpy for cases where src and dest are compactly strided.
+    //
+    // element_ptr(0) gets us to start of dest
+    utils::conduit_memcpy_strided_elements(element_ptr(0), // dest ptr
+                                           str_size_with_term, // num ele
+                                           ele_bytes, /// dest bytes per ele
+                                           stride, /// dest stride
+                                           data_ptr, /// src
+                                           ele_bytes, /// stride
+                                           m_allocator_id);
+
+    // for(index_t i=0; i< (index_t) str_size_with_term; i++)
+    // {
+    //     utils::conduit_memcpy(element_ptr(i),
+    //                           data_ptr,
+    //                           (size_t)ele_bytes,
+    //                           m_allocator_id);
+    //     data_ptr+=ele_bytes;
+    // }
 }
 
 //---------------------------------------------------------------------------//
@@ -1300,17 +1379,32 @@ Node::set_char8_str(const char *data)
     // so we need to follow a 'compact_elements_to' style
     // of copying the data
 
-    const char *data_ptr = data;
+    size_t ele_bytes = (size_t) dtype().element_bytes();
+    size_t stride    = (size_t) dtype().stride();
 
-    index_t ele_bytes = dtype().element_bytes();
-    for(index_t i=0; i< (index_t)str_size_with_term; i++)
-    {
-        utils::conduit_memcpy(element_ptr(i),
-                              data_ptr,
-                              (size_t)ele_bytes,
-                              m_allocator_id);
-        data_ptr+=ele_bytes;
-    }
+    // Note: 
+    // conduit_memcpy_strided_elements will use a single 
+    // conduit_memcpy for cases where src and dest are compactly strided.
+    //
+    // element_ptr(0) gets us to start of dest
+    utils::conduit_memcpy_strided_elements(element_ptr(0),     // dest ptr
+                                           str_size_with_term, // num ele
+                                           ele_bytes,          // dest bytes per ele
+                                           stride,             // dest stride
+                                           data,               // src ptr
+                                           ele_bytes,          // src stride
+                                           m_allocator_id);
+
+    // const char *data_ptr = data;
+    // index_t ele_bytes = dtype().element_bytes();
+    // for(index_t i=0; i< (index_t)str_size_with_term; i++)
+    // {
+    //     utils::conduit_memcpy(element_ptr(i),
+    //                           data_ptr,
+    //                           (size_t)ele_bytes,
+    //                           m_allocator_id);
+    //     data_ptr+=ele_bytes;
+    // }
 }
 
 
@@ -1455,17 +1549,17 @@ void
 Node::set_float32_vector(const std::vector<float32> &data)
 {
     init(DataType::float32(data.size()));
-    memcpy(m_data,&data[0],sizeof(float32)*data.size());
+    // memcpy(m_data,&data[0],sizeof(float32)*data.size());
 
     //
     // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
     //
     // // Note: The source AND dest in this case will always be compact.
     // // This is a basic memcpy case
-    // utils::conduit_memcpy(m_data,
-    //                       &data[0],
-    //                       sizeof(float32)*data.size(),
-    //                       m_allocator_id);
+    utils::conduit_memcpy(m_data,
+                          &data[0],
+                          sizeof(float32)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1855,12 +1949,12 @@ Node::set_float32_initializer_list(const std::initializer_list<float32> &data)
 {
     init(DataType::float32(data.size()));
 
-    float32 *data_ptr = (float32*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    // float32 *data_ptr = (float32*)m_data;
+    // for (auto val : data)
+    // {
+    //     *data_ptr = val;
+    //     data_ptr++;
+    // }
 
     //
     // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
@@ -1872,10 +1966,10 @@ Node::set_float32_initializer_list(const std::initializer_list<float32> &data)
     //
     // i think this is how it would work :
     //
-    //    utils::conduit_memcpy(m_data,
-    //                          (void*)data.begin(),
-    //                          sizeof(float32) * data.size(),
-    //                          m_allocator_id);
+    utils::conduit_memcpy(m_data,
+                         (void*)data.begin(),
+                         sizeof(float32) * data.size(),
+                         m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -16316,22 +16410,41 @@ Node::compact_elements_to(uint8 *data) const
        dtype_id == DataType::LIST_ID ||
        dtype_id == DataType::EMPTY_ID)
     {
-        // TODO: error
+        // TODO: error ?
+        // NOTE: WE RELY ON THIS NOT BEING AN ERROR
+        // FIND OUT WHY!
+        // CONDUIT_ERROR("Node::compact_elements_to cannot compact "
+        //               " Object, List, or Empty Node to array.");
     }
     else
     {
-        // copy all elements
-        index_t num_ele   = dtype().number_of_elements();
-        index_t ele_bytes = DataType::default_bytes(dtype_id);
-        uint8 *data_ptr = data;
-        for(index_t i=0;i<num_ele;i++)
-        {
-          utils::conduit_memcpy(data_ptr,
-                                element_ptr(i),
-                                (size_t)ele_bytes,
-                                m_allocator_id);
-            data_ptr+=ele_bytes;
-        }
+        // // copy all elements
+        // index_t num_ele   = dtype().number_of_elements();
+        // index_t ele_bytes = DataType::default_bytes(dtype_id);
+        // uint8 *data_ptr = data;
+        // for(index_t i=0;i<num_ele;i++)
+        // {
+        //   utils::conduit_memcpy(data_ptr,
+        //                         element_ptr(i),
+        //                         (size_t)ele_bytes,
+        //                         m_allocator_id);
+        //     data_ptr+=ele_bytes;
+        // }
+
+        size_t num_ele    = (size_t) dtype().number_of_elements();
+        // dest will be the expected compact rep, in terms of ele byte
+        size_t ele_bytes  = (size_t) DataType::default_bytes(dtype_id);
+        size_t src_stride = (size_t) dtype().stride();
+        //
+        // Note: conduit_memcpy_strided_elements will use a single
+        // memcpy when src and dest are compactly  strided
+        utils::conduit_memcpy_strided_elements(data,           // dest ptr
+                                               num_ele,        // num ele
+                                               ele_bytes,      // dest bytes per ele
+                                               ele_bytes,      // dest stride
+                                               element_ptr(0), // src ptr
+                                               src_stride,     // src stride
+                                               m_allocator_id);
     }
 }
 

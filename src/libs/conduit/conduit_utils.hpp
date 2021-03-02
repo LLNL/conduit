@@ -242,30 +242,38 @@ namespace utils
 /// Primary interface used by the conduit API to allocate memory.
 //-----------------------------------------------------------------------------
 
-    int32 CONDUIT_API register_mem_handler( void*(*allocate) (size_t, size_t),
-                                            void(*free)(void *),
-                                            void(*copy)(void*,const void *,size_t),
-                                            void(*memset)(void*,int,size_t));
+    index_t CONDUIT_API register_memory_handler(void*(*conduit_hnd_allocate) (size_t, size_t),
+                                                void(*conduit_hnd_free)(void *),
+                                                void(*conduit_hnd_copy)(void*,const void *,size_t),
+                                                void(*conduit_hnd_memset)(void*,int,size_t));
 
     // allocator_id 0 is the default
     void * CONDUIT_API conduit_allocate(size_t n_items,
                                         size_t item_size,
-                                        int32 allocator_id = 0);
+                                        index_t allocator_id = 0);
 
     void CONDUIT_API conduit_free(void *data_ptr,
-                                  int32 allocator_id = 0);
+                                  index_t allocator_id = 0);
 
     void CONDUIT_API conduit_memcpy(void * destination,
                                     const void * source,
                                     size_t num,
-                                    int32 allocator_id = 0);
+                                    index_t allocator_id = 0);
+
+    void CONDUIT_API conduit_memcpy_strided_elements(void *dest,
+                                                     size_t num_elements,
+                                                     size_t ele_bytes,
+                                                     size_t dest_stride,
+                                                     const void *src,
+                                                     size_t src_stride,
+                                                     index_t allocator_id = 0);
 
     // I note that the default memset returns the orig pointer, but
     // other allocators like cuda do not
     void CONDUIT_API conduit_memset(void * ptr,
                                     int value,
                                     size_t num,
-                                    int32 allocator_id = 0);
+                                    index_t allocator_id = 0);
 
 //-----------------------------------------------------------------------------
 /// Helpers for common string splitting operations.

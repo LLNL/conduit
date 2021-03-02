@@ -56,10 +56,10 @@ size_t TestAllocator::m_free_count = 0;
 TEST(conduit_memory_allocator, test_custom_allocator)
 {
   int allocator_id
-    = conduit::utils::register_mem_handler(TestAllocator::banana_alloc,
-                                           TestAllocator::free_bananas,
-                                           TestAllocator::banana_copy,
-                                           TestAllocator::banana_memset);
+    = conduit::utils::register_memory_handler(TestAllocator::banana_alloc,
+                                              TestAllocator::free_bananas,
+                                              TestAllocator::banana_copy,
+                                              TestAllocator::banana_memset);
 
   conduit::Node node;
   node.set_allocator(allocator_id);
