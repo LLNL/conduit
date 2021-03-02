@@ -1872,16 +1872,10 @@ Node::set_float32_initializer_list(const std::initializer_list<float32> &data)
     //
     // i think this is how it would work :
     //
-    // float32 *data_ptr = (float32*)m_data;
-    // for (auto val : data)
-    // {
     //    utils::conduit_memcpy(m_data,
     //                          (void*)data.begin(),
     //                          sizeof(float32) * data.size(),
     //                          m_allocator_id);
-    //     *data_ptr = val;
-    //     data_ptr++;
-    // }
 }
 
 //-----------------------------------------------------------------------------
