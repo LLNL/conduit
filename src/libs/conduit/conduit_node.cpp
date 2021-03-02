@@ -1437,15 +1437,6 @@ Node::set_string(const std::string &data)
                                            data_ptr, /// src
                                            ele_bytes, /// stride
                                            m_allocator_id);
-
-    // for(index_t i=0; i< (index_t) str_size_with_term; i++)
-    // {
-    //     utils::conduit_memcpy(element_ptr(i),
-    //                           data_ptr,
-    //                           (size_t)ele_bytes,
-    //                           m_allocator_id);
-    //     data_ptr+=ele_bytes;
-    // }
 }
 
 //---------------------------------------------------------------------------//
@@ -1488,17 +1479,6 @@ Node::set_char8_str(const char *data)
                                            data,               // src ptr
                                            ele_bytes,          // src stride
                                            m_allocator_id);
-
-    // const char *data_ptr = data;
-    // index_t ele_bytes = dtype().element_bytes();
-    // for(index_t i=0; i< (index_t)str_size_with_term; i++)
-    // {
-    //     utils::conduit_memcpy(element_ptr(i),
-    //                           data_ptr,
-    //                           (size_t)ele_bytes,
-    //                           m_allocator_id);
-    //     data_ptr+=ele_bytes;
-    // }
 }
 
 
@@ -1515,7 +1495,10 @@ void
 Node::set_int8_vector(const std::vector<int8> &data)
 {
     init(DataType::int8(data.size()));
-    memcpy(m_data,&data[0],sizeof(int8)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(int8)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1530,7 +1513,10 @@ void
 Node::set_int16_vector(const std::vector<int16> &data)
 {
     init(DataType::int16(data.size()));
-    memcpy(m_data,&data[0],sizeof(int16)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(int16)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1545,7 +1531,10 @@ void
 Node::set_int32_vector(const std::vector<int32> &data)
 {
     init(DataType::int32(data.size()));
-    memcpy(m_data,&data[0],sizeof(int32)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(int32)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1560,7 +1549,10 @@ void
 Node::set_int64_vector(const std::vector<int64> &data)
 {
     init(DataType::int64(data.size()));
-    memcpy(m_data,&data[0],sizeof(int64)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(int64)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1579,7 +1571,10 @@ void
 Node::set_uint8_vector(const std::vector<uint8> &data)
 {
     init(DataType::uint8(data.size()));
-    memcpy(m_data,&data[0],sizeof(uint8)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(uint8)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1594,7 +1589,10 @@ void
 Node::set_uint16_vector(const std::vector<uint16> &data)
 {
     init(DataType::uint16(data.size()));
-    memcpy(m_data,&data[0],sizeof(uint16)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(uint16)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1609,7 +1607,10 @@ void
 Node::set_uint32_vector(const std::vector<uint32> &data)
 {
     init(DataType::uint32(data.size()));
-    memcpy(m_data,&data[0],sizeof(uint32)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(uint32)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1624,7 +1625,10 @@ void
 Node::set_uint64_vector(const std::vector<uint64> &data)
 {
     init(DataType::uint64(data.size()));
-    memcpy(m_data,&data[0],sizeof(uint64)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(uint64)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1643,14 +1647,7 @@ void
 Node::set_float32_vector(const std::vector<float32> &data)
 {
     init(DataType::float32(data.size()));
-    // memcpy(m_data,&data[0],sizeof(float32)*data.size());
-
-    //
-    // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
-    //
-    // // Note: The source AND dest in this case will always be compact.
-    // // This is a basic memcpy case
-    utils::conduit_memcpy(m_data,
+    utils::conduit_memcpy(element_ptr(0),
                           &data[0],
                           sizeof(float32)*data.size(),
                           m_allocator_id);
@@ -1669,7 +1666,10 @@ void
 Node::set_float64_vector(const std::vector<float64> &data)
 {
     init(DataType::float64(data.size()));
-    memcpy(m_data,&data[0],sizeof(float64)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(float64)*data.size(),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1689,7 +1689,10 @@ void
 Node::set(const std::vector<char> &data)
 {
     init(DataType::c_char(data.size()));
-    memcpy(m_data,&data[0],sizeof(char)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(char)*data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1699,7 +1702,10 @@ void
 Node::set(const std::vector<signed char> &data)
 {
     init(DataType::c_char(data.size()));
-    memcpy(m_data,&data[0],sizeof(signed char)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(signed char)*data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1707,7 +1713,10 @@ void
 Node::set(const std::vector<unsigned char> &data)
 {
     init(DataType::c_unsigned_char(data.size()));
-    memcpy(m_data,&data[0],sizeof(unsigned char)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(unsigned char)*data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use char check
@@ -1720,7 +1729,10 @@ void
 Node::set(const std::vector<short> &data)
 {
     init(DataType::c_short(data.size()));
-    memcpy(m_data,&data[0],sizeof(short)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(short)*data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1728,7 +1740,10 @@ void
 Node::set(const std::vector<unsigned short> &data)
 {
     init(DataType::c_unsigned_short(data.size()));
-    memcpy(m_data,&data[0],sizeof(unsigned short)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(unsigned short)*data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use short check
@@ -1741,7 +1756,10 @@ void
 Node::set(const std::vector<int> &data)
 {
     init(DataType::c_int(data.size()));
-    memcpy(m_data,&data[0],sizeof(int)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(int)*data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1749,7 +1767,10 @@ void
 Node::set(const std::vector<unsigned int> &data)
 {
     init(DataType::c_unsigned_int(data.size()));
-    memcpy(m_data,&data[0],sizeof(unsigned int)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(unsigned int)*data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use int check
@@ -1762,7 +1783,10 @@ void
 Node::set(const std::vector<long> &data)
 {
     init(DataType::c_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(long)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(long)*data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1770,7 +1794,10 @@ void
 Node::set(const std::vector<unsigned long> &data)
 {
     init(DataType::c_unsigned_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(unsigned long)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(unsigned long)*data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use long check
@@ -1783,7 +1810,10 @@ void
 Node::set(const std::vector<long long> &data)
 {
     init(DataType::c_long_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(long long)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(long long)*data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1791,7 +1821,10 @@ void
 Node::set(const std::vector<unsigned long long> &data)
 {
     init(DataType::c_unsigned_long_long(data.size()));
-    memcpy(m_data,&data[0],sizeof(unsigned long long)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(unsigned long long)*data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use long long check
@@ -1804,7 +1837,10 @@ void
 Node::set(const std::vector<float> &data)
 {
     init(DataType::c_float(data.size()));
-    memcpy(m_data,&data[0],sizeof(float)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(float)*data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use float check
@@ -1817,7 +1853,10 @@ void
 Node::set(const std::vector<double> &data)
 {
     init(DataType::c_double(data.size()));
-    memcpy(m_data,&data[0],sizeof(double)*data.size());
+    utils::conduit_memcpy(element_ptr(0),
+                          &data[0],
+                          sizeof(double)*data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use double check
@@ -1855,12 +1894,10 @@ void
 Node::set_int8_initializer_list(const std::initializer_list<int8> &data)
 {
     init(DataType::int8(data.size()));
-    int8 *data_ptr = (int8*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(int8) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1877,12 +1914,10 @@ void
 Node::set_int16_initializer_list(const std::initializer_list<int16> &data)
 {
     init(DataType::int16(data.size()));
-    int16 *data_ptr = (int16*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(int16) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1899,12 +1934,10 @@ void
 Node::set_int32_initializer_list(const std::initializer_list<int32> &data)
 {
     init(DataType::int32(data.size()));
-    int32 *data_ptr = (int32*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(int64) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1922,12 +1955,10 @@ void
 Node::set_int64_initializer_list(const std::initializer_list<int64> &data)
 {
     init(DataType::int64(data.size()));
-    int64 *data_ptr = (int64*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(int64) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1949,12 +1980,10 @@ void
 Node::set_uint8_initializer_list(const std::initializer_list<uint8> &data)
 {
     init(DataType::uint8(data.size()));
-    uint8 *data_ptr = (uint8*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(uint8) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1971,12 +2000,10 @@ void
 Node::set_uint16_initializer_list(const std::initializer_list<uint16> &data)
 {
     init(DataType::uint16(data.size()));
-    uint16 *data_ptr = (uint16*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(uint16) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -1994,11 +2021,10 @@ Node::set_uint32_initializer_list(const std::initializer_list<uint32> &data)
 {
     init(DataType::uint32(data.size()));
     uint32 *data_ptr = (uint32*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(uint32) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2016,11 +2042,10 @@ Node::set_uint64_initializer_list(const std::initializer_list<uint64> &data)
 {
     init(DataType::uint64(data.size()));
     uint64 *data_ptr = (uint64*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(uint64) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2042,28 +2067,10 @@ void
 Node::set_float32_initializer_list(const std::initializer_list<float32> &data)
 {
     init(DataType::float32(data.size()));
-
-    // float32 *data_ptr = (float32*)m_data;
-    // for (auto val : data)
-    // {
-    //     *data_ptr = val;
-    //     data_ptr++;
-    // }
-
-    //
-    // PLACE TO EXPLORE PROPER ALLOCATOR COPY USE CASE
-    //
-
-    // initializer_list case:
-    // this is always be a compact src and dest case.
-    // so we should be able to do a single dispatch to memcpy
-    //
-    // i think this is how it would work :
-    //
-    utils::conduit_memcpy(m_data,
-                         (void*)data.begin(),
-                         sizeof(float32) * data.size(),
-                         m_allocator_id);
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(float32) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2080,12 +2087,10 @@ void
 Node::set_float64_initializer_list(const std::initializer_list<float64> &data)
 {
     init(DataType::float64(data.size()));
-    float64 *data_ptr = (float64*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(float64) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2104,12 +2109,10 @@ void
 Node::set(const std::initializer_list<char> &data)
 {
     init(DataType::c_char(data.size()));
-    char *data_ptr = (char*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(char) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2119,13 +2122,10 @@ void
 Node::set(const std::initializer_list<signed char> &data)
 {
     init(DataType::c_char(data.size()));
-    signed char *data_ptr = (signed char*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
-
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(signed char) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2133,13 +2133,10 @@ void
 Node::set(const std::initializer_list<unsigned char> &data)
 {
     init(DataType::c_unsigned_char(data.size()));
-    unsigned char *data_ptr = (unsigned char*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
-
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(unsigned char) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2153,12 +2150,10 @@ void
 Node::set(const std::initializer_list<short> &data)
 {
     init(DataType::c_short(data.size()));
-    short *data_ptr = (short*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(short) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2166,12 +2161,10 @@ void
 Node::set(const std::initializer_list<unsigned short> &data)
 {
     init(DataType::c_unsigned_short(data.size()));
-    unsigned short *data_ptr = (unsigned short*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(unsigned short) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2185,12 +2178,10 @@ void
 Node::set(const std::initializer_list<int> &data)
 {
     init(DataType::c_int(data.size()));
-    int *data_ptr = (int*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(int) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2198,12 +2189,10 @@ void
 Node::set(const std::initializer_list<unsigned int> &data)
 {
     init(DataType::c_unsigned_int(data.size()));
-    unsigned int *data_ptr = (unsigned int*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(unsigned int) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2217,12 +2206,10 @@ void
 Node::set(const std::initializer_list<long> &data)
 {
     init(DataType::c_long(data.size()));
-    long *data_ptr = (long*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(long) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2230,12 +2217,10 @@ void
 Node::set(const std::initializer_list<unsigned long> &data)
 {
     init(DataType::c_unsigned_long(data.size()));
-    unsigned long *data_ptr = (unsigned long*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(unsigned long) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2249,12 +2234,10 @@ void
 Node::set(const std::initializer_list<long long> &data)
 {
     init(DataType::c_long_long(data.size()));
-    long long *data_ptr = (long long*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(long long) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2262,12 +2245,10 @@ void
 Node::set(const std::initializer_list<unsigned long long> &data)
 {
     init(DataType::c_unsigned_long_long(data.size()));
-    unsigned long long *data_ptr = (unsigned long long*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(unsigned long long) * data.size(),
+                          m_allocator_id);
 }
 
 //-----------------------------------------------------------------------------
@@ -2281,12 +2262,10 @@ void
 Node::set(const std::initializer_list<float> &data)
 {
     init(DataType::c_float(data.size()));
-    float *data_ptr = (float*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(float) * data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use float check
@@ -2299,12 +2278,10 @@ void
 Node::set(const std::initializer_list<double> &data)
 {
     init(DataType::c_double(data.size()));
-    double *data_ptr = (double*)m_data;
-    for (auto val : data)
-    {
-        *data_ptr = val;
-        data_ptr++;
-    }
+    utils::conduit_memcpy(element_ptr(0),
+                          (void*)data.begin(),
+                          sizeof(double) * data.size(),
+                          m_allocator_id);
 }
 //-----------------------------------------------------------------------------
 #endif // end use double check
