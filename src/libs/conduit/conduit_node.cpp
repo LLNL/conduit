@@ -2038,7 +2038,6 @@ void
 Node::set_uint32_initializer_list(const std::initializer_list<uint32> &data)
 {
     init(DataType::uint32(data.size()));
-    uint32 *data_ptr = (uint32*)m_data;
     utils::conduit_memcpy(element_ptr(0),
                           (void*)data.begin(),
                           sizeof(uint32) * data.size(),
@@ -2059,7 +2058,6 @@ void
 Node::set_uint64_initializer_list(const std::initializer_list<uint64> &data)
 {
     init(DataType::uint64(data.size()));
-    uint64 *data_ptr = (uint64*)m_data;
     utils::conduit_memcpy(element_ptr(0),
                           (void*)data.begin(),
                           sizeof(uint64) * data.size(),
