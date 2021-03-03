@@ -648,7 +648,10 @@ void
 Node::set_int64(int64 data)
 {
     init(DataType::int64());
-    *(int64*)((char*)m_data + schema().element_index(0)) = data;
+    utils::conduit_memcpy(element_ptr(0),
+                          &data,
+                          sizeof(int64),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -667,7 +670,10 @@ void
 Node::set_uint8(uint8 data)
 {
     init(DataType::uint8());
-    *(uint8*)((char*)m_data + schema().element_index(0)) = data;
+    utils::conduit_memcpy(element_ptr(0),
+                          &data,
+                          sizeof(uint8),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -682,7 +688,10 @@ void
 Node::set_uint16(uint16 data)
 {
     init(DataType::uint16());
-    *(uint16*)((char*)m_data + schema().element_index(0)) = data;
+    utils::conduit_memcpy(element_ptr(0),
+                          &data,
+                          sizeof(uint16),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -697,7 +706,10 @@ void
 Node::set_uint32(uint32 data)
 {
     init(DataType::uint32());
-    *(uint32*)((char*)m_data + schema().element_index(0)) = data;
+    utils::conduit_memcpy(element_ptr(0),
+                          &data,
+                          sizeof(uint32),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -712,7 +724,10 @@ void
 Node::set_uint64(uint64 data)
 {
     init(DataType::uint64());
-    *(uint64*)((char*)m_data + schema().element_index(0)) = data;
+    utils::conduit_memcpy(element_ptr(0),
+                          &data,
+                          sizeof(uint64),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -754,7 +769,10 @@ void
 Node::set_float64(float64 data)
 {
     init(DataType::float64());
-    *(float64*)((char*)m_data + schema().element_index(0)) = data;
+    utils::conduit_memcpy(element_ptr(0),
+                          &data,
+                          sizeof(float64),
+                          m_allocator_id);
 }
 
 //---------------------------------------------------------------------------//
@@ -1936,7 +1954,7 @@ Node::set_int32_initializer_list(const std::initializer_list<int32> &data)
     init(DataType::int32(data.size()));
     utils::conduit_memcpy(element_ptr(0),
                           (void*)data.begin(),
-                          sizeof(int64) * data.size(),
+                          sizeof(int32) * data.size(),
                           m_allocator_id);
 }
 
