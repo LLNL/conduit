@@ -238,42 +238,75 @@ namespace utils
                                           const std::string &file,
                                           int line);
 
+
 //-----------------------------------------------------------------------------
-/// Primary interface used by the conduit API to allocate memory.
+/// Primary interface used by the conduit API to move memory.
 //-----------------------------------------------------------------------------
 
-    index_t CONDUIT_API register_memory_handler(void*(*conduit_hnd_allocate) (size_t, size_t),
-                                                void(*conduit_hnd_free)(void *),
-                                                void(*conduit_hnd_copy)(void*,const void *,size_t),
-                                                void(*conduit_hnd_memset)(void*,int,size_t));
+    // conduit uses a single pair of memset and memcpy functions to
+    // manage data movement. 
 
-    // allocator_id 0 is the default
-    void * CONDUIT_API conduit_allocate(size_t n_items,
-                                        size_t item_size,
-                                        index_t allocator_id = 0);
+    // this strategy allows downstream users to support complex cases
+    // like moving between memory spaces non accessible on the host. 
+    //
+    // These methods aren't bound to allocators b/c allocators
+    // won't be tied into all of the places where source and dest pointers
+    // need to be located.
+    //
+    void CONDUIT_API set_memcpy_handler(void(*conduit_hnd_copy)(void*,
+                                                                const void *,
+                                                                size_t));
+    void CONDUIT_API set_memset_handler(void(*conduit_hnd_memset)(void*,
+                                                                  int,
+                                                                  size_t));
 
-    void CONDUIT_API conduit_free(void *data_ptr,
-                                  index_t allocator_id = 0);
+    void CONDUIT_API default_memset_handler(void *ptr,
+                                            int value,
+                                            size_t num);
 
+    void CONDUIT_API default_memcpy_handler(void *destination,
+                                            const void *source,
+                                            size_t num);
+
+    // general memcpy interface used by conduit 
     void CONDUIT_API conduit_memcpy(void * destination,
                                     const void * source,
-                                    size_t num,
-                                    index_t allocator_id = 0);
+                                    size_t num);
 
     void CONDUIT_API conduit_memcpy_strided_elements(void *dest,
                                                      size_t num_elements,
                                                      size_t ele_bytes,
                                                      size_t dest_stride,
                                                      const void *src,
-                                                     size_t src_stride,
-                                                     index_t allocator_id = 0);
+                                                     size_t src_stride);
 
+    // general memset interface used by conduit 
     // I note that the default memset returns the orig pointer, but
     // other allocators like cuda do not
+    // CYRUS TODO: GIVEN THIS DO WE NEED TO PASS AN ALLOC_ID?
     void CONDUIT_API conduit_memset(void * ptr,
                                     int value,
-                                    size_t num,
-                                    index_t allocator_id = 0);
+                                    size_t num);
+
+//-----------------------------------------------------------------------------
+/// Primary interface used by the conduit API to allocate memory.
+//-----------------------------------------------------------------------------
+
+    // register a custom allocator
+    index_t CONDUIT_API register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
+                                           void(*conduit_hnd_free)(void *));
+
+    // generic allocate interface
+    // allocator_id 0 is the default
+    void * CONDUIT_API conduit_allocate(size_t num_items,
+                                        size_t item_size,
+                                        index_t allocator_id = 0);
+
+    // generic free interface
+    void CONDUIT_API conduit_free(void *data_ptr,
+                                  index_t allocator_id = 0);
+
+
 
 //-----------------------------------------------------------------------------
 /// Helpers for common string splitting operations.

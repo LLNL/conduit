@@ -55,11 +55,20 @@ size_t TestAllocator::m_free_count = 0;
 //-----------------------------------------------------------------------------
 TEST(conduit_memory_allocator, test_custom_allocator)
 {
+  // int allocator_id
+  //   = conduit::utils::register_memory_handler(TestAllocator::banana_alloc,
+  //                                             TestAllocator::free_bananas,
+  //                                             TestAllocator::banana_copy,
+  //                                             TestAllocator::banana_memset);
+
+
+  conduit::utils::set_memcpy_handler(TestAllocator::banana_copy);
+  conduit::utils::set_memset_handler(TestAllocator::banana_memset);
+
   int allocator_id
-    = conduit::utils::register_memory_handler(TestAllocator::banana_alloc,
-                                              TestAllocator::free_bananas,
-                                              TestAllocator::banana_copy,
-                                              TestAllocator::banana_memset);
+     = conduit::utils::register_allocator(TestAllocator::banana_alloc,
+                                          TestAllocator::free_bananas);
+
 
   conduit::Node node;
   node.set_allocator(allocator_id);

@@ -104,6 +104,38 @@ default_memcpy_handler(void * destination, const void * source, size_t num)
   memcpy(destination,source,num);
 }
 
+
+//-----------------------------------------------------------------------------
+// Private namespace member that holds our memcpy callback.
+void (*conduit_handle_memcpy)(void * destination,
+                              const void * source,
+                              size_t num) = default_memcpy_handler;
+
+//-----------------------------------------------------------------------------
+// Private namespace member that holds our memset callback.
+void (*conduit_handle_memset)(void * ptr,
+                              int value,
+                              size_t num ) = default_memset_handler;
+
+//-----------------------------------------------------------------------------
+void
+set_memcpy_handler(void(*conduit_hnd_copy)(void*,
+                                           const void *,
+                                           size_t))
+{
+    conduit_handle_memcpy = conduit_hnd_copy;
+}
+
+//-----------------------------------------------------------------------------
+void
+set_memset_handler(void(*conduit_hnd_memset)(void*,
+                                             int,
+                                             size_t))
+{
+    conduit_handle_memset = conduit_hnd_memset;
+}
+
+
 //-----------------------------------------------------------------------------
 static std::map<index_t,void*(*)(size_t, size_t)> allocator_map
   = {{0, &default_alloc_handler}};
@@ -112,28 +144,40 @@ static std::map<index_t,void*(*)(size_t, size_t)> allocator_map
 static std::map<index_t,void(*)(void*)> free_map
   = {{0, default_free_handler}};
 
-//-----------------------------------------------------------------------------
-static std::map<index_t,void(*)(void*,const void *,size_t)> memcpy_map
-  = {{0, default_memcpy_handler}};
+// //-----------------------------------------------------------------------------
+// static std::map<index_t,void(*)(void*,const void *,size_t)> memcpy_map
+//   = {{0, default_memcpy_handler}};
+//
+// //-----------------------------------------------------------------------------
+// static std::map<index_t,void(*)(void*,int,size_t)> memset_map
+//   = {{0, default_memset_handler}};
 
-//-----------------------------------------------------------------------------
-static std::map<index_t,void(*)(void*,int,size_t)> memset_map
-  = {{0, default_memset_handler}};
+// //-----------------------------------------------------------------------------
+// index_t
+// register_memory_handler( void*(*conduit_hnd_allocate) (size_t, size_t),
+//                          void(*conduit_hnd_free)(void *),
+//                          void(*conduit_hnd_copy)(void*,const void *,size_t),
+//                          void(*conduit_hnd_memset)(void*,int,size_t))
+// {
+//   static index_t allocator_id = 1;
+//   allocator_map[allocator_id] = conduit_hnd_allocate;
+//   free_map[allocator_id]      = conduit_hnd_free;
+//   memcpy_map[allocator_id]    = conduit_hnd_copy;
+//   memset_map[allocator_id]    = conduit_hnd_memset;
+//   return allocator_id++;
+// }
 
 //-----------------------------------------------------------------------------
 index_t
-register_memory_handler( void*(*conduit_hnd_allocate) (size_t, size_t),
-                         void(*conduit_hnd_free)(void *),
-                         void(*conduit_hnd_copy)(void*,const void *,size_t),
-                         void(*conduit_hnd_memset)(void*,int,size_t))
+register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
+                   void(*conduit_hnd_free)(void *))
 {
-  static index_t allocator_id = 1;
-  allocator_map[allocator_id] = conduit_hnd_allocate;
-  free_map[allocator_id]      = conduit_hnd_free;
-  memcpy_map[allocator_id]    = conduit_hnd_copy;
-  memset_map[allocator_id]    = conduit_hnd_memset;
-  return allocator_id++;
+    static index_t allocator_id = 1;
+    allocator_map[allocator_id] = conduit_hnd_allocate;
+    free_map[allocator_id]      = conduit_hnd_free;
+    return allocator_id++;
 }
+
 
 //-----------------------------------------------------------------------------
 void *
@@ -146,30 +190,30 @@ conduit_allocate(size_t n_items,
 
 //-----------------------------------------------------------------------------
 void
-conduit_free(void *data_ptr,
+conduit_free(void *ptr,
              index_t allocator_id)
 {
-  free_map[allocator_id](data_ptr);
+  free_map[allocator_id](ptr);
 }
 
 //-----------------------------------------------------------------------------
 void
-conduit_memcpy(void * destination,
-               const void * source,
-               size_t num_bytes,
-               index_t allocator_id)
+conduit_memcpy(void *destination,
+               const void *source,
+               size_t num)
 {
-   memcpy_map[allocator_id](destination,source,num_bytes);
+    // memcpy_map[allocator_id](destination,source,num_bytes);
+    conduit_handle_memcpy(destination,source,num);
 }
 
 
 //-----------------------------------------------------------------------------
-void conduit_memset(void * ptr,
+void conduit_memset(void *ptr,
                     int value,
-                    size_t num,
-                    index_t allocator_id)
+                    size_t num)
 {
-  memset_map[allocator_id](ptr,value,num);
+    // memset_map[allocator_id](ptr,value,num);
+    conduit_handle_memset(ptr,value,num);
 }
 //-----------------------------------------------------------------------------
 void
@@ -178,16 +222,14 @@ conduit_memcpy_strided_elements(void *dest,
                                 size_t ele_bytes,
                                 size_t dest_stride,
                                 const void *src,
-                                size_t src_stride,
-                                index_t allocator_id)
+                                size_t src_stride)
 {
     // source and dest are compact
     if( dest_stride == ele_bytes && src_stride == ele_bytes)
     {
         utils::conduit_memcpy(dest,
                               src,
-                              ele_bytes * num_elements,
-                              allocator_id);
+                              ele_bytes * num_elements);
     }
     else // the source or dest are strided in a non compact way
     {
@@ -198,8 +240,7 @@ conduit_memcpy_strided_elements(void *dest,
             // copy next strided element
             utils::conduit_memcpy(dest_data_ptr,
                                   src_data_ptr,
-                                  ele_bytes,
-                                  allocator_id);
+                                  ele_bytes);
             // move by src stride
             src_data_ptr  += src_stride;
             // move by dest stride
