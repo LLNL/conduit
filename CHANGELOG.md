@@ -8,9 +8,18 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### General
+- Added DataType::index_t method. Creates a DataType instance that describes an `index_t`, which is an alias to either `int32`, or `int 64` controlled by the `CONDUIT_INDEX_32` compile time option.
+- Added several more methods to Python DataType interface
+
 #### Relay
 - Added Relay HDF5 support for reading and writing to an HDF5 dataset with offset.
 - Added `conduit::relay::io::hdf5::read_info` which allows you to obtain metadata from an HDF5 file.
+
+### Fixed
+
+#### General
+- Fixed missing implementation of DataType::is_index_t 
 
 
 ## [0.7.1] - Released 2021-02-11
