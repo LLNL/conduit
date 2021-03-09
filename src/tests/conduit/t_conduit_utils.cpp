@@ -24,6 +24,10 @@ bool info_occured    = false;
 bool warning_occured = false;
 bool error_occured   = false;
 
+bool other_info_occured    = false;
+bool other_warning_occured = false;
+bool other_error_occured   = false;
+
 //-----------------------------------------------------------------------------
 void
 print_msg(const std::string &msg,
@@ -65,6 +69,38 @@ my_error_handler(const std::string &msg,
     print_msg(msg,file,line);
     error_occured = true;
 }
+
+//-----------------------------------------------------------------------------
+void
+my_other_info_handler(const std::string &msg,
+                      const std::string &file,
+                      int line)
+{
+    print_msg(msg,file,line);
+    other_info_occured = true;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+my_other_warning_handler(const std::string &msg,
+                   const std::string &file,
+                   int line)
+{
+    print_msg(msg,file,line);
+    other_warning_occured = true;
+}
+
+//-----------------------------------------------------------------------------
+void
+my_other_error_handler(const std::string &msg,
+                 const std::string &file,
+                 int line)
+{
+    print_msg(msg,file,line);
+    other_error_occured = true;
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_utils, error_constructors)
@@ -147,6 +183,79 @@ TEST(conduit_utils, override_error)
                  conduit::Error);
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, handler_defaults_are_the_defaults)
+{
+    conduit::utils::conduit_info_handler on_info = conduit::utils::info_handler();
+    conduit::utils::conduit_info_handler on_info_default = &conduit::utils::default_info_handler;
+    EXPECT_EQ(on_info,on_info_default);
+
+    conduit::utils::conduit_warning_handler on_warning = conduit::utils::warning_handler();
+    conduit::utils::conduit_warning_handler on_warning_default = &conduit::utils::default_warning_handler;
+    EXPECT_EQ(on_warning,on_warning_default);
+
+    conduit::utils::conduit_error_handler on_error = conduit::utils::error_handler();
+    conduit::utils::conduit_error_handler on_error_default = &conduit::utils::default_error_handler;
+    EXPECT_EQ(on_error,on_error_default);
+
+
+    EXPECT_NE(on_info,on_error);
+    EXPECT_NE(on_info,on_warning);
+    EXPECT_NE(on_error,on_warning);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, handler_defaults_push_pop)
+{
+    // change to other handler
+    conduit::utils::set_info_handler(my_other_info_handler);
+    conduit::utils::set_warning_handler(my_other_warning_handler);
+    conduit::utils::set_error_handler(my_other_error_handler);
+
+    // ----------
+    // demo push / pop like swing to default
+    // ----------
+    conduit::utils::conduit_info_handler curr_on_info = conduit::utils::info_handler();
+    conduit::utils::conduit_warning_handler curr_on_warning = conduit::utils::warning_handler();
+    conduit::utils::conduit_error_handler curr_on_error = conduit::utils::error_handler();
+
+    // set to default
+    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
+    conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
+    conduit::utils::set_error_handler(conduit::utils::default_error_handler);
+
+    EXPECT_THROW(utils::handle_warning("ERROR!",__FILE__,__LINE__),
+                 conduit::Error);
+
+    // set to curr
+    conduit::utils::set_info_handler(curr_on_info);
+    conduit::utils::set_warning_handler(curr_on_warning);
+    conduit::utils::set_error_handler(curr_on_error);
+
+    EXPECT_FALSE(other_info_occured);
+    EXPECT_FALSE(other_warning_occured);
+    EXPECT_FALSE(other_error_occured);
+
+    utils::handle_info("INFO!",__FILE__,__LINE__);
+    utils::handle_warning("WARNING!",__FILE__,__LINE__);
+    utils::handle_error("ERROR!",__FILE__,__LINE__);
+
+    EXPECT_TRUE(other_info_occured);
+    EXPECT_TRUE(other_warning_occured);
+    EXPECT_TRUE(other_error_occured);
+
+
+    // back set to default (for other tests !!!!)
+    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
+    conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
+    conduit::utils::set_error_handler(conduit::utils::default_error_handler);
+
+}
+
+
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_utils, escape_special_chars)
