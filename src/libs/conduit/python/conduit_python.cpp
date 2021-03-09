@@ -862,6 +862,7 @@ PyConduit_DataType_float32(PyObject *, // cls -- unused
                                      endianness));
     return (PyObject*)res;
 }
+
 //-----------------------------------------------------------------------------
 static PyObject *
 PyConduit_DataType_float64(PyObject *, // cls -- unused
@@ -890,6 +891,76 @@ PyConduit_DataType_float64(PyObject *, // cls -- unused
     PyConduit_DataType *res = PyConduit_DataType_Python_Create();
         
     res->dtype.set(DataType::float64(num_elements,
+                                     offset,
+                                     stride,
+                                     element_bytes,
+                                     endianness));
+    return (PyObject*)res;
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyConduit_DataType_char8_str(PyObject *, // cls -- unused
+                             PyObject *args,
+                             PyObject *kwargs)
+{
+    // default args for char8_str
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = 1;
+    Py_ssize_t element_bytes = 1;
+    Py_ssize_t endianness = Endianness::DEFAULT_ID;
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
+        
+    res->dtype.set(DataType::char8_str(num_elements,
+                                       offset,
+                                       stride,
+                                       element_bytes,
+                                       endianness));
+    return (PyObject*)res;
+}
+
+//-----------------------------------------------------------------------------
+static PyObject *
+PyConduit_DataType_index_t(PyObject *, // cls -- unused
+                           PyObject *args,
+                           PyObject *kwargs)
+{
+    // default args for char8_str
+    Py_ssize_t num_elements = 1;
+    Py_ssize_t offset = 0;
+    Py_ssize_t stride = sizeof(conduit::index_t);
+    Py_ssize_t element_bytes = sizeof(conduit::index_t);;
+    Py_ssize_t endianness = Endianness::DEFAULT_ID;
+    
+    if(!PyConduit_DataType_Parse_Standard_Set_Keyword_Args(args,
+                                                           kwargs,
+                                                           num_elements,
+                                                           offset,
+                                                           stride,
+                                                           element_bytes,
+                                                           endianness))
+    {
+        // parsing error
+        return NULL;
+    }
+
+    PyConduit_DataType *res = PyConduit_DataType_Python_Create();
+        
+    res->dtype.set(DataType::index_t(num_elements,
                                      offset,
                                      stride,
                                      element_bytes,
@@ -1408,6 +1479,13 @@ PyConduit_DataType_id(PyConduit_DataType *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_DataType_name(PyConduit_DataType *self)
+{    
+    return Py_BuildValue("s", self->dtype.name().c_str());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_DataType_bytes_compact(PyConduit_DataType *self)
 {
     return PyLong_FromSsize_t((Py_ssize_t)self->dtype.bytes_compact());
@@ -1444,6 +1522,29 @@ PyConduit_DataType_is_compact(PyConduit_DataType *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_DataType_equals(PyConduit_DataType *self,
+                          PyObject *args)
+{
+    PyObject *py_dtype;
+    if ( (!PyArg_ParseTuple(args, "O", &py_dtype)) ||
+         (!PyConduit_DataType_Check(py_dtype)) )
+    {
+         PyErr_SetString(PyExc_TypeError, "equals e needs a DataType arg");
+         return (NULL);
+    }
+
+    if(self->dtype.equals( ((PyConduit_DataType*)py_dtype)->dtype ) )
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_DataType_compatible(PyConduit_DataType *self,
                               PyObject *args)
 {
@@ -1468,6 +1569,48 @@ PyConduit_DataType_compatible(PyConduit_DataType *self,
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_DataType_is_empty(PyConduit_DataType *self)
+{
+    if(self->dtype.is_empty())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_object(PyConduit_DataType *self)
+{
+    if(self->dtype.is_object())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_list(PyConduit_DataType *self)
+{
+    if(self->dtype.is_list())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_DataType_is_number(PyConduit_DataType *self)
 {
     if(self->dtype.is_number())
@@ -1479,7 +1622,6 @@ PyConduit_DataType_is_number(PyConduit_DataType *self)
         Py_RETURN_FALSE;
     }
 }
-
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -1528,6 +1670,497 @@ static PyObject *
 PyConduit_DataType_is_unsigned_integer(PyConduit_DataType *self)
 {
     if(self->dtype.is_unsigned_integer())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// -- `is` for bw ints
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_int8(PyConduit_DataType *self)
+{
+    if(self->dtype.is_int8())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_int16(PyConduit_DataType *self)
+{
+    if(self->dtype.is_int16())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_int32(PyConduit_DataType *self)
+{
+    if(self->dtype.is_int32())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_int64(PyConduit_DataType *self)
+{
+    if(self->dtype.is_int64())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// -- `is` for bw uints
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_uint8(PyConduit_DataType *self)
+{
+    if(self->dtype.is_uint8())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_uint16(PyConduit_DataType *self)
+{
+    if(self->dtype.is_uint16())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_uint32(PyConduit_DataType *self)
+{
+    if(self->dtype.is_uint32())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_uint64(PyConduit_DataType *self)
+{
+    if(self->dtype.is_uint64())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_float32(PyConduit_DataType *self)
+{
+    if(self->dtype.is_float32())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_float64(PyConduit_DataType *self)
+{
+    if(self->dtype.is_float64())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_index_t(PyConduit_DataType *self)
+{
+    if(self->dtype.is_index_t())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// -- `is` for c style types
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_char(PyConduit_DataType *self)
+{
+    if(self->dtype.is_char())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_short(PyConduit_DataType *self)
+{
+    if(self->dtype.is_short())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_int(PyConduit_DataType *self)
+{
+    if(self->dtype.is_int())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_long(PyConduit_DataType *self)
+{
+    if(self->dtype.is_long())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_long_long(PyConduit_DataType *self)
+{
+    if(self->dtype.is_long_long())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// -- `is` for signed c style types
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_signed_char(PyConduit_DataType *self)
+{
+    if(self->dtype.is_signed_char())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_signed_short(PyConduit_DataType *self)
+{
+    if(self->dtype.is_signed_short())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_signed_int(PyConduit_DataType *self)
+{
+    if(self->dtype.is_signed_int())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_signed_long(PyConduit_DataType *self)
+{
+    if(self->dtype.is_signed_long())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_signed_long_long(PyConduit_DataType *self)
+{
+    if(self->dtype.is_signed_long_long())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// -- `is` for unsigned c style types
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_unsigned_char(PyConduit_DataType *self)
+{
+    if(self->dtype.is_unsigned_char())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_unsigned_short(PyConduit_DataType *self)
+{
+    if(self->dtype.is_unsigned_short())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_unsigned_int(PyConduit_DataType *self)
+{
+    if(self->dtype.is_unsigned_int())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_unsigned_long(PyConduit_DataType *self)
+{
+    if(self->dtype.is_unsigned_long())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_unsigned_long_long(PyConduit_DataType *self)
+{
+    if(self->dtype.is_unsigned_long_long())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+// -- `is` for c style fp types
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_float(PyConduit_DataType *self)
+{
+    if(self->dtype.is_float())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_double(PyConduit_DataType *self)
+{
+    if(self->dtype.is_double())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_long_double(PyConduit_DataType *self)
+{
+    if(self->dtype.is_long_double())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+// -- `is` for string types
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_string(PyConduit_DataType *self)
+{
+    if(self->dtype.is_string())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_char8_str(PyConduit_DataType *self)
+{
+    if(self->dtype.is_char8_str())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_little_endian(PyConduit_DataType *self)
+{
+    if(self->dtype.is_little_endian())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_is_big_endian(PyConduit_DataType *self)
+{
+    if(self->dtype.is_big_endian())
+    {
+        Py_RETURN_TRUE;
+    }
+    else
+    {
+        Py_RETURN_FALSE;
+    }
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_DataType_endianness_matches_machine(PyConduit_DataType *self)
+{
+    if(self->dtype.endianness_matches_machine())
     {
         Py_RETURN_TRUE;
     }
@@ -1979,55 +2612,10 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      METH_NOARGS,
      "Returns the dtype id of this DataType"},
     //-----------------------------------------------------------------------//
-    {"bytes_compact",
-     (PyCFunction)PyConduit_DataType_bytes_compact,
+    {"name",
+     (PyCFunction)PyConduit_DataType_name,
      METH_NOARGS,
-     "Returns the bytes compact property of this DataType"},
-    //-----------------------------------------------------------------------//
-    {"strided_bytes",
-     (PyCFunction)PyConduit_DataType_strided_bytes,
-     METH_NOARGS,
-     "Returns the strided bytes property of this DataType"},
-    //-----------------------------------------------------------------------//
-    {"spanned_bytes",
-     (PyCFunction)PyConduit_DataType_spanned_bytes,
-     METH_NOARGS,
-     "Returns the bytes spanned property of this DataType"},
-    //-----------------------------------------------------------------------//
-    {"is_compact",
-     (PyCFunction)PyConduit_DataType_is_compact,
-     METH_NOARGS,
-     "Returns if this DataType is compact"},
-    //-----------------------------------------------------------------------//
-    {"compatible",
-     (PyCFunction)PyConduit_DataType_compatible,
-     METH_VARARGS,
-     "Returns if this DataType is compatible with another DataType instance"},
-    //-----------------------------------------------------------------------//
-    {"is_number",
-     (PyCFunction)PyConduit_DataType_is_number,
-     METH_NOARGS,
-     "Returns if this DataType is a number"},
-    //-----------------------------------------------------------------------//
-    {"is_floating_point",
-     (PyCFunction)PyConduit_DataType_is_floating_point,
-     METH_NOARGS,
-     "Returns if this DataType is a floating point number"},
-    //-----------------------------------------------------------------------//
-    {"is_integer",
-     (PyCFunction)PyConduit_DataType_is_integer,
-     METH_NOARGS,
-     "Returns if this DataType is an integer"},
-    //-----------------------------------------------------------------------//
-    {"is_signed_integer",
-     (PyCFunction)PyConduit_DataType_is_signed_integer,
-     METH_NOARGS,
-     "Returns if this DataType is a signed integer"},
-    //-----------------------------------------------------------------------//
-    {"is_unsigned_integer",
-     (PyCFunction)PyConduit_DataType_is_unsigned_integer,
-     METH_NOARGS,
-     "Returns if this DataType is an unsigned integer"},
+     "Returns the name of this DataType"},
     //-----------------------------------------------------------------------//
     {"number_of_elements",
      (PyCFunction)PyConduit_DataType_number_of_elements,
@@ -2058,6 +2646,259 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      (PyCFunction)PyConduit_DataType_element_index,
      METH_VARARGS,
      "Returns the byte offset for a given element index of this DataType"},
+    //-----------------------------------------------------------------------//
+    {"strided_bytes",
+     (PyCFunction)PyConduit_DataType_strided_bytes,
+     METH_NOARGS,
+     "Returns the strided bytes property of this DataType"},
+    //-----------------------------------------------------------------------//
+    {"bytes_compact",
+     (PyCFunction)PyConduit_DataType_bytes_compact,
+     METH_NOARGS,
+     "Returns the bytes compact property of this DataType"},
+    //-----------------------------------------------------------------------//
+    {"spanned_bytes",
+     (PyCFunction)PyConduit_DataType_spanned_bytes,
+     METH_NOARGS,
+     "Returns the bytes spanned property of this DataType"},
+    //-----------------------------------------------------------------------//
+    {"is_compact",
+     (PyCFunction)PyConduit_DataType_is_compact,
+     METH_NOARGS,
+     "Returns if this DataType is compact"},
+    //-----------------------------------------------------------------------//
+    {"compatible",
+     (PyCFunction)PyConduit_DataType_compatible,
+     METH_VARARGS,
+     "Returns if this DataType is compatible with another DataType instance"},
+    //-----------------------------------------------------------------------//
+    {"equals",
+     (PyCFunction)PyConduit_DataType_equals,
+     METH_VARARGS,
+     "Returns if this DataType is equal one passed"},
+    //-----------------------------------------------------------------------//
+    {"is_empty",
+     (PyCFunction)PyConduit_DataType_is_empty,
+     METH_NOARGS,
+     "Returns if this DataType is empty"},
+    //-----------------------------------------------------------------------//
+    {"is_object",
+     (PyCFunction)PyConduit_DataType_is_object,
+     METH_NOARGS,
+     "Returns if this DataType is an object"},
+    //-----------------------------------------------------------------------//
+    {"is_list",
+     (PyCFunction)PyConduit_DataType_is_list,
+     METH_NOARGS,
+     "Returns if this DataType is a list"},
+    //-----------------------------------------------------------------------//
+    {"is_number",
+     (PyCFunction)PyConduit_DataType_is_number,
+     METH_NOARGS,
+     "Returns if this DataType is a number"},
+    //-----------------------------------------------------------------------//
+    {"is_floating_point",
+     (PyCFunction)PyConduit_DataType_is_floating_point,
+     METH_NOARGS,
+     "Returns if this DataType is a floating point number"},
+    //-----------------------------------------------------------------------//
+    {"is_integer",
+     (PyCFunction)PyConduit_DataType_is_integer,
+     METH_NOARGS,
+     "Returns if this DataType is an integer"},
+    //-----------------------------------------------------------------------//
+    {"is_signed_integer",
+     (PyCFunction)PyConduit_DataType_is_signed_integer,
+     METH_NOARGS,
+     "Returns if this DataType is a signed integer"},
+    //-----------------------------------------------------------------------//
+    {"is_unsigned_integer",
+     (PyCFunction)PyConduit_DataType_is_unsigned_integer,
+     METH_NOARGS,
+     "Returns if this DataType is an unsigned integer"},
+     
+    //-----------------------------------------------------------------------//
+    {"is_int8",
+     (PyCFunction)PyConduit_DataType_is_int8,
+     METH_NOARGS,
+     "Returns if this DataType is an int8"},
+    //-----------------------------------------------------------------------//
+    {"is_int16",
+     (PyCFunction)PyConduit_DataType_is_int16,
+     METH_NOARGS,
+     "Returns if this DataType is an int16"},
+    //-----------------------------------------------------------------------//
+    {"is_int32",
+     (PyCFunction)PyConduit_DataType_is_int32,
+     METH_NOARGS,
+     "Returns if this DataType is an int32"},
+    //-----------------------------------------------------------------------//
+    {"is_int64",
+     (PyCFunction)PyConduit_DataType_is_int64,
+     METH_NOARGS,
+     "Returns if this DataType is an int64"},
+    //-----------------------------------------------------------------------//
+    {"is_uint8",
+     (PyCFunction)PyConduit_DataType_is_uint8,
+     METH_NOARGS,
+     "Returns if this DataType is an uint8"},
+    //-----------------------------------------------------------------------//
+    {"is_uint16",
+     (PyCFunction)PyConduit_DataType_is_uint16,
+     METH_NOARGS,
+     "Returns if this DataType is an uint16"},
+    //-----------------------------------------------------------------------//
+    {"is_uint32",
+     (PyCFunction)PyConduit_DataType_is_uint32,
+     METH_NOARGS,
+     "Returns if this DataType is an uint32"},
+    //-----------------------------------------------------------------------//
+    {"is_uint64",
+     (PyCFunction)PyConduit_DataType_is_uint64,
+     METH_NOARGS,
+     "Returns if this DataType is an uint64"},
+
+    //-----------------------------------------------------------------------//
+    {"is_float32",
+     (PyCFunction)PyConduit_DataType_is_float32,
+     METH_NOARGS,
+     "Returns if this DataType is a float32"},
+    //-----------------------------------------------------------------------//
+    {"is_float64",
+     (PyCFunction)PyConduit_DataType_is_float64,
+     METH_NOARGS,
+     "Returns if this DataType is a float64"},
+
+    //-----------------------------------------------------------------------//
+    {"is_index_t",
+     (PyCFunction)PyConduit_DataType_is_index_t,
+     METH_NOARGS,
+     "Returns if this DataType is an index_t"},
+
+    //-----------------------------------------------------------------------//
+    {"is_char",
+     (PyCFunction)PyConduit_DataType_is_char,
+     METH_NOARGS,
+     "Returns if this DataType is a char"},
+    //-----------------------------------------------------------------------//
+    {"is_short",
+     (PyCFunction)PyConduit_DataType_is_short,
+     METH_NOARGS,
+     "Returns if this DataType is a short"},
+    //-----------------------------------------------------------------------//
+    {"is_int",
+     (PyCFunction)PyConduit_DataType_is_int,
+     METH_NOARGS,
+     "Returns if this DataType is an int"},
+    //-----------------------------------------------------------------------//
+    {"is_long",
+     (PyCFunction)PyConduit_DataType_is_long,
+     METH_NOARGS,
+     "Returns if this DataType is a long"},
+    //-----------------------------------------------------------------------//
+    {"is_long_long",
+     (PyCFunction)PyConduit_DataType_is_long_long,
+     METH_NOARGS,
+     "Returns if this DataType is a long long"},
+
+    //-----------------------------------------------------------------------//
+    {"is_signed_char",
+     (PyCFunction)PyConduit_DataType_is_signed_char,
+     METH_NOARGS,
+     "Returns if this DataType is a signed char"},
+    //-----------------------------------------------------------------------//
+    {"is_signed_short",
+     (PyCFunction)PyConduit_DataType_is_signed_short,
+     METH_NOARGS,
+     "Returns if this DataType is a signed short"},
+    //-----------------------------------------------------------------------//
+    {"is_signed_int",
+     (PyCFunction)PyConduit_DataType_is_signed_int,
+     METH_NOARGS,
+     "Returns if this DataType is a signed int"},
+    //-----------------------------------------------------------------------//
+    {"is_signed_long",
+     (PyCFunction)PyConduit_DataType_is_signed_long,
+     METH_NOARGS,
+     "Returns if this DataType is a signed long"},
+    //-----------------------------------------------------------------------//
+    {"is_signed_long_long",
+     (PyCFunction)PyConduit_DataType_is_signed_long_long,
+     METH_NOARGS,
+     "Returns if this DataType is a signed long long"},
+
+    //-----------------------------------------------------------------------//
+    {"is_unsigned_char",
+     (PyCFunction)PyConduit_DataType_is_unsigned_char,
+     METH_NOARGS,
+     "Returns if this DataType is an unsigned char"},
+    //-----------------------------------------------------------------------//
+    {"is_unsigned_short",
+     (PyCFunction)PyConduit_DataType_is_unsigned_short,
+     METH_NOARGS,
+     "Returns if this DataType is an unsigned short"},
+    //-----------------------------------------------------------------------//
+    {"is_unsigned_int",
+     (PyCFunction)PyConduit_DataType_is_unsigned_int,
+     METH_NOARGS,
+     "Returns if this DataType is an unsigned int"},
+    //-----------------------------------------------------------------------//
+    {"is_unsigned_long",
+     (PyCFunction)PyConduit_DataType_is_unsigned_long,
+     METH_NOARGS,
+     "Returns if this DataType is an unsigned long"},
+    //-----------------------------------------------------------------------//
+    {"is_unsigned_long_long",
+     (PyCFunction)PyConduit_DataType_is_unsigned_long_long,
+     METH_NOARGS,
+     "Returns if this DataType is an unsigned long long"},
+
+    //-----------------------------------------------------------------------//
+    {"is_float",
+     (PyCFunction)PyConduit_DataType_is_float,
+     METH_NOARGS,
+     "Returns if this DataType is a float"},
+    //-----------------------------------------------------------------------//
+    {"is_double",
+     (PyCFunction)PyConduit_DataType_is_double,
+     METH_NOARGS,
+     "Returns if this DataType is a double"},
+    //-----------------------------------------------------------------------//
+    {"is_long_double",
+     (PyCFunction)PyConduit_DataType_is_long_double,
+     METH_NOARGS,
+     "Returns if this DataType is a long double"},
+
+    //-----------------------------------------------------------------------//
+    {"is_string",
+     (PyCFunction)PyConduit_DataType_is_string,
+     METH_NOARGS,
+     "Returns if this DataType is a string"},
+
+    //-----------------------------------------------------------------------//
+    {"is_char8_str",
+     (PyCFunction)PyConduit_DataType_is_char8_str,
+     METH_NOARGS,
+     "Returns if this DataType is a char8 string"},
+
+    //-----------------------------------------------------------------------//
+    {"is_little_endian",
+     (PyCFunction)PyConduit_DataType_is_little_endian,
+     METH_NOARGS,
+     "Returns if this DataType uses little endian byte ordering"},
+
+    //-----------------------------------------------------------------------//
+    {"is_big_endian",
+     (PyCFunction)PyConduit_DataType_is_big_endian,
+     METH_NOARGS,
+     "Returns if this DataType uses big endian byte ordering"},
+
+    //-----------------------------------------------------------------------//
+    {"endianness_matches_machine",
+     (PyCFunction)PyConduit_DataType_endianness_matches_machine,
+     METH_NOARGS,
+     "Returns if this DataType's endianness matches this machines endianness"},
+
     //-----------------------------------------------------------------------//
     {"to_string",
      (PyCFunction)PyConduit_DataType_to_string, 
@@ -2155,6 +2996,16 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
      (PyCFunction)PyConduit_DataType_float64,
      METH_VARARGS | METH_KEYWORDS| METH_STATIC,
      "Creates a DataType for an float64 leaf"},
+    //-----------------------------------------------------------------------//
+    {"char8_str",
+     (PyCFunction)PyConduit_DataType_char8_str,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
+     "Creates a DataType for a char8_str string leaf"},
+    //-----------------------------------------------------------------------//
+    {"index_t",
+     (PyCFunction)PyConduit_DataType_index_t,
+     METH_VARARGS | METH_KEYWORDS| METH_STATIC,
+     "Creates a DataType for an index_t leaf"},
     //-----------------------------------------------------------------------//
     {"c_char",
      (PyCFunction)PyConduit_DataType_c_char,
