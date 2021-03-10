@@ -2,6 +2,7 @@
 "package_name" : "conduit",
 "uberenv_package_name" : "uberenv-conduit",
 "package_version" : "develop",
+"package_source_dir" : "../../",
 "spack_configs_path": "scripts/uberenv_configs/spack_configs",
 "spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_url": "https://github.com/alpine-DAV/spack",
