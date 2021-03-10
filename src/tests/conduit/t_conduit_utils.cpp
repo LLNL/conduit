@@ -204,7 +204,7 @@ TEST(conduit_utils, handler_defaults_are_the_defaults)
     EXPECT_NE(on_info,on_warning);
 
     // 
-    // NOTE: (Except from "Adventures in fun with compilers")
+    // NOTE: (Excerpt from "Adventures in fun with compilers")
     // The default implementations of:
     //    conduit::utils::default_warning_handler
     //       and 
