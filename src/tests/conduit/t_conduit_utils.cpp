@@ -188,21 +188,34 @@ TEST(conduit_utils, override_error)
 TEST(conduit_utils, handler_defaults_are_the_defaults)
 {
     conduit::utils::conduit_info_handler on_info = conduit::utils::info_handler();
-    conduit::utils::conduit_info_handler on_info_default = &conduit::utils::default_info_handler;
+    conduit::utils::conduit_info_handler on_info_default = conduit::utils::default_info_handler;
     EXPECT_EQ(on_info,on_info_default);
 
     conduit::utils::conduit_warning_handler on_warning = conduit::utils::warning_handler();
-    conduit::utils::conduit_warning_handler on_warning_default = &conduit::utils::default_warning_handler;
+    conduit::utils::conduit_warning_handler on_warning_default = conduit::utils::default_warning_handler;
     EXPECT_EQ(on_warning,on_warning_default);
 
     conduit::utils::conduit_error_handler on_error = conduit::utils::error_handler();
-    conduit::utils::conduit_error_handler on_error_default = &conduit::utils::default_error_handler;
+    conduit::utils::conduit_error_handler on_error_default = conduit::utils::default_error_handler;
     EXPECT_EQ(on_error,on_error_default);
 
 
     EXPECT_NE(on_info,on_error);
     EXPECT_NE(on_info,on_warning);
-    EXPECT_NE(on_error,on_warning);
+
+    // 
+    // NOTE: (Except from "Adventures in fun with compilers")
+    // The default implementations of:
+    //    conduit::utils::default_warning_handler
+    //       and 
+    //    conduit::utils::default_error_handler
+    // are identical at the source level.
+    // On windows, we hit a case where the compiler understands this
+    // and low and behold there is only one copy!
+    //
+    // B/c of this we can't expect the following to hold:
+    // EXPECT_NE(on_error,on_warning);
+    //
 
 }
 
