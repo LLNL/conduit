@@ -1,11 +1,9 @@
 {
 "package_name" : "conduit",
+"uberenv_package_name" : "uberenv-conduit",
 "package_version" : "develop",
-"package_final_phase" : "hostconfig",
-"package_source_dir" : "../../",
-"spack_spec_print_options" : "",
 "spack_configs_path": "scripts/uberenv_configs/spack_configs",
-"BKALSDKSAKLDKJLSDspack_packages_path": "scripts/uberenv_configs/packages",
+"spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_url": "https://github.com/alpine-DAV/spack",
 "spack_branch": "task/2021_01_update_conduit",
 "mirror_url": "https://www.ascent-dav.org/mirror/conduit/latest/",
