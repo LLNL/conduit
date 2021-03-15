@@ -109,7 +109,9 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_HDF5_1_12: ON
-          ENABLE_SILO: ON
+          # silo requires hdf5 1.10, so for now we can't
+          # test both silo and hdft 1.12 support
+          ENABLE_SILO: OFF
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
           ENABLE_PYTHON2: OFF
