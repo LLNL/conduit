@@ -16,6 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Added Relay HDF5 support for reading and writing to an HDF5 dataset with offset.
 - Added `conduit::relay::io::hdf5::read_info` which allows you to obtain metadata from an HDF5 file.
+- Added support to compile against HDF5 1.12.
 
 ### Fixed
 
