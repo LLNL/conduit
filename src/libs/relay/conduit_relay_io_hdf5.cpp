@@ -2172,7 +2172,7 @@ struct h5_read_opdata
     struct h5_read_opdata   *prev;       /* Pointer to previous opdata */
 
 #if H5_VERSION_GE(1, 12, 0)
-    H5O_token_t             token;       /* Group token */
+    H5O_token_t            *token;       /* Group token */
 #else
     haddr_t                 addr;        /* Group address */
 #endif
@@ -2203,10 +2203,14 @@ struct h5_read_opdata
 #if H5_VERSION_GE(1, 12, 0)
 int
 h5_group_check(h5_read_opdata *od,
-               H5O_token_t target_token)
+               hid_t h5_id,
+               H5O_token_t *target_token)
 {
-    
-    if (od->token == target_token)
+
+    int cmp = -1;
+    H5Otoken_cmp(h5_id, od->token, target_token, &cmp);
+
+    if (cmp == 0)
     {
         /* Addresses match */
         return 1;
@@ -2219,7 +2223,7 @@ h5_group_check(h5_read_opdata *od,
     else
     {
         /* Recursively examine the next node */
-        return h5_group_check(od->prev, target_token);
+        return h5_group_check(od->prev, h5_id, target_token);
     }
 }
 #else
@@ -2352,6 +2356,13 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
     {
         case H5O_TYPE_GROUP:
         {
+#if H5_VERSION_GE(1, 12, 0)
+            /*
+             * With 1.12, we compare tokens, with the hope this provides
+             * the same cycle avoidance.
+             */
+            if ( h5_group_check (h5_od, hdf5_id, &h5_info_buf.token) )
+#else
             /*
              * Check group address against linked list of operator
              * data structures.  We will always run the check, as the
@@ -2363,9 +2374,6 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
              * reference count was manually manipulated with
              * H5Odecr_refcount.
              */
-#if H5_VERSION_GE(1, 12, 0)
-            if ( h5_group_check (h5_od, h5_info_buf.token) )
-#else
             if ( h5_group_check (h5_od, h5_info_buf.addr) )
 #endif
             {
@@ -2489,7 +2497,7 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
     h5_od.recurs = 0;
     h5_od.prev = NULL;
 #if H5_VERSION_GE(1, 12, 0)
-    h5_od.token = h5_info_buf.token;
+    h5_od.token = &h5_info_buf.token;
 #else
     h5_od.addr = h5_info_buf.addr;
 #endif
