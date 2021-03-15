@@ -845,7 +845,11 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
     bool res = true;
     H5O_info_t h5_obj_info;
 
+#if H5_VERSION_GE(1, 12, 0)
+    herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
+#else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
+#endif
 
     // make sure it is a dataset ...
     if( CONDUIT_HDF5_STATUS_OK(h5_status) &&
@@ -985,7 +989,12 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
     // make sure we have a group ...
 
     H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0)
+    herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
+#else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
+#endif
 
     // make sure it is a group ...
     if( CONDUIT_HDF5_STATUS_OK(h5_status) &&
@@ -1055,7 +1064,12 @@ check_if_conduit_list_is_compatible_with_hdf5_tree(const Node &node,
     // make sure we have a group ...
 
     H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0)
+    herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
+#else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
+#endif
 
     // make sure it is a group ...
     if( CONDUIT_HDF5_STATUS_OK(h5_status) &&
@@ -1727,10 +1741,21 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
 
     // check if the dataset exists
     H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0)
+    herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
+                                                 hdf5_dset_name.c_str(),
+                                                 &h5_obj_info,
+                                                 H5O_INFO_ALL,
+                                                 H5P_DEFAULT);
+#else
     herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                  hdf5_dset_name.c_str(),
                                                  &h5_obj_info,
                                                  H5P_DEFAULT);
+#endif
+
+
 
     hid_t h5_child_id = -1;
 
@@ -1799,10 +1824,19 @@ write_conduit_empty_to_hdf5_group(hid_t hdf5_group_id,
 
     // check if the dataset exists
     H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0)
+    herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
+                                                 hdf5_dset_name.c_str(),
+                                                 &h5_obj_info,
+                                                 H5O_INFO_ALL,
+                                                 H5P_DEFAULT);
+#else
     herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                  hdf5_dset_name.c_str(),
                                                  &h5_obj_info,
                                                  H5P_DEFAULT);
+#endif
 
     hid_t h5_child_id = -1;
 
@@ -1904,10 +1938,19 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
             // check if the HDF5 group has child with same name
             // as the node's child
             H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0)
+            herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
+                                                         child_name.c_str(),
+                                                         &h5_obj_info,
+                                                         H5O_INFO_ALL,
+                                                         H5P_DEFAULT);
+#else
             herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                          child_name.c_str(),
                                                          &h5_obj_info,
                                                          H5P_DEFAULT);
+#endif
 
             hid_t h5_child_id = -1;
 
@@ -2126,9 +2169,14 @@ remove_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
 struct h5_read_opdata
 {
     unsigned                recurs;      /* Recursion level.  0=root */
-    struct h5_read_opdata   *prev;        /* Pointer to previous opdata */
-    haddr_t                 addr;        /* Group address */
+    struct h5_read_opdata   *prev;       /* Pointer to previous opdata */
 
+#if H5_VERSION_GE(1, 12, 0)
+    H5O_token_t             token;       /* Group token */
+#else
+    haddr_t                 addr;        /* Group address */
+#endif
+    
     // pointer to conduit node, anchors traversal to
     Node            *node;
     const Node      *opts;
@@ -2148,10 +2196,41 @@ struct h5_read_opdata
 //  target_addr.  Returns 1 if a match is found, and 0
 //  otherwise.
 //---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// -- hdf5 1.12 implementation
+//---------------------------------------------------------------------------//
+#if H5_VERSION_GE(1, 12, 0)
+int
+h5_group_check(h5_read_opdata *od,
+               H5O_token_t target_token)
+{
+    
+    if (od->token == target_token)
+    {
+        /* Addresses match */
+        return 1;
+    }
+    else if (!od->recurs)
+    {
+        /* Root group reached with no matches */
+        return 0;
+    }
+    else
+    {
+        /* Recursively examine the next node */
+        return h5_group_check(od->prev, target_token);
+    }
+}
+#else
+//---------------------------------------------------------------------------//
+// -- pre hdf5 1.12 implementation
+//---------------------------------------------------------------------------//
 int
 h5_group_check(h5_read_opdata *od,
                haddr_t target_addr)
 {
+    
     if (od->addr == target_addr)
     {
         /* Addresses match */
@@ -2168,7 +2247,7 @@ h5_group_check(h5_read_opdata *od,
         return h5_group_check(od->prev, target_addr);
     }
 }
-
+#endif
 
 //---------------------------------------------------------------------------//
 Node *
@@ -2244,10 +2323,19 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
      * The name of the object is passed to this function by
      * the Library.
      */
+
+#if H5_VERSION_GE(1, 12, 0)
+    h5_status = H5Oget_info_by_name(hdf5_id,
+                                    hdf5_path,
+                                    &h5_info_buf,
+                                    H5O_INFO_ALL,
+                                    H5P_DEFAULT);
+#else
     h5_status = H5Oget_info_by_name(hdf5_id,
                                     hdf5_path,
                                     &h5_info_buf,
                                     H5P_DEFAULT);
+#endif
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
                                                     hdf5_id,
@@ -2275,7 +2363,11 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
              * reference count was manually manipulated with
              * H5Odecr_refcount.
              */
+#if H5_VERSION_GE(1, 12, 0)
+            if ( h5_group_check (h5_od, h5_info_buf.token) )
+#else
             if ( h5_group_check (h5_od, h5_info_buf.addr) )
+#endif
             {
                 // skip cycles in the graph ...
             }
@@ -2369,8 +2461,14 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 {
     // get info, we need to get the obj addr for cycle tracking
     H5O_info_t h5_info_buf;
+#if H5_VERSION_GE(1, 12, 0)
+    herr_t h5_status = H5Oget_info(hdf5_group_id,
+                                   &h5_info_buf,
+                                   H5P_DEFAULT);
+#else
     herr_t h5_status = H5Oget_info(hdf5_group_id,
                                    &h5_info_buf);
+#endif 
 
     // Check if this is a list or an object case
     if(check_if_hdf5_group_has_conduit_list_attribute(hdf5_group_id,
@@ -2390,7 +2488,11 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
     // setup linked list tracking that allows us to detect cycles
     h5_od.recurs = 0;
     h5_od.prev = NULL;
+#if H5_VERSION_GE(1, 12, 0)
+    h5_od.token = h5_info_buf.token;
+#else
     h5_od.addr = h5_info_buf.addr;
+#endif
     // attach the pointer to our node
     h5_od.node = &dest;
     h5_od.opts = &opts;
@@ -2681,10 +2783,14 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
                                  const Node &opts,
                                  Node &dest)
 {
-    herr_t     h5_status = 0;
     H5O_info_t h5_info_buf;
 
-    h5_status = H5Oget_info(hdf5_id,&h5_info_buf);
+#if H5_VERSION_GE(1, 12, 0)
+    herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf,H5P_DEFAULT);
+#else
+    herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf)l
+#endif 
+
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
                                                     hdf5_id,
@@ -3647,11 +3753,21 @@ void hdf5_group_list_child_names(hid_t hdf5_id,
 
     H5O_info_t h5_info_buf;
 
-    // Get type of the object
+
+#if H5_VERSION_GE(1, 12, 0)
+    herr_t h5_status = H5Oget_info_by_name(hdf5_id,
+                                           hdf5_path.c_str(),
+                                           &h5_info_buf,
+                                           H5O_INFO_ALL,
+                                           H5P_DEFAULT);
+#else
     herr_t h5_status = H5Oget_info_by_name(hdf5_id,
                                            hdf5_path.c_str(),
                                            &h5_info_buf,
                                            H5P_DEFAULT);
+#endif
+
+    // Get type of the object
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
                                                     hdf5_id,
