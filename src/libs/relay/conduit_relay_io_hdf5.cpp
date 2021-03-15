@@ -2788,7 +2788,7 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 #if H5_VERSION_GE(1, 12, 0)
     herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf,H5P_DEFAULT);
 #else
-    herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf)l
+    herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf);
 #endif 
 
 
