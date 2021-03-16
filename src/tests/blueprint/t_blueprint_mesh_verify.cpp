@@ -10,7 +10,7 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
-#include "conduit_blueprint_mesh_util.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
@@ -21,7 +21,7 @@
 
 using namespace conduit;
 using namespace conduit::utils;
-namespace bputil = conduit::blueprint::mesh::util;
+namespace bputils = conduit::blueprint::mesh::utils;
 
 /// Testing Constants ///
 
@@ -37,7 +37,7 @@ std::vector<std::string> get_log_keywords()
 
 const std::vector<std::string> LOG_KEYWORDS = get_log_keywords();
 const std::vector<std::string> COORDINATE_COORDSYSS[] =
-    {bputil::CARTESIAN_AXES, bputil::CYLINDRICAL_AXES, bputil::SPHERICAL_AXES};
+    {bputils::CARTESIAN_AXES, bputils::CYLINDRICAL_AXES, bputils::SPHERICAL_AXES};
 
 typedef bool (*VerifyFun)(const Node&, Node&);
 
@@ -228,9 +228,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_logical_dims)
     Node n, info;
     CHECK_MESH(verify_coordset_logical,n,info,false);
 
-    EXPECT_TRUE(is_valid_coordsys(verify_coordset_logical,bputil::LOGICAL_AXES));
+    EXPECT_TRUE(is_valid_coordsys(verify_coordset_logical,bputils::LOGICAL_AXES));
 
-    EXPECT_FALSE(is_valid_coordsys(verify_coordset_logical,bputil::CARTESIAN_AXES));
+    EXPECT_FALSE(is_valid_coordsys(verify_coordset_logical,bputils::CARTESIAN_AXES));
 }
 
 
@@ -243,11 +243,11 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_origin)
     // FIXME: The origin verification function shouldn't accept an empty node.
     // CHECK_MESH(verify_uniform_origin,n,info,false);
 
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputil::CARTESIAN_AXES));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputil::SPHERICAL_AXES));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputil::CYLINDRICAL_AXES));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::CARTESIAN_AXES));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::SPHERICAL_AXES));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::CYLINDRICAL_AXES));
 
-    EXPECT_FALSE(is_valid_coordsys(verify_uniform_origin,bputil::LOGICAL_AXES));
+    EXPECT_FALSE(is_valid_coordsys(verify_uniform_origin,bputils::LOGICAL_AXES));
 }
 
 
@@ -368,9 +368,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
     // for the rectilinear verify function.
     /*
     n["values"].reset();
-    for(index_t ci = 0; ci < bputil::LOGICAL_AXES.size(); ci++)
+    for(index_t ci = 0; ci < bputils::LOGICAL_AXES.size(); ci++)
     {
-        n["values"][bputil::LOGICAL_AXES[ci]].set(DataType::float64(10));
+        n["values"][bputils::LOGICAL_AXES[ci]].set(DataType::float64(10));
         CHECK_MESH(verify_rectilinear_coordset,n,info,false);
     }
     */
@@ -410,9 +410,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     // for the explicit verify function.
     /*
     n["values"].reset();
-    for(index_t ci = 0; ci < bputil::LOGICAL_AXES.size(); ci++)
+    for(index_t ci = 0; ci < bputils::LOGICAL_AXES.size(); ci++)
     {
-        n["values"][bputil::LOGICAL_AXES[ci]].set(DataType::float64(10));
+        n["values"][bputils::LOGICAL_AXES[ci]].set(DataType::float64(10));
         CHECK_MESH(verify_explicit_coordset,n,info,false);
     }
     */
