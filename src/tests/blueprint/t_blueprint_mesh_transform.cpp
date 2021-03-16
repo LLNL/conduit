@@ -10,7 +10,7 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
-#include "conduit_blueprint_util_mesh.hpp"
+#include "conduit_blueprint_mesh_util.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
@@ -22,7 +22,7 @@
 
 using namespace conduit;
 using namespace conduit::utils;
-namespace bputils = conduit::blueprint::util::mesh;
+namespace bputil = conduit::blueprint::mesh::util;
 
 /// Testing Constants ///
 
@@ -121,18 +121,18 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
         blueprint::mesh::coordset::rectilinear::verify,
         blueprint::mesh::coordset::_explicit::verify};
 
-    for(size_t xi = 0; xi < bputils::COORD_TYPES.size(); xi++)
+    for(size_t xi = 0; xi < bputil::COORD_TYPES.size(); xi++)
     {
-        const std::string icoordset_type = bputils::COORD_TYPES[xi];
+        const std::string icoordset_type = bputil::COORD_TYPES[xi];
         const std::string icoordset_braid = get_braid_type(icoordset_type);
 
         conduit::Node imesh;
         blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(size_t xj = xi + 1; xj < bputils::COORD_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < bputil::COORD_TYPES.size(); xj++)
         {
-            const std::string jcoordset_type = bputils::COORD_TYPES[xj];
+            const std::string jcoordset_type = bputil::COORD_TYPES[xj];
             const std::string jcoordset_braid = get_braid_type(jcoordset_type);
 
             // NOTE: The following lines are for debugging purposes only.
@@ -164,24 +164,24 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
         {NULL, NULL, blueprint::mesh::coordset::rectilinear::to_explicit},
         {NULL, NULL, NULL}};
 
-    for(size_t xi = 0; xi < bputils::COORD_TYPES.size(); xi++)
+    for(size_t xi = 0; xi < bputil::COORD_TYPES.size(); xi++)
     {
-        const std::string icoordset_type = bputils::COORD_TYPES[xi];
+        const std::string icoordset_type = bputil::COORD_TYPES[xi];
         const std::string icoordset_braid = get_braid_type(icoordset_type);
 
         conduit::Node imesh;
         blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(size_t xj = xi + 1; xj < bputils::COORD_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < bputil::COORD_TYPES.size(); xj++)
         {
             conduit::Node jcoordset;
-            const std::string jcoordset_type = bputils::COORD_TYPES[xj];
+            const std::string jcoordset_type = bputil::COORD_TYPES[xj];
             XformCoordsFun to_new_coordset = xform_funs[xi][xj];
 
-            for(size_t ii = 0; ii < bputils::INT_DTYPES.size(); ii++)
+            for(size_t ii = 0; ii < bputil::INT_DTYPES.size(); ii++)
             {
-                for(size_t fi = 0; fi < bputils::FLOAT_DTYPES.size(); fi++)
+                for(size_t fi = 0; fi < bputil::FLOAT_DTYPES.size(); fi++)
                 {
                     // NOTE: The following lines are for debugging purposes only.
                     std::cout << "Testing " <<
@@ -191,13 +191,13 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
                     conduit::Node icoordset = imesh["coordsets"].child(0);
                     conduit::Node jcoordset;
 
-                    set_node_data(icoordset, bputils::INT_DTYPES[ii]);
-                    set_node_data(icoordset, bputils::FLOAT_DTYPES[fi]);
+                    set_node_data(icoordset, bputil::INT_DTYPES[ii]);
+                    set_node_data(icoordset, bputil::FLOAT_DTYPES[fi]);
 
                     to_new_coordset(icoordset, jcoordset);
 
-                    EXPECT_TRUE(verify_node_data(jcoordset, bputils::INT_DTYPES[ii]));
-                    EXPECT_TRUE(verify_node_data(jcoordset, bputils::FLOAT_DTYPES[fi]));
+                    EXPECT_TRUE(verify_node_data(jcoordset, bputil::INT_DTYPES[ii]));
+                    EXPECT_TRUE(verify_node_data(jcoordset, bputil::FLOAT_DTYPES[fi]));
                 }
             }
         }
@@ -229,9 +229,9 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
 
     // NOTE(JRC): We skip the "points" topology during this general check
     // because its rules are peculiar and specific.
-    for(size_t xi = 1; xi < bputils::TOPO_TYPES.size(); xi++)
+    for(size_t xi = 1; xi < bputil::TOPO_TYPES.size(); xi++)
     {
-        const std::string itopology_type = bputils::TOPO_TYPES[xi];
+        const std::string itopology_type = bputil::TOPO_TYPES[xi];
         const std::string itopology_braid = get_braid_type(itopology_type);
 
         conduit::Node imesh;
@@ -239,9 +239,9 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
         const conduit::Node &itopology = imesh["topologies"].child(0);
         const conduit::Node &icoordset = imesh["coordsets"].child(0);
 
-        for(size_t xj = xi + 1; xj < bputils::TOPO_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < bputil::TOPO_TYPES.size(); xj++)
         {
-            const std::string jtopology_type = bputils::TOPO_TYPES[xj];
+            const std::string jtopology_type = bputil::TOPO_TYPES[xj];
             const std::string jtopology_braid = get_braid_type(jtopology_type);
 
             // NOTE: The following lines are for debugging purposes only.
@@ -294,9 +294,9 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
 
     // NOTE(JRC): We skip the "points" topology during this general check
     // because its rules are peculiar and specific.
-    for(size_t xi = 1; xi < bputils::TOPO_TYPES.size(); xi++)
+    for(size_t xi = 1; xi < bputil::TOPO_TYPES.size(); xi++)
     {
-        const std::string itopology_type = bputils::TOPO_TYPES[xi];
+        const std::string itopology_type = bputil::TOPO_TYPES[xi];
         const std::string itopology_braid = get_braid_type(itopology_type);
 
         // NOTE(JRC): For the data type checks, we're only interested in the parts
@@ -310,14 +310,14 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
             ibase.set(temp);
         }
 
-        for(size_t xj = xi + 1; xj < bputils::TOPO_TYPES.size(); xj++)
+        for(size_t xj = xi + 1; xj < bputil::TOPO_TYPES.size(); xj++)
         {
-            const std::string jtopology_type = bputils::TOPO_TYPES[xj];
+            const std::string jtopology_type = bputil::TOPO_TYPES[xj];
             XformTopoFun to_new_topology = xform_funs[xi][xj];
 
-            for(size_t ii = 0; ii < bputils::INT_DTYPES.size(); ii++)
+            for(size_t ii = 0; ii < bputil::INT_DTYPES.size(); ii++)
             {
-                for(size_t fi = 0; fi < bputils::FLOAT_DTYPES.size(); fi++)
+                for(size_t fi = 0; fi < bputil::FLOAT_DTYPES.size(); fi++)
                 {
                     // NOTE: The following lines are for debugging purposes only.
                     std::cout << "Testing " <<
@@ -332,13 +332,13 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
                     conduit::Node jtopology = jmesh["topologies"][itopology.name()];
                     conduit::Node jcoordset = jmesh["coordsets"][icoordset.name()];
 
-                    set_node_data(imesh, bputils::INT_DTYPES[ii]);
-                    set_node_data(imesh, bputils::FLOAT_DTYPES[fi]);
+                    set_node_data(imesh, bputil::INT_DTYPES[ii]);
+                    set_node_data(imesh, bputil::FLOAT_DTYPES[fi]);
 
                     to_new_topology(itopology, jtopology, jcoordset);
 
-                    EXPECT_TRUE(verify_node_data(jmesh, bputils::INT_DTYPES[ii]));
-                    EXPECT_TRUE(verify_node_data(jmesh, bputils::FLOAT_DTYPES[fi]));
+                    EXPECT_TRUE(verify_node_data(jmesh, bputil::INT_DTYPES[ii]));
+                    EXPECT_TRUE(verify_node_data(jmesh, bputil::FLOAT_DTYPES[fi]));
                 }
             }
         }

@@ -12,8 +12,8 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_o2mrelation.hpp"
+#include "conduit_blueprint_o2mrelation_util.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
-#include "conduit_blueprint_util_o2mrelation.hpp"
 #include "conduit_log.hpp"
 
 //-----------------------------------------------------------------------------
@@ -28,7 +28,7 @@ using namespace conduit;
 // Easier access to the Conduit logging functions
 using namespace conduit::utils;
 // access conduit blueprint mesh utilities
-namespace o2mutils = conduit::blueprint::util::o2mrelation;
+namespace o2mutil = conduit::blueprint::o2mrelation::util;
 
 typedef conduit::blueprint::o2mrelation::O2MIterator O2MIterator;
 
@@ -82,7 +82,7 @@ bool verify(const conduit::Node &n,
     // Verify Correctness of Meta Sections //
 
     std::set<const conduit::Node*> o2m_nodeset;
-    for(const std::string &o2m_path : o2mutils::O2M_PATHS)
+    for(const std::string &o2m_path : o2mutil::O2M_PATHS)
     {
         const conduit::Node *o2m_node = n.fetch_ptr(o2m_path);
         o2m_nodeset.insert(o2m_node);
@@ -160,7 +160,7 @@ std::vector<std::string> data_paths(const conduit::Node &o2mrelation)
     {
         const Node &nchld = o2miter.next();
         const std::string &nchld_name = o2miter.name();
-        if(std::find(o2mutils::O2M_PATHS.begin(), o2mutils::O2M_PATHS.end(), nchld_name) == o2mutils::O2M_PATHS.end() &&
+        if(std::find(o2mutil::O2M_PATHS.begin(), o2mutil::O2M_PATHS.end(), nchld_name) == o2mutil::O2M_PATHS.end() &&
             nchld.dtype().is_number())
         {
             paths.push_back(nchld_name);

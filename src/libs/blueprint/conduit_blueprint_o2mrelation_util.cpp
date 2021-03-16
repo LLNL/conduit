@@ -4,26 +4,20 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_util_mesh.hpp
+/// file: conduit_blueprint_util_mesh.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_UTIL_O2MRELATION_HPP
-#define CONDUIT_BLUEPRINT_UTIL_O2MRELATION_HPP
-
 //-----------------------------------------------------------------------------
-// std includes
-//-----------------------------------------------------------------------------
-#include <map>
-#include <set>
+// std lib includes
 #include <string>
+#include <map>
 #include <vector>
 
 //-----------------------------------------------------------------------------
-// conduit lib includes
+// conduit includes
 //-----------------------------------------------------------------------------
-#include "conduit.hpp"
-#include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_o2mrelation.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -40,27 +34,22 @@ namespace blueprint
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::util --
 //-----------------------------------------------------------------------------
-namespace util
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::o2mrelation --
-//-----------------------------------------------------------------------------
 namespace o2mrelation
 {
 
 //-----------------------------------------------------------------------------
-/// blueprint o2mrelation utility constants
+// -- begin conduit::blueprint::o2mrelation::util --
 //-----------------------------------------------------------------------------
+namespace util
+{
 
-static const std::vector<std::string> O2M_PATHS = {"sizes", "offsets", "indices"};
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util::o2mrelation --
+// -- end conduit::blueprint::o2mrelation::util --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::util --
@@ -77,5 +66,3 @@ static const std::vector<std::string> O2M_PATHS = {"sizes", "offsets", "indices"
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
-
-#endif

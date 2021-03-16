@@ -4,7 +4,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_util_mesh.cpp
+/// file: conduit_blueprint_mesh_util.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
-#include "conduit_blueprint_util_mesh.hpp"
+#include "conduit_blueprint_mesh_util.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -38,15 +38,15 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util --
+// -- begin conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
-namespace util
+namespace mesh
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::mesh --
+// -- begin conduit::blueprint::mesh::util --
 //-----------------------------------------------------------------------------
-namespace mesh
+namespace util
 {
 
 //-----------------------------------------------------------------------------
@@ -766,7 +766,7 @@ find_reference_node(const Node &node, const std::string &ref_key, Node &ref)
 }
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::mesh::coordset --
+// -- begin conduit::blueprint::mesh::util::coordset --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -912,11 +912,11 @@ coordset::coordsys(const Node &n)
 }
 
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util::mesh::coorset --
+// -- end conduit::blueprint::mesh::util::coorset --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::mesh::topology --
+// -- begin conduit::blueprint::mesh::util::topology --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -1002,7 +1002,7 @@ topology::unstructured::generate_offsets(Node &n,
     {
         const Node &n_const = n;
         Node &offsets = n["elements/offsets"];
-        blueprint::util::mesh::topology::unstructured::generate_offsets(n_const, offsets);
+        blueprint::mesh::util::topology::unstructured::generate_offsets(n_const, offsets);
         if(&dest != &offsets)
         {
             dest.set_external(offsets);
@@ -1111,18 +1111,18 @@ topology::unstructured::generate_offsets(const Node &n,
 }
 
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util::mesh::topology --
+// -- end conduit::blueprint::mesh::util::topology --
 //-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util::mesh --
+// -- end conduit::blueprint::mesh::util --
 //-----------------------------------------------------------------------------
 
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util --
+// -- end conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
 
 

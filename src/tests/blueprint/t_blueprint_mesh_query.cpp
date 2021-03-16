@@ -10,7 +10,7 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
-#include "conduit_blueprint_util_mesh.hpp"
+#include "conduit_blueprint_mesh_util.hpp"
 #include "conduit_log.hpp"
 
 #include <algorithm>
@@ -21,7 +21,7 @@
 
 using namespace conduit;
 using namespace conduit::utils;
-namespace bputils = conduit::blueprint::util::mesh;
+namespace bputils = conduit::blueprint::mesh::util;
 
 /// Testing Constants ///
 

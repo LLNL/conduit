@@ -4,12 +4,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_util_mesh.hpp
+/// file: conduit_blueprint_mesh_util.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_UTIL_MESH_HPP
-#define CONDUIT_BLUEPRINT_UTIL_MESH_HPP
+#ifndef CONDUIT_BLUEPRINT_MESH_UTIL_HPP
+#define CONDUIT_BLUEPRINT_MESH_UTIL_HPP
 
 //-----------------------------------------------------------------------------
 // std includes
@@ -38,15 +38,15 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util --
+// -- begin conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
-namespace util
+namespace mesh
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::mesh --
+// -- begin conduit::blueprint::mesh::util --
 //-----------------------------------------------------------------------------
-namespace mesh
+namespace util
 {
 
 //-----------------------------------------------------------------------------
@@ -243,7 +243,7 @@ DataType find_widest_dtype(const Node &node, const std::vector<DataType> &defaul
 bool find_reference_node(const Node &node, const std::string &ref_key, Node &ref);
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::mesh::coordset --
+// -- begin conduit::blueprint::mesh::util::coordset --
 //-----------------------------------------------------------------------------
 namespace coordset
 {
@@ -260,11 +260,11 @@ namespace coordset
     std::string coordsys(const Node &n);
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util::mesh::coorset --
+// -- end conduit::blueprint::mesh::util::coorset --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::util::mesh::topology --
+// -- begin conduit::blueprint::mesh::util::topology --
 //-----------------------------------------------------------------------------
 namespace topology
 {
@@ -275,7 +275,7 @@ namespace topology
     index_t length(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
-    // -- begin conduit::blueprint::util::mesh::topology::unstructured --
+    // -- begin conduit::blueprint::mesh::util::topology::unstructured --
     //-------------------------------------------------------------------------
     namespace unstructured
     {
@@ -289,22 +289,22 @@ namespace topology
                               Node &dest);
     }
     //-------------------------------------------------------------------------
-    // -- end conduit::blueprint::util::mesh::topology::unstructured --
+    // -- end conduit::blueprint::mesh::util::topology::unstructured --
     //-------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util::mesh::topology --
+// -- end conduit::blueprint::mesh::util::topology --
 //-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util::mesh --
+// -- end conduit::blueprint::mesh::util --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::util --
+// -- end conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
 
 
