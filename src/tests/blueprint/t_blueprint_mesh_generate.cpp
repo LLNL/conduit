@@ -16,6 +16,8 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_o2mrelation_utils.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
@@ -31,6 +33,8 @@
 using namespace conduit;
 using namespace conduit::blueprint;
 using namespace conduit::utils;
+namespace bputils = conduit::blueprint::mesh::utils;
+namespace o2mutils = conduit::blueprint::o2mrelation::utils;
 
 /// Testing Constants ///
 
@@ -49,9 +53,11 @@ static const index_t ELEM_TYPE_FACES[]         = {     1,       1,      4,      
 static const index_t ELEM_TYPE_FACE_INDICES[]  = {     3,       4,      3,      4};
 static const index_t ELEM_TYPE_COUNT = sizeof(ELEM_TYPE_LIST) / sizeof(ELEM_TYPE_LIST[0]);
 
-static const std::string CSET_AXES[] = {"x", "y", "z"};
-static const std::string O2M_PATHS[] = {"sizes", "offsets", "values"};
-static const index_t O2M_PATH_COUNT = sizeof(O2M_PATHS) / sizeof(O2M_PATHS[0]);
+static const std::vector<std::string> CSET_AXES = bputils::CARTESIAN_AXES;
+// FIXME(JRC): Why don't the 'generate' functions have an 'indices' component?
+// This should be required, alongside 'sizes'.
+// static const std::vector<std::string> O2M_PATHS = o2mutils::O2M_PATHS;
+static const std::vector<std::string> O2M_PATHS = {"sizes", "offsets", "values"};
 
 const static index_t TRIVIAL_GRID[] = {2, 2, 2};
 const static index_t SIMPLE_GRID[] = {3, 3, 3};
@@ -1117,9 +1123,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
         {
             const conduit::Node& map_node = (mi == 0) ? t2p_map : p2t_map;
             EXPECT_TRUE(o2mrelation::verify(map_node, info));
-            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            for(const std::string &o2m_path : O2M_PATHS)
             {
-                const std::string& o2m_path = O2M_PATHS[pi];
                 EXPECT_TRUE(map_node.has_child(o2m_path));
                 EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
@@ -1191,9 +1196,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
         {
             const conduit::Node& map_node = (mi == 0) ? t2l_map : l2t_map;
             EXPECT_TRUE(o2mrelation::verify(map_node, info));
-            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            for(const std::string &o2m_path : O2M_PATHS)
             {
-                const std::string& o2m_path = O2M_PATHS[pi];
                 EXPECT_TRUE(map_node.has_child(o2m_path));
                 EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
@@ -1271,9 +1275,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
         {
             const conduit::Node& map_node = (mi == 0) ? t2f_map : f2t_map;
             EXPECT_TRUE(o2mrelation::verify(map_node, info));
-            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            for(const std::string &o2m_path : O2M_PATHS)
             {
-                const std::string& o2m_path = O2M_PATHS[pi];
                 EXPECT_TRUE(map_node.has_child(o2m_path));
                 EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
@@ -1379,9 +1382,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
         {
             const conduit::Node& map_node = (mi == 0) ? t2s_map : s2t_map;
             EXPECT_TRUE(o2mrelation::verify(map_node, info));
-            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            for(const std::string &o2m_path : O2M_PATHS)
             {
-                const std::string& o2m_path = O2M_PATHS[pi];
                 EXPECT_TRUE(map_node.has_child(o2m_path));
                 EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
@@ -1539,9 +1541,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         {
             const conduit::Node& map_node = (mi == 0) ? t2c_map : c2t_map;
             EXPECT_TRUE(o2mrelation::verify(map_node, info));
-            for(index_t pi = 0; pi < O2M_PATH_COUNT; pi++)
+            for(const std::string &o2m_path : O2M_PATHS)
             {
-                const std::string& o2m_path = O2M_PATHS[pi];
                 EXPECT_TRUE(map_node.has_child(o2m_path));
                 EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
