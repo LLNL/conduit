@@ -16,11 +16,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Added Relay HDF5 support for reading and writing to an HDF5 dataset with offset.
 - Added `conduit::relay::io::hdf5::read_info` which allows you to obtain metadata from an HDF5 file.
+- Added configure error when conduit lacks MPI support and HDF5 has MPI support
 
 ### Fixed
 
 #### General
-- Fixed missing implementation of DataType::is_index_t 
+- Fixed missing implementation of DataType::is_index_t
+- Fixed issue with compiling t_h5z_zfp_smoke.cpp against an MPI-enabled HDF5.
 
 
 ## [0.7.1] - Released 2021-02-11
