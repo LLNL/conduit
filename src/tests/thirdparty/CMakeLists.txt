@@ -61,7 +61,7 @@ endif()
 
 if(HDF5_FOUND)
     message(STATUS "HDF5 enabled: Adding related unit tests")
-    if(HDF5_IS_PARALLEL AND ENABLE_MPI)
+    if(HDF5_IS_PARALLEL)
        set(HDF5_MPI_DEP mpi)
     endif()
     add_cpp_test(TEST t_hdf5_smoke
@@ -73,7 +73,7 @@ endif()
 
 
 if(SILO_FOUND)
-    if(HDF5_FOUND AND HDF5_IS_PARALLEL AND ENABLE_MPI)
+    if(HDF5_FOUND AND HDF5_IS_PARALLEL)
        set(SILO_HDF5_MPI_DEP mpi)
     endif()
     message(STATUS "Silo enabled: Adding related unit tests")
@@ -116,8 +116,11 @@ endif()
 
 if(H5ZZFP_FOUND)
     message(STATUS "h5z-zfp enabled: Adding related unit tests")
+    if(HDF5_IS_PARALLEL)
+        set(H5ZZFP_MPI_DEP mpi)
+    endif()
     add_cpp_test(TEST t_h5z_zfp_smoke
-                 DEPENDS_ON h5zzfp zfp hdf5
+                 DEPENDS_ON h5zzfp zfp hdf5 ${H5ZZFP_MPI_DEP}
                  FOLDER tests/thirdparty)
 else()
     message(STATUS "h5z-zfp disabled: Skipping related tests")
