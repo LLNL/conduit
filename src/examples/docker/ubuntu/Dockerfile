@@ -2,7 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Conduit.
 
-FROM ubuntu:trusty
+FROM ubuntu:18.04
 MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 
 # fetch build env
