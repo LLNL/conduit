@@ -6,7 +6,7 @@
 "spack_configs_path": "scripts/uberenv_configs/spack_configs",
 "spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_url": "https://github.com/alpine-DAV/spack",
-"spack_branch": "task/2021_01_update_conduit",
+"spack_branch": "task/2021_03_update_conduit",
 "mirror_url": "https://www.ascent-dav.org/mirror/conduit/latest/",
 "spack_activate" : {"py-numpy" : ["+python"], 
                     "py-sphinx": ["+python","+doc"], 
