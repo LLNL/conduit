@@ -135,76 +135,48 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
 {
     int64 par_rank = relay::mpi::rank(comm);
 
-    if (!mesh.dtype().is_empty() &&
-        ::conduit::blueprint::mesh::is_multi_domain(mesh))
+    std::vector<const Node *> domains;
+    if(!::conduit::blueprint::mesh::is_multi_domain(mesh))
     {
-
-        std::vector<conduit::int64> local_domains;
-
-        conduit::NodeConstIterator itr = mesh.children();
-        while (itr.has_next())
-        {
-            const conduit::Node &chld = itr.next();
-            if (chld.has_child("state"))
-            {
-                const conduit::Node &state = chld["state"];
-                if (state.has_child("domain_id"))
-                {
-                    conduit::int64 dom_id = state["domain_id"].as_int64();
-                    local_domains.push_back(dom_id);
-                }
-            }
-        }
-
-        Node num_local, num_global;
-        num_local.set_int64(local_domains.size());
-        num_global.set_int64(0);
-        relay::mpi::sum_all_reduce(num_local, num_global, comm);
-
-        std::vector<int64> local_map(num_global.as_int64(), 0);
-        for (auto m_itr = local_domains.begin(); m_itr != local_domains.end();
-             ++m_itr)
-        {
-            local_map[*m_itr] = par_rank;
-        }
-
-        Node local_par;
-        local_par.set_external(&local_map[0], local_map.size());
-
-        relay::mpi::max_all_reduce(local_par, domain_to_rank_map, comm);
+        domains.push_back(&mesh);
     }
     else
     {
-        int64 par_size = relay::mpi::size(comm);
-
-        std::vector<int64> local_map(par_size, 0);
-        if (mesh.dtype().is_empty())
+        NodeConstIterator itr = mesh.children();
+        while(itr.has_next())
         {
-            local_map[par_rank] = -1;
+            domains.push_back(&itr.next());
         }
-        else
-        {
-            local_map[par_rank] = par_rank; 
-        }
-
-        Node local_full;
-        local_full.set_external(&local_map[0], local_map.size());
-
-        Node global_full;
-        relay::mpi::sum_all_reduce(local_full, global_full, comm);
-
-        conduit::int64_array global_array = global_full.as_int64_array();
-        std::vector<int64> compact_map;
-        for (int i = 0; i < par_size; ++i)
-        {
-            if (global_array[i] != -1)
-            {
-                compact_map.push_back(i);
-            }
-        } 
-
-        domain_to_rank_map.set(compact_map);
     }
+
+    std::vector<int64> local_domains;
+    for(index_t di = 0; di < (index_t)domains.size(); di++)
+    {
+        const conduit::Node &domain = *domains[di];
+
+        int64 domain_id = par_rank;
+        if(domain.has_child("state") && domain["state"].has_child("domain_id"))
+        {
+            domain_id = domain["state/domain_id"].as_int64();
+        }
+        local_domains.push_back(domain_id);
+    }
+
+    Node num_local, num_global;
+    num_local.set_int64(local_domains.size());
+    num_global.set_int64(0);
+    relay::mpi::sum_all_reduce(num_local, num_global, comm);
+
+    std::vector<int64> local_map(num_global.as_int64(), 0);
+    for(auto m_itr = local_domains.begin(); m_itr != local_domains.end(); ++m_itr)
+    {
+        local_map[*m_itr] = par_rank;
+    }
+
+    Node local_par;
+    local_par.set_external(&local_map[0], local_map.size());
+
+    relay::mpi::max_all_reduce(local_par, domain_to_rank_map, comm);
 }
 
 //-----------------------------------------------------------------------------
