@@ -243,4 +243,48 @@ TEST(conduit_relay_io_hdf5, hdf5_dset_slab_read_test)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, hdf5_dset_slab_read_test_using_opts)
+{
+    // create a simple buffer of doubles
+    Node n;
+
+    n["full_data"].set(DataType::c_double(20));
+
+    double *vin = n["full_data"].value();
+
+    for(int i=0;i<20;i++)
+    {
+        vin[i] = i;
+    }
+
+    CONDUIT_INFO("Example Full Data")
+
+    n.print();
+    io::hdf5_write(n,"tout_hdf5_slab_opts.hdf5");
+
+    // read 10 [1->11) entries (as above test, but using hdf5 read options)
+
+    Node n_res;
+    Node opts;
+    opts["offset"] = 1;
+    opts["stride"] = 2;
+    opts["size"]   = 10;
+
+    Node nload;
+    io::hdf5_read("tout_hdf5_slab_opts.hdf5:full_data",opts,nload);
+    nload.print();
+
+    CONDUIT_INFO("Load Result");
+    nload.print();
+
+    double *vload = nload.value();
+    for(int i=0;i<10;i++)
+    {
+        EXPECT_NEAR(vload[i],1.0 + i * 2.0,1e-3);
+    }
+}
+
+
+
 

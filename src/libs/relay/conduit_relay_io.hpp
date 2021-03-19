@@ -13,7 +13,7 @@
 #define CONDUIT_RELAY_IO_HPP
 
 //-----------------------------------------------------------------------------
-// conduit lib include 
+// conduit lib include
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 #include "conduit_relay_exports.h"
@@ -62,6 +62,11 @@ void CONDUIT_RELAY_API save(const Node &node,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save(const Node &node,
                             const std::string &path,
+                            const Node &options);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save(const Node &node,
+                            const std::string &path,
                             const std::string &protocol);
 
 //-----------------------------------------------------------------------------
@@ -77,6 +82,11 @@ void CONDUIT_RELAY_API save(const Node &node,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_merged(const Node &node,
                                    const std::string &path);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_merged(const Node &node,
+                                   const std::string &path,
+                                   const Node &options);
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_merged(const Node &node,
@@ -120,6 +130,11 @@ void CONDUIT_RELAY_API load(const std::string &path,
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load(const std::string &path,
+                            const Node &options,
+                            Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load(const std::string &path,
                             const std::string &protocol,
                             Node &node);
 
@@ -146,7 +161,7 @@ void CONDUIT_RELAY_API load(const std::string &path,
 
 ///
 /// ``load_merged`` works like an update, for the object case, entries are read
-///  into the node. If the node is already in the OBJECT_T role, children are 
+///  into the node. If the node is already in the OBJECT_T role, children are
 ///  added
 ///
 
@@ -156,7 +171,18 @@ void CONDUIT_RELAY_API load_merged(const std::string &path,
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load_merged(const std::string &path,
+                                   const Node &options,
+                                   Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_merged(const std::string &path,
                                    const std::string &protocol,
+                                   Node &node);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_merged(const std::string &path,
+                                   const std::string &protocol,
+                                   const Node &options,
                                    Node &node);
 
 ///
@@ -189,4 +215,3 @@ int CONDUIT_RELAY_API query_number_of_domains(const std::string &path);
 
 
 #endif
-

@@ -224,7 +224,6 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
     // this should succeed
     io::hdf5_write(n,h5_dset_id);
 
-
     // this should also succeed
     vals[1] = 16;
 
@@ -246,8 +245,440 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
     H5Dclose(h5_dset_id);
     H5Fclose(h5_file_id);
 
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_extendible_hdf5_dataset_handle_with_offset)
+{
+    std::string ofname = "tout_hdf5_wr_conduit_leaf_to_hdf5_extendible_dataset_handle_with_offset.hdf5";
+
+    hid_t h5_file_id = H5Fcreate(ofname.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 H5P_DEFAULT,
+                                 H5P_DEFAULT);
+
+    // create a dataset for a 16-bit signed integer  array with 2 elements
+
+
+    hid_t h5_dtype = H5T_NATIVE_SHORT;
+
+    hsize_t num_eles = 2;
+    hsize_t dims[1] = {H5S_UNLIMITED};
+
+    hid_t   h5_dspace_id = H5Screate_simple(1,
+                                            &num_eles,
+                                            dims);
+
+    /*
+     * Modify dataset creation properties, i.e. enable chunking.
+     */
+    hid_t cparms;
+    hsize_t chunk_dims[1] = {1};
+
+    cparms = H5Pcreate (H5P_DATASET_CREATE);
+    H5Pset_chunk(cparms, 1, chunk_dims);
+
+
+    // create new dataset
+    hid_t h5_dset_id  = H5Dcreate1(h5_file_id,
+                                   "mydata",
+                                   h5_dtype,
+                                   h5_dspace_id,
+                                   cparms);
+
+    Node n, opts;
+    n.set(DataType::c_short(2));
+    short_array vals = n.value();
+
+    vals[0] = -16;
+    vals[1] = -15;
+
+    // this should succeed
+    io::hdf5_write(n,h5_dset_id);
+
+    vals[0] = 1;
+    vals[1] = 2;
+    opts["offset"] = 2;
+    opts["stride"] = 1;
+
+    io::hdf5_write(n,h5_dset_id,opts);
+
+    Node n_read, opts_read;
+
+    io::hdf5_read_info(h5_dset_id,opts_read,n_read);
+    EXPECT_EQ(4,(int) n_read["num_elements"].to_value());
+
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // check values of data
+    short_array read_vals = n_read.value();
+    EXPECT_EQ(-16,read_vals[0]);
+    EXPECT_EQ(-15,read_vals[1]);
+    EXPECT_EQ(1,read_vals[2]);
+    EXPECT_EQ(2,read_vals[3]);
+
+    opts_read["offset"] = 2;
+    opts_read["stride"] = 1;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // check values of data
+    read_vals = n_read.value();
+    EXPECT_EQ(1,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+
+    vals[0] = -1;
+    vals[1] = -3;
+    opts["offset"] = 0;
+    opts["stride"] = 2;
+
+    io::hdf5_write(n,h5_dset_id,opts);
+
+    opts_read["offset"] = 0;
+    opts_read["stride"] = 1;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // check values of data
+    read_vals = n_read.value();
+    EXPECT_EQ(-1,read_vals[0]);
+    EXPECT_EQ(-15,read_vals[1]);
+    EXPECT_EQ(-3,read_vals[2]);
+    EXPECT_EQ(2,read_vals[3]);
+
+    vals[0] = 5;
+    vals[1] = 6;
+    opts["offset"] = 7;
+    opts["stride"] = 1;
+
+    io::hdf5_write(n,h5_dset_id,opts);
+
+    opts_read["offset"] = 0;
+    opts_read["stride"] = 1;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+    // check values of data
+    read_vals = n_read.value();
+    EXPECT_EQ(-1,read_vals[0]);
+    EXPECT_EQ(-15,read_vals[1]);
+    EXPECT_EQ(-3,read_vals[2]);
+    EXPECT_EQ(2,read_vals[3]);
+    EXPECT_EQ(0,read_vals[4]);
+    EXPECT_EQ(0,read_vals[5]);
+    EXPECT_EQ(0,read_vals[6]);
+    EXPECT_EQ(5,read_vals[7]);
+    EXPECT_EQ(6,read_vals[8]);
+
+    opts["offset"] = -1;
+    opts["stride"] = 2;
+    opts_read["offset"] = -1;
+    opts_read["stride"] = 2;
+
+    //this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
+    EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
+
+    opts["offset"] = 0;
+    opts["stride"] = 0;
+    opts_read["offset"] = 0;
+    opts_read["stride"] = 0;
+
+    //this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
+    EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
+
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+    H5Fclose(h5_file_id);
+
 
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_fixed_hdf5_dataset_handle_with_offset)
+{
+    std::string ofname = "tout_hdf5_wr_conduit_leaf_to_fixed_hdf5_dataset_handle_with_offset.hdf5";
+
+    hid_t h5_file_id = H5Fcreate(ofname.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 H5P_DEFAULT,
+                                 H5P_DEFAULT);
+
+    // create a dataset for a 16-bit signed integer  array with 2 elements
+
+
+    hid_t h5_dtype = H5T_NATIVE_SHORT;
+
+    hsize_t num_eles = 2;
+
+    hid_t   h5_dspace_id = H5Screate_simple(1,
+                                            &num_eles,
+                                            NULL);
+
+    // create new dataset
+    hid_t h5_dset_id  = H5Dcreate(h5_file_id,
+                                   "mydata",
+                                   h5_dtype,
+                                   h5_dspace_id,
+                                   H5P_DEFAULT,
+                                   H5P_DEFAULT,
+                                   H5P_DEFAULT);
+
+    Node n, opts;
+    n.set(DataType::c_short(2));
+    short_array vals = n.value();
+
+    vals[0] = -16;
+    vals[1] = -15;
+
+    // this should succeed
+    io::hdf5_write(n,h5_dset_id);
+
+    vals[0] = 1;
+    vals[1] = 2;
+    opts["offset"] = 2;
+    opts["stride"] = 1;
+
+    io::hdf5_write(n,h5_dset_id,opts);
+
+    Node n_read, opts_read;
+    io::hdf5_read_info(h5_dset_id,opts_read,n_read);
+    EXPECT_EQ(4,(int) n_read["num_elements"].to_value());
+
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // check values of data
+    short_array read_vals = n_read.value();
+    EXPECT_EQ(-16,read_vals[0]);
+    EXPECT_EQ(-15,read_vals[1]);
+    EXPECT_EQ(1,read_vals[2]);
+    EXPECT_EQ(2,read_vals[3]);
+
+    opts_read["offset"] = 2;
+    opts_read["stride"] = 1;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // check values of data
+    read_vals = n_read.value();
+    EXPECT_EQ(1,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+
+    vals[0] = -1;
+    vals[1] = -3;
+    opts["offset"] = 0;
+    opts["stride"] = 2;
+
+    io::hdf5_write(n,h5_dset_id,opts);
+
+    opts_read["offset"] = 0;
+    opts_read["stride"] = 1;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+
+    // check values of data
+    read_vals = n_read.value();
+    EXPECT_EQ(-1,read_vals[0]);
+    EXPECT_EQ(-15,read_vals[1]);
+    EXPECT_EQ(-3,read_vals[2]);
+    EXPECT_EQ(2,read_vals[3]);
+
+    vals[0] = 5;
+    vals[1] = 6;
+    opts["offset"] = 7;
+    opts["stride"] = 1;
+
+    io::hdf5_write(n,h5_dset_id,opts);
+
+    opts_read["offset"] = 0;
+    opts_read["stride"] = 1;
+    io::hdf5_read(h5_dset_id,opts_read,n_read);
+    // check values of data
+    read_vals = n_read.value();
+    EXPECT_EQ(-1,read_vals[0]);
+    EXPECT_EQ(-15,read_vals[1]);
+    EXPECT_EQ(-3,read_vals[2]);
+    EXPECT_EQ(2,read_vals[3]);
+    EXPECT_EQ(0,read_vals[4]);
+    EXPECT_EQ(0,read_vals[5]);
+    EXPECT_EQ(0,read_vals[6]);
+    EXPECT_EQ(5,read_vals[7]);
+    EXPECT_EQ(6,read_vals[8]);
+
+    opts["offset"] = -1;
+    opts["stride"] = 2;
+    opts_read["offset"] = -1;
+    opts_read["stride"] = 2;
+
+    //this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
+    EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
+
+    opts["offset"] = 0;
+    opts["stride"] = 0;
+    opts_read["offset"] = 0;
+    opts_read["stride"] = 0;
+
+    //this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
+    EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
+
+    H5Sclose(h5_dspace_id);
+    H5Dclose(h5_dset_id);
+    H5Fclose(h5_file_id);
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle_with_offset)
+{
+    std::string ofname = "tout_hdf5_wr_conduit_object_to_hdf5_group_handle_with_offset.hdf5";
+
+    hid_t h5_file_id = H5Fcreate(ofname.c_str(),
+                                 H5F_ACC_TRUNC,
+                                 H5P_DEFAULT,
+                                 H5P_DEFAULT);
+
+    hid_t h5_group_id = H5Gcreate(h5_file_id,
+                                  "mygroup",
+                                  H5P_DEFAULT,
+                                  H5P_DEFAULT,
+                                  H5P_DEFAULT);
+
+
+    Node n, opts;
+    n["a/b"].set(DataType::int16(2));
+    int16_array vals = n["a/b"].value();
+    vals[0] =-16;
+    vals[1] =-16;
+
+    // this should succeed
+    io::hdf5_write(n,h5_group_id);
+
+    n["a/c"] = "mystring";
+
+    // this should also succeed
+    vals[1] = 16;
+
+    io::hdf5_write(n,h5_group_id);
+
+    Node n_read;
+    io::hdf5_read(h5_group_id,n_read);
+
+    n["a/b"].set(DataType::int16(10));
+    // this should fail
+    EXPECT_THROW(io::hdf5_write(n,h5_group_id),Error);
+
+    n["a/b"].set(DataType::int16(10));
+    vals = n["a/b"].value();
+    opts["offset"] = 5;
+    for (int i = 0; i < 10; i++) {
+        vals[i] = i + 1;
+    }
+
+    io::hdf5_write(n,h5_group_id,opts);
+
+    io::hdf5_read(h5_group_id,n_read);
+
+    // check values of data with offset
+    int16_array read_vals = n_read["a/b"].value();
+    for (int i = 0; i < 10; i++) {
+        EXPECT_EQ(i + 1, read_vals[i + 5]);
+    }
+
+    // this is also offset
+    EXPECT_EQ("mystrmystring",n_read["a/c"].as_string());
+
+    opts["offset"] = 20;
+    opts["stride"] = 2;
+    for (int i = 0; i < 10; i++) {
+        vals[i] = i + 1;
+    }
+    n["a/d"].set(DataType::int16(5));
+    int16_array vals2 = n["a/d"].value();
+    for (int i = 0; i < 5; i++) {
+        vals2[i] = (i + 1) * -1;
+    }
+
+    io::hdf5_write(n,h5_group_id,opts);
+
+    io::hdf5_read(h5_group_id,n_read);
+
+    // check values of data
+    read_vals = n_read["a/b"].value();
+    for (int i = 0; i < 10; i++) {
+        EXPECT_EQ(i + 1, read_vals[i + 5]);
+    }
+    for (int i = 0; i < 10; i++) {
+        EXPECT_EQ(i + 1, read_vals[2*i + 20]);
+    }
+    read_vals = n_read["a/d"].value();
+    for (int i = 0; i < 5; i++) {
+        EXPECT_EQ((i + 1) * -1, read_vals[2*i + 20]);
+    }
+
+    Node n_read_info;
+    io::hdf5_read_info(h5_group_id,n_read_info);
+    EXPECT_EQ(39,(int) n_read_info["a/b/num_elements"].to_value());
+    EXPECT_EQ(37,(int) n_read_info["a/c/num_elements"].to_value());
+    EXPECT_EQ(29,(int) n_read_info["a/d/num_elements"].to_value());
+
+    // this doesn't change because the null-terminated character
+    // wasn't overwritten
+    EXPECT_EQ("mystrmystring",n_read["a/c"].as_string());
+
+    Node opts_read;
+    opts_read["offset"] = 5;
+    io::hdf5_read_info(h5_group_id,opts_read,n_read_info);
+    io::hdf5_read(h5_group_id,opts_read,n_read);
+
+    // check values of data
+    read_vals = n_read["a/b"].value();
+    for (int i = 0; i < 10; i++) {
+        EXPECT_EQ(i + 1, read_vals[i]);
+    }
+    EXPECT_EQ("mystring",n_read["a/c"].as_string());
+    EXPECT_EQ(34,(int) n_read_info["a/b/num_elements"].to_value());
+    EXPECT_EQ(32,(int) n_read_info["a/c/num_elements"].to_value());
+
+    opts_read["offset"] = 20;
+    opts_read["stride"] = 2;
+    io::hdf5_read_info(h5_group_id,opts_read,n_read_info);
+    io::hdf5_read(h5_group_id,opts_read,n_read);
+
+    // check values of data
+    read_vals = n_read["a/b"].value();
+    for (int i = 0; i < 10; i++) {
+        EXPECT_EQ(i + 1, read_vals[i]);
+    }
+    read_vals = n_read["a/d"].value();
+    for (int i = 0; i < 5; i++) {
+        EXPECT_EQ((i + 1) * -1, read_vals[i]);
+    }
+    EXPECT_EQ(10,(int) n_read_info["a/b/num_elements"].to_value());
+    EXPECT_EQ(5,(int) n_read_info["a/d/num_elements"].to_value());
+
+    opts_read["offset"] = 20;
+    opts_read["stride"] = 3;
+    io::hdf5_read_info(h5_group_id,opts_read,n_read_info);
+    io::hdf5_read(h5_group_id,opts_read,n_read);
+
+    // check values of data
+    read_vals = n_read["a/b"].value();
+    EXPECT_EQ(1, read_vals[0]);
+    EXPECT_EQ(4, read_vals[2]);
+    EXPECT_EQ(7, read_vals[4]);
+    EXPECT_EQ(10, read_vals[6]);
+    read_vals = n_read["a/d"].value();
+    EXPECT_EQ(-1, read_vals[0]);
+    EXPECT_EQ(-4, read_vals[2]);
+    EXPECT_EQ(7,(int) n_read_info["a/b/num_elements"].to_value());
+    EXPECT_EQ(3,(int) n_read_info["a/d/num_elements"].to_value());
+
+    H5Gclose(h5_group_id);
+    H5Fclose(h5_file_id);
+}
+
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle)
@@ -1345,10 +1776,88 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_list_with_offset)
+{
+    std::string tout_std = "tout_hdf5_list_with_offset.hdf5";
+
+    Node n, opts;
+    n.append() = DataType::c_short(1);
+    short_array vals = n[0].value();
+    vals[0] = 1;
+    io::save(n,tout_std, "hdf5");
+
+    vals[0] = 2;
+    opts["offset"] = 1;
+    io::save(n,tout_std, "hdf5",opts);
+
+    Node n_load, info;
+    io::load(tout_std,"hdf5",n_load);
+
+    // check values of data
+    // since we didn't use save_merged, the first value should be overwritten
+    short_array read_vals = n_load[0].value();
+    EXPECT_EQ(0,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+
+    // let's try again
+    vals[0] = 1;
+    io::save(n,tout_std, "hdf5");
+
+    vals[0] = 2;
+    opts["offset"] = 1;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    io::load(tout_std,"hdf5",n_load);
+
+    read_vals = n_load[0].value();
+    EXPECT_EQ(1,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+
+    vals[0] = 3;
+    opts["offset"] = 2;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    vals[0] = 4;
+    opts["offset"] = 3;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    vals[0] = 5;
+    opts["offset"] = 4;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    vals[0] = 6;
+    opts["offset"] = 5;
+    io::save_merged(n,tout_std, "hdf5",opts);
+
+    io::load_merged(tout_std,"hdf5",n_load);
+
+    read_vals = n_load[0].value();
+    EXPECT_EQ(1,read_vals[0]);
+    EXPECT_EQ(2,read_vals[1]);
+    EXPECT_EQ(3,read_vals[2]);
+    EXPECT_EQ(4,read_vals[3]);
+    EXPECT_EQ(5,read_vals[4]);
+    EXPECT_EQ(6,read_vals[5]);
+
+    // try loading with offset and size
+    Node opts_read;
+    opts_read["offset"] = 2;
+    opts_read["size"] = 2;
+    io::load(tout_std,"hdf5",opts_read,n_load);
+
+    read_vals = n_load[0].value();
+    EXPECT_EQ(3,read_vals[0]);
+    EXPECT_EQ(4,read_vals[1]);
+    EXPECT_EQ(2, read_vals.number_of_elements());
+
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
 {
     std::string tout_std = "tout_hdf5_empty_compat.hdf5";
-    
+
     Node n;
     n["myval"] = 42;
     io::save(n,tout_std);
@@ -1361,8 +1870,6 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
     Node n_load, n_diff_info;
     io::load(tout_std,"hdf5",n_load);
     n_load.print();
-    
+
     EXPECT_FALSE(n.diff(n_load,n_diff_info));
 }
-
-

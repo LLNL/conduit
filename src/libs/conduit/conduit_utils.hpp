@@ -164,7 +164,6 @@ class Node;
 //-----------------------------------------------------------------------------
 namespace utils
 {
-
 //-----------------------------------------------------------------------------
 /// Primary interface used by the conduit API when an info message is issued
 /// This simply dispatches the message to the currently configured info handler.
@@ -175,12 +174,11 @@ namespace utils
                                  int line);
 
 //-----------------------------------------------------------------------------
-/// Allows other libraries to provide an alternate info message handler.
+/// Info handler callback function type
 //-----------------------------------------------------------------------------
-    void CONDUIT_API set_info_handler( void(*on_info)
-                                       (const std::string &,
+    typedef void(*conduit_info_handler)(const std::string &,
                                         const std::string &,
-                                        int));
+                                        int);
 
 //-----------------------------------------------------------------------------
 /// Default info message handler, which prints the message to std::cout;
@@ -188,6 +186,16 @@ namespace utils
    void CONDUIT_API default_info_handler(const std::string &msg,
                                          const std::string &file,
                                          int line);
+
+//-----------------------------------------------------------------------------
+/// Allows other libraries to provide an alternate info message handler.
+//-----------------------------------------------------------------------------
+    void CONDUIT_API set_info_handler(conduit_info_handler on_info);
+
+//-----------------------------------------------------------------------------
+/// Returns the active info message handler.
+//-----------------------------------------------------------------------------
+    conduit_info_handler CONDUIT_API info_handler();
 
 //-----------------------------------------------------------------------------
 /// Primary interface used by the conduit API when a warning is issued.
@@ -199,12 +207,11 @@ namespace utils
                                     int line);
 
 //-----------------------------------------------------------------------------
-/// Allows other libraries to provide an alternate warning handler.
+/// Warning handler callback function type
 //-----------------------------------------------------------------------------
-    void CONDUIT_API set_warning_handler( void(*on_error)
-                                         (const std::string &,
-                                          const std::string &,
-                                          int));
+    typedef void(*conduit_warning_handler)(const std::string &,
+                                           const std::string &,
+                                           int);
 
 //-----------------------------------------------------------------------------
 /// Default warning handler, which throws a conduit::Error exception.
@@ -213,6 +220,15 @@ namespace utils
                                             const std::string &file,
                                             int line);
 
+//-----------------------------------------------------------------------------
+/// Allows other libraries to provide an alternate warning handler.
+//-----------------------------------------------------------------------------
+    void CONDUIT_API set_warning_handler(conduit_warning_handler on_warning);
+
+//-----------------------------------------------------------------------------
+/// Returns the active warning message handler.
+//-----------------------------------------------------------------------------
+    conduit_warning_handler CONDUIT_API warning_handler();
 
 //-----------------------------------------------------------------------------
 /// Primary interface used by the conduit API when an error occurs.
@@ -224,19 +240,28 @@ namespace utils
                                   int line);
 
 //-----------------------------------------------------------------------------
-/// Allows other libraries to provide an alternate error handler.
-//-----------------------------------------------------------------------------
-    void CONDUIT_API set_error_handler( void(*on_error)
-                                        (const std::string &,
-                                         const std::string &,
-                                         int));
-
-//-----------------------------------------------------------------------------
 /// Default error handler, which throws a conduit::Error exception.
 //-----------------------------------------------------------------------------
    void CONDUIT_API default_error_handler(const std::string &msg,
                                           const std::string &file,
                                           int line);
+//-----------------------------------------------------------------------------
+/// Warning handler callback function type
+//-----------------------------------------------------------------------------
+    typedef void(*conduit_error_handler)(const std::string &,
+                                         const std::string &,
+                                         int);
+
+//-----------------------------------------------------------------------------
+/// Allows other libraries to provide an alternate error handler.
+//-----------------------------------------------------------------------------
+    void CONDUIT_API set_error_handler(conduit_error_handler on_error);
+
+//-----------------------------------------------------------------------------
+/// Returns the active warning message handler.
+//-----------------------------------------------------------------------------
+    conduit_error_handler CONDUIT_API error_handler();
+
 
 //-----------------------------------------------------------------------------
 /// Helpers for common string splitting operations.
