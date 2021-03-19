@@ -201,6 +201,8 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_generate_offsets)
     EXPECT_FALSE(ref["offsets"].diff(n["offsets"], info));
 }
 
+// TODO(JRC): Add test cases for new direct iterator 'to' method.
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator_properties)
 {

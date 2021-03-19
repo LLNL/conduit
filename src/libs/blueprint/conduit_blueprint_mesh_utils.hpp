@@ -240,7 +240,7 @@ DataType find_widest_dtype(const Node &node, const DataType &default_dtype);
 DataType find_widest_dtype(const Node &node, const std::vector<DataType> &default_dtypes);
 
 //-----------------------------------------------------------------------------
-bool find_reference_node(const Node &node, const std::string &ref_key, Node &ref);
+const Node *find_reference_node(const Node &node, const std::string &ref_key);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::coordset --
@@ -258,6 +258,18 @@ namespace coordset
 
     //-----------------------------------------------------------------------------
     std::string coordsys(const Node &n);
+
+    //-------------------------------------------------------------------------
+    // -- begin conduit::blueprint::mesh::utils::coordset::_explicit --
+    //-------------------------------------------------------------------------
+    namespace _explicit
+    {
+        //-------------------------------------------------------------------------
+        std::vector<float64> coords(const Node &n, const index_t i);
+    }
+    //-------------------------------------------------------------------------
+    // -- end conduit::blueprint::mesh::utils::coordset::_explicit --
+    //-------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::coorset --
@@ -287,6 +299,9 @@ namespace topology
         //-------------------------------------------------------------------------
         void generate_offsets(const Node &n,
                               Node &dest);
+
+        //-------------------------------------------------------------------------
+        std::vector<index_t> points(const Node &n, const index_t i);
     }
     //-------------------------------------------------------------------------
     // -- end conduit::blueprint::mesh::utils::topology::unstructured --
