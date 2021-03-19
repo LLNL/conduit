@@ -44,6 +44,12 @@ TEST(blueprint_mpi_smoke, basic_verify)
 
     EXPECT_EQ(domain_to_rank_map.dtype().number_of_elements(),par_size);
 
+    conduit::int64_array map_array = domain_to_rank_map.as_int64_array();
+    for(conduit::int64 rank=0; rank < par_size; ++rank)
+    {
+        EXPECT_EQ(map_array[rank], rank);
+    }
+
 }
 
 
@@ -160,6 +166,22 @@ TEST(blueprint_mpi_smoke, multi_domain)
     EXPECT_TRUE(domain_to_rank_map.dtype().is_int64());
 
     EXPECT_EQ(domain_to_rank_map.dtype().number_of_elements(), num_domains);
+
+    // Check the values in domain_to_rank_map.
+    conduit::int64_array map_array = domain_to_rank_map.as_int64_array();
+    conduit::int64 start_dom_for_rank = 0;
+    for(conduit::int64 cur_rank=0; cur_rank < par_size; ++cur_rank)
+    {
+        conduit::int64 stop_dom_for_rank = start_dom_for_rank + (cur_rank%3)+1;
+        for(conduit::int64 dom=start_dom_for_rank; dom < stop_dom_for_rank;
+            ++dom)
+        {
+            EXPECT_EQ(map_array[dom], cur_rank);
+        }
+
+        start_dom_for_rank += (cur_rank%3) + 1;
+    }
+
 }
 
 
