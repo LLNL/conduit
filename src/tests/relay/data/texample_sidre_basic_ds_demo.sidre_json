@@ -44,26 +44,40 @@
           {
             "state": "BUFFER",
             "buffer_id": 0,
-            "schema": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}",
+            "schema": "{\"dtype\":\"int64\",\"number_of_elements\": 5,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}",
+            "is_applied": 1
+          },
+          "a0_i64": 
+          {
+            "state": "BUFFER",
+            "buffer_id": 1,
+            "schema": "{\"dtype\":\"int64\",\"number_of_elements\": 0,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}",
             "is_applied": 1
           },
           "a5_i64_ext": 
           {
             "state": "EXTERNAL",
-            "schema": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}"
+            "schema": "{\"dtype\":\"int64\",\"number_of_elements\": 5,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}"
+          },
+          "b_v0": 
+          {
+            "state": "BUFFER",
+            "buffer_id": 2,
+            "schema": "{\"dtype\":\"float64\",\"number_of_elements\": 0,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}",
+            "is_applied": 1
           },
           "b_v1": 
           {
             "state": "BUFFER",
-            "buffer_id": 1,
-            "schema": "{\"dtype\":\"float64\", \"number_of_elements\": 3, \"offset\": 0, \"stride\": 16, \"element_bytes\": 8, \"endianness\": \"little\"}",
+            "buffer_id": 2,
+            "schema": "{\"dtype\":\"float64\",\"number_of_elements\": 3,\"offset\": 0,\"stride\": 16,\"element_bytes\": 8,\"endianness\": \"little\"}",
             "is_applied": 1
           },
           "b_v2": 
           {
             "state": "BUFFER",
-            "buffer_id": 1,
-            "schema": "{\"dtype\":\"float64\", \"number_of_elements\": 3, \"offset\": 8, \"stride\": 16, \"element_bytes\": 8, \"endianness\": \"little\"}",
+            "buffer_id": 2,
+            "schema": "{\"dtype\":\"float64\",\"number_of_elements\": 3,\"offset\": 8,\"stride\": 16,\"element_bytes\": 8,\"endianness\": \"little\"}",
             "is_applied": 1
           }
         }
@@ -74,13 +88,19 @@
       "buffer_id_0": 
       {
         "id": 0,
-        "schema": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}",
+        "schema": "{\"dtype\":\"int64\",\"number_of_elements\": 5,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}",
         "data": [0, 1, 2, 3, 4]
       },
       "buffer_id_1": 
       {
         "id": 1,
-        "schema": "{\"dtype\":\"float64\", \"number_of_elements\": 6, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}",
+        "schema": "{\"dtype\":\"int64\",\"number_of_elements\": 0,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}",
+        "data": 
+      },
+      "buffer_id_2": 
+      {
+        "id": 2,
+        "schema": "{\"dtype\":\"float64\",\"number_of_elements\": 6,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}",
         "data": [1.0, 2.0, 1.0, 2.0, 1.0, 2.0]
       }
     },
