@@ -11,6 +11,7 @@
 #include "conduit_relay.hpp"
 #include "conduit_blueprint.hpp"
 #include <iostream>
+#include <vector>
 #include "gtest/gtest.h"
 
 #include "t_config.hpp"
@@ -48,18 +49,20 @@ TEST(conduit_relay_io_handle, test_sidre_basic)
     // create an equiv conduit tree for testing
     //
 
-    conduit::int64    conduit_vals_0[]  = {};
     conduit::int64    conduit_vals_1[5] = {0,1,2,3,4};
     conduit::float64  conduit_vals_2[6] = { 1.0, 2.0,
                                             1.0, 2.0,
                                             1.0, 2.0,};
+    // Note: use a std::vector for the empty array as workaround for
+    // MSVC error C2466 about allocating arrays of constant size 0
+    std::vector<conduit::int64> conduit_vals_0;
 
     Node n;
     n["my_scalars/i64"].set_int64(1);
     n["my_scalars/f64"].set_float64(10.0);
     n["my_strings/s0"] = "s0 string";
     n["my_strings/s1"] = "s1 string";
-    n["my_arrays/a0_i64"].set(conduit_vals_0,0);
+    n["my_arrays/a0_i64"].set(conduit_vals_0.data(),0);
     n["my_arrays/a5_i64"].set(conduit_vals_1,5);
     n["my_arrays/a5_i64_ext"].set_external(conduit_vals_1,5);
     n["my_arrays/b_v0"].set(conduit_vals_2,0);
@@ -111,8 +114,8 @@ TEST(conduit_relay_io_handle, test_sidre_basic)
         h.read("my_scalars/f64",n_leaf); n_leaf.print();
         h.read("my_strings/s0",n_leaf); n_leaf.print();
         h.read("my_strings/s1",n_leaf); n_leaf.print();
-        h.read("my_arrays/a5_i64",n_leaf); n_leaf.print();
         h.read("my_arrays/a0_i64",n_leaf); n_leaf.print();
+        h.read("my_arrays/a5_i64",n_leaf); n_leaf.print();
         h.read("my_arrays/a5_i64_ext",n_leaf); n_leaf.print();
         h.read("my_arrays/b_v0",n_leaf); n_leaf.print();
         h.read("my_arrays/b_v1",n_leaf); n_leaf.print();
