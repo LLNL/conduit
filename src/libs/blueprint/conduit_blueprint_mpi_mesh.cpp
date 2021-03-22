@@ -51,19 +51,11 @@ verify(const conduit::Node &n,
        conduit::Node &info,
        MPI_Comm comm)
 {
-    // some MPI tasks may not have data, that is fine
-    // but blueprint verify will fail, so if the
-    // input node is empty skip verify
-    int local_verify_ok = 0;
-    if(!n.dtype().is_empty())
-    {
-        if(conduit::blueprint::mesh::verify(n,
-                                            info))
-        {
-            local_verify_ok = 1;
-        }
-    }
+    int par_size = relay::mpi::size(comm);
 
+    // NOTE(JRC): MPI tasks without any domains should use a multi-domain
+    // format with empty contents (i.e. an empty object or list node).
+    int local_verify_ok = conduit::blueprint::mesh::verify(n, info) ? 1 : 0;
     int global_verify_ok = 0;
 
     Node n_snd, n_reduce;
@@ -72,7 +64,7 @@ verify(const conduit::Node &n,
     n_reduce.set_external(&global_verify_ok,1);
 
     relay::mpi::sum_all_reduce(n_snd, n_reduce, comm);
-    return global_verify_ok > 0;
+    return global_verify_ok == par_size;
 }
 
 //-------------------------------------------------------------------------

@@ -27,7 +27,7 @@ TEST(blueprint_mpi_smoke, basic_verify)
 
     // empty on all domains should return false ... 
     EXPECT_FALSE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
-        
+
     conduit::blueprint::mesh::examples::braid("uniform",
                                       10,
                                       10,
@@ -65,12 +65,16 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
     int par_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &par_size);
-    
+
     for(conduit::index_t active_rank=0;active_rank < par_size; active_rank++)
     {
         mesh.reset();
         // even with a single domain on one rank, we should still verify true
-        if(par_rank == active_rank)
+        if(par_rank != active_rank)
+        {
+            mesh.set(conduit::DataType::object());
+        }
+        else
         {
             conduit::blueprint::mesh::examples::braid("uniform",
                                                       10,
