@@ -11,5 +11,6 @@ Conduit
    
    tutorial_cpp
    tutorial_python
+   tutorial_cpp_fort_and_py
 
 ..    conduit_api
