@@ -9,9 +9,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### General
+- Added the `cpp_fort_and_py` standalone example. It demos passing Conduit Nodes between C++, Fortran, and Python. See the related tutorial docs (https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_fort_and_py.html) for more details.
 - Added  `conduit::utils::info_handler()`, `conduit::utils::warning_handler()`, and `conduit::utils::error_handler()`  methods, which provide access to the currently registered info, warning, and error handlers.
 - Added DataType::index_t method. Creates a DataType instance that describes an `index_t`, which is an alias to either `int32`, or `int 64` controlled by the `CONDUIT_INDEX_32` compile time option.
 - Added several more methods to Python DataType interface
+
+
 
 #### Relay
 - Added Relay HDF5 support for reading and writing to an HDF5 dataset with offset.
