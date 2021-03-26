@@ -1,7 +1,12 @@
 ##############################################################################
-# Copyright (c) 2014-20, Lawrence Livermore National Security, LLC and Conduit
+# Copyright (c) 2014-21, Lawrence Livermore National Security, LLC and Conduit
 # project contributors. See the COPYRIGHT file for details.
 ##############################################################################
+
+build-job:
+  stage: build
+  script:
+    - echo "Hello!"
 
 # variables:
 #   GIT_SUBMODULE_STRATEGY: recursive
