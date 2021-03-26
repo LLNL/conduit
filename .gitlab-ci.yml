@@ -3,45 +3,45 @@
 # project contributors. See the COPYRIGHT file for details.
 ##############################################################################
 
-variables:
-  GIT_SUBMODULE_STRATEGY: recursive
-  INSTALL_ROOT: ${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}/uberenv_libs
-  SPACK_UPSTREAM: /usr/workspace/radiuss/spack-chain-parent/opt/spack
-  SPACK_MIRROR: /usr/workspace/radiuss/mirrors/conduit
-
-stages:
-  - deps
-  - install
-
-#########
-# SCRIPTS
-#########
-
-# Define the generic script
-.build_script:
-  script:
-    - scripts/ci/build-on-lc.sh
-
-# Build modes templates:
-# A job will have one on this template to pilot the behavior of def_uberenv_cmd
-.mode_deps:
-  stage: deps
-  variables:
-    UBERENV_INSTALL: "OFF"
-
-.mode_install:
-  stage: install
-  variables:
-    UBERENV_INSTALL: "ON"
-
-##########
-# INCLUDES
-##########
-
-# This is where templates and jobs are included
-include:
-  - local: .gitlab/toolchains_templates.yml
-  - local: .gitlab/quartz_templates.yml
-  - local: .gitlab/quartz_jobs.yml
-  - local: .gitlab/lassen_templates.yml
-  - local: .gitlab/lassen_jobs.yml
+# variables:
+#   GIT_SUBMODULE_STRATEGY: recursive
+#   INSTALL_ROOT: ${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_COMMIT_REF_SLUG}_${CI_PIPELINE_ID}/uberenv_libs
+#   SPACK_UPSTREAM: /usr/workspace/radiuss/spack-chain-parent/opt/spack
+#   SPACK_MIRROR: /usr/workspace/radiuss/mirrors/conduit
+#
+# stages:
+#   - deps
+#   - install
+#
+# #########
+# # SCRIPTS
+# #########
+#
+# # Define the generic script
+# .build_script:
+#   script:
+#     - scripts/ci/build-on-lc.sh
+#
+# # Build modes templates:
+# # A job will have one on this template to pilot the behavior of def_uberenv_cmd
+# .mode_deps:
+#   stage: deps
+#   variables:
+#     UBERENV_INSTALL: "OFF"
+#
+# .mode_install:
+#   stage: install
+#   variables:
+#     UBERENV_INSTALL: "ON"
+#
+# ##########
+# # INCLUDES
+# ##########
+#
+# # This is where templates and jobs are included
+# include:
+#   - local: .gitlab/toolchains_templates.yml
+#   - local: .gitlab/quartz_templates.yml
+#   - local: .gitlab/quartz_jobs.yml
+#   - local: .gitlab/lassen_templates.yml
+#   - local: .gitlab/lassen_jobs.yml
