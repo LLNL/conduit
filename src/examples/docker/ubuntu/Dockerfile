@@ -3,7 +3,6 @@
 # other details. No copyright assignment is required to contribute to Conduit.
 
 FROM ubuntu:18.04
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 
 # fetch build env
 RUN apt-get update && apt-get install -y \
@@ -18,8 +17,6 @@ RUN apt-get update && apt-get install -y \
     tar \
     unzip \
     perl \
-    openmpi-bin \
-    libopenmpi-dev \
     libncurses-dev \
     libssl-dev \
     libopenblas-dev \

@@ -5,16 +5,12 @@ packages:
       blas: [netlib-lapack]
       lapack: [netlib-lapack]
       uuid: [util-linux-uuid, libuuid]
+      mpi: [mpich]
   netlib-lapack:
     buildable: false
     externals:
     - prefix: /usr/
       spec: netlib-lapack
-  openmpi:
-    buildable: false
-    externals:
-    - prefix: /usr
-      spec: openmpi
   gdbm:
     buildable: false
     externals:
@@ -60,10 +56,8 @@ packages:
     externals:
     - prefix: /usr
       spec: tar
-  conduit:
-    version: [develop]
-  # python 2 constraints
-  py-sphinx:
-    version: [1.8.4]
-  py-numpy:
-    version: [1.16.5]
+  # # python 2 constraints
+  # py-sphinx:
+  #   version: [1.8.4]
+  # py-numpy:
+  #   version: [1.16.5]
