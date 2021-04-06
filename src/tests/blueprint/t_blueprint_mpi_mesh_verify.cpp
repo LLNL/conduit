@@ -15,7 +15,28 @@
 #include "conduit_fmt/conduit_fmt.h"
 
 #include <iostream>
+#include <string>
 #include "gtest/gtest.h"
+
+//-----------------------------------------------------------------------------
+bool has_empty_warning(const conduit::Node &info)
+{
+    bool res = false;
+
+    if((info.dtype().is_object() && info.has_child("info")) &&
+       (info["info"].dtype().is_object() || info["info"].dtype().is_list()))
+    {
+        conduit::NodeConstIterator iitr = info["info"].children();
+        while(iitr.has_next())
+        {
+            const conduit::Node &ichld = iitr.next();
+            res |= ichld.dtype().is_char8_str() &&
+                   ichld.to_string().find("is an empty mesh", 0) != std::string::npos;
+        }
+    }
+
+    return res;
+}
 
 //-----------------------------------------------------------------------------
 TEST(blueprint_mpi_smoke, basic_verify)
@@ -25,23 +46,24 @@ TEST(blueprint_mpi_smoke, basic_verify)
     int par_size;
     MPI_Comm_size(MPI_COMM_WORLD, &par_size);
 
-    // empty on all domains should return false ... 
-    EXPECT_FALSE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    // empty on all domains should return true, with a warning
+    EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    EXPECT_TRUE(has_empty_warning(info));
 
     conduit::blueprint::mesh::examples::braid("uniform",
-                                      10,
-                                      10,
-                                      10,
-                                      mesh);
+                                              10,
+                                              10,
+                                              10,
+                                              mesh);
 
-    EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    EXPECT_FALSE(has_empty_warning(info));
     EXPECT_EQ(conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD),par_size);
 
     conduit::Node domain_to_rank_map;
     conduit::blueprint::mpi::mesh::generate_domain_to_rank_map(mesh,domain_to_rank_map,MPI_COMM_WORLD);
 
     EXPECT_TRUE(domain_to_rank_map.dtype().is_int64());
-
     EXPECT_EQ(domain_to_rank_map.dtype().number_of_elements(),par_size);
 
     conduit::int64_array map_array = domain_to_rank_map.as_int64_array();
@@ -58,8 +80,9 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
 {
     conduit::Node mesh, info;
 
-    // empty on all domains should return false ... 
-    EXPECT_FALSE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    // empty on all domains should return true, with a warning
+    EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    EXPECT_TRUE(has_empty_warning(info));
 
     int par_rank;
     int par_size;
@@ -70,11 +93,7 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
     {
         mesh.reset();
         // even with a single domain on one rank, we should still verify true
-        if(par_rank != active_rank)
-        {
-            mesh.set(conduit::DataType::object());
-        }
-        else
+        if(par_rank == active_rank)
         {
             conduit::blueprint::mesh::examples::braid("uniform",
                                                       10,
@@ -83,10 +102,9 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
                                                       mesh);
         }
 
-        EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
-
-        // check the number of domains
-        EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD), 1);
+        EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+        EXPECT_EQ(has_empty_warning(info), par_rank != active_rank);
+        EXPECT_EQ(conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD), 1);
 
         // check hypothetical index gen
         conduit::Node bp_index;
@@ -97,7 +115,6 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
 
         // all ranks should have index data.
         EXPECT_TRUE(bp_index["mesh"].dtype().is_object());
-
     }
 }
 
@@ -106,8 +123,9 @@ TEST(blueprint_mpi_smoke, multi_domain)
 {
     conduit::Node mesh, info;
 
-    // empty on all domains should return false ... 
-    EXPECT_FALSE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    // empty on all domains should return true, with a warning
+    EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    EXPECT_TRUE(has_empty_warning(info));
 
     int par_rank;
     int par_size;
@@ -140,10 +158,10 @@ TEST(blueprint_mpi_smoke, multi_domain)
                                                   domain);
 
         domain["state/domain_id"] = dom;
-
     }
 
-    EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+    EXPECT_FALSE(has_empty_warning(info));
 
     // check the total number of domains.
     conduit::index_t num_domains = 0;
@@ -152,7 +170,7 @@ TEST(blueprint_mpi_smoke, multi_domain)
         num_domains += (rank%3) + 1;
     }
 
-    EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD), num_domains);
+    EXPECT_EQ(conduit::blueprint::mpi::mesh::number_of_domains(mesh,MPI_COMM_WORLD), num_domains);
 
     // check hypothetical index gen
     conduit::Node bp_index;
@@ -168,7 +186,6 @@ TEST(blueprint_mpi_smoke, multi_domain)
     conduit::blueprint::mpi::mesh::generate_domain_to_rank_map(mesh,domain_to_rank_map,MPI_COMM_WORLD);
 
     EXPECT_TRUE(domain_to_rank_map.dtype().is_int64());
-
     EXPECT_EQ(domain_to_rank_map.dtype().number_of_elements(), num_domains);
 
     // Check the values in domain_to_rank_map.

@@ -127,20 +127,7 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
 {
     int64 par_rank = relay::mpi::rank(comm);
 
-    std::vector<const Node *> domains;
-    if(!::conduit::blueprint::mesh::is_multi_domain(mesh))
-    {
-        domains.push_back(&mesh);
-    }
-    else
-    {
-        NodeConstIterator itr = mesh.children();
-        while(itr.has_next())
-        {
-            domains.push_back(&itr.next());
-        }
-    }
-
+    std::vector<const Node *> domains = ::conduit::blueprint::mesh::domains(mesh);
     std::vector<int64> local_domains;
     for(index_t di = 0; di < (index_t)domains.size(); di++)
     {

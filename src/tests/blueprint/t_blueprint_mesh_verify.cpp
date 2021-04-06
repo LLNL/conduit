@@ -77,6 +77,26 @@ bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
 }
 
 
+bool has_empty_warning(const Node &info)
+{
+    bool res = false;
+
+    if((info.dtype().is_object() && info.has_child("info")) &&
+       (info["info"].dtype().is_object() || info["info"].dtype().is_list()))
+    {
+        NodeConstIterator iitr = info["info"].children();
+        while(iitr.has_next())
+        {
+            const Node &ichld = iitr.next();
+            res |= ichld.dtype().is_char8_str() &&
+                   ichld.to_string().find("is an empty mesh", 0) != std::string::npos;
+        }
+    }
+
+    return res;
+}
+
+
 bool has_consistent_validity(const Node &n)
 {
     // TODO(JRC): This function will have problems for given nodes containing
@@ -2380,13 +2400,17 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
 {
     Node mesh, info;
-    // is_multi_domain can only be called if mesh verify is true
-    EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
-                  blueprint::mesh::is_multi_domain(mesh));
+    EXPECT_TRUE(blueprint::mesh::verify(mesh,info) &&
+                blueprint::mesh::is_multi_domain(mesh));
+    EXPECT_TRUE(has_empty_warning(info));
 
     Node domains[2];
     blueprint::mesh::examples::braid("quads",10,10,1,domains[0]);
     blueprint::mesh::to_multi_domain(domains[0],mesh);
+    EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
+
+    blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
+    mesh.append().set_external(domains[1]);
     EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
     { // Redundant "to_multi_domain" Tests //
@@ -2394,10 +2418,6 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
         blueprint::mesh::to_multi_domain(mesh,temp);
         EXPECT_TRUE(blueprint::mesh::is_multi_domain(temp));
     }
-
-    blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
-    mesh.append().set_external(domains[1]);
-    EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
     for(index_t di = 0; di < 2; di++)
     {
@@ -2407,8 +2427,8 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
         // is_multi_domain can only be called if mesh verify is true
         Node coordsets = domain["coordsets"];
         domain.remove("coordsets");
-        EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
-                      blueprint::mesh::is_multi_domain(mesh));
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info) &&
+                     blueprint::mesh::is_multi_domain(mesh));
 
         domain["coordsets"].reset();
         domain["coordsets"].set(coordsets);
@@ -2430,7 +2450,8 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         VerifyFun verify_mesh = verify_mesh_funs[fi];
 
         Node mesh, mesh_data, info;
-        CHECK_MESH(verify_mesh,mesh,info,false);
+        CHECK_MESH(verify_mesh,mesh,info,true);
+        EXPECT_TRUE(has_empty_warning(info));
 
         blueprint::mesh::examples::braid("quads",10,10,1,mesh_data);
 
@@ -2448,6 +2469,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         Node& domain = *domain_ptr;
 
         CHECK_MESH(verify_mesh,mesh,info,true);
+        EXPECT_FALSE(has_empty_warning(info));
         // info.print();
 
         { // Coordsets Field Tests //
