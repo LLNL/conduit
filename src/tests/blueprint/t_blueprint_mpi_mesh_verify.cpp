@@ -115,6 +115,10 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
 
         // all ranks should have index data.
         EXPECT_TRUE(bp_index["mesh"].dtype().is_object());
+
+        conduit::Node domain_to_rank_map;
+        conduit::blueprint::mpi::mesh::generate_domain_to_rank_map(mesh,domain_to_rank_map,MPI_COMM_WORLD);
+
     }
 }
 
