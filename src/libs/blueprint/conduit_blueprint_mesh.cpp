@@ -769,19 +769,26 @@ verify_multi_domain(const Node &n,
     bool res = true;
     info.reset();
 
-    if(!n.dtype().is_object() && !n.dtype().is_list())
+    if(!n.dtype().is_object() && !n.dtype().is_list() && !n.dtype().is_empty())
     {
-        log::error(info, protocol, "not an object or a list");
+        log::error(info, protocol, "not an object, a list, or empty");
         res = false;
     }
     else
     {
-        NodeConstIterator itr = n.children();
-        while(itr.has_next())
+        if(n.dtype().is_empty() || n.number_of_children() == 0)
         {
-            const Node &chld = itr.next();
-            const std::string chld_name = itr.name();
-            res &= verify_single_domain(chld, info[chld_name]);
+            log::info(info, protocol, "is an empty mesh");
+        }
+        else
+        {
+            NodeConstIterator itr = n.children();
+            while(itr.has_next())
+            {
+                const Node &chld = itr.next();
+                const std::string chld_name = itr.name();
+                res &= verify_single_domain(chld, info[chld_name]);
+            }
         }
 
         log::info(info, protocol, "is a multi domain mesh");
@@ -1429,6 +1436,7 @@ bool mesh::is_multi_domain(const conduit::Node &n)
     return !n.has_child("coordsets");
 }
 
+
 //-------------------------------------------------------------------------
 index_t
 mesh::number_of_domains(const conduit::Node &n)
@@ -1447,6 +1455,32 @@ mesh::number_of_domains(const conduit::Node &n)
     }
 }
 
+
+//-------------------------------------------------------------------------
+std::vector<const conduit::Node *>
+mesh::domains(const conduit::Node &n)
+{
+    // this is a blueprint property, we can assume it will be called
+    // only when mesh verify is true. Given that - it is easy to
+    // aggregate all of the domains into a list
+
+    std::vector<const conduit::Node *> doms;
+
+    if(!mesh::is_multi_domain(n))
+    {
+        doms.push_back(&n);
+    }
+    else if(!n.dtype().is_empty())
+    {
+        NodeConstIterator nitr = n.children();
+        while(nitr.has_next())
+        {
+            doms.push_back(&nitr.next());
+        }
+    }
+
+    return std::vector<const conduit::Node *>(std::move(doms));
+}
 
 
 //-------------------------------------------------------------------------
