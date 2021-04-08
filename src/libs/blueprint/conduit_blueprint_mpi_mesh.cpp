@@ -126,6 +126,7 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
                                  MPI_Comm comm)
 {
     int64 par_rank = relay::mpi::rank(comm);
+    int64 max_local_id = -1;
 
     std::vector<const Node *> domains = ::conduit::blueprint::mesh::domains(mesh);
     std::vector<int64> local_domains;
@@ -139,14 +140,16 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
             domain_id = domain["state/domain_id"].as_int64();
         }
         local_domains.push_back(domain_id);
+
+        max_local_id = std::max(domain_id, max_local_id);
     }
 
-    Node num_local, num_global;
-    num_local.set_int64(local_domains.size());
-    num_global.set_int64(0);
-    relay::mpi::sum_all_reduce(num_local, num_global, comm);
+    Node max_local, max_global;
+    max_local.set_int64(max_local_id);
+    max_global.set_int64(-1);
+    relay::mpi::max_all_reduce(max_local, max_global, comm);
 
-    std::vector<int64> local_map(num_global.as_int64(), 0);
+    std::vector<int64> local_map(max_global.as_int64() + 1, -1);
     for(auto m_itr = local_domains.begin(); m_itr != local_domains.end(); ++m_itr)
     {
         local_map[*m_itr] = par_rank;

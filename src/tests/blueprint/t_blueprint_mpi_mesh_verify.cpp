@@ -89,7 +89,7 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
     MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &par_size);
 
-    for(conduit::index_t active_rank=0;active_rank < par_size; active_rank++)
+    for(conduit::index_t active_rank=0; active_rank < par_size; active_rank++)
     {
         mesh.reset();
         // even with a single domain on one rank, we should still verify true
@@ -119,6 +119,14 @@ TEST(blueprint_mpi_smoke, ranks_with_no_mesh)
         conduit::Node domain_to_rank_map;
         conduit::blueprint::mpi::mesh::generate_domain_to_rank_map(mesh,domain_to_rank_map,MPI_COMM_WORLD);
 
+        EXPECT_TRUE(domain_to_rank_map.dtype().is_int64());
+        EXPECT_EQ(domain_to_rank_map.dtype().number_of_elements(), active_rank + 1);
+
+        conduit::int64_array map_array = domain_to_rank_map.as_int64_array();
+        for(conduit::int64 rank=0; rank <= active_rank; ++rank)
+        {
+            EXPECT_EQ(map_array[rank], (rank == active_rank) ? rank : -1);
+        }
     }
 }
 
