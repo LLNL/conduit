@@ -8,18 +8,6 @@
 ///
 //-----------------------------------------------------------------------------
 
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-#define NOMINMAX
-#undef min
-#undef max
-#include "windows.h"
-#endif
-
-//-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <cmath>
-
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
@@ -153,7 +141,7 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
         }
         local_domains.push_back(domain_id);
 
-        max_local_id = std::max(domain_id, max_local_id);
+        max_local_id = (domain_id > max_local_id) ? domain_id : max_local_id;
     }
 
     Node max_local, max_global;
