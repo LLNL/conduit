@@ -121,7 +121,10 @@
     \see RAPIDJSON_NAMESPACE
 */
 #ifndef RAPIDJSON_NAMESPACE
-#define RAPIDJSON_NAMESPACE rapidjson
+//----------------------------------------------------------------------------
+// MOD FOR CONDUIT: use custom namespace to avoid symbol collisions
+// ---------------------------------------------------------------------------
+#define RAPIDJSON_NAMESPACE conduit_rapidjson
 #endif
 #ifndef RAPIDJSON_NAMESPACE_BEGIN
 #define RAPIDJSON_NAMESPACE_BEGIN namespace RAPIDJSON_NAMESPACE {

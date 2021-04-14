@@ -21,6 +21,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `conduit::relay::io::hdf5::read_info` which allows you to obtain metadata from an HDF5 file.
 - Added configure error when conduit lacks MPI support and HDF5 has MPI support
 
+### Changed
+
+#### General
+- Changed `rapidjson` namespace to `conduit_rapidjson` to avoid symbol collisions with other libraries using RapidJSON.
+
 ### Fixed
 
 #### General
