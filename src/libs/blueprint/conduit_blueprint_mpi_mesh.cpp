@@ -1548,26 +1548,43 @@ void to_polyhedral(const Node &n,
 
                 //Get map_subelem, the coarse face touching the boundary.
                 //Need to change it to new subelems.
+                //
+                //Here we have:
+                //ref_elem--Coarse element with face on coarse-fine bdry
+                //map_subelem--The coarse face touching the boundary
+                //nbr_subelems--The fine faces toucing map_subelem
+                //
+                //Need to divide map_subelem into new subelems corresponding
+                //to each member of nbr_subelems.  The new subelems need to
+                //be added to ref_elem, replacing the original map_subelem.
+                //
+                //For a 2x refinement ratio, nbr_subelems provide 5 new
+                //vertices in addition to the 4 vertices that are coincident
+                //with the coarse element.
+                //
+                //Also we need to get the real coordinate values into the
+                //coordset arrays.
                 for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr)
                 {
                     int64_t ref_offset = eitr->first;
                     blueprint::mesh::connectivity::ElemType& ref_elem =
                         poly_elems[ref_offset];
-//                    int64_t ref_face = ref_elem[pbnd.side];
-//                    auto& map_subelem = allfaces[ref_face];
-//                    map_subelem.push_back(-32);
+                    int64_t ref_face = ref_elem[pbnd.side];
+                    auto& map_subelem = allfaces[ref_face];
 
                     auto& nbr_subelems = fv_map[ref_offset];
                     int64_t new_offset = allfaces.size();
                     size_t num_nbrs = nbr_subelems.size();
                     for (size_t nb = 0; nb < num_nbrs; ++nb)
                     {
-                        std::vector<int64_t> new_face;
-//                        new_face.push_back(-64);
-                        allfaces[new_offset] = new_face;
-                        ref_elem.push_back(new_offset);
-                        ++new_offset;
+                        //Here should be code to create each new face
+                        //
                     }
+
+                    // Here should add new faces to ref_elem
+
+                    // Somewhere we add new coordinates to coordset for
+                    // coarse domain.
                 }
             }
         }
