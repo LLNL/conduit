@@ -425,12 +425,12 @@ Uni-Buffer Material Sets
 *********************************
 
 A **uni-buffer** material set is one that presents all of its volume fraction data in a single data buffer.
-In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associating each volume with a material identifier, and an *Object* mapping of human-readable material names to each unique material identifier.
+In this case, the material set schema must include this volume fraction data buffer, a parallel buffer associating each volume with a material identifier, and an *Object* that maps human-readable material names to unique integer material identifiers.
 Additionally, the top-level of this schema is an **o2mrelation** that sources from the volume fraction/material identifier buffers and targets the material topology.
 To conform to protocol, each ``matsets`` child of this type must be an *Object* that contains the following information:
 
    * matsets/matset/topology: "topo"
-   * matsets/matset/material_map: (integer object)
+   * matsets/matset/material_map: (object with integer leaves)
    * matsets/matset/material_ids: (integer array)
    * matsets/matset/volume_fractions: (floating-point array)
 
@@ -465,11 +465,15 @@ Multi-Buffer Material Sets
 
 A **multi-buffer** material set is a material set variant wherein the volume fraction data is split such that one buffer exists per material.
 The schema for this variant dictates that each material be presented as an *Object* entry of the ``volume_fractions`` field with the material name as the entry key and the material volume fractions as the entry value.
+**Multi-buffer** material sets also support an optional ``material_map``, which is an *Object* that maps human-readable material names to unique integer material identifiers. 
+If omitted, the map from material names to ids is inferred from the order of the material names in the ``volume_fractions`` node.
+
 Optionally, the value for each such entry can be specified as an **o2mrelation** instead of a flat array to enable greater specification flexibility.
 To conform to protocol, each ``matsets`` child of this type must be an *Object* that contains the following information:
 
    * matsets/matset/topology: "topo"
    * matsets/matset/volume_fractions: (object)
+   * matsets/matset/material_map: (optional, object with integer leaves)
 
 The following diagram illustrates a simple **multi-buffer** material set example:
 
@@ -493,6 +497,9 @@ The following diagram illustrates a simple **multi-buffer** material set example
             b:
               values: [0, b0, b2, b1, 0]
               indices: [1, 3, 2]
+          material_map: # (optional)
+            a: 0
+            b: 1
 
 
 Material Set Indexing Variants
@@ -529,6 +536,10 @@ The following diagram illustrates a simple **element-dominant** material set exa
             a: [a0, a1, 0]
             b: [b0, b1, b2]
             c: [0, 0, c2]
+          material_map: # (optional)
+            a: 0
+            b: 1
+            c: 2
 
 
 Material-Dominant Material Sets
@@ -562,6 +573,10 @@ The following diagram illustrates a simple **material-dominant** material set ex
             a: [0, 1]
             b: [0, 1, 2]
             c: [2]
+          material_map: # (optional)
+            a: 0
+            b: 1
+            c: 2
 
 
 Fields
@@ -617,14 +632,13 @@ Species Sets
 Species Sets are a means of representing multi-dimensional per-material quantities, most commonly per-material substance fractions.
 
 Individual Species Sets are entries in the ``specsets`` section of the Blueprint hierarchy, and these entries are formatted in much the same way as ``fields`` entries that describe per-material, multi-dimensional fields.
-Just as with this class of ``fields`` entries, each ``specsets`` entry must specify the material set over which it is defined and enumerate its values within an **mcarray** that's organized in material-major and component-minor order.
+Just as with this class of ``fields`` entries, each ``specsets`` entry must specify the material set over which it is defined and enumerate its values within an **mcarray** that's organized first by materials (shallower level of nesting) and then by species components (deeper level of nesting).
 Additionally, like ``field`` entries, each ``specsets`` item must indicate a volumetric scaling type (e.g. volume-dependent, volume-independent).
 To put it in short, each entry in the ``specsets`` section of the Blueprint hierarchy must be an *Object* that follows this template:
 
  * specsets/specset/volume_dependent: "true" | "false"
  * specsets/specset/matset: "matset"
  * specsets/specset/matset_values: (mcarray)
-
 
 
 Nesting Sets
@@ -634,7 +648,7 @@ Nesting Sets are used to represent the nesting relationships between different d
 
 Each entry in the Nesting Sets section contains an independent set of nesting relationships between domains in the described mesh.
 On an individual basis, a nesting set contains a source topology, an element association, and a list of nesting windows.
-The windows for a particular nesting set describe the topological nesting pattern for a paired set of domains, which includes the ID of the partnered domain, the type of the partnered domain (parent or child), and the self-relative origin and dimensions of the nesting relationship.
+The windows for a particular nesting set describe the topological nesting pattern for a paired set of domains, which includes the ID of the partnered domain, the type of the partnered domain (parent or child), the per-dimension zone ratios of this domain relative to the partnered domain, and the self-relative dimensions and origin (provided in terms of local domain coordinates) of the nesting relationship.
 The Blueprint schema for each entry in the ``nestsets`` section matches the following template:
 
    * nestsets/nestset/association: "vertex" | "element"
@@ -644,6 +658,32 @@ The Blueprint schema for each entry in the ``nestsets`` section matches the foll
    * nestsets/nestset/windows/window/ratio/{i, j, k}
    * nestsets/nestset/windows/window/origin/{i, j, k}
    * nestsets/nestset/windows/window/dims/{i, j, k}
+
+.. note::
+   Many structured AMR codes use global coordinate identifiers when specifying
+   each window's ``origin``. Such coordinates must be transformed to domain-local
+   coordinates to be Blueprint-compliant. Given the global structured origin of
+   a window's associated topology ``topo_origin`` (which isn't in the Blueprint,
+   but is likely stored somewhere in the client code), the global origin can be
+   transformed into a local origin like so:
+
+   .. code:: cpp
+
+       // 'window_origin': starts out as a global index, but is transformed into
+       // a domain-local index through this procedure
+       conduit::Node &window_origin = // path to nestset/windows/window/origin
+       conduit::Node &topo_origin = // loaded from client code; {i, j, k} structure
+
+       conduit::NodeIterator origin_it = window_origin.children();
+       while(origin_it.has_next())
+       {
+           conduit::Node &window_dim = origin_it.next();
+           conduit::Node &topo_dim = topo_origin[origin_it.name()];
+
+           conduit::int64 new_dim_val = window_dim.to_int64() - topo_dim.to_int64();
+           conduit::Node &new_dim(conduit::DataType::int64(1), &new_dim_val, true);
+           new_dim.to_data_type(window_dim.dtype().id(), window_dim);
+       }
 
 Each domain that contains a Nesting Sets section must also update its State section to include the domain's global nesting level.
 This additional requirement adds the follow constraint to the ``state`` section:

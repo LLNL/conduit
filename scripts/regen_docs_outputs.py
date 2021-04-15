@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+# Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Conduit.
 # note: run in build dir, expects src to be ../src from build dir
 import subprocess
 import os

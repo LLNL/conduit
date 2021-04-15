@@ -116,6 +116,112 @@ class Test_Conduit_Node(unittest.TestCase):
         print(DataType.c_float());
         print(DataType.c_double());
 
+    def test_is_checks(self):
+        # objs
+        edt = DataType.empty()
+        self.assertEqual(edt.name(),"empty")
+        self.assertTrue(edt.is_empty())
+        # lots of false checks anchored from empty
+        self.assertFalse(edt.is_object())
+        self.assertFalse(edt.is_list())
+        #
+        self.assertFalse(edt.is_number())
+        self.assertFalse(edt.is_floating_point())
+        self.assertFalse(edt.is_integer())
+        self.assertFalse(edt.is_signed_integer())
+        self.assertFalse(edt.is_unsigned_integer())
+        #
+        self.assertFalse(edt.is_int8())
+        self.assertFalse(edt.is_int16())
+        self.assertFalse(edt.is_int32())
+        self.assertFalse(edt.is_int64())
+        #
+        self.assertFalse(edt.is_uint8())
+        self.assertFalse(edt.is_uint16())
+        self.assertFalse(edt.is_uint32())
+        self.assertFalse(edt.is_uint64())
+        #
+        self.assertFalse(edt.is_float32())
+        self.assertFalse(edt.is_float64())
+        #
+        self.assertFalse(edt.is_char())
+        self.assertFalse(edt.is_short())
+        self.assertFalse(edt.is_int())
+        self.assertFalse(edt.is_long())
+        self.assertFalse(edt.is_long_long())
+        #
+        self.assertFalse(edt.is_signed_char())
+        self.assertFalse(edt.is_signed_short())
+        self.assertFalse(edt.is_signed_int())
+        self.assertFalse(edt.is_signed_long())
+        self.assertFalse(edt.is_signed_long_long())
+        #
+        self.assertFalse(edt.is_unsigned_char())
+        self.assertFalse(edt.is_unsigned_short())
+        self.assertFalse(edt.is_unsigned_int())
+        self.assertFalse(edt.is_unsigned_long())
+        self.assertFalse(edt.is_unsigned_long_long())
+        #
+        self.assertFalse(edt.is_float())
+        self.assertFalse(edt.is_double())
+        self.assertFalse(edt.is_long_double())
+        #
+        self.assertFalse(edt.is_string())
+        self.assertFalse(edt.is_char8_str())
+        #
+        self.assertFalse(edt.is_index_t())
+        #
+        self.assertFalse(DataType.object().is_empty())
+        #############
+        #
+        self.assertTrue(DataType.object().is_object())
+        self.assertTrue(DataType.list().is_list())
+        # signed integers
+        self.assertTrue(DataType.int8().is_number())
+        self.assertTrue(DataType.int8().is_integer())
+        self.assertTrue(DataType.int8().is_signed_integer())
+        self.assertFalse(DataType.int8().is_unsigned_integer())
+        self.assertFalse(DataType.int8().is_floating_point())
+        self.assertTrue(DataType.int8().is_int8())
+        self.assertTrue(DataType.int16().is_int16())
+        self.assertTrue(DataType.int32().is_int32())
+        self.assertTrue(DataType.int64().is_int64())
+        # unsigned integers
+        self.assertTrue(DataType.uint8().is_uint8())
+        self.assertTrue(DataType.uint8().is_number())
+        self.assertTrue(DataType.uint8().is_integer())
+        self.assertFalse(DataType.uint8().is_signed_integer())
+        self.assertTrue(DataType.uint8().is_unsigned_integer())
+        self.assertFalse(DataType.uint8().is_floating_point())
+        #
+        self.assertTrue(DataType.uint16().is_uint16())
+        self.assertTrue(DataType.uint32().is_uint32())
+        self.assertTrue(DataType.uint64().is_uint64())
+        # floating point
+        self.assertTrue(DataType.float32().is_number())
+        self.assertTrue(DataType.float32().is_floating_point())
+        self.assertTrue(DataType.float32().is_float32())
+        self.assertTrue(DataType.float64().is_float64())
+        # c style integers
+        self.assertTrue(DataType.c_char().is_char())
+        self.assertTrue(DataType.c_short().is_short())
+        self.assertTrue(DataType.c_int().is_int())
+        self.assertTrue(DataType.c_long().is_long())
+        self.assertFalse(DataType.c_char().is_long_long())
+        # c style unsigned integers
+        self.assertTrue(DataType.c_unsigned_char().is_unsigned_char());
+        self.assertTrue(DataType.c_unsigned_short().is_unsigned_short());
+        self.assertTrue(DataType.c_unsigned_int().is_unsigned_int());
+        self.assertTrue(DataType.c_unsigned_long().is_unsigned_long());
+        # floating point
+        self.assertTrue(DataType.c_float().is_float());
+        self.assertTrue(DataType.c_double().is_double());
+        # string
+        self.assertTrue(DataType.char8_str().is_string());
+        self.assertTrue(DataType.char8_str().is_char8_str());
+        # index_t
+        self.assertTrue(DataType.index_t().is_index_t());
+
     def test_enum_ids(self):
         # objs
         self.assertEqual(DataType.empty().id(),  DataType.empty_id())

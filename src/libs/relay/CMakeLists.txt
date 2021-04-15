@@ -170,7 +170,7 @@ endif()
 
 if(HDF5_FOUND)
     list(APPEND conduit_relay_deps hdf5)
-    if(HDF5_IS_PARALLEL AND MPI_FOUND)
+    if(HDF5_IS_PARALLEL)
         list(APPEND conduit_relay_deps mpi)
     endif()
 endif()

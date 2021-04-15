@@ -51,19 +51,11 @@ verify(const conduit::Node &n,
        conduit::Node &info,
        MPI_Comm comm)
 {
-    // some MPI tasks may not have data, that is fine
-    // but blueprint verify will fail, so if the
-    // input node is empty skip verify
-    int local_verify_ok = 0;
-    if(!n.dtype().is_empty())
-    {
-        if(conduit::blueprint::mesh::verify(n,
-                                            info))
-        {
-            local_verify_ok = 1;
-        }
-    }
+    int par_size = relay::mpi::size(comm);
 
+    // NOTE(JRC): MPI tasks without any domains should use a multi-domain
+    // format with empty contents (i.e. an empty object or list node).
+    int local_verify_ok = conduit::blueprint::mesh::verify(n, info) ? 1 : 0;
     int global_verify_ok = 0;
 
     Node n_snd, n_reduce;
@@ -72,7 +64,7 @@ verify(const conduit::Node &n,
     n_reduce.set_external(&global_verify_ok,1);
 
     relay::mpi::sum_all_reduce(n_snd, n_reduce, comm);
-    return global_verify_ok > 0;
+    return global_verify_ok == par_size;
 }
 
 //-------------------------------------------------------------------------
@@ -155,6 +147,47 @@ generate_index(const conduit::Node &mesh,
                                        comm);
 }
 
+
+//-----------------------------------------------------------------------------
+void generate_domain_to_rank_map(const conduit::Node &mesh,
+                                 Node &domain_to_rank_map,
+                                 MPI_Comm comm)
+{
+    int64 par_rank = relay::mpi::rank(comm);
+    int64 max_local_id = -1;
+
+    std::vector<const Node *> domains = ::conduit::blueprint::mesh::domains(mesh);
+    std::vector<int64> local_domains;
+    for(index_t di = 0; di < (index_t)domains.size(); di++)
+    {
+        const conduit::Node &domain = *domains[di];
+
+        int64 domain_id = par_rank;
+        if(domain.has_child("state") && domain["state"].has_child("domain_id"))
+        {
+            domain_id = domain["state/domain_id"].as_int64();
+        }
+        local_domains.push_back(domain_id);
+
+        max_local_id = (domain_id > max_local_id) ? domain_id : max_local_id;
+    }
+
+    Node max_local, max_global;
+    max_local.set_int64(max_local_id);
+    max_global.set_int64(-1);
+    relay::mpi::max_all_reduce(max_local, max_global, comm);
+
+    std::vector<int64> local_map(max_global.as_int64() + 1, -1);
+    for(auto m_itr = local_domains.begin(); m_itr != local_domains.end(); ++m_itr)
+    {
+        local_map[*m_itr] = par_rank;
+    }
+
+    Node local_par;
+    local_par.set_external(&local_map[0], local_map.size());
+
+    relay::mpi::max_all_reduce(local_par, domain_to_rank_map, comm);
+}
 
 //-----------------------------------------------------------------------------
 index_t

@@ -112,6 +112,12 @@ void CONDUIT_BLUEPRINT_API match_nbr_elems(PolyBndry& pbnd,
 
 
 //-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_domain_to_rank_map(
+                                              const conduit::Node &mesh,
+                                              Node &domain_to_rank_map,
+                                              MPI_Comm comm);
+
+//-------------------------------------------------------------------------
 index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh,
                                                 MPI_Comm comm);
 

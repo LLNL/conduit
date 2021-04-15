@@ -100,6 +100,25 @@ TEST(conduit_tutorial, error_handlers)
     conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
     conduit::utils::set_error_handler(conduit::utils::default_error_handler);
     END_EXAMPLE("error_handlers_reset");
+
+    BEGIN_EXAMPLE("error_handlers_current_push_pop");
+    // store current handlers
+    conduit::utils::conduit_info_handler    on_info  = conduit::utils::info_handler();
+    conduit::utils::conduit_warning_handler on_warn  = conduit::utils::warning_handler();
+    conduit::utils::conduit_error_handler   on_error = conduit::utils::error_handler();
+
+    // temporarily restore default handlers
+    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
+    conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
+    conduit::utils::set_error_handler(conduit::utils::default_error_handler);
+
+    // do something exciting ...
+
+    // done with excitement, reset to previously saved handlers
+    conduit::utils::set_info_handler(on_info);
+    conduit::utils::set_warning_handler(on_warn);
+    conduit::utils::set_error_handler(on_error);
+    END_EXAMPLE("error_handlers_current_push_pop");
 }
 
 

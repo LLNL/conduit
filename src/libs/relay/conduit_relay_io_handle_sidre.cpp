@@ -55,7 +55,7 @@ namespace io
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// SidreIOHandle Implementation 
+// SidreIOHandle Implementation
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -74,7 +74,7 @@ SidreIOHandle::~SidreIOHandle()
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 SidreIOHandle::open()
 {
     close();
@@ -134,7 +134,7 @@ SidreIOHandle::open()
             CONDUIT_ERROR("Sidre root file missing entry: protocol")
 
         // read the standard entries
-        Node root_info; 
+        Node root_info;
         m_root_handle.read("file_pattern",root_info["file_pattern"]);
         m_root_handle.read("tree_pattern",root_info["tree_pattern"]);
         m_root_handle.read("number_of_trees",root_info["number_of_trees"]);
@@ -171,9 +171,19 @@ SidreIOHandle::is_open() const
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 SidreIOHandle::read(Node &node)
 {
+    Node opts;
+    read(node,opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+SidreIOHandle::read(Node &node,
+                    const Node &opts)
+{
+    CONDUIT_UNUSED(opts);
     // note: wrong mode errors are handled before dispatch to interface
 
     std::vector<std::string> child_names;
@@ -186,10 +196,21 @@ SidreIOHandle::read(Node &node)
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 SidreIOHandle::read(const std::string &path,
                     Node &node)
 {
+    Node opts;
+    read(path,node,opts);
+}
+
+//-----------------------------------------------------------------------------
+void
+SidreIOHandle::read(const std::string &path,
+                    Node &node,
+                    const Node &opts)
+{
+    CONDUIT_UNUSED(opts);
     // note: wrong mode errors are handled before dispatch to interface
 
     // if blank path or "/", use other method and early exist.
@@ -245,7 +266,7 @@ SidreIOHandle::read(const std::string &path,
     else //
     {
         // we need to prep sidre meta ...
-        
+
         read_from_sidre_tree(m_root_handle,
                              "",
                              path,
@@ -255,8 +276,19 @@ SidreIOHandle::read(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 SidreIOHandle::write(const Node & /*node*/) // node is unused
+{
+    // note: wrong mode errors are handled before dispatch to interface
+
+    // not supported yet, so throw a fatal error
+    CONDUIT_ERROR("IOHandle: sidre write support not implemented");
+}
+
+//-----------------------------------------------------------------------------
+void
+SidreIOHandle::write(const Node & /*node*/, // node is unused
+                     const Node & /*opts*/) // opts is unused
 {
     // note: wrong mode errors are handled before dispatch to interface
 
@@ -266,9 +298,22 @@ SidreIOHandle::write(const Node & /*node*/) // node is unused
 
 
 //-----------------------------------------------------------------------------
-void 
+void
 SidreIOHandle::write(const Node & /*node*/, // node is unused
                    const std::string & /*path*/ ) // path is unused
+{
+    // note: wrong mode errors are handled before dispatch to interface
+
+    // not supported yet, so throw a fatal error
+    CONDUIT_ERROR("IOHandle: sidre write support not implemented");
+
+}
+
+//-----------------------------------------------------------------------------
+void
+SidreIOHandle::write(const Node & /*node*/, // node is unused
+                   const std::string & /*path*/, // path is unused
+                   const Node & /*opts*/) // opts is unused
 {
     // note: wrong mode errors are handled before dispatch to interface
 
@@ -331,7 +376,7 @@ SidreIOHandle::list_child_names(const std::string &path,
                 m_root_handle.list_child_names(p_next,res);
             }
         }
-        else 
+        else
         {
             if(utils::string_is_integer(p_first))
             {
@@ -352,7 +397,7 @@ SidreIOHandle::list_child_names(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 SidreIOHandle::remove(const std::string &/*path*/) // path is unused
 {
     // note: wrong mode errors are handled before dispatch to interface
@@ -362,7 +407,7 @@ SidreIOHandle::remove(const std::string &/*path*/) // path is unused
 }
 
 //-----------------------------------------------------------------------------
-bool 
+bool
 SidreIOHandle::has_path(const std::string &path)
 {
     // note: wrong mode errors are handled before dispatch to interface
@@ -380,7 +425,7 @@ SidreIOHandle::has_path(const std::string &path)
             if(p_next.empty())
             {
                 res = true;
-            } 
+            }
             else
             {
                 res = m_root_handle.has_path(p_next);
@@ -425,7 +470,7 @@ SidreIOHandle::has_path(const std::string &path)
 
 
 //-----------------------------------------------------------------------------
-void 
+void
 SidreIOHandle::close()
 {
     m_open = false;
@@ -444,7 +489,7 @@ SidreIOHandle::close()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-std::string 
+std::string
 SidreIOHandle::root_file_directory() const
 {
     std::string curr, next;
@@ -454,11 +499,11 @@ SidreIOHandle::root_file_directory() const
 
 
 //-------------------------------------------------------------------//
-std::string 
+std::string
 SidreIOHandle::detect_root_protocol() const
 {
     //
-    // TODO: detect underlying root file type -- 
+    // TODO: detect underlying root file type --
     //  could be hdf5, json, or yaml
     std::string ftype;
     identify_file_type(path(),ftype);
@@ -468,7 +513,7 @@ SidreIOHandle::detect_root_protocol() const
 //-------------------------------------------------------------------//
 // adapted from VisIt, avtBlueprintTreeCache
 //              ascent, hola, BlueprintTreePathGenerator
-std::string 
+std::string
 SidreIOHandle::expand_pattern(const std::string pattern,
                               int idx) const
 {
@@ -581,11 +626,11 @@ SidreIOHandle::generate_domain_to_file_map(int num_domains,
     out["global_domains_per_file"].set(DataType::int32(num_files));
     out["global_domain_offsets"].set(DataType::int32(num_files));
     out["global_domain_to_file"].set(DataType::int32(num_domains));
-    
+
     int32_array v_domains_per_file = out["global_domains_per_file"].value();
     int32_array v_domains_offsets  = out["global_domain_offsets"].value();
     int32_array v_domain_to_file   = out["global_domain_to_file"].value();
-    
+
     // setup domains per file
     for(int f=0; f < num_files; f++)
     {
@@ -601,7 +646,7 @@ SidreIOHandle::generate_domain_to_file_map(int num_domains,
         if(f > 0)
             v_domains_offsets[f] += v_domains_offsets[f-1];
     }
-    
+
     // do assignment, create simple map
     int f_idx = 0;
     for(int d=0; d < num_domains; d++)
@@ -613,7 +658,7 @@ SidreIOHandle::generate_domain_to_file_map(int num_domains,
 }
 
 //---------------------------------------------------------------------------//
-// Helper that expands a sidre groups's meta path to the expected file path 
+// Helper that expands a sidre groups's meta path to the expected file path
 //---------------------------------------------------------------------------//
 std::string
 SidreIOHandle::generate_sidre_meta_group_path(const std::string &tree_path)
@@ -631,7 +676,7 @@ SidreIOHandle::generate_sidre_meta_group_path(const std::string &tree_path)
         conduit::utils::split_path(t_path,
                                    t_curr,
                                    t_next);
-                                   
+
         oss << "groups/" << t_curr;
         if( t_next != "")
         {
@@ -698,7 +743,7 @@ SidreIOHandle::sidre_meta_tree_has_path(const Node &sidre_meta,
     std::string sidre_mtree_group = generate_sidre_meta_group_path(path);
     std::string sidre_mtree_view  = generate_sidre_meta_view_path(path);
 
-    return sidre_meta.has_path(sidre_mtree_group) || 
+    return sidre_meta.has_path(sidre_mtree_group) ||
            sidre_meta.has_path(sidre_mtree_view);
 
 }
@@ -793,7 +838,7 @@ SidreIOHandle::load_sidre_tree(Node &sidre_meta,
     //              << tree_path   << " "
     //              << curr_path);
 
-    // we want to pull out a sub-tree of the sidre group hierarchy 
+    // we want to pull out a sub-tree of the sidre group hierarchy
     //
     // descend down to "tree_path" in sidre meta
 
@@ -815,7 +860,7 @@ SidreIOHandle::load_sidre_tree(Node &sidre_meta,
     {
         // BP_PLUGIN_INFO(curr_path << tree_curr << " is a group");
         if(tree_next.size() == 0)
-        { 
+        {
             // we have the correct sidre meta node, now read
             load_sidre_group(sidre_meta["groups"][tree_curr],
                              hnd,
@@ -823,7 +868,7 @@ SidreIOHandle::load_sidre_tree(Node &sidre_meta,
                              curr_path + tree_curr  + "/",
                              out);
         }
-        else // keep descending 
+        else // keep descending
         {
             load_sidre_tree(sidre_meta["groups"][tree_curr],
                             hnd,
@@ -916,7 +961,7 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
     //     simply copy the "value" from the meta view
     //
     //   the view is attached to a buffer
-    //     in this case we need to get the info about the buffer the view is 
+    //     in this case we need to get the info about the buffer the view is
     //     attached to and read the proper slab of that buffer's hdf5 dataset
     //     into a new compact node.
     //
@@ -969,11 +1014,11 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
         Schema view_schema(view_schema_str);
         // BP_PLUGIN_INFO("sidre view schema: " << view_schema.to_json());
 
-        // if the schema isn't compact, or if we are reading 
-        // less elements than the entire buffer, 
+        // if the schema isn't compact, or if we are reading
+        // less elements than the entire buffer,
         // we need to read a subset of the hdf5 dataset
 
-        if(   !view_schema.is_compact() || 
+        if(   !view_schema.is_compact() ||
             ( view_schema.dtype().number_of_elements() <
               buffer_schema.dtype().number_of_elements() )
           )
@@ -993,8 +1038,8 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
             // ---------------------------------------------------------------
             //
             // we can use hdf5 slab fetch if the the dtype.id() of the buffer
-            // and the view are the same. 
-            // 
+            // and the view are the same.
+            //
             //  otherwise, we will have to fetch the entire buffer since
             //  hdf5 doesn't support byte level striding.
 
@@ -1050,10 +1095,10 @@ SidreIOHandle::load_sidre_view(Node &sidre_meta_view,
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 SidreIOHandle::read_from_root(const std::string &path, Node &node)
 {
-    // skip cache first 
+    // skip cache first
     if(!path.empty())
         m_root_handle.read(path,node);
     else
@@ -1084,7 +1129,7 @@ SidreIOHandle::prepare_sidre_meta_tree(IOHandle &hnd,
 {
     //CONDUIT_INFO("prepare_sidre_meta_tree "<< tree_prefix << " " << path);
 
-    // check for read at root of the file, for this case we 
+    // check for read at root of the file, for this case we
     // need to read the entire sidre tree
     if(path.empty() || path == "/")
     {
@@ -1102,8 +1147,8 @@ SidreIOHandle::prepare_sidre_meta_tree(IOHandle &hnd,
         // check if either exists cached
         if( !sidre_meta.has_path(sidre_mtree_group) ||
             !sidre_meta.has_path(sidre_mtree_view) )
-        {   
-            // CONDUIT_INFO("sidre meta not loaded yet " 
+        {
+            // CONDUIT_INFO("sidre meta not loaded yet "
             //             << sidre_mtree_group << " or " << sidre_mtree_view);
             // CONDUIT_INFO("check for " << tree_prefix + "sidre/" + sidre_mtree_group);
             // CONDUIT_INFO("check for " << tree_prefix + "sidre/" + sidre_mtree_view);
@@ -1125,7 +1170,7 @@ SidreIOHandle::prepare_sidre_meta_tree(IOHandle &hnd,
             }
             // the path is invalid, we don't throw an error here
             // because this method is also used to prepare sidre meta trees
-            // for has_path and list_child_names cases, which don't throw 
+            // for has_path and list_child_names cases, which don't throw
             // errors, but here are the details about what we would expect
             // for valid path:
             // {
@@ -1199,10 +1244,10 @@ SidreIOHandle::read_from_sidre_tree(int tree_id,
     // if we don't already have it cached, this will fetch
     // the proper sidre meta data
     prepare_sidre_meta_tree(tree_id,path);
-    
+
     if(m_has_spio_index)
     {
-    
+
         // fetch the right file handle
         prepare_file_handle(tree_id);
         int file_id = generate_file_id_for_tree(tree_id);

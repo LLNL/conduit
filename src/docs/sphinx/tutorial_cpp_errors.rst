@@ -80,3 +80,20 @@ The default handlers are part of the conduit::utils interface, so you can restor
    :language: cpp
    :dedent: 4
 
+Accessing Current Handlers
+--------------------------------
+
+You can access the currently active handlers using the `conduit::utils::info_handler()`,
+`conduit::utils::warning_handler()`, and `conduit::utils::error_handler()` methods.
+Here is an example that shows how to save the current handlers, temporarily restore
+the default handlers, execute an operation, and finally restore the saved handlers:
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_errors.cpp
+   :start-after: BEGIN_EXAMPLE("error_handlers_current_push_pop")
+   :end-before:  END_EXAMPLE("error_handlers_current_push_pop")
+   :language: cpp
+   :dedent: 4
+
+
+
+

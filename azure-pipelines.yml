@@ -547,6 +547,38 @@ stages:
           ./conduit_example
         displayName: 'Test vs Install (using-with-make)'
 
+      - script: |
+          ################################
+          # cpp fort and py example
+          ################################
+          # only run this when python is enabled
+          # (there might be a better way to do this with an azure `condition:` stmt)
+          if [ $ENABLE_PYTHON = 'OFF' ]; then exit 0; fi
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          # find spack installed python
+          export PYTHON_EXE=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin/python`
+          # add conduit module to python path
+          export PYTHONPATH=${ROOT_DIR}/install/python-modules/
+          echo $PYTHONPATH
+          which cmake
+          # lets build
+          cd install/examples/conduit/cpp_fort_and_py
+          mkdir _test_build
+          cd _test_build
+          cmake -DCONDUIT_DIR=${ROOT_DIR}/install  -DPYTHON_EXECUTABLE=${PYTHON_EXE} ../
+          make VERBOSE=1
+          # lets run!
+          ./conduit_cpp_and_py_ex
+          ./conduit_fort_and_py_ex
+        displayName: 'Test vs Install (cpp_fort_and_py)'
+        
+
   ###############################################################################
   # Docker build and test case, that leverages our script that calls Docker Build
   ###############################################################################

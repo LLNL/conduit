@@ -22,7 +22,7 @@ TEST(c_conduit_blueprint_mesh, create_and_verify)
     conduit_node *nempty = conduit_node_create();
     conduit_node *info   = conduit_node_create();
 
-    EXPECT_FALSE(conduit_blueprint_mesh_verify(nempty,info));
+    EXPECT_TRUE(conduit_blueprint_mesh_verify(nempty,info));
     
 
     conduit_blueprint_mesh_examples_braid("hexs",3,3,3,n);

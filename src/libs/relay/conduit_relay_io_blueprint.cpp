@@ -306,6 +306,15 @@ void make_domain_ids(conduit::Node &domains
     dom["state/domain_id"] = domain_offset + i;
   }
 }
+
+
+
+bool quick_mesh_check(const conduit::Node &n)
+{
+    return n.has_child("topologies") &&
+           n["topologies"].number_of_children() > 0;
+}
+
 //
 // This expects a single or multi_domain blueprint mesh and will iterate
 // through all domains to see if they are valid. Returns true
@@ -334,9 +343,14 @@ bool clean_mesh(const conduit::Node &data,
     // check all the children for valid domains
     for(int i = 0; i < potential_doms; ++i)
     {
+      // we expect folks to use their best behaivor
+      // (mesh bp verify is true before passing data)
+      // so we can assume we have valid mesh bp.
+      // if a child looks like a mesh, we have one
       conduit::Node info;
       const conduit::Node &child = data.child(i);
-      bool is_valid = ::conduit::blueprint::mesh::verify(child, info);
+      
+      bool is_valid = quick_mesh_check(child);
       if(is_valid)
       {
         conduit::Node &dest_dom = output.append();
@@ -350,7 +364,7 @@ bool clean_mesh(const conduit::Node &data,
   {
     // check to see if this is a single valid domain
     conduit::Node info;
-    bool is_valid = ::conduit::blueprint::mesh::verify(data, info);
+    bool is_valid = quick_mesh_check(data);
     if(is_valid)
     {
       conduit::Node &dest_dom = output.append();
@@ -719,9 +733,9 @@ void write_mesh(const Node &mesh,
     {
         opts_file_style = opts["file_style"].as_string();
 
-        if(opts_suffix != "default" && 
-           opts_suffix != "root_only" &&
-           opts_suffix != "multi_file" )
+        if(opts_file_style != "default" && 
+           opts_file_style != "root_only" &&
+           opts_file_style != "multi_file" )
         {
             CONDUIT_ERROR("write_mesh invalid file_style option: \"" 
                           << opts_file_style << "\"\n"
@@ -829,7 +843,7 @@ void write_mesh(const Node &mesh,
             {
                 static std::map<std::string,int> counters;
                 CONDUIT_INFO("Blueprint save: no 'state/cycle' present."
-                            " Defaulting to counter");
+                             " Defaulting to counter");
                 cycle = counters[path];
                 counters[path]++;
             }
@@ -838,7 +852,7 @@ void write_mesh(const Node &mesh,
                 opts_suffix = "none";
             }
         }
-        else
+        else if(opts_suffix == "default")
         {
             cycle = dom["state/cycle"].to_int();
             opts_suffix = "cycle";
@@ -981,17 +995,36 @@ void write_mesh(const Node &mesh,
     //   root_only, multi_file
     if(opts_file_style == "root_only")
     {
+        // if truncate, first touch needs to open the file with
+        //          open_opts["mode"] = "wt";
+
         // write out local domains, since all tasks will
         // write to single file in this case, we need baton.
         // the outer loop + par_rank == current_writer implements
         // the baton.
         relay::io::IOHandle hnd;
+        
+        Node local_root_file_created;
+        Node global_root_file_created;
+        local_root_file_created.set((int)0);
+        global_root_file_created.set((int)0);
+
         for(int current_writer=0; current_writer < par_size; current_writer++)
         {
             if(par_rank == current_writer)
             {
                 for(int i = 0; i < local_num_domains; ++i)
                 {
+                    // if truncate, first rank to touch the file needs
+                    // to open at
+                    Node open_opts;
+                    if( (global_root_file_created.as_int() == 0) 
+                        && opts_truncate)
+                    {
+                        Node open_opts;
+                        local_root_file_created.set((int)1);
+                    }
+                    
                     if(!hnd.is_open())
                     {
                         hnd.open(root_filename,file_protocol);
@@ -1018,10 +1051,14 @@ void write_mesh(const Node &mesh,
                 }
             }
 
-    #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-        MPI_Barrier(mpi_comm);
-    #endif
-
+        // Reduce to sync up (like a barrier) and solve first writer need
+        #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+            mpi::max_all_reduce(local_root_file_created,
+                                global_root_file_created,
+                                mpi_comm);
+        #else
+            global_root_file_created.set(local_root_file_created);
+        #endif
         }
     }
     else if(global_num_domains == num_files)
@@ -1038,7 +1075,15 @@ void write_mesh(const Node &mesh,
                                                                     domain,
                                                                     file_protocol,
                                                                     opts_mesh_name));
-            relay::io::save(dom, output_file);
+            // properly support truncate vs non truncate
+            if(opts_truncate)
+            {
+                relay::io::save(dom, output_file);
+            }
+            else
+            {
+                relay::io::save_merged(dom, output_file);
+            }
         }
     }
     else // more complex case, N domains to M files
@@ -1204,10 +1249,11 @@ void write_mesh(const Node &mesh,
                                     hnd.open(output_file, open_opts);
                                 }
 
-                                hnd.write(dom, curr_path);
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
                                 //              << output_file << " path " << path);
 
+                                hnd.write(dom, curr_path);
+                                
                                 // update status, we are done with this doman
                                 local_domain_status[d] = 0;
                             }
@@ -1366,7 +1412,16 @@ void write_mesh(const Node &mesh,
         root["tree_pattern"]     = output_tree_pattern;
 
         relay::io::IOHandle hnd;
-        hnd.open(root_filename, file_protocol);
+
+        // if not root only, this is the first time we are writing 
+        // to the root file -- make sure to properly support truncate
+        Node open_opts;
+        if(opts_file_style != "root_only" && opts_truncate)
+        {
+            open_opts["mode"] = "wt";
+        }
+
+        hnd.open(root_filename, file_protocol, open_opts);
         hnd.write(root);
         hnd.close();
     }
@@ -1699,126 +1754,6 @@ void read_mesh(const std::string &root_file_path,
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::io --
 //-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay::<mpi>::io_blueprint -- (DEPRECATED)
-//-----------------------------------------------------------------------------
-namespace io_blueprint
-{
-
-//---------------------------------------------------------------------------//
-// DEPRECATED
-//---------------------------------------------------------------------------//
-void
-save(const Node &mesh,
-     const std::string &path
-     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm comm))
-{
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    save(mesh,
-         path,
-         relay::mpi::io::blueprint::detail::identify_protocol(path),
-         comm);
-#else
-    save(mesh,
-         path,
-         relay::io::blueprint::detail::identify_protocol(path));
-#endif
-}
-
-//---------------------------------------------------------------------------//
-// DEPRECATED
-//---------------------------------------------------------------------------//
-void
-save(const Node &mesh,
-     const std::string &path,
-     const std::string &protocol
-     CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm /*comm*/))
-{
-    // TODO: Add support for yaml protocol
-    Node info;
-    if(protocol != "json" && protocol != "hdf5")
-    {
-        CONDUIT_ERROR("Blueprint I/O doesn't support '" << protocol << "' outputs; "
-                      "output type must be 'blueprint_root' (JSON) or 'blueprint_root_hdf5' (HDF5): " <<
-                      "Failed to save mesh to path " << path);
-    }
-
-    if(!::conduit::blueprint::mesh::verify(mesh, info))
-    {
-        CONDUIT_ERROR("Given node isn't a valid Blueprint mesh: " <<
-                      "Failed to save mesh to path " << path);
-    }
-
-    // NOTE(JRC): The code below is used in lieu of `blueprint::mesh::to_multi_domain`
-    // because the official Blueprint function produces results that are incompatible
-    // with HDF5 outputs (because they include Conduit lists instead of dictionaries).
-    Node index;
-    if(::conduit::blueprint::mesh::is_multi_domain(mesh))
-    {
-        index["data"].set_external(mesh);
-    }
-    else
-    {
-        index["data/mesh"].set_external(mesh);
-    }
-
-    Node &bpindex = index["blueprint_index"];
-    {
-        NodeConstIterator domain_iter = index["data"].children();
-        while(domain_iter.has_next())
-        {
-            const Node &domain = domain_iter.next();
-            const std::string domain_name = domain_iter.name();
-
-            // NOTE: Skip all domains containing one or more mixed-shape topologies
-            // because this type of mesh isn't fully supported yet.
-            bool is_domain_index_valid = true;
-            NodeConstIterator topo_iter = domain["topologies"].children();
-            while(topo_iter.has_next())
-            {
-                const Node &topo = topo_iter.next();
-                is_domain_index_valid &= (
-                    !::conduit::blueprint::mesh::topology::unstructured::verify(topo, info) ||
-                    !topo["elements"].has_child("element_types"));
-            }
-
-            if(is_domain_index_valid)
-            {
-                ::conduit::blueprint::mesh::generate_index(
-                    domain,domain_name,1,bpindex[domain_name]);
-            }
-        }
-    }
-
-    if(bpindex.number_of_children() == 0)
-    {
-        CONDUIT_INFO("No valid domains in given Blueprint mesh: " <<
-                     "Skipping save of mesh to path " << path);
-    }
-    else
-    {
-        index["protocol/name"].set(protocol);
-        index["protocol/version"].set(CONDUIT_VERSION);
-
-        index["number_of_files"].set(1);
-        index["number_of_trees"].set(1);
-        index["file_pattern"].set(path);
-        index["tree_pattern"].set((protocol == "hdf5") ? "data/" : "data");
-
-        relay::io::save(index,path,protocol);
-    }
-}
-
-
-
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::relay::<mpi>::io_blueprint --
-//-----------------------------------------------------------------------------
-
 
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
