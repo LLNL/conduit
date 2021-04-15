@@ -28,7 +28,7 @@ endif()
 # if using newer CMake, prefer using MPI as imported targets
 ################################################################
 if( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.15.0" )
-    set(BLT_USE_MPI_IMPORTED_TARGETS TRUE CACHE BOOL "")
+    set(BLT_USE_FIND_MPI_TARGETS TRUE CACHE BOOL "")
 endif()
 
 
