@@ -1502,19 +1502,19 @@ void mesh::to_multi_domain(const conduit::Node &n,
 
 //-----------------------------------------------------------------------------
 void
-mesh::connectivity::make_element_2d(std::vector<int64_t>& elem,
-                                    int64_t element,
-                                    int64_t iwidth)
+mesh::connectivity::make_element_2d(std::vector<int64>& elem,
+                                    int64 element,
+                                    int64 iwidth)
 {
-    int64_t ilo = element % iwidth;
-    int64_t jlo = element / iwidth;
-    int64_t ihi = ilo + 1;
-    int64_t jhi = jlo + 1;
+    int64 ilo = element % iwidth;
+    int64 jlo = element / iwidth;
+    int64 ihi = ilo + 1;
+    int64 jhi = jlo + 1;
 
-    int64_t ilo_jlo = (iwidth+1)*jlo + ilo;
-    int64_t ihi_jlo = (iwidth+1)*jlo + ihi;
-    int64_t ihi_jhi = (iwidth+1)*jhi + ihi;
-    int64_t ilo_jhi = (iwidth+1)*jhi + ilo;
+    int64 ilo_jlo = (iwidth+1)*jlo + ilo;
+    int64 ihi_jlo = (iwidth+1)*jlo + ihi;
+    int64 ihi_jhi = (iwidth+1)*jhi + ihi;
+    int64 ilo_jhi = (iwidth+1)*jhi + ilo;
  
     elem.push_back(ilo_jlo);
     elem.push_back(ihi_jlo);
@@ -1525,36 +1525,36 @@ mesh::connectivity::make_element_2d(std::vector<int64_t>& elem,
 
 void
 mesh::connectivity::make_element_3d(ElemType& connect,
-                                    int64_t element,
-                                    int64_t iwidth,
-                                    int64_t jwidth,
-                                    int64_t kwidth,
+                                    int64 element,
+                                    int64 iwidth,
+                                    int64 jwidth,
+                                    int64 kwidth,
                                     SubelemMap& faces)
 {
-    int64_t ilo = element % iwidth;
-    int64_t jlo = (element / iwidth) % jwidth;
-    int64_t klo = element / (iwidth*jwidth);
-    int64_t ihi = ilo + 1;
-    int64_t jhi = jlo + 1;
-    int64_t khi = klo + 1;
+    int64 ilo = element % iwidth;
+    int64 jlo = (element / iwidth) % jwidth;
+    int64 klo = element / (iwidth*jwidth);
+    int64 ihi = ilo + 1;
+    int64 jhi = jlo + 1;
+    int64 khi = klo + 1;
 
-    int64_t jlo_offset = (iwidth+1)*jlo;
-    int64_t jhi_offset = (iwidth+1)*jhi;
-    int64_t klo_offset = (iwidth+1)*(jwidth+1)*klo;
-    int64_t khi_offset = (iwidth+1)*(jwidth+1)*khi;
+    int64 jlo_offset = (iwidth+1)*jlo;
+    int64 jhi_offset = (iwidth+1)*jhi;
+    int64 klo_offset = (iwidth+1)*(jwidth+1)*klo;
+    int64 khi_offset = (iwidth+1)*(jwidth+1)*khi;
 
 
-    int64_t iface_start = 0; 
-    int64_t jface_start = (iwidth+1)*jwidth*kwidth;
-    int64_t kface_start = jface_start + iwidth*(jwidth+1)*kwidth;
+    int64 iface_start = 0; 
+    int64 jface_start = (iwidth+1)*jwidth*kwidth;
+    int64 kface_start = jface_start + iwidth*(jwidth+1)*kwidth;
 
     //ifaces
     {
-        int64_t j_offset = jlo_offset; 
-        int64_t k_offset = (iwidth+1)*jwidth*klo;
+        int64 j_offset = jlo_offset; 
+        int64 k_offset = (iwidth+1)*jwidth*klo;
 
-        int64_t lo_face = iface_start + ilo + j_offset + k_offset;
-        int64_t hi_face = iface_start + ihi + j_offset + k_offset;
+        int64 lo_face = iface_start + ilo + j_offset + k_offset;
+        int64 hi_face = iface_start + ihi + j_offset + k_offset;
 
 
         //ilo face
@@ -1580,13 +1580,13 @@ mesh::connectivity::make_element_3d(ElemType& connect,
     }
     //jfaces
     {
-        int64_t i_offset = ilo;  
-        int64_t jlo_face_offset = iwidth*jlo; 
-        int64_t jhi_face_offset = iwidth*jhi; 
-        int64_t k_offset = iwidth*(jwidth+1)*klo;
+        int64 i_offset = ilo;  
+        int64 jlo_face_offset = iwidth*jlo; 
+        int64 jhi_face_offset = iwidth*jhi; 
+        int64 k_offset = iwidth*(jwidth+1)*klo;
 
-        int64_t lo_face = jface_start + i_offset + jlo_face_offset + k_offset;
-        int64_t hi_face = jface_start + i_offset + jhi_face_offset + k_offset;
+        int64 lo_face = jface_start + i_offset + jlo_face_offset + k_offset;
+        int64 hi_face = jface_start + i_offset + jhi_face_offset + k_offset;
 
         //jlo face
         if (faces.find(lo_face) == faces.end())
@@ -1611,13 +1611,13 @@ mesh::connectivity::make_element_3d(ElemType& connect,
     }
     //kfaces
     {
-        int64_t i_offset = ilo;  
-        int64_t j_offset = iwidth*jlo; 
-        int64_t klo_face_offset = iwidth*jwidth*klo;
-        int64_t khi_face_offset = iwidth*jwidth*khi;
+        int64 i_offset = ilo;  
+        int64 j_offset = iwidth*jlo; 
+        int64 klo_face_offset = iwidth*jwidth*klo;
+        int64 khi_face_offset = iwidth*jwidth*khi;
 
-        int64_t lo_face = kface_start + i_offset + j_offset + klo_face_offset;
-        int64_t hi_face = kface_start + i_offset + j_offset + khi_face_offset;
+        int64 lo_face = kface_start + i_offset + j_offset + klo_face_offset;
+        int64 hi_face = kface_start + i_offset + j_offset + khi_face_offset;
 
         //klo face
         if (faces.find(lo_face) == faces.end())
@@ -1648,16 +1648,16 @@ mesh::connectivity::make_element_3d(ElemType& connect,
 //-----------------------------------------------------------------------------
 void
 mesh::connectivity::create_elements_2d(const Node& ref_win,
-                                       int64_t i_lo,
-                                       int64_t j_lo,
-                                       int64_t iwidth,
-                                       std::map<int, std::vector<int64_t> >& elems)
+                                       int64 i_lo,
+                                       int64 j_lo,
+                                       int64 iwidth,
+                                       std::map<int, std::vector<int64> >& elems)
 {
-    int64_t origin_iref = ref_win["origin/i"].as_int();
-    int64_t origin_jref = ref_win["origin/j"].as_int();
+    int64 origin_iref = ref_win["origin/i"].as_int();
+    int64 origin_jref = ref_win["origin/j"].as_int();
 
-    int64_t ref_size_i = ref_win["dims/i"].as_int();
-    int64_t ref_size_j = ref_win["dims/j"].as_int();
+    int64 ref_size_i = ref_win["dims/i"].as_int();
+    int64 ref_size_j = ref_win["dims/j"].as_int();
 
     if (ref_size_i == 1)
     {
@@ -1768,22 +1768,22 @@ mesh::connectivity::create_elements_2d(const Node& ref_win,
 //-----------------------------------------------------------------------------
 void
 mesh::connectivity::create_elements_3d(const Node& ref_win,
-                                       int64_t i_lo,
-                                       int64_t j_lo,
-                                       int64_t k_lo,
-                                       int64_t iwidth,
-                                       int64_t jwidth,
-                                       int64_t kwidth,
+                                       int64 i_lo,
+                                       int64 j_lo,
+                                       int64 k_lo,
+                                       int64 iwidth,
+                                       int64 jwidth,
+                                       int64 kwidth,
                                        std::map<int, ElemType>& elems,
                                        SubelemMap& faces)
 {
-    int64_t origin_iref = ref_win["origin/i"].as_int();
-    int64_t origin_jref = ref_win["origin/j"].as_int();
-    int64_t origin_kref = ref_win["origin/k"].as_int();
+    int64 origin_iref = ref_win["origin/i"].as_int();
+    int64 origin_jref = ref_win["origin/j"].as_int();
+    int64 origin_kref = ref_win["origin/k"].as_int();
 
-    int64_t ref_size_i = ref_win["dims/i"].as_int();
-    int64_t ref_size_j = ref_win["dims/j"].as_int();
-    int64_t ref_size_k = ref_win["dims/k"].as_int();
+    int64 ref_size_i = ref_win["dims/i"].as_int();
+    int64 ref_size_j = ref_win["dims/j"].as_int();
+    int64 ref_size_k = ref_win["dims/k"].as_int();
 
     int istart = origin_iref - i_lo;
     int jstart = origin_jref - j_lo;
@@ -1831,21 +1831,21 @@ mesh::connectivity::create_elements_3d(const Node& ref_win,
 
 void
 mesh::connectivity::connect_elements_3d(const Node& ref_win,
-                                        int64_t i_lo,
-                                        int64_t j_lo,
-                                        int64_t k_lo,
-                                        int64_t iwidth,
-                                        int64_t jwidth,
-                                        int64_t& new_vertex,
+                                        int64 i_lo,
+                                        int64 j_lo,
+                                        int64 k_lo,
+                                        int64 iwidth,
+                                        int64 jwidth,
+                                        int64& new_vertex,
                                         std::map<int, ElemType>& elems)
 {
-    int64_t origin_iref = ref_win["origin/i"].as_int();
-    int64_t origin_jref = ref_win["origin/j"].as_int();
-    int64_t origin_kref = ref_win["origin/k"].as_int();
+    int64 origin_iref = ref_win["origin/i"].as_int();
+    int64 origin_jref = ref_win["origin/j"].as_int();
+    int64 origin_kref = ref_win["origin/k"].as_int();
 
-    int64_t ref_size_i = ref_win["dims/i"].as_int();
-    int64_t ref_size_j = ref_win["dims/j"].as_int();
-    int64_t ref_size_k = ref_win["dims/k"].as_int();
+    int64 ref_size_i = ref_win["dims/i"].as_int();
+    int64 ref_size_j = ref_win["dims/j"].as_int();
+    int64 ref_size_k = ref_win["dims/k"].as_int();
 
     int kstart = origin_kref - k_lo;
     int kend = origin_kref - k_lo + ref_size_k - 1;
@@ -1874,18 +1874,18 @@ mesh::connectivity::connect_elements_3d(const Node& ref_win,
 
 void
 mesh::connectivity::connect_elements_2d(const Node& ref_win,
-                                     int64_t i_lo,
-                                     int64_t j_lo,
-                                     int64_t iwidth,
-                                     int64_t ratio,
-                                     int64_t& new_vertex,
-                                     std::map<int, std::vector<int64_t> >& elems)
+                                     int64 i_lo,
+                                     int64 j_lo,
+                                     int64 iwidth,
+                                     int64 ratio,
+                                     int64& new_vertex,
+                                     std::map<int, std::vector<int64> >& elems)
 {
-    int64_t origin_iref = ref_win["origin/i"].as_int();
-    int64_t origin_jref = ref_win["origin/j"].as_int();
+    int64 origin_iref = ref_win["origin/i"].as_int();
+    int64 origin_jref = ref_win["origin/j"].as_int();
 
-    int64_t ref_size_i = ref_win["dims/i"].as_int();
-    int64_t ref_size_j = ref_win["dims/j"].as_int();
+    int64 ref_size_i = ref_win["dims/i"].as_int();
+    int64 ref_size_j = ref_win["dims/j"].as_int();
 
     if (ref_size_i == 1)
     {
@@ -1920,9 +1920,9 @@ mesh::connectivity::connect_elements_2d(const Node& ref_win,
                     int corner = 1;
                     if (elem_conn[1] - elem_conn[0] != 1)
                     {
-                        int64_t ioff = offset % iwidth;
-                        int64_t joff = offset / iwidth;
-                        int64_t target = (iwidth+1)*joff + ioff + 1;
+                        int64 ioff = offset % iwidth;
+                        int64 joff = offset / iwidth;
+                        int64 target = (iwidth+1)*joff + ioff + 1;
                         for (int nr = 1; nr < 1+ratio; ++nr)
                         {
                             if (elem_conn[nr] == target)
@@ -1984,9 +1984,9 @@ mesh::connectivity::connect_elements_2d(const Node& ref_win,
                     int corner = 2;
                     if (old_size != 4)
                     {
-                        int64_t ioff = offset % iwidth;
-                        int64_t joff = offset / iwidth;
-                        int64_t target = (iwidth+1)*(joff+1) + ioff + 1;
+                        int64 ioff = offset % iwidth;
+                        int64 joff = offset / iwidth;
+                        int64 target = (iwidth+1)*(joff+1) + ioff + 1;
                         for (int nr = 3; nr < 3+ratio; ++nr)
                         {
                             if (elem_conn[nr] == target) {

@@ -66,26 +66,26 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
 //-------------------------------------------------------------------------
 struct SharedFace
     {
-        int64_t m_face_id;
-        int64_t m_crse_pt = -1;
-        int64_t m_fine_pt = -1;
+        int64 m_face_id;
+        int64 m_crse_pt = -1;
+        int64 m_fine_pt = -1;
     };
 
 
 struct PolyBndry
 {
     int side; //which 3D side 0-5
-    int64_t m_nbr_rank;
-    int64_t m_nbr_id;
-    std::vector<int64_t> m_elems; //elems of nbr domain that touch side
-    std::map<int64_t, int64_t> m_bface; //map from nbr elem to face of nbr elem
-    std::map<int64_t, std::vector<int64_t> > m_nbr_elems; //map from local
+    int64 m_nbr_rank;
+    int64 m_nbr_id;
+    std::vector<int64> m_elems; //elems of nbr domain that touch side
+    std::map<int64, int64> m_bface; //map from nbr elem to face of nbr elem
+    std::map<int64, std::vector<int64> > m_nbr_elems; //map from local
                                                           //elem to all
                                                           //nbr elems that
                                                           //touch it 
     //outer map: local elem, inner map: nbr elem to face
-    std::map<int64_t, std::map<int64_t, SharedFace> > m_nbr_faces;
-    std::set<int64_t> m_shared_fine;
+    std::map<int64, std::map<int64, SharedFace> > m_nbr_faces;
+    std::set<int64> m_shared_fine;
 };
 
 void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
@@ -106,9 +106,9 @@ void CONDUIT_BLUEPRINT_API match_nbr_elems(PolyBndry& pbnd,
     const Node& ref_topo,
     const Node& ref_win,
     const Node& nbr_win,
-    int64_t nbr_iwidth, int64_t nbr_jwidth,
-    int64_t ni_lo, int64_t nj_lo, int64_t nk_lo,
-    int64_t ratio_i, int64_t ratio_j, int64_t ratio_k);
+    int64 nbr_iwidth, int64 nbr_jwidth,
+    int64 ni_lo, int64 nj_lo, int64 nk_lo,
+    int64 ratio_i, int64 ratio_j, int64 ratio_k);
 
 
 //-------------------------------------------------------------------------

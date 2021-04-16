@@ -264,7 +264,7 @@ void to_polygonal(const Node &n,
     dest.reset();
     NodeConstIterator itr = n.children();
 
-    std::map<int, std::map<int, std::vector<int64_t> > > poly_elems_map;
+    std::map<int, std::map<int, std::vector<int64> > > poly_elems_map;
 
     while(itr.has_next())
     {
@@ -273,8 +273,8 @@ void to_polygonal(const Node &n,
         dest[domain_name]["state"] = chld["state"];
         const Node& in_coords = chld["coordsets/coords"];
 
-        int64_t domain_id = chld["state/domain_id"].as_int();
-        int64_t level_id = chld["state/level_id"].as_int();
+        int64 domain_id = chld["state/domain_id"].as_int();
+        int64 level_id = chld["state/level_id"].as_int();
         if (level_id == 0) continue; 
 
         std::ostringstream win_oss;
@@ -283,10 +283,10 @@ void to_polygonal(const Node &n,
 
         const Node& in_topo = chld["topologies"][name];
 
-        int64_t niwidth = in_topo["elements/dims/i"].as_int() + 1;
+        int64 niwidth = in_topo["elements/dims/i"].as_int() + 1;
 
-        int64_t i_lo = in_topo["elements/origin/i0"].as_int();
-        int64_t j_lo = in_topo["elements/origin/j0"].as_int();
+        int64 i_lo = in_topo["elements/origin/i0"].as_int();
+        int64 j_lo = in_topo["elements/origin/j0"].as_int();
 
         const Node* in_parent = chld.parent();
 
@@ -315,13 +315,13 @@ void to_polygonal(const Node &n,
                     if (nbr_win["level_id"].as_int() < ref_win["level_id"].as_int())
                     {
 
-                        int64_t ref_size_i = ref_win["dims/i"].as_int();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int();
-                        int64_t ref_size = ref_size_i * ref_size_j;
+                        int64 ref_size_i = ref_win["dims/i"].as_int();
+                        int64 ref_size_j = ref_win["dims/j"].as_int();
+                        int64 ref_size = ref_size_i * ref_size_j;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int();
-                        int64_t nbr_size = nbr_size_i * nbr_size_j;
+                        int64 nbr_size_i = nbr_win["dims/i"].as_int();
+                        int64 nbr_size_j = nbr_win["dims/j"].as_int();
+                        int64 nbr_size = nbr_size_i * nbr_size_j;
 
                         std::ostringstream nbr_oss;
                         nbr_oss << "domain_" << std::setw(6)
@@ -339,8 +339,8 @@ void to_polygonal(const Node &n,
                             const double_array& yarray =
                                fcoords["y"].as_double_array();
 
-                            int64_t origin_i = ref_win["origin/i"].as_int();
-                            int64_t origin_j = ref_win["origin/j"].as_int();
+                            int64 origin_i = ref_win["origin/i"].as_int();
+                            int64 origin_j = ref_win["origin/j"].as_int();
 
                             if (ref_size_i == 1) {
                                int icnst = origin_i - i_lo;
@@ -361,7 +361,7 @@ void to_polygonal(const Node &n,
                                   ybuffer.push_back(yarray[offset]);
                                }
                             }
-                            int64_t nbr_rank = group["rank"].as_int();
+                            int64 nbr_rank = group["rank"].as_int();
                             MPI_Send(&xbuffer[0],
                                      xbuffer.size(),
                                      MPI_DOUBLE,
@@ -390,7 +390,7 @@ void to_polygonal(const Node &n,
         const Node& chld = itr.next();
         std::string domain_name = itr.name();
 
-        int64_t domain_id = chld["state/domain_id"].as_int();
+        int64 domain_id = chld["state/domain_id"].as_int();
 
         std::ostringstream win_oss;
         win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
@@ -424,13 +424,13 @@ void to_polygonal(const Node &n,
                     const Node& nbr_win = in_windows[nbr_win_name];
                     if (nbr_win["level_id"].as_int() > ref_win["level_id"].as_int())
                     {
-                        int64_t ref_size_i = ref_win["dims/i"].as_int();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int();
-                        int64_t ref_size = ref_size_i * ref_size_j;
+                        int64 ref_size_i = ref_win["dims/i"].as_int();
+                        int64 ref_size_j = ref_win["dims/j"].as_int();
+                        int64 ref_size = ref_size_i * ref_size_j;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int();
-                        int64_t nbr_size = nbr_size_i * nbr_size_j;
+                        int64 nbr_size_i = nbr_win["dims/i"].as_int();
+                        int64 nbr_size_j = nbr_win["dims/j"].as_int();
+                        int64 nbr_size = nbr_size_i * nbr_size_j;
 
                         if (nbr_size > ref_size)
                         {
@@ -456,7 +456,7 @@ void to_polygonal(const Node &n,
                                     ybuffer.resize(nbr_size_i);
                                 }
 
-                                int64_t nbr_rank = group["rank"].as_int();
+                                int64 nbr_rank = group["rank"].as_int();
                                 MPI_Recv(&xbuffer[0],
                                          xbuffer.size(),
                                          MPI_DOUBLE,
@@ -480,11 +480,11 @@ void to_polygonal(const Node &n,
 
                                 const Node& ntopo =
                                    nbr_dom["topologies"][name];
-                                int64_t ni_lo =
+                                int64 ni_lo =
                                    ntopo["elements/origin/i0"].as_int();
-                                int64_t nj_lo =
+                                int64 nj_lo =
                                    ntopo["elements/origin/j0"].as_int();
-                                int64_t nbr_iwidth =
+                                int64 nbr_iwidth =
                                    ntopo["elements/dims/i"].as_int() + 1;
 
                                 const Node& fcoords =
@@ -494,19 +494,19 @@ void to_polygonal(const Node &n,
                                 const double_array& yarray =
                                    fcoords["y"].as_double_array();
 
-                                int64_t origin_i = nbr_win["origin/i"].as_int();
-                                int64_t origin_j = nbr_win["origin/j"].as_int();
+                                int64 origin_i = nbr_win["origin/i"].as_int();
+                                int64 origin_j = nbr_win["origin/j"].as_int();
 
-                                int64_t istart = origin_i - ni_lo;
-                                int64_t jstart = origin_j - nj_lo;
-                                int64_t iend = istart + nbr_size_i;
-                                int64_t jend = jstart + nbr_size_j;
-                                for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                int64 istart = origin_i - ni_lo;
+                                int64 jstart = origin_j - nj_lo;
+                                int64 iend = istart + nbr_size_i;
+                                int64 jend = jstart + nbr_size_j;
+                                for (int64 jidx = jstart; jidx < jend; ++jidx)
                                 {
-                                    int64_t joffset = jidx*nbr_iwidth;
-                                    for (int64_t iidx = istart; iidx < iend; ++iidx)
+                                    int64 joffset = jidx*nbr_iwidth;
+                                    for (int64 iidx = istart; iidx < iend; ++iidx)
                                     {
-                                        int64_t offset = joffset+iidx;
+                                        int64 offset = joffset+iidx;
                                         xbuffer.push_back(xarray[offset]);
                                         ybuffer.push_back(yarray[offset]);
                                     }
@@ -527,7 +527,7 @@ void to_polygonal(const Node &n,
         Node& out_coords = dest[domain_name]["coordsets/coords"];
         const Node& in_coords = chld["coordsets/coords"];
 
-        int64_t domain_id = chld["state/domain_id"].as_int();
+        int64 domain_id = chld["state/domain_id"].as_int();
         std::ostringstream win_oss;
         win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
         std::string win_name = win_oss.str();
@@ -549,11 +549,11 @@ void to_polygonal(const Node &n,
 
         const Node& in_topo = chld["topologies"][name];
 
-        int64_t iwidth = in_topo["elements/dims/i"].as_int();
-        int64_t jwidth = in_topo["elements/dims/j"].as_int();
+        int64 iwidth = in_topo["elements/dims/i"].as_int();
+        int64 jwidth = in_topo["elements/dims/j"].as_int();
 
-        int64_t i_lo = in_topo["elements/origin/i0"].as_int();
-        int64_t j_lo = in_topo["elements/origin/j0"].as_int();
+        int64 i_lo = in_topo["elements/origin/i0"].as_int();
+        int64 j_lo = in_topo["elements/origin/j0"].as_int();
 
         auto& poly_elems = poly_elems_map[domain_id];
 
@@ -581,16 +581,16 @@ void to_polygonal(const Node &n,
                     if (nbr_win["level_id"].as_int() > ref_win["level_id"].as_int())
                     {
 
-                        int64_t ratio_i = nbr_win["ratio/i"].as_int();
-                        int64_t ratio_j = nbr_win["ratio/j"].as_int();
+                        int64 ratio_i = nbr_win["ratio/i"].as_int();
+                        int64 ratio_j = nbr_win["ratio/j"].as_int();
 
-                        int64_t ref_size_i = ref_win["dims/i"].as_int();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int();
-                        int64_t ref_size = ref_size_i * ref_size_j;
+                        int64 ref_size_i = ref_win["dims/i"].as_int();
+                        int64 ref_size_j = ref_win["dims/j"].as_int();
+                        int64 ref_size = ref_size_i * ref_size_j;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int();
-                        int64_t nbr_size = nbr_size_i * nbr_size_j;
+                        int64 nbr_size_i = nbr_win["dims/i"].as_int();
+                        int64 nbr_size_j = nbr_win["dims/j"].as_int();
+                        int64 nbr_size = nbr_size_i * nbr_size_j;
 
                         if (ref_size < nbr_size)
                         {
@@ -624,7 +624,7 @@ void to_polygonal(const Node &n,
 
                             const auto& out_x = out_values["x"].as_double_array();
                             const auto& out_y = out_values["y"].as_double_array();
-                            int64_t new_vertex = out_x.number_of_elements();
+                            int64 new_vertex = out_x.number_of_elements();
 
                             size_t out_x_size = out_x.number_of_elements();
                             size_t out_y_size = out_y.number_of_elements();
@@ -677,12 +677,12 @@ void to_polygonal(const Node &n,
         topo["type"] = "unstructured";
         topo["elements/shape"] = "polygonal";
 
-        int64_t elemsize = iwidth*jwidth;
+        int64 elemsize = iwidth*jwidth;
 
-        std::vector<int64_t> connect;
-        std::vector<int64_t> num_vertices;
-        std::vector<int64_t> elem_offsets;
-        int64_t offset_sum = 0;
+        std::vector<int64> connect;
+        std::vector<int64> num_vertices;
+        std::vector<int64> elem_offsets;
+        int64 offset_sum = 0;
         for (int elem = 0; elem < elemsize; ++elem)
         {
             auto elem_itr = poly_elems.find(elem);
@@ -693,7 +693,7 @@ void to_polygonal(const Node &n,
             }
             else
             {
-                std::vector<int64_t>& poly_elem = elem_itr->second;
+                std::vector<int64>& poly_elem = elem_itr->second;
                 connect.insert(connect.end(), poly_elem.begin(), poly_elem.end());
                 num_vertices.push_back(poly_elem.size());
             }
@@ -721,58 +721,58 @@ void match_nbr_elems(PolyBndry& pbnd,
                 const Node& ref_topo,
                 const Node& ref_win,
                 const Node& nbr_win,
-                int64_t nbr_iwidth, int64_t nbr_jwidth,
-                int64_t ni_lo, int64_t nj_lo, int64_t nk_lo,
-                int64_t ratio_i, int64_t ratio_j, int64_t ratio_k)
+                int64 nbr_iwidth, int64 nbr_jwidth,
+                int64 ni_lo, int64 nj_lo, int64 nk_lo,
+                int64 ratio_i, int64 ratio_j, int64 ratio_k)
 {
-    int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-    int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
-    int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
+    int64 nbr_size_i = nbr_win["dims/i"].as_int64();
+    int64 nbr_size_j = nbr_win["dims/j"].as_int64();
+    int64 nbr_size_k = nbr_win["dims/k"].as_int64();
 
-    int64_t ri_lo = ref_topo["elements/origin/i0"].as_int64();
-    int64_t rj_lo = ref_topo["elements/origin/j0"].as_int64();
-    int64_t rk_lo = ref_topo["elements/origin/k0"].as_int64();
+    int64 ri_lo = ref_topo["elements/origin/i0"].as_int64();
+    int64 rj_lo = ref_topo["elements/origin/j0"].as_int64();
+    int64 rk_lo = ref_topo["elements/origin/k0"].as_int64();
 
-    int64_t ref_iwidth = ref_topo["elements/dims/i"].as_int64();
-    int64_t ref_jwidth = ref_topo["elements/dims/j"].as_int64();
+    int64 ref_iwidth = ref_topo["elements/dims/i"].as_int64();
+    int64 ref_jwidth = ref_topo["elements/dims/j"].as_int64();
 
-    int64_t ref_origin_i = ref_win["origin/i"].as_int64();
-    int64_t ref_origin_j = ref_win["origin/j"].as_int64();
-    int64_t ref_origin_k = ref_win["origin/k"].as_int64();
+    int64 ref_origin_i = ref_win["origin/i"].as_int64();
+    int64 ref_origin_j = ref_win["origin/j"].as_int64();
+    int64 ref_origin_k = ref_win["origin/k"].as_int64();
 
-    int64_t origin_i = nbr_win["origin/i"].as_int64();
-    int64_t origin_j = nbr_win["origin/j"].as_int64();
-    int64_t origin_k = nbr_win["origin/k"].as_int64();
+    int64 origin_i = nbr_win["origin/i"].as_int64();
+    int64 origin_j = nbr_win["origin/j"].as_int64();
+    int64 origin_k = nbr_win["origin/k"].as_int64();
 
     int side = pbnd.side;
 
     if (side == 0 || side == 1)
     {
         int nside = (side+1)%2;     //nbr side counterpart to  ref side
-        int64_t shift = -(nside%2); //0 on low side, -1 on high side
-        int64_t icnst = origin_i - ni_lo + shift;
-        int64_t jstart = origin_j;
-        int64_t jend = jstart + nbr_size_j - 1;
-        int64_t kstart = origin_k;
-        int64_t kend = kstart + nbr_size_k - 1;
+        int64 shift = -(nside%2); //0 on low side, -1 on high side
+        int64 icnst = origin_i - ni_lo + shift;
+        int64 jstart = origin_j;
+        int64 jend = jstart + nbr_size_j - 1;
+        int64 kstart = origin_k;
+        int64 kend = kstart + nbr_size_k - 1;
 
-        int64_t rshift = -(side%2); 
-        int64_t ricnst = ref_origin_i - ri_lo + rshift;
+        int64 rshift = -(side%2); 
+        int64 ricnst = ref_origin_i - ri_lo + rshift;
 
-        for (int64_t kidx = kstart; kidx < kend; ++kidx)
+        for (int64 kidx = kstart; kidx < kend; ++kidx)
         {
-            int64_t rkidx = kidx/ratio_k;
-            int64_t nk = kidx - nk_lo;
-            int64_t rk = rkidx - rk_lo;
-            int64_t nkoffset = icnst + nk*nbr_iwidth*nbr_jwidth;
-            int64_t rkoffset = ricnst + rk*ref_iwidth*ref_jwidth;
-            for (int64_t jidx = jstart; jidx < jend; ++jidx)
+            int64 rkidx = kidx/ratio_k;
+            int64 nk = kidx - nk_lo;
+            int64 rk = rkidx - rk_lo;
+            int64 nkoffset = icnst + nk*nbr_iwidth*nbr_jwidth;
+            int64 rkoffset = ricnst + rk*ref_iwidth*ref_jwidth;
+            for (int64 jidx = jstart; jidx < jend; ++jidx)
             {
-                int64_t rjidx = jidx/ratio_j;
-                int64_t nj = jidx - nj_lo;
-                int64_t rj = rjidx - rj_lo;
-                int64_t noffset = nkoffset + nj*nbr_iwidth;
-                int64_t roffset = rkoffset + rj*ref_iwidth;
+                int64 rjidx = jidx/ratio_j;
+                int64 nj = jidx - nj_lo;
+                int64 rj = rjidx - rj_lo;
+                int64 noffset = nkoffset + nj*nbr_iwidth;
+                int64 roffset = rkoffset + rj*ref_iwidth;
 
                 pbnd.m_nbr_elems[roffset].push_back(noffset);
 
@@ -787,30 +787,30 @@ void match_nbr_elems(PolyBndry& pbnd,
     else if (side == 2 || side == 3)
     {
         int nside = (side+1)%2;     //nbr side counterpart to  ref side
-        int64_t shift = -(nside%2); //0 on low side, -1 on high side
-        int64_t jcnst = origin_j - nj_lo + shift;
-        int64_t istart = origin_i;
-        int64_t iend = istart + nbr_size_i - 1;
-        int64_t kstart = origin_k;
-        int64_t kend = kstart + nbr_size_k - 1;
+        int64 shift = -(nside%2); //0 on low side, -1 on high side
+        int64 jcnst = origin_j - nj_lo + shift;
+        int64 istart = origin_i;
+        int64 iend = istart + nbr_size_i - 1;
+        int64 kstart = origin_k;
+        int64 kend = kstart + nbr_size_k - 1;
 
-        int64_t rshift = -(side%2); 
-        int64_t rjcnst = ref_origin_j - rj_lo + rshift;
+        int64 rshift = -(side%2); 
+        int64 rjcnst = ref_origin_j - rj_lo + rshift;
 
-        for (int64_t kidx = kstart; kidx < kend; ++kidx)
+        for (int64 kidx = kstart; kidx < kend; ++kidx)
         {
-            int64_t rkidx = kidx/ratio_k;
-            int64_t nk = kidx - nk_lo;
-            int64_t rk = rkidx - rk_lo;
-            int64_t nkoffset = nk*nbr_iwidth*nbr_jwidth;
-            int64_t rkoffset = rk*ref_iwidth*ref_jwidth;
-            for (int64_t iidx = istart; iidx < iend; ++iidx)
+            int64 rkidx = kidx/ratio_k;
+            int64 nk = kidx - nk_lo;
+            int64 rk = rkidx - rk_lo;
+            int64 nkoffset = nk*nbr_iwidth*nbr_jwidth;
+            int64 rkoffset = rk*ref_iwidth*ref_jwidth;
+            for (int64 iidx = istart; iidx < iend; ++iidx)
             {
-                int64_t riidx = iidx/ratio_i;
-                int64_t ni = iidx - ni_lo;
-                int64_t ri = riidx - ri_lo;
-                int64_t noffset = nkoffset + jcnst*nbr_iwidth + ni;
-                int64_t roffset = rkoffset + rjcnst*ref_iwidth + ri;
+                int64 riidx = iidx/ratio_i;
+                int64 ni = iidx - ni_lo;
+                int64 ri = riidx - ri_lo;
+                int64 noffset = nkoffset + jcnst*nbr_iwidth + ni;
+                int64 roffset = rkoffset + rjcnst*ref_iwidth + ri;
 
                 pbnd.m_nbr_elems[roffset].push_back(noffset);
                 auto& nbr_elem = nbr_elems[noffset];
@@ -824,30 +824,30 @@ void match_nbr_elems(PolyBndry& pbnd,
     else if (side == 4 || side == 5)
     {
         int nside = (side+1)%2;     //nbr side counterpart to  ref side
-        int64_t shift = -(nside%2); //0 on low side, -1 on high side
-        int64_t kcnst = origin_k - nk_lo + shift;
-        int64_t jstart = origin_j;
-        int64_t jend = jstart + nbr_size_j - 1;
-        int64_t istart = origin_i;
-        int64_t iend = istart + nbr_size_i - 1;
+        int64 shift = -(nside%2); //0 on low side, -1 on high side
+        int64 kcnst = origin_k - nk_lo + shift;
+        int64 jstart = origin_j;
+        int64 jend = jstart + nbr_size_j - 1;
+        int64 istart = origin_i;
+        int64 iend = istart + nbr_size_i - 1;
 
-        int64_t rshift = -(side%2); 
-        int64_t rkcnst = ref_origin_k - rk_lo + rshift;
+        int64 rshift = -(side%2); 
+        int64 rkcnst = ref_origin_k - rk_lo + rshift;
 
-        for (int64_t jidx = jstart; jidx < jend; ++jidx)
+        for (int64 jidx = jstart; jidx < jend; ++jidx)
         {
-            int64_t rjidx = jidx/ratio_j;
-            int64_t nj = jidx - nj_lo;
-            int64_t rj = rjidx - rj_lo;
-            int64_t njoffset = kcnst*nbr_iwidth*nbr_jwidth + nj*nbr_iwidth;
-            int64_t rjoffset = rkcnst*ref_iwidth*ref_jwidth + rj*ref_iwidth;
-            for (int64_t iidx = istart; iidx < iend; ++iidx)
+            int64 rjidx = jidx/ratio_j;
+            int64 nj = jidx - nj_lo;
+            int64 rj = rjidx - rj_lo;
+            int64 njoffset = kcnst*nbr_iwidth*nbr_jwidth + nj*nbr_iwidth;
+            int64 rjoffset = rkcnst*ref_iwidth*ref_jwidth + rj*ref_iwidth;
+            for (int64 iidx = istart; iidx < iend; ++iidx)
             {
-                int64_t riidx = iidx/ratio_i;
-                int64_t ni = iidx - ni_lo;
-                int64_t ri = riidx - ri_lo;
-                int64_t noffset = njoffset + ni;
-                int64_t roffset = rjoffset + ri;
+                int64 riidx = iidx/ratio_i;
+                int64 ni = iidx - ni_lo;
+                int64 ri = riidx - ri_lo;
+                int64 noffset = njoffset + ni;
+                int64 roffset = rjoffset + ri;
 
                 pbnd.m_nbr_elems[roffset].push_back(noffset);
                 auto& nbr_elem = nbr_elems[noffset];
@@ -865,23 +865,23 @@ void match_nbr_elems(PolyBndry& pbnd,
 
     if (side == 0 || side == 1)
     {
-        int64_t icnst = origin_i - ni_lo;
-        int64_t jstart = origin_j;
-        int64_t jend = jstart + nbr_size_j;
-        int64_t kstart = origin_k;
-        int64_t kend = kstart + nbr_size_k;
+        int64 icnst = origin_i - ni_lo;
+        int64 jstart = origin_j;
+        int64 jend = jstart + nbr_size_j;
+        int64 kstart = origin_k;
+        int64 kend = kstart + nbr_size_k;
 
-        int64_t nbr_viwidth = nbr_iwidth+1;
-        int64_t nbr_vjwidth = nbr_jwidth+1;
+        int64 nbr_viwidth = nbr_iwidth+1;
+        int64 nbr_vjwidth = nbr_jwidth+1;
 
 
-        for (int64_t kidx = kstart; kidx < kend; ++kidx) {
+        for (int64 kidx = kstart; kidx < kend; ++kidx) {
             if (kidx % ratio_k == 0)
             {
-                for (int64_t jidx = jstart; jidx < jend; ++jidx) {
+                for (int64 jidx = jstart; jidx < jend; ++jidx) {
                     if (jidx % ratio_j == 0)
                     {
-                        int64_t npnt = icnst + jidx*nbr_viwidth +
+                        int64 npnt = icnst + jidx*nbr_viwidth +
                                        kidx*nbr_viwidth*nbr_vjwidth;
                         pbnd.m_shared_fine.insert(npnt);
                     }
@@ -891,22 +891,22 @@ void match_nbr_elems(PolyBndry& pbnd,
     }
     else if (side == 2 || side == 3)
     {
-        int64_t jcnst = origin_j - nj_lo;
-        int64_t istart = origin_i;
-        int64_t iend = istart + nbr_size_i;
-        int64_t kstart = origin_k;
-        int64_t kend = kstart + nbr_size_k;
+        int64 jcnst = origin_j - nj_lo;
+        int64 istart = origin_i;
+        int64 iend = istart + nbr_size_i;
+        int64 kstart = origin_k;
+        int64 kend = kstart + nbr_size_k;
 
-        int64_t nbr_viwidth = nbr_iwidth+1;
-        int64_t nbr_vjwidth = nbr_jwidth+1;
+        int64 nbr_viwidth = nbr_iwidth+1;
+        int64 nbr_vjwidth = nbr_jwidth+1;
 
-        for (int64_t kidx = kstart; kidx < kend; ++kidx) {
+        for (int64 kidx = kstart; kidx < kend; ++kidx) {
             if (kidx % ratio_k == 0)
             {
-                for (int64_t iidx = istart; iidx < iend; ++iidx) {
+                for (int64 iidx = istart; iidx < iend; ++iidx) {
                     if (iidx % ratio_i == 0)
                     {
-                        int64_t npnt = iidx + jcnst*nbr_viwidth +
+                        int64 npnt = iidx + jcnst*nbr_viwidth +
                                        kidx*nbr_viwidth*nbr_vjwidth;
                         pbnd.m_shared_fine.insert(npnt);
                     }
@@ -916,22 +916,22 @@ void match_nbr_elems(PolyBndry& pbnd,
     }
     else if (side == 4 || side == 5)
     {
-        int64_t kcnst = origin_k - nk_lo;
-        int64_t istart = origin_i;
-        int64_t iend = istart + nbr_size_i;
-        int64_t jstart = origin_j;
-        int64_t jend = jstart + nbr_size_j;
+        int64 kcnst = origin_k - nk_lo;
+        int64 istart = origin_i;
+        int64 iend = istart + nbr_size_i;
+        int64 jstart = origin_j;
+        int64 jend = jstart + nbr_size_j;
 
-        int64_t nbr_viwidth = nbr_iwidth+1;
-        int64_t nbr_vjwidth = nbr_jwidth+1;
+        int64 nbr_viwidth = nbr_iwidth+1;
+        int64 nbr_vjwidth = nbr_jwidth+1;
 
-        for (int64_t jidx = jstart; jidx < jend; ++jidx) {
+        for (int64 jidx = jstart; jidx < jend; ++jidx) {
             if (jidx % ratio_j == 0)
             {
-                for (int64_t iidx = istart; iidx < iend; ++iidx) {
+                for (int64 iidx = istart; iidx < iend; ++iidx) {
                     if (iidx % ratio_i == 0)
                     {
-                        int64_t npnt = iidx +jidx*nbr_viwidth +
+                        int64 npnt = iidx +jidx*nbr_viwidth +
                                        kcnst*nbr_viwidth*nbr_vjwidth;
                         pbnd.m_shared_fine.insert(npnt);
                     }
@@ -952,19 +952,19 @@ void to_polyhedral(const Node &n,
 
     dest.reset();
 
-    int64_t par_rank = relay::mpi::rank(MPI_COMM_WORLD);
+    int64 par_rank = relay::mpi::rank(MPI_COMM_WORLD);
 
     NodeConstIterator itr = n.children();
 
     std::map<int, std::map<int, blueprint::mesh::connectivity::ElemType> > poly_elems_map;
     std::map<int, blueprint::mesh::connectivity::SubelemMap> allfaces_map;
 
-    std::map<int, std::vector<int64_t> > elem_connect;
-    std::map<int, std::vector<int64_t> > elem_sizes;
-    std::map<int, std::vector<int64_t> > elem_offsets;
-    std::map<int, std::vector<int64_t> > subelem_connect;
-    std::map<int, std::vector<int64_t> > subelem_sizes;
-    std::map<int, std::vector<int64_t> > subelem_offsets;
+    std::map<int, std::vector<int64> > elem_connect;
+    std::map<int, std::vector<int64> > elem_sizes;
+    std::map<int, std::vector<int64> > elem_offsets;
+    std::map<int, std::vector<int64> > subelem_connect;
+    std::map<int, std::vector<int64> > subelem_sizes;
+    std::map<int, std::vector<int64> > subelem_offsets;
 
     while(itr.has_next())
     {
@@ -974,13 +974,13 @@ void to_polyhedral(const Node &n,
         const Node& in_coords = chld["coordsets/coords"];
         const Node& in_topo = chld["topologies"][name];
 
-        int64_t iwidth = in_topo["elements/dims/i"].as_int64();
-        int64_t jwidth = in_topo["elements/dims/j"].as_int64();
-        int64_t kwidth = in_topo["elements/dims/k"].as_int64();
+        int64 iwidth = in_topo["elements/dims/i"].as_int64();
+        int64 jwidth = in_topo["elements/dims/j"].as_int64();
+        int64 kwidth = in_topo["elements/dims/k"].as_int64();
 
         Node& out_coords = dest[domain_name]["coordsets/coords"];
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64 domain_id = chld["state/domain_id"].as_int64();
         Node& out_values = out_coords["values"];
         if (in_coords["type"].as_string() == "uniform")
         {
@@ -996,7 +996,7 @@ void to_polyhedral(const Node &n,
         auto& poly_elems = poly_elems_map[domain_id];
         auto& allfaces = allfaces_map[domain_id];
 
-        int64_t elemsize = iwidth*jwidth*kwidth;
+        int64 elemsize = iwidth*jwidth*kwidth;
 
         for (int elem = 0; elem < elemsize; ++elem)
         {
@@ -1013,7 +1013,7 @@ void to_polyhedral(const Node &n,
         const Node& chld = itr.next();
         std::string domain_name = itr.name();
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64 domain_id = chld["state/domain_id"].as_int64();
 
         const Node& in_topo = chld["topologies"][name];
 
@@ -1034,7 +1034,7 @@ void to_polyhedral(const Node &n,
                 {
                     int64_array neighbors = group["neighbors"].as_int64_array();
 
-                    int64_t nbr_id = neighbors[1];
+                    int64 nbr_id = neighbors[1];
                     const Node& in_windows = group["windows"];
                     std::ostringstream nw_oss;
                     nw_oss << "window_" << std::setw(6)
@@ -1046,15 +1046,15 @@ void to_polyhedral(const Node &n,
 
                     if (nbr_win["level_id"].as_int64() < ref_win["level_id"].as_int64())
                     {
-                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
-                        int64_t ref_size_k = ref_win["dims/k"].as_int64();
-                        int64_t ref_size = ref_size_i*ref_size_j*ref_size_k;
+                        int64 ref_size_i = ref_win["dims/i"].as_int64();
+                        int64 ref_size_j = ref_win["dims/j"].as_int64();
+                        int64 ref_size_k = ref_win["dims/k"].as_int64();
+                        int64 ref_size = ref_size_i*ref_size_j*ref_size_k;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
-                        int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
-                        int64_t nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
+                        int64 nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64 nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64 nbr_size_k = nbr_win["dims/k"].as_int64();
+                        int64 nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
 
                         if (nbr_size < ref_size)
                         {
@@ -1073,14 +1073,14 @@ void to_polyhedral(const Node &n,
 
                             if (is_side && !in_parent->has_child(nbr_name))
                             {
-                                int64_t buffer[5];
+                                int64 buffer[5];
                                 buffer[0] = in_topo["elements/dims/i"].as_int64();
                                 buffer[1] = in_topo["elements/dims/j"].as_int64();
                                 buffer[2] = in_topo["elements/origin/i0"].as_int64();
                                 buffer[3] = in_topo["elements/origin/j0"].as_int64();
                                 buffer[4] = in_topo["elements/origin/k0"].as_int64();
 
-                                int64_t nbr_rank = group["rank"].as_int64();
+                                int64 nbr_rank = group["rank"].as_int64();
                                 MPI_Send(buffer,
                                          5,
                                          MPI_INT64_T,
@@ -1105,18 +1105,18 @@ void to_polyhedral(const Node &n,
         const Node& chld = itr.next();
         std::string domain_name = itr.name();
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64 domain_id = chld["state/domain_id"].as_int64();
 
         auto& poly_elems = poly_elems_map[domain_id];
 
         const Node& in_topo = chld["topologies"][name];
 
-        int64_t iwidth = in_topo["elements/dims/i"].as_int64();
-        int64_t jwidth = in_topo["elements/dims/j"].as_int64();
+        int64 iwidth = in_topo["elements/dims/i"].as_int64();
+        int64 jwidth = in_topo["elements/dims/j"].as_int64();
 
-        int64_t i_lo = in_topo["elements/origin/i0"].as_int64();
-        int64_t j_lo = in_topo["elements/origin/j0"].as_int64();
-        int64_t k_lo = in_topo["elements/origin/k0"].as_int64();
+        int64 i_lo = in_topo["elements/origin/i0"].as_int64();
+        int64 j_lo = in_topo["elements/origin/j0"].as_int64();
+        int64 k_lo = in_topo["elements/origin/k0"].as_int64();
 
         const Node* in_parent = chld.parent();
 
@@ -1136,7 +1136,7 @@ void to_polyhedral(const Node &n,
                 {
                     int64_array neighbors = group["neighbors"].as_int64_array();
 
-                    int64_t nbr_id = neighbors[1];
+                    int64 nbr_id = neighbors[1];
                     const Node& in_windows = group["windows"];
                     std::ostringstream nw_oss;
                     nw_oss << "window_" << std::setw(6)
@@ -1147,32 +1147,32 @@ void to_polyhedral(const Node &n,
                     const Node& nbr_win = in_windows[nbr_win_name];
                     if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
                     {
-                        int64_t ratio_i = nbr_win["ratio/i"].as_int64();
-                        int64_t ratio_j = nbr_win["ratio/j"].as_int64();
-                        int64_t ratio_k = nbr_win["ratio/k"].as_int64();
+                        int64 ratio_i = nbr_win["ratio/i"].as_int64();
+                        int64 ratio_j = nbr_win["ratio/j"].as_int64();
+                        int64 ratio_k = nbr_win["ratio/k"].as_int64();
 
-                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
-                        int64_t ref_size_k = ref_win["dims/k"].as_int64();
-                        int64_t ref_size = ref_size_i*ref_size_j*ref_size_k;
+                        int64 ref_size_i = ref_win["dims/i"].as_int64();
+                        int64 ref_size_j = ref_win["dims/j"].as_int64();
+                        int64 ref_size_k = ref_win["dims/k"].as_int64();
+                        int64 ref_size = ref_size_i*ref_size_j*ref_size_k;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
-                        int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
-                        int64_t nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
+                        int64 nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64 nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64 nbr_size_k = nbr_win["dims/k"].as_int64();
+                        int64 nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
 
                         if (nbr_size > ref_size)
                         {
-                            int64_t origin_i = ref_win["origin/i"].as_int64();
-                            int64_t origin_j = ref_win["origin/j"].as_int64();
-                            int64_t origin_k = ref_win["origin/k"].as_int64();
+                            int64 origin_i = ref_win["origin/i"].as_int64();
+                            int64 origin_j = ref_win["origin/j"].as_int64();
+                            int64 origin_k = ref_win["origin/k"].as_int64();
 
                             PolyBndry& pbnd = poly_bndry_map[domain_id][nbr_id];
 
                             if (ref_size_i == 1 && ref_size_j != 1 &&
                                 ref_size_k != 1)
                             {
-                                int64_t shift = 0;
+                                int64 shift = 0;
                                 if (origin_i == i_lo)
                                 {
                                     pbnd.side = 0;
@@ -1182,17 +1182,17 @@ void to_polyhedral(const Node &n,
                                     pbnd.side = 1;
                                     shift = -1;
                                 }
-                                int64_t icnst = origin_i - i_lo + shift;
-                                int64_t jstart = origin_j - j_lo;
-                                int64_t jend = jstart + ref_size_j - 1;
-                                int64_t kstart = origin_k - k_lo;
-                                int64_t kend = kstart + ref_size_k - 1;
-                                for (int64_t kidx = kstart; kidx < kend; ++kidx)
+                                int64 icnst = origin_i - i_lo + shift;
+                                int64 jstart = origin_j - j_lo;
+                                int64 jend = jstart + ref_size_j - 1;
+                                int64 kstart = origin_k - k_lo;
+                                int64 kend = kstart + ref_size_k - 1;
+                                for (int64 kidx = kstart; kidx < kend; ++kidx)
                                     {
-                                    int64_t koffset = icnst + kidx*iwidth*jwidth;
-                                    for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                    int64 koffset = icnst + kidx*iwidth*jwidth;
+                                    for (int64 jidx = jstart; jidx < jend; ++jidx)
                                     {
-                                        int64_t offset = koffset + jidx*iwidth;
+                                        int64 offset = koffset + jidx*iwidth;
                                         pbnd.m_elems.push_back(offset);
                                         pbnd.m_bface[offset] =
                                             pbnd.side == 0 ?
@@ -1204,7 +1204,7 @@ void to_polyhedral(const Node &n,
                             else if (ref_size_j == 1 && ref_size_i != 1 &&
                                      ref_size_k != 1)
                             {
-                                int64_t shift = 0;
+                                int64 shift = 0;
                                 if (origin_j == j_lo)
                                 {
                                     pbnd.side = 2;
@@ -1214,17 +1214,17 @@ void to_polyhedral(const Node &n,
                                     pbnd.side = 3;
                                     shift = -1;
                                 }
-                                int64_t jcnst = origin_j - j_lo + shift;
-                                int64_t istart = origin_i - i_lo;
-                                int64_t iend = istart + ref_size_i - 1;
-                                int64_t kstart = origin_k - k_lo;
-                                int64_t kend = kstart + ref_size_k - 1;
-                                for (int64_t kidx = kstart; kidx < kend; ++kidx)
+                                int64 jcnst = origin_j - j_lo + shift;
+                                int64 istart = origin_i - i_lo;
+                                int64 iend = istart + ref_size_i - 1;
+                                int64 kstart = origin_k - k_lo;
+                                int64 kend = kstart + ref_size_k - 1;
+                                for (int64 kidx = kstart; kidx < kend; ++kidx)
                                 {
-                                    int64_t koffset = jcnst*jwidth + kidx*iwidth*jwidth;
-                                    for (int64_t iidx = istart; iidx < iend; ++iidx)
+                                    int64 koffset = jcnst*jwidth + kidx*iwidth*jwidth;
+                                    for (int64 iidx = istart; iidx < iend; ++iidx)
                                     {
-                                        int64_t offset = koffset + iidx;
+                                        int64 offset = koffset + iidx;
                                         pbnd.m_elems.push_back(offset);
                                         pbnd.m_bface[offset] =
                                             pbnd.side == 2 ?
@@ -1236,7 +1236,7 @@ void to_polyhedral(const Node &n,
                             else if (ref_size_k == 1 && ref_size_i != 1 &&
                                      ref_size_j != 1)
                             {
-                                int64_t shift = 0; 
+                                int64 shift = 0; 
                                 if (origin_k == k_lo)
                                 {
                                     pbnd.side = 4;
@@ -1246,17 +1246,17 @@ void to_polyhedral(const Node &n,
                                     pbnd.side = 5;
                                     shift = -1;
                                 }
-                                int64_t kcnst = origin_k - k_lo + shift;
-                                int64_t istart = origin_i - i_lo;
-                                int64_t iend = istart + ref_size_i - 1;
-                                int64_t jstart = origin_j - j_lo;
-                                int64_t jend = jstart + ref_size_j - 1;
-                                for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                int64 kcnst = origin_k - k_lo + shift;
+                                int64 istart = origin_i - i_lo;
+                                int64 iend = istart + ref_size_i - 1;
+                                int64 jstart = origin_j - j_lo;
+                                int64 jend = jstart + ref_size_j - 1;
+                                for (int64 jidx = jstart; jidx < jend; ++jidx)
                                 {
-                                    int64_t joffset = jidx*iwidth + kcnst*iwidth*jwidth;
-                                    for (int64_t iidx = istart; iidx < iend; ++iidx)
+                                    int64 joffset = jidx*iwidth + kcnst*iwidth*jwidth;
+                                    for (int64 iidx = istart; iidx < iend; ++iidx)
                                     {
-                                        int64_t offset = joffset + iidx;
+                                        int64 offset = joffset + iidx;
                                         pbnd.m_elems.push_back(offset);
                                         pbnd.m_bface[offset] =
                                             pbnd.side == 4 ?
@@ -1280,8 +1280,8 @@ void to_polyhedral(const Node &n,
                             {
                                 if (pbnd.side >= 0)
                                 {
-                                    int64_t nbr_rank = group["rank"].as_int64();
-                                    int64_t buffer[5];
+                                    int64 nbr_rank = group["rank"].as_int64();
+                                    int64 buffer[5];
 
                                     MPI_Recv(buffer,
                                              5,
@@ -1291,11 +1291,11 @@ void to_polyhedral(const Node &n,
                                              MPI_COMM_WORLD,
                                              MPI_STATUS_IGNORE);
 
-                                    int64_t nbr_iwidth = buffer[0]; 
-                                    int64_t nbr_jwidth = buffer[1];
-                                    int64_t ni_lo = buffer[2]; 
-                                    int64_t nj_lo = buffer[3]; 
-                                    int64_t nk_lo = buffer[4]; 
+                                    int64 nbr_iwidth = buffer[0]; 
+                                    int64 nbr_jwidth = buffer[1];
+                                    int64 ni_lo = buffer[2]; 
+                                    int64 nj_lo = buffer[3]; 
+                                    int64 nk_lo = buffer[4]; 
 
                                     auto& nbr_elems = poly_elems_map[nbr_id];
 
@@ -1317,13 +1317,13 @@ void to_polyhedral(const Node &n,
                                 const Node& ntopo =
                                    nbr_dom["topologies"][name];
 
-                                int64_t ni_lo = ntopo["elements/origin/i0"].as_int64();
-                                int64_t nj_lo = ntopo["elements/origin/j0"].as_int64();
-                                int64_t nk_lo = ntopo["elements/origin/k0"].as_int64();
+                                int64 ni_lo = ntopo["elements/origin/i0"].as_int64();
+                                int64 nj_lo = ntopo["elements/origin/j0"].as_int64();
+                                int64 nk_lo = ntopo["elements/origin/k0"].as_int64();
 
-                                int64_t nbr_iwidth =
+                                int64 nbr_iwidth =
                                    ntopo["elements/dims/i"].as_int64();
-                                int64_t nbr_jwidth =
+                                int64 nbr_jwidth =
                                    ntopo["elements/dims/j"].as_int64();
 
                                 auto& nbr_elems = poly_elems_map[nbr_id];
@@ -1346,10 +1346,10 @@ void to_polyhedral(const Node &n,
         }
     }
 
-    std::map<int64_t, std::map<int64_t, std::map<int64_t,int64_t> > > dom_to_nbr_to_buffidx;
-    std::map<int64_t, std::map<int64_t, std::vector<double> > > dom_to_nbr_to_xbuffer;
-    std::map<int64_t, std::map<int64_t, std::vector<double> > > dom_to_nbr_to_ybuffer;
-    std::map<int64_t, std::map<int64_t, std::vector<double> > > dom_to_nbr_to_zbuffer;
+    std::map<int64, std::map<int64, std::map<int64,int64> > > dom_to_nbr_to_buffidx;
+    std::map<int64, std::map<int64, std::vector<double> > > dom_to_nbr_to_xbuffer;
+    std::map<int64, std::map<int64, std::vector<double> > > dom_to_nbr_to_ybuffer;
+    std::map<int64, std::map<int64, std::vector<double> > > dom_to_nbr_to_zbuffer;
 
     itr = n.children();
     while(itr.has_next())
@@ -1357,7 +1357,7 @@ void to_polyhedral(const Node &n,
         const Node& chld = itr.next();
         std::string domain_name = itr.name();
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64 domain_id = chld["state/domain_id"].as_int64();
 
         std::ostringstream win_oss;
         win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
@@ -1393,15 +1393,15 @@ void to_polyhedral(const Node &n,
                     const Node& nbr_win = in_windows[nbr_win_name];
                     if (nbr_win["level_id"].as_int64() > ref_win["level_id"].as_int64())
                     {
-                        int64_t ref_size_i = ref_win["dims/i"].as_int64();
-                        int64_t ref_size_j = ref_win["dims/j"].as_int64();
-                        int64_t ref_size_k = ref_win["dims/k"].as_int64();
-                        int64_t ref_size = ref_size_i*ref_size_j*ref_size_k;
+                        int64 ref_size_i = ref_win["dims/i"].as_int64();
+                        int64 ref_size_j = ref_win["dims/j"].as_int64();
+                        int64 ref_size_k = ref_win["dims/k"].as_int64();
+                        int64 ref_size = ref_size_i*ref_size_j*ref_size_k;
 
-                        int64_t nbr_size_i = nbr_win["dims/i"].as_int64();
-                        int64_t nbr_size_j = nbr_win["dims/j"].as_int64();
-                        int64_t nbr_size_k = nbr_win["dims/k"].as_int64();
-                        int64_t nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
+                        int64 nbr_size_i = nbr_win["dims/i"].as_int64();
+                        int64 nbr_size_j = nbr_win["dims/j"].as_int64();
+                        int64 nbr_size_k = nbr_win["dims/k"].as_int64();
+                        int64 nbr_size = nbr_size_i*nbr_size_j*nbr_size_k;
 
                         if (nbr_size > ref_size)
                         {
@@ -1427,15 +1427,15 @@ void to_polyhedral(const Node &n,
 
                                 const Node& ntopo =
                                    nbr_dom["topologies"][name];
-                                int64_t ni_lo =
+                                int64 ni_lo =
                                    ntopo["elements/origin/i0"].as_int64();
-                                int64_t nj_lo =
+                                int64 nj_lo =
                                    ntopo["elements/origin/j0"].as_int64();
-                                int64_t nk_lo =
+                                int64 nk_lo =
                                    ntopo["elements/origin/k0"].as_int64();
-                                int64_t nbr_iwidth =
+                                int64 nbr_iwidth =
                                    ntopo["elements/dims/i"].as_int64() + 1;
-                                int64_t nbr_jwidth =
+                                int64 nbr_jwidth =
                                    ntopo["elements/dims/j"].as_int64() + 1;
 
                                 const Node& fcoords =
@@ -1447,25 +1447,25 @@ void to_polyhedral(const Node &n,
                                 const double_array& zarray =
                                    fcoords["z"].as_double_array();
 
-                                int64_t origin_i = nbr_win["origin/i"].as_int64();
-                                int64_t origin_j = nbr_win["origin/j"].as_int64();
-                                int64_t origin_k = nbr_win["origin/k"].as_int64();
+                                int64 origin_i = nbr_win["origin/i"].as_int64();
+                                int64 origin_j = nbr_win["origin/j"].as_int64();
+                                int64 origin_k = nbr_win["origin/k"].as_int64();
 
-                                int64_t istart = origin_i - ni_lo;
-                                int64_t jstart = origin_j - nj_lo;
-                                int64_t kstart = origin_k - nk_lo;
-                                int64_t iend = istart + nbr_size_i;
-                                int64_t jend = jstart + nbr_size_j;
-                                int64_t kend = jstart + nbr_size_k;
-                                for (int64_t kidx = kstart; kidx < kend; ++kidx)
+                                int64 istart = origin_i - ni_lo;
+                                int64 jstart = origin_j - nj_lo;
+                                int64 kstart = origin_k - nk_lo;
+                                int64 iend = istart + nbr_size_i;
+                                int64 jend = jstart + nbr_size_j;
+                                int64 kend = jstart + nbr_size_k;
+                                for (int64 kidx = kstart; kidx < kend; ++kidx)
                                 {
-                                    int64_t koffset = kidx*nbr_iwidth*nbr_jwidth;
-                                    for (int64_t jidx = jstart; jidx < jend; ++jidx)
+                                    int64 koffset = kidx*nbr_iwidth*nbr_jwidth;
+                                    for (int64 jidx = jstart; jidx < jend; ++jidx)
                                     {
-                                        int64_t joffset = jidx*nbr_iwidth;
-                                        for (int64_t iidx = istart; iidx < iend; ++iidx)
+                                        int64 joffset = jidx*nbr_iwidth;
+                                        for (int64 iidx = istart; iidx < iend; ++iidx)
                                         {
-                                            int64_t offset = koffset+joffset+iidx;
+                                            int64 offset = koffset+joffset+iidx;
                                             buffidx[offset] = xbuffer.size();
                                             xbuffer.push_back(xarray[offset]);
                                             ybuffer.push_back(yarray[offset]);
@@ -1487,7 +1487,7 @@ void to_polyhedral(const Node &n,
         const Node& chld = itr.next();
         std::string domain_name = itr.name();
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64 domain_id = chld["state/domain_id"].as_int64();
 
         auto& poly_elems = poly_elems_map[domain_id];
         auto& allfaces = allfaces_map[domain_id];
@@ -1499,13 +1499,13 @@ void to_polyhedral(const Node &n,
 
         if (poly_bndry_map.find(domain_id) != poly_bndry_map.end())
         {
-            //std::map<int64_t, PolyBndry>
+            //std::map<int64, PolyBndry>
             auto& bndries = poly_bndry_map[domain_id];
             for (auto bitr = bndries.begin(); bitr != bndries.end(); ++bitr)
             {
                 //One PolyBndry for each fine neighbor
                 PolyBndry& pbnd = bitr->second;
-                int64_t nbr_id = pbnd.m_nbr_id; //domain id of nbr.
+                int64 nbr_id = pbnd.m_nbr_id; //domain id of nbr.
                 auto& nbr_faces = allfaces_map[nbr_id];
 
                 auto& buffidx = nbr_to_buffidx[nbr_id];
@@ -1513,25 +1513,25 @@ void to_polyhedral(const Node &n,
                 auto& ybuffer = nbr_to_ybuffer[nbr_id];
                 auto& zbuffer = nbr_to_zbuffer[nbr_id];
 
-//                std::vector<int64_t> face_verts;
-                std::map<int64_t, std::map<int64_t, std::vector<int64_t> > >fv_map;
+//                std::vector<int64> face_verts;
+                std::map<int64, std::map<int64, std::vector<int64> > >fv_map;
                 //Map from domain elems that touch neighbor to  
                 //vector holding the neighbor elems
                 auto& nbr_elems = pbnd.m_nbr_elems;
                 for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr) 
                 {
                     //offset for a single domain elem
-                    int64_t ref_offset = eitr->first;
+                    int64 ref_offset = eitr->first;
 
                     //Holds neighbor elem offsets
-                    std::vector<int64_t>& nbrs = eitr->second;
+                    std::vector<int64>& nbrs = eitr->second;
                     size_t num_nbrs = nbrs.size();
                     for (size_t n = 0; n < num_nbrs; ++n)
                     {
-                        int64_t nbr_elem = nbrs[n];
+                        int64 nbr_elem = nbrs[n];
                         //nbr_face is subelem offset for the face of
                         //nbr_elem touching the boundary
-                        int64_t nbr_face = pbnd.m_nbr_faces[ref_offset][nbr_elem].m_face_id;
+                        int64 nbr_face = pbnd.m_nbr_faces[ref_offset][nbr_elem].m_face_id;
                         //face_subelem holds the vertices for the nbr_face
                         auto& face_subelem = nbr_faces[nbr_face];
                         //subelem at ref/nbr interface
@@ -1549,13 +1549,13 @@ void to_polyhedral(const Node &n,
                         << std::setfill('0') << nbr_id;
                 std::string nbr_name = nbr_oss.str();
 
-                std::map<int64_t, std::map< int64_t, std::vector<double> > > xv_map;
-                std::map<int64_t, std::map< int64_t, std::vector<double> > > yv_map;
-                std::map<int64_t, std::map< int64_t, std::vector<double> > > zv_map;
+                std::map<int64, std::map< int64, std::vector<double> > > xv_map;
+                std::map<int64, std::map< int64, std::vector<double> > > yv_map;
+                std::map<int64, std::map< int64, std::vector<double> > > zv_map;
                 //loop over fv_map, fill xyz doubles into these maps
                 for (auto fitr = fv_map.begin(); fitr != fv_map.end(); ++fitr)
                 {
-                    int64_t ref_offset = fitr->first;
+                    int64 ref_offset = fitr->first;
                     auto& xnbrs = xv_map[ref_offset];
                     auto& ynbrs = yv_map[ref_offset];
                     auto& znbrs = zv_map[ref_offset];
@@ -1563,7 +1563,7 @@ void to_polyhedral(const Node &n,
                     auto& nbrs = fitr->second;
                     for (auto nitr = nbrs.begin(); nitr != nbrs.end(); ++nitr)
                     {
-                        int64_t nbr_face = nitr->first;
+                        int64 nbr_face = nitr->first;
                         auto& xv = xnbrs[nbr_face];
                         auto& yv = ynbrs[nbr_face];
                         auto& zv = znbrs[nbr_face];
@@ -1571,7 +1571,7 @@ void to_polyhedral(const Node &n,
                         auto& verts = nitr->second;
                         for (auto vitr = verts.begin(); vitr != verts.end(); ++vitr)
                         {
-                            int64_t idx = buffidx[*vitr];
+                            int64 idx = buffidx[*vitr];
                             xv.push_back(xbuffer[idx]);
                             yv.push_back(ybuffer[idx]);
                             zv.push_back(zbuffer[idx]);
@@ -1599,14 +1599,14 @@ void to_polyhedral(const Node &n,
                 //coordset arrays.
                 for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr)
                 {
-                    int64_t ref_offset = eitr->first;
+                    int64 ref_offset = eitr->first;
                     blueprint::mesh::connectivity::ElemType& ref_elem =
                         poly_elems[ref_offset];
-                    int64_t ref_face = ref_elem[pbnd.side];
+                    int64 ref_face = ref_elem[pbnd.side];
                     auto& map_subelem = allfaces[ref_face];
 
                     auto& nbr_subelems = fv_map[ref_offset];
-                    int64_t new_offset = allfaces.size();
+                    int64 new_offset = allfaces.size();
                     size_t num_nbrs = nbr_subelems.size();
                     for (size_t nb = 0; nb < num_nbrs; ++nb)
                     {
@@ -1630,27 +1630,27 @@ void to_polyhedral(const Node &n,
         const Node& chld = itr.next();
         std::string domain_name = itr.name();
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64 domain_id = chld["state/domain_id"].as_int64();
 
         const Node& in_topo = chld["topologies"][name];
 
-        int64_t iwidth = in_topo["elements/dims/i"].as_int64();
-        int64_t jwidth = in_topo["elements/dims/j"].as_int64();
-        int64_t kwidth = in_topo["elements/dims/k"].as_int64();
+        int64 iwidth = in_topo["elements/dims/i"].as_int64();
+        int64 jwidth = in_topo["elements/dims/j"].as_int64();
+        int64 kwidth = in_topo["elements/dims/k"].as_int64();
 
         auto& poly_elems = poly_elems_map[domain_id];
         auto& allfaces = allfaces_map[domain_id];
 
-        int64_t elemsize = iwidth*jwidth*kwidth;
+        int64 elemsize = iwidth*jwidth*kwidth;
 
-        std::vector<int64_t>& e_connect = elem_connect[domain_id];
-        std::vector<int64_t>& e_sizes = elem_sizes[domain_id];
-        std::vector<int64_t>& e_offsets = elem_offsets[domain_id];
-        std::vector<int64_t>& sub_connect = subelem_connect[domain_id];
-        std::vector<int64_t>& sub_sizes = subelem_sizes[domain_id];
-        std::vector<int64_t>& sub_offsets = subelem_offsets[domain_id];
-        int64_t elem_offset_sum = 0;
-        int64_t subelem_offset_sum = 0;
+        std::vector<int64>& e_connect = elem_connect[domain_id];
+        std::vector<int64>& e_sizes = elem_sizes[domain_id];
+        std::vector<int64>& e_offsets = elem_offsets[domain_id];
+        std::vector<int64>& sub_connect = subelem_connect[domain_id];
+        std::vector<int64>& sub_sizes = subelem_sizes[domain_id];
+        std::vector<int64>& sub_offsets = subelem_offsets[domain_id];
+        int64 elem_offset_sum = 0;
+        int64 subelem_offset_sum = 0;
         for (int elem = 0; elem < elemsize; ++elem)
         {
             auto& poly_elem = poly_elems[elem];
@@ -1675,14 +1675,14 @@ void to_polyhedral(const Node &n,
         const Node& chld = itr.next();
         std::string domain_name = itr.name();
 
-        int64_t domain_id = chld["state/domain_id"].as_int64();
+        int64 domain_id = chld["state/domain_id"].as_int64();
 
-        std::vector<int64_t>& e_connect = elem_connect[domain_id];
-        std::vector<int64_t>& e_sizes = elem_sizes[domain_id];
-        std::vector<int64_t>& e_offsets = elem_offsets[domain_id];
-        std::vector<int64_t>& sub_connect = subelem_connect[domain_id];
-        std::vector<int64_t>& sub_sizes = subelem_sizes[domain_id];
-        std::vector<int64_t>& sub_offsets = subelem_offsets[domain_id];
+        std::vector<int64>& e_connect = elem_connect[domain_id];
+        std::vector<int64>& e_sizes = elem_sizes[domain_id];
+        std::vector<int64>& e_offsets = elem_offsets[domain_id];
+        std::vector<int64>& sub_connect = subelem_connect[domain_id];
+        std::vector<int64>& sub_sizes = subelem_sizes[domain_id];
+        std::vector<int64>& sub_offsets = subelem_offsets[domain_id];
 
         Node& topo = dest[domain_name]["topologies"][name];
         const Node& in_topo = chld["topologies"][name];
