@@ -5,7 +5,7 @@ packages:
       blas: [netlib-lapack]
       lapack: [netlib-lapack]
       uuid: [util-linux-uuid, libuuid]
-      mpi: [mpich]
+      mpi: [openmpi]
   netlib-lapack:
     buildable: false
     externals:
@@ -56,6 +56,10 @@ packages:
     externals:
     - prefix: /usr
       spec: tar
+  openmpi:
+    buildable: False
+    paths:
+      openmpi: /usr
   # # python 2 constraints
   # py-sphinx:
   #   version: [1.8.4]

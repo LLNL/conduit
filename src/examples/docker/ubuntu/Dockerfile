@@ -25,6 +25,9 @@ RUN apt-get update && apt-get install -y \
     libreadline-dev \
     libsqlite3-dev \
     libbz2-dev \
+    openmpi-bin \
+    libopenmpi-dev \
+    vim \
  && rm -rf /var/lib/apt/lists/*
 
 
@@ -51,7 +54,7 @@ RUN tar -xf conduit.docker.src.tar
 #  will not run for the root user
 RUN cd conduit && python scripts/uberenv/uberenv.py \
     -k \
-    --spec "%gcc+mpi~doc~silo ^mpich" \
+    --spec "%gcc+mpi~doc~silo" \
     --spack-config-dir=scripts/uberenv_configs/spack_configs/docker/ubuntu/
 
 # configure a debug build with cmake
