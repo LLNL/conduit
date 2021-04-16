@@ -297,6 +297,25 @@ public:
     void            set(const DataArray<float64>  &values);
 
 //-----------------------------------------------------------------------------
+// fill
+//-----------------------------------------------------------------------------
+    /// signed integer fill
+    void            fill(int8  value);
+    void            fill(int16 value);
+    void            fill(int32 value);
+    void            fill(int64 value);
+
+    /// unsigned integer fill
+    void            fill(uint8  value);
+    void            fill(uint16 value);
+    void            fill(uint32 value);
+    void            fill(uint64 value);
+
+    /// floating point fill
+    void            fill(float32 value);
+    void            fill(float64 value);
+
+//-----------------------------------------------------------------------------
 // Transforms
 //-----------------------------------------------------------------------------
     std::string     to_string(const std::string &protocol="json") const;

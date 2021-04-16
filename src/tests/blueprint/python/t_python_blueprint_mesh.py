@@ -2,8 +2,8 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Conduit.
 """
- file: t_python_blueprint_mcarray.py
- description: Simple unit test for the conduit blueprint mcarray python module.
+ file: t_python_blueprint_mesh.py
+ description: Simple unit test for the conduit blueprint mesh python module.
 
 """
 
@@ -19,13 +19,29 @@ from conduit import Node
 
 class Test_Blueprint_Mesh(unittest.TestCase):
 
+    def has_empty_warning(self, info):
+        res = False
+
+        if info.dtype().is_object() and info.has_child("info"):
+            iinfo = info.fetch('info')
+            if iinfo.dtype().is_object() or iinfo.dtype().is_list():
+                iitr = iinfo.children()
+                for ival in iitr:
+                    inode = ival.node()
+                    res = res or (inode.dtype().is_string() and "is an empty mesh" in inode.to_string())
+
+        return res
+
     def test_basic_and_verify(self):
         n = Node()
         info = Node()
-        self.assertFalse(blueprint.verify("mesh",n,info))
-        self.assertFalse(blueprint.mesh.verify(n,info))
+        self.assertTrue(blueprint.verify("mesh",n,info))
+        self.assertTrue(self.has_empty_warning(info))
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertTrue(self.has_empty_warning(info))
         blueprint.mesh.examples.basic("hexs",2,2,2,n);
         self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
         n_idx = Node()
         blueprint.mesh.generate_index(n,"",1,n_idx)
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
@@ -34,10 +50,13 @@ class Test_Blueprint_Mesh(unittest.TestCase):
     def test_braid_and_verify(self):
         n = Node()
         info = Node()
-        self.assertFalse(blueprint.verify("mesh",n,info))
-        self.assertFalse(blueprint.mesh.verify(n,info))
+        self.assertTrue(blueprint.verify("mesh",n,info))
+        self.assertTrue(self.has_empty_warning(info))
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertTrue(self.has_empty_warning(info))
         blueprint.mesh.examples.braid("hexs",2,2,2,n);
         self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
         n_idx = Node()
         blueprint.mesh.generate_index(n,"",1,n_idx)
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
@@ -46,14 +65,17 @@ class Test_Blueprint_Mesh(unittest.TestCase):
     def test_julia_and_verify(self):
         n = Node()
         info = Node()
-        self.assertFalse(blueprint.verify("mesh",n,info))
-        self.assertFalse(blueprint.mesh.verify(n,info))
+        self.assertTrue(blueprint.verify("mesh",n,info))
+        self.assertTrue(self.has_empty_warning(info))
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertTrue(self.has_empty_warning(info))
         blueprint.mesh.examples.julia(200,200,
                                       -2.0, 2.0,
                                       -2.0, 2.0,
                                       0.285, 0.01,
                                       n);
         self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
         n_idx = Node()
         blueprint.mesh.generate_index(n,"",1,n_idx)
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
@@ -62,10 +84,13 @@ class Test_Blueprint_Mesh(unittest.TestCase):
     def test_spiral_and_verify(self):
         n = Node()
         info = Node()
-        self.assertFalse(blueprint.verify("mesh",n,info))
-        self.assertFalse(blueprint.mesh.verify(n,info))
+        self.assertTrue(blueprint.verify("mesh",n,info))
+        self.assertTrue(self.has_empty_warning(info))
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertTrue(self.has_empty_warning(info))
         blueprint.mesh.examples.spiral(4,n);
         self.assertTrue(blueprint.mesh.verify(n["domain_000000"],info))
+        self.assertFalse(self.has_empty_warning(info))
         n_idx = Node()
         blueprint.mesh.generate_index(n["domain_000000"],"",4,n_idx)
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
@@ -74,14 +99,17 @@ class Test_Blueprint_Mesh(unittest.TestCase):
     def test_julia_nestsets(self):
         n = Node()
         info = Node()
-        self.assertFalse(blueprint.verify("mesh",n,info))
-        self.assertFalse(blueprint.mesh.verify(n,info))
+        self.assertTrue(blueprint.verify("mesh",n,info))
+        self.assertTrue(self.has_empty_warning(info))
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertTrue(self.has_empty_warning(info))
         # simple case
         blueprint.mesh.examples.julia_nestsets_simple(-2.0, 2.0,
                                                       -2.0, 2.0,
                                                       0.285, 0.01,
                                                       n);
         self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
         n_idx = Node()
         blueprint.mesh.generate_index(n["domain_000000"],"",1,n_idx)
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
@@ -102,8 +130,10 @@ class Test_Blueprint_Mesh(unittest.TestCase):
     def test_venn(self):
         n = Node()
         info = Node()
-        self.assertFalse(blueprint.verify("mesh",n,info))
-        self.assertFalse(blueprint.mesh.verify(n,info))
+        self.assertTrue(blueprint.verify("mesh",n,info))
+        self.assertTrue(self.has_empty_warning(info))
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertTrue(self.has_empty_warning(info))
         for matset_type in ['full', 
                             'sparse_by_material',
                             'sparse_by_element' ]:
@@ -112,6 +142,7 @@ class Test_Blueprint_Mesh(unittest.TestCase):
                                          .5,
                                          n);
             self.assertTrue(blueprint.mesh.verify(n,info))
+            self.assertFalse(self.has_empty_warning(info))
             n_idx = Node()
             blueprint.mesh.generate_index(n,"",1,n_idx)
             self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
@@ -122,11 +153,14 @@ class Test_Blueprint_Mesh(unittest.TestCase):
     def test_polytess(self):
         n = Node()
         info = Node()
-        self.assertFalse(blueprint.verify("mesh",n,info))
-        self.assertFalse(blueprint.mesh.verify(n,info))
+        self.assertTrue(blueprint.verify("mesh",n,info))
+        self.assertTrue(self.has_empty_warning(info))
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertTrue(self.has_empty_warning(info))
         # simple case
         blueprint.mesh.examples.polytess(3,n);
         self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
         n_idx = Node()
         blueprint.mesh.generate_index(n,"",1,n_idx)
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))

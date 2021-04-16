@@ -228,6 +228,23 @@ message(STATUS "HDF5 Libraries:    ${HDF5_LIBRARIES}")
 message(STATUS "HDF5 Definitions:  ${HDF5_DEFINITIONS}")
 message(STATUS "HDF5 is parallel:  ${HDF5_IS_PARALLEL}")
 
+
+# if hdf5 was built with mpi support, we have to propgate
+# that regardless of conduit's use of MPI
+
+if(HDF5_IS_PARALLEL)
+    if(NOT MPI_FOUND)
+         MESSAGE(FATAL_ERROR "Cannot link non-mpi aware conduit (MPI_FOUND == FALSE) "
+                             "against HDF5 built with MPI support (HDF5_IS_PARALLEL == TRUE). "
+                             "Please enable conduit's MPI support (ENABLE_MPI == ON, etc) or "
+                             "build against a non-mpi HDF5 library.")
+    endif()
+endif()
+
+#############
+# Note: MPI libraries and include dirs are not propgated for the config.mk case
+#############
+
 message(STATUS "HDF5 Thirdparty Include Flags: ${hdf5_tpl_inc_flags}")
 message(STATUS "HDF5 Thirdparty Link Flags: ${hdf5_tpl_lnk_flags}")
 

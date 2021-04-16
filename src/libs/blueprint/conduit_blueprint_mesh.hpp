@@ -69,13 +69,15 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
 //-------------------------------------------------------------------------
 bool CONDUIT_BLUEPRINT_API is_multi_domain(const conduit::Node &n);
 
-//
-/// Note: to_multi_domain uses Node::set_external to avoid copying data.
-/// If you need a copy of the data unlinked from the input, set into 
-/// another node.
 //-------------------------------------------------------------------------
 index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &n);
 
+//-----------------------------------------------------------------------------
+std::vector<const conduit::Node *> CONDUIT_BLUEPRINT_API domains(const Node &n);
+
+/// Note: to_multi_domain uses Node::set_external to avoid copying data.
+/// If you need a copy of the data unlinked from the input, set into
+/// another node.
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API to_multi_domain(const conduit::Node &n,
                                            conduit::Node &dest);
@@ -117,6 +119,9 @@ namespace coordset
 
     //-------------------------------------------------------------------------
     index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
@@ -224,6 +229,12 @@ namespace topology
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::points protocol interface
@@ -414,7 +425,7 @@ namespace matset
     // For details about the silo format, see documentation for 
     // 'DBPutMaterial' at:
     // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
-    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &n,
+    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &matset,
                                        conduit::Node &dest,
                                        const float64 epsilon = CONDUIT_EPSILON);
 
@@ -440,6 +451,19 @@ namespace field
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                       conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    // Given a blueprint field and matset, converts the matset and the field
+    // values + matset_values to the silo style sparse mixed slot
+    // representation.
+    //
+    // For details about the silo format, see documentation for 
+    // 'DBPutZZZVar' methods `mixvar` / `mixlen` params at:
+    // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
+    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &field,
+                                       const conduit::Node &matset,
+                                       conduit::Node &dest,
+                                       const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::field::index protocol interface

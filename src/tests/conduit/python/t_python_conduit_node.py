@@ -577,6 +577,56 @@ class Test_Conduit_Node(unittest.TestCase):
         d = n.describe(opts)
         print(d)
 
+    def test_summary_string(self):
+        n = Node()
+        n["a"] = [1,2,3,4,5];
+        n["b"] = [1,2,3];
+        n["c"] = [1,2,3,4,5,6];
+        n["d"] = [1,2,3,4,5,6,7];
+        n["e"] = [1,2,3,4,5,6,7,8,9,10,11,12];
+        n["f"] = [1.0,2.0,3.0,4.0,5.0,6.0,7.0];
+        n["g"] = [2.0,4.0];
+
+        print(repr(n))
+
+        r = n.to_summary_string()
+        print(r)
+        texp = """
+a: [1, 2, 3, 4, 5]
+b: [1, 2, 3]
+c: [1, 2, 3, ..., 5, 6]
+d: [1, 2, 3, ..., 6, 7]
+e: [1, 2, 3, ..., 11, 12]
+f: [1.0, 2.0, 3.0, ..., 6.0, 7.0]
+g: [2.0, 4.0]
+"""
+        self.assertEqual(r,texp)
+    
+        opts = Node()
+        opts["num_children_threshold"] = 2
+        opts["num_elements_threshold"] = 3
+        r = n.to_summary_string(opts)
+        print(r)
+
+        texp = """
+a: [1, 2, ..., 5]
+... ( skipped 5 children )
+g: [2.0, 4.0]
+"""
+        self.assertEqual(r,texp)
+        r = n.to_summary_string(opts=opts)
+        print(r)
+
+        self.assertEqual(r,texp)
+
+        opts = Node()
+        opts["num_children_threshold"] = 100
+        opts["num_elements_threshold"] = -1
+        r = n.to_summary_string(opts)
+        print(r)
+
+        self.assertEqual(r,n.to_yaml())
+
 
 if __name__ == '__main__':
     unittest.main()

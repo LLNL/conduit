@@ -85,44 +85,44 @@ DataType::list()
 /// signed integer arrays
 //---------------------------------------------------------------------------//
 DataType
-DataType::int8(index_t num_elements,
-               index_t offset,
-               index_t stride,
-               index_t element_bytes,
-               index_t endianness)
+DataType::int8(conduit::index_t num_elements,
+               conduit::index_t offset,
+               conduit::index_t stride,
+               conduit::index_t element_bytes,
+               conduit::index_t endianness)
 {
     return DataType(INT8_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::int16(index_t num_elements,
-                index_t offset,
-                index_t stride,
-                index_t element_bytes,
-                index_t endianness)
+DataType::int16(conduit::index_t num_elements,
+                conduit::index_t offset,
+                conduit::index_t stride,
+                conduit::index_t element_bytes,
+                conduit::index_t endianness)
 {
     return DataType(INT16_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 DataType 
-DataType::int32(index_t num_elements,
-                index_t offset,
-                index_t stride,
-                index_t element_bytes,
-                index_t endianness)
+DataType::int32(conduit::index_t num_elements,
+                conduit::index_t offset,
+                conduit::index_t stride,
+                conduit::index_t element_bytes,
+                conduit::index_t endianness)
 {
     return DataType(INT32_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::int64(index_t num_elements,
-                index_t offset,
-                index_t stride,
-                index_t element_bytes,
-                index_t endianness)
+DataType::int64(conduit::index_t num_elements,
+                conduit::index_t offset,
+                conduit::index_t stride,
+                conduit::index_t element_bytes,
+                conduit::index_t endianness)
 {
     return DataType(INT64_ID,num_elements,offset,stride,element_bytes,endianness);
 }
@@ -130,44 +130,44 @@ DataType::int64(index_t num_elements,
 /// unsigned integer arrays
 //---------------------------------------------------------------------------//
 DataType
-DataType::uint8(index_t num_elements,
-                index_t offset,
-                index_t stride,
-                index_t element_bytes,
-                index_t endianness)
+DataType::uint8(conduit::index_t num_elements,
+                conduit::index_t offset,
+                conduit::index_t stride,
+                conduit::index_t element_bytes,
+                conduit::index_t endianness)
 {
     return DataType(UINT8_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::uint16(index_t num_elements,
-                 index_t offset,
-                 index_t stride,
-                 index_t element_bytes,
-                 index_t endianness)
+DataType::uint16(conduit::index_t num_elements,
+                 conduit::index_t offset,
+                 conduit::index_t stride,
+                 conduit::index_t element_bytes,
+                 conduit::index_t endianness)
 {
     return DataType(UINT16_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 DataType 
-DataType::uint32(index_t num_elements,
-                 index_t offset,
-                 index_t stride,
-                 index_t element_bytes,
-                 index_t endianness)
+DataType::uint32(conduit::index_t num_elements,
+                 conduit::index_t offset,
+                 conduit::index_t stride,
+                 conduit::index_t element_bytes,
+                 conduit::index_t endianness)
 {
     return DataType(UINT32_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::uint64(index_t num_elements,
-                 index_t offset,
-                 index_t stride,
-                 index_t element_bytes,
-                 index_t endianness)
+DataType::uint64(conduit::index_t num_elements,
+                 conduit::index_t offset,
+                 conduit::index_t stride,
+                 conduit::index_t element_bytes,
+                 conduit::index_t endianness)
 {
     return DataType(UINT64_ID,num_elements,offset,stride,element_bytes,endianness);
 }
@@ -175,33 +175,33 @@ DataType::uint64(index_t num_elements,
  /// floating point arrays
 //---------------------------------------------------------------------------//
 DataType 
-DataType::float32(index_t num_elements,
-                  index_t offset,
-                  index_t stride,
-                  index_t element_bytes,
-                  index_t endianness)
+DataType::float32(conduit::index_t num_elements,
+                  conduit::index_t offset,
+                  conduit::index_t stride,
+                  conduit::index_t element_bytes,
+                  conduit::index_t endianness)
 {
     return DataType(FLOAT32_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::float64(index_t num_elements,
-                  index_t offset,
-                  index_t stride,
-                  index_t element_bytes,
-                  index_t endianness)
+DataType::float64(conduit::index_t num_elements,
+                  conduit::index_t offset,
+                  conduit::index_t stride,
+                  conduit::index_t element_bytes,
+                  conduit::index_t endianness)
 {
     return DataType(FLOAT64_ID,num_elements,offset,stride,element_bytes,endianness);
 }
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::char8_str(index_t num_elements,
-                    index_t offset,
-                    index_t stride,
-                    index_t element_bytes,
-                    index_t endianness)
+DataType::char8_str(conduit::index_t num_elements,
+                    conduit::index_t offset,
+                    conduit::index_t stride,
+                    conduit::index_t element_bytes,
+                    conduit::index_t endianness)
 {
     return DataType(CHAR8_STR_ID,
                     num_elements,
@@ -211,16 +211,34 @@ DataType::char8_str(index_t num_elements,
                     endianness);
 }
 
+
+//---------------------------------------------------------------------------//
+DataType
+DataType::index_t(conduit::index_t num_elements,
+                  conduit::index_t offset,
+                  conduit::index_t stride,
+                  conduit::index_t element_bytes,
+                  conduit::index_t endianness)
+{
+#ifdef CONDUIT_INDEX_32
+    return DataType(INT32_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+#else
+    return DataType(INT64_ID,
+                    num_elements,offset,stride,element_bytes,endianness);
+#endif 
+}
+
 /// native c types
 //-----------------------------------------------------------------------------
 /// signed integer arrays
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_char(index_t num_elements,
-                 index_t offset,
-                 index_t stride,
-                 index_t element_bytes,
-                 index_t endianness)
+DataType::c_char(conduit::index_t num_elements,
+                 conduit::index_t offset,
+                 conduit::index_t stride,
+                 conduit::index_t element_bytes,
+                 conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_CHAR_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -228,11 +246,11 @@ DataType::c_char(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_short(index_t num_elements,
-                  index_t offset,
-                  index_t stride,
-                  index_t element_bytes,
-                  index_t endianness)
+DataType::c_short(conduit::index_t num_elements,
+                  conduit::index_t offset,
+                  conduit::index_t stride,
+                  conduit::index_t element_bytes,
+                  conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_SHORT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -240,11 +258,11 @@ DataType::c_short(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType 
-DataType::c_int(index_t num_elements,
-                index_t offset,
-                index_t stride,
-                index_t element_bytes,
-                index_t endianness)
+DataType::c_int(conduit::index_t num_elements,
+                conduit::index_t offset,
+                conduit::index_t stride,
+                conduit::index_t element_bytes,
+                conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_INT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -252,11 +270,11 @@ DataType::c_int(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_long(index_t num_elements,
-                 index_t offset,
-                 index_t stride,
-                 index_t element_bytes,
-                 index_t endianness)
+DataType::c_long(conduit::index_t num_elements,
+                 conduit::index_t offset,
+                 conduit::index_t stride,
+                 conduit::index_t element_bytes,
+                 conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_LONG_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -265,11 +283,11 @@ DataType::c_long(index_t num_elements,
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_long_long(index_t num_elements,
-                      index_t offset,
-                      index_t stride,
-                      index_t element_bytes,
-                      index_t endianness)
+DataType::c_long_long(conduit::index_t num_elements,
+                      conduit::index_t offset,
+                      conduit::index_t stride,
+                      conduit::index_t element_bytes,
+                      conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_LONG_LONG_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -279,11 +297,11 @@ DataType::c_long_long(index_t num_elements,
 /// unsigned integer arrays
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_signed_char(index_t num_elements,
-                        index_t offset,
-                        index_t stride,
-                        index_t element_bytes,
-                        index_t endianness)
+DataType::c_signed_char(conduit::index_t num_elements,
+                        conduit::index_t offset,
+                        conduit::index_t stride,
+                        conduit::index_t element_bytes,
+                        conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_SIGNED_CHAR_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -291,11 +309,11 @@ DataType::c_signed_char(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_signed_short(index_t num_elements,
-                         index_t offset,
-                         index_t stride,
-                         index_t element_bytes,
-                         index_t endianness)
+DataType::c_signed_short(conduit::index_t num_elements,
+                         conduit::index_t offset,
+                         conduit::index_t stride,
+                         conduit::index_t element_bytes,
+                         conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_SIGNED_SHORT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -303,11 +321,11 @@ DataType::c_signed_short(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType 
-DataType::c_signed_int(index_t num_elements,
-                       index_t offset,
-                       index_t stride,
-                       index_t element_bytes,
-                       index_t endianness)
+DataType::c_signed_int(conduit::index_t num_elements,
+                       conduit::index_t offset,
+                       conduit::index_t stride,
+                       conduit::index_t element_bytes,
+                       conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_SIGNED_INT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -315,11 +333,11 @@ DataType::c_signed_int(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_signed_long(index_t num_elements,
-                        index_t offset,
-                        index_t stride,
-                        index_t element_bytes,
-                        index_t endianness)
+DataType::c_signed_long(conduit::index_t num_elements,
+                        conduit::index_t offset,
+                        conduit::index_t stride,
+                        conduit::index_t element_bytes,
+                        conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_SIGNED_LONG_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -328,11 +346,11 @@ DataType::c_signed_long(index_t num_elements,
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_signed_long_long(index_t num_elements,
-                             index_t offset,
-                             index_t stride,
-                             index_t element_bytes,
-                             index_t endianness)
+DataType::c_signed_long_long(conduit::index_t num_elements,
+                             conduit::index_t offset,
+                             conduit::index_t stride,
+                             conduit::index_t element_bytes,
+                             conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -344,11 +362,11 @@ DataType::c_signed_long_long(index_t num_elements,
 /// unsigned integer arrays
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_unsigned_char(index_t num_elements,
-                          index_t offset,
-                          index_t stride,
-                          index_t element_bytes,
-                          index_t endianness)
+DataType::c_unsigned_char(conduit::index_t num_elements,
+                          conduit::index_t offset,
+                          conduit::index_t stride,
+                          conduit::index_t element_bytes,
+                          conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_UNSIGNED_CHAR_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -356,11 +374,11 @@ DataType::c_unsigned_char(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_unsigned_short(index_t num_elements,
-                           index_t offset,
-                           index_t stride,
-                           index_t element_bytes,
-                           index_t endianness)
+DataType::c_unsigned_short(conduit::index_t num_elements,
+                           conduit::index_t offset,
+                           conduit::index_t stride,
+                           conduit::index_t element_bytes,
+                           conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_UNSIGNED_SHORT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -368,11 +386,11 @@ DataType::c_unsigned_short(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType 
-DataType::c_unsigned_int(index_t num_elements,
-                         index_t offset,
-                         index_t stride,
-                         index_t element_bytes,
-                         index_t endianness)
+DataType::c_unsigned_int(conduit::index_t num_elements,
+                         conduit::index_t offset,
+                         conduit::index_t stride,
+                         conduit::index_t element_bytes,
+                         conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_UNSIGNED_INT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -380,11 +398,11 @@ DataType::c_unsigned_int(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_unsigned_long(index_t num_elements,
-                          index_t offset,
-                          index_t stride,
-                          index_t element_bytes,
-                          index_t endianness)
+DataType::c_unsigned_long(conduit::index_t num_elements,
+                          conduit::index_t offset,
+                          conduit::index_t stride,
+                          conduit::index_t element_bytes,
+                          conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_UNSIGNED_LONG_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -393,11 +411,11 @@ DataType::c_unsigned_long(index_t num_elements,
 #ifdef CONDUIT_HAS_LONG_LONG
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_unsigned_long_long(index_t num_elements,
-                               index_t offset,
-                               index_t stride,
-                               index_t element_bytes,
-                               index_t endianness)
+DataType::c_unsigned_long_long(conduit::index_t num_elements,
+                               conduit::index_t offset,
+                               conduit::index_t stride,
+                               conduit::index_t element_bytes,
+                               conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_UNSIGNED_LONG_LONG_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -407,11 +425,11 @@ DataType::c_unsigned_long_long(index_t num_elements,
  /// floating point arrays
 //---------------------------------------------------------------------------//
 DataType 
-DataType::c_float(index_t num_elements,
-                  index_t offset,
-                  index_t stride,
-                  index_t element_bytes,
-                  index_t endianness)
+DataType::c_float(conduit::index_t num_elements,
+                  conduit::index_t offset,
+                  conduit::index_t stride,
+                  conduit::index_t element_bytes,
+                  conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_FLOAT_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -419,11 +437,11 @@ DataType::c_float(index_t num_elements,
 
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_double(index_t num_elements,
-                   index_t offset,
-                   index_t stride,
-                   index_t element_bytes,
-                   index_t endianness)
+DataType::c_double(conduit::index_t num_elements,
+                   conduit::index_t offset,
+                   conduit::index_t stride,
+                   conduit::index_t element_bytes,
+                   conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_DOUBLE_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -432,11 +450,11 @@ DataType::c_double(index_t num_elements,
 #ifdef CONDUIT_USE_LONG_DOUBLE
 //---------------------------------------------------------------------------//
 DataType
-DataType::c_long_double(index_t num_elements,
-                        index_t offset,
-                        index_t stride,
-                        index_t element_bytes,
-                        index_t endianness)
+DataType::c_long_double(conduit::index_t num_elements,
+                        conduit::index_t offset,
+                        conduit::index_t stride,
+                        conduit::index_t element_bytes,
+                        conduit::index_t endianness)
 {
     return DataType(CONDUIT_NATIVE_LONG_DOUBLE_ID,
                     num_elements,offset,stride,element_bytes,endianness);
@@ -480,7 +498,7 @@ DataType::DataType(const DataType& value)
 
 
 //---------------------------------------------------------------------------//
-DataType::DataType(index_t id, index_t num_elements)
+DataType::DataType(conduit::index_t id, conduit::index_t num_elements)
 : m_id(id),
   m_num_ele(num_elements),
   m_offset(0),
@@ -491,11 +509,11 @@ DataType::DataType(index_t id, index_t num_elements)
 
 //---------------------------------------------------------------------------// 
 DataType::DataType(const std::string &dtype_name,
-                   index_t num_elements,
-                   index_t offset,
-                   index_t stride,
-                   index_t element_bytes,
-                   index_t endianness)
+                   conduit::index_t num_elements,
+                   conduit::index_t offset,
+                   conduit::index_t stride,
+                   conduit::index_t element_bytes,
+                   conduit::index_t endianness)
 : m_id(name_to_id(dtype_name)),
   m_num_ele(num_elements),
   m_offset(offset),
@@ -505,12 +523,12 @@ DataType::DataType(const std::string &dtype_name,
 {}
 
 //---------------------------------------------------------------------------// 
-DataType::DataType(index_t dtype_id,
-                   index_t num_elements,
-                   index_t offset,
-                   index_t stride,
-                   index_t element_bytes,
-                   index_t endianness)
+DataType::DataType(conduit::index_t dtype_id,
+                   conduit::index_t num_elements,
+                   conduit::index_t offset,
+                   conduit::index_t stride,
+                   conduit::index_t element_bytes,
+                   conduit::index_t endianness)
                 
 : m_id(dtype_id),
   m_num_ele(num_elements),
@@ -558,11 +576,11 @@ DataType::set(const DataType& dtype)
 //---------------------------------------------------------------------------// 
 void
 DataType::set(const std::string &dtype_name,
-              index_t num_elements,
-              index_t offset,
-              index_t stride,
-              index_t element_bytes,
-              index_t endianness)
+              conduit::index_t num_elements,
+              conduit::index_t offset,
+              conduit::index_t stride,
+              conduit::index_t element_bytes,
+              conduit::index_t endianness)
 {
     m_id = name_to_id(dtype_name);
     m_num_ele = num_elements;
@@ -574,12 +592,12 @@ DataType::set(const std::string &dtype_name,
 
 //---------------------------------------------------------------------------// 
 void
-DataType::set(index_t dtype_id,
-              index_t num_elements,
-              index_t offset,
-              index_t stride,
-              index_t element_bytes,
-              index_t endianness)
+DataType::set(conduit::index_t dtype_id,
+              conduit::index_t num_elements,
+              conduit::index_t offset,
+              conduit::index_t stride,
+              conduit::index_t element_bytes,
+              conduit::index_t endianness)
 {
     m_id = dtype_id;
     m_num_ele = num_elements;
@@ -594,7 +612,7 @@ DataType::set(index_t dtype_id,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------// 
-index_t
+conduit::index_t
 DataType::strided_bytes() const
 {
     // this is the memory extent excluding the offset
@@ -603,14 +621,14 @@ DataType::strided_bytes() const
 
 
 //---------------------------------------------------------------------------//
-index_t
+conduit::index_t
 DataType::bytes_compact() const
 {
     return default_bytes(m_id) * m_num_ele;
 }
 
 //---------------------------------------------------------------------------//
-index_t
+conduit::index_t
 DataType::spanned_bytes() const
 {
     return m_offset + m_stride * (m_num_ele -1) + m_ele_bytes;
@@ -781,6 +799,18 @@ bool
 DataType::is_float64() const
 {
     return m_id == FLOAT64_ID;
+}
+
+
+//---------------------------------------------------------------------------//
+bool
+DataType::is_index_t() const
+{
+#ifdef CONDUIT_INDEX_32
+    return m_id == INT32_ID;
+#else
+    return m_id == INT64_ID;
+#endif
 }
 
 //---------------------------------------------------------------------------//
@@ -979,8 +1009,8 @@ DataType::endianness_matches_machine() const
 }
 
 //---------------------------------------------------------------------------// 
-index_t
-DataType::element_index(index_t idx) const
+conduit::index_t
+DataType::element_index(conduit::index_t idx) const
 {
     /// TODO: This will be an expensive check, placed this in 
     /// to help us ferret out some places were we are creating default 
@@ -999,7 +1029,7 @@ DataType::element_index(index_t idx) const
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-index_t 
+conduit::index_t 
 DataType::name_to_id(const std::string &dtype_name)
 {
     if(dtype_name      == "empty")   return EMPTY_ID;
@@ -1023,7 +1053,7 @@ DataType::name_to_id(const std::string &dtype_name)
 
 //---------------------------------------------------------------------------//
 std::string 
-DataType::id_to_name(index_t dtype_id)
+DataType::id_to_name(conduit::index_t dtype_id)
 {
     /// container types
     if(dtype_id      == EMPTY_ID)   return "empty";
@@ -1056,7 +1086,7 @@ DataType::id_to_name(index_t dtype_id)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-index_t 
+conduit::index_t 
 DataType::c_type_name_to_id(const std::string &dtype_name)
 {
     if(dtype_name == "char")
@@ -1115,7 +1145,7 @@ DataType::c_type_name_to_id(const std::string &dtype_name)
 
 //---------------------------------------------------------------------------// 
 DataType
-DataType::default_dtype(index_t dtype_id)
+DataType::default_dtype(conduit::index_t dtype_id)
 {
    switch (dtype_id)
    {
@@ -1160,8 +1190,8 @@ DataType::default_dtype(const std::string &name)
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------// 
-index_t
-DataType::default_bytes(index_t dtype_id)
+conduit::index_t
+DataType::default_bytes(conduit::index_t dtype_id)
 {
    switch (dtype_id)
    {
@@ -1192,7 +1222,7 @@ DataType::default_bytes(index_t dtype_id)
 
 
 //---------------------------------------------------------------------------// 
-index_t
+conduit::index_t
 DataType::default_bytes(const std::string &name)
 {
     return default_bytes(name_to_id(name));
@@ -1206,8 +1236,8 @@ DataType::default_bytes(const std::string &name)
 //---------------------------------------------------------------------------// 
 std::string 
 DataType::to_string(const std::string &protocol,
-                    index_t indent,
-                    index_t depth,
+                    conduit::index_t indent,
+                    conduit::index_t depth,
                     const std::string &pad,
                     const std::string &eoe) const
 {
@@ -1225,8 +1255,8 @@ DataType::to_string(const std::string &protocol,
 void
 DataType::to_string_stream(std::ostream &os, 
                            const std::string &protocol,
-                           index_t indent,
-                           index_t depth,
+                           conduit::index_t indent,
+                           conduit::index_t depth,
                            const std::string &pad,
                            const std::string &eoe) const
 {
@@ -1264,8 +1294,8 @@ DataType::to_string_default() const
 
 //---------------------------------------------------------------------------// 
 std::string 
-DataType::to_json(index_t indent,
-                  index_t depth,
+DataType::to_json(conduit::index_t indent,
+                  conduit::index_t depth,
                   const std::string &pad,
                   const std::string &eoe) const
 {
@@ -1281,33 +1311,33 @@ DataType::to_json(index_t indent,
 //---------------------------------------------------------------------------// 
 void
 DataType::to_json_stream(std::ostream &os,
-                         index_t indent,
-                         index_t depth,
+                         conduit::index_t indent,
+                         conduit::index_t depth,
                          const std::string &pad,
                          const std::string &eoe) const
 {
     os << eoe;
     utils::indent(os,indent,depth,pad);
     os << "{" << eoe;
-    utils::indent(os,indent,depth,pad);
+    utils::indent(os,indent,depth+1,pad);
     os << "\"dtype\":" << "\"" << id_to_name(m_id) << "\"";
 
     if(is_number() || is_string())
     {
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"number_of_elements\": " << m_num_ele;
 
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"offset\": " << m_offset;
 
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"stride\": " << m_stride;
 
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"element_bytes\": " << m_ele_bytes;
 
         std::string endian_str;
@@ -1322,7 +1352,7 @@ DataType::to_json_stream(std::ostream &os,
         }
 
         os << "," << eoe;
-        utils::indent(os,indent,depth,pad);
+        utils::indent(os,indent,depth+1,pad);
         os << "\"endianness\": \"" << endian_str << "\"";
     }
     os << eoe;
@@ -1341,8 +1371,8 @@ DataType::to_json_default() const
 
 //---------------------------------------------------------------------------// 
 std::string 
-DataType::to_yaml(index_t indent,
-                  index_t depth,
+DataType::to_yaml(conduit::index_t indent,
+                  conduit::index_t depth,
                   const std::string &pad,
                   const std::string &eoe) const
 {
@@ -1358,8 +1388,8 @@ DataType::to_yaml(index_t indent,
 //---------------------------------------------------------------------------// 
 void
 DataType::to_yaml_stream(std::ostream &os,
-                         index_t indent,
-                         index_t depth,
+                         conduit::index_t indent,
+                         conduit::index_t depth,
                          const std::string &pad,
                          const std::string &eoe) const
 {
@@ -1407,7 +1437,7 @@ DataType::to_yaml_default() const
 void
 DataType::compact_to(DataType &dtype) const
 {
-     index_t ele_size =  default_bytes(m_id);
+     conduit::index_t ele_size =  default_bytes(m_id);
      dtype.set(m_id,
                m_num_ele, 
                0,    

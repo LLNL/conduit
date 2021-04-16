@@ -10,6 +10,7 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
@@ -20,6 +21,7 @@
 
 using namespace conduit;
 using namespace conduit::utils;
+namespace bputils = conduit::blueprint::mesh::utils;
 
 /// Testing Constants ///
 
@@ -33,32 +35,9 @@ std::vector<std::string> get_log_keywords()
     return log_node.child_names();
 }
 
-std::vector<std::string> create_coordsys(const std::string& d1,
-                                         const std::string& d2,
-                                         const std::string& d3="")
-{
-    std::vector<std::string> dim_vector;
-
-    dim_vector.push_back(d1);
-    dim_vector.push_back(d2);
-
-    if(d3 != "")
-    {
-        dim_vector.push_back(d3);
-    }
-
-    return dim_vector;
-}
-
 const std::vector<std::string> LOG_KEYWORDS = get_log_keywords();
-
-const std::vector<std::string> LOGICAL_COORDSYS = create_coordsys("i","j","k");
-const std::vector<std::string> CARTESIAN_COORDSYS = create_coordsys("x","y","z");
-const std::vector<std::string> SPHERICAL_COORDSYS = create_coordsys("r","theta","phi");
-const std::vector<std::string> CYLINDRICAL_COORDSYS = create_coordsys("r","z");
-
 const std::vector<std::string> COORDINATE_COORDSYSS[] =
-    {CARTESIAN_COORDSYS, CYLINDRICAL_COORDSYS, SPHERICAL_COORDSYS};
+    {bputils::CARTESIAN_AXES, bputils::CYLINDRICAL_AXES, bputils::SPHERICAL_AXES};
 
 typedef bool (*VerifyFun)(const Node&, Node&);
 
@@ -95,6 +74,26 @@ bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
     }
 
     return is_valid;
+}
+
+
+bool has_empty_warning(const Node &info)
+{
+    bool res = false;
+
+    if((info.dtype().is_object() && info.has_child("info")) &&
+       (info["info"].dtype().is_object() || info["info"].dtype().is_list()))
+    {
+        NodeConstIterator iitr = info["info"].children();
+        while(iitr.has_next())
+        {
+            const Node &ichld = iitr.next();
+            res |= ichld.dtype().is_char8_str() &&
+                   ichld.to_string().find("is an empty mesh", 0) != std::string::npos;
+        }
+    }
+
+    return res;
 }
 
 
@@ -216,6 +215,17 @@ bool verify_mesh_multi_domain_protocol(const Node &n, Node &info)
 
 #define CHECK_MESH(verify, n, info, expected)    \
 {                                                \
+                                                 \
+    if(verify(n, info) != expected)              \
+    {                                            \
+        std::cout << "[verify test failed!]\n"   \
+                  << "[expected result: "        \
+                  << expected << "]\n"           \
+                  << "[details:]\n";             \
+        n.print();                               \
+        info.print();                            \
+    }                                            \
+                                                 \
     EXPECT_EQ(verify(n, info), expected);        \
     EXPECT_TRUE(has_consistent_validity(info));  \
 }                                                \
@@ -238,9 +248,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_logical_dims)
     Node n, info;
     CHECK_MESH(verify_coordset_logical,n,info,false);
 
-    EXPECT_TRUE(is_valid_coordsys(verify_coordset_logical,LOGICAL_COORDSYS));
+    EXPECT_TRUE(is_valid_coordsys(verify_coordset_logical,bputils::LOGICAL_AXES));
 
-    EXPECT_FALSE(is_valid_coordsys(verify_coordset_logical,CARTESIAN_COORDSYS));
+    EXPECT_FALSE(is_valid_coordsys(verify_coordset_logical,bputils::CARTESIAN_AXES));
 }
 
 
@@ -253,11 +263,11 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_origin)
     // FIXME: The origin verification function shouldn't accept an empty node.
     // CHECK_MESH(verify_uniform_origin,n,info,false);
 
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,CARTESIAN_COORDSYS));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,SPHERICAL_COORDSYS));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,CYLINDRICAL_COORDSYS));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::CARTESIAN_AXES));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::SPHERICAL_AXES));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::CYLINDRICAL_AXES));
 
-    EXPECT_FALSE(is_valid_coordsys(verify_uniform_origin,LOGICAL_COORDSYS));
+    EXPECT_FALSE(is_valid_coordsys(verify_uniform_origin,bputils::LOGICAL_AXES));
 }
 
 
@@ -270,11 +280,11 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_spacing)
     // FIXME: The spacing verification function shouldn't accept an empty node.
     // CHECK_MESH(verify_uniform_spacing,n,info,false);
 
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("dx","dy","dz")));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("dr","dtheta","dphi")));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("dr","dz")));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dx","dy","dz"}));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dr","dtheta","dphi"}));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dr","dz"}));
 
-    EXPECT_FALSE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("di","dj","dk")));
+    EXPECT_FALSE(is_valid_coordsys(verify_uniform_spacing,{"di","dj","dk"}));
 }
 
 
@@ -378,9 +388,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
     // for the rectilinear verify function.
     /*
     n["values"].reset();
-    for(index_t ci = 0; ci < LOGICAL_COORDSYS.size(); ci++)
+    for(index_t ci = 0; ci < bputils::LOGICAL_AXES.size(); ci++)
     {
-        n["values"][LOGICAL_COORDSYS[ci]].set(DataType::float64(10));
+        n["values"][bputils::LOGICAL_AXES[ci]].set(DataType::float64(10));
         CHECK_MESH(verify_rectilinear_coordset,n,info,false);
     }
     */
@@ -420,9 +430,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     // for the explicit verify function.
     /*
     n["values"].reset();
-    for(index_t ci = 0; ci < LOGICAL_COORDSYS.size(); ci++)
+    for(index_t ci = 0; ci < bputils::LOGICAL_AXES.size(); ci++)
     {
-        n["values"][LOGICAL_COORDSYS[ci]].set(DataType::float64(10));
+        n["values"][bputils::LOGICAL_AXES[ci]].set(DataType::float64(10));
         CHECK_MESH(verify_explicit_coordset,n,info,false);
     }
     */
@@ -1051,6 +1061,25 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 n["offsets"].set(DataType::uint32(5));
                 CHECK_MESH(verify_matset,n,info,true);
                 CHECK_MATSET(n,is_uni_buffer,is_element_dominant);
+
+                //--------------------------------------//
+                // check for bad material_maps
+                //--------------------------------------//
+
+                // - bad material_maps - //
+
+                //  not an object (empty)
+                n["material_map"].reset();
+                CHECK_MESH(verify_matset,n,info,false);
+
+                //  not an object (leaf)
+                n["material_map"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // child leaves not an integer
+                n["material_map"].reset();
+                n["material_map/m1"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
             }
 
             { // Multi-Buffer Tests //
@@ -1079,6 +1108,56 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 CHECK_MESH(verify_matset,n,info,false);
                 n["volume_fractions"]["m4"]["indices"].set(DataType::uint32(5));
                 CHECK_MESH(verify_matset,n,info,false);
+                
+                // make sure we are in good shape for opt material_map checks
+                n["volume_fractions"].remove("m4");
+                CHECK_MESH(verify_matset,n,info,true);
+
+                //--------------------------------------//
+                // check for optional use of material_map
+                //--------------------------------------//
+
+                // - good material_map - //
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = 1;
+                n["material_map/m3"] = 2;
+
+                CHECK_MESH(verify_matset,n,info,true);
+
+                // - bad material_maps - //
+
+                //  not an object (empty)
+                n["material_map"].reset();
+                CHECK_MESH(verify_matset,n,info,false);
+
+                //  not an object (leaf)
+                n["material_map"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // child leaves not an integer
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = "bananas";
+                n["material_map/m3"] = "mangoes";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // material_map ents don't match vfs
+                // (more mat map ents than vfs)
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = 1;
+                n["material_map/m3"] = 2;
+                n["material_map/m4"] = 4;
+
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // material_map ents are subset of vfs
+                // (should be true)
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m3"] = 2;
+                CHECK_MESH(verify_matset,n,info,true);
             }
 
             { // Element ID Tests //
@@ -1110,6 +1189,42 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 CHECK_MESH(verify_matset,n,info,true);
                 CHECK_MATSET(n,is_multi_buffer,is_material_dominant);
 
+                //--------------------------------------//
+                // check for optional use of material_map
+                //--------------------------------------//
+
+                // - good material_map - //
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = 1;
+                CHECK_MESH(verify_matset,n,info,true);
+
+                // - bad material_maps - //
+
+                //  not an object (empty)
+                n["material_map"].reset();
+                CHECK_MESH(verify_matset,n,info,false);
+
+                //  not an object (leaf)
+                n["material_map"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // child leaves not an integer
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = "bananas";
+                n["material_map/m3"] = "mangoes";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // material_map ents don't match vfs
+                n["material_map"].reset();
+                n["material_map/banana"] = 0;
+                n["material_map/mango"] = 1;
+                CHECK_MESH(verify_matset,n,info,false);
+
+
+                n.remove("material_map");
+
                 // Uni-Buffer Volume Fractions //
                 n["volume_fractions"].reset();
                 n["volume_fractions"].set(DataType::float64(5));
@@ -1127,6 +1242,34 @@ TEST(conduit_blueprint_mesh_verify, matset_general)
                 n["element_ids"].set(DataType::int32(5));
                 CHECK_MESH(verify_matset,n,info,true);
                 CHECK_MATSET(n,is_uni_buffer,is_material_dominant);
+                
+                //--------------------------------------//
+                // check for optional use of material_map
+                //--------------------------------------//
+
+                // - good material_map - //
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = 1;
+                CHECK_MESH(verify_matset,n,info,true);
+
+                // - bad material_maps - //
+
+                //  not an object (empty)
+                n["material_map"].reset();
+                CHECK_MESH(verify_matset,n,info,false);
+
+                //  not an object (leaf)
+                n["material_map"] = "bananas";
+                CHECK_MESH(verify_matset,n,info,false);
+
+                // child leaves not an integer
+                n["material_map"].reset();
+                n["material_map/m1"] = 0;
+                n["material_map/m2"] = "bananas";
+                n["material_map/m3"] = "mangoes";
+                CHECK_MESH(verify_matset,n,info,false);
+
             }
 
             n.reset();
@@ -1705,6 +1848,7 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
             CHECK_MESH(verify_matset_index,mindex,info,true);
         }
 
+        if(mindex.has_child("materials"))
         { // Materials Field Tests //
             mindex.remove("materials");
             CHECK_MESH(verify_matset_index,mindex,info,false);
@@ -1715,6 +1859,20 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
             mindex["materials/mat1"].set(1);
             CHECK_MESH(verify_matset_index,mindex,info,true);
             mindex["materials/mat2"].set(2);
+            CHECK_MESH(verify_matset_index,mindex,info,true);
+        }
+
+        if(mindex.has_child("material_maps"))
+        { // Materials Field Tests //
+            mindex.remove("material_map");
+            CHECK_MESH(verify_matset_index,mindex,info,false);
+
+            mindex["material_map"];
+            CHECK_MESH(verify_matset_index,mindex,info,false);
+
+            mindex["material_map/mat1"].set(1);
+            CHECK_MESH(verify_matset_index,mindex,info,true);
+            mindex["material_map/mat2"].set(2);
             CHECK_MESH(verify_matset_index,mindex,info,true);
         }
 
@@ -2242,13 +2400,17 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
 {
     Node mesh, info;
-    // is_multi_domain can only be called if mesh verify is true
-    EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
-                  blueprint::mesh::is_multi_domain(mesh));
+    EXPECT_TRUE(blueprint::mesh::verify(mesh,info) &&
+                blueprint::mesh::is_multi_domain(mesh));
+    EXPECT_TRUE(has_empty_warning(info));
 
     Node domains[2];
     blueprint::mesh::examples::braid("quads",10,10,1,domains[0]);
     blueprint::mesh::to_multi_domain(domains[0],mesh);
+    EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
+
+    blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
+    mesh.append().set_external(domains[1]);
     EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
     { // Redundant "to_multi_domain" Tests //
@@ -2256,10 +2418,6 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
         blueprint::mesh::to_multi_domain(mesh,temp);
         EXPECT_TRUE(blueprint::mesh::is_multi_domain(temp));
     }
-
-    blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
-    mesh.append().set_external(domains[1]);
-    EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
     for(index_t di = 0; di < 2; di++)
     {
@@ -2269,8 +2427,8 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
         // is_multi_domain can only be called if mesh verify is true
         Node coordsets = domain["coordsets"];
         domain.remove("coordsets");
-        EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
-                      blueprint::mesh::is_multi_domain(mesh));
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info) &&
+                     blueprint::mesh::is_multi_domain(mesh));
 
         domain["coordsets"].reset();
         domain["coordsets"].set(coordsets);
@@ -2292,7 +2450,8 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         VerifyFun verify_mesh = verify_mesh_funs[fi];
 
         Node mesh, mesh_data, info;
-        CHECK_MESH(verify_mesh,mesh,info,false);
+        CHECK_MESH(verify_mesh,mesh,info,true);
+        EXPECT_TRUE(has_empty_warning(info));
 
         blueprint::mesh::examples::braid("quads",10,10,1,mesh_data);
 
@@ -2310,6 +2469,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         Node& domain = *domain_ptr;
 
         CHECK_MESH(verify_mesh,mesh,info,true);
+        EXPECT_FALSE(has_empty_warning(info));
         // info.print();
 
         { // Coordsets Field Tests //

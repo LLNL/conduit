@@ -198,7 +198,7 @@ TEST(conduit_node, simple_schema)
 
     std::string res = n.schema().to_json();
     std::cout << res;
-    rapidjson::Document d;
+    conduit_rapidjson::Document d;
     d.Parse<0>(res.c_str());
 
     EXPECT_TRUE(d.HasMember("a"));
@@ -1143,6 +1143,86 @@ TEST(conduit_node, to_string_and_parse_all_protos)
 
     n2.parse(txt_cases[7],"conduit_base64_json");
     EXPECT_FALSE(n.diff(n2,info));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_node, to_string_and_indent_check_all_protos)
+{
+    Node n;
+
+    n["a/b/c"] = (int64) 10;
+    n["a/b/d"] = (float64) 42.2;
+    n["a/b/e"] = " string !";
+
+    const std::map<std::string, index_t> schema_key_depths =
+        {{"a", 0}, {"b", 1}, {"c", 2}, {"d", 2}, {"e", 2}};
+
+    std::ostringstream oss;
+
+    std::vector<std::string> txt_cases, txt_types;
+    txt_cases.push_back(n.to_string()); // yaml
+    txt_types.push_back("yaml");
+    txt_cases.push_back(n.to_string_default()); // yaml
+    txt_types.push_back("yaml");
+
+    n.to_string_stream(oss);
+    txt_cases.push_back(oss.str()); // yaml
+    txt_types.push_back("yaml");
+
+    txt_cases.push_back(n.to_string("yaml"));
+    txt_types.push_back("yaml");
+
+    oss.str("");
+    n.to_string_stream(oss,"json");
+    txt_cases.push_back(oss.str()); // json
+    txt_types.push_back("json");
+
+    txt_cases.push_back(n.to_string("json"));
+    txt_types.push_back("json");
+    txt_cases.push_back(n.to_string("conduit_json"));
+    txt_types.push_back("json");
+    // TODO: Eventually should test this case, but it's too different at present.
+    // txt_cases.push_back(n.to_string("conduit_base64_json"));
+    // txt_types.push_back("json");
+
+    for(index_t ti = 0; ti < (index_t)txt_cases.size(); ti++)
+    {
+        const std::string& txt_case = txt_cases[ti];
+        const std::string& txt_type = txt_types[ti];
+        std::vector<std::string> txt_lines;
+        conduit::utils::split_string(txt_case, '\n', txt_lines);
+
+        for(const auto& key_pair : schema_key_depths)
+        {
+            const std::string& key_string = key_pair.first;
+            const index_t key_depth = key_pair.second + ((txt_type == "json") ? 1 : 0);
+
+            std::string key_line;
+            {
+                std::ostringstream oss;
+                oss << std::string(2 * key_depth, ' ');
+                if(txt_type == "json")
+                {
+                    oss << "\"";
+                }
+                oss << key_string;
+                if(txt_type == "json")
+                {
+                    oss << "\"";
+                }
+                oss << ":";
+                key_line = oss.str();
+            }
+
+            bool key_found = false;
+            for(index_t li = 0; li < (index_t)txt_lines.size() && !key_found; li++)
+            {
+                key_found |= txt_lines[li].rfind(key_line) == 0;
+            }
+            ASSERT_TRUE(key_found);
+        }
+    }
 }
 
 
