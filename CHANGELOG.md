@@ -15,6 +15,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added several more methods to Python DataType interface
 
 
+### Changed
+
+#### General
+- Updated to newer version of BLT to leverage CMake's FindMPI defined targets when using CMake 3.15 or newer.
+
 
 #### Relay
 - Added Relay HDF5 support for reading and writing to an HDF5 dataset with offset.

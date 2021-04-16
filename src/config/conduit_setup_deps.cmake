@@ -142,6 +142,21 @@ if(CONDUIT_HDF5_DIR)
         list(REMOVE_ITEM HDF5_LIBRARIES ${HDF5_HL_LIB})
     endif()
 
+    message(STATUS "HDF5 is parallel:  ${HDF5_IS_PARALLEL}")
+    # if HDF5 was built with parallel support, we need to find MPI
+    # to make sure the targets propgate correctly.
+    # in other cases, folks will 
+    if(HDF5_IS_PARALLEL AND NOT MPI_FOUND)
+        find_package(MPI)
+    endif()
+
+    if(HDF5_IS_PARALLEL)
+        if(NOT MPI_FOUND)
+             MESSAGE(FATAL_ERROR "Cannot find MPI, but the HDF5 Conduit is linked to requires MPI support."
+                                 " (HDF5_IS_PARALLEL == TRUE). ")
+        endif()
+    endif()
+
 else()
     message(STATUS "Conduit was NOT built with HDF5 Support")
 endif()
