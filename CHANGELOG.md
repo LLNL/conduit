@@ -18,6 +18,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 #### General
+- Updated to newer version of uberenv and changed to track spack fork https://github.com/alpine-dav/spack (branch: conduit/develop).
 - Updated to newer version of BLT to leverage CMake's FindMPI defined targets when using CMake 3.15 or newer.
 - Changed `rapidjson` namespace to `conduit_rapidjson` to avoid symbol collisions with other libraries using RapidJSON.
 
