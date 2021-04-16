@@ -25,8 +25,8 @@ RUN apt-get update && apt-get install -y \
     libreadline-dev \
     libsqlite3-dev \
     libbz2-dev \
-    openmpi-bin \
-    libopenmpi-dev \
+    mpich \
+    libmpich-dev \
     vim \
  && rm -rf /var/lib/apt/lists/*
 
