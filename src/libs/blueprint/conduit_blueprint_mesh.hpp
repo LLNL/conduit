@@ -88,59 +88,6 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           index_t num_domains,
                                           Node &index_out);
 
-namespace connectivity
-{
-   //-------------------------------------------------------------------------
-   typedef std::vector<int64> ElemType;
-   typedef std::map<int64, std::vector<int64> > SubelemMap;
-
-
-   void CONDUIT_BLUEPRINT_API make_element_2d(std::vector<int64>& elem,
-                        int64 element,
-                        int64 iwidth);
-
-   void CONDUIT_BLUEPRINT_API make_element_3d(ElemType& connect,
-                        int64 element,
-                        int64 iwidth,
-                        int64 jwidth,
-                        int64 kwidth,
-                        SubelemMap& faces);
-
-
-   void CONDUIT_BLUEPRINT_API create_elements_2d(const Node& ref_win,
-                        int64 i_lo,
-                        int64 j_lo,
-                        int64 iwidth,
-                        std::map<int, std::vector<int64> >& elems);
-
-   void CONDUIT_BLUEPRINT_API create_elements_3d(const Node& ref_win,
-                        int64 i_lo,
-                        int64 j_lo,
-                        int64 k_lo,
-                        int64 iwidth,
-                        int64 jwidth,
-                        int64 kwidth,
-                        std::map<int, ElemType>& elems,
-                        SubelemMap& faces);
-
-   void CONDUIT_BLUEPRINT_API connect_elements_2d(const Node& ref_win,
-                        int64 i_lo,
-                        int64 j_lo,
-                        int64 iwidth,
-                        int64 ratio,
-                        int64& new_vertex,
-                        std::map<int, std::vector<int64> >& elems);
-
-   void CONDUIT_BLUEPRINT_API connect_elements_3d(const Node& ref_win,
-                        int64 i_lo,
-                        int64 j_lo,
-                        int64 k_lo,
-                        int64 iwidth,
-                        int64 jwidth,
-                        int64& new_vertex,
-                        std::map<int, ElemType>& elems);
-}
-
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------
