@@ -890,7 +890,7 @@ void match_nbr_elems(PolyBndry& pbnd,
 
 
 //-------------------------------------------------------------------------
-void to_polyhderal(const Node &n,
+void to_polyhedral(const Node &n,
                    Node &dest,
                    const std::string& name)
 {
