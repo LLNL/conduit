@@ -37,6 +37,18 @@ endif()
 ################################################################
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
+# adjust MPI from BLT
+if(BLT_USE_FIND_MPI_TARGETS)
+    # newer cmake we use find mpi targets directly,
+    # this is simply a target alias
+    blt_register_library(NAME mpi_deps
+                         LIBRARIES MPI::MPI_CXX)
+else()
+    # older cmake, we use BLT imported targets
+    # again, this is simply a target alias
+    blt_register_library(NAME mpi_deps
+                         LIBRARIES mpi)
+endif()
 
 ################################################################
 # apply folders to a few ungrouped blt targets
