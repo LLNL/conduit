@@ -101,6 +101,6 @@ target_link_libraries(conduit_mpi_example conduit::conduit
                                           MPI::MPI_CXX)
 
 # if you are using conduit's python CAPI capsule interface
-# target_link_libraries(conduit_example conduit::conduit_python)
+# target_link_libraries(conduit_mpi_example conduit::conduit_python)
 
 
