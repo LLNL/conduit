@@ -29,17 +29,26 @@ endif()
 ################################################################
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
-# adjust MPI from BLT
-if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
-    # older cmake, we use BLT imported targets
-    # again, this is simply a target alias
-    blt_register_library(NAME mpi_deps
-                         LIBRARIES mpi)
-else()
-    # newer cmake we use find mpi targets directly,
-    # this is simply a target alias
-    blt_register_library(NAME mpi_deps
-                         LIBRARIES MPI::MPI_CXX)
+if(ENABLE_MPI)
+    # adjust MPI from BLT
+    if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
+        # older cmake, we use BLT imported targets
+        # this is simply a target alias
+        blt_register_library(NAME mpi_deps
+                             LIBRARIES mpi)
+    else()
+        if(TARGET MPI::MPI_CXX)
+            message(STATUS "Using MPI CMake imported target: MPI::MPI_CXX")
+            # newer cmake we use find mpi targets directly,
+            # this is simply a target alias
+            blt_register_library(NAME mpi_deps
+                                 LIBRARIES MPI::MPI_CXX)
+        else()
+            message(FATAL_ERROR "Cannot use CMake imported targets for MPI."
+                                "(CMake > 3.15, ENABLE_MPI == ON, but "
+                                "MPI::MPI_CXX CMake target is missing.)")
+        endif()
+    endif()
 endif()
 
 ################################################################
