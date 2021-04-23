@@ -2,8 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Conduit.
 
-FROM ubuntu:trusty
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+FROM ubuntu:18.04
 
 # fetch build env
 RUN apt-get update && apt-get install -y \
@@ -18,8 +17,6 @@ RUN apt-get update && apt-get install -y \
     tar \
     unzip \
     perl \
-    openmpi-bin \
-    libopenmpi-dev \
     libncurses-dev \
     libssl-dev \
     libopenblas-dev \
@@ -28,6 +25,9 @@ RUN apt-get update && apt-get install -y \
     libreadline-dev \
     libsqlite3-dev \
     libbz2-dev \
+    mpich \
+    libmpich-dev \
+    vim \
  && rm -rf /var/lib/apt/lists/*
 
 
@@ -54,8 +54,8 @@ RUN tar -xf conduit.docker.src.tar
 #  will not run for the root user
 RUN cd conduit && python scripts/uberenv/uberenv.py \
     -k \
-    --spec "%gcc+mpi~doc~silo ^mpich" \
-    --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
+    --spec "%gcc+mpi~doc~silo" \
+    --spack-config-dir=scripts/uberenv_configs/spack_configs/docker/ubuntu/
 
 # configure a debug build with cmake
 RUN cd conduit && mkdir build-debug
