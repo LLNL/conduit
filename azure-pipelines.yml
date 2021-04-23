@@ -128,20 +128,20 @@ stages:
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
 
-          shared_py38_cmake20:
-            BUILD_SHARED_LIBS: ON
-            CMAKE_BUILD_TYPE: Debug
-            ENABLE_COVERAGE: OFF
-            ENABLE_MPI: ON
-            ENABLE_DOCS: ON
-            ENABLE_SILO: ON
-            ENABLE_ADIOS: OFF
-            ENABLE_PYTHON: ON
-            ENABLE_PYTHON2: OFF
-            PYTHON_VERSION: 3.8.9
-            CMAKE_VERSION: 3.20.1
-            BLT_CXX_STD: c++11
-          
+        shared_py38_cmake20:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_SILO: ON
+          ENABLE_ADIOS: OFF
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.8.9
+          CMAKE_VERSION: 3.20.1
+          BLT_CXX_STD: c++11
+
     steps:
       - checkout: self
         clean: boolean
