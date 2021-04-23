@@ -63,6 +63,12 @@ find_package(Conduit REQUIRED
              NO_DEFAULT_PATH 
              PATHS ${CONDUIT_DIR}/lib/cmake/conduit)
 
+# make sure we have mpi, since we are going to use
+# conduits mpi features
+if(NOT MPI_FOUND)
+    find_package(MPI COMPONENTS CXX)
+endif()
+
 
 ################################################################
 # Option 2: import conduit using find_package search
@@ -87,19 +93,13 @@ endif()
 #######################################################
 # create our example 
 #######################################################
-add_executable(conduit_example conduit_example.cpp)
+add_executable(conduit_mpi_example conduit_mpi_example.cpp)
 
 # link to conduit targets
-target_link_libraries(conduit_example conduit::conduit)
+target_link_libraries(conduit_mpi_example conduit::conduit
+                                          conduit::conduit_mpi)
 
 # if you are using conduit's python CAPI capsule interface
 # target_link_libraries(conduit_example conduit::conduit_python)
-
-
-# if you are using conduit's mpi features
-# if(IF NOT MPI_FOUND)
-#    find_package(MPI COMPONENTS CXX)
-# endif()
-# target_link_libraries(conduit_example conduit::conduit_mpi)
 
 

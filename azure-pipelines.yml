@@ -320,6 +320,26 @@ stages:
           ./conduit_example
         displayName: 'Test vs Install (using-with-make)'
 
+      - script: |
+          ################################
+          # using with cmake mpi example
+          ###############################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          cd install/examples/conduit/using-with-cmake-mpi
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+          mpiexec -n 1 ./conduit_mpi_example
+        displayName: 'Test vs Install (using-with-cmake-mpi)'
+        condition: eq(variables['ENABLE_MPI'], 'ON')
 
   ###############################################################################
   # Ubuntu 18 build and test, using spack to build tpls

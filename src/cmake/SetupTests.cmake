@@ -64,7 +64,7 @@ function(add_cpp_mpi_test)
     blt_add_executable( NAME ${args_TEST}
                         SOURCES ${args_TEST}.cpp ${args_SOURCES}
                         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                        DEPENDS_ON "${args_DEPENDS_ON}" gtest mpi)
+                        DEPENDS_ON "${args_DEPENDS_ON}" gtest conduit_blt_mpi_deps)
 
     blt_add_test( NAME ${args_TEST}
                   COMMAND ${args_TEST}

@@ -34,14 +34,14 @@ if(ENABLE_MPI)
     if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
         # older cmake, we use BLT imported targets
         # this is simply a target alias
-        blt_register_library(NAME mpi_deps
+        blt_register_library(NAME conduit_blt_mpi_deps
                              LIBRARIES mpi)
     else()
         if(TARGET MPI::MPI_CXX)
             message(STATUS "Using MPI CMake imported target: MPI::MPI_CXX")
             # newer cmake we use find mpi targets directly,
             # this is simply a target alias
-            blt_register_library(NAME mpi_deps
+            blt_register_library(NAME conduit_blt_mpi_deps
                                  LIBRARIES MPI::MPI_CXX)
         else()
             message(FATAL_ERROR "Cannot use CMake imported targets for MPI."

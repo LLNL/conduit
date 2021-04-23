@@ -169,7 +169,10 @@ ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h)
 #
 # Specify blueprint mpi deps
 #
-set(conduit_blueprint_mpi_deps conduit conduit_blueprint mpi conduit_relay_mpi)
+set(conduit_blueprint_mpi_deps conduit
+                               conduit_blt_mpi_deps
+                               conduit_blueprint
+                               conduit_relay_mpi)
 
 #
 # setup conduit blueprint mpi lib

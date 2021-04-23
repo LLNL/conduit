@@ -155,14 +155,14 @@ endif()
 # Export BLT Targets when needed
 ##################################
 
-set(BLT_TPL_DEPS)
+set(BLT_TPL_DEPS_EXPORTS)
 # cmake < 3.15, we use BLT's mpi target and need to export
 # it for use downstream
 if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
-    blt_list_append(TO BLT_TPL_DEPS ELEMENTS mpi IF ENABLE_MPI)
+    blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS mpi IF ENABLE_MPI)
 endif()
 
-foreach(dep ${BLT_TPL_DEPS})
+foreach(dep ${BLT_TPL_DEPS_EXPORTS})
     # If the target is EXPORTABLE, add it to the export set
     get_target_property(_is_imported ${dep} IMPORTED)
     if(NOT ${_is_imported})
