@@ -25,29 +25,21 @@ endif()
 
 
 ################################################################
-# if using newer CMake, prefer using MPI as imported targets
-################################################################
-if( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.15.0" )
-    set(BLT_USE_FIND_MPI_TARGETS TRUE CACHE BOOL "")
-endif()
-
-
-################################################################
 # init blt using BLT_SOURCE_DIR
 ################################################################
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
 # adjust MPI from BLT
-if(BLT_USE_FIND_MPI_TARGETS)
-    # newer cmake we use find mpi targets directly,
-    # this is simply a target alias
-    blt_register_library(NAME mpi_deps
-                         LIBRARIES MPI::MPI_CXX)
-else()
+if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
     # older cmake, we use BLT imported targets
     # again, this is simply a target alias
     blt_register_library(NAME mpi_deps
                          LIBRARIES mpi)
+else()
+    # newer cmake we use find mpi targets directly,
+    # this is simply a target alias
+    blt_register_library(NAME mpi_deps
+                         LIBRARIES MPI::MPI_CXX)
 endif()
 
 ################################################################
