@@ -138,7 +138,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
           ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.9
+          PYTHON_VERSION: 3.8.8
           CMAKE_VERSION: 3.20.0
           BLT_CXX_STD: c++11
 
