@@ -1,99 +1,439 @@
-
 {
-  "sidre": 
-  {
-    "groups": 
-    {
-      "my_scalars": 
-      {
-        "views": 
-        {
-          "i64": 
-          {
-            "state": {"dtype":"char8_str", "number_of_elements": 7, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "SCALAR"},
-            "value": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 1}
+  "sidre": {
+    "groups": {
+      "my_scalars": {
+        "views": {
+          "i64": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "SCALAR"
+            },
+            "value": {
+              "dtype": "int64",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 8,
+              "element_bytes": 8,
+              "endianness": "little",
+              "value": 1
+            }
           },
-          "f64": 
-          {
-            "state": {"dtype":"char8_str", "number_of_elements": 7, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "SCALAR"},
-            "value": {"dtype":"float64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 10.0}
+          "f64": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "SCALAR"
+            },
+            "value": {
+              "dtype": "float64",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 8,
+              "element_bytes": 8,
+              "endianness": "little",
+              "value": 10.0
+            }
           }
         }
       },
-      "my_strings": 
-      {
-        "views": 
-        {
-          "s0": 
-          {
-            "state": {"dtype":"char8_str", "number_of_elements": 7, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "STRING"},
-            "value": {"dtype":"char8_str", "number_of_elements": 10, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "s0 string"}
+      "my_strings": {
+        "views": {
+          "s0": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "STRING"
+            },
+            "value": {
+              "dtype": "char8_str",
+              "number_of_elements": 10,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "s0 string"
+            }
           },
-          "s1": 
-          {
-            "state": {"dtype":"char8_str", "number_of_elements": 7, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "STRING"},
-            "value": {"dtype":"char8_str", "number_of_elements": 10, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "s1 string"}
+          "s1": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "STRING"
+            },
+            "value": {
+              "dtype": "char8_str",
+              "number_of_elements": 10,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "s1 string"
+            }
           }
         }
       },
-      "my_arrays": 
-      {
-        "views": 
-        {
-          "a5_i64": 
-          {
-            "state": {"dtype":"char8_str", "number_of_elements": 7, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "BUFFER"},
-            "buffer_id": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 0},
-            "schema": {"dtype":"char8_str", "number_of_elements": 113, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}"},
-            "is_applied": {"dtype":"uint8", "number_of_elements": 1, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": 1}
+      "my_arrays": {
+        "views": {
+          "a5_i64": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "BUFFER"
+            },
+            "buffer_id": {
+              "dtype": "int64",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 8,
+              "element_bytes": 8,
+              "endianness": "little",
+              "value": 0
+            },
+            "schema": {
+              "dtype": "char8_str",
+              "number_of_elements": 108,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "{\"dtype\":\"int64\",\"number_of_elements\": 5,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}"
+            },
+            "is_applied": {
+              "dtype": "uint8",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": 1
+            }
           },
-          "a5_i64_ext": 
-          {
-            "state": {"dtype":"char8_str", "number_of_elements": 9, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "EXTERNAL"},
-            "schema": {"dtype":"char8_str", "number_of_elements": 113, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}"}
+          "a0_i64": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "BUFFER"
+            },
+            "buffer_id": {
+              "dtype": "int64",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 8,
+              "element_bytes": 8,
+              "endianness": "little",
+              "value": 1
+            },
+            "schema": {
+              "dtype": "char8_str",
+              "number_of_elements": 108,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "{\"dtype\":\"int64\",\"number_of_elements\": 0,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}"
+            },
+            "is_applied": {
+              "dtype": "uint8",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": 1
+            }
           },
-          "b_v1": 
-          {
-            "state": {"dtype":"char8_str", "number_of_elements": 7, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "BUFFER"},
-            "buffer_id": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 1},
-            "schema": {"dtype":"char8_str", "number_of_elements": 116, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "{\"dtype\":\"float64\", \"number_of_elements\": 3, \"offset\": 0, \"stride\": 16, \"element_bytes\": 8, \"endianness\": \"little\"}"},
-            "is_applied": {"dtype":"uint8", "number_of_elements": 1, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": 1}
+          "a5_i64_ext": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 9,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "EXTERNAL"
+            },
+            "schema": {
+              "dtype": "char8_str",
+              "number_of_elements": 108,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "{\"dtype\":\"int64\",\"number_of_elements\": 5,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}"
+            }
           },
-          "b_v2": 
-          {
-            "state": {"dtype":"char8_str", "number_of_elements": 7, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "BUFFER"},
-            "buffer_id": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 1},
-            "schema": {"dtype":"char8_str", "number_of_elements": 116, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "{\"dtype\":\"float64\", \"number_of_elements\": 3, \"offset\": 8, \"stride\": 16, \"element_bytes\": 8, \"endianness\": \"little\"}"},
-            "is_applied": {"dtype":"uint8", "number_of_elements": 1, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": 1}
+          "b_v0": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "BUFFER"
+            },
+            "buffer_id": {
+              "dtype": "int64",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 8,
+              "element_bytes": 8,
+              "endianness": "little",
+              "value": 2
+            },
+            "schema": {
+              "dtype": "char8_str",
+              "number_of_elements": 110,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "{\"dtype\":\"float64\",\"number_of_elements\": 0,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}"
+            },
+            "is_applied": {
+              "dtype": "uint8",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": 1
+            }
+          },
+          "b_v1": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "BUFFER"
+            },
+            "buffer_id": {
+              "dtype": "int64",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 8,
+              "element_bytes": 8,
+              "endianness": "little",
+              "value": 2
+            },
+            "schema": {
+              "dtype": "char8_str",
+              "number_of_elements": 111,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "{\"dtype\":\"float64\",\"number_of_elements\": 3,\"offset\": 0,\"stride\": 16,\"element_bytes\": 8,\"endianness\": \"little\"}"
+            },
+            "is_applied": {
+              "dtype": "uint8",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": 1
+            }
+          },
+          "b_v2": {
+            "state": {
+              "dtype": "char8_str",
+              "number_of_elements": 7,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "BUFFER"
+            },
+            "buffer_id": {
+              "dtype": "int64",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 8,
+              "element_bytes": 8,
+              "endianness": "little",
+              "value": 2
+            },
+            "schema": {
+              "dtype": "char8_str",
+              "number_of_elements": 111,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": "{\"dtype\":\"float64\",\"number_of_elements\": 3,\"offset\": 8,\"stride\": 16,\"element_bytes\": 8,\"endianness\": \"little\"}"
+            },
+            "is_applied": {
+              "dtype": "uint8",
+              "number_of_elements": 1,
+              "offset": 0,
+              "stride": 1,
+              "element_bytes": 1,
+              "endianness": "little",
+              "value": 1
+            }
           }
         }
       }
     },
-    "buffers": 
-    {
-      "buffer_id_0": 
-      {
-        "id": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 0},
-        "schema": {"dtype":"char8_str", "number_of_elements": 113, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "{\"dtype\":\"int64\", \"number_of_elements\": 5, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}"},
-        "data": {"dtype":"int64", "number_of_elements": 5, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": [0, 1, 2, 3, 4]}
+    "buffers": {
+      "buffer_id_0": {
+        "id": {
+          "dtype": "int64",
+          "number_of_elements": 1,
+          "offset": 0,
+          "stride": 8,
+          "element_bytes": 8,
+          "endianness": "little",
+          "value": 0
+        },
+        "schema": {
+          "dtype": "char8_str",
+          "number_of_elements": 108,
+          "offset": 0,
+          "stride": 1,
+          "element_bytes": 1,
+          "endianness": "little",
+          "value": "{\"dtype\":\"int64\",\"number_of_elements\": 5,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}"
+        },
+        "data": {
+          "dtype": "int64",
+          "number_of_elements": 5,
+          "offset": 0,
+          "stride": 8,
+          "element_bytes": 8,
+          "endianness": "little",
+          "value": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        }
       },
-      "buffer_id_1": 
-      {
-        "id": {"dtype":"int64", "number_of_elements": 1, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": 1},
-        "schema": {"dtype":"char8_str", "number_of_elements": 115, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": "{\"dtype\":\"float64\", \"number_of_elements\": 6, \"offset\": 0, \"stride\": 8, \"element_bytes\": 8, \"endianness\": \"little\"}"},
-        "data": {"dtype":"float64", "number_of_elements": 6, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": [1.0, 2.0, 1.0, 2.0, 1.0, 2.0]}
+      "buffer_id_1": {
+        "id": {
+          "dtype": "int64",
+          "number_of_elements": 1,
+          "offset": 0,
+          "stride": 8,
+          "element_bytes": 8,
+          "endianness": "little",
+          "value": 1
+        },
+        "schema": {
+          "dtype": "char8_str",
+          "number_of_elements": 108,
+          "offset": 0,
+          "stride": 1,
+          "element_bytes": 1,
+          "endianness": "little",
+          "value": "{\"dtype\":\"int64\",\"number_of_elements\": 0,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}"
+        },
+        "data": {
+          "dtype": "int64",
+          "number_of_elements": 0,
+          "offset": 0,
+          "stride": 8,
+          "element_bytes": 8,
+          "endianness": "little",
+          "value":
+        }
+      },
+      "buffer_id_2": {
+        "id": {
+          "dtype": "int64",
+          "number_of_elements": 1,
+          "offset": 0,
+          "stride": 8,
+          "element_bytes": 8,
+          "endianness": "little",
+          "value": 2
+        },
+        "schema": {
+          "dtype": "char8_str",
+          "number_of_elements": 110,
+          "offset": 0,
+          "stride": 1,
+          "element_bytes": 1,
+          "endianness": "little",
+          "value": "{\"dtype\":\"float64\",\"number_of_elements\": 6,\"offset\": 0,\"stride\": 8,\"element_bytes\": 8,\"endianness\": \"little\"}"
+        },
+        "data": {
+          "dtype": "float64",
+          "number_of_elements": 6,
+          "offset": 0,
+          "stride": 8,
+          "element_bytes": 8,
+          "endianness": "little",
+          "value": [
+            1.0,
+            2.0,
+            1.0,
+            2.0,
+            1.0,
+            2.0
+          ]
+        }
       }
     },
-    "attribute": 
-    {
-    },
-    "external": 
-    {
-      "my_arrays": 
-      {
-        "a5_i64_ext": {"dtype":"int64", "number_of_elements": 5, "offset": 0, "stride": 8, "element_bytes": 8, "endianness": "little", "value": [0, 1, 2, 3, -5]}
+    "attribute": {},
+    "external": {
+      "my_arrays": {
+        "a5_i64_ext": {
+          "dtype": "int64",
+          "number_of_elements": 5,
+          "offset": 0,
+          "stride": 8,
+          "element_bytes": 8,
+          "endianness": "little",
+          "value": [
+            0,
+            1,
+            2,
+            3,
+            -5
+          ]
+        }
       }
     }
   },
-  "sidre_group_name": {"dtype":"char8_str", "number_of_elements": 1, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little", "value": ""}
+  "sidre_group_name": {
+    "dtype": "char8_str",
+    "number_of_elements": 1,
+    "offset": 0,
+    "stride": 1,
+    "element_bytes": 1,
+    "endianness": "little",
+    "value": ""
+  }
 }

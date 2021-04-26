@@ -19,12 +19,14 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_blueprint_exports.h.in"
 set(blueprint_headers
     conduit_blueprint.hpp
     conduit_blueprint_mesh.hpp
+    conduit_blueprint_mesh_utils.hpp
     conduit_blueprint_mesh_examples.hpp
     conduit_blueprint_mesh_examples_julia.hpp
     conduit_blueprint_mesh_examples_venn.hpp
     conduit_blueprint_mcarray.hpp
     conduit_blueprint_mcarray_examples.hpp
     conduit_blueprint_o2mrelation.hpp
+    conduit_blueprint_o2mrelation_utils.hpp
     conduit_blueprint_o2mrelation_iterator.hpp
     conduit_blueprint_o2mrelation_examples.hpp
     conduit_blueprint_zfparray.hpp
@@ -47,6 +49,7 @@ set(blueprint_c_headers
 set(blueprint_sources
     conduit_blueprint.cpp
     conduit_blueprint_mesh.cpp
+    conduit_blueprint_mesh_utils.cpp
     conduit_blueprint_mesh_matset_xforms.cpp
     conduit_blueprint_mesh_examples.cpp
     conduit_blueprint_mesh_examples_julia.cpp
@@ -54,6 +57,7 @@ set(blueprint_sources
     conduit_blueprint_mcarray.cpp
     conduit_blueprint_mcarray_examples.cpp
     conduit_blueprint_o2mrelation.cpp
+    conduit_blueprint_o2mrelation_utils.cpp
     conduit_blueprint_o2mrelation_iterator.cpp
     conduit_blueprint_o2mrelation_examples.cpp
     conduit_blueprint_zfparray.cpp
@@ -165,7 +169,10 @@ ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h)
 #
 # Specify blueprint mpi deps
 #
-set(conduit_blueprint_mpi_deps conduit conduit_blueprint mpi conduit_relay_mpi)
+set(conduit_blueprint_mpi_deps conduit
+                               conduit_blt_mpi_deps
+                               conduit_blueprint
+                               conduit_relay_mpi)
 
 #
 # setup conduit blueprint mpi lib

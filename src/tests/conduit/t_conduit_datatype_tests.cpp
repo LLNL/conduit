@@ -367,6 +367,19 @@ TEST(dtype_tests, dtype_construct_from_string)
 }
 
 //-----------------------------------------------------------------------------
+TEST(dtype_tests, dtype_index_t)
+{
+    EXPECT_FALSE(DataType::index_t().is_empty());
+    EXPECT_TRUE(DataType::index_t().is_index_t());
+#ifdef CONDUIT_INDEX_32
+    EXPECT_TRUE(DataType::index_t().is_int32());
+#else
+    EXPECT_TRUE(DataType::index_t().is_int64());
+#endif 
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(dtype_tests, dtype_set_using_string)
 {
     DataType dt;

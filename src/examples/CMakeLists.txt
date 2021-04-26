@@ -11,5 +11,9 @@
 add_subdirectory(staging)
 
 # install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python
+install(DIRECTORY using-with-cmake
+                  using-with-cmake-mpi
+                  using-with-make
+                  python
+                  cpp_fort_and_py
         DESTINATION examples/conduit)

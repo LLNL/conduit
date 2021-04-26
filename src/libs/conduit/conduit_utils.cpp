@@ -279,6 +279,13 @@ set_info_handler(void(*on_info)
 }
 
 //-----------------------------------------------------------------------------
+conduit_info_handler
+info_handler()
+{
+    return conduit_on_info;
+}
+
+//-----------------------------------------------------------------------------
 void
 handle_info(const std::string &msg,
             const std::string &file,
@@ -312,6 +319,13 @@ set_warning_handler(void(*on_warning)
                      int))
 {
     conduit_on_warning = on_warning;
+}
+
+//-----------------------------------------------------------------------------
+conduit_warning_handler
+warning_handler()
+{
+    return conduit_on_warning;
 }
 
 //-----------------------------------------------------------------------------
@@ -349,6 +363,13 @@ set_error_handler(void(*on_error)
                   int))
 {
     conduit_on_error = on_error;
+}
+
+//-----------------------------------------------------------------------------
+conduit_error_handler
+error_handler()
+{
+    return conduit_on_error;
 }
 
 //-----------------------------------------------------------------------------

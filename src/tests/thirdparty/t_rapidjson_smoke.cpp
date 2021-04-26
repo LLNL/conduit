@@ -16,7 +16,7 @@ TEST(rapidjson_smoke, basic_use)
 {
     const char json[] = "{ \"hello\" : \"world\" }";
 
-    rapidjson::Document d;
+    conduit_rapidjson::Document d;
     d.Parse<0>(json);
 
     ASSERT_STREQ(d["hello"].GetString(),"world");

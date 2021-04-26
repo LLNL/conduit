@@ -127,6 +127,21 @@ stages:
           PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-pygments@2.4.2 "
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
+
+        shared_py38_cmake20:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_SILO: ON
+          ENABLE_ADIOS: OFF
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.8.8
+          CMAKE_VERSION: 3.20.0
+          BLT_CXX_STD: c++11
+
     steps:
       - checkout: self
         clean: boolean
@@ -202,7 +217,7 @@ stages:
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/
+           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/ci/ubuntu_16/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -320,6 +335,26 @@ stages:
           ./conduit_example
         displayName: 'Test vs Install (using-with-make)'
 
+      - script: |
+          ################################
+          # using with cmake mpi example
+          ###############################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          cd install/examples/conduit/using-with-cmake-mpi
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+          mpiexec -n 1 ./conduit_mpi_example
+        displayName: 'Test vs Install (using-with-cmake-mpi)'
+        condition: eq(variables['ENABLE_MPI'], 'ON')
 
   ###############################################################################
   # Ubuntu 18 build and test, using spack to build tpls
@@ -428,7 +463,7 @@ stages:
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/
+           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/ci/ubuntu_16/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -546,6 +581,38 @@ stages:
           make
           ./conduit_example
         displayName: 'Test vs Install (using-with-make)'
+
+      - script: |
+          ################################
+          # cpp fort and py example
+          ################################
+          # only run this when python is enabled
+          # (there might be a better way to do this with an azure `condition:` stmt)
+          if [ $ENABLE_PYTHON = 'OFF' ]; then exit 0; fi
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          # find spack installed python
+          export PYTHON_EXE=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin/python`
+          # add conduit module to python path
+          export PYTHONPATH=${ROOT_DIR}/install/python-modules/
+          echo $PYTHONPATH
+          which cmake
+          # lets build
+          cd install/examples/conduit/cpp_fort_and_py
+          mkdir _test_build
+          cd _test_build
+          cmake -DCONDUIT_DIR=${ROOT_DIR}/install  -DPYTHON_EXECUTABLE=${PYTHON_EXE} ../
+          make VERBOSE=1
+          # lets run!
+          ./conduit_cpp_and_py_ex
+          ./conduit_fort_and_py_ex
+        displayName: 'Test vs Install (cpp_fort_and_py)'
+        
 
   ###############################################################################
   # Docker build and test case, that leverages our script that calls Docker Build

@@ -95,74 +95,81 @@ public:
 // -- begin conduit::DataType Leaf Constructor Helpers --
 //-----------------------------------------------------------------------------
     /// signed integer arrays
-    static DataType int8(index_t num_elements=1,
-                         index_t offset = 0,
-                         index_t stride = sizeof(conduit::int8),
-                         index_t element_bytes = sizeof(conduit::int8),
-                         index_t endianness = Endianness::DEFAULT_ID);
+    static DataType int8(conduit::index_t num_elements=1,
+                         conduit::index_t offset = 0,
+                         conduit::index_t stride = sizeof(conduit::int8),
+                         conduit::index_t element_bytes = sizeof(conduit::int8),
+                         conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType int16(index_t num_elements=1,
-                          index_t offset = 0,
-                          index_t stride = sizeof(conduit::int16),
-                          index_t element_bytes = sizeof(conduit::int16),
-                          index_t endianness = Endianness::DEFAULT_ID);
+    static DataType int16(conduit::index_t num_elements=1,
+                          conduit::index_t offset = 0,
+                          conduit::index_t stride = sizeof(conduit::int16),
+                          conduit::index_t element_bytes = sizeof(conduit::int16),
+                          conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType int32(index_t num_elements=1,
-                          index_t offset = 0,
-                          index_t stride = sizeof(conduit::int32),
-                          index_t element_bytes = sizeof(conduit::int32),
-                          index_t endianness = Endianness::DEFAULT_ID);
+    static DataType int32(conduit::index_t num_elements=1,
+                          conduit::index_t offset = 0,
+                          conduit::index_t stride = sizeof(conduit::int32),
+                          conduit::index_t element_bytes = sizeof(conduit::int32),
+                          conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType int64(index_t num_elements=1,
-                          index_t offset = 0,
-                          index_t stride = sizeof(conduit::int64),
-                          index_t element_bytes = sizeof(conduit::int64),
-                          index_t endianness = Endianness::DEFAULT_ID);
+    static DataType int64(conduit::index_t num_elements=1,
+                          conduit::index_t offset = 0,
+                          conduit::index_t stride = sizeof(conduit::int64),
+                          conduit::index_t element_bytes = sizeof(conduit::int64),
+                          conduit::index_t endianness = Endianness::DEFAULT_ID);
 
     /// unsigned integer arrays
-    static DataType uint8(index_t num_elements=1,
-                          index_t offset = 0,
-                          index_t stride = sizeof(conduit::uint8),
-                          index_t element_bytes = sizeof(conduit::uint8),
-                          index_t endianness = Endianness::DEFAULT_ID);
+    static DataType uint8(conduit::index_t num_elements=1,
+                          conduit::index_t offset = 0,
+                          conduit::index_t stride = sizeof(conduit::uint8),
+                          conduit::index_t element_bytes = sizeof(conduit::uint8),
+                          conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType uint16(index_t num_elements=1,
-                           index_t offset = 0,
-                           index_t stride = sizeof(conduit::uint16),
-                           index_t element_bytes = sizeof(conduit::uint16),
-                           index_t endianness = Endianness::DEFAULT_ID);
+    static DataType uint16(conduit::index_t num_elements=1,
+                           conduit::index_t offset = 0,
+                           conduit::index_t stride = sizeof(conduit::uint16),
+                           conduit::index_t element_bytes = sizeof(conduit::uint16),
+                           conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType uint32(index_t num_elements=1,
-                           index_t offset = 0,
-                           index_t stride = sizeof(conduit::uint32),
-                           index_t element_bytes = sizeof(conduit::uint32),
-                           index_t endianness = Endianness::DEFAULT_ID);
+    static DataType uint32(conduit::index_t num_elements=1,
+                           conduit::index_t offset = 0,
+                           conduit::index_t stride = sizeof(conduit::uint32),
+                           conduit::index_t element_bytes = sizeof(conduit::uint32),
+                           conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType uint64(index_t num_elements=1,
-                           index_t offset = 0,
-                           index_t stride = sizeof(conduit::uint64),
-                           index_t element_bytes = sizeof(conduit::uint64),
-                           index_t endianness = Endianness::DEFAULT_ID);
+    static DataType uint64(conduit::index_t num_elements=1,
+                           conduit::index_t offset = 0,
+                           conduit::index_t stride = sizeof(conduit::uint64),
+                           conduit::index_t element_bytes = sizeof(conduit::uint64),
+                           conduit::index_t endianness = Endianness::DEFAULT_ID);
 
     /// floating point arrays
-    static DataType float32(index_t num_elements=1,
-                            index_t offset = 0,
-                            index_t stride = sizeof(conduit::float32),
-                            index_t element_bytes=sizeof(conduit::float32),
-                            index_t endianness = Endianness::DEFAULT_ID);
+    static DataType float32(conduit::index_t num_elements=1,
+                            conduit::index_t offset = 0,
+                            conduit::index_t stride = sizeof(conduit::float32),
+                            conduit::index_t element_bytes=sizeof(conduit::float32),
+                            conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType float64(index_t num_elements=1,
-                            index_t offset = 0,
-                            index_t stride = sizeof(conduit::float64),
-                            index_t element_bytes=sizeof(conduit::float64),
-                            index_t endianness = Endianness::DEFAULT_ID);
+    static DataType float64(conduit::index_t num_elements=1,
+                            conduit::index_t offset = 0,
+                            conduit::index_t stride = sizeof(conduit::float64),
+                            conduit::index_t element_bytes=sizeof(conduit::float64),
+                            conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType char8_str(index_t num_elements=1,
-                              index_t offset = 0,
-                              index_t stride = 1,
-                              index_t element_bytes=1,
-                              index_t endianness = Endianness::DEFAULT_ID);
+    static DataType char8_str(conduit::index_t num_elements=1,
+                              conduit::index_t offset = 0,
+                              conduit::index_t stride = 1,
+                              conduit::index_t element_bytes=1,
+                              conduit::index_t endianness = Endianness::DEFAULT_ID);
 
+    // Note: this is an alias to either int32, or int 64
+    //       controlled by CONDUIT_INDEX_32 compile time option
+    static DataType index_t(conduit::index_t num_elements=1,
+                            conduit::index_t offset = 0,
+                            conduit::index_t stride = sizeof(conduit_index_t),
+                            conduit::index_t element_bytes=sizeof(conduit_index_t),
+                            conduit::index_t endianness = Endianness::DEFAULT_ID);
 
 //-----------------------------------------------------------------------------
 // -- end conduit::DataType Leaf Constructor Helpers --
@@ -172,123 +179,123 @@ public:
 // -- begin conduit::DataType C Native Leaf Constructor Helpers --
 //-----------------------------------------------------------------------------
     /// signed integer arrays
-    static DataType c_char(index_t num_elements=1,
-                           index_t offset = 0,
-                           index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
-                           index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
-                           index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_char(conduit::index_t num_elements=1,
+                           conduit::index_t offset = 0,
+                           conduit::index_t stride = sizeof(CONDUIT_NATIVE_CHAR),
+                           conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_CHAR),
+                           conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_short(index_t num_elements=1,
-                            index_t offset = 0,
-                            index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
-                            index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
-                            index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_short(conduit::index_t num_elements=1,
+                            conduit::index_t offset = 0,
+                            conduit::index_t stride = sizeof(CONDUIT_NATIVE_SHORT),
+                            conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_SHORT),
+                            conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_int(index_t num_elements=1,
-                          index_t offset = 0,
-                          index_t stride = sizeof(CONDUIT_NATIVE_INT),
-                          index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
-                          index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_int(conduit::index_t num_elements=1,
+                          conduit::index_t offset = 0,
+                          conduit::index_t stride = sizeof(CONDUIT_NATIVE_INT),
+                          conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_INT),
+                          conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_long(index_t num_elements=1,
-                           index_t offset = 0,
-                           index_t stride = sizeof(CONDUIT_NATIVE_LONG),
-                           index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
-                           index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_long(conduit::index_t num_elements=1,
+                           conduit::index_t offset = 0,
+                           conduit::index_t stride = sizeof(CONDUIT_NATIVE_LONG),
+                           conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG),
+                           conduit::index_t endianness = Endianness::DEFAULT_ID);
 
 #ifdef CONDUIT_HAS_LONG_LONG
-    static DataType c_long_long(index_t num_elements=1,
-                                index_t offset = 0,
-                                index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
-                                index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
-                                index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_long_long(conduit::index_t num_elements=1,
+                                conduit::index_t offset = 0,
+                                conduit::index_t stride = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                                conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_LONG_LONG),
+                                conduit::index_t endianness = Endianness::DEFAULT_ID);
 #endif
 
     /// signed integer arrays
-    static DataType c_signed_char(index_t num_elements=1,
-                                  index_t offset = 0,
-                                  index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
-                                  index_t element_bytes =  sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
-                                  index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_signed_char(conduit::index_t num_elements=1,
+                                  conduit::index_t offset = 0,
+                                  conduit::index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
+                                  conduit::index_t element_bytes =  sizeof(CONDUIT_NATIVE_SIGNED_CHAR),
+                                  conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_signed_short(index_t num_elements=1,
-                                   index_t offset = 0,
-                                   index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_SHORT),
-                                   index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_SHORT),
-                                   index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_signed_short(conduit::index_t num_elements=1,
+                                   conduit::index_t offset = 0,
+                                   conduit::index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_SHORT),
+                                   conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_SHORT),
+                                   conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_signed_int(index_t num_elements=1,
-                                 index_t offset = 0,
-                                 index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_INT),
-                                 index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_INT),
-                                 index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_signed_int(conduit::index_t num_elements=1,
+                                 conduit::index_t offset = 0,
+                                 conduit::index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_INT),
+                                 conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_INT),
+                                 conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_signed_long(index_t num_elements=1,
-                                  index_t offset = 0,
-                                  index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_LONG),
-                                  index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_LONG),
-                                   index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_signed_long(conduit::index_t num_elements=1,
+                                  conduit::index_t offset = 0,
+                                  conduit::index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_LONG),
+                                  conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_LONG),
+                                  conduit::index_t endianness = Endianness::DEFAULT_ID);
 
 #ifdef CONDUIT_HAS_LONG_LONG
-    static DataType c_signed_long_long(index_t num_elements=1,
-                                       index_t offset = 0,
-                                       index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_LONG_LONG),
-                                       index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_LONG_LONG),
-                                       index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_signed_long_long(conduit::index_t num_elements=1,
+                                       conduit::index_t offset = 0,
+                                       conduit::index_t stride = sizeof(CONDUIT_NATIVE_SIGNED_LONG_LONG),
+                                       conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_SIGNED_LONG_LONG),
+                                       conduit::index_t endianness = Endianness::DEFAULT_ID);
 #endif
 
     /// unsigned integer arrays
-    static DataType c_unsigned_char(index_t num_elements=1,
-                                    index_t offset = 0,
-                                    index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
-                                    index_t element_bytes =  sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
-                                    index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_unsigned_char(conduit::index_t num_elements=1,
+                                    conduit::index_t offset = 0,
+                                    conduit::index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                                    conduit::index_t element_bytes =  sizeof(CONDUIT_NATIVE_UNSIGNED_CHAR),
+                                    conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_unsigned_short(index_t num_elements=1,
-                                     index_t offset = 0,
-                                     index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
-                                     index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
-                                     index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_unsigned_short(conduit::index_t num_elements=1,
+                                     conduit::index_t offset = 0,
+                                     conduit::index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                                     conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_SHORT),
+                                     conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_unsigned_int(index_t num_elements=1,
-                                   index_t offset = 0,
-                                   index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
-                                   index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
-                                   index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_unsigned_int(conduit::index_t num_elements=1,
+                                   conduit::index_t offset = 0,
+                                   conduit::index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                                   conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_INT),
+                                   conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_unsigned_long(index_t num_elements=1,
-                                    index_t offset = 0,
-                                    index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
-                                    index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
-                                    index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_unsigned_long(conduit::index_t num_elements=1,
+                                    conduit::index_t offset = 0,
+                                    conduit::index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                                    conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG),
+                                    conduit::index_t endianness = Endianness::DEFAULT_ID);
 
 #ifdef CONDUIT_HAS_LONG_LONG
-    static DataType c_unsigned_long_long(index_t num_elements=1,
-                                         index_t offset = 0,
-                                         index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
-                                         index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
-                                         index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_unsigned_long_long(conduit::index_t num_elements=1,
+                                         conduit::index_t offset = 0,
+                                         conduit::index_t stride = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                                         conduit::index_t element_bytes = sizeof(CONDUIT_NATIVE_UNSIGNED_LONG_LONG),
+                                         conduit::index_t endianness = Endianness::DEFAULT_ID);
 #endif
 
     /// floating point arrays
-    static DataType c_float(index_t num_elements=1,
-                            index_t offset = 0,
-                            index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
-                            index_t element_bytes=sizeof(CONDUIT_NATIVE_FLOAT),
-                            index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_float(conduit::index_t num_elements=1,
+                            conduit::index_t offset = 0,
+                            conduit::index_t stride = sizeof(CONDUIT_NATIVE_FLOAT),
+                            conduit::index_t element_bytes=sizeof(CONDUIT_NATIVE_FLOAT),
+                            conduit::index_t endianness = Endianness::DEFAULT_ID);
 
-    static DataType c_double(index_t num_elements=1,
-                             index_t offset = 0,
-                             index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
-                             index_t element_bytes=sizeof(CONDUIT_NATIVE_DOUBLE),
-                             index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_double(conduit::index_t num_elements=1,
+                             conduit::index_t offset = 0,
+                             conduit::index_t stride = sizeof(CONDUIT_NATIVE_DOUBLE),
+                             conduit::index_t element_bytes=sizeof(CONDUIT_NATIVE_DOUBLE),
+                             conduit::index_t endianness = Endianness::DEFAULT_ID);
 
 #ifdef CONDUIT_USE_LONG_DOUBLE
-    static DataType c_long_double(index_t num_elements=1,
-                             index_t offset = 0,
-                             index_t stride = sizeof(CONDUIT_NATIVE_LONG_DOUBLE),
-                             index_t element_bytes=sizeof(CONDUIT_NATIVE_LONG_DOUBLE),
-                             index_t endianness = Endianness::DEFAULT_ID);
+    static DataType c_long_double(conduit::index_t num_elements=1,
+                                  conduit::index_t offset = 0,
+                                  conduit::index_t stride = sizeof(CONDUIT_NATIVE_LONG_DOUBLE),
+                                  conduit::index_t element_bytes=sizeof(CONDUIT_NATIVE_LONG_DOUBLE),
+                                  conduit::index_t endianness = Endianness::DEFAULT_ID);
 #endif
 
 
@@ -311,23 +318,24 @@ public:
     /// copy constructor
     DataType(const DataType& type);
     /// construct simplest dtype for given type id
-    explicit DataType(index_t id, index_t num_elements=0);
+    explicit DataType(conduit::index_t id,
+                      conduit::index_t num_elements=0);
 
     /// construct from full details, given a data type name
     DataType(const std::string &dtype_name,
-             index_t num_elements,
-             index_t offset,
-             index_t stride,
-             index_t element_bytes,
-             index_t endianness);
+             conduit::index_t num_elements,
+             conduit::index_t offset,
+             conduit::index_t stride,
+             conduit::index_t element_bytes,
+             conduit::index_t endianness);
 
     /// construct from full details, given a data type id
-    DataType(index_t dtype_id,
-             index_t num_elements,
-             index_t offset,
-             index_t stride,
-             index_t element_bytes,
-             index_t endianness);
+    DataType(conduit::index_t dtype_id,
+             conduit::index_t num_elements,
+             conduit::index_t offset,
+             conduit::index_t stride,
+             conduit::index_t element_bytes,
+             conduit::index_t endianness);
 
     /// destructor
    ~DataType();
@@ -341,52 +349,52 @@ public:
     void       set(const DataType& type);
     
     void       set(const std::string &dtype_name,
-                   index_t num_elements,
-                   index_t offset,
-                   index_t stride,
-                   index_t element_bytes,
-                   index_t endianness);    
+                   conduit::index_t num_elements,
+                   conduit::index_t offset,
+                   conduit::index_t stride,
+                   conduit::index_t element_bytes,
+                   conduit::index_t endianness);    
 
-    void       set(index_t dtype_id,
-                   index_t num_elements,
-                   index_t offset,
-                   index_t stride,
-                   index_t element_bytes,
-                   index_t endianness);
+    void       set(conduit::index_t dtype_id,
+                   conduit::index_t num_elements,
+                   conduit::index_t offset,
+                   conduit::index_t stride,
+                   conduit::index_t element_bytes,
+                   conduit::index_t endianness);
     
-    void       set_id(index_t dtype_id)
+    void       set_id(conduit::index_t dtype_id)
                     { m_id = dtype_id;}
                    
-    void       set_number_of_elements(index_t v)
+    void       set_number_of_elements(conduit::index_t v)
                     { m_num_ele = v;}
-    void       set_offset(index_t v)
+    void       set_offset(conduit::index_t v)
                     { m_offset = v;}
-    void       set_stride(index_t v)
+    void       set_stride(conduit::index_t v)
                     { m_stride = v;}
-    void       set_element_bytes(index_t v)
+    void       set_element_bytes(conduit::index_t v)
                     { m_ele_bytes = v;}
-    void       set_endianness(index_t v)
+    void       set_endianness(conduit::index_t v)
                     { m_endianness = v;}
 
 //-----------------------------------------------------------------------------
 // Getters and info methods.
 //-----------------------------------------------------------------------------
-    index_t     id()    const { return m_id;}
+    conduit::index_t     id()    const { return m_id;}
     std::string name()  const { return id_to_name(m_id);}
 
-    index_t     number_of_elements()  const { return m_num_ele;}
-    index_t     offset()              const { return m_offset;}
-    index_t     stride()              const { return m_stride;}
-    index_t     element_bytes()       const { return m_ele_bytes;}
-    index_t     endianness()          const { return m_endianness;}
-    index_t     element_index(index_t idx) const;
+    conduit::index_t     number_of_elements()  const { return m_num_ele;}
+    conduit::index_t     offset()              const { return m_offset;}
+    conduit::index_t     stride()              const { return m_stride;}
+    conduit::index_t     element_bytes()       const { return m_ele_bytes;}
+    conduit::index_t     endianness()          const { return m_endianness;}
+    conduit::index_t     element_index(conduit::index_t idx) const;
 
     /// strided bytes = stride() * (number_of_elements() -1) + element_bytes()
-    index_t     strided_bytes() const;
+    conduit::index_t     strided_bytes() const;
     // bytes compact = number_of_elements() * element_bytes()
-    index_t     bytes_compact() const;
+    conduit::index_t     bytes_compact() const;
     /// spanned bytes = strided_bytes() + offet()
-    index_t     spanned_bytes() const;
+    conduit::index_t     spanned_bytes() const;
 
     bool        is_compact() const;
     bool        compatible(const DataType& type) const;
@@ -463,23 +471,23 @@ public:
 // Helpers to convert TypeID Enum Values to human readable strings and 
 // vice versa.
 //-----------------------------------------------------------------------------
-    static index_t          name_to_id(const std::string &name);
-    static std::string      id_to_name(index_t dtype);
-    static index_t          c_type_name_to_id(const std::string &name);
+    static conduit::index_t name_to_id(const std::string &name);
+    static std::string      id_to_name(conduit::index_t dtype);
+    static conduit::index_t c_type_name_to_id(const std::string &name);
 
 //-----------------------------------------------------------------------------
 // Access to simple reference data types by id or name.
 //-----------------------------------------------------------------------------
 
-    static DataType default_dtype(index_t dtype_id);
+    static DataType default_dtype(conduit::index_t dtype_id);
     static DataType default_dtype(const std::string &name);
 
 //-----------------------------------------------------------------------------
 // Return the default number of bytes used in a given type (from a type id, or
 // string)
 //-----------------------------------------------------------------------------
-    static index_t          default_bytes(index_t dtype_id);
-    static index_t          default_bytes(const std::string &name);
+    static conduit::index_t  default_bytes(conduit::index_t dtype_id);
+    static conduit::index_t  default_bytes(const std::string &name);
 
 
 //-----------------------------------------------------------------------------
@@ -499,14 +507,14 @@ public:
     ///   adds the `eoe` (end-of-entry) suffix where necessary.
     ///
     std::string         to_string(const std::string &protocol="json",
-                                  index_t indent=2,
-                                  index_t depth=0,
+                                  conduit::index_t indent=2,
+                                  conduit::index_t depth=0,
                                   const std::string &pad=" ",
                                   const std::string &eoe="\n") const;
     void                to_string_stream(std::ostream &os, 
                                          const std::string &protocol="json",
-                                         index_t indent=2,
-                                         index_t depth=0,
+                                         conduit::index_t indent=2,
+                                         conduit::index_t depth=0,
                                          const std::string &pad=" ",
                                          const std::string &eoe="\n") const;
 
@@ -525,14 +533,14 @@ public:
     ///      utils::indent(...,indent, depth, pad)
     ///   adds the `eoe` (end-of-entry) suffix where necessary.
     ///
-    std::string         to_json(index_t indent=2,
-                                index_t depth=0,
+    std::string         to_json(conduit::index_t indent=2,
+                                conduit::index_t depth=0,
                                 const std::string &pad=" ",
                                 const std::string &eoe="\n") const;
 
     void                to_json_stream(std::ostream &os,
-                                       index_t indent=2,
-                                       index_t depth=0,
+                                       conduit::index_t indent=2,
+                                       conduit::index_t depth=0,
                                        const std::string &pad=" ",
                                        const std::string &eoe="\n") const;
 
@@ -552,14 +560,14 @@ public:
     ///      utils::indent(...,indent, depth, pad)
     ///   adds the `eoe` (end-of-entry) suffix where necessary.
     ///
-    std::string         to_yaml(index_t indent=2,
-                                index_t depth=0,
+    std::string         to_yaml(conduit::index_t indent=2,
+                                conduit::index_t depth=0,
                                 const std::string &pad=" ",
                                 const std::string &eoe="\n") const;
 
     void                to_yaml_stream(std::ostream &os,
-                                       index_t indent=2,
-                                       index_t depth=0,
+                                       conduit::index_t indent=2,
+                                       conduit::index_t depth=0,
                                        const std::string &pad=" ",
                                        const std::string &eoe="\n") const;
 
@@ -577,12 +585,12 @@ private:
 // -- conduit::DataType private data members --
 //
 //-----------------------------------------------------------------------------
-    index_t   m_id;         /// for dtype enum value
-    index_t   m_num_ele;    /// number of elements
-    index_t   m_offset;     /// bytes to start of array
-    index_t   m_stride;     /// bytes between start of current and start of next
-    index_t   m_ele_bytes;  /// bytes per element
-    index_t   m_endianness; /// endianness of elements
+    conduit::index_t  m_id;         /// for dtype enum value
+    conduit::index_t  m_num_ele;    /// number of elements
+    conduit::index_t  m_offset;     /// bytes to start of array
+    conduit::index_t  m_stride;     /// bytes between start of current and start of next
+    conduit::index_t  m_ele_bytes;  /// bytes per element
+    conduit::index_t  m_endianness; /// endianness of elements
 
 };
 //-----------------------------------------------------------------------------

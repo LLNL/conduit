@@ -44,7 +44,7 @@ contains
         nindex = conduit_node_create()
         info = conduit_node_create()
     
-        call assert_true( conduit_blueprint_mesh_verify(nempty,info) .eqv. .false. , "verify false on empty")
+        call assert_true( conduit_blueprint_mesh_verify(nempty,info) .eqv. .true. , "verify true on empty")
         call conduit_blueprint_mesh_examples_braid("hexs",3_8,3_8,3_8,n)
         call assert_true( conduit_blueprint_mesh_verify(n,info) .eqv. .true., "verify true on braid hexs")
 

@@ -170,8 +170,8 @@ endif()
 
 if(HDF5_FOUND)
     list(APPEND conduit_relay_deps hdf5)
-    if(HDF5_IS_PARALLEL AND MPI_FOUND)
-        list(APPEND conduit_relay_deps mpi)
+    if(HDF5_IS_PARALLEL)
+        list(APPEND conduit_relay_deps conduit_blt_mpi_deps)
     endif()
 endif()
 
@@ -305,7 +305,8 @@ set(conduit_relay_mpi_sources conduit_relay_mpi.cpp)
 #
 # Specify the relay mpi deps
 #
-set(conduit_relay_mpi_deps conduit mpi)
+set(conduit_relay_mpi_deps conduit
+                           conduit_blt_mpi_deps)
 
 #
 # setup conduit relay mpi lib
@@ -341,7 +342,10 @@ set(conduit_relay_mpi_io_headers conduit_relay_mpi_io.hpp)
 #
 # Specify the relay mpi io deps
 #
-set(conduit_relay_mpi_io_deps conduit mpi conduit_relay_mpi conduit_relay)
+set(conduit_relay_mpi_io_deps conduit
+                              conduit_blt_mpi_deps
+                              conduit_relay_mpi
+                              conduit_relay)
 
 #
 # Specify relay mpi c headers

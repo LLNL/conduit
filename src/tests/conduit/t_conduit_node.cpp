@@ -198,7 +198,7 @@ TEST(conduit_node, simple_schema)
 
     std::string res = n.schema().to_json();
     std::cout << res;
-    rapidjson::Document d;
+    conduit_rapidjson::Document d;
     d.Parse<0>(res.c_str());
 
     EXPECT_TRUE(d.HasMember("a"));

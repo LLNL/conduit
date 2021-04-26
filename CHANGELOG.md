@@ -8,9 +8,30 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### General
+- Added the `cpp_fort_and_py` standalone example. It demos passing Conduit Nodes between C++, Fortran, and Python. See the related tutorial docs (https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_fort_and_py.html) for more details.
+- Added  `conduit::utils::info_handler()`, `conduit::utils::warning_handler()`, and `conduit::utils::error_handler()`  methods, which provide access to the currently registered info, warning, and error handlers.
+- Added DataType::index_t method. Creates a DataType instance that describes an `index_t`, which is an alias to either `int32`, or `int 64` controlled by the `CONDUIT_INDEX_32` compile time option.
+- Added several more methods to Python DataType interface
+
+
+### Changed
+
+#### General
+- Updated to newer version of uberenv and changed to track spack fork https://github.com/alpine-dav/spack (branch: conduit/develop).
+- Updated to newer version of BLT to leverage CMake's FindMPI defined targets when using CMake 3.15 or newer.
+- Changed `rapidjson` namespace to `conduit_rapidjson` to avoid symbol collisions with other libraries using RapidJSON.
+
 #### Relay
 - Added Relay HDF5 support for reading and writing to an HDF5 dataset with offset.
 - Added `conduit::relay::io::hdf5::read_info` which allows you to obtain metadata from an HDF5 file.
+- Added configure error when conduit lacks MPI support and HDF5 has MPI support
+
+### Fixed
+
+#### General
+- Fixed missing implementation of DataType::is_index_t
+- Fixed issue with compiling t_h5z_zfp_smoke.cpp against an MPI-enabled HDF5.
 
 
 ## [0.7.1] - Released 2021-02-11
@@ -463,7 +484,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/llnl/conduit/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/llnl/conduit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/llnl/conduit/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/llnl/conduit/compare/v0.5.0...v0.5.1
