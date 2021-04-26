@@ -225,16 +225,34 @@ public:
     void mmap(const std::string &stream_path,
               const Schema &schema);
 
-    //TODO: just change this to allocator
-    void set_allocator(int32 allocator_id);
-    int32 get_allocator();
-    void reset_allocator();
 
 //-----------------------------------------------------------------------------
 ///@}
 //-----------------------------------------------------------------------------
 //
 // -- end declaration of Node basic i/o methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node allocator selection methods --
+//
+//-----------------------------------------------------------------------------
+///@name Allocator Selection
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///
+//-----------------------------------------------------------------------------
+    void    set_allocator(index_t allocator_id);
+    index_t allocator();
+    void    reset_allocator();
+//-----------------------------------------------------------------------------
+///@}
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node allocator selection methods --
 //
 //-----------------------------------------------------------------------------
 
@@ -4560,7 +4578,7 @@ private:
     MMap     *m_mmap;
 
     // allocator id for memory
-    int32 m_allocator_id;
+    index_t m_allocator_id;
 };
 //-----------------------------------------------------------------------------
 // -- end conduit::Node --

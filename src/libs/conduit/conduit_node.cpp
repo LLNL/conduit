@@ -15830,7 +15830,14 @@ Node::as_long_double_array() const
 //
 //-----------------------------------------------------------------------------
 
-void Node::set_allocator(int32 allocator_id)
+
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Node allocator selection methods --
+//
+//-----------------------------------------------------------------------------
+void
+Node::set_allocator(index_t allocator_id)
 {
   if(allocator_id != m_allocator_id)
   {
@@ -15840,7 +15847,9 @@ void Node::set_allocator(int32 allocator_id)
   }
 }
 
-void Node::reset_allocator()
+//-----------------------------------------------------------------------------
+void
+Node::reset_allocator()
 {
   if(m_allocator_id != 0)
   {
@@ -15849,10 +15858,19 @@ void Node::reset_allocator()
   }
 }
 
-int32 Node::get_allocator()
+//-----------------------------------------------------------------------------
+index_t
+Node::allocator()
 {
   return m_allocator_id;
 }
+
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Node allocator selection methods --
+//
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 //
 // -- begin definition of Interface Warts --
@@ -16354,7 +16372,7 @@ Node::mirror_node(Node   *node,
             Schema *curr_schema   = &schema->add_child(curr_name);
             Node *curr_node = new Node();
             const Node *curr_src = src->child_ptr(i);
-            curr_node->set_allocator(node->get_allocator());
+            curr_node->set_allocator(node->allocator());
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
@@ -16369,7 +16387,7 @@ Node::mirror_node(Node   *node,
             Schema *curr_schema = schema->child_ptr(i);
             Node *curr_node = new Node();
             const Node *curr_src = src->child_ptr(i);
-            curr_node->set_allocator(node->get_allocator());
+            curr_node->set_allocator(node->allocator());
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             mirror_node(curr_node,curr_schema,curr_src);
@@ -17013,10 +17031,6 @@ Node::info(Node &res, const std::string &curr_path) const
     // extract
     // mem_spaces:
     //  node path, pointer, alloced, mmaped or external, bytes
-    
-    // 
-    // TODO ADD ALLOCATOR ID INFO
-    //
 
     if(m_data != NULL)
     {
@@ -17030,6 +17044,7 @@ Node::info(Node &res, const std::string &curr_path) const
             {
                 ptr_ref["type"]  = "allocated";
                 ptr_ref["bytes"] = m_data_size;
+                ptr_ref["allocator_id"] = m_allocator_id;
             }
             else if(m_mmaped)
             {
