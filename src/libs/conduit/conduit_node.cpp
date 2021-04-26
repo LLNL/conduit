@@ -420,7 +420,7 @@ Node::mmap(const std::string &stream_path,
     m_mmaped = false;
 
     m_schema->set(schema);
-#warning "I don't know if this is ok(mmap). It might need to be set to the defautl alloc_id"
+
     walk_schema(this,m_schema,m_data, m_allocator_id);
 
     ///
@@ -4555,7 +4555,6 @@ Node::set_external_data_using_schema(const Schema &schema,
 {
     reset();
     m_schema->set(schema);
-#warning "should set_external_data_using_schema inherit allocator?"
     walk_schema(this,m_schema,data,m_allocator_id);
 }
 
@@ -12973,8 +12972,11 @@ Node::to_base64_json(std::ostream &os,
     std::ios_base::fmtflags prev_stream_flags(os.flags());
     os.precision(15);
 
+    //
     // we need compact data
-    // TODO check if already compact + contig
+    //
+    // TODO check to support fast path if already
+    // compact + contig and host accessible?
     Node n;
     compact_to(n);
 
@@ -12984,7 +12986,8 @@ Node::to_base64_json(std::ostream &os,
     Node bb64_data;
     bb64_data.set(DataType::char8_str(enc_buff_size));
 
-#warning "I don't think to_base64_json should use the allocator, but it references mem"
+    // since we use compact_to(n) above, the data will always compact
+    // and on the host, so we can use it directly in utils::base64_encode
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr       = (char*)bb64_data.data_ptr();
     memset(dest_ptr,0,(size_t)enc_buff_size);
