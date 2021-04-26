@@ -52,7 +52,7 @@
 ///
 /// The default warning handler throws a c++ exception, in the form of a
 /// conduit::Error instance. You can change the error handler via
-/// conduit::utils::set_warning_handler().¬
+/// conduit::utils::set_warning_handler().
 //
 //-----------------------------------------------------------------------------
 #define CONDUIT_WARN( msg )                                          \
