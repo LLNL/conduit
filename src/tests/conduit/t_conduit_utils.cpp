@@ -20,6 +20,10 @@
 
 using namespace conduit;
 
+bool info_occured    = false;
+bool warning_occured = false;
+bool error_occured   = false;
+
 bool other_info_occured    = false;
 bool other_warning_occured = false;
 bool other_error_occured   = false;
