@@ -52,7 +52,7 @@
 ///
 /// The default warning handler throws a c++ exception, in the form of a
 /// conduit::Error instance. You can change the error handler via
-/// conduit::utils::set_warning_handler().
+/// conduit::utils::set_warning_handler().¬
 //
 //-----------------------------------------------------------------------------
 #define CONDUIT_WARN( msg )                                          \
@@ -298,7 +298,7 @@ namespace utils
 
     // generic allocate interface
     // allocator_id 0 is the default
-    void * CONDUIT_API conduit_allocate(size_t num_items,
+    void CONDUIT_API * conduit_allocate(size_t num_items,
                                         size_t item_size,
                                         index_t allocator_id = 0);
 
@@ -433,7 +433,7 @@ namespace utils
 
 //-----------------------------------------------------------------------------
 /// fmt style string formatting helpers
-//-----------------------------------------------------------------------------    
+//-----------------------------------------------------------------------------
 
     std::string CONDUIT_API format(const std::string &s,
                                    const conduit::Node &args);
