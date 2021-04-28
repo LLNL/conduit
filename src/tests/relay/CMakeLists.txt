@@ -88,7 +88,7 @@ if(ADIOS_FOUND)
         foreach(TEST ${RELAY_MPI_ADIOS_TESTS})
             add_cpp_mpi_test(TEST ${TEST}
                              NUM_MPI_TASKS 2
-                             DEPENDS_ON conduit conduit_relay_mpi_io conduit_blt_mpi_deps
+                             DEPENDS_ON conduit conduit_relay_mpi_io
                              FOLDER tests/relay)
         endforeach()
     endif()
@@ -102,7 +102,7 @@ if(MPI_FOUND)
     foreach(TEST ${RELAY_MPI_TESTS})
         add_cpp_mpi_test(TEST ${TEST}
                          NUM_MPI_TASKS 2
-                         DEPENDS_ON conduit conduit_relay_mpi conduit_blt_mpi_deps
+                         DEPENDS_ON conduit conduit_relay_mpi
                          FOLDER tests/relay)
     endforeach()
 else()
