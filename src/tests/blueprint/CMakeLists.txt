@@ -64,7 +64,8 @@ if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
     foreach(TEST ${BLUEPRINT_MPI_TESTS})
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit
-                                                                 conduit_blueprint_mpi)
+                                                                 conduit_blueprint_mpi
+                                                                 conduit_blt_mpi_deps)
     endforeach()
 
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
@@ -74,7 +75,8 @@ if(MPI_FOUND)
                                                                  conduit_blueprint_mpi
                                                                  conduit_relay
                                                                  conduit_relay_mpi
-                                                                 conduit_relay_mpi_io)
+                                                                 conduit_relay_mpi_io
+                                                                 conduit_blt_mpi_deps)
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping conduit_blueprint_mpi tests")
