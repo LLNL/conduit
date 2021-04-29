@@ -316,6 +316,7 @@ stages:
           echo $PATH
           which cmake
           cd install/examples/conduit/using-with-cmake
+          rm -rf _test_build
           mkdir _test_build
           cd _test_build
           cmake ../
@@ -348,6 +349,7 @@ stages:
           echo $PATH
           which cmake
           cd install/examples/conduit/using-with-cmake-mpi
+          rm -rf _test_build
           mkdir _test_build
           cd _test_build
           cmake ../
@@ -370,6 +372,7 @@ stages:
           which cmake
           mv install bananas
           cd bananas/examples/conduit/using-with-cmake
+          rm -rf _test_build
           mkdir _test_build
           cd _test_build
           cmake ../
@@ -584,6 +587,7 @@ stages:
           echo $PATH
           which cmake
           cd install/examples/conduit/using-with-cmake
+          rm -rf _test_build
           mkdir _test_build
           cd _test_build
           cmake ../
@@ -625,6 +629,7 @@ stages:
           which cmake
           # lets build
           cd install/examples/conduit/cpp_fort_and_py
+          rm -rf _test_build
           mkdir _test_build
           cd _test_build
           cmake -DCONDUIT_DIR=${ROOT_DIR}/install  -DPYTHON_EXECUTABLE=${PYTHON_EXE} ../
@@ -633,7 +638,28 @@ stages:
           ./conduit_cpp_and_py_ex
           ./conduit_fort_and_py_ex
         displayName: 'Test vs Install (cpp_fort_and_py)'
-        
+
+      - script: |
+          ################################################
+          # using with cmake example vs reloc-ed install
+          ################################################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          mv install bananas
+          cd bananas/examples/conduit/using-with-cmake
+          rm -rf _test_build
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+          ./conduit_example
+        displayName: 'Test vs Relocated Install (using-with-cmake)'
 
   ###############################################################################
   # Docker build and test case, that leverages our script that calls Docker Build
