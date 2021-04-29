@@ -70,7 +70,7 @@ install:
   
   # Install CMake 3.9
   ############################################################################
-  - ps: Start-FileDownload 'http://portal.nersc.gov/project/visit/cmake/cmake-3.9.6-win64-x64.msi'
+  - ps: Start-FileDownload 'http://ascent-dav.org/mirror/cmake-3.9.6-win64-x64.msi'
   - cmake-3.9.6-win64-x64.msi /passive
   - set PATH=C:\Program Files\CMake\bin;%PATH%
   - cmake --version
