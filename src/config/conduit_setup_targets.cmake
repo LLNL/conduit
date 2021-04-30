@@ -2,38 +2,52 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Conduit.
 
-set(CONDUIT_INCLUDE_DIRS "${CONDUIT_INSTALL_PREFIX}/include/conduit")
+
+# calc the proper relative install root
+get_filename_component(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+
+if(_IMPORT_PREFIX STREQUAL "/")
+  set(_IMPORT_PREFIX "")
+endif()
+
+# we want the import root, which is right above the "lib" prefix
+get_filename_component(_IMPORT_ROOT "${_IMPORT_PREFIX}" PATH)
+
+
+set(CONDUIT_INCLUDE_DIRS "${_IMPORT_ROOT}/include/conduit")
 
 #
 # Probe Conduit Features
 #
 
 # check for conduit fortran support
-if(EXISTS ${CONDUIT_INSTALL_PREFIX}/include/conduit/conduit.mod)
+if(EXISTS ${_IMPORT_ROOT}/include/conduit/conduit.mod)
     set(CONDUIT_FORTRAN_ENABLED TRUE)
 else()
     set(CONDUIT_FORTRAN_ENABLED FALSE)
 endif()
 
-if(EXISTS  ${CONDUIT_INSTALL_PREFIX}/include/conduit/conduit_relay_mpi.hpp)
+if(EXISTS  ${_IMPORT_ROOT}/include/conduit/conduit_relay_mpi.hpp)
     set(CONDUIT_RELAY_MPI_ENABLED TRUE)
 else()
     set(CONDUIT_RELAY_MPI_ENABLED FALSE)
 endif()
 
-if(EXISTS  ${CONDUIT_INSTALL_PREFIX}/include/conduit/conduit_relay_io_hdf5_api.hpp)
+if(EXISTS  ${_IMPORT_ROOT}/include/conduit/conduit_relay_io_hdf5_api.hpp)
     set(CONDUIT_RELAY_HDF5_ENABLED TRUE)
 else()
     set(CONDUIT_RELAY_HDF5_ENABLED FALSE)
 endif()
 
-if(EXISTS  ${CONDUIT_INSTALL_PREFIX}/include/conduit/conduit_relay_io_adios_api.hpp)
+if(EXISTS  ${_IMPORT_ROOT}/include/conduit/conduit_relay_io_adios_api.hpp)
     set(CONDUIT_RELAY_ADIOS_ENABLED TRUE)
 else()
     set(CONDUIT_RELAY_ADIOS_ENABLED FALSE)
 endif()
 
-if(EXISTS  ${CONDUIT_INSTALL_PREFIX}/include/conduit/conduit_relay_io_silo_api.hpp)
+if(EXISTS  ${_IMPORT_ROOT}/include/conduit/conduit_relay_io_silo_api.hpp)
     set(CONDUIT_RELAY_SILO_ENABLED TRUE)
 else()
     set(CONDUIT_RELAY_SILO_ENABLED FALSE)
@@ -46,11 +60,11 @@ add_library(conduit::conduit INTERFACE IMPORTED)
 
 set_property(TARGET conduit::conduit 
              APPEND PROPERTY
-             INTERFACE_INCLUDE_DIRECTORIES "${CONDUIT_INSTALL_PREFIX}/include/")
+             INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_ROOT}/include/")
 
 set_property(TARGET conduit::conduit 
              APPEND PROPERTY
-             INTERFACE_INCLUDE_DIRECTORIES "${CONDUIT_INSTALL_PREFIX}/include/conduit/")
+             INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_ROOT}/include/conduit/")
 
 set_property(TARGET conduit::conduit 
              PROPERTY INTERFACE_LINK_LIBRARIES
@@ -79,9 +93,12 @@ if(CONDUIT_RELAY_MPI_ENABLED)
                  conduit_blueprint_mpi)
 endif()
 
+message(STATUS "Found Conduit: ${_IMPORT_ROOT} (found version ${CONDUIT_VERSION})")
+
 if(NOT Conduit_FIND_QUIETLY)
     message(STATUS "CONDUIT_VERSION             = ${CONDUIT_VERSION}")
     message(STATUS "CONDUIT_INSTALL_PREFIX      = ${CONDUIT_INSTALL_PREFIX}")
+    message(STATUS "CONDUIT_IMPORT_ROOT         = ${_IMPORT_ROOT}")
     message(STATUS "CONDUIT_USE_CXX11           = ${CONDUIT_USE_CXX11}")
     message(STATUS "CONDUIT_USE_FMT             = ${CONDUIT_USE_FMT}")
     message(STATUS "CONDUIT_INCLUDE_DIRS        = ${CONDUIT_INCLUDE_DIRS}")
@@ -111,12 +128,5 @@ if(NOT Conduit_FIND_QUIETLY)
     message(STATUS "Conduit imported targets: ${_print_targets}")
     unset(_print_targets)
 endif()
-
-
-
-
-
-
-
 
 
