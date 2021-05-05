@@ -33,6 +33,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed missing implementation of DataType::is_index_t
 - Fixed issue with compiling t_h5z_zfp_smoke.cpp against an MPI-enabled HDF5.
 
+#### Blueprint
+- `conduit::relay::io::blueprint.read_mesh` now uses read only I/O handles.
+
 
 ## [0.7.1] - Released 2021-02-11
 
