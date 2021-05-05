@@ -1659,7 +1659,9 @@ void read_mesh(const std::string &root_file_path,
     if(data_protocol == "sidre_hdf5")
     {
         relay::io::IOHandle hnd;
-        hnd.open(root_fname,"sidre_hdf5");
+        Node open_opts;
+        open_opts["mode"] = "r";
+        hnd.open(root_fname, "sidre_hdf5", open_opts);
         for(int i = domain_start ; i < domain_end; i++)
         {
             oss.str("");
@@ -1670,13 +1672,15 @@ void read_mesh(const std::string &root_file_path,
     else
     {
         relay::io::IOHandle hnd;
+        Node open_opts;
+        open_opts["mode"] = "r";
         for(int i = domain_start ; i < domain_end; i++)
         {
             std::string current, next;
             utils::rsplit_file_path (root_fname, current, next);
             std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
 
-            hnd.open(domain_file, data_protocol);
+            hnd.open(domain_file, data_protocol, open_opts);
 
             // also need the tree path
             std::string tree_path = gen.GenerateTreePath(i);

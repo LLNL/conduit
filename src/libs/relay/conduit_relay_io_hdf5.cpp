@@ -3230,7 +3230,7 @@ hdf5_open_file_for_read(const std::string &file_path)
                                h5_fa_plist);
 
     CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
-                             "Error opening HDF5 file for reading: "
+                             "Error opening HDF5 file for read only access: "
                               << file_path);
 
     CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
@@ -3257,7 +3257,7 @@ hdf5_open_file_for_read_write(const std::string &file_path)
                                h5_fa_plist);
 
     CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
-                             "Error opening HDF5 file for reading: "
+                             "Error opening HDF5 file for read + write access: "
                               << file_path);
 
     CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
