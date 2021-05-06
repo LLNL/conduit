@@ -84,12 +84,4 @@ install(FILES
         conduit_setup_targets.cmake
         DESTINATION ${CONDUIT_INSTALL_CMAKE_MODULE_DIR}/conduit/)
 
-# also install to support our old export directory layout 
-# (preserving for now to avoid issues with downstream packages using old layout)
-install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfig.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/ConduitConfigVersion.cmake
-        conduit_setup_deps.cmake
-        conduit_setup_targets.cmake
-        DESTINATION ${CONDUIT_INSTALL_CMAKE_MODULE_DIR})
 
