@@ -160,6 +160,10 @@ if(UNIX AND NOT APPLE)
     set(CONDUIT_MAKE_EXTRA_LIBS "${CONDUIT_MAKE_EXTRA_LIBS} -ldl -lrt ${CMAKE_THREAD_LIBS_INIT}" CACHE STRING "" FORCE)
 endif()
 
+# CONDUIT_MAKE_EXTRA_LIBS is basically used as an output var so
+# we mark it as advanced b/c otherwise folks may see it in ccmake or
+# the cmake gui  and think they should be setting it
+mark_as_advanced(CONDUIT_MAKE_EXTRA_LIBS)
 
 #
 # Link with silo and hdf5 and adios if these are enabled
