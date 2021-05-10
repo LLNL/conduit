@@ -15,6 +15,11 @@ convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     CONDUIT_INSTALL_PREFIX)
 
 set(CONDUIT_INSTALL_PREFIX ${CONDUIT_INSTALL_PREFIX} CACHE STRING "" FORCE)
+# CONDUIT_INSTALL_PREFIX is basically used as an output var so
+# we mark it as advanced b/c otherwise folks may see it in ccmake or
+# the cmake gui  and think they should be setting it
+mark_as_advanced(CONDUIT_INSTALL_PREFIX)
+
 
 if(FORTRAN_FOUND)
     set(CONDUIT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
