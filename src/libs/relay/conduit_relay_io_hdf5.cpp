@@ -2507,11 +2507,17 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
 
         if (offset < 0)
         {
-            CONDUIT_ERROR("Offset must be non-negative.");
+            CONDUIT_HDF5_ERROR(ref_path,
+                               "Error reading HDF5 Dataset with options:"
+                               << opts.to_yaml() <<
+                               "`offset` must be non-negative.");
         }
         else if (stride < 1)
         {
-            CONDUIT_ERROR("Stride must be greater than zero.");
+            CONDUIT_HDF5_ERROR(ref_path,
+                               "Error reading HDF5 Dataset with options:"
+                               << opts.to_yaml() <<
+                               "`stride` must be greater than zero.");
         }
 
         // get the number of elements in the dataset given the offset and stride
@@ -2527,7 +2533,10 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             nelems_to_read = opts["size"].to_value();
             if (nelems_to_read < 1)
             {
-                CONDUIT_ERROR("Size must be greater than zero.");
+                CONDUIT_HDF5_ERROR(ref_path,
+                                   "Error reading HDF5 Dataset with options:"
+                                   << opts.to_yaml() <<
+                                   "`size` must be greater than zero.");
             }
         }
 
@@ -2614,7 +2623,11 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             else if( dt.number_of_elements() < 0 )
             {
                 CONDUIT_HDF5_ERROR(ref_path,
-                                    "Cannot read dataset with # of elements < 0");
+                                   "Error reading HDF5 Dataset with options:"
+                                   << opts.to_yaml() 
+                                   << "Cannot read using offset (" << offset << ")"
+                                   << " greater than the number of entries in"
+                                   << " the HDF5 dataset (" << nelems << ")");
             }
             else if(dest.dtype().is_compact() &&
                dest.dtype().compatible(dt) )
@@ -2651,11 +2664,26 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             H5Dclose(dataspace);
         }
 
-        CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                                                        hdf5_dset_id,
-                                                        ref_path,
-                                               "Error reading HDF5 Dataset: "
-                                                << hdf5_dset_id);
+        if(opts.dtype().is_empty())
+        {
+            CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
+                                                            hdf5_dset_id,
+                                                            ref_path,
+                                                            "Error reading HDF5 Dataset: "
+                                                                << hdf5_dset_id);
+        }
+        else
+        {
+            CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
+                                                            hdf5_dset_id,
+                                                            ref_path,
+                                                            "Error reading HDF5 Dataset: "
+                                                            << hdf5_dset_id
+                                                            << " with options: "
+                                                            << opts.to_yaml()
+                                                            << "HDF5 dataset size: "
+                                                            << nelems);
+        }
 
         CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(H5Tclose(h5_dtype_id),
                                                         hdf5_dset_id,

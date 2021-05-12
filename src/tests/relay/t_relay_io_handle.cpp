@@ -395,7 +395,7 @@ TEST(conduit_relay_io_handle, test_reuse_handle)
     h.open("tout_conduit_relay_io_handle_reopen_1.conduit_bin");
     h.write(n);
     h.close();
-    
+
     h.open("tout_conduit_relay_io_handle_reopen_2.conduit_bin");
     h.write(n);
     h.close();
@@ -527,6 +527,204 @@ TEST(conduit_relay_io_handle, test_hdf5_trunc)
     nread.print();
     info.print();
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_offset_and_stride)
+{
+    Node n_about;
+    io::about(n_about);
+
+    // skip test if hdf5 isn't enabled
+    if(n_about["protocols/hdf5"].as_string() != "enabled")
+        return;
+
+    std::string tfile_out = "tout_hdf5_io_handle_with_offset.hdf5";
+    // remove files if they already exist
+    utils::remove_path_if_exists(tfile_out);
+
+    Node n, n_read, n_check, opts, info;
+    n["data"]= { 0,1,2,3,4,5,6,7,8,9};
+
+    io::IOHandle h;
+    h.open(tfile_out);
+    h.write(n);
+
+    h.read(n_read);
+    n_read.print();
+    
+    n_check = n;
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+ 
+    // strided read
+    n_read.reset();
+    opts.reset();
+    opts["stride"] = 2;
+    h.read(n_read,opts);
+    n_read.print();
+
+    n_check.reset();
+    n_check["data"] = {0,2,4,6,8};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+    // offset write
+    n = {-1,-1,-1,-1,-1};
+    opts.reset();
+    opts["offset"] = 5;
+    h.write(n,"data",opts);
+
+    n_read.reset();
+    h.read(n_read);
+    n_read.print();
+
+    n_check.reset();
+    n_check["data"] = {0,1,2,3,4,-1,-1,-1,-1,-1};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+
+    // read the  first part of the seq
+    opts.reset();
+    opts["size"] = 5;
+    n_read.reset();
+    h.read("data",n_read,opts);
+    n_read.print();
+    
+    n_check.reset();
+    n_check = {0,1,2,3,4};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+    // read the second part of the seq (-1's)
+    opts.reset();
+    opts["offset"] = 5;
+    n_read.reset();
+    h.read("data",n_read,opts);
+    n_read.print();
+
+    n_check.reset();
+    n_check = {-1,-1,-1,-1,-1};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+
+    // strided write
+    n = {1,1,1,1,1};
+    opts.reset();
+    opts["stride"] = 2;
+    h.write(n,"data",opts);
+
+    // strided +offset write
+    n = {2,2,2,2,2};
+    opts.reset();
+    opts["offset"] = 1;
+    opts["stride"] = 2;
+    h.write(n,"data",opts);
+
+    n_read.reset();
+    h.read(n_read);
+    n_read.print();
+
+    n_check.reset();
+    n_check["data"] = {1, 2, 1, 2, 1, 2,  1, 2, 1, 2};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+
+    // read the 1's
+    opts.reset();
+    opts["offset"] = 0;
+    opts["stride"] = 2;
+    n_read.reset();
+    h.read("data",n_read,opts);
+    n_read.print();
+
+    n_check.reset();
+    n_check = {1, 1, 1, 1, 1};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+
+    // read the 2's
+    opts.reset();
+    opts["offset"] = 1;
+    opts["stride"] = 2;
+    n_read.reset();
+    h.read("data",n_read,opts);
+    n_read.print();
+
+
+    n_check.reset();
+    n_check = {2, 2, 2, 2, 2};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+
+    // read subset of the 2's
+    opts.reset();
+    opts["offset"] = 1;
+    opts["stride"] = 2;
+    opts["size"] = 2;
+    n_read.reset();
+    h.read("data",n_read,opts);
+    n_read.print();
+
+    n_check.reset();
+    n_check = {2, 2};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+    // huge stride, this will only read the first entry
+    n_read.reset();
+    opts.reset();
+    opts["stride"] = 1000;
+    h.read(n_read,opts);
+    n_read.print();
+
+    n_check.reset();
+    n_check["data"] = {1};
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+
+    // now some error conditions:
+
+    // neg size
+    n_read.reset();
+    opts.reset();
+    opts["size"] = -100;
+    EXPECT_THROW(h.read(n_read,opts),conduit::Error);
+
+
+    // neg stride
+    n_read.reset();
+    opts.reset();
+    opts["stride"] = -1;
+    EXPECT_THROW(h.read(n_read,opts),conduit::Error);
+
+    // neg offset
+    n_read.reset();
+    opts.reset();
+    opts["offset"] = -1;
+    EXPECT_THROW(h.read(n_read,opts),conduit::Error);
+
+    // // huge size
+    n_read.reset();
+    opts.reset();
+    opts["size"] = 1000;
+    EXPECT_THROW(h.read(n_read,opts),conduit::Error);
+
+    // huge offset
+    n_read.reset();
+    opts.reset();
+    opts["offset"] = 1000;
+    EXPECT_THROW(h.read(n_read,opts),conduit::Error);
+
+}
+
+
 
 
 //-----------------------------------------------------------------------------
