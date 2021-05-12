@@ -259,6 +259,9 @@ elseif(WIN32 AND TARGET hdf5::hdf5-static )
     message(STATUS "HDF5 using hdf5::hdf5-static target")
     blt_register_library(NAME hdf5
                          LIBRARIES hdf5::hdf5-static)
+elseif(TARGET hdf5)
+    # legacy hdf5 CMake build system support creates an hdf5 target we use directly
+    message(STATUS "HDF5 using hdf5 target")
 else()
     # reg includes and libs with blt
     message(STATUS "HDF5 using HDF5_DEFINITIONS + HDF5_INCLUDE_DIRS + HDF5_LIBRARIES")
