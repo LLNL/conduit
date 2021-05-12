@@ -62,7 +62,7 @@ endif()
 if(HDF5_FOUND)
     message(STATUS "HDF5 enabled: Adding related unit tests")
     if(HDF5_IS_PARALLEL)
-       set(HDF5_MPI_DEP mpi)
+       set(HDF5_MPI_DEP ${conduit_blt_mpi_deps})
     endif()
     add_cpp_test(TEST t_hdf5_smoke
                  DEPENDS_ON hdf5 ${HDF5_MPI_DEP}
@@ -74,7 +74,7 @@ endif()
 
 if(SILO_FOUND)
     if(HDF5_FOUND AND HDF5_IS_PARALLEL)
-       set(SILO_HDF5_MPI_DEP mpi)
+       set(SILO_HDF5_MPI_DEP ${conduit_blt_mpi_deps})
     endif()
     message(STATUS "Silo enabled: Adding related unit tests")
         add_cpp_test(TEST t_silo_smoke
@@ -117,7 +117,7 @@ endif()
 if(H5ZZFP_FOUND)
     message(STATUS "h5z-zfp enabled: Adding related unit tests")
     if(HDF5_IS_PARALLEL)
-        set(H5ZZFP_MPI_DEP mpi)
+        set(H5ZZFP_MPI_DEP ${conduit_blt_mpi_deps})
     endif()
     add_cpp_test(TEST t_h5z_zfp_smoke
                  DEPENDS_ON h5zzfp zfp hdf5 ${H5ZZFP_MPI_DEP}

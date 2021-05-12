@@ -160,6 +160,10 @@ if(UNIX AND NOT APPLE)
     set(CONDUIT_MAKE_EXTRA_LIBS "${CONDUIT_MAKE_EXTRA_LIBS} -ldl -lrt ${CMAKE_THREAD_LIBS_INIT}" CACHE STRING "" FORCE)
 endif()
 
+# CONDUIT_MAKE_EXTRA_LIBS is basically used as an output var so
+# we mark it as advanced b/c otherwise folks may see it in ccmake or
+# the cmake gui  and think they should be setting it
+mark_as_advanced(CONDUIT_MAKE_EXTRA_LIBS)
 
 #
 # Link with silo and hdf5 and adios if these are enabled
@@ -171,7 +175,7 @@ endif()
 if(HDF5_FOUND)
     list(APPEND conduit_relay_deps hdf5)
     if(HDF5_IS_PARALLEL)
-        list(APPEND conduit_relay_deps mpi)
+        list(APPEND conduit_relay_deps ${conduit_blt_mpi_deps})
     endif()
 endif()
 
@@ -305,7 +309,8 @@ set(conduit_relay_mpi_sources conduit_relay_mpi.cpp)
 #
 # Specify the relay mpi deps
 #
-set(conduit_relay_mpi_deps conduit mpi)
+set(conduit_relay_mpi_deps conduit
+                           ${conduit_blt_mpi_deps})
 
 #
 # setup conduit relay mpi lib
@@ -341,7 +346,10 @@ set(conduit_relay_mpi_io_headers conduit_relay_mpi_io.hpp)
 #
 # Specify the relay mpi io deps
 #
-set(conduit_relay_mpi_io_deps conduit mpi conduit_relay_mpi conduit_relay)
+set(conduit_relay_mpi_io_deps conduit
+                              ${conduit_blt_mpi_deps}
+                              conduit_relay_mpi
+                              conduit_relay)
 
 #
 # Specify relay mpi c headers
