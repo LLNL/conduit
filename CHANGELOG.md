@@ -34,6 +34,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed issue with compiling t_h5z_zfp_smoke.cpp against an MPI-enabled HDF5.
 
 #### Blueprint
+- Fixed a bug that caused HDF5 reference paths to appear twice in Relay HDF5 Error messages.
+
+#### Blueprint
 - `conduit::relay::io::blueprint.read_mesh` now uses read only I/O handles.
 
 
