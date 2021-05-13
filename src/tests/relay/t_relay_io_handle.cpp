@@ -552,11 +552,11 @@ TEST(conduit_relay_io_handle, test_offset_and_stride)
 
     h.read(n_read);
     n_read.print();
-    
+
     n_check = n;
     // expect no diff
     EXPECT_FALSE(n_read.diff(n_check,info));
- 
+
     // strided read
     n_read.reset();
     opts.reset();
@@ -591,7 +591,7 @@ TEST(conduit_relay_io_handle, test_offset_and_stride)
     n_read.reset();
     h.read("data",n_read,opts);
     n_read.print();
-    
+
     n_check.reset();
     n_check = {0,1,2,3,4};
     // expect no diff
@@ -771,4 +771,66 @@ TEST(conduit_relay_io_handle, test_empty_path_as_root)
     EXPECT_FALSE(n.diff(n_read_1, info, 0.0));
     EXPECT_FALSE(n.diff(n_read_2, info, 0.0));
     EXPECT_FALSE(n.diff(n_read_2, info, 0.0));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, test_ref_path_error_msg)
+{
+    // check that ref  path only appears in the error message string once
+
+    Node n_about;
+    io::about(n_about);
+
+    // skip test if hdf5 isn't enabled
+    if(n_about["protocols/hdf5"].as_string() != "enabled")
+        return;
+
+    std::string tfile_out = "tout_hdf5_io_handle_for_ref_path_error_msg.hdf5";
+    // remove files if they already exist
+    utils::remove_path_if_exists(tfile_out);
+
+    Node n, n_read, n_check, opts, info;
+    n["my/path/to/some/data"]= { 0,1,2,3,4,5,6,7,8,9};
+
+    io::IOHandle h;
+    h.open(tfile_out);
+    h.write(n);
+
+    h.read(n_read);
+    n_read.print();
+    
+    n_check = n;
+    // expect no diff
+    EXPECT_FALSE(n_read.diff(n_check,info));
+
+    // huge offset
+    n_read.reset();
+    opts.reset();
+    opts["offset"] = 1000;
+    try
+    {
+        h.read(n_read,opts);
+    }
+    catch(conduit::Error &e)
+    {
+        std::string msg = e.message();
+        std::cout << "error message:" 
+                  <<  msg << std::endl;
+        int count = 0;
+        
+        std::string::size_type pos = 0;
+        std::string path = "my/path/to/some/data";
+
+        while ((pos = msg.find(path, pos )) != std::string::npos)
+        {
+            count++;
+            pos += path.length();
+        }
+
+        std::cout << "# of occurrences of path: " << count << std::endl;
+        // the path should only appear in the error message string once
+        EXPECT_EQ(count,1);
+    }
+
 }

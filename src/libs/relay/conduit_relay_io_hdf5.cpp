@@ -38,17 +38,17 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_HDF5_ERROR( ref_path, msg )                               \
 {                                                                         \
-    CONDUIT_ERROR( "HDF5 Error (reference path: \"" << ref_path           \
-                    << ref_path << "\") " <<  msg);                       \
+    CONDUIT_ERROR( "HDF5 Error (reference path: \"" << ref_path << "\") " \
+                    <<  msg);                                             \
 }
 
 //-----------------------------------------------------------------------------
 /// The CONDUIT_HDF5_WARN macro is used for warnings with ref paths.
 //-----------------------------------------------------------------------------
-#define CONDUIT_HDF5_WARN( ref_path, msg )                                \
-{                                                                         \
-    CONDUIT_WARN( "HDF5 Warning (reference path: \"" << ref_path          \
-                  << ref_path << "\") " <<  msg);                         \
+#define CONDUIT_HDF5_WARN( ref_path, msg )                                 \
+{                                                                          \
+    CONDUIT_WARN( "HDF5 Warning (reference path: \"" << ref_path << "\") " \
+                    <<  msg);                                              \
 }
 
 //-----------------------------------------------------------------------------
@@ -1853,7 +1853,7 @@ setup_hdf5_group_atts_for_conduit_node(const Node &node,
 
     if( has_list_attr && node.dtype().is_object() )
     {
-        std::cout << " remove_conduit_hdf5_list_attribute " << std::endl;
+        // std::cout << " remove_conduit_hdf5_list_attribute " << std::endl;
         remove_conduit_hdf5_list_attribute(hdf5_group_id,
                                            ref_path);
     }
@@ -2256,9 +2256,12 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
                                            << " parent: " << hdf5_id
                                            << " path:"    << hdf5_path) ;
 
-    std::string chld_ref_path = h5_od->ref_path  +
-                                std::string("/") +
-                                std::string(hdf5_path);
+    std::string chld_ref_path = h5_od->ref_path;
+    if(chld_ref_path != std::string("/"))
+    {
+        chld_ref_path += std::string("/");
+    }
+    chld_ref_path += std::string(hdf5_path);
 
     switch (h5_info_buf.type)
     {
