@@ -32,11 +32,20 @@
 // if you do define it, you get a deprecated warning :-)
 // we suppress the deprecated warning only in 3.8.
 // 
-#define PUSH_DEP_DECL \
+
+#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#define PRAGMA_PUSH_DEP_DECL \
      _Pragma("GCC diagnostic push") \
      _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#else
+#define PRAGMA_PUSH_DEP_DECL
+#endif
 
-#define POP_DEC_DECL _Pragma("GCC diagnostic pop") 
+#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#define PRAGMA_POP_DEP_DECL _Pragma("GCC diagnostic pop")
+#else
+#define PRAGMA_POP_DEP_DECL
+#endif
 
 
 #ifdef Py_TPFLAGS_HAVE_FINALIZE
@@ -45,10 +54,7 @@
     #if PY_VERSION_HEX >= 0x03080000
         #if PY_VERSION_HEX < 0x03090000
              // python 3.8 tail
-            #define PyVarObject_TAIL \
-                 PUSH_DEP_DECL \
-                 ,0, 0, 0 \
-                 POP_DEC_DECL
+            #define PyVarObject_TAIL ,0, 0, 0 
         #else
             // python 3.9 and newer tail
             #define PyVarObject_TAIL ,0, 0
@@ -3166,8 +3172,13 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
     {NULL, NULL, 0, NULL}
 };
 
+
+
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "DataType",
@@ -3220,6 +3231,8 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *
@@ -3438,6 +3451,9 @@ static PyMethodDef PyConduit_Generator_METHODS[] = {
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyConduit_Generator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Generator",
@@ -3491,6 +3507,7 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    PyVarObject_TAIL
 };
 
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static int
@@ -4461,6 +4478,9 @@ static PyMappingMethods PyConduit_Schema_as_mapping = {
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Schema",
@@ -4514,7 +4534,7 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_TAIL
 };
 
-
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -4821,6 +4841,10 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 };
 
 //---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Iterator",
@@ -4873,6 +4897,8 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyConduit_NodeIterator *
@@ -6960,6 +6986,10 @@ static PyMappingMethods node_as_mapping = {
 };
 
 //---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyConduit_Node_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Node",
@@ -7013,6 +7043,7 @@ static PyTypeObject PyConduit_Node_TYPE = {
    PyVarObject_TAIL
 };
 
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 // conduit:::about
@@ -7893,6 +7924,9 @@ static PyMethodDef PyConduit_Endianness_METHODS[] =
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyConduit_Endianness_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Endianness",
@@ -7945,6 +7979,8 @@ static PyTypeObject PyConduit_Endianness_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//

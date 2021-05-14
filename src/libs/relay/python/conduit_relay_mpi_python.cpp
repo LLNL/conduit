@@ -53,11 +53,20 @@ using namespace conduit::relay::mpi;
 // if you do define it, you get a deprecated warning :-)
 // we suppress the deprecated warning only in 3.8.
 // 
-#define PUSH_DEP_DECL \
+
+#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#define PRAGMA_PUSH_DEP_DECL \
      _Pragma("GCC diagnostic push") \
      _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#else
+#define PRAGMA_PUSH_DEP_DECL
+#endif
 
-#define POP_DEC_DECL _Pragma("GCC diagnostic pop") 
+#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#define PRAGMA_POP_DEP_DECL _Pragma("GCC diagnostic pop")
+#else
+#define PRAGMA_POP_DEP_DECL
+#endif
 
 
 #ifdef Py_TPFLAGS_HAVE_FINALIZE
@@ -66,10 +75,7 @@ using namespace conduit::relay::mpi;
     #if PY_VERSION_HEX >= 0x03080000
         #if PY_VERSION_HEX < 0x03090000
              // python 3.8 tail
-            #define PyVarObject_TAIL \
-                 PUSH_DEP_DECL \
-                 ,0, 0, 0 \
-                 POP_DEC_DECL
+            #define PyVarObject_TAIL ,0, 0, 0 
         #else
             // python 3.9 and newer tail
             #define PyVarObject_TAIL ,0, 0
@@ -82,8 +88,6 @@ using namespace conduit::relay::mpi;
 // python tail when finalize is not part of struct
 #define PyVarObject_TAIL
 #endif
-
-
 
 //---------------------------------------------------------------------------//
 struct PyRelay_MPI_Request
@@ -145,6 +149,9 @@ static PyMethodDef PyRelay_MPI_Request_METHODS[] = {
 };
 
 //---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyRelay_MPI_Request_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Request",
@@ -197,6 +204,8 @@ static PyTypeObject PyRelay_MPI_Request_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 // TODO: Enable when async support is enabled
