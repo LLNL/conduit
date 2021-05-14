@@ -2355,7 +2355,7 @@ PyConduit_DataType_to_string(PyConduit_DataType* self,
                                      pad,
                                      eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -2420,7 +2420,7 @@ PyConduit_DataType_to_json(PyConduit_DataType* self,
                                    pad,
                                    eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -2485,7 +2485,7 @@ PyConduit_DataType_to_yaml(PyConduit_DataType* self,
                                    pad,
                                    eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -3836,7 +3836,7 @@ PyConduit_Schema_add_child(PyConduit_Schema *self,
         retval = PyConduit_Schema_Python_Wrap(&(*self->schema).add_child(std::string(name)),
                                               0); // schema owns
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -3887,7 +3887,7 @@ PyConduit_Schema_child(PyConduit_Schema *self,
             return NULL;
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -3925,7 +3925,7 @@ PyConduit_Schema_rename_child(PyConduit_Schema *self,
                                    std::string(new_name));
 
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -3958,7 +3958,7 @@ PyConduit_Schema_remove_child(PyConduit_Schema *self,
     {
         self->schema->remove_child(std::string(name));
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -4005,7 +4005,7 @@ PyConduit_Schema_remove(PyConduit_Schema *self,
             return NULL;
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -4185,7 +4185,7 @@ PyConduit_Schema_to_string(PyConduit_Schema* self,
                                        pad,
                                        eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -4249,7 +4249,7 @@ PyConduit_Schema_to_json(PyConduit_Schema* self,
                                      pad,
                                      eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -4313,7 +4313,7 @@ PyConduit_Schema_to_yaml(PyConduit_Schema* self,
                                      pad,
                                      eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -5260,7 +5260,7 @@ PyConduit_Node_parse(PyConduit_Node *self,
         self->node->parse(text_str,
                           protocol_str);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
             PyErr_SetString(PyExc_IOError,
                             e.message().c_str());
@@ -5308,7 +5308,7 @@ PyConduit_Node_save(PyConduit_Node *self,
     {
         self->node->save(path_str,protocol_str);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -5368,7 +5368,7 @@ PyConduit_Node_load(PyConduit_Node *self,
             self->node->load(path_str,
                              *schema_ptr);
         }
-        catch(conduit::Error e)
+        catch(conduit::Error &e)
         {
             PyErr_SetString(PyExc_IOError,
                             e.message().c_str());
@@ -5390,7 +5390,7 @@ PyConduit_Node_load(PyConduit_Node *self,
             self->node->load(path_str,
                              protocol_str);
         }
-        catch(conduit::Error e)
+        catch(conduit::Error &e)
         {
             PyErr_SetString(PyExc_IOError,
                             e.message().c_str());
@@ -5443,7 +5443,7 @@ PyConduit_Node_fetch(PyConduit_Node* self,
         retval = PyConduit_Node_Python_Wrap(&(*self->node).fetch(path),
                                             0); // node owns
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -5470,7 +5470,7 @@ PyConduit_Node_fetch_existing(PyConduit_Node* self,
         retval = PyConduit_Node_Python_Wrap(&(*self->node).fetch_existing(path),
                                             0); // node owns
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -5506,7 +5506,7 @@ PyConduit_Node_add_child(PyConduit_Node *self,
         retval = PyConduit_Node_Python_Wrap(&(*self->node).add_child(std::string(name)),
                                             0); // node owns
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -5557,7 +5557,7 @@ PyConduit_Node_child(PyConduit_Node *self,
             return NULL;
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -5688,7 +5688,7 @@ PyConduit_Node_remove(PyConduit_Node *self,
             return NULL;
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -5721,7 +5721,7 @@ PyConduit_Node_remove_child(PyConduit_Node *self,
     {
         self->node->remove_child(std::string(name));
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -5758,7 +5758,7 @@ PyConduit_Node_rename_child(PyConduit_Node *self,
                                  std::string(new_name));
 
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -6443,7 +6443,7 @@ PyConduit_Node_to_string(PyConduit_Node* self,
                                      pad,
                                      eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -6496,7 +6496,7 @@ PyConduit_Node_to_summary_string(PyConduit_Node* self,
                                              *opts_ptr);
 
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -6570,7 +6570,7 @@ PyConduit_Node_to_json(PyConduit_Node* self,
                                    pad,
                                    eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -6645,7 +6645,7 @@ PyConduit_Node_to_yaml(PyConduit_Node* self,
                                    pad,
                                    eoe);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());

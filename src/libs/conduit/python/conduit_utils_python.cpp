@@ -126,7 +126,7 @@ PyConduit_Utils_format(PyObject *, //self
                                          (index_t)map_index);
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());

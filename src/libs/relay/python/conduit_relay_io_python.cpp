@@ -224,7 +224,7 @@ PyRelay_IOHandle_open(PyRelay_IOHandle *self,
                            protocol_str,
                            *opts_ptr);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -294,7 +294,7 @@ PyRelay_IOHandle_read(PyRelay_IOHandle *self,
             self->handle->read(std::string(path),*node_ptr);
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -349,7 +349,7 @@ PyRelay_IOHandle_write(PyRelay_IOHandle *self,
             self->handle->write(*node_ptr,std::string(path));
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -391,7 +391,7 @@ PyRelay_IOHandle_list_child_names(PyRelay_IOHandle *self,
                                            cld_names);
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -438,7 +438,7 @@ PyRelay_IOHandle_has_path(PyRelay_IOHandle *self,
     {
         res = self->handle->has_path(std::string(path));
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -475,7 +475,7 @@ PyRelay_IOHandle_remove(PyRelay_IOHandle *self,
     {
         self->handle->remove(std::string(path));
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -493,7 +493,7 @@ PyRelay_IOHandle_close(PyRelay_IOHandle *self)
     {
         self->handle->close();
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -698,7 +698,7 @@ PyRelay_io_save(PyObject *, //self
                         protocol_str,
                         *opts_ptr);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -783,7 +783,7 @@ PyRelay_io_save_merged(PyObject *, //self
                                protocol_str,
                                *opts_ptr);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -843,7 +843,7 @@ PyRelay_io_load(PyObject *, //self
                         protocol_str,
                         node);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -905,7 +905,7 @@ PyRelay_io_load_merged(PyObject *, //self
                                protocol_str,
                                node);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());

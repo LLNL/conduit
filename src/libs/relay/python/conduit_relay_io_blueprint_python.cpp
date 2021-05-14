@@ -109,7 +109,7 @@ PyRelay_io_blueprint_write_mesh(PyObject *, //self
                                          protocol_str,
                                          *opts_ptr);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -184,7 +184,7 @@ PyRelay_io_blueprint_read_mesh(PyObject *, //self
                                         *opts_ptr,
                                         node);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());

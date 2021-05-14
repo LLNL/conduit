@@ -267,7 +267,7 @@ PyRelay_MPI_rank(PyObject *, //self
     {
         rank = relay::mpi::rank(comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -310,7 +310,7 @@ PyRelay_MPI_size(PyObject *, //self
     {
         size = relay::mpi::size(comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -374,7 +374,7 @@ PyRelay_MPI_send(PyObject *, //self
     {
         relay::mpi::send(node, dest, tag, comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -435,7 +435,7 @@ PyRelay_MPI_recv(PyObject *, //self
     {
         relay::mpi::recv(node, source, tag, comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -495,7 +495,7 @@ PyRelay_MPI_send_using_schema(PyObject *, //self
     {
         relay::mpi::send_using_schema(node, dest, tag, comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -555,7 +555,7 @@ PyRelay_MPI_recv_using_schema(PyObject *, //self
     {
         relay::mpi::recv_using_schema(node, source, tag, comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -674,7 +674,7 @@ PyRelay_MPI_sum_reduce(PyObject *, //self
                                root,
                                comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -749,7 +749,7 @@ PyRelay_MPI_min_reduce(PyObject *, //self
                                root,
                                comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -825,7 +825,7 @@ PyRelay_MPI_max_reduce(PyObject *, //self
                                root,
                                comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -901,7 +901,7 @@ PyRelay_MPI_prod_reduce(PyObject *, //self
                                root,
                                comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -972,7 +972,7 @@ PyRelay_MPI_sum_all_reduce(PyObject *, //self
                                    recv_node,
                                    comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1044,7 +1044,7 @@ PyRelay_MPI_min_all_reduce(PyObject *, //self
                                    recv_node,
                                    comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1115,7 +1115,7 @@ PyRelay_MPI_max_all_reduce(PyObject *, //self
                                    recv_node,
                                    comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1186,7 +1186,7 @@ PyRelay_MPI_prod_all_reduce(PyObject *, //self
                                     recv_node,
                                     comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1272,7 +1272,7 @@ PyRelay_MPI_prod_all_reduce(PyObject *, //self
 //                           comm,
 //                           request);
 //     }
-//     catch(conduit::Error e)
+//     catch(conduit::Error &e)
 //     {
 //         PyErr_SetString(PyExc_Exception,
 //                         e.message().c_str());
@@ -1358,7 +1358,7 @@ PyRelay_MPI_prod_all_reduce(PyObject *, //self
 //                           comm,
 //                           request);
 //     }
-//     catch(conduit::Error e)
+//     catch(conduit::Error &e)
 //     {
 //         PyErr_SetString(PyExc_Exception,
 //                         e.message().c_str());
@@ -1451,7 +1451,7 @@ PyRelay_MPI_gather(PyObject *, //self
                            root,
                            comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1523,7 +1523,7 @@ PyRelay_MPI_gather_using_schema(PyObject *, //self
                                         root,
                                         comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1591,7 +1591,7 @@ PyRelay_MPI_all_gather(PyObject *, //self
                                recv_node,
                                comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1659,7 +1659,7 @@ PyRelay_MPI_all_gather_using_schema(PyObject *, //self
                                             recv_node,
                                             comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1720,7 +1720,7 @@ PyRelay_MPI_broadcast(PyObject *, //self
     {
         relay::mpi::broadcast(node, root, comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());
@@ -1777,7 +1777,7 @@ PyRelay_MPI_broadcast_using_schema(PyObject *, //self
     {
         relay::mpi::broadcast_using_schema(node, root, comm);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_Exception,
                         e.message().c_str());

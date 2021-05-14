@@ -113,7 +113,7 @@ TEST(conduit_utils, error_constructors)
     {
         utils::handle_warning("ERROR!",__FILE__,__LINE__);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         conduit::Error ecpy(e);
         CONDUIT_INFO(ecpy.message());
@@ -123,7 +123,7 @@ TEST(conduit_utils, error_constructors)
     {
         utils::handle_warning("ERROR!",__FILE__,__LINE__);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         conduit::Error ecpy;
         ecpy = e;
