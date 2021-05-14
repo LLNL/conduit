@@ -34,17 +34,6 @@
 using namespace conduit;
 using namespace conduit::relay::io;
 
-//-----------------------------------------------------------------------------
-// PyVarObject_TAIL is used at the end of each PyVarObject def
-// to make sure we have the correct number of initializers across python
-// versions.
-//-----------------------------------------------------------------------------
-#ifdef Py_TPFLAGS_HAVE_FINALIZE
-#define PyVarObject_TAIL ,0
-#else
-#define PyVarObject_TAIL
-#endif
-
 //---------------------------------------------------------------------------//
 // conduit::relay::io::blueprint::write_mesh
 //---------------------------------------------------------------------------//

@@ -26,9 +26,39 @@
 // to make sure we have the correct number of initializers across python
 // versions.
 //-----------------------------------------------------------------------------
+
+// helper macros for dealing with deprecated tp_print field in 
+// python 3.8. If you don't define it, you get an un-inited warning
+// if you do define it, you get a deprecated warning :-)
+// we suppress the deprecated warning only in 3.8.
+// 
+#define PUSH_DEP_DECL \
+     _Pragma("GCC diagnostic push") \
+     _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+
+#define POP_DEC_DECL _Pragma("GCC diagnostic pop") 
+
+
 #ifdef Py_TPFLAGS_HAVE_FINALIZE
-#define PyVarObject_TAIL ,0
+    // python 3.8 adds tp_vectorcall, at end and special slot for tp_print
+    // python 3.9 removes tp_print special slot
+    #if PY_VERSION_HEX >= 0x03080000
+        #if PY_VERSION_HEX < 0x03090000
+             // python 3.8 tail
+            #define PyVarObject_TAIL \
+                 PUSH_DEP_DECL \
+                 ,0, 0, 0 \
+                 POP_DEC_DECL
+        #else
+            // python 3.9 and newer tail
+            #define PyVarObject_TAIL ,0, 0
+        #endif
+    #else
+        // python tail when finalize is part of struct
+        #define PyVarObject_TAIL ,0
+    #endif
 #else
+// python tail when finalize is not part of struct
 #define PyVarObject_TAIL
 #endif
 
@@ -3144,10 +3174,12 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    sizeof(PyConduit_DataType),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyConduit_DataType_dealloc, /* tp_dealloc */
-   0, /* tp_print */
+   // tp_print was removed in Python 3.9, its now used as
+   // tp_vectorcall_offset (which we also don't use here)
+   0, /* tp_print or tp_vectorcall_offset */
    0, /* tp_getattr */
    0, /* tp_setattr */
-   0, /* tp_compare */
+   0, /* tp_compare or tp_reserved pr tp_as_async*/
    0, /* tp_repr */
    0, /* tp_as_number */
    0, /* tp_as_sequence */
@@ -3158,7 +3190,7 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    0, /* getattro */
    0, /* setattro */
    0, /* asbuffer */
-   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* flags */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* flags */
    "Conduit DataType objects",
    0, /* traverse */
    0, /* clear */
@@ -3174,18 +3206,18 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    0, /* descr_get */
    0, /* gescr_set */
    0, /* dictoffset */
-   (initproc)PyConduit_DataType_init,
+   (initproc)PyConduit_DataType_init, /* tp_init */
    0, /* alloc */
-   PyConduit_DataType_new,                                   /* new */
+   PyConduit_DataType_new, /* new */
    0, /* tp_free */
    0, /* tp_is_gc */
    0, /* tp_bases */
    0, /* tp_mro */
    0, /* tp_cache */
    0, /* tp_subclasses */
-   0,  /* tp_weaklist */
-   0,
-   0
+   0, /* tp_weaklist */
+   0, /* tp_del */
+   0  /* tp_version_tag */
    PyVarObject_TAIL
 };
 
@@ -3412,7 +3444,9 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    sizeof(PyConduit_Generator),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyConduit_Generator_dealloc, /* tp_dealloc */
-   0, /* tp_print */
+   // tp_print was removed in Python 3.9, its now used as
+   // tp_vectorcall_offset (which we also don't use here)
+   0, /* tp_print or tp_vectorcall_offset */
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
@@ -3442,18 +3476,18 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    0, /* descr_get */
    0, /* gescr_set */
    0, /* dictoffset */
-   (initproc)PyConduit_Generator_init,
+   (initproc)PyConduit_Generator_init,  /* tp_init */
    0, /* alloc */
-   PyConduit_Generator_new,                       /* new */
+   PyConduit_Generator_new,  /* new */
    0, /* tp_free */
    0, /* tp_is_gc */
    0, /* tp_bases */
    0, /* tp_mro */
    0, /* tp_cache */
    0, /* tp_subclasses */
-   0,  /* tp_weaklist */
-   0,
-   0
+   0, /* tp_weaklist */
+   0, /* tp_del */
+   0  /* tp_version_tag */
    PyVarObject_TAIL
 };
 
@@ -4433,7 +4467,9 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    sizeof(PyConduit_Schema),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyConduit_Schema_dealloc, /* tp_dealloc */
-   0, /* tp_print */
+   // tp_print was removed in Python 3.9, its now used as
+   // tp_vectorcall_offset (which we also don't use here)
+   0, /* tp_print or tp_vectorcall_offset */
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
@@ -4472,9 +4508,9 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    0, /* tp_mro */
    0, /* tp_cache */
    0, /* tp_subclasses */
-   0,  /* tp_weaklist */
-   0,
-   0
+   0, /* tp_weaklist */
+   0, /* tp_del */
+   0  /* tp_version_tag */
    PyVarObject_TAIL
 };
 
@@ -4791,7 +4827,9 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    sizeof(PyConduit_NodeIterator),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyConduit_NodeIterator_dealloc,   /* tp_dealloc */
-   0, /* tp_print */
+   // tp_print was removed in Python 3.9, its now used as
+   // tp_vectorcall_offset (which we also don't use here)
+   0, /* tp_print or tp_vectorcall_offset */
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
@@ -4830,10 +4868,10 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    0, /* tp_mro */
    0, /* tp_cache */
    0, /* tp_subclasses */
-   0,  /* tp_weaklist */
-   0,
-   0
-   PyVarObject_TAIL       
+   0, /* tp_weaklist */
+   0, /* tp_del */
+   0  /* tp_version_tag */
+   PyVarObject_TAIL
 };
 
 //---------------------------------------------------------------------------//
@@ -6928,7 +6966,9 @@ static PyTypeObject PyConduit_Node_TYPE = {
    sizeof(PyConduit_Node),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyConduit_Node_dealloc,                   /* tp_dealloc */
-   0, /* tp_print */
+   // tp_print was removed in Python 3.9, its now used as
+   // tp_vectorcall_offset (which we also don't use here)
+   0, /* tp_print or tp_vectorcall_offset */
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
@@ -6967,9 +7007,9 @@ static PyTypeObject PyConduit_Node_TYPE = {
    0, /* tp_mro */
    0, /* tp_cache */
    0, /* tp_subclasses */
-   0,  /* tp_weaklist */
-   0,
-   0
+   0, /* tp_weaklist */
+   0, /* tp_del */
+   0  /* tp_version_tag */
    PyVarObject_TAIL
 };
 
@@ -7859,7 +7899,9 @@ static PyTypeObject PyConduit_Endianness_TYPE = {
    0, // sizeof(PyConduit_Endianness), /* tp_basicsize */
    0, /* tp_itemsize */
    0, /* tp_dealloc */
-   0, /* tp_print */
+   // tp_print was removed in Python 3.9, its now used as
+   // tp_vectorcall_offset (which we also don't use here)
+   0, /* tp_print or tp_vectorcall_offset */
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
@@ -7899,8 +7941,8 @@ static PyTypeObject PyConduit_Endianness_TYPE = {
    0, /* tp_cache */
    0, /* tp_subclasses */
    0,  /* tp_weaklist */
-   0,
-   0
+   0, /* tp_del */
+   0  /* tp_version_tag */
    PyVarObject_TAIL
 };
 
