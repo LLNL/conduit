@@ -15,7 +15,7 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mpi_mesh.hpp"
 #include "conduit_relay_mpi.hpp"
-
+#include <cmath>
 // access conduit blueprint mesh utilities
 namespace bputils = conduit::blueprint::mesh::utils;
 
@@ -1363,6 +1363,7 @@ void to_polyhedral(const Node &n,
 
                             if (!in_parent->has_child(nbr_name))
                             {
+                                //MPI xyz buffer communication
                             }
                             else
                             {
@@ -1427,6 +1428,9 @@ void to_polyhedral(const Node &n,
         }
     }
 
+    std::map<index_t, std::map<index_t, std::map<index_t,index_t> > > dom_to_nbr_to_sharedmap;
+
+
     itr = n.children();
     while(itr.has_next())
     {
@@ -1435,9 +1439,19 @@ void to_polyhedral(const Node &n,
 
         index_t domain_id = chld["state/domain_id"].to_index_t();
 
+        const Node& dom_coords = chld["coordsets/coords"];
+
+        const double_array& ref_xarray =
+           dom_coords["values/x"].as_double_array();
+        const double_array& ref_yarray =
+           dom_coords["values/y"].as_double_array();
+        const double_array& ref_zarray =
+           dom_coords["values/z"].as_double_array();
+
         auto& poly_elems = poly_elems_map[domain_id];
         auto& allfaces = allfaces_map[domain_id];
 
+        auto& nbr_to_sharedmap = dom_to_nbr_to_sharedmap[domain_id];
         auto& nbr_to_buffidx = dom_to_nbr_to_buffidx[domain_id];
         auto& nbr_to_xbuffer = dom_to_nbr_to_xbuffer[domain_id];
         auto& nbr_to_ybuffer = dom_to_nbr_to_ybuffer[domain_id];
@@ -1454,15 +1468,15 @@ void to_polyhedral(const Node &n,
                 index_t nbr_id = pbnd.m_nbr_id; //domain id of nbr.
                 auto& nbr_faces = allfaces_map[nbr_id];
 
+                auto& sharedmap = nbr_to_sharedmap[nbr_id];
                 auto& buffidx = nbr_to_buffidx[nbr_id];
                 auto& xbuffer = nbr_to_xbuffer[nbr_id];
                 auto& ybuffer = nbr_to_ybuffer[nbr_id];
                 auto& zbuffer = nbr_to_zbuffer[nbr_id];
 
-//                std::vector<index_t> face_verts;
+
                 std::map<index_t, std::map<index_t, std::vector<index_t> > >fv_map;
-                //Map from domain elems that touch neighbor to  
-                //vector holding the neighbor elems
+
                 auto& nbr_elems = pbnd.m_nbr_elems;
                 for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr) 
                 {
@@ -1485,11 +1499,61 @@ void to_polyhedral(const Node &n,
                     }
                 }
 
-                //Above:: replace face_verts with some kind of map
-                //from coarse subelems to its fine subelems;
+                //Above:: fv_map maps a coarse subelem to a vector of its
+                //fine subelems;
                 //
-                //Below:: map from coarse subelems to xyz values.
+                for (auto fitr = fv_map.begin(); fitr != fv_map.end(); ++fitr)
+                {
+                    index_t ref_offset = fitr->first;
+                    bputils::connectivity::ElemType& ref_elem = poly_elems[ref_offset];
+                    index_t ref_face = ref_elem[pbnd.side];
+                    std::vector<index_t>& ref_subelem = allfaces[ref_face];
 
+                    std::map<index_t, double> ref_sums;
+                    for (auto rv = ref_subelem.begin(); rv != ref_subelem.end(); ++rv)
+                    {
+                        ref_sums[*rv] = ref_xarray[*rv]+ref_yarray[*rv]+ref_zarray[*rv]; 
+                    }
+
+                    std::map<index_t,index_t> nbr_to_ref_vert;
+                    auto& nbrs = fitr->second;
+                    for (auto nitr = nbrs.begin(); nitr != nbrs.end(); ++nitr)
+                    {
+                        index_t nbr_face = nitr->first;
+                        std::vector<index_t>& nbr_subelem = nbr_faces[nbr_face];
+                        for (auto nv = nbr_subelem.begin(); nv != nbr_subelem.end(); ++nv)
+                        {
+                            index_t nvert = *nv;
+                            if (sharedmap.find(nvert) == sharedmap.end())
+                            {
+                                index_t buf_offset = buffidx[nvert];
+                                double nbr_x = xbuffer[buf_offset];
+                                double nbr_y = ybuffer[buf_offset];
+                                double nbr_z = zbuffer[buf_offset];
+                                double nbr_sum = nbr_x+nbr_y+nbr_z;
+
+                                for (auto rs = ref_sums.begin(); rs != ref_sums.end(); ++rs)
+                                {
+                                    if (fabs(nbr_sum-rs->second) < 1.0e-12)
+                                    {
+                                        index_t ridx = rs->first;
+                                        if (fabs(nbr_x-ref_xarray[ridx]) < 1.0e-12 &&
+                                            fabs(nbr_y-ref_yarray[ridx]) < 1.0e-12 &&
+                                            fabs(nbr_z-ref_zarray[ridx]) < 1.0e-12)
+                                        {
+                                            sharedmap[nvert] = ridx;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                
+                //Below:: Create a map from coarse subelems to xyz values.
+                //of vertices of the fine subelems
                 std::ostringstream nbr_oss;
                 nbr_oss << "domain_" << std::setw(6)
                         << std::setfill('0') << nbr_id;
@@ -1531,7 +1595,7 @@ void to_polyhedral(const Node &n,
                 //Here we have:
                 //ref_elem--Coarse element with face on coarse-fine bdry
                 //map_subelem--The coarse face touching the boundary
-                //nbr_subelems--The fine faces toucing map_subelem
+                //nbr_subelems--The fine faces touching map_subelem
                 //
                 //Need to divide map_subelem into new subelems corresponding
                 //to each member of nbr_subelems.  The new subelems need to
@@ -1553,10 +1617,10 @@ void to_polyhedral(const Node &n,
                     auto& nbr_subelems = fv_map[ref_offset];
                     index_t new_offset = allfaces.size();
                     size_t num_nbrs = nbr_subelems.size();
+
                     for (size_t nb = 0; nb < num_nbrs; ++nb)
                     {
                         //Here should be code to create each new face
-                        //
                     }
 
                     // Here should add new faces to ref_elem
