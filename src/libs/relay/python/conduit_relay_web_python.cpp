@@ -47,9 +47,45 @@ using namespace conduit::relay::web;
 // to make sure we have the correct number of initializers across python
 // versions.
 //-----------------------------------------------------------------------------
-#ifdef Py_TPFLAGS_HAVE_FINALIZE
-#define PyVarObject_TAIL ,0
+
+// helper macros for dealing with deprecated tp_print field in 
+// python 3.8. If you don't define it, you get an un-inited warning
+// if you do define it, you get a deprecated warning :-)
+// we suppress the deprecated warning only in 3.8.
+// 
+
+#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#define PRAGMA_PUSH_DEP_DECL \
+     _Pragma("GCC diagnostic push") \
+     _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 #else
+#define PRAGMA_PUSH_DEP_DECL
+#endif
+
+#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#define PRAGMA_POP_DEP_DECL _Pragma("GCC diagnostic pop")
+#else
+#define PRAGMA_POP_DEP_DECL
+#endif
+
+
+#ifdef Py_TPFLAGS_HAVE_FINALIZE
+    // python 3.8 adds tp_vectorcall, at end and special slot for tp_print
+    // python 3.9 removes tp_print special slot
+    #if PY_VERSION_HEX >= 0x03080000
+        #if PY_VERSION_HEX < 0x03090000
+             // python 3.8 tail
+            #define PyVarObject_TAIL ,0, 0, 0 
+        #else
+            // python 3.9 and newer tail
+            #define PyVarObject_TAIL ,0, 0
+        #endif
+    #else
+        // python tail when finalize is part of struct
+        #define PyVarObject_TAIL ,0
+    #endif
+#else
+// python tail when finalize is not part of struct
 #define PyVarObject_TAIL
 #endif
 
@@ -507,13 +543,18 @@ static PyMethodDef PyRelay_Web_WebServer_METHODS[] = {
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyRelay_Web_WebServer_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "WebServer",
    sizeof(PyRelay_Web_WebServer),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyRelay_Web_WebServer_dealloc, /* tp_dealloc */
-   0, /* tp_print */
+   // tp_print was removed in Python 3.9, its now used as
+   // tp_vectorcall_offset (which we also don't use here)
+   0, /* tp_print or tp_vectorcall_offset */
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
@@ -553,11 +594,12 @@ static PyTypeObject PyRelay_Web_WebServer_TYPE = {
    0, /* tp_cache */
    0, /* tp_subclasses */
    0,  /* tp_weaklist */
-   0,
-   0
+   0, /* tp_del */
+   0  /* tp_version_tag */
    PyVarObject_TAIL
 };
 
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 // Leave commented until we need to use.
@@ -700,6 +742,9 @@ static PyMethodDef PyRelay_Web_WebSocket_METHODS[] = {
 
 
 //---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "WebSocket",
@@ -750,6 +795,8 @@ static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
    0
    PyVarObject_TAIL
 };
+
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 // Leave commented until we need to use.

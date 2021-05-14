@@ -1257,7 +1257,7 @@ void write_mesh(const Node &mesh,
                                 // update status, we are done with this doman
                                 local_domain_status[d] = 0;
                             }
-                            catch(conduit::Error e)
+                            catch(conduit::Error &e)
                             {
                                 local_all_is_good = 0;
                                 local_io_exception_msg = e.message();

@@ -242,7 +242,7 @@ TEST(conduit_tutorial, basics_const_vs_non_const)
     {
         important_suprise(n1);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         e.print();
     }
@@ -263,7 +263,7 @@ TEST(conduit_tutorial, basics_const_vs_non_const)
     {
         important(n2);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         e.print();
     }

@@ -88,7 +88,7 @@ TEST(conduit_tutorial, error_handlers)
         const Node &n_my_value = n["my_value"];
         n_my_value["bad"];
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         // pass
     }
