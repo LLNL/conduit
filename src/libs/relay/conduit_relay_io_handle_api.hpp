@@ -46,23 +46,23 @@ public:
 
     /// read contents starting at the root of the handle
     void read(Node &node);
-    void read(Node &node, const Node &opts);
+    void read(Node &node, const Node &options);
     /// read contents starting at given subpath
     void read(const std::string &path,
               Node &node);
     void read(const std::string &path,
               Node &node,
-              const Node &opts);
+              const Node &options);
 
     /// write contents of passed node to the root of the handle
     void write(const Node &node);
-    void write(const Node &node, const Node &opts);
+    void write(const Node &node, const Node &options);
     /// write contents of passed node to given subpath
     void write(const Node &node,
                const std::string &path);
     void write(const Node &node,
                const std::string &path,
-               const Node &opts);
+               const Node &options);
 
     /// list child names at root of handle
     void list_child_names(std::vector<std::string> &res);
@@ -106,19 +106,19 @@ public:
         virtual void open();
         virtual bool is_open() const = 0;
         virtual void read(Node &node) = 0;
-        virtual void read(Node &node, const Node &opts) = 0;
+        virtual void read(Node &node, const Node &options) = 0;
         virtual void read(const std::string &path,
                           Node &node) = 0;
         virtual void read(const std::string &path,
                           Node &node,
-                          const Node &opts) = 0;
+                          const Node &options) = 0;
         virtual void write(const Node &node) = 0;
-        virtual void write(const Node &node, const Node &opts) = 0;
+        virtual void write(const Node &node, const Node &options) = 0;
         virtual void write(const Node &node,
                    const std::string &path) = 0;
         virtual void write(const Node &node,
                    const std::string &path,
-                   const Node &opts) = 0;
+                   const Node &options) = 0;
         virtual void list_child_names(std::vector<std::string> &res) = 0;
         virtual void list_child_names(const std::string &path,
                               std::vector<std::string> &res) = 0;
