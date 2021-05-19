@@ -10,12 +10,12 @@
 module conduit_obj
 !------------------------------------------------------------------------------
     use conduit
-    use, intrinsic :: iso_c_binding, only : C_PTR
+    use, intrinsic :: iso_c_binding, only : C_PTR, C_NULL_PTR
     implicit none
     
     !--------------------------------------------------------------------------
     type node
-        type(C_PTR) cnode
+        type(C_PTR) cnode => C_NULL_PTR
     contains
 
         !----------------------------------------------------------------------
