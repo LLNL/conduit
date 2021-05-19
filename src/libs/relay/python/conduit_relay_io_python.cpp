@@ -258,17 +258,20 @@ PyRelay_IOHandle_read(PyRelay_IOHandle *self,
 
     static const char *kwlist[] = {"node",
                                    "path",
+                                   "options",
                                    NULL};
 
     PyObject *py_node = NULL;
     char     *path    = NULL;
+    PyObject *py_opts = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "O|s",
+                                     "O|sO",
                                      const_cast<char**>(kwlist),
                                      &py_node,
-                                     &path))
+                                     &path,
+                                     &py_opts))
     {
         return NULL;
     }
@@ -281,17 +284,36 @@ PyRelay_IOHandle_read(PyRelay_IOHandle *self,
         return NULL;
     }
 
+    Node opts;
+    Node *opts_ptr = &opts;
+
+    if(py_opts!= NULL)
+    {
+        if(!PyConduit_Node_Check(py_opts))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "IOHandle.read 'options' argument must "
+                                "be a conduit.Node");
+                            return NULL;
+        }
+
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_opts);
+    }
+
     Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_node);
     
     try
     {
         if(path == NULL)
         {
-            self->handle->read(*node_ptr);
+            self->handle->read(*node_ptr,
+                               *opts_ptr);
         }
         else
         {
-            self->handle->read(std::string(path),*node_ptr);
+            self->handle->read(std::string(path),
+                               *node_ptr,
+                               *opts_ptr);
         }
     }
     catch(conduit::Error &e)
@@ -313,17 +335,20 @@ PyRelay_IOHandle_write(PyRelay_IOHandle *self,
 
     static const char *kwlist[] = {"node",
                                    "path",
+                                   "options",
                                    NULL};
 
     PyObject *py_node = NULL;
     char     *path    = NULL;
+    PyObject *py_opts = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "O|s",
+                                     "O|sO",
                                      const_cast<char**>(kwlist),
                                      &py_node,
-                                     &path))
+                                     &path,
+                                     &py_opts))
     {
         return NULL;
     }
@@ -336,17 +361,36 @@ PyRelay_IOHandle_write(PyRelay_IOHandle *self,
         return NULL;
     }
 
+    Node opts;
+    Node *opts_ptr = &opts;
+
+    if(py_opts!= NULL)
+    {
+        if(!PyConduit_Node_Check(py_opts))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "IOHandle.write 'options' argument must "
+                                "be a conduit.Node");
+                            return NULL;
+        }
+
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_opts);
+    }
+
     Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_node);
 
     try
     {
         if(path == NULL)
         {
-            self->handle->write(*node_ptr);
+            self->handle->write(*node_ptr,
+                                *opts_ptr);
         }
         else
         {
-            self->handle->write(*node_ptr,std::string(path));
+            self->handle->write(*node_ptr,
+                                std::string(path),
+                                *opts_ptr);
         }
     }
     catch(conduit::Error &e)
