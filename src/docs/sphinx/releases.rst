@@ -48,7 +48,7 @@ Changed
 
 * **Blueprint**
 
- * The semantics of ``conduit::blueprint::mesh::verify`` changed. An empty conduit Node is now considered a valid multi-domain mesh with zero domains. If you always expect mesh data, you can add an additional check for empty and to craft code that works for both the old and new verify semantics.
+ * The semantics of ``conduit::blueprint::mesh::verify`` changed. An empty conduit Node is now considered a valid multi-domain mesh with zero domains. If you always expect mesh data, you can add an additional check for empty to craft code that works for both the old and new verify semantics.
 
 * **Relay**
 
