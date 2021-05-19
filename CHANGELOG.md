@@ -23,7 +23,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Changed `rapidjson` namespace to `conduit_rapidjson` to avoid symbol collisions with other libraries using RapidJSON.
 
 #### Blueprint
-- The semantics of `conduit::blueprint::mesh::verify` changed. An empty conduit Node is now considered a valid multi-domain mesh with zero domains. If you always expect mesh data, you can add an additional check for empty and to craft code that works for both the old and new verify semantics.
+- The semantics of `conduit::blueprint::mesh::verify` changed. An empty conduit Node is now considered a valid multi-domain mesh with zero domains. If you always expect mesh data, you can add an additional check for empty to craft code that works for both the old and new verify semantics.
 
 #### Relay
 - Added Relay HDF5 support for reading and writing to an HDF5 dataset with offset.
