@@ -358,6 +358,7 @@ O2MIterator::to(const index_t i, IndexType itype)
     {
         // FIXME(JRC): Make this more efficient if possible.
         to_front(DATA);
+        next(DATA);
         for(index_t ii = 0; ii < i; ii++)
         {
             next(DATA);
@@ -369,7 +370,7 @@ O2MIterator::to(const index_t i, IndexType itype)
     }
     else // if(itype == MANY)
     {
-        m_many_index = i;
+        m_many_index = i + 1;
     }
 }
 

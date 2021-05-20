@@ -201,8 +201,6 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_generate_offsets)
     EXPECT_FALSE(ref["offsets"].diff(n["offsets"], info));
 }
 
-// TODO(JRC): Add test cases for new direct iterator 'to' method.
-
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator_properties)
 {
@@ -283,6 +281,31 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator_properties)
         niter.to_front();
         EXPECT_TRUE(niter.has_next());
         EXPECT_FALSE(niter.has_previous());
+    }
+
+    { // Arbitrary Access Tests //
+        blueprint::o2mrelation::O2MIterator niter(n);
+
+        // o2m:
+        //            0    1     2     3    4    5     6     7    8    9    10    11
+        //   data: [1.0, 2.0, -1.0, -1.0, 3.0, 4.0, -1.0, -1.0, 5.0, 6.0, -1.0, -1.0]
+        //   sizes: [2, 2, 2]
+        //   offsets: [0, 4, 8]
+
+        niter.to(4, blueprint::o2mrelation::DATA);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 8);
+        niter.to(1, blueprint::o2mrelation::DATA);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 1);
+
+        niter.to(0, blueprint::o2mrelation::MANY);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 0);
+        niter.to(1, blueprint::o2mrelation::ONE);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 4);
+        niter.to(1, blueprint::o2mrelation::MANY);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 5);
+
+        niter.to(2, blueprint::o2mrelation::DATA);
+        EXPECT_EQ(niter.index(blueprint::o2mrelation::DATA), 4);
     }
 }
 
