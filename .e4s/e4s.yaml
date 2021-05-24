@@ -1,4 +1,7 @@
 - e4s_product: conduit
   website: https://github.com/llnl/conduit
-  docs: [README.md]
+  docs: 
+    - README.md
+    - CHANGELOG.md
+    - LICENSE
   area: Data & Viz
