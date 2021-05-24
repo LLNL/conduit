@@ -1,0 +1,4 @@
+- e4s_product: conduit
+  website: https://github.com/llnl/conduit
+  docs: [README.md]
+  area: Data & Viz
