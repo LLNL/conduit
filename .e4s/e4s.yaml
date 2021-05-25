@@ -1,7 +1,8 @@
 - e4s_product: conduit
   website: https://github.com/llnl/conduit
-  docs: 
+  docs:
     - README.md
     - CHANGELOG.md
     - LICENSE
   area: Data & Viz
+  Description: Simplified Data Exchange for HPC Simulations
