@@ -4,6 +4,14 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+#### General
+- Avoid compile issue with using `_Pragma()` with Python 3.8 on Windows
+
+
 ## [0.7.2] - Released 2021-05-19
 
 ### Added
