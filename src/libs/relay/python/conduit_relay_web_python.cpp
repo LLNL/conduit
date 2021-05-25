@@ -54,7 +54,9 @@ using namespace conduit::relay::web;
 // we suppress the deprecated warning only in 3.8.
 // 
 
-#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#if PY_VERSION_HEX >= 0x03080000 && \
+    PY_VERSION_HEX < 0x03090000 && \
+    !defined(CONDUIT_PLATFORM_WINDOWS)
 #define PRAGMA_PUSH_DEP_DECL \
      _Pragma("GCC diagnostic push") \
      _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
@@ -62,7 +64,9 @@ using namespace conduit::relay::web;
 #define PRAGMA_PUSH_DEP_DECL
 #endif
 
-#if PY_VERSION_HEX >= 0x03080000 && PY_VERSION_HEX < 0x03090000
+#if PY_VERSION_HEX >= 0x03080000 && \
+    PY_VERSION_HEX < 0x03090000 && \
+    !defined(CONDUIT_PLATFORM_WINDOWS)
 #define PRAGMA_POP_DEP_DECL _Pragma("GCC diagnostic pop")
 #else
 #define PRAGMA_POP_DEP_DECL
