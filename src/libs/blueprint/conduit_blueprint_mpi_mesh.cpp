@@ -31,6 +31,13 @@ namespace bputils = conduit::blueprint::mesh::utils;
 // access one-to-many index types
 namespace O2MIndex = conduit::blueprint::o2mrelation;
 
+// typedefs for verbose but commonly used types
+typedef std::tuple<conduit::Node*, conduit::Node*, conduit::Node*> DomMapsTuple;
+typedef std::tuple<conduit::float64, conduit::float64, conduit::float64> PointTuple;
+// typedefs to enable passing around function pointers
+typedef void (*GenDerivedFun)(const conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&);
+typedef void (*GenDecomposedFun)(const conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&);
+
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -202,91 +209,141 @@ number_of_domains(const conduit::Node &n,
 
 
 //-----------------------------------------------------------------------------
-void
-generate_points(conduit::Node &mesh,
-                const std::string& src_adjset_name,
-                const std::string& dst_adjset_name,
-                const std::string& dst_topo_name,
-                conduit::Node& s2dmap,
-                conduit::Node& d2smap)
+//
+// This function is responsible for collecting the domains within the given mesh
+// with subnodes of the given maps based on the domain's path, e.g.:
+//
+// input:
+//   mesh: {"domain0": {/*1*/}, "domain1": {/*2*/}}
+//   s2dmap: {}
+//   d2smap: {}
+//
+// output:
+//   mesh: {"domain0": {/*1*/}, "domain1": {/*2*/}}
+//   s2dmap: {"domain0": {/*A*/}, "domain1": {/*B*/}}
+//   d2smap: {"domain0": {/*a*/}, "domain1": {/*b*/}}
+//   return: [<&1, &A, &a>, <&2, &B, &b>]
+//
+std::vector<DomMapsTuple>
+group_domains_and_maps(conduit::Node &mesh, conduit::Node &s2dmap, conduit::Node &d2smap)
 {
+    std::vector<DomMapsTuple> doms_and_maps;
+
     s2dmap.reset();
     d2smap.reset();
 
-    // NOTE(JRC): We want to be sure we're modifying the structure of the
-    // given node, so we need to be careful to use pointers and references.
-    std::vector<conduit::Node *> domains, domain_s2dmaps, domain_d2smaps;
     if(!conduit::blueprint::mesh::is_multi_domain(mesh))
     {
-        domains.push_back(&mesh);
-        domain_s2dmaps.push_back(&s2dmap);
-        domain_d2smaps.push_back(&d2smap);
+        doms_and_maps.emplace_back(&mesh, &s2dmap, &d2smap);
     }
     else
     {
         NodeIterator domains_it = mesh.children();
         while(domains_it.has_next())
         {
-            conduit::Node& curr_domain = domains_it.next();
-            domains.push_back(&curr_domain);
-            // TODO(JRC): Support multi-domain via list also.
-            domain_s2dmaps.push_back(&s2dmap[curr_domain.name()]);
-            domain_d2smaps.push_back(&d2smap[curr_domain.name()]);
+            conduit::Node& domain = domains_it.next();
+            if(mesh.dtype().is_object())
+            {
+                doms_and_maps.emplace_back(&domain,
+                                           &s2dmap[domain.name()],
+                                           &d2smap[domain.name()]);
+            }
+            else
+            {
+                doms_and_maps.emplace_back(&domain,
+                                           &s2dmap.append(),
+                                           &d2smap.append());
+            }
         }
     }
 
-    const bool is_src_assoc_vertex = (*domains.front())["adjsets"][src_adjset_name]["association"].as_string() == "vertex";
+    return std::vector<DomMapsTuple>(std::move(doms_and_maps));
+}
 
+
+//-----------------------------------------------------------------------------
+void
+generate_derived_entities(conduit::Node &mesh,
+                          const std::string &src_adjset_name,
+                          const std::string &dst_adjset_name,
+                          const std::string &dst_topo_name,
+                          conduit::Node &s2dmap,
+                          conduit::Node &d2smap,
+                          GenDerivedFun generate_derived)
+{
     Node src_data, dst_data;
-    std::vector<std::map<index_t, index_t>> domain_c2tmaps(domains.size());
-    for(index_t di = 0; di < (index_t)domains.size(); di++)
-    {
-        conduit::Node &domain = *domains[di];
-        conduit::Node &domain_s2dmap = *domain_s2dmaps[di];
-        conduit::Node &domain_d2smap = *domain_d2smaps[di];
 
-        // TODO(JRC): Add in error handling for:
-        // - paths to be sure important paths exist (e.g. adjset isn't empty).
-        // - ensure that the topology is unstructured
+    const std::vector<DomMapsTuple> doms_and_maps = group_domains_and_maps(mesh, s2dmap, d2smap);
+    const conduit::Node &dom_delegate = *std::get<0>(doms_and_maps.front());
+    const bool is_src_assoc_vertex = dom_delegate["adjsets"][src_adjset_name]["association"].as_string() == "vertex";
+
+    { // Error Checking //
+        if(!is_src_assoc_vertex)
+        {
+            CONDUIT_ERROR("<blueprint::mpi::mesh::generate_derived_entities> " <<
+                          "Given adjacency set has an unsupported association type 'element.'\n" <<
+                          "Supported associations:\n" <<
+                          "  'vertex'");
+        }
+
+        for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
+        {
+            conduit::Node &domain = *std::get<0>(doms_and_maps[di]);
+            conduit::Node info;
+
+            if(!domain["adjsets"].has_child(src_adjset_name))
+            {
+                CONDUIT_ERROR("<blueprint::mpi::mesh::generate_derived_entities> " <<
+                              "Requested source adjacency set '" << src_adjset_name << "' " <<
+                              "doesn't exist on domain '" << domain.name() << ".'");
+            }
+
+            const conduit::Node &src_adjset = domain["adjsets"][src_adjset_name];
+            const Node *src_topo_ptr = bputils::find_reference_node(src_adjset, "topology");
+            const Node &src_topo = *src_topo_ptr;
+            if(!conduit::blueprint::mesh::topology::unstructured::verify(src_topo, info))
+            {
+                CONDUIT_ERROR("<blueprint::mpi::mesh::generate_derived_entities> " <<
+                              "Requested source topology '" << src_topo.name() << "' " <<
+                              "is of unsupported type '" << src_topo["type"].as_string() << ".'\n" <<
+                              "Supported types:\n" <<
+                              "  'unstructured'");
+            }
+        }
+    }
+
+    for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
+    {
+        conduit::Node &domain = *std::get<0>(doms_and_maps[di]);
+        conduit::Node &domain_s2dmap = *std::get<1>(doms_and_maps[di]);
+        conduit::Node &domain_d2smap = *std::get<2>(doms_and_maps[di]);
+
         const conduit::Node &src_adjset = domain["adjsets"][src_adjset_name];
         const Node *src_topo_ptr = bputils::find_reference_node(src_adjset, "topology");
         const Node &src_topo = *src_topo_ptr;
 
         conduit::Node &dst_topo = domain["topologies"][dst_topo_name];
-        // TODO(JRC): This assumes that the 'src_topo' is an unstructured topology.
-        conduit::blueprint::mesh::topology::unstructured::generate_points(
-            src_topo, dst_topo, domain_s2dmap, domain_d2smap);
+        generate_derived(src_topo, dst_topo, domain_s2dmap, domain_d2smap);
 
         conduit::Node &dst_adjset = domain["adjsets"][dst_adjset_name];
         dst_adjset.reset();
         dst_adjset["association"].set("element");
         dst_adjset["topology"].set(dst_topo_name);
-
-        if(is_src_assoc_vertex)
-        { // generate mapping from coordset to point topology //
-            std::map<index_t, index_t> &domain_c2tmap = domain_c2tmaps[di];
-
-            Node &dst_topo_conn = dst_topo["elements/connectivity"];
-            for(index_t ti = 0; ti < dst_topo_conn.dtype().number_of_elements(); ti++)
-            {
-                src_data.set_external(DataType(dst_topo_conn.dtype().id(), 1),
-                    dst_topo_conn.element_ptr(ti));
-                domain_c2tmap[src_data.to_index_t()] = ti;
-            }
-        }
     }
 
     src_data.reset();
     dst_data.reset();
-    for(index_t di = 0; di < (index_t)domains.size(); di++)
+    for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
     {
-        conduit::Node &domain = *domains[di];
-        std::map<index_t, index_t> &domain_c2tmap = domain_c2tmaps[di];
+        conduit::Node &domain = *std::get<0>(doms_and_maps[di]);
 
         const Node *src_topo_ptr = bputils::find_reference_node(domain["adjsets"][src_adjset_name], "topology");
         const Node &src_topo = *src_topo_ptr;
         const Node *src_cset_ptr = bputils::find_reference_node(src_topo, "coordset");
         const Node &src_cset = *src_cset_ptr;
+
+        const Node &dst_topo = domain["topologies"][dst_topo_name];
+        const index_t dst_topo_len = bputils::topology::length(dst_topo);
 
         const conduit::Node &src_adjset_groups = domain["adjsets"][src_adjset_name]["groups"];
         conduit::Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
@@ -294,65 +351,91 @@ generate_points(conduit::Node &mesh,
         for(const std::string &group_name : src_adjset_groups.child_names())
         {
             const conduit::Node &src_group = src_adjset_groups[group_name];
-            conduit::Node &dst_group = dst_adjset_groups[group_name];
-
-            dst_group["neighbors"].set(src_group["neighbors"]);
-
             const conduit::Node &src_values = src_group["values"];
-            conduit::Node &dst_values = dst_group["values"];
-            dst_values.set(DataType(src_values.dtype().id(),
-                src_values.dtype().number_of_elements()));
 
-            // if the source is 'vertex', the process is a bit easier because we
-            // can match coordinate set index w/ topology index fairly easily
-            if(is_src_assoc_vertex)
+            // given the list of entity ids, we need to sort these ids based on the local
+            //   sorting algorithm (uniform within an entity type)
+            //
+            // result: list of entity ids that constitute this group (std::set<index_t>)
+            std::set<index_t> group_pidxs;
+            for(index_t ei = 0; ei < src_values.dtype().number_of_elements(); ei++)
             {
-                for(index_t vi = 0; vi < src_values.dtype().number_of_elements(); vi++)
+                std::vector<index_t> entry_pidxs;
+                if(is_src_assoc_vertex)
                 {
+                    // NOTE(JRC): This won't work if there is an indirection scheme
+                    // on the source group's "values" array, but this shouldn't
+                    // currently be allowed anyway.
                     src_data.set_external(DataType(src_values.dtype().id(), 1),
-                        (void*)src_values.element_ptr(vi));
+                        (void*)src_values.element_ptr(ei));
+                    entry_pidxs.push_back(src_data.to_index_t());
+                }
+                else
+                {
+                    entry_pidxs = bputils::topology::unstructured::points(src_topo, ei);
+                }
+                group_pidxs.insert(entry_pidxs.begin(), entry_pidxs.end());
+            }
 
-                    const index_t cset_index = src_data.to_index_t();
-                    const index_t topo_index = domain_c2tmap[cset_index];
+            // given the list of vertex ids, we need to get the list of entities that
+            //   are completely contained within the group
+            //
+            // result: list of entity ids that constitute this group (std::set<index_t>)
+            std::vector<std::tuple<std::set<PointTuple>, index_t>> group_entities;
+            for(index_t ei = 0; ei < dst_topo_len; ei++)
+            {
+                std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dst_topo, ei);
 
-                    src_data.set_external(DataType::index_t(1),
-                        (void*)&topo_index);
-                    dst_data.set_external(DataType(dst_values.dtype().id(), 1),
-                        (void*)dst_values.element_ptr(vi));
-                    src_data.to_data_type(dst_data.dtype().id(), dst_data);
+                bool entity_in_group = true;
+                for(index_t pi = 0; pi < (index_t)entity_pidxs.size() && entity_in_group; pi++)
+                {
+                    entity_in_group &= group_pidxs.find(entity_pidxs[pi]) != group_pidxs.end();
+                }
+
+                if(entity_in_group)
+                {
+                    std::tuple<std::set<PointTuple>, index_t> entity;
+
+                    std::set<PointTuple> &entity_points = std::get<0>(entity);
+                    for(const index_t &entity_pidx : entity_pidxs)
+                    {
+                        const std::vector<float64> point_coords = bputils::coordset::_explicit::coords(
+                            src_cset, entity_pidx);
+                        entity_points.emplace(
+                            point_coords[0],
+                            (point_coords.size() > 1) ? point_coords[1] : 0.0,
+                            (point_coords.size() > 2) ? point_coords[2] : 0.0);
+                    }
+
+                    index_t &entity_id = std::get<1>(entity);
+                    entity_id = ei;
+
+                    // NOTE(JRC): Inserting with this method allows this algorithm to sort new
+                    // elements as they're generated, rather than as a separate process at the
+                    // end (slight optimization overall).
+                    auto entity_itr = std::upper_bound(group_entities.begin(), group_entities.end(), entity);
+                    group_entities.insert(entity_itr, entity);
                 }
             }
-            // if the source is 'element', the process is more challenging;
-            // to minimize communication, we just sort positions and we know
-            // these orderings will be the same across processors
-            else
+
+            // NOTE(JRC): If there are no entities in the result for this group (e.g. the start
+            // group is a single point and we're generating lines), then we omit it from the result.
+            if(!group_entities.empty())
             {
-                std::set<index_t> group_pidxs;
-                for(index_t ei = 0; ei < src_values.dtype().number_of_elements(); ei++)
-                {
-                    std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(src_topo, ei);
-                    group_pidxs.insert(entity_pidxs.begin(), entity_pidxs.end());
-                }
+                conduit::Node &dst_group = dst_adjset_groups[group_name];
 
-                std::vector<std::tuple<float64, float64, float64, index_t>> group_coords;
-                for(index_t pi = 0; pi < (index_t)group_pidxs.size(); pi++)
-                {
-                    std::vector<float64> point_coords = bputils::coordset::_explicit::coords(src_cset, pi);
-                    group_coords.emplace_back(
-                        point_coords[0],
-                        (point_coords.size() > 1) ? point_coords[1] : 0.0,
-                        (point_coords.size() > 2) ? point_coords[2] : 0.0,
-                        pi);
-                }
-                std::sort(group_coords.begin(), group_coords.end());
+                dst_group["neighbors"].set(src_group["neighbors"]);
 
-                // now that we have all the points sorted, we just need to extract their
-                // index values and put those into the 'dst_values' array in order.
-                for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
+                // given the sorted list of entities fully contained in the group, we need
+                //   to push this data into the destination array
+                //
+                conduit::Node &dst_values = dst_group["values"];
+                dst_values.set(DataType(src_values.dtype().id(), group_entities.size()));
+                for(index_t ei = 0; ei < (index_t)group_entities.size(); ei++)
                 {
-                    src_data.set_external(DataType::index_t(1), &group_coords[pi]);
+                    src_data.set_external(DataType::index_t(1), &std::get<1>(group_entities[ei]));
                     dst_data.set_external(DataType(dst_values.dtype().id(), 1),
-                        (void*)dst_values.element_ptr(pi));
+                        (void*)dst_values.element_ptr(ei));
                     src_data.to_data_type(dst_data.dtype().id(), dst_data);
                 }
             }
@@ -365,25 +448,58 @@ generate_points(conduit::Node &mesh,
 
 //-----------------------------------------------------------------------------
 void
-generate_lines(conduit::Node &/*mesh*/,
-               const std::string& /*src_adjset_name*/,
-               const std::string& /*dst_adjset_name*/,
-               const std::string& /*dst_topo_name*/,
-               conduit::Node& /*s2dmap*/,
-               conduit::Node& /*d2smap*/)
+generate_points(conduit::Node &mesh,
+                const std::string &src_adjset_name,
+                const std::string &dst_adjset_name,
+                const std::string &dst_topo_name,
+                conduit::Node &s2dmap,
+                conduit::Node &d2smap)
 {
-    // TODO(JRC)
+    generate_derived_entities(
+        mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
+        conduit::blueprint::mesh::topology::unstructured::generate_points);
 }
 
 
 //-----------------------------------------------------------------------------
 void
-generate_faces(conduit::Node &/*mesh*/,
-               const std::string& /*src_adjset_name*/,
-               const std::string& /*dst_adjset_name*/,
-               const std::string& /*dst_topo_name*/,
-               conduit::Node& /*s2dmap*/,
-               conduit::Node& /*d2smap*/)
+generate_lines(conduit::Node &mesh,
+               const std::string &src_adjset_name,
+               const std::string &dst_adjset_name,
+               const std::string &dst_topo_name,
+               conduit::Node &s2dmap,
+               conduit::Node &d2smap)
+{
+    generate_derived_entities(
+        mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
+        conduit::blueprint::mesh::topology::unstructured::generate_lines);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+generate_faces(conduit::Node &mesh,
+               const std::string& src_adjset_name,
+               const std::string& dst_adjset_name,
+               const std::string& dst_topo_name,
+               conduit::Node& s2dmap,
+               conduit::Node& d2smap)
+{
+    generate_derived_entities(
+        mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
+        conduit::blueprint::mesh::topology::unstructured::generate_faces);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+generate_decomposed_entities(conduit::Node &/*mesh*/,
+                             const std::string &/*src_adjset_name*/,
+                             const std::string &/*dst_adjset_name*/,
+                             const std::string &/*dst_topo_name*/,
+                             conduit::Node &/*s2dmap*/,
+                             conduit::Node &/*d2smap*/,
+                             GenDecomposedFun /*generate_decomposed*/)
 {
     // TODO(JRC)
 }
