@@ -60,6 +60,22 @@ std::set<index_t> to_index_set(const Node &n)
     return std::set<index_t>(index_vector.begin(), index_vector.end());
 }
 
+std::map<std::set<index_t>, std::set<index_t>> to_group_map(const Node &groups)
+{
+    // {<domain ids>: <entity index list>, ...}
+    // verify that these match up
+    std::map<std::set<index_t>, std::set<index_t>> group_map;
+
+    NodeConstIterator group_itr = groups.children();
+    while(group_itr.has_next())
+    {
+        const Node &group = group_itr.next();
+        group_map[to_index_set(group["neighbors"])] = to_index_set(group["values"]);
+    }
+
+    return std::map<std::set<index_t>, std::set<index_t>>(std::move(group_map));
+}
+
 // Setup Functions //
 
 void setup_test_mesh_paths(const index_t type,
@@ -168,27 +184,11 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_points)
             const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
             const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
 
-            // Verify Group Names //
-            const std::vector<std::string> src_aset_group_names = src_aset_groups.child_names();
-            const std::vector<std::string> dst_aset_group_names = dst_aset_groups.child_names();
-            const std::set<std::string> src_aset_group_nameset(src_aset_group_names.begin(), src_aset_group_names.end());
-            const std::set<std::string> dst_aset_group_nameset(dst_aset_group_names.begin(), dst_aset_group_names.end());
-            EXPECT_EQ(dst_aset_group_nameset, src_aset_group_nameset);
-
-            // Verify Group Contents //
-            for(const std::string &group_name : src_aset_group_names)
-            {
-                const Node &src_group = src_aset_groups[group_name];
-                const Node &dst_group = dst_aset_groups[group_name];
-
-                const std::set<index_t> src_group_neighbors = to_index_set(src_group["neighbors"]);
-                const std::set<index_t> dst_group_neighbors = to_index_set(dst_group["neighbors"]);
-                ASSERT_EQ(dst_group_neighbors, src_group_neighbors);
-
-                const std::set<index_t> src_group_values = to_index_set(src_group["values"]);
-                const std::set<index_t> dst_group_values = to_index_set(dst_group["values"]);
-                ASSERT_EQ(dst_group_values, src_group_values);
-            }
+            // Verify Group Data //
+            const std::map<std::set<index_t>, std::set<index_t>> src_group_map = to_group_map(src_aset_groups);
+            const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
+            ASSERT_EQ(dst_group_map.size(), src_group_map.size());
+            ASSERT_EQ(dst_group_map, src_group_map);
         }
     }
 }
@@ -209,46 +209,28 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_lines)
         test_mesh_paths(rank_mesh, rank_paths);
     }
 
-    // { // Adjacency Tests //
-    //     for(const Node *domain_ptr : domains)
-    //     {
-    //         const Node &domain = *domain_ptr;
+    { // Adjacency Tests //
+        for(const Node *domain_ptr : domains)
+        {
+            const Node &domain = *domain_ptr;
 
-    //         const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
-    //         const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
+            // const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
+            const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
 
-    //         // Verify Group Names //
-    //         const std::vector<std::string> src_aset_group_names = src_aset_groups.child_names();
-    //         const std::vector<std::string> dst_aset_group_names = dst_aset_groups.child_names();
-    //         const std::set<std::string> src_aset_group_nameset(src_aset_group_names.begin(), src_aset_group_names.end());
-    //         const std::set<std::string> dst_aset_group_nameset(dst_aset_group_names.begin(), dst_aset_group_names.end());
+            // Verify Group Count //
+            const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
+            ASSERT_EQ(dst_group_map.size(), 2);
 
-    //         std::set<std::string> src_diff_dst, dst_diff_src;
-    //         std::set_difference(src_aset_group_nameset.begin(), src_aset_group_nameset.end(),
-    //                             dst_aset_group_nameset.begin(), dst_aset_group_nameset.end(),
-    //                             std::inserter(src_diff_dst, src_diff_dst.begin()));
-    //         std::set_difference(dst_aset_group_nameset.begin(), dst_aset_group_nameset.end(),
-    //                             src_aset_group_nameset.begin(), src_aset_group_nameset.end(),
-    //                             std::inserter(dst_diff_src, dst_diff_src.begin()));
-    //         EXPECT_EQ(dst_diff_src.size(), 0);
-    //         EXPECT_EQ(src_diff_dst.size(), 1);
-
-    //         // Verify Group Contents //
-    //         for(const std::string &group_name : src_aset_group_names)
-    //         {
-    //             const Node &src_group = src_aset_groups[group_name];
-    //             const Node &dst_group = dst_aset_groups[group_name];
-
-    //             const std::set<index_t> src_group_neighbors = to_index_set(src_group["neighbors"]);
-    //             const std::set<index_t> dst_group_neighbors = to_index_set(dst_group["neighbors"]);
-    //             ASSERT_EQ(dst_group_neighbors, src_group_neighbors);
-
-    //             // TODO(JRC): Put in a better check here; just need to make sure that the
-    //             // data in the adjacency set looks correct (may require manual check).
-    //             // EXPECT_FALSE(dst_aset_groups.diff(src_aset_groups, info));
-    //         }
-    //     }
-    // }
+            // Verify Group Data //
+            for(const auto &group_pair : dst_group_map)
+            {
+                const std::set<index_t> &group_neighbors = group_pair.first;
+                const std::set<index_t> &group_values = group_pair.second;
+                ASSERT_EQ(group_neighbors.size(), 1);
+                ASSERT_EQ(group_values.size(), 3 - 1);
+            }
+        }
+    }
 }
 
 /// Test Driver ///
