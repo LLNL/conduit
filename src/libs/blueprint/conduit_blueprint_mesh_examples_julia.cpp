@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <limits>
 #include <algorithm>
 #include <cassert>
 #include <map>
