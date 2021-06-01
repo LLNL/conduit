@@ -31,6 +31,7 @@ static const index_t DERIVED_TYPE_LINE_ID = 1;
 static const index_t DERIVED_TYPE_FACE_ID = 2;
 
 static const std::vector<std::string> DERIVED_TYPE_NAMES = {"point", "line", "face"};
+static const std::vector<std::string> DERIVED_TYPE_SHAPES = {"point", "line", "quad"};
 static const std::vector<GenDerivedFun> DERIVED_TYPE_FUNS = {
     conduit::blueprint::mpi::mesh::generate_points,
     conduit::blueprint::mpi::mesh::generate_lines,
@@ -91,9 +92,11 @@ void setup_test_mesh_paths(const index_t type,
     info["dst/cset"].set(info["src/cset"]);
     info["dst/topo"].set(DERIVED_TYPE_NAMES[type]);
     info["dst/aset"].set(DERIVED_TYPE_NAMES[type] + "_adj");
+    info["dst/shape"].set(DERIVED_TYPE_SHAPES[type]);
 }
 
 void setup_derived_test_mesh(const index_t type,
+                             const size_t ndims,
                              const size_t dims,
                              Node &rank_mesh,
                              Node &rank_paths,
@@ -104,7 +107,7 @@ void setup_derived_test_mesh(const index_t type,
     rank_mesh.reset();
     full_mesh.reset();
 
-    conduit::blueprint::mesh::examples::misc("adjsets", dims, dims, 0, full_mesh);
+    conduit::blueprint::mesh::examples::misc("adjsets", dims, dims, (ndims == 3) ? dims : 0, full_mesh);
     setup_test_mesh_paths(type, full_mesh, rank_paths);
 
     const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
@@ -154,7 +157,7 @@ void test_mesh_paths(const Node &rank_mesh,
         EXPECT_EQ(domain["adjsets"][rank_paths["dst/aset"].as_string()]["association"].as_string(),
                   "element");
         EXPECT_EQ(domain["topologies"][rank_paths["dst/topo"].as_string()]["elements/shape"].as_string(),
-                  rank_paths["dst/topo"].as_string()); // NOTE(JRC): dst/topo name matches topological type
+                  rank_paths["dst/shape"].as_string());
     }
 }
 
@@ -163,10 +166,15 @@ void test_mesh_paths(const Node &rank_mesh,
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mpi_mesh_transform, generate_points)
 {
+    const index_t TEST_TYPE_ID = DERIVED_TYPE_POINT_ID;
+    const index_t TEST_MESH_NDIM = 2;
+    const index_t TEST_MESH_RES = 3;
+
     Node rank_mesh, full_mesh, info;
     Node rank_paths, rank_s2dmap, rank_d2smap;
 
-    setup_derived_test_mesh(DERIVED_TYPE_POINT_ID, 3, rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
+    setup_derived_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+        rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
     rank_mesh.print();
     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
 
@@ -196,10 +204,15 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_points)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mpi_mesh_transform, generate_lines)
 {
+    const index_t TEST_TYPE_ID = DERIVED_TYPE_LINE_ID;
+    const index_t TEST_MESH_NDIM = 2;
+    const index_t TEST_MESH_RES = 3;
+
     Node rank_mesh, full_mesh, info;
     Node rank_paths, rank_s2dmap, rank_d2smap;
 
-    setup_derived_test_mesh(DERIVED_TYPE_LINE_ID, 3, rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
+    setup_derived_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+        rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
     rank_mesh.print();
     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
 
@@ -219,7 +232,7 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_lines)
 
             // Verify Group Count //
             const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
-            ASSERT_EQ(dst_group_map.size(), 2);
+            ASSERT_EQ(dst_group_map.size(), 2); // NOTE(JRC): 2 interfaces per domain in the grid
 
             // Verify Group Data //
             for(const auto &group_pair : dst_group_map)
@@ -227,7 +240,52 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_lines)
                 const std::set<index_t> &group_neighbors = group_pair.first;
                 const std::set<index_t> &group_values = group_pair.second;
                 ASSERT_EQ(group_neighbors.size(), 1);
-                ASSERT_EQ(group_values.size(), 3 - 1);
+                ASSERT_EQ(group_values.size(), TEST_MESH_RES - 1);
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mpi_mesh_transform, generate_faces)
+{
+    const index_t TEST_TYPE_ID = DERIVED_TYPE_FACE_ID;
+    const index_t TEST_MESH_NDIM = 3;
+    const index_t TEST_MESH_RES = 3;
+
+    Node rank_mesh, full_mesh, info;
+    Node rank_paths, rank_s2dmap, rank_d2smap;
+
+    setup_derived_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+        rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
+    rank_mesh.print();
+    EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
+
+    const std::vector<const Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+
+    { // Sanity Tests //
+        test_mesh_paths(rank_mesh, rank_paths);
+    }
+
+    { // Adjacency Tests //
+        for(const Node *domain_ptr : domains)
+        {
+            const Node &domain = *domain_ptr;
+
+            // const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
+            const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
+
+            // Verify Group Count //
+            const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
+            ASSERT_EQ(dst_group_map.size(), 2); // NOTE(JRC): 2 interfaces per domain in the grid
+
+            // Verify Group Data //
+            for(const auto &group_pair : dst_group_map)
+            {
+                const std::set<index_t> &group_neighbors = group_pair.first;
+                const std::set<index_t> &group_values = group_pair.second;
+                ASSERT_EQ(group_neighbors.size(), 1);
+                ASSERT_EQ(group_values.size(), (TEST_MESH_RES - 1) * (TEST_MESH_RES - 1));
             }
         }
     }
