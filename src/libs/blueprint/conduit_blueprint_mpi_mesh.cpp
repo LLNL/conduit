@@ -312,40 +312,6 @@ generate_derived_entities(conduit::Node &mesh,
         }
     }
 
-    // NOTE(JRC): This is basically an implementation of the combinatorical concept
-    // of "n choose i" with all results being returned as lists over index space.
-    const static auto calc_combinations = [] (const index_t combo_length, const index_t total_length)
-    {
-        std::vector<std::vector<index_t>> combinations;
-
-        index_t max_binary_combo = 1;
-        for(index_t li = 1; li < total_length; li++)
-        {
-            max_binary_combo <<= 1;
-            max_binary_combo += 1;
-        }
-        max_binary_combo += 1;
-
-        for(index_t ci = 0; ci < max_binary_combo; ci++)
-        {
-            std::vector<index_t> combination;
-            for(index_t bi = 0; bi < total_length; bi++)
-            {
-                if((ci >> bi) & 1)
-                {
-                    combination.push_back(bi);
-                }
-            }
-
-            if((index_t)combination.size() == combo_length)
-            {
-                combinations.push_back(combination);
-            }
-        }
-
-        return (combo_length > 0) ? combinations : std::vector<std::vector<index_t>>(1);
-    };
-
     for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
     {
         conduit::Node &domain = *std::get<0>(doms_and_maps[di]);
@@ -386,213 +352,132 @@ generate_derived_entities(conduit::Node &mesh,
         const conduit::DataType src_neighbors_dtype = src_adjset_groups.child(0)["neighbors"].dtype();
         const conduit::DataType src_values_dtype = src_adjset_groups.child(0)["values"].dtype();
 
-        // Map Groups to Set of all Viable Points (Even from More General/Inclusive Groups) //
+        // Organize Adjset Points into Interfaces (Pair-Wise Groups) //
 
-        std::map<std::set<index_t>, std::set<index_t>> src_group_pidxs;
-        index_t src_group_max_length = 0;
+        // {(neighbor domain id): <(participating points for domain interface)>}
+        std::map<index_t, std::set<index_t>> neighbor_pidxs_map;
         for(const std::string &group_name : src_adjset_groups.child_names())
         {
             const conduit::Node &src_group = src_adjset_groups[group_name];
             const conduit::Node &src_neighbors = src_group["neighbors"];
             const conduit::Node &src_values = src_group["values"];
 
-            // NOTE(JRC): The local domain is included in the list of neighbors to
-            // enable cross-rank synchronization of domain naming.
-            std::set<index_t> group_nidxs; // neighbor indices
-            group_nidxs.insert(domain_id);
             for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
             {
                 src_data.set_external(DataType(src_neighbors.dtype().id(), 1),
                     (void*)src_neighbors.element_ptr(ni));
-                group_nidxs.insert(src_data.to_index_t());
-            }
-
-            std::set<index_t> &group_pidxs = src_group_pidxs[group_nidxs]; // point indices
-            for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
-            {
-                // NOTE(JRC): This won't work if there is an indirection scheme
-                // on the source group's "values" array, but this shouldn't
-                // currently be allowed anyway.
-                src_data.set_external(DataType(src_values.dtype().id(), 1),
-                    (void*)src_values.element_ptr(pi));
-                group_pidxs.insert(src_data.to_index_t());
-            }
-
-            src_group_max_length = std::max(src_group_max_length, (index_t)group_nidxs.size());
-        }
-
-        std::vector<std::vector<const std::set<index_t>*>> src_groups_by_length(src_group_max_length + 1);
-        for(const auto &group_pair : src_group_pidxs)
-        {
-            const std::set<index_t> &group_nidxs = group_pair.first;
-            src_groups_by_length[group_nidxs.size()].push_back(&group_nidxs);
-        }
-        // NOTE(JRC): Use the list of the longest groups to propagate points down to all
-        // possible subgroups to prevent redundant iteration.
-        // FIXME(JRC): This won't work in the general case, e.g. there can be smaller sets
-        // that are orthogonal to the longest set (e.g. (0,1,2) and (0,4) for an L-shaped
-        // set of domains).
-        const std::vector<const std::set<index_t>*> &longest_groups_list = src_groups_by_length.back();
-        for(const std::set<index_t> *const&long_group_ptr : longest_groups_list)
-        {
-            const std::set<index_t> &long_group_nidxs = *long_group_ptr;
-            const std::set<index_t> &long_group_pidxs = src_group_pidxs[long_group_nidxs];
-            for(index_t ci = long_group_nidxs.size() - 1; ci > 1; ci--)
-            {
-                const index_t subgroup_length = ci;
-                const std::vector<std::vector<index_t>> subgroup_idxs_list =
-                    calc_combinations(subgroup_length, long_group_nidxs.size());
-
-                for(const std::vector<index_t> &subgroup_idxs : subgroup_idxs_list)
+                std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_data.to_index_t()];
+                for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
                 {
-                    std::set<index_t> subgroup_nidxs;
-                    // FIXME(JRC): This is pretty ugly and very inefficient, but
-                    // required since 'std::set' isn't a random-access iterator.
-                    index_t sii = 0, sitri = 0;
-                    for(auto sitr = long_group_nidxs.begin();
-                        sii < subgroup_length && sitr != long_group_nidxs.end();
-                        ++sitr, ++sitri)
-                    {
-                        if(subgroup_idxs[sii] == sitri)
-                        {
-                            subgroup_nidxs.insert(*sitr);
-                            sii++;
-                        }
-                    }
-
-                    // NOTE(JRC): Only subgroups that include this domain need to be
-                    // considered for adjset processing as we can only check entities
-                    // that live within this domain.
-                    if(subgroup_nidxs.find(domain_id) != subgroup_nidxs.end())
-                    {
-                        // NOTE(JRC): If this subgroup doesn't have its own top-level
-                        // group (i.e. it exists only as a subset of a bigger group), then we
-                        // we need to add it to 'src_groups_by_length' so it's accounted
-                        // for during the following traversal step.
-                        std::set<index_t>* subgroup_pidxs;
-                        auto subgroup_itr = src_group_pidxs.find(subgroup_nidxs);
-                        if(subgroup_itr != src_group_pidxs.end())
-                        {
-                            subgroup_pidxs = &(subgroup_itr->second);
-                        }
-                        else
-                        {
-                            subgroup_pidxs = &src_group_pidxs[subgroup_nidxs];
-                            src_groups_by_length[subgroup_nidxs.size()].push_back(
-                                &(src_group_pidxs.find(subgroup_nidxs)->first));
-                        }
-
-                        subgroup_pidxs->insert(long_group_pidxs.begin(), long_group_pidxs.end());
-                    }
+                    src_data.set_external(DataType(src_values.dtype().id(), 1),
+                        (void*)src_values.element_ptr(pi));
+                    neighbor_pidxs.insert(src_data.to_index_t());
                 }
             }
         }
 
-        // Top-Down Assign Derived Entities to Groups //
+        // Collect Viable Entities for All Interfaces //
 
-        // {<group domain ids>: sorted([(group entity tuple w/ index), ...]), ...}
-        std::map<std::set<index_t>, std::vector<std::tuple<std::set<PointTuple>, index_t>>> dst_group_entities;
-        std::set<index_t> group_claimed_entities;
-        for(index_t li = src_group_max_length; li > 1; li--)
+        // {(entity id in topology): <(neighbor domain ids that contain this entity)>}
+        std::map<index_t, std::set<index_t>> entity_neighbor_map;
+        for(index_t ei = 0; ei < dst_topo_len; ei++)
         {
-            const std::vector<const std::set<index_t>*> &groups_at_length = src_groups_by_length[li];
-            for(const std::set<index_t> *group_ptr : groups_at_length)
+            std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dst_topo, ei);
+            for(const auto &neighbor_pair : neighbor_pidxs_map)
             {
-                const std::set<index_t> &group_nidxs = *group_ptr;
-                const std::set<index_t> &group_pidxs = src_group_pidxs[group_nidxs];
-                std::vector<std::tuple<std::set<PointTuple>, index_t>> &group_entities = dst_group_entities[group_nidxs];
+                const index_t &ni = neighbor_pair.first;
+                const std::set<index_t> &neighbor_pidxs = neighbor_pair.second;
 
-                for(index_t ei = 0; ei < dst_topo_len; ei++)
+                bool entity_in_neighbor = true;
+                for(index_t pi = 0; pi < (index_t)entity_pidxs.size() && entity_in_neighbor; pi++)
                 {
-                    // NOTE(JRC): This code assumes that there are no duplicate entities in
-                    // the topology (i.e. there are no two entities e1, e2 such that the set
-                    // of vertices for these entities are equal).
-                    if(group_claimed_entities.find(ei) == group_claimed_entities.end())
-                    {
-                        std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dst_topo, ei);
-                        bool entity_in_group = true;
-                        for(index_t pi = 0; pi < (index_t)entity_pidxs.size() && entity_in_group; pi++)
-                        {
-                            entity_in_group &= group_pidxs.find(entity_pidxs[pi]) != group_pidxs.end();
-                        }
+                    entity_in_neighbor &= neighbor_pidxs.find(entity_pidxs[pi]) != neighbor_pidxs.end();
+                }
 
-                        if(entity_in_group)
-                        {
-                            std::tuple<std::set<PointTuple>, index_t> entity;
-
-                            std::set<PointTuple> &entity_points = std::get<0>(entity);
-                            for(const index_t &entity_pidx : entity_pidxs)
-                            {
-                                const std::vector<float64> point_coords = bputils::coordset::_explicit::coords(
-                                    src_cset, entity_pidx);
-                                entity_points.emplace(
-                                    point_coords[0],
-                                    (point_coords.size() > 1) ? point_coords[1] : 0.0,
-                                    (point_coords.size() > 2) ? point_coords[2] : 0.0);
-                            }
-
-                            index_t &entity_id = std::get<1>(entity);
-                            entity_id = ei;
-
-                            // NOTE(JRC): Inserting with this method allows this algorithm to sort new
-                            // elements as they're generated, rather than as a separate process at the
-                            // end (slight optimization overall).
-                            auto entity_itr = std::upper_bound(group_entities.begin(), group_entities.end(), entity);
-                            group_entities.insert(entity_itr, entity);
-
-                            group_claimed_entities.insert(ei);
-                        }
-                    }
+                if(entity_in_neighbor)
+                {
+                    entity_neighbor_map[ei].insert(ni);
                 }
             }
         }
 
-        for(const auto &group_pair : dst_group_entities)
+        // Use Entity Interfaces to Construct Group Entity Lists //
+
+        std::map<std::set<index_t>, std::vector<std::tuple<std::set<PointTuple>, index_t>>> group_entity_map;
+        for(const auto &entity_neighbor_pair : entity_neighbor_map)
+        {
+            const index_t &ei = entity_neighbor_pair.first;
+            const std::set<index_t> &entity_neighbors = entity_neighbor_pair.second;
+            std::tuple<std::set<PointTuple>, index_t> entity;
+
+            std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dst_topo, ei);
+            std::set<PointTuple> &entity_points = std::get<0>(entity);
+            for(const index_t &entity_pidx : entity_pidxs)
+            {
+                const std::vector<float64> point_coords = bputils::coordset::_explicit::coords(
+                    src_cset, entity_pidx);
+                entity_points.emplace(
+                    point_coords[0],
+                    (point_coords.size() > 1) ? point_coords[1] : 0.0,
+                    (point_coords.size() > 2) ? point_coords[2] : 0.0);
+            }
+
+            index_t &entity_id = std::get<1>(entity);
+            entity_id = ei;
+
+            // NOTE(JRC): Inserting with this method allows this algorithm to sort new
+            // elements as they're generated, rather than as a separate process at the
+            // end (slight optimization overall).
+            std::vector<std::tuple<std::set<PointTuple>, index_t>> &group_entities =
+                group_entity_map[entity_neighbors];
+            auto entity_itr = std::upper_bound(group_entities.begin(), group_entities.end(), entity);
+            group_entities.insert(entity_itr, entity);
+        }
+
+        for(const auto &group_pair : group_entity_map)
         {
             const std::set<index_t> &group_nidxs = group_pair.first;
             const std::vector<std::tuple<std::set<PointTuple>, index_t>> &group_entities = group_pair.second;
-
             std::string group_name;
             {
+                // NOTE(JRC): The current domain is included in the domain name so that
+                // it matches across all domains and processors (also, using std::set
+                // ensures that items are sorted and the order is the same across ranks).
+                std::set<index_t> group_all_nidxs = group_nidxs;
+                group_all_nidxs.insert(domain_id);
+
                 std::ostringstream oss;
                 oss << "group";
-                for(const index_t &group_nidx : group_nidxs)
+                for(const index_t &group_nidx : group_all_nidxs)
                 {
                     oss << "_" << group_nidx;
                 }
                 group_name = oss.str();
             }
 
-            if(!group_entities.empty())
+            conduit::Node &dst_group = dst_adjset_groups[group_name];
+            conduit::Node &dst_neighbors = dst_group["neighbors"];
+            conduit::Node &dst_values = dst_group["values"];
+
+            dst_neighbors.set(DataType(src_neighbors_dtype.id(), group_nidxs.size()));
+            index_t ni = 0;
+            for(auto nitr = group_nidxs.begin(); nitr != group_nidxs.end(); ++nitr)
             {
-                conduit::Node &dst_group = dst_adjset_groups[group_name];
-                conduit::Node &dst_neighbors = dst_group["neighbors"];
-                conduit::Node &dst_values = dst_group["values"];
+                src_data.set_external(DataType::index_t(1),
+                    (void*)&(*nitr));
+                dst_data.set_external(DataType(src_neighbors_dtype.id(), 1),
+                    (void*)dst_neighbors.element_ptr(ni++));
+                src_data.to_data_type(dst_data.dtype().id(), dst_data);
+            }
 
-                dst_neighbors.set(DataType(src_neighbors_dtype.id(), group_nidxs.size() - 1));
-                index_t ni = 0;
-                for(auto nitr = group_nidxs.begin(); nitr != group_nidxs.end(); ++nitr)
-                {
-                    const index_t neighbor_id = *nitr;
-                    if(neighbor_id != domain_id)
-                    {
-                        src_data.set_external(DataType::index_t(1),
-                            (void*)&(*nitr));
-                        dst_data.set_external(DataType(src_neighbors_dtype.id(), 1),
-                            (void*)dst_neighbors.element_ptr(ni++));
-                        src_data.to_data_type(dst_data.dtype().id(), dst_data);
-                    }
-                }
-
-                dst_values.set(DataType(src_values_dtype.id(), group_entities.size()));
-                for(index_t ei = 0; ei < (index_t)group_entities.size(); ei++)
-                {
-                    src_data.set_external(DataType::index_t(1),
-                        (void*)&std::get<1>(group_entities[ei]));
-                    dst_data.set_external(DataType(src_values_dtype.id(), 1),
-                        (void*)dst_values.element_ptr(ei));
-                    src_data.to_data_type(dst_data.dtype().id(), dst_data);
-                }
+            dst_values.set(DataType(src_values_dtype.id(), group_entities.size()));
+            for(index_t ei = 0; ei < (index_t)group_entities.size(); ei++)
+            {
+                src_data.set_external(DataType::index_t(1),
+                    (void*)&std::get<1>(group_entities[ei]));
+                dst_data.set_external(DataType(src_values_dtype.id(), 1),
+                    (void*)dst_values.element_ptr(ei));
+                src_data.to_data_type(dst_data.dtype().id(), dst_data);
             }
         }
     }

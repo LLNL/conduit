@@ -578,6 +578,9 @@ void braid_init_example_adjset(Node &mesh)
     const index_t dim_count = blueprint::mesh::coordset::dims(
         mesh.child(0).fetch("coordsets").child(0));
 
+    // FIXME(JRC): Update this code to use the utilities provided in
+    // 'conduit_blueprint_mesh_utils.hpp'.
+
     // From mesh data, create a map from domain combination tuple to point list.
     // These domain combination tuples represent groups and the point lists contain
     // the points that lie on the shared boundary between these domains.
