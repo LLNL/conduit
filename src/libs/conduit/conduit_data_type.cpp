@@ -497,6 +497,20 @@ DataType::DataType(const DataType& value)
 {}
 
 
+//---------------------------------------------------------------------------// 
+DataType& DataType::operator=(const DataType& value)
+{
+  m_id = value.m_id;
+  m_num_ele = value.m_num_ele;
+  m_offset = value.m_offset;
+  m_stride = value.m_stride;
+  m_ele_bytes = value.m_ele_bytes;
+  m_endianness = value.m_endianness;
+
+  return *this;
+}
+
+
 //---------------------------------------------------------------------------//
 DataType::DataType(conduit::index_t id, conduit::index_t num_elements)
 : m_id(id),
