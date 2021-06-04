@@ -16,6 +16,7 @@
 #include "conduit_blueprint_mpi_mesh.hpp"
 #include "conduit_relay_mpi.hpp"
 #include <cmath>
+#include <limits>
 // access conduit blueprint mesh utilities
 namespace bputils = conduit::blueprint::mesh::utils;
 
@@ -1474,7 +1475,6 @@ void to_polyhedral(const Node &n,
                 auto& ybuffer = nbr_to_ybuffer[nbr_id];
                 auto& zbuffer = nbr_to_zbuffer[nbr_id];
 
-
                 std::map<index_t, std::map<index_t, std::vector<index_t> > >fv_map;
 
                 auto& nbr_elems = pbnd.m_nbr_elems;
@@ -1509,14 +1509,14 @@ void to_polyhedral(const Node &n,
                     index_t ref_face = ref_elem[pbnd.side];
                     std::vector<index_t>& ref_subelem = allfaces[ref_face];
 
-                    std::map<index_t, double> ref_sums;
-                    for (auto rv = ref_subelem.begin(); rv != ref_subelem.end(); ++rv)
-                    {
-                        ref_sums[*rv] = ref_xarray[*rv]+ref_yarray[*rv]+ref_zarray[*rv]; 
-                    }
+                    auto nbrs = fitr->second; 
+                    std::set<index_t> sh_verts;
+                    std::set<index_t> others;
 
-                    std::map<index_t,index_t> nbr_to_ref_vert;
-                    auto& nbrs = fitr->second;
+                    // This loop causes sh_verts to be filled with the
+                    // vertices that only exist once in the neighbor
+                    // subelems.  Those vertices are the once shared by
+                    // the reference subelem.
                     for (auto nitr = nbrs.begin(); nitr != nbrs.end(); ++nitr)
                     {
                         index_t nbr_face = nitr->first;
@@ -1524,34 +1524,55 @@ void to_polyhedral(const Node &n,
                         for (auto nv = nbr_subelem.begin(); nv != nbr_subelem.end(); ++nv)
                         {
                             index_t nvert = *nv;
-                            if (sharedmap.find(nvert) == sharedmap.end())
+                            if (sh_verts.find(nvert) == sh_verts.end())
                             {
-                                index_t buf_offset = buffidx[nvert];
-                                double nbr_x = xbuffer[buf_offset];
-                                double nbr_y = ybuffer[buf_offset];
-                                double nbr_z = zbuffer[buf_offset];
-                                double nbr_sum = nbr_x+nbr_y+nbr_z;
-
-                                for (auto rs = ref_sums.begin(); rs != ref_sums.end(); ++rs)
+                                if (others.find(nvert) == others.end())
                                 {
-                                    if (fabs(nbr_sum-rs->second) < 1.0e-12)
-                                    {
-                                        index_t ridx = rs->first;
-                                        if (fabs(nbr_x-ref_xarray[ridx]) < 1.0e-12 &&
-                                            fabs(nbr_y-ref_yarray[ridx]) < 1.0e-12 &&
-                                            fabs(nbr_z-ref_zarray[ridx]) < 1.0e-12)
-                                        {
-                                            sharedmap[nvert] = ridx;
-                                        }
-                                    }
+                                    sh_verts.insert(nvert);
                                 }
+                            }
+                            else
+                            {
+                                sh_verts.erase(nvert);
+                                others.insert(nvert);
                             }
                         }
                     }
+
+                    // Determine which reference vertex is shared with
+                    // each neighbor vertex.
+                    for (auto rv = ref_subelem.begin(); rv != ref_subelem.end(); ++rv)
+                    {
+                        double min_dist_sqr = std::numeric_limits<double>::max();
+                        index_t shared_vert = -1;
+                        for (auto sv = sh_verts.begin(); sv != sh_verts.end();
+                             ++sv)
+                        {
+                            index_t nvert = *sv; 
+
+                            index_t buf_offset = buffidx[nvert];
+                            double nbr_x = xbuffer[buf_offset];
+                            double nbr_y = ybuffer[buf_offset];
+                            double nbr_z = zbuffer[buf_offset];
+
+                            double xdiff = nbr_x-ref_xarray[*rv];
+                            double ydiff = nbr_y-ref_yarray[*rv];
+                            double zdiff = nbr_z-ref_zarray[*rv];
+
+                            double dist_sqr = xdiff*xdiff + ydiff*ydiff + 
+                                              zdiff*zdiff;
+
+                            if (dist_sqr < min_dist_sqr)
+                            {
+                                min_dist_sqr = dist_sqr;
+                                shared_vert = nvert;
+                            }
+                        }
+
+                        sharedmap[shared_vert] = *rv;
+                    }
                 }
 
-
-                
                 //Below:: Create a map from coarse subelems to xyz values.
                 //of vertices of the fine subelems
                 std::ostringstream nbr_oss;
