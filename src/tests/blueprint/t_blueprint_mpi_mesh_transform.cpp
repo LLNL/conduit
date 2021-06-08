@@ -23,8 +23,8 @@ using namespace conduit;
 
 /// Testing Constants ///
 
-typedef void (*GenDerivedFun)(Node&, const std::string&, const std::string&, const std::string&, Node&, Node&);
-typedef void (*GenDecomposedFun)(Node&, const std::string&, const std::string&, const std::string&, const std::string&, Node&, Node&);
+typedef void (*GenDerivedFun)(Node&, const std::string&, const std::string&, const std::string&, Node&, Node&, MPI_Comm);
+typedef void (*GenDecomposedFun)(Node&, const std::string&, const std::string&, const std::string&, const std::string&, Node&, Node&, MPI_Comm);
 
 static const index_t TYPE_POINT_ID = 0;
 static const index_t TYPE_LINE_ID = 1;
@@ -55,8 +55,8 @@ static const std::vector<std::string> TYPE_SHAPES = {
     "line",     // 1
     "quad",     // 2
     "point",    // 3
-    "TODO(JRC)",// 4
-    "TODO(JRC)" // 5
+    "tet",      // 4
+    "polygonal" // 5
 };
 static const std::vector<GenDerivedFun> DERIVED_TYPE_FUNS = {
     conduit::blueprint::mpi::mesh::generate_points,   // 0
@@ -131,14 +131,14 @@ void setup_test_mesh_paths(const index_t type,
     info["dst/aset"].set(TYPE_NAMES[type] + "_adj");
 }
 
-void setup_derived_test_mesh(const index_t type,
-                             const size_t ndims,
-                             const size_t dims,
-                             Node &rank_mesh,
-                             Node &rank_paths,
-                             Node &rank_s2dmap,
-                             Node &rank_d2smap,
-                             Node &full_mesh)
+void setup_test_mesh(const index_t type,
+                     const size_t ndims,
+                     const size_t dims,
+                     Node &rank_mesh,
+                     Node &rank_paths,
+                     Node &rank_s2dmap,
+                     Node &rank_d2smap,
+                     Node &full_mesh)
 {
     rank_mesh.reset();
     full_mesh.reset();
@@ -167,7 +167,19 @@ void setup_derived_test_mesh(const index_t type,
                                 rank_paths["dst/aset"].as_string(),
                                 rank_paths["dst/topo"].as_string(),
                                 rank_s2dmap,
-                                rank_d2smap);
+                                rank_d2smap,
+                                MPI_COMM_WORLD);
+    }
+    else if(DECOMPOSED_TYPE_FUNS[type] != nullptr)
+    {
+        DECOMPOSED_TYPE_FUNS[type](rank_mesh,
+                                   rank_paths["src/aset"].as_string(),
+                                   rank_paths["dst/aset"].as_string(),
+                                   rank_paths["dst/topo"].as_string(),
+                                   rank_paths["dst/cset"].as_string(),
+                                   rank_s2dmap,
+                                   rank_d2smap,
+                                   MPI_COMM_WORLD);
     }
 }
 
@@ -217,19 +229,19 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_points)
     Node rank_mesh, full_mesh, info;
     Node rank_paths, rank_s2dmap, rank_d2smap;
 
-    setup_derived_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+    setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
         rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
     rank_mesh.print();
     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
 
-    const std::vector<const Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
 
     { // Sanity Tests //
         test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
     }
 
     { // Adjacency Tests //
-        for(const Node *domain_ptr : domains)
+        for(Node *domain_ptr : domains)
         {
             const Node &domain = *domain_ptr;
 
@@ -255,19 +267,19 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_lines)
     Node rank_mesh, full_mesh, info;
     Node rank_paths, rank_s2dmap, rank_d2smap;
 
-    setup_derived_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+    setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
         rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
     rank_mesh.print();
     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
 
-    const std::vector<const Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
 
     { // Sanity Tests //
         test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
     }
 
     { // Adjacency Tests //
-        for(const Node *domain_ptr : domains)
+        for(Node *domain_ptr : domains)
         {
             const Node &domain = *domain_ptr;
 
@@ -300,19 +312,19 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_faces)
     Node rank_mesh, full_mesh, info;
     Node rank_paths, rank_s2dmap, rank_d2smap;
 
-    setup_derived_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+    setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
         rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
     rank_mesh.print();
     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
 
-    const std::vector<const Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
 
     { // Sanity Tests //
         test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
     }
 
     { // Adjacency Tests //
-        for(const Node *domain_ptr : domains)
+        for(Node *domain_ptr : domains)
         {
             const Node &domain = *domain_ptr;
 
@@ -345,7 +357,7 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_centroids)
     Node rank_mesh, full_mesh, info;
     Node rank_paths, rank_s2dmap, rank_d2smap;
 
-    setup_derived_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+    setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
         rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
     { // Initialize Centroid Topology //
         const std::string mid_topo_name = "line";
@@ -356,14 +368,15 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_centroids)
                                                       mid_aset_name,
                                                       mid_topo_name,
                                                       rank_s2dmap,
-                                                      rank_d2smap);
+                                                      rank_d2smap,
+                                                      MPI_COMM_WORLD);
 
         // TODO(JRC): Remove this hack once the 'generate_*' functions support adjsets
         // for which "association" is "element".
-        const std::vector<const Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
-        for(const Node *domain_ptr : domains)
+        const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+        for(Node *domain_ptr : domains)
         {
-            Node &domain = *(const_cast<Node *>(domain_ptr));
+            Node &domain = *domain_ptr;
             domain["adjsets"][mid_aset_name].set(domain["adjsets"][rank_paths["src/aset"].as_string()]);
             domain["adjsets"][mid_aset_name]["topology"].set(mid_topo_name);
         }
@@ -374,12 +387,13 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_centroids)
                                                           rank_paths["dst/topo"].as_string(),
                                                           rank_paths["dst/cset"].as_string(),
                                                           rank_s2dmap,
-                                                          rank_d2smap);
+                                                          rank_d2smap,
+                                                          MPI_COMM_WORLD);
     }
     rank_mesh.print();
     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
 
-    const std::vector<const Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
 
     { // Sanity Tests //
         test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
@@ -389,7 +403,7 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_centroids)
     // and used, etc.
 
     { // Adjacency Tests //
-        for(const Node *domain_ptr : domains)
+        for(Node *domain_ptr : domains)
         {
             const Node &domain = *domain_ptr;
 
@@ -412,19 +426,96 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_centroids)
     }
 }
 
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mpi_mesh_transform, generate_sides)
-{
-    // TODO(JRC): Small 3D test that does 'generate_sides' on the element topology
-    ASSERT_TRUE(true);
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mpi_mesh_transform, generate_corners)
-{
-    // TODO(JRC): Small 3D test that does 'generate_corners' on the element topology
-    ASSERT_TRUE(true);
-}
+// //-----------------------------------------------------------------------------
+// TEST(conduit_blueprint_mpi_mesh_transform, generate_sides)
+// {
+//     const index_t TEST_TYPE_ID = TYPE_SIDE_ID;
+//     const index_t TEST_MESH_NDIM = 3;
+//     const index_t TEST_MESH_RES = 3;
+// 
+//     Node rank_mesh, full_mesh, info;
+//     Node rank_paths, rank_s2dmap, rank_d2smap;
+// 
+//     setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+//         rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
+//     rank_mesh.print();
+//     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
+// 
+//     const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+// 
+//     // { // Sanity Tests //
+//     //     test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
+//     // }
+// 
+//     // { // Adjacency Tests //
+//     //     for(Node *domain_ptr : domains)
+//     //     {
+//     //         const Node &domain = *domain_ptr;
+// 
+//     //         // const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
+//     //         const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
+// 
+//     //         // Verify Group Count //
+//     //         const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
+//     //         ASSERT_EQ(dst_group_map.size(), 2); // NOTE(JRC): 2 interfaces per domain in the grid
+// 
+//     //         // Verify Group Data //
+//     //         for(const auto &group_pair : dst_group_map)
+//     //         {
+//     //             const std::set<index_t> &group_neighbors = group_pair.first;
+//     //             const std::set<index_t> &group_values = group_pair.second;
+//     //             ASSERT_EQ(group_neighbors.size(), 1);
+//     //             ASSERT_EQ(group_values.size(), (TEST_MESH_RES - 1) * (TEST_MESH_RES - 1));
+//     //         }
+//     //     }
+//     // }
+// }
+// 
+// //-----------------------------------------------------------------------------
+// TEST(conduit_blueprint_mpi_mesh_transform, generate_corners)
+// {
+//     const index_t TEST_TYPE_ID = TYPE_CORNER_ID;
+//     const index_t TEST_MESH_NDIM = 2;
+//     const index_t TEST_MESH_RES = 3;
+// 
+//     Node rank_mesh, full_mesh, info;
+//     Node rank_paths, rank_s2dmap, rank_d2smap;
+// 
+//     setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+//         rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
+//     rank_mesh.print();
+//     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
+// 
+//     const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+// 
+//     // { // Sanity Tests //
+//     //     test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
+//     // }
+// 
+//     // { // Adjacency Tests //
+//     //     for(Node *domain_ptr : domains)
+//     //     {
+//     //         const Node &domain = *domain_ptr;
+// 
+//     //         const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
+//     //         const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
+// 
+//     //         // Verify Group Count //
+//     //         const std::map<std::set<index_t>, std::set<index_t>> src_group_map = to_group_map(src_aset_groups);
+//     //         const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
+//     //         ASSERT_EQ(dst_group_map.size(), src_group_map.size());
+// 
+//     //         // Verify Group Data //
+//     //         for(const auto &group_pair : dst_group_map)
+//     //         {
+//     //             const std::set<index_t> &group_neighbors = group_pair.first;
+//     //             const std::set<index_t> &group_values = group_pair.second;
+//     //             ASSERT_EQ(group_neighbors.size(), 1);
+//     //             ASSERT_EQ(group_values.size(), (TEST_MESH_RES - 1) * (TEST_MESH_RES - 1));
+//     //         }
+//     //     }
+//     // }
+// }
 
 /// Test Driver ///
 

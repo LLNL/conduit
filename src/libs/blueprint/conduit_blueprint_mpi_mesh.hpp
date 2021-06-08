@@ -77,12 +77,18 @@ index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh,
                                                 MPI_Comm comm);
 
 //-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API delegate(const conduit::Node &mesh,
+                                    conduit::Node &domain,
+                                    MPI_Comm comm);
+
+//-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_points(conduit::Node &mesh,
                                            const std::string& src_adjset_name,
                                            const std::string& dst_adjset_name,
                                            const std::string& dst_topo_name,
                                            conduit::Node& s2dmap,
-                                           conduit::Node& d2smap);
+                                           conduit::Node& d2smap,
+                                           MPI_Comm comm);
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_lines(conduit::Node &mesh,
@@ -90,7 +96,8 @@ void CONDUIT_BLUEPRINT_API generate_lines(conduit::Node &mesh,
                                           const std::string& dst_adjset_name,
                                           const std::string& dst_topo_name,
                                           conduit::Node& s2dmap,
-                                          conduit::Node& d2smap);
+                                          conduit::Node& d2smap,
+                                          MPI_Comm comm);
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_faces(conduit::Node &mesh,
@@ -98,7 +105,8 @@ void CONDUIT_BLUEPRINT_API generate_faces(conduit::Node &mesh,
                                           const std::string& dst_adjset_name,
                                           const std::string& dst_topo_name,
                                           conduit::Node& s2dmap,
-                                          conduit::Node& d2smap);
+                                          conduit::Node& d2smap,
+                                          MPI_Comm comm);
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_centroids(conduit::Node& mesh,
@@ -107,7 +115,8 @@ void CONDUIT_BLUEPRINT_API generate_centroids(conduit::Node& mesh,
                                               const std::string& dst_topo_name,
                                               const std::string& dst_cset_name,
                                               conduit::Node& s2dmap,
-                                              conduit::Node& d2smap);
+                                              conduit::Node& d2smap,
+                                              MPI_Comm comm);
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_sides(conduit::Node& mesh,
@@ -116,7 +125,8 @@ void CONDUIT_BLUEPRINT_API generate_sides(conduit::Node& mesh,
                                           const std::string& dst_topo_name,
                                           const std::string& dst_cset_name,
                                           conduit::Node& s2dmap,
-                                          conduit::Node& d2smap);
+                                          conduit::Node& d2smap,
+                                          MPI_Comm comm);
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_corners(conduit::Node& mesh,
@@ -125,7 +135,8 @@ void CONDUIT_BLUEPRINT_API generate_corners(conduit::Node& mesh,
                                             const std::string& dst_topo_name,
                                             const std::string& dst_cset_name,
                                             conduit::Node& s2dmap,
-                                            conduit::Node& d2smap);
+                                            conduit::Node& d2smap,
+                                            MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
 }

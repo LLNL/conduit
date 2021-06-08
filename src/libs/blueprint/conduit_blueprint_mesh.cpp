@@ -1454,6 +1454,33 @@ mesh::number_of_domains(const conduit::Node &n)
 
 
 //-------------------------------------------------------------------------
+std::vector<conduit::Node *>
+mesh::domains(conduit::Node &n)
+{
+    // this is a blueprint property, we can assume it will be called
+    // only when mesh verify is true. Given that - it is easy to
+    // aggregate all of the domains into a list
+
+    std::vector<conduit::Node *> doms;
+
+    if(!mesh::is_multi_domain(n))
+    {
+        doms.push_back(&n);
+    }
+    else if(!n.dtype().is_empty())
+    {
+        NodeIterator nitr = n.children();
+        while(nitr.has_next())
+        {
+            doms.push_back(&nitr.next());
+        }
+    }
+
+    return std::vector<conduit::Node *>(std::move(doms));
+}
+
+
+//-------------------------------------------------------------------------
 std::vector<const conduit::Node *>
 mesh::domains(const conduit::Node &n)
 {
@@ -2819,6 +2846,10 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         {
             dim_coord_offsets[di] = doffset;
 
+            // TODO(JRC): This comment may be important for parallel processing;
+            // there are a lot of assumptions in that code on how ordering is
+            // presented via 'TopologyMataData'.
+            //
             // NOTE: The centroid ordering for the positions is different
             // from the base ordering, which messes up all subsequent indexing.
             // We must use the coordinate set associated with the base topology.
@@ -3277,6 +3308,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         Node dst_data;
         Node &dst_axis = cdest["values"][csys_axes[ai]];
 
+        // TODO(JRC): This is how centroids offsets are generated in the
+        // final topology!
         for(index_t di = 0, doffset = 0; di <= topo_shape.dim; di++)
         {
             dim_coord_offsets[di] = doffset;

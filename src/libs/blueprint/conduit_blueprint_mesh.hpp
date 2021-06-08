@@ -73,6 +73,8 @@ bool CONDUIT_BLUEPRINT_API is_multi_domain(const conduit::Node &n);
 index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &n);
 
 //-----------------------------------------------------------------------------
+std::vector<conduit::Node *> CONDUIT_BLUEPRINT_API domains(Node &n);
+//-----------------------------------------------------------------------------
 std::vector<const conduit::Node *> CONDUIT_BLUEPRINT_API domains(const Node &n);
 
 /// Note: to_multi_domain uses Node::set_external to avoid copying data.
