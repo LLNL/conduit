@@ -940,7 +940,7 @@ WebServer::serve(bool block)
     {
         m_server = new CivetServer(options);
     }
-    catch(CivetException except)
+    catch(CivetException& except)
     {
         // Catch Civet Exception and use Conduit's error handling mech.
         CONDUIT_ERROR("WebServer failed to bind civet server on " 
