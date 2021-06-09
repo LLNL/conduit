@@ -232,15 +232,15 @@ struct TopologyMetadata
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-Node link_nodes(const Node &lhs, const Node &rhs);
+Node CONDUIT_BLUEPRINT_API link_nodes(const Node &lhs, const Node &rhs);
 
 //-----------------------------------------------------------------------------
-DataType find_widest_dtype(const Node &node, const DataType &default_dtype);
+DataType CONDUIT_BLUEPRINT_API find_widest_dtype(const Node &node, const DataType &default_dtype);
 //-----------------------------------------------------------------------------
-DataType find_widest_dtype(const Node &node, const std::vector<DataType> &default_dtypes);
+DataType CONDUIT_BLUEPRINT_API find_widest_dtype(const Node &node, const std::vector<DataType> &default_dtypes);
 
 //-----------------------------------------------------------------------------
-const Node *find_reference_node(const Node &node, const std::string &ref_key);
+const Node * CONDUIT_BLUEPRINT_API find_reference_node(const Node &node, const std::string &ref_key);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::coordset --
@@ -248,16 +248,16 @@ const Node *find_reference_node(const Node &node, const std::string &ref_key);
 namespace coordset
 {
     //-------------------------------------------------------------------------
-    index_t dims(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
-    index_t length(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
 
     //-----------------------------------------------------------------------------
-    std::vector<std::string> axes(const Node &n);
+    std::vector<std::string> CONDUIT_BLUEPRINT_API axes(const Node &n);
 
     //-----------------------------------------------------------------------------
-    std::string coordsys(const Node &n);
+    std::string CONDUIT_BLUEPRINT_API coordsys(const Node &n);
 
     //-------------------------------------------------------------------------
     // -- begin conduit::blueprint::mesh::utils::coordset::_explicit --
@@ -265,7 +265,7 @@ namespace coordset
     namespace _explicit
     {
         //-------------------------------------------------------------------------
-        std::vector<float64> coords(const Node &n, const index_t i);
+        std::vector<float64> CONDUIT_BLUEPRINT_API coords(const Node &n, const index_t i);
     }
     //-------------------------------------------------------------------------
     // -- end conduit::blueprint::mesh::utils::coordset::_explicit --
@@ -281,10 +281,10 @@ namespace coordset
 namespace topology
 {
     //-------------------------------------------------------------------------
-    index_t dims(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
-    index_t length(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
     // -- begin conduit::blueprint::mesh::utils::topology::unstructured --
@@ -293,15 +293,16 @@ namespace topology
     {
         // TODO(JRC): Expose this 'cache' version of the function publicly?
         //-------------------------------------------------------------------------
-        void generate_offsets(Node &n,
-                              Node &dest);
+        void CONDUIT_BLUEPRINT_API generate_offsets(Node &n,
+                                                    Node &dest);
 
         //-------------------------------------------------------------------------
-        void generate_offsets(const Node &n,
-                              Node &dest);
+        void CONDUIT_BLUEPRINT_API generate_offsets(const Node &n,
+                                                    Node &dest);
 
         //-------------------------------------------------------------------------
-        std::vector<index_t> points(const Node &n, const index_t i);
+        std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &n,
+                                                          const index_t i);
     }
     //-------------------------------------------------------------------------
     // -- end conduit::blueprint::mesh::utils::topology::unstructured --
