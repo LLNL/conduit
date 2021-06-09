@@ -113,7 +113,7 @@ static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
-struct ShapeType
+struct CONDUIT_BLUEPRINT_API ShapeType
 {
 public:
     ShapeType();
@@ -136,7 +136,7 @@ private:
 };
 
 //---------------------------------------------------------------------------//
-struct ShapeCascade
+struct CONDUIT_BLUEPRINT_API ShapeCascade
 {
     ShapeCascade(const conduit::Node &topology);
 
@@ -148,7 +148,7 @@ struct ShapeCascade
 };
 
 //---------------------------------------------------------------------------//
-struct TopologyMetadata
+struct CONDUIT_BLUEPRINT_API TopologyMetadata
 {
     // The 'IndexType' indicates the index space to be used when referring to
     // entities within this topological cascade. The types have the following
