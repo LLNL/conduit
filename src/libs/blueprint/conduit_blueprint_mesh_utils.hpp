@@ -240,7 +240,7 @@ DataType CONDUIT_BLUEPRINT_API find_widest_dtype(const Node &node, const DataTyp
 DataType CONDUIT_BLUEPRINT_API find_widest_dtype(const Node &node, const std::vector<DataType> &default_dtypes);
 
 //-----------------------------------------------------------------------------
-const Node * CONDUIT_BLUEPRINT_API find_reference_node(const Node &node, const std::string &ref_key);
+CONDUIT_BLUEPRINT_API const Node * find_reference_node(const Node &node, const std::string &ref_key);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::coordset --
