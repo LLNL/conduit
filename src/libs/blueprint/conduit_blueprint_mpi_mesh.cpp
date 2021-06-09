@@ -38,6 +38,7 @@ typedef std::tuple<conduit::float64, conduit::float64, conduit::float64> PointTu
 typedef void (*GenDerivedFun)(const conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&);
 typedef void (*GenDecomposedFun)(const conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&);
 typedef conduit::index_t (*IdDecomposedFun)(const bputils::TopologyMetadata&, const conduit::index_t /*ei*/, const conduit::index_t /*di*/);
+typedef std::vector<conduit::index_t> (*CalcDimDecomposedFun)(const bputils::ShapeType&);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -308,6 +309,32 @@ group_domains_and_maps(conduit::Node &mesh, conduit::Node &s2dmap, conduit::Node
 
 
 //-----------------------------------------------------------------------------
+std::vector<index_t>
+calculate_decomposed_dims(const conduit::Node &mesh, const std::string &adjset_name, CalcDimDecomposedFun calc_dims)
+{
+    // NOTE(JRC): This strategy works even if some ranks have empty meshes because
+    // the empty ranks won't use the resulting 'dims' array to compute indices and
+    // thus it doesn't matter if the variable has the technically incorrect value.
+    const std::vector<const Node *> domains = ::conduit::blueprint::mesh::domains(mesh);
+    if(domains.empty())
+    {
+        return std::vector<index_t>();
+    }
+    else // if(!domains.empty())
+    {
+        const Node &domain = *domains.front();
+
+        const Node &adjset = domain["adjsets"][adjset_name];
+        const Node *topo_ptr = bputils::find_reference_node(adjset, "topology");
+        const Node &topo = *topo_ptr;
+
+        const bputils::ShapeType shape(topo);
+        return calc_dims(shape);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 void
 verify_generate_mesh(const conduit::Node &mesh,
                      const std::string &adjset_name,
@@ -349,6 +376,7 @@ verify_generate_mesh(const conduit::Node &mesh,
         }
     }
 }
+
 
 //-----------------------------------------------------------------------------
 void
@@ -560,14 +588,14 @@ generate_decomposed_entities(conduit::Node &mesh,
         const Node *src_topo_ptr = bputils::find_reference_node(src_adjset, "topology");
         const Node &src_topo = *src_topo_ptr;
 
-        // TODO(JRC): Diff- new code below
+        // NOTE(JRC): Diff- new code below
         Node &dst_topo = domain["topologies"][dst_topo_name];
         Node &dst_cset = domain["coordsets"][dst_cset_name];
         generate_decomposed(src_topo, dst_topo, dst_cset, domain_s2dmap, domain_d2smap);
 
         Node &dst_adjset = domain["adjsets"][dst_adjset_name];
         dst_adjset.reset();
-        // TODO(JRC): Diff- different association (decomposed entity -> assoc: vertex)
+        // NOTE(JRC): Diff- different association (decomposed entity -> assoc: vertex)
         dst_adjset["association"].set("vertex");
         dst_adjset["topology"].set(dst_topo_name);
     }
@@ -584,7 +612,7 @@ generate_decomposed_entities(conduit::Node &mesh,
         const Node &src_topo = *src_topo_ptr;
         const Node *src_cset_ptr = bputils::find_reference_node(src_topo, "coordset");
         const Node &src_cset = *src_cset_ptr;
-        // TODO(JRC): Diff- generate topology metadata for source topology to find
+        // NOTE(JRC): Diff- generate topology metadata for source topology to find
         // centroids that may exist within an adjset group.
         const bputils::TopologyMetadata src_topo_data(src_topo, src_cset);
 
@@ -625,7 +653,7 @@ generate_decomposed_entities(conduit::Node &mesh,
 
         // {(entity centroid id): <(neighbor domain ids that contain this entity)>}
         std::map<index_t, std::set<index_t>> entity_neighbor_map;
-        // TODO(JRC): Diff, entirely different iteration strategy for finding entities
+        // NOTE(JRC): Diff, entirely different iteration strategy for finding entities
         // to consider on individual adjset interfaces.
         for(const index_t &di : decomposed_centroid_dims)
         {
@@ -663,7 +691,7 @@ generate_decomposed_entities(conduit::Node &mesh,
             std::tuple<std::set<PointTuple>, index_t> entity;
 
             std::set<PointTuple> &entity_points = std::get<0>(entity);
-            // TODO(JRC): Diff: Substitute entity for centroid point at the end here.
+            // NOTE(JRC): Diff: Substitute entity for centroid point at the end here.
             const std::vector<float64> point_coords = bputils::coordset::_explicit::coords(
                 dst_cset, entity_cidx);
             entity_points.emplace(
@@ -797,26 +825,21 @@ generate_centroids(conduit::Node& mesh,
                    conduit::Node& d2smap,
                    MPI_Comm comm)
 {
-    verify_generate_mesh(mesh, src_adjset_name, comm);
-
     const static auto identify_centroid = []
         (const bputils::TopologyMetadata &/*topo_data*/, const index_t ei, const index_t /*di*/)
     {
         return ei;
     };
 
-    std::vector<index_t> centroid_dims;
+    const static auto calculate_centroid_dims = [] (const bputils::ShapeType &topo_shape)
     {
-        Node domain;
-        blueprint::mpi::mesh::delegate(mesh, domain, comm);
+        return std::vector<index_t>(1, topo_shape.dim);
+    };
 
-        const Node &src_adjset = domain["adjsets"][src_adjset_name];
-        const Node *src_topo_ptr = bputils::find_reference_node(src_adjset, "topology");
-        const Node &src_topo = *src_topo_ptr;
-        const bputils::ShapeType src_shape(src_topo);
+    verify_generate_mesh(mesh, src_adjset_name, comm);
 
-        centroid_dims.push_back(src_shape.dim);
-    }
+    const std::vector<index_t> centroid_dims = calculate_decomposed_dims(
+        mesh, src_adjset_name, calculate_centroid_dims);
 
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap, comm,
@@ -835,31 +858,38 @@ generate_sides(conduit::Node& mesh,
                conduit::Node& d2smap,
                MPI_Comm comm)
 {
-    verify_generate_mesh(mesh, src_adjset_name, comm);
-
     const static auto identify_side = []
-        (const bputils::TopologyMetadata &/*topo_data*/, const index_t ei, const index_t /*di*/)
+        (const bputils::TopologyMetadata &topo_data, const index_t ei, const index_t di)
     {
-        // TODO(JRC): Implement this function.
-        return ei;
+        index_t doffset = 0;
+        for(index_t dii = 0; dii < di; dii++)
+        {
+            if(dii != 1)
+            {
+                doffset += topo_data.get_length(dii);
+            }
+        }
+
+        return doffset + ei;
     };
 
-    std::vector<index_t> side_dims;
+    const static auto calculate_side_dims = [] (const bputils::ShapeType &topo_shape)
     {
-        Node domain;
-        blueprint::mpi::mesh::delegate(mesh, domain, comm);
-
-        const Node &src_adjset = domain["adjsets"][src_adjset_name];
-        const Node *src_topo_ptr = bputils::find_reference_node(src_adjset, "topology");
-        const Node &src_topo = *src_topo_ptr;
-        const bputils::ShapeType src_shape(src_topo);
+        std::vector<index_t> side_dims;
 
         side_dims.push_back(0);
-        if(src_shape.dim == 3)
+        if(topo_shape.dim == 3)
         {
             side_dims.push_back(2);
         }
-    }
+
+        return std::vector<index_t>(std::move(side_dims));
+    };
+
+    verify_generate_mesh(mesh, src_adjset_name, comm);
+
+    const std::vector<index_t> side_dims = calculate_decomposed_dims(
+        mesh, src_adjset_name, calculate_side_dims);
 
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap, comm,
@@ -878,30 +908,34 @@ generate_corners(conduit::Node& mesh,
                  conduit::Node& d2smap,
                  MPI_Comm comm)
 {
-    verify_generate_mesh(mesh, src_adjset_name, comm);
-
     const static auto identify_corner = []
-        (const bputils::TopologyMetadata &/*topo_data*/, const index_t ei, const index_t /*di*/)
+        (const bputils::TopologyMetadata &topo_data, const index_t ei, const index_t di)
     {
-        // TODO(JRC): Implement this function.
-        return ei;
+        index_t doffset = 0;
+        for(index_t dii = 0; dii < di; dii++)
+        {
+            doffset += topo_data.get_length(dii);
+        }
+
+        return doffset + ei;
     };
 
-    std::vector<index_t> corner_dims;
+    const static auto calculate_corner_dims = [] (const bputils::ShapeType &topo_shape)
     {
-        Node domain;
-        blueprint::mpi::mesh::delegate(mesh, domain, comm);
+        std::vector<index_t> corner_dims;
 
-        const Node &src_adjset = domain["adjsets"][src_adjset_name];
-        const Node *src_topo_ptr = bputils::find_reference_node(src_adjset, "topology");
-        const Node &src_topo = *src_topo_ptr;
-        const bputils::ShapeType src_shape(src_topo);
-
-        for(index_t di = 0; di < src_shape.dim; di++)
+        for(index_t di = 0; di < topo_shape.dim; di++)
         {
             corner_dims.push_back(di);
         }
-    }
+
+        return std::vector<index_t>(std::move(corner_dims));
+    };
+
+    verify_generate_mesh(mesh, src_adjset_name, comm);
+
+    const std::vector<index_t> corner_dims = calculate_decomposed_dims(
+        mesh, src_adjset_name, calculate_corner_dims);
 
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap, comm,

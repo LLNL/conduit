@@ -3047,8 +3047,6 @@ misc(const std::string &mesh_type,
                 oss << "domain" << domain_id;
                 const std::string domain_name = oss.str();
 
-                // TODO(JRC): If 'npts_z > 0', then we need to call 'braid_hexs'
-                // instead and do a similar process.
                 Node &domain_node = res[domain_name];
                 if(npts_z == 0)
                 {

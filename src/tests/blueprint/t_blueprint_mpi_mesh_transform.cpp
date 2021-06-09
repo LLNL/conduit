@@ -99,10 +99,24 @@ std::set<index_t> to_index_set(const Node &n)
     return std::set<index_t>(index_vector.begin(), index_vector.end());
 }
 
+std::set<std::set<index_t>> to_neighbor_set(const Node &groups)
+{
+    // <<group 0 domain ids>, <group 1 domain ids>, ...}
+    std::set<std::set<index_t>> neighbor_set;
+
+    NodeConstIterator group_itr = groups.children();
+    while(group_itr.has_next())
+    {
+        const Node &group = group_itr.next();
+        neighbor_set.insert(to_index_set(group["neighbors"]));
+    }
+
+    return std::set<std::set<index_t>>(std::move(neighbor_set));
+}
+
 std::map<std::set<index_t>, std::set<index_t>> to_group_map(const Node &groups)
 {
     // {<domain ids>: <entity index list>, ...}
-    // verify that these match up
     std::map<std::set<index_t>, std::set<index_t>> group_map;
 
     NodeConstIterator group_itr = groups.children();
@@ -214,6 +228,8 @@ void test_mesh_paths(const index_t type,
     }
 }
 
+// TODO(JRC): Validate that points/entities match up across processor boundaries
+// by performing a communication step and doing a list comparison.
 // TODO(JRC): Validate 's2d' and 'd2s' maps with another test function, and then
 // put this function alongside 'test_mesh_paths' in all the test cases.
 
@@ -426,96 +442,124 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_centroids)
     }
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_blueprint_mpi_mesh_transform, generate_sides)
-// {
-//     const index_t TEST_TYPE_ID = TYPE_SIDE_ID;
-//     const index_t TEST_MESH_NDIM = 3;
-//     const index_t TEST_MESH_RES = 3;
-// 
-//     Node rank_mesh, full_mesh, info;
-//     Node rank_paths, rank_s2dmap, rank_d2smap;
-// 
-//     setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
-//         rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
-//     rank_mesh.print();
-//     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
-// 
-//     const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
-// 
-//     // { // Sanity Tests //
-//     //     test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
-//     // }
-// 
-//     // { // Adjacency Tests //
-//     //     for(Node *domain_ptr : domains)
-//     //     {
-//     //         const Node &domain = *domain_ptr;
-// 
-//     //         // const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
-//     //         const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
-// 
-//     //         // Verify Group Count //
-//     //         const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
-//     //         ASSERT_EQ(dst_group_map.size(), 2); // NOTE(JRC): 2 interfaces per domain in the grid
-// 
-//     //         // Verify Group Data //
-//     //         for(const auto &group_pair : dst_group_map)
-//     //         {
-//     //             const std::set<index_t> &group_neighbors = group_pair.first;
-//     //             const std::set<index_t> &group_values = group_pair.second;
-//     //             ASSERT_EQ(group_neighbors.size(), 1);
-//     //             ASSERT_EQ(group_values.size(), (TEST_MESH_RES - 1) * (TEST_MESH_RES - 1));
-//     //         }
-//     //     }
-//     // }
-// }
-// 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_blueprint_mpi_mesh_transform, generate_corners)
-// {
-//     const index_t TEST_TYPE_ID = TYPE_CORNER_ID;
-//     const index_t TEST_MESH_NDIM = 2;
-//     const index_t TEST_MESH_RES = 3;
-// 
-//     Node rank_mesh, full_mesh, info;
-//     Node rank_paths, rank_s2dmap, rank_d2smap;
-// 
-//     setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
-//         rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
-//     rank_mesh.print();
-//     EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
-// 
-//     const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
-// 
-//     // { // Sanity Tests //
-//     //     test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
-//     // }
-// 
-//     // { // Adjacency Tests //
-//     //     for(Node *domain_ptr : domains)
-//     //     {
-//     //         const Node &domain = *domain_ptr;
-// 
-//     //         const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
-//     //         const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
-// 
-//     //         // Verify Group Count //
-//     //         const std::map<std::set<index_t>, std::set<index_t>> src_group_map = to_group_map(src_aset_groups);
-//     //         const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
-//     //         ASSERT_EQ(dst_group_map.size(), src_group_map.size());
-// 
-//     //         // Verify Group Data //
-//     //         for(const auto &group_pair : dst_group_map)
-//     //         {
-//     //             const std::set<index_t> &group_neighbors = group_pair.first;
-//     //             const std::set<index_t> &group_values = group_pair.second;
-//     //             ASSERT_EQ(group_neighbors.size(), 1);
-//     //             ASSERT_EQ(group_values.size(), (TEST_MESH_RES - 1) * (TEST_MESH_RES - 1));
-//     //         }
-//     //     }
-//     // }
-// }
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mpi_mesh_transform, generate_sides)
+{
+    const index_t TEST_TYPE_ID = TYPE_SIDE_ID;
+    const index_t TEST_MESH_NDIM = 3;
+    const index_t TEST_MESH_RES = 2;
+
+    Node rank_mesh, full_mesh, info;
+    Node rank_paths, rank_s2dmap, rank_d2smap;
+
+    setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+        rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
+    rank_mesh.print();
+    EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
+
+    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+
+    { // Sanity Tests //
+        test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
+    }
+
+    { // Adjacency Tests //
+        for(Node *domain_ptr : domains)
+        {
+            const Node &domain = *domain_ptr;
+
+            const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
+            const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
+
+            // Verify Group Counts/Participants //
+            const std::set<std::set<index_t>> src_neighbor_set = to_neighbor_set(src_aset_groups);
+            const std::set<std::set<index_t>> dst_neighbor_set = to_neighbor_set(dst_aset_groups);
+            ASSERT_EQ(dst_neighbor_set.size(), src_neighbor_set.size());
+            ASSERT_EQ(dst_neighbor_set, src_neighbor_set);
+
+            // Verify Group Data //
+            const std::map<std::set<index_t>, std::set<index_t>> src_group_map = to_group_map(src_aset_groups);
+            const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
+            for(const auto &group_pair : dst_group_map)
+            {
+                const std::set<index_t> &group_neighbors = group_pair.first;
+                const std::set<index_t> &dst_group_values = group_pair.second;
+                const std::set<index_t> &src_group_values = src_group_map.at(group_neighbors);
+
+                if(group_neighbors.size() == 1)
+                {
+                    // NOTE(JRC): The number of shared points along an individual boundary is
+                    // the number of existing shared points plus the number of shared faces
+                    ASSERT_EQ(dst_group_values.size(),
+                              src_group_values.size() + (TEST_MESH_RES - 1) * (TEST_MESH_RES - 1));
+                }
+                else // if(group_neighbors.size() == 3)
+                {
+                    // NOTE(JRC): The number of points shared by all domains is just the number
+                    // of points along the z-axis.
+                    ASSERT_EQ(dst_group_values.size(), TEST_MESH_RES);
+                }
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mpi_mesh_transform, generate_corners)
+{
+    const index_t TEST_TYPE_ID = TYPE_CORNER_ID;
+    const index_t TEST_MESH_NDIM = 2;
+    const index_t TEST_MESH_RES = 2;
+
+    Node rank_mesh, full_mesh, info;
+    Node rank_paths, rank_s2dmap, rank_d2smap;
+
+    setup_test_mesh(TEST_TYPE_ID, TEST_MESH_NDIM, TEST_MESH_RES,
+        rank_mesh, rank_paths, rank_s2dmap, rank_d2smap, full_mesh);
+    rank_mesh.print();
+    EXPECT_TRUE(conduit::blueprint::mpi::verify("mesh", rank_mesh, info, MPI_COMM_WORLD));
+
+    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(rank_mesh);
+
+    { // Sanity Tests //
+        test_mesh_paths(TEST_TYPE_ID, rank_mesh, rank_paths);
+    }
+
+    { // Adjacency Tests //
+        for(Node *domain_ptr : domains)
+        {
+            const Node &domain = *domain_ptr;
+
+            const Node &src_aset_groups = domain["adjsets"][rank_paths["src/aset"].as_string()]["groups"];
+            const Node &dst_aset_groups = domain["adjsets"][rank_paths["dst/aset"].as_string()]["groups"];
+
+            // Verify Group Counts/Participants //
+            const std::set<std::set<index_t>> src_neighbor_set = to_neighbor_set(src_aset_groups);
+            const std::set<std::set<index_t>> dst_neighbor_set = to_neighbor_set(dst_aset_groups);
+            ASSERT_EQ(dst_neighbor_set.size(), src_neighbor_set.size());
+            ASSERT_EQ(dst_neighbor_set, src_neighbor_set);
+
+            // Verify Group Data //
+            const std::map<std::set<index_t>, std::set<index_t>> src_group_map = to_group_map(src_aset_groups);
+            const std::map<std::set<index_t>, std::set<index_t>> dst_group_map = to_group_map(dst_aset_groups);
+            for(const auto &group_pair : dst_group_map)
+            {
+                const std::set<index_t> &group_neighbors = group_pair.first;
+                const std::set<index_t> &dst_group_values = group_pair.second;
+                const std::set<index_t> &src_group_values = src_group_map.at(group_neighbors);
+
+                if(group_neighbors.size() == 1)
+                {
+                    ASSERT_EQ(dst_group_values.size(), src_group_values.size() * 2);
+                }
+                else // if(group_neighbors.size() == 3)
+                {
+                    ASSERT_EQ(dst_group_values.size(), 1);
+                }
+            }
+        }
+    }
+}
 
 /// Test Driver ///
 
