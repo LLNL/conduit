@@ -31,6 +31,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added DataType::index_t method. Creates a DataType instance that describes an `index_t`, which is an alias to either `int32`, or `int 64` controlled by the `CONDUIT_INDEX_32` compile time option.
 - Added several more methods to Python DataType interface
 - Removed duplicate install of CMake exported target files that served as a bridge for clients using old style paths.
+- Added a host of `conduit::blueprint::mpi::mesh::generate_*` methods, which are the MPI parallel equivalents of the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions.
+- Added the `conduit::blueprint::mpi::mesh::find_delegate_domain` function, which returns a single delegate domain for the given mesh across MPI ranks (useful when all ranks need mesh information and some ranks can have empty meshes).
+- Added support for both `const` and non-`const` inputs to the `conduit::blueprint::mesh::domains` function.
 
 ### Changed
 

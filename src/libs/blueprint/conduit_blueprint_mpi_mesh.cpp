@@ -213,9 +213,9 @@ number_of_domains(const conduit::Node &n,
 
 //-----------------------------------------------------------------------------
 void
-delegate(const conduit::Node &n,
-         conduit::Node &domain,
-         MPI_Comm comm)
+find_delegate_domain(const conduit::Node &n,
+                     conduit::Node &domain,
+                     MPI_Comm comm)
 {
     const index_t par_rank = relay::mpi::rank(comm);
     const index_t par_size = relay::mpi::size(comm);
@@ -248,6 +248,9 @@ delegate(const conduit::Node &n,
     {
         if(par_rank == min_delegate_rank)
         {
+            // TODO(JRC): Consider using a more consistent evaluation for the
+            // "first" domain (e.g. the domain with the lowest "state/domain_id"
+            // value).
             domain.set(*domains[0]);
         }
         relay::mpi::broadcast_using_schema(domain, min_delegate_rank, comm);
@@ -337,19 +340,8 @@ calculate_decomposed_dims(const conduit::Node &mesh, const std::string &adjset_n
 //-----------------------------------------------------------------------------
 void
 verify_generate_mesh(const conduit::Node &mesh,
-                     const std::string &adjset_name,
-                     MPI_Comm comm)
+                     const std::string &adjset_name)
 {
-    Node dom_delegate;
-    blueprint::mpi::mesh::delegate(mesh, dom_delegate, comm);
-    if(dom_delegate["adjsets"][adjset_name]["association"].as_string() != "vertex")
-    {
-        CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
-                      "Given adjacency set has an unsupported association type 'element.'\n" <<
-                      "Supported associations:\n" <<
-                      "  'vertex'");
-    }
-
     const std::vector<const Node *> domains = blueprint::mesh::domains(mesh);
     for(index_t di = 0; di < (index_t)domains.size(); di++)
     {
@@ -361,6 +353,14 @@ verify_generate_mesh(const conduit::Node &mesh,
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Requested source adjacency set '" << adjset_name << "' " <<
                           "doesn't exist on domain '" << domain.name() << ".'");
+        }
+
+        if(domain["adjsets"][adjset_name]["association"].as_string() != "vertex")
+        {
+            CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
+                          "Given adjacency set has an unsupported association type 'element.'\n" <<
+                          "Supported associations:\n" <<
+                          "  'vertex'");
         }
 
         const Node &adjset = domain["adjsets"][adjset_name];
@@ -773,7 +773,7 @@ generate_points(conduit::Node &mesh,
                 conduit::Node &d2smap,
                 MPI_Comm comm)
 {
-    verify_generate_mesh(mesh, src_adjset_name, comm);
+    verify_generate_mesh(mesh, src_adjset_name);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap, comm,
         conduit::blueprint::mesh::topology::unstructured::generate_points);
@@ -790,7 +790,7 @@ generate_lines(conduit::Node &mesh,
                conduit::Node &d2smap,
                MPI_Comm comm)
 {
-    verify_generate_mesh(mesh, src_adjset_name, comm);
+    verify_generate_mesh(mesh, src_adjset_name);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap, comm,
         conduit::blueprint::mesh::topology::unstructured::generate_lines);
@@ -807,7 +807,7 @@ generate_faces(conduit::Node &mesh,
                conduit::Node& d2smap,
                MPI_Comm comm)
 {
-    verify_generate_mesh(mesh, src_adjset_name, comm);
+    verify_generate_mesh(mesh, src_adjset_name);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap, comm,
         conduit::blueprint::mesh::topology::unstructured::generate_faces);
@@ -836,7 +836,7 @@ generate_centroids(conduit::Node& mesh,
         return std::vector<index_t>(1, topo_shape.dim);
     };
 
-    verify_generate_mesh(mesh, src_adjset_name, comm);
+    verify_generate_mesh(mesh, src_adjset_name);
 
     const std::vector<index_t> centroid_dims = calculate_decomposed_dims(
         mesh, src_adjset_name, calculate_centroid_dims);
@@ -886,7 +886,7 @@ generate_sides(conduit::Node& mesh,
         return std::vector<index_t>(std::move(side_dims));
     };
 
-    verify_generate_mesh(mesh, src_adjset_name, comm);
+    verify_generate_mesh(mesh, src_adjset_name);
 
     const std::vector<index_t> side_dims = calculate_decomposed_dims(
         mesh, src_adjset_name, calculate_side_dims);
@@ -932,7 +932,7 @@ generate_corners(conduit::Node& mesh,
         return std::vector<index_t>(std::move(corner_dims));
     };
 
-    verify_generate_mesh(mesh, src_adjset_name, comm);
+    verify_generate_mesh(mesh, src_adjset_name);
 
     const std::vector<index_t> corner_dims = calculate_decomposed_dims(
         mesh, src_adjset_name, calculate_corner_dims);

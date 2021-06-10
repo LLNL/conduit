@@ -41,7 +41,7 @@ namespace mpi
 // -- begin conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
 
-namespace mesh 
+namespace mesh
 {
 
 //-----------------------------------------------------------------------------
@@ -55,8 +55,8 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                   MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
-/// blueprint mesh property and transform methods
-/// 
+/// blueprint mesh property methods
+///
 /// These methods can be called on any verified blueprint mesh.
 //-----------------------------------------------------------------------------
 
@@ -77,9 +77,25 @@ index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh,
                                                 MPI_Comm comm);
 
 //-------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API delegate(const conduit::Node &mesh,
-                                    conduit::Node &domain,
-                                    MPI_Comm comm);
+///@name blueprint::mpi::mesh::find_delegate_domain(...)
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///   find_delegate_domain(...) uses cross-rank MPI communication to find a
+//    "delegate" domain that can be used to represent the mesh's schema across
+//    all ranks. This function is most useful in cases where all ranks need some
+//    mesh information to bootstrap local data structures, but one or more ranks
+//    have empty mesh definitions.
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API find_delegate_domain(const conduit::Node &mesh,
+                                                conduit::Node &domain,
+                                                MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// blueprint mesh transform methods
+///
+/// These methods can be called on specific verified blueprint mesh.
+//-----------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_points(conduit::Node &mesh,

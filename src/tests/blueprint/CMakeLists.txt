@@ -57,6 +57,7 @@ endif()
 
 set(BLUEPRINT_MPI_TESTS 
     t_blueprint_mpi_smoke
+    t_blueprint_mpi_mesh_query
     t_blueprint_mpi_mesh_transform
     t_blueprint_mpi_mesh_verify)
 
