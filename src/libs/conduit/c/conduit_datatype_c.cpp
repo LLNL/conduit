@@ -13,6 +13,7 @@
 #include "conduit_cpp_to_c.hpp"
 
 #include <stdlib.h>
+#include <string.h>
 
 //-----------------------------------------------------------------------------
 // -- begin extern C
@@ -21,6 +22,52 @@
 extern "C" {
 
 using namespace conduit;
+
+conduit_index_t conduit_datatype_id(const conduit_datatype *cdatatype)
+{
+    return cpp_datatype_ref(cdatatype).id();
+}
+
+char* conduit_datatype_name(const conduit_datatype *cdatatype)
+{
+    auto name = cpp_datatype_ref(cdatatype).name();
+    return strdup(name.c_str());
+}
+
+void conduit_datatype_name_destroy(char *name)
+{
+    free(name);
+}
+
+conduit_index_t conduit_datatype_number_of_elements(const conduit_datatype *cdatatype)
+{
+    return cpp_datatype_ref(cdatatype).number_of_elements();
+}
+
+conduit_index_t conduit_datatype_offset(const conduit_datatype *cdatatype)
+{
+    return cpp_datatype_ref(cdatatype).offset();
+}
+
+conduit_index_t conduit_datatype_stride(const conduit_datatype *cdatatype)
+{
+    return cpp_datatype_ref(cdatatype).stride();
+}
+
+conduit_index_t conduit_datatype_element_bytes(const conduit_datatype *cdatatype)
+{
+    return cpp_datatype_ref(cdatatype).element_bytes();
+}
+
+conduit_index_t conduit_datatype_endianess(const conduit_datatype *cdatatype)
+{
+    return cpp_datatype_ref(cdatatype).endianness();
+}
+
+conduit_index_t conduit_datatype_element_index(const conduit_datatype *cdatatype, conduit_index_t idx)
+{
+    return cpp_datatype_ref(cdatatype).element_index(idx);
+}
 
 int conduit_datatype_is_empty(const conduit_datatype *cdatatype)
 {
