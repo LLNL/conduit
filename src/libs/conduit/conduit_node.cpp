@@ -16317,10 +16317,10 @@ Node::identify_protocol(const std::string &path,
 
 //---------------------------------------------------------------------------//
 void
-Node::walk_schema(Node   *node,
-                  Schema *schema,
-                  void   *data,
-                  int32   allocator_id)
+Node::walk_schema(Node    *node,
+                  Schema  *schema,
+                  void    *data,
+                  index_t allocator_id)
 {
     // we can have an object, list, or leaf
     node->set_data_ptr(data);
@@ -16442,25 +16442,12 @@ Node::compact_elements_to(uint8 *data) const
     {
         // TODO: error ?
         // NOTE: WE RELY ON THIS NOT BEING AN ERROR
-        // FIND OUT WHY!
+        // FIND OUT WHY! (https://github.com/LLNL/conduit/issues/780)
         // CONDUIT_ERROR("Node::compact_elements_to cannot compact "
         //               " Object, List, or Empty Node to array.");
     }
     else
     {
-        // // copy all elements
-        // index_t num_ele   = dtype().number_of_elements();
-        // index_t ele_bytes = DataType::default_bytes(dtype_id);
-        // uint8 *data_ptr = data;
-        // for(index_t i=0;i<num_ele;i++)
-        // {
-        //   utils::conduit_memcpy(data_ptr,
-        //                         element_ptr(i),
-        //                         (size_t)ele_bytes,
-        //                         m_allocator_id);
-        //     data_ptr+=ele_bytes;
-        // }
-
         size_t num_ele    = (size_t) dtype().number_of_elements();
         // dest will be the expected compact rep, in terms of ele byte
         size_t ele_bytes  = (size_t) DataType::default_bytes(dtype_id);

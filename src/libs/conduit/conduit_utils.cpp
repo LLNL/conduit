@@ -144,29 +144,6 @@ static std::map<index_t,void*(*)(size_t, size_t)> allocator_map
 static std::map<index_t,void(*)(void*)> free_map
   = {{0, default_free_handler}};
 
-// //-----------------------------------------------------------------------------
-// static std::map<index_t,void(*)(void*,const void *,size_t)> memcpy_map
-//   = {{0, default_memcpy_handler}};
-//
-// //-----------------------------------------------------------------------------
-// static std::map<index_t,void(*)(void*,int,size_t)> memset_map
-//   = {{0, default_memset_handler}};
-
-// //-----------------------------------------------------------------------------
-// index_t
-// register_memory_handler( void*(*conduit_hnd_allocate) (size_t, size_t),
-//                          void(*conduit_hnd_free)(void *),
-//                          void(*conduit_hnd_copy)(void*,const void *,size_t),
-//                          void(*conduit_hnd_memset)(void*,int,size_t))
-// {
-//   static index_t allocator_id = 1;
-//   allocator_map[allocator_id] = conduit_hnd_allocate;
-//   free_map[allocator_id]      = conduit_hnd_free;
-//   memcpy_map[allocator_id]    = conduit_hnd_copy;
-//   memset_map[allocator_id]    = conduit_hnd_memset;
-//   return allocator_id++;
-// }
-
 //-----------------------------------------------------------------------------
 index_t
 register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),

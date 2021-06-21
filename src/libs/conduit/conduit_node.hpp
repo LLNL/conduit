@@ -4344,7 +4344,7 @@ private:
     static void      walk_schema(Node   *node,
                                  Schema *schema,
                                  void   *data,
-                                 int32 allocator_id);
+                                 index_t allocator_id);
 
     static void      mirror_node(Node *node,
                                  Schema *schema,

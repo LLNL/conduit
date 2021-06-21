@@ -272,7 +272,7 @@ namespace utils
     // manage data movement. 
 
     // this strategy allows downstream users to support complex cases
-    // like moving between memory spaces non accessible on the host. 
+    // like moving between memory spaces not accessible on the host. 
     //
     // These methods aren't bound to allocators b/c allocators
     // won't be tied into all of the places where source and dest pointers
