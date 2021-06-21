@@ -47,9 +47,49 @@ using namespace conduit::relay::io;
 // to make sure we have the correct number of initializers across python
 // versions.
 //-----------------------------------------------------------------------------
-#ifdef Py_TPFLAGS_HAVE_FINALIZE
-#define PyVarObject_TAIL ,0
+
+// helper macros for dealing with deprecated tp_print field in 
+// python 3.8. If you don't define it, you get an un-inited warning
+// if you do define it, you get a deprecated warning :-)
+// we suppress the deprecated warning only in 3.8.
+// 
+
+#if PY_VERSION_HEX >= 0x03080000 && \
+    PY_VERSION_HEX < 0x03090000 && \
+    !defined(CONDUIT_PLATFORM_WINDOWS)
+#define PRAGMA_PUSH_DEP_DECL \
+     _Pragma("GCC diagnostic push") \
+     _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 #else
+#define PRAGMA_PUSH_DEP_DECL
+#endif
+
+#if PY_VERSION_HEX >= 0x03080000 && \
+    PY_VERSION_HEX < 0x03090000 && \
+    !defined(CONDUIT_PLATFORM_WINDOWS)
+#define PRAGMA_POP_DEP_DECL _Pragma("GCC diagnostic pop")
+#else
+#define PRAGMA_POP_DEP_DECL
+#endif
+
+
+#ifdef Py_TPFLAGS_HAVE_FINALIZE
+    // python 3.8 adds tp_vectorcall, at end and special slot for tp_print
+    // python 3.9 removes tp_print special slot
+    #if PY_VERSION_HEX >= 0x03080000
+        #if PY_VERSION_HEX < 0x03090000
+             // python 3.8 tail
+            #define PyVarObject_TAIL ,0, 0, 0 
+        #else
+            // python 3.9 and newer tail
+            #define PyVarObject_TAIL ,0, 0
+        #endif
+    #else
+        // python tail when finalize is part of struct
+        #define PyVarObject_TAIL ,0
+    #endif
+#else
+// python tail when finalize is not part of struct
 #define PyVarObject_TAIL
 #endif
 
@@ -188,7 +228,7 @@ PyRelay_IOHandle_open(PyRelay_IOHandle *self,
                            protocol_str,
                            *opts_ptr);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -222,17 +262,20 @@ PyRelay_IOHandle_read(PyRelay_IOHandle *self,
 
     static const char *kwlist[] = {"node",
                                    "path",
+                                   "options",
                                    NULL};
 
     PyObject *py_node = NULL;
     char     *path    = NULL;
+    PyObject *py_opts = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "O|s",
+                                     "O|sO",
                                      const_cast<char**>(kwlist),
                                      &py_node,
-                                     &path))
+                                     &path,
+                                     &py_opts))
     {
         return NULL;
     }
@@ -245,20 +288,39 @@ PyRelay_IOHandle_read(PyRelay_IOHandle *self,
         return NULL;
     }
 
+    Node opts;
+    Node *opts_ptr = &opts;
+
+    if(py_opts!= NULL)
+    {
+        if(!PyConduit_Node_Check(py_opts))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "IOHandle.read 'options' argument must "
+                                "be a conduit.Node");
+                            return NULL;
+        }
+
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_opts);
+    }
+
     Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_node);
     
     try
     {
         if(path == NULL)
         {
-            self->handle->read(*node_ptr);
+            self->handle->read(*node_ptr,
+                               *opts_ptr);
         }
         else
         {
-            self->handle->read(std::string(path),*node_ptr);
+            self->handle->read(std::string(path),
+                               *node_ptr,
+                               *opts_ptr);
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -277,17 +339,20 @@ PyRelay_IOHandle_write(PyRelay_IOHandle *self,
 
     static const char *kwlist[] = {"node",
                                    "path",
+                                   "options",
                                    NULL};
 
     PyObject *py_node = NULL;
     char     *path    = NULL;
+    PyObject *py_opts = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "O|s",
+                                     "O|sO",
                                      const_cast<char**>(kwlist),
                                      &py_node,
-                                     &path))
+                                     &path,
+                                     &py_opts))
     {
         return NULL;
     }
@@ -300,20 +365,39 @@ PyRelay_IOHandle_write(PyRelay_IOHandle *self,
         return NULL;
     }
 
+    Node opts;
+    Node *opts_ptr = &opts;
+
+    if(py_opts!= NULL)
+    {
+        if(!PyConduit_Node_Check(py_opts))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "IOHandle.write 'options' argument must "
+                                "be a conduit.Node");
+                            return NULL;
+        }
+
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_opts);
+    }
+
     Node *node_ptr = PyConduit_Node_Get_Node_Ptr(py_node);
 
     try
     {
         if(path == NULL)
         {
-            self->handle->write(*node_ptr);
+            self->handle->write(*node_ptr,
+                                *opts_ptr);
         }
         else
         {
-            self->handle->write(*node_ptr,std::string(path));
+            self->handle->write(*node_ptr,
+                                std::string(path),
+                                *opts_ptr);
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -355,7 +439,7 @@ PyRelay_IOHandle_list_child_names(PyRelay_IOHandle *self,
                                            cld_names);
         }
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -402,7 +486,7 @@ PyRelay_IOHandle_has_path(PyRelay_IOHandle *self,
     {
         res = self->handle->has_path(std::string(path));
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -439,7 +523,7 @@ PyRelay_IOHandle_remove(PyRelay_IOHandle *self,
     {
         self->handle->remove(std::string(path));
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -457,7 +541,7 @@ PyRelay_IOHandle_close(PyRelay_IOHandle *self)
     {
         self->handle->close();
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -514,13 +598,18 @@ static PyMethodDef PyRelay_IOHandle_METHODS[] = {
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+
+PRAGMA_PUSH_DEP_DECL
+
 static PyTypeObject PyRelay_IOHandle_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "IOHandle",
    sizeof(PyRelay_IOHandle),  /* tp_basicsize */
    0, /* tp_itemsize */
    (destructor)PyRelay_IOHandle_dealloc,   /* tp_dealloc */
-   0, /* tp_print */
+   // tp_print was removed in Python 3.9, its now used as
+   // tp_vectorcall_offset (which we also don't use here)
+   0, /* tp_print or tp_vectorcall_offset */
    0, /* tp_getattr */
    0, /* tp_setattr */
    0, /* tp_compare */
@@ -559,12 +648,13 @@ static PyTypeObject PyRelay_IOHandle_TYPE = {
    0, /* tp_mro */
    0, /* tp_cache */
    0, /* tp_subclasses */
-   0,  /* tp_weaklist */
-   0,
-   0
+   0, /* tp_weaklist */
+   0, /* tp_del */
+   0  /* tp_version_tag */
    PyVarObject_TAIL
 };
 
+PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 // conduit::relay::io::about
@@ -656,7 +746,7 @@ PyRelay_io_save(PyObject *, //self
                         protocol_str,
                         *opts_ptr);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -741,7 +831,7 @@ PyRelay_io_save_merged(PyObject *, //self
                                protocol_str,
                                *opts_ptr);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -801,7 +891,7 @@ PyRelay_io_load(PyObject *, //self
                         protocol_str,
                         node);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -863,7 +953,7 @@ PyRelay_io_load_merged(PyObject *, //self
                                protocol_str,
                                node);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());

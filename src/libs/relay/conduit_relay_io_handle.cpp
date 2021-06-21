@@ -711,7 +711,6 @@ void
 HDF5Handle::write(const Node &node,
                   const Node &opts)
 {
-    CONDUIT_UNUSED(opts);
     // note: wrong mode errors are handled before dispatch to interface
 
     // Options Push / Pop (only needed for write, since hdf5 only supports
@@ -723,7 +722,7 @@ HDF5Handle::write(const Node &node,
         hdf5_set_options(options()["hdf5"]);
     }
 
-    hdf5_write(node,m_h5_id);
+    hdf5_write(node,m_h5_id, opts);
 
     if(!prev_options.dtype().is_empty())
     {

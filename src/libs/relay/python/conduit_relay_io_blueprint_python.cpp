@@ -34,17 +34,6 @@
 using namespace conduit;
 using namespace conduit::relay::io;
 
-//-----------------------------------------------------------------------------
-// PyVarObject_TAIL is used at the end of each PyVarObject def
-// to make sure we have the correct number of initializers across python
-// versions.
-//-----------------------------------------------------------------------------
-#ifdef Py_TPFLAGS_HAVE_FINALIZE
-#define PyVarObject_TAIL ,0
-#else
-#define PyVarObject_TAIL
-#endif
-
 //---------------------------------------------------------------------------//
 // conduit::relay::io::blueprint::write_mesh
 //---------------------------------------------------------------------------//
@@ -120,7 +109,7 @@ PyRelay_io_blueprint_write_mesh(PyObject *, //self
                                          protocol_str,
                                          *opts_ptr);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());
@@ -195,7 +184,7 @@ PyRelay_io_blueprint_read_mesh(PyObject *, //self
                                         *opts_ptr,
                                         node);
     }
-    catch(conduit::Error e)
+    catch(conduit::Error &e)
     {
         PyErr_SetString(PyExc_IOError,
                         e.message().c_str());

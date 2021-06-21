@@ -222,7 +222,7 @@ public:
                 CONDUIT_INFO("WebSocket received message:" << n.to_json());
                 // TODO: Call recv handler callback.
             }
-            catch(conduit::Error e)
+            catch(conduit::Error &e)
             {
                  CONDUIT_INFO("Error parsing JSON response from browser\n" 
                                << e.message());
@@ -940,7 +940,7 @@ WebServer::serve(bool block)
     {
         m_server = new CivetServer(options);
     }
-    catch(CivetException except)
+    catch(CivetException& except)
     {
         // Catch Civet Exception and use Conduit's error handling mech.
         CONDUIT_ERROR("WebServer failed to bind civet server on " 

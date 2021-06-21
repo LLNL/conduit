@@ -317,6 +317,8 @@ public:
     DataType();
     /// copy constructor
     DataType(const DataType& type);
+    /// Assignment operator
+    DataType& operator=(const DataType& type);
     /// construct simplest dtype for given type id
     explicit DataType(conduit::index_t id,
                       conduit::index_t num_elements=0);

@@ -6,6 +6,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Fixed
+
+#### General
+- Avoid compile issue with using `_Pragma()` with Python 3.8 on Windows
+
+
+## [0.7.2] - Released 2021-05-19
+
 ### Added
 
 #### General
@@ -13,7 +21,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added  `conduit::utils::info_handler()`, `conduit::utils::warning_handler()`, and `conduit::utils::error_handler()`  methods, which provide access to the currently registered info, warning, and error handlers.
 - Added DataType::index_t method. Creates a DataType instance that describes an `index_t`, which is an alias to either `int32`, or `int 64` controlled by the `CONDUIT_INDEX_32` compile time option.
 - Added several more methods to Python DataType interface
-
+- Removed duplicate install of CMake exported target files that served as a bridge for clients using old style paths.
 
 ### Changed
 
@@ -21,6 +29,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Updated to newer version of uberenv and changed to track spack fork https://github.com/alpine-dav/spack (branch: conduit/develop).
 - Updated to newer version of BLT to leverage CMake's FindMPI defined targets when using CMake 3.15 or newer.
 - Changed `rapidjson` namespace to `conduit_rapidjson` to avoid symbol collisions with other libraries using RapidJSON.
+
+#### Blueprint
+- The semantics of `conduit::blueprint::mesh::verify` changed. An empty conduit Node is now considered a valid multi-domain mesh with zero domains. If you always expect mesh data, you can add an additional check for empty to craft code that works for both the old and new verify semantics.
 
 #### Relay
 - Added Relay HDF5 support for reading and writing to an HDF5 dataset with offset.
@@ -32,6 +43,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Fixed missing implementation of DataType::is_index_t
 - Fixed issue with compiling t_h5z_zfp_smoke.cpp against an MPI-enabled HDF5.
+
+#### Blueprint
+- Fixed a bug that caused HDF5 reference paths to appear twice in Relay HDF5 Error messages.
+
+#### Blueprint
+- `conduit::relay::io::blueprint.read_mesh` now uses read only I/O handles.
 
 
 ## [0.7.1] - Released 2021-02-11
