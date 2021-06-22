@@ -71,6 +71,19 @@ conduit_blueprint_mesh_generate_index(const conduit_node *cmesh,
 /// Interface to generate example data
 //-----------------------------------------------------------------------------
 void
+conduit_blueprint_mesh_examples_basic(const char *mesh_type,
+                                      conduit_index_t nx,
+                                      conduit_index_t ny,
+                                      conduit_index_t nz,
+                                      conduit_node *cres)
+{
+    Node &res = cpp_node_ref(cres);
+    blueprint::mesh::examples::basic(std::string(mesh_type),
+                                     nx,ny,nz,
+                                     res);
+}
+
+void
 conduit_blueprint_mesh_examples_braid(const char *mesh_type,
                                       conduit_index_t nx,
                                       conduit_index_t ny,
@@ -81,6 +94,56 @@ conduit_blueprint_mesh_examples_braid(const char *mesh_type,
     blueprint::mesh::examples::braid(std::string(mesh_type),
                                      nx,ny,nz,
                                      res);
+}
+
+void
+conduit_blueprint_mesh_examples_julia(conduit_index_t nx,
+                                      conduit_index_t ny,
+                                      conduit_float64 x_min,
+                                      conduit_float64 x_max,
+                                      conduit_float64 y_min,
+                                      conduit_float64 y_max,
+                                      conduit_float64 c_re,
+                                      conduit_float64 c_im,
+                                      conduit_node *cres)
+{
+    Node &res = cpp_node_ref(cres);
+    blueprint::mesh::examples::julia(nx,ny,
+                                     x_min,x_max,
+                                     y_min,y_max,
+                                     c_re,c_im,
+                                     res);
+}
+
+void
+conduit_blueprint_mesh_examples_spiral(conduit_index_t ndomains,
+                                       conduit_node *cres)
+{
+    Node &res = cpp_node_ref(cres);
+    blueprint::mesh::examples::spiral(ndomains,
+                                      res);
+}
+
+void
+conduit_blueprint_mesh_examples_polytess(conduit_index_t nlevels,
+                                         conduit_node *cres)
+{
+    Node &res = cpp_node_ref(cres);
+    blueprint::mesh::examples::polytess(nlevels,
+                                        res);
+}
+
+void
+conduit_blueprint_mesh_examples_misc(const char *mesh_type,
+                                     conduit_index_t nx,
+                                     conduit_index_t ny,
+                                     conduit_index_t nz,
+                                     conduit_node *cres)
+{
+    Node &res = cpp_node_ref(cres);
+    blueprint::mesh::examples::misc(std::string(mesh_type),
+                                    nx,ny,nz,
+                                    res);
 }
 
 
