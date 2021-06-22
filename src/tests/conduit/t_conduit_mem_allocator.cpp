@@ -142,3 +142,112 @@ TEST(conduit_memory_allocator, test_custom_allocator)
         EXPECT_EQ(p_n["allocator_id"].to_int64(),0);
     }
 }
+
+
+struct StrangeAllocator
+{
+    static void * strange_alloc(size_t items, size_t item_size)
+    {
+        std::cout<<"Strange allocate\n";
+        return calloc(items, item_size);
+    }
+
+    static void strange_free(void *data_ptr)
+    {
+        std::cout<<"strange free \n";
+        free(data_ptr);
+    }
+
+    static void strange_memset(void * ptr, int value, size_t num )
+    {
+        // init with -1 bytes
+        std::cout<<"strange set\n";
+        memset(ptr,-1,num);
+    }
+
+    static void strange_copy(void * destination, const void * source, size_t num)
+    {
+        std::cout<<"strange copy\n";
+        conduit::uint8 *des_ptr = (conduit::uint8*)destination;
+        for(int i=0;i<num;i++)
+        {
+            des_ptr[i] = (conduit::uint8) (i%2 ? 0:1);
+        }
+    }
+
+};
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_memory_allocator, test_strange)
+{
+    conduit::utils::set_memcpy_handler(StrangeAllocator::strange_copy);
+    conduit::utils::set_memset_handler(StrangeAllocator::strange_memset);
+
+    int allocator_id
+     = conduit::utils::register_allocator(StrangeAllocator::strange_alloc,
+                                          StrangeAllocator::strange_free);
+
+
+    conduit::Node n1, n2;
+    n1.set_allocator(allocator_id);
+    n1.set(conduit::DataType::uint8(3));
+    n1.print();
+
+    std::cout << "set" << std::endl;
+    n2.set(n1);
+    n2.print();
+
+    conduit::uint8_array n2_ptr = n2.value();
+    EXPECT_EQ(n2_ptr[0],1);
+    EXPECT_EQ(n2_ptr[1],0);
+    EXPECT_EQ(n2_ptr[2],1);
+
+    std::cout << "update (blank dest)" << std::endl;
+    n2.reset();
+    // update incompat case
+    n2.update(n1);
+    n2.print();
+    conduit::uint8_array n2_vals = n2.value();
+
+    EXPECT_EQ(n2_vals[0],1);
+    EXPECT_EQ(n2_vals[1],0);
+    EXPECT_EQ(n2_vals[2],1);
+
+    std::cout << "update (compat dest)" << std::endl;
+    n2.reset();
+    // trigger update case we want to test (compat update)
+    n2.set(conduit::DataType::uint8(3));
+    n2.update(n1);
+    n2.print();
+    n2_vals = n2.value();
+
+    EXPECT_EQ(n2_vals[0],1);
+    EXPECT_EQ(n2_vals[1],0);
+    EXPECT_EQ(n2_vals[2],1);
+
+
+    std::cout << "update_compatible (compat dest)" << std::endl;
+    n2.reset();
+    // trigger update case we want to test (compat update)
+    n2.set(conduit::DataType::uint8(3));
+    n2.update_compatible(n1);
+    n2.print();
+    n2_vals = n2.value();
+
+    EXPECT_EQ(n2_vals[0],1);
+    EXPECT_EQ(n2_vals[1],0);
+    EXPECT_EQ(n2_vals[2],1);
+
+    n2.reset();
+    n2.set(conduit::DataType::uint8(3));
+
+    conduit::uint8 buff[3] = {0,0,0};
+    n2_vals = n2.value();
+
+    n2_vals.compact_elements_to(buff);
+
+    EXPECT_EQ(buff[0],1);
+    EXPECT_EQ(buff[1],0);
+    EXPECT_EQ(buff[2],1);
+}

@@ -269,10 +269,10 @@ namespace utils
 //-----------------------------------------------------------------------------
 
     // conduit uses a single pair of memset and memcpy functions to
-    // manage data movement. 
+    // manage data movement.
 
     // this strategy allows downstream users to support complex cases
-    // like moving between memory spaces not accessible on the host. 
+    // like moving between memory spaces not accessible on the host.
     //
     // These methods aren't bound to allocators b/c allocators
     // won't be tied into all of the places where source and dest pointers
@@ -294,8 +294,8 @@ namespace utils
                                             size_t num);
 
     // general memcpy interface used by conduit 
-    void CONDUIT_API conduit_memcpy(void * destination,
-                                    const void * source,
+    void CONDUIT_API conduit_memcpy(void *destination,
+                                    const void *source,
                                     size_t num);
 
     void CONDUIT_API conduit_memcpy_strided_elements(void *dest,
@@ -305,10 +305,10 @@ namespace utils
                                                      const void *src,
                                                      size_t src_stride);
 
-    // general memset interface used by conduit 
-    // I note that the default memset returns the orig pointer, but
-    // other allocators like cuda do not
-    // CYRUS TODO: GIVEN THIS DO WE NEED TO PASS AN ALLOC_ID?
+    // general memset interface used by conduit
+    // NOTE (cyrush): The default memset returns the orig pointer, but
+    // other allocators like cuda do not.
+    //    TODO: GIVEN THIS DO WE NEED TO PASS AN ALLOC_ID?
     void CONDUIT_API conduit_memset(void * ptr,
                                     int value,
                                     size_t num);

@@ -8564,14 +8564,19 @@ Node::update(const Node &n_src)
                  (this->dtype().number_of_elements() >=
                    n_src.dtype().number_of_elements()))
         {
-            for(index_t idx = 0;
-                idx < n_src.dtype().number_of_elements();
-                idx++)
-            {
-                memcpy(element_ptr(idx),
-                       n_src.element_ptr(idx),
-                       (size_t)this->dtype().element_bytes());
-            }
+            size_t ele_bytes  = (size_t) dtype().element_bytes();
+            size_t stride     = (size_t) dtype().stride();
+            size_t num_ele    = (size_t) n_src.dtype().number_of_elements();
+            size_t src_stride = (size_t) n_src.dtype().stride();
+            //
+            // Note: conduit_memcpy_strided_elements will use a single
+            // memcpy when src and dest are compactly  strided
+            utils::conduit_memcpy_strided_elements(element_ptr(0),       // dest ptr
+                                                   num_ele,              // num ele
+                                                   ele_bytes,            // dest bytes per ele
+                                                   stride,               // dest stride
+                                                   n_src.element_ptr(0), // src ptr
+                                                   src_stride);          // src stride
         }
         else // not compatible
         {
@@ -8628,14 +8633,19 @@ Node::update_compatible(const Node &n_src)
                  (this->dtype().number_of_elements() >=
                    n_src.dtype().number_of_elements()))
         {
-            for(index_t idx = 0;
-                idx < n_src.dtype().number_of_elements();
-                idx++)
-            {
-                memcpy(element_ptr(idx),
-                       n_src.element_ptr(idx),
-                       (size_t)this->dtype().element_bytes());
-            }
+            size_t ele_bytes  = (size_t) dtype().element_bytes();
+            size_t stride     = (size_t) dtype().stride();
+            size_t num_ele    = (size_t) n_src.dtype().number_of_elements();
+            size_t src_stride = (size_t) n_src.dtype().stride();
+            //
+            // Note: conduit_memcpy_strided_elements will use a single
+            // memcpy when src and dest are compactly  strided
+            utils::conduit_memcpy_strided_elements(element_ptr(0),       // dest ptr
+                                                   num_ele,              // num ele
+                                                   ele_bytes,            // dest bytes per ele
+                                                   stride,               // dest stride
+                                                   n_src.element_ptr(0), // src ptr
+                                                   src_stride);          // src stride
         }
     }
 }
@@ -12990,7 +13000,7 @@ Node::to_base64_json(std::ostream &os,
     // and on the host, so we can use it directly in utils::base64_encode
     const char *src_ptr = (const char*)n.data_ptr();
     char *dest_ptr       = (char*)bb64_data.data_ptr();
-    memset(dest_ptr,0,(size_t)enc_buff_size);
+    utils::conduit_memset(dest_ptr,0,(size_t)enc_buff_size);
 
     utils::base64_encode(src_ptr,nbytes,dest_ptr);
 
