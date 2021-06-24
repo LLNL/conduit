@@ -10,6 +10,7 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
@@ -20,6 +21,7 @@
 
 using namespace conduit;
 using namespace conduit::utils;
+namespace bputils = conduit::blueprint::mesh::utils;
 
 /// Testing Constants ///
 
@@ -33,32 +35,9 @@ std::vector<std::string> get_log_keywords()
     return log_node.child_names();
 }
 
-std::vector<std::string> create_coordsys(const std::string& d1,
-                                         const std::string& d2,
-                                         const std::string& d3="")
-{
-    std::vector<std::string> dim_vector;
-
-    dim_vector.push_back(d1);
-    dim_vector.push_back(d2);
-
-    if(d3 != "")
-    {
-        dim_vector.push_back(d3);
-    }
-
-    return dim_vector;
-}
-
 const std::vector<std::string> LOG_KEYWORDS = get_log_keywords();
-
-const std::vector<std::string> LOGICAL_COORDSYS = create_coordsys("i","j","k");
-const std::vector<std::string> CARTESIAN_COORDSYS = create_coordsys("x","y","z");
-const std::vector<std::string> SPHERICAL_COORDSYS = create_coordsys("r","theta","phi");
-const std::vector<std::string> CYLINDRICAL_COORDSYS = create_coordsys("r","z");
-
 const std::vector<std::string> COORDINATE_COORDSYSS[] =
-    {CARTESIAN_COORDSYS, CYLINDRICAL_COORDSYS, SPHERICAL_COORDSYS};
+    {bputils::CARTESIAN_AXES, bputils::CYLINDRICAL_AXES, bputils::SPHERICAL_AXES};
 
 typedef bool (*VerifyFun)(const Node&, Node&);
 
@@ -95,6 +74,26 @@ bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
     }
 
     return is_valid;
+}
+
+
+bool has_empty_warning(const Node &info)
+{
+    bool res = false;
+
+    if((info.dtype().is_object() && info.has_child("info")) &&
+       (info["info"].dtype().is_object() || info["info"].dtype().is_list()))
+    {
+        NodeConstIterator iitr = info["info"].children();
+        while(iitr.has_next())
+        {
+            const Node &ichld = iitr.next();
+            res |= ichld.dtype().is_char8_str() &&
+                   ichld.to_string().find("is an empty mesh", 0) != std::string::npos;
+        }
+    }
+
+    return res;
 }
 
 
@@ -249,9 +248,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_logical_dims)
     Node n, info;
     CHECK_MESH(verify_coordset_logical,n,info,false);
 
-    EXPECT_TRUE(is_valid_coordsys(verify_coordset_logical,LOGICAL_COORDSYS));
+    EXPECT_TRUE(is_valid_coordsys(verify_coordset_logical,bputils::LOGICAL_AXES));
 
-    EXPECT_FALSE(is_valid_coordsys(verify_coordset_logical,CARTESIAN_COORDSYS));
+    EXPECT_FALSE(is_valid_coordsys(verify_coordset_logical,bputils::CARTESIAN_AXES));
 }
 
 
@@ -264,11 +263,11 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_origin)
     // FIXME: The origin verification function shouldn't accept an empty node.
     // CHECK_MESH(verify_uniform_origin,n,info,false);
 
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,CARTESIAN_COORDSYS));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,SPHERICAL_COORDSYS));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,CYLINDRICAL_COORDSYS));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::CARTESIAN_AXES));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::SPHERICAL_AXES));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_origin,bputils::CYLINDRICAL_AXES));
 
-    EXPECT_FALSE(is_valid_coordsys(verify_uniform_origin,LOGICAL_COORDSYS));
+    EXPECT_FALSE(is_valid_coordsys(verify_uniform_origin,bputils::LOGICAL_AXES));
 }
 
 
@@ -281,11 +280,11 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_spacing)
     // FIXME: The spacing verification function shouldn't accept an empty node.
     // CHECK_MESH(verify_uniform_spacing,n,info,false);
 
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("dx","dy","dz")));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("dr","dtheta","dphi")));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("dr","dz")));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dx","dy","dz"}));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dr","dtheta","dphi"}));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dr","dz"}));
 
-    EXPECT_FALSE(is_valid_coordsys(verify_uniform_spacing,create_coordsys("di","dj","dk")));
+    EXPECT_FALSE(is_valid_coordsys(verify_uniform_spacing,{"di","dj","dk"}));
 }
 
 
@@ -389,9 +388,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_rectilinear)
     // for the rectilinear verify function.
     /*
     n["values"].reset();
-    for(index_t ci = 0; ci < LOGICAL_COORDSYS.size(); ci++)
+    for(index_t ci = 0; ci < bputils::LOGICAL_AXES.size(); ci++)
     {
-        n["values"][LOGICAL_COORDSYS[ci]].set(DataType::float64(10));
+        n["values"][bputils::LOGICAL_AXES[ci]].set(DataType::float64(10));
         CHECK_MESH(verify_rectilinear_coordset,n,info,false);
     }
     */
@@ -431,9 +430,9 @@ TEST(conduit_blueprint_mesh_verify, coordset_explicit)
     // for the explicit verify function.
     /*
     n["values"].reset();
-    for(index_t ci = 0; ci < LOGICAL_COORDSYS.size(); ci++)
+    for(index_t ci = 0; ci < bputils::LOGICAL_AXES.size(); ci++)
     {
-        n["values"][LOGICAL_COORDSYS[ci]].set(DataType::float64(10));
+        n["values"][bputils::LOGICAL_AXES[ci]].set(DataType::float64(10));
         CHECK_MESH(verify_explicit_coordset,n,info,false);
     }
     */
@@ -2401,13 +2400,17 @@ TEST(conduit_blueprint_mesh_verify, index_general)
 TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
 {
     Node mesh, info;
-    // is_multi_domain can only be called if mesh verify is true
-    EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
-                  blueprint::mesh::is_multi_domain(mesh));
+    EXPECT_TRUE(blueprint::mesh::verify(mesh,info) &&
+                blueprint::mesh::is_multi_domain(mesh));
+    EXPECT_TRUE(has_empty_warning(info));
 
     Node domains[2];
     blueprint::mesh::examples::braid("quads",10,10,1,domains[0]);
     blueprint::mesh::to_multi_domain(domains[0],mesh);
+    EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
+
+    blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
+    mesh.append().set_external(domains[1]);
     EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
     { // Redundant "to_multi_domain" Tests //
@@ -2415,10 +2418,6 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
         blueprint::mesh::to_multi_domain(mesh,temp);
         EXPECT_TRUE(blueprint::mesh::is_multi_domain(temp));
     }
-
-    blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
-    mesh.append().set_external(domains[1]);
-    EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
     for(index_t di = 0; di < 2; di++)
     {
@@ -2428,8 +2427,8 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
         // is_multi_domain can only be called if mesh verify is true
         Node coordsets = domain["coordsets"];
         domain.remove("coordsets");
-        EXPECT_FALSE( blueprint::mesh::verify(mesh,info) && 
-                      blueprint::mesh::is_multi_domain(mesh));
+        EXPECT_FALSE(blueprint::mesh::verify(mesh,info) &&
+                     blueprint::mesh::is_multi_domain(mesh));
 
         domain["coordsets"].reset();
         domain["coordsets"].set(coordsets);
@@ -2451,7 +2450,8 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         VerifyFun verify_mesh = verify_mesh_funs[fi];
 
         Node mesh, mesh_data, info;
-        CHECK_MESH(verify_mesh,mesh,info,false);
+        CHECK_MESH(verify_mesh,mesh,info,true);
+        EXPECT_TRUE(has_empty_warning(info));
 
         blueprint::mesh::examples::braid("quads",10,10,1,mesh_data);
 
@@ -2469,6 +2469,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         Node& domain = *domain_ptr;
 
         CHECK_MESH(verify_mesh,mesh,info,true);
+        EXPECT_FALSE(has_empty_warning(info));
         // info.print();
 
         { // Coordsets Field Tests //

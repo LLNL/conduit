@@ -228,6 +228,23 @@ message(STATUS "HDF5 Libraries:    ${HDF5_LIBRARIES}")
 message(STATUS "HDF5 Definitions:  ${HDF5_DEFINITIONS}")
 message(STATUS "HDF5 is parallel:  ${HDF5_IS_PARALLEL}")
 
+
+# if hdf5 was built with mpi support, we have to propgate
+# that regardless of conduit's use of MPI
+
+if(HDF5_IS_PARALLEL)
+    if(NOT MPI_FOUND)
+         MESSAGE(FATAL_ERROR "Cannot link non-mpi aware conduit (MPI_FOUND == FALSE) "
+                             "against HDF5 built with MPI support (HDF5_IS_PARALLEL == TRUE). "
+                             "Please enable conduit's MPI support (ENABLE_MPI == ON, etc) or "
+                             "build against a non-mpi HDF5 library.")
+    endif()
+endif()
+
+#############
+# Note: MPI libraries and include dirs are not propgated for the config.mk case
+#############
+
 message(STATUS "HDF5 Thirdparty Include Flags: ${hdf5_tpl_inc_flags}")
 message(STATUS "HDF5 Thirdparty Link Flags: ${hdf5_tpl_lnk_flags}")
 
@@ -242,6 +259,9 @@ elseif(WIN32 AND TARGET hdf5::hdf5-static )
     message(STATUS "HDF5 using hdf5::hdf5-static target")
     blt_register_library(NAME hdf5
                          LIBRARIES hdf5::hdf5-static)
+elseif(TARGET hdf5)
+    # legacy hdf5 CMake build system support creates an hdf5 target we use directly
+    message(STATUS "HDF5 using hdf5 target")
 else()
     # reg includes and libs with blt
     message(STATUS "HDF5 using HDF5_DEFINITIONS + HDF5_INCLUDE_DIRS + HDF5_LIBRARIES")

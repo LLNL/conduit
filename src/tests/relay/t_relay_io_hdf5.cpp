@@ -1873,3 +1873,57 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
 
     EXPECT_FALSE(n.diff(n_load,n_diff_info));
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, test_ref_path_error_msg)
+{
+    // check that ref  path only appears in the error message string once
+
+    Node n_about;
+    io::about(n_about);
+
+    // skip test if hdf5 isn't enabled
+    if(n_about["protocols/hdf5"].as_string() != "enabled")
+        return;
+
+    std::string tfile_out = "tout_hdf5_io_for_ref_path_error_msg.hdf5";
+    // remove files if they already exist
+    utils::remove_path_if_exists(tfile_out);
+
+    Node n, n_read, n_check, opts, info;
+    n["my/path/to/some/data"]= { 0,1,2,3,4,5,6,7,8,9};
+
+    io::save(n,tfile_out, "hdf5");
+
+    // bad offset
+    opts.reset();
+    opts["offset"] = 1000;
+
+    try
+    {
+        io::load(tfile_out,"hdf5",opts,n_read);
+    }
+    catch(conduit::Error &e)
+    {
+        std::string msg = e.message();
+        std::cout << "error message:" 
+                  <<  msg << std::endl;
+        int count = 0;
+        
+        std::string::size_type pos = 0;
+        std::string path = "my/path/to/some/data";
+
+        while ((pos = msg.find(path, pos )) != std::string::npos)
+        {
+            count++;
+            pos += path.length();
+        }
+
+        std::cout << "# of occurrences of path: " << count << std::endl;
+
+        // the path should only appear in the error message string once
+        EXPECT_EQ(count,1);
+    }
+
+}
+

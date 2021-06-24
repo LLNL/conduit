@@ -26,7 +26,7 @@ Properties and Transforms
 
  * **conduit::blueprint::mcarray::is_interleaved(const Node &mcarray)** 
    
-     Checks if an mcarray has an interleaved memory layout for tuple components (eg: struct of arrays style) 
+     Checks if an mcarray has an interleaved memory layout for tuple components (eg: array of structs style) 
 
      * Example: {x0, y0, z0, x1, y1, z1, ... , xN, yN, zN}
 
@@ -63,8 +63,8 @@ Here is a list of valid strings for the *mcarray_type* argument:
 | interleaved       | One allocation, using interleaved memory layout          |
 |                   | with float64 components (array of structs style)         |
 +-------------------+----------------------------------------------------------+
-| separate          | Three allocations, separe float64 components arrays for  |
-|                   | {x,y,z}                                                  |
+| separate          | Three allocations, separate float64 components arrays    |
+|                   | for {x,y,z}                                              |
 +-------------------+----------------------------------------------------------+
 | contiguous        | One allocation, using a contiguous memory layout with    |
 |                   | float64 components (struct of arrays style)              |

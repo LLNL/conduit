@@ -38,17 +38,17 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_HDF5_ERROR( ref_path, msg )                               \
 {                                                                         \
-    CONDUIT_ERROR( "HDF5 Error (reference path: \"" << ref_path           \
-                    << ref_path << "\") " <<  msg);                       \
+    CONDUIT_ERROR( "HDF5 Error (reference path: \"" << ref_path << "\") " \
+                    <<  msg);                                             \
 }
 
 //-----------------------------------------------------------------------------
 /// The CONDUIT_HDF5_WARN macro is used for warnings with ref paths.
 //-----------------------------------------------------------------------------
-#define CONDUIT_HDF5_WARN( ref_path, msg )                                \
-{                                                                         \
-    CONDUIT_WARN( "HDF5 Warning (reference path: \"" << ref_path          \
-                  << ref_path << "\") " <<  msg);                         \
+#define CONDUIT_HDF5_WARN( ref_path, msg )                                 \
+{                                                                          \
+    CONDUIT_WARN( "HDF5 Warning (reference path: \"" << ref_path << "\") " \
+                    <<  msg);                                              \
 }
 
 //-----------------------------------------------------------------------------
@@ -1887,7 +1887,7 @@ setup_hdf5_group_atts_for_conduit_node(const Node &node,
 
     if( has_list_attr && node.dtype().is_object() )
     {
-        std::cout << " remove_conduit_hdf5_list_attribute " << std::endl;
+        // std::cout << " remove_conduit_hdf5_list_attribute " << std::endl;
         remove_conduit_hdf5_list_attribute(hdf5_group_id,
                                            ref_path);
     }
@@ -2348,9 +2348,12 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
                                            << " parent: " << hdf5_id
                                            << " path:"    << hdf5_path) ;
 
-    std::string chld_ref_path = h5_od->ref_path  +
-                                std::string("/") +
-                                std::string(hdf5_path);
+    std::string chld_ref_path = h5_od->ref_path;
+    if(chld_ref_path != std::string("/"))
+    {
+        chld_ref_path += std::string("/");
+    }
+    chld_ref_path += std::string(hdf5_path);
 
     switch (h5_info_buf.type)
     {
@@ -2617,11 +2620,17 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
 
         if (offset < 0)
         {
-            CONDUIT_ERROR("Offset must be non-negative.");
+            CONDUIT_HDF5_ERROR(ref_path,
+                               "Error reading HDF5 Dataset with options:"
+                               << opts.to_yaml() <<
+                               "`offset` must be non-negative.");
         }
         else if (stride < 1)
         {
-            CONDUIT_ERROR("Stride must be greater than zero.");
+            CONDUIT_HDF5_ERROR(ref_path,
+                               "Error reading HDF5 Dataset with options:"
+                               << opts.to_yaml() <<
+                               "`stride` must be greater than zero.");
         }
 
         // get the number of elements in the dataset given the offset and stride
@@ -2637,7 +2646,10 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             nelems_to_read = opts["size"].to_value();
             if (nelems_to_read < 1)
             {
-                CONDUIT_ERROR("Size must be greater than zero.");
+                CONDUIT_HDF5_ERROR(ref_path,
+                                   "Error reading HDF5 Dataset with options:"
+                                   << opts.to_yaml() <<
+                                   "`size` must be greater than zero.");
             }
         }
 
@@ -2724,7 +2736,11 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             else if( dt.number_of_elements() < 0 )
             {
                 CONDUIT_HDF5_ERROR(ref_path,
-                                    "Cannot read dataset with # of elements < 0");
+                                   "Error reading HDF5 Dataset with options:"
+                                   << opts.to_yaml() 
+                                   << "Cannot read using offset (" << offset << ")"
+                                   << " greater than the number of entries in"
+                                   << " the HDF5 dataset (" << nelems << ")");
             }
             else if(dest.dtype().is_compact() &&
                dest.dtype().compatible(dt) )
@@ -2761,11 +2777,26 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             H5Dclose(dataspace);
         }
 
-        CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                                                        hdf5_dset_id,
-                                                        ref_path,
-                                               "Error reading HDF5 Dataset: "
-                                                << hdf5_dset_id);
+        if(opts.dtype().is_empty())
+        {
+            CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
+                                                            hdf5_dset_id,
+                                                            ref_path,
+                                                            "Error reading HDF5 Dataset: "
+                                                                << hdf5_dset_id);
+        }
+        else
+        {
+            CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
+                                                            hdf5_dset_id,
+                                                            ref_path,
+                                                            "Error reading HDF5 Dataset: "
+                                                            << hdf5_dset_id
+                                                            << " with options: "
+                                                            << opts.to_yaml()
+                                                            << "HDF5 dataset size: "
+                                                            << nelems);
+        }
 
         CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(H5Tclose(h5_dtype_id),
                                                         hdf5_dset_id,
@@ -3344,7 +3375,7 @@ hdf5_open_file_for_read(const std::string &file_path)
                                h5_fa_plist);
 
     CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
-                             "Error opening HDF5 file for reading: "
+                             "Error opening HDF5 file for read only access: "
                               << file_path);
 
     CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),
@@ -3371,7 +3402,7 @@ hdf5_open_file_for_read_write(const std::string &file_path)
                                h5_fa_plist);
 
     CONDUIT_CHECK_HDF5_ERROR(h5_file_id,
-                             "Error opening HDF5 file for reading: "
+                             "Error opening HDF5 file for read + write access: "
                               << file_path);
 
     CONDUIT_CHECK_HDF5_ERROR(H5Pclose(h5_fa_plist),

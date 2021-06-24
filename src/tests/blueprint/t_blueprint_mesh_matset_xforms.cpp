@@ -22,7 +22,7 @@ using namespace conduit;
 /// Test Cases ///
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_util_mesh, mesh_util_to_silo_basic)
+TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_to_silo_basic)
 {
     Node mesh;
     {
@@ -69,7 +69,7 @@ TEST(conduit_blueprint_util_mesh, mesh_util_to_silo_basic)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo)
+TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_venn_to_silo)
 {
     const int nx = 4, ny = 4;
     const double radius = 0.25;
@@ -128,7 +128,7 @@ TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_util_mesh, mesh_util_venn_to_silo_matset_values)
+TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_venn_to_silo_matset_values)
 {
     const int nx = 4, ny = 4;
     const double radius = 0.25;

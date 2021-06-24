@@ -20,89 +20,15 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mesh.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 
-// FIXME(JRC): The helper functions below are hackily copied over from
-// 'conduit_blueprint_mesh.cpp'; these helpers should ultimately be abstracted
-// into an internal module and shared.
-
 using namespace conduit;
+// access conduit blueprint mesh utilities
+namespace bputils = conduit::blueprint::mesh::utils;
+// access one-to-many index types
 namespace O2MIndex = conduit::blueprint::o2mrelation;
-
-//-----------------------------------------------------------------------------
-namespace conduit { namespace blueprint { namespace mesh {
-//-----------------------------------------------------------------------------
-    static const DataType default_int_dtype(DataType::INT32_ID, 1);
-    static const DataType default_uint_dtype(DataType::UINT32_ID, 1);
-    static const DataType default_float_dtype(DataType::FLOAT64_ID, 1);
-
-    static const DataType default_int_dtype_list[2] = {default_int_dtype, default_uint_dtype};
-    static const std::vector<DataType> default_int_dtypes(default_int_dtype_list,
-        default_int_dtype_list + sizeof(default_int_dtype_list) / sizeof(default_int_dtype_list[0]));
-
-    static const DataType default_number_dtype_list[3] = {default_float_dtype,
-        default_int_dtype, default_uint_dtype};
-    static const std::vector<DataType> default_number_dtypes(default_number_dtype_list,
-        default_number_dtype_list + sizeof(default_number_dtype_list) /
-        sizeof(default_number_dtype_list[0]));
-} } }
-
-//-----------------------------------------------------------------------------
-// -- begin internal helpers --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-DataType find_widest_dtype2(const Node &node,
-                            const std::vector<DataType> &default_dtypes)
-{
-    DataType widest_dtype(default_dtypes[0].id(), 0, 0, 0, 0, default_dtypes[0].endianness());
-
-    std::vector<const Node*> node_bag(1, &node);
-    while(!node_bag.empty())
-    {
-        const Node *curr_node = node_bag.back(); node_bag.pop_back();
-        const DataType curr_dtype = curr_node->dtype();
-        if( curr_dtype.is_list() || curr_dtype.is_object() )
-        {
-            NodeConstIterator curr_node_it = curr_node->children();
-            while(curr_node_it.has_next())
-            {
-                node_bag.push_back(&curr_node_it.next());
-            }
-        }
-        else
-        {
-            for(index_t ti = 0; ti < (index_t)default_dtypes.size(); ti++)
-            {
-                const DataType &valid_dtype = default_dtypes[ti];
-                bool is_valid_dtype =
-                    (curr_dtype.is_floating_point() && valid_dtype.is_floating_point()) ||
-                    (curr_dtype.is_signed_integer() && valid_dtype.is_signed_integer()) ||
-                    (curr_dtype.is_unsigned_integer() && valid_dtype.is_unsigned_integer()) ||
-                    (curr_dtype.is_string() && valid_dtype.is_string());
-                if(is_valid_dtype && (widest_dtype.element_bytes() < curr_dtype.element_bytes()))
-                {
-                    widest_dtype.set(DataType(curr_dtype.id(), 1));
-                }
-            }
-        }
-    }
-
-    bool no_type_found = widest_dtype.element_bytes() == 0;
-    return no_type_found ? default_dtypes[0] : widest_dtype;
-}
-
-//-----------------------------------------------------------------------------
-DataType find_widest_dtype2(const Node &node,
-                            const DataType &default_dtype)
-{
-    return find_widest_dtype2(node, std::vector<DataType>(1, default_dtype));
-}
-
-//-----------------------------------------------------------------------------
-// -- end internal helpers --
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -154,10 +80,8 @@ to_silo(const conduit::Node &field,
         const float64 epsilon)
 {
     Node temp, data;
-    const DataType int_dtype = find_widest_dtype2(matset,
-                                            blueprint::mesh::default_int_dtypes);
-    const DataType float_dtype = find_widest_dtype2(matset,
-                                            blueprint::mesh::default_float_dtype);
+    const DataType int_dtype = bputils::find_widest_dtype(matset, bputils::DEFAULT_INT_DTYPES);
+    const DataType float_dtype = bputils::find_widest_dtype(matset, bputils::DEFAULT_FLOAT_DTYPE);
     // if matset_values is not empty, we will
     // apply the same xform to it as we do to the volume fractions.
     const bool xform_matset_values = field.has_child("matset_values");
@@ -172,7 +96,7 @@ to_silo(const conduit::Node &field,
     // setup the material map, which provides a map from material names
     // to to material numbers
     Node matset_mat_map;
-    
+
     // mset_is_unibuffer will always have the material_map, other cases
     // it is optional. If not given, the map from material names to ids
     // is implied by the order the materials are presented in the matset node
@@ -194,7 +118,7 @@ to_silo(const conduit::Node &field,
             temp.to_data_type(int_dtype.id(), matset_mat_map[curr_mat_name]);
         }
     }
-    
+
     const Node mset_mat_map(matset_mat_map);
 
     // find the number of elements in the matset
@@ -261,7 +185,7 @@ to_silo(const conduit::Node &field,
         while(mat_iter.has_next(O2MIndex::DATA))
         {
             const index_t elem_ind_index = mat_iter.next(O2MIndex::ONE);
-            
+
             // -- get element id -- //
             // this is either "elem_ind_index" from the o2m, or
             // this index applied to the material-to-elements map
@@ -286,7 +210,7 @@ to_silo(const conduit::Node &field,
                 //  vol frac
                 //  matset value
                 //  material id
-                
+
                 // get the vf and convert it to a float64
                 temp.set_external(
                     DataType(mat_vfs.dtype().id(), 1),
@@ -386,7 +310,7 @@ to_silo(const conduit::Node &field,
                         (void*)mat_eids.element_ptr(mat_index));
                 }
                 const index_t mat_elem = mset_is_matdom ? temp.to_index_t() : mat_index;
-                
+
                 // we now have both the element and material index.
 
                 // if this elem has a non-zero (or non-trivial) volume fraction for this
@@ -429,8 +353,8 @@ to_silo(const conduit::Node &field,
                     mat_eids.set_external(matset["element_ids"][mat_name]);
                 }
 
-            // this is a multi-buffer case, make sure we are pointing
-            // to the correct values for this pass
+                // this is a multi-buffer case, make sure we are pointing
+                // to the correct values for this pass
                 Node matset_values_data;
                 {
                     const std::string path =
@@ -586,14 +510,14 @@ to_silo(const conduit::Node &matset,
         const float64 epsilon)
 {
     // extra seat belt here b/c we want to avoid folks entering
-    // the detail version of to_silo with surprising results. 
+    // the detail version of to_silo with surprising results.
 
     if(!matset.dtype().is_object() )
     {
         CONDUIT_ERROR("blueprint::mesh::matset::to_silo passed matset node"
                       " must be a valid matset tree.");
     }
-    
+
     conduit::Node field;
 
     detail::to_silo(field,

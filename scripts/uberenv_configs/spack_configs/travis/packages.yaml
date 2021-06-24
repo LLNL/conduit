@@ -1,0 +1,64 @@
+packages:
+  all:
+    compiler: [gcc]
+    providers:
+      blas: [netlib-lapack]
+      lapack: [netlib-lapack]
+      uuid: [util-linux-uuid, libuuid]
+  netlib-lapack:
+    buildable: false
+    externals:
+    - prefix: /usr/
+      spec: netlib-lapack
+  openmpi:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: openmpi
+  gdbm:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: gdbm
+  bzip2:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: bzip2
+  readline:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: readline
+  sqlite:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: sqlite
+  ncurses:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: ncurses
+  pkg-confg:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: pkg-confg
+  openssl:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: openssl
+  tar:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: tar
+  conduit:
+    version: [develop]
+  # python 2 constraints
+  py-sphinx:
+    version: [1.8.4]
+  py-numpy:
+    version: [1.16.5]

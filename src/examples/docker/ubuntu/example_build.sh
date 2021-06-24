@@ -14,6 +14,7 @@ cd ../../../../ && python package.py src/examples/docker/ubuntu/conduit.docker.s
 echo "cd src/examples/docker/ubuntu/"
 cd src/examples/docker/ubuntu/
 
+
 # exec docker build to create image
 echo "docker build -t conduit-ubuntu:current ."
 docker build -t conduit-ubuntu:current .

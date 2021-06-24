@@ -91,6 +91,7 @@ spiral_round_robin(conduit::index_t ndomains,
                    MPI_Comm comm)
 {
     res.reset();
+    res.set(DataType::list());
 
     int par_rank = relay::mpi::rank(comm);
     int par_size = relay::mpi::size(comm);

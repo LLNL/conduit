@@ -150,3 +150,5 @@ if(H5ZZFP_DIR)
         message(FATAL_ERROR "H5ZZFP_DIR is set, but h5z-zfp wasn't found.")
     endif()
 endif()
+
+
