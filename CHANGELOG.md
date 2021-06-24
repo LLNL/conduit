@@ -11,6 +11,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Avoid compile issue with using `_Pragma()` with Python 3.8 on Windows
 
+### Changed
+
+#### Relay
+- Added support to compile against HDF5 1.12.
+
 
 ## [0.7.2] - Released 2021-05-19
 
