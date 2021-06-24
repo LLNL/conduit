@@ -2475,7 +2475,7 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 #if H5_VERSION_GE(1, 12, 0)
     herr_t h5_status = H5Oget_info(hdf5_group_id,
                                    &h5_info_buf,
-                                   H5P_DEFAULT);
+                                   H5O_INFO_ALL);
 #else
     herr_t h5_status = H5Oget_info(hdf5_group_id,
                                    &h5_info_buf);
