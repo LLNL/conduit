@@ -1449,6 +1449,41 @@ void to_polyhedral(const Node &n,
         const double_array& ref_zarray =
            dom_coords["values/z"].as_double_array();
 
+        Node& out_coords = dest[domain_name]["coordsets/coords"];
+
+        std::vector<double> out_xvec;
+        std::vector<double> out_yvec;
+        std::vector<double> out_zvec;
+        if (dom_coords["type"].as_string() == "uniform")
+        {
+            Node tmp_coords;
+            blueprint::mesh::coordset::uniform::to_explicit(dom_coords, tmp_coords);
+            const Node& tmp_x = tmp_coords["values/x"];
+            const Node& tmp_y = tmp_coords["values/y"];
+            const Node& tmp_z = tmp_coords["values/z"];
+            const double* tmp_x_ptr = static_cast< const double*>(tmp_x.data_ptr());
+            const double* tmp_y_ptr = static_cast< const double*>(tmp_y.data_ptr());
+            const double* tmp_z_ptr = static_cast< const double*>(tmp_z.data_ptr());
+            index_t num_coords = tmp_x.dtype().number_of_elements();
+            out_xvec.insert(out_xvec.end(), tmp_x_ptr, tmp_x_ptr + num_coords);
+            out_yvec.insert(out_yvec.end(), tmp_y_ptr, tmp_y_ptr + num_coords);
+            out_zvec.insert(out_zvec.end(), tmp_z_ptr, tmp_z_ptr + num_coords);
+            out_coords["type"] = "explicit"; 
+        }
+        else
+        {
+            out_coords["type"] = dom_coords["type"];
+            const double* tmp_x_ptr = static_cast< const double*>(ref_xarray.data_ptr());
+            const double* tmp_y_ptr = static_cast< const double*>(ref_yarray.data_ptr());
+            const double* tmp_z_ptr = static_cast< const double*>(ref_zarray.data_ptr());
+
+            index_t num_coords = ref_xarray.dtype().number_of_elements();
+            out_xvec.insert(out_xvec.end(), tmp_x_ptr, tmp_x_ptr + num_coords);
+            out_yvec.insert(out_yvec.end(), tmp_y_ptr, tmp_y_ptr + num_coords);
+            out_zvec.insert(out_zvec.end(), tmp_z_ptr, tmp_z_ptr + num_coords);
+        }
+
+
         auto& poly_elems = poly_elems_map[domain_id];
         auto& allfaces = allfaces_map[domain_id];
 
@@ -1610,6 +1645,8 @@ void to_polyhedral(const Node &n,
                     }
                 }
 
+                index_t num_vertices = out_xvec.size();
+
                 //Get map_subelem, the coarse face touching the boundary.
                 //Need to change it to new subelems.
                 //
@@ -1636,21 +1673,49 @@ void to_polyhedral(const Node &n,
                     auto& map_subelem = allfaces[ref_face];
 
                     auto& nbr_subelems = fv_map[ref_offset];
-                    index_t new_offset = allfaces.size();
-                    size_t num_nbrs = nbr_subelems.size();
 
-                    for (size_t nb = 0; nb < num_nbrs; ++nb)
+                    index_t last_added_face = allfaces.rbegin()->first;
+                    for (auto nb = nbr_subelems.begin();
+                         nb != nbr_subelems.end(); ++nb)
                     {
                         //Here should be code to create each new face
+                        std::vector<index_t> new_face;
+                        auto& n_subelem = nb->second;
+
+                        for (unsigned int v = 0; v < n_subelem.size(); ++v)
+                        {
+                            index_t n_vtx = n_subelem[v];
+                            if (sharedmap.find(n_vtx) == sharedmap.end())
+                            {
+                                new_face.push_back(num_vertices);
+                                sharedmap[n_vtx] = num_vertices;
+                                ++num_vertices;
+
+                                index_t buf_offset = buffidx[n_vtx];
+                                out_xvec.push_back(xbuffer[buf_offset]); 
+                                out_yvec.push_back(ybuffer[buf_offset]); 
+                                out_zvec.push_back(zbuffer[buf_offset]); 
+                            }
+                            else
+                            {
+                                new_face.push_back(sharedmap[n_vtx]);
+                            }
+                        }
+                        ++last_added_face;
+                        allfaces[last_added_face] = new_face;
+                        ref_elem.push_back(last_added_face);
                     }
 
-                    // Here should add new faces to ref_elem
-
-                    // Somewhere we add new coordinates to coordset for
-                    // coarse domain.
+                    allfaces[ref_face] = allfaces[last_added_face];
+                    allfaces.erase(last_added_face);
+                    ref_elem.pop_back();
                 }
             }
         }
+
+        out_coords["values/x"].set(out_xvec);
+        out_coords["values/y"].set(out_yvec);
+        out_coords["values/z"].set(out_zvec);
     }
 
 
