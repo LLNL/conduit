@@ -943,10 +943,11 @@ topology::dims(const Node &n)
 
 
 //-----------------------------------------------------------------------------
-index_t
-topology::length(const Node &n)
+void
+topology::logical_dims(const Node &n, index_t *d, index_t maxdims)
 {
-    index_t topology_length = 1;
+    for(index_t i = 0; i < max_dims; i++)
+        d[i] = 1;
 
     const std::string type = n["type"].as_string();
     if(type == "uniform" || type == "rectilinear")
@@ -957,7 +958,7 @@ topology::length(const Node &n)
         const std::vector<std::string> csys_axes = coordset::axes(coordset);
         for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
         {
-            topology_length *= ((type == "uniform") ?
+            d[i] = ((type == "uniform") ?
                 coordset["dims"][LOGICAL_AXES[i]].to_index_t() :
                 coordset["values"][csys_axes[i]].dtype().number_of_elements()) - 1;
         }
@@ -968,7 +969,7 @@ topology::length(const Node &n)
 
         for(index_t i = 0; i < (index_t)dims.number_of_children(); i++)
         {
-            topology_length *= dims[LOGICAL_AXES[i]].to_index_t();
+            d[i] = dims[LOGICAL_AXES[i]].to_index_t();
         }
     }
     else // if(type == "unstructured")
@@ -977,12 +978,18 @@ topology::length(const Node &n)
         // is discarded after this calculation is complete.
         Node topo_offsets;
         topology::unstructured::generate_offsets(n, topo_offsets);
-        topology_length = topo_offsets.dtype().number_of_elements();
+        d[0] = topo_offsets.dtype().number_of_elements();
     }
-
-    return topology_length;
 }
 
+//-----------------------------------------------------------------------------
+index_t
+topology::length(const Node &n)
+{
+    index_t d[3]={1,1,1};
+    logical_dims(n, d, 3);
+    return d[0] * d[1] * d[2];
+}
 
 //-----------------------------------------------------------------------------
 void
