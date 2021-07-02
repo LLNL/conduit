@@ -4,12 +4,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_redecompose.hpp
+/// file: conduit_blueprint_mesh_partition.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_MESH_REDECOMPOSE_HPP
-#define CONDUIT_BLUEPRINT_MESH_REDECOMPOSE_HPP
+#ifndef CONDUIT_BLUEPRINT_MESH_PARTITION_HPP
+#define CONDUIT_BLUEPRINT_MESH_PARTITION_HPP
 
 //-----------------------------------------------------------------------------
 // std includes
