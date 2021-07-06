@@ -16,6 +16,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_node
                 t_conduit_node_parent
                 t_conduit_node_compare
+                t_conduit_node_static_init
                 t_conduit_serialize
                 t_conduit_array
                 t_conduit_list_of
