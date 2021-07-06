@@ -135,14 +135,22 @@ set_memset_handler(void(*conduit_hnd_memset)(void*,
     conduit_handle_memset = conduit_hnd_memset;
 }
 
+//-----------------------------------------------------------------------------
+static std::map<index_t,void*(*)(size_t, size_t)> &allocator_map()
+{
+    static std::map<index_t,void*(*)(size_t, size_t)> _allocator_map
+            = {{0, &default_alloc_handler}};
+    return _allocator_map;
+}
 
 //-----------------------------------------------------------------------------
-static std::map<index_t,void*(*)(size_t, size_t)> allocator_map
-  = {{0, &default_alloc_handler}};
-
-//-----------------------------------------------------------------------------
-static std::map<index_t,void(*)(void*)> free_map
-  = {{0, default_free_handler}};
+static std::map<index_t,void(*)(void*)> &free_map()
+{
+    //-----------------------------------------------------------------------------
+    static std::map<index_t,void(*)(void*)> _free_map
+        = {{0, default_free_handler}};
+    return _free_map;
+}
 
 //-----------------------------------------------------------------------------
 index_t
@@ -150,8 +158,8 @@ register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
                    void(*conduit_hnd_free)(void *))
 {
     static index_t allocator_id = 1;
-    allocator_map[allocator_id] = conduit_hnd_allocate;
-    free_map[allocator_id]      = conduit_hnd_free;
+    allocator_map()[allocator_id] = conduit_hnd_allocate;
+    free_map()[allocator_id]      = conduit_hnd_free;
     return allocator_id++;
 }
 
@@ -162,7 +170,7 @@ conduit_allocate(size_t n_items,
                  size_t item_size,
                  index_t allocator_id)
 {
-  return allocator_map[allocator_id](n_items, item_size);
+  return allocator_map()[allocator_id](n_items, item_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -170,7 +178,7 @@ void
 conduit_free(void *ptr,
              index_t allocator_id)
 {
-  free_map[allocator_id](ptr);
+  free_map()[allocator_id](ptr);
 }
 
 //-----------------------------------------------------------------------------
