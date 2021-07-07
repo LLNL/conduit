@@ -251,9 +251,6 @@ namespace coordset
     index_t dims(const conduit::Node &n);
 
     //-------------------------------------------------------------------------
-    void logical_dims(const Node &n, index_t *d, index_t maxdims);
-
-    //-------------------------------------------------------------------------
     index_t length(const conduit::Node &n);
 
     //-----------------------------------------------------------------------------
@@ -273,6 +270,9 @@ namespace topology
 {
     //-------------------------------------------------------------------------
     index_t dims(const conduit::Node &n);
+
+    //-------------------------------------------------------------------------
+    void logical_dims(const Node &n, index_t *d, index_t maxdims);
 
     //-------------------------------------------------------------------------
     index_t length(const conduit::Node &n);

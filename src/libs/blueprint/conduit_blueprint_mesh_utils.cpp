@@ -946,7 +946,7 @@ topology::dims(const Node &n)
 void
 topology::logical_dims(const Node &n, index_t *d, index_t maxdims)
 {
-    for(index_t i = 0; i < max_dims; i++)
+    for(index_t i = 0; i < maxdims; i++)
         d[i] = 1;
 
     const std::string type = n["type"].as_string();
