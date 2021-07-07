@@ -88,6 +88,11 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           index_t num_domains,
                                           Node &index_out);
 
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
+                                     const conduit::Node &options,
+                                     conduit::Node &output);
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------
