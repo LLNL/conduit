@@ -37,6 +37,7 @@
 //#include <mpi.h>
 //#endif
 
+using index_t=conduit::index_t;
 
 extern void grid_ijk_to_id(const index_t *ijk, const index_t *dims, index_t &grid_id);
 extern void grid_id_to_ijk(const index_t id, const index_t *dims, index_t *grid_ijk);
@@ -110,42 +111,10 @@ options:
   merging:
     enabled: true
     radius: 0.001
+  fill_value: 0.0  # fill value to use for when not all chunks entirely cover space.
   root: 0
   mpi_comm: 11223
 
-
-# Should we have separate lists of cell ids per topology?
-selections:
-   explicit:
-      -
-       domain: 0
-       topologies:
-          volume:
-              indices: [0,1,2,3,4,5,6,7,8,9]
-          faces:
-              indices: [100,101,102,103]
-
-Or, should we combine them but preserve the topology structure in the output?
-(I like this one...)
-selections:
-   explicit:
-      -
-       domain: 0
-       indices: [0,1,2,3,4,5,6,7,8,9,100,101,102,103]
-
-
-# The target is how many meshes are desired in the output
-target: 1
-# Whether to include information that indicates how the output
-# is related to the input.
-mapping: true
-# Point merging options
-merging:
-    enabled: true
-    tolerance: 0.0001
-# Parallel options
-replicate: true
-root: 0
 
   If selections re not present in the options then we assume that we're selecting
   all cells in all domains that we passed. This is fine for N-1. For 1-N if we 
@@ -198,7 +167,7 @@ root: 0
   making 10 target domains. Which ranks get them? The first 10 ranks in the comm? Does this
   need to be an option? dest_ranks=[10,20,30,40,...]?
 */
-
+#if 0
 size_t
 determine_highest_topology(const std::vector<const conduit::Node *> &domains)
 {
@@ -217,6 +186,7 @@ determine_highest_topology(const std::vector<const conduit::Node *> &domains)
     }
     return retval;
 }
+#endif
 
 //---------------------------------------------------------------------------
 /**
@@ -271,7 +241,7 @@ public:
     {
         bool mapping = true;
         if(n_options_ptr && n_options_ptr->has_child(MAPPING_KEY))
-            mapping = n_options_ptr->child(MAPPING_KEY).as_bool();
+            mapping = n_options_ptr->child(MAPPING_KEY).as_uint32() != 0;
         return mapping;
     }
 
@@ -326,8 +296,6 @@ public:
 
     virtual std::vector<std::shared_ptr<selection> > partition(const conduit::Node &n_mesh) const override;
 
-    virtual void extract(const conduit::Node &n_mesh, conduit::Node &n_output) const override;
-
     void set_start(index_t s0, index_t s1, index_t s2)
     {
         start[0] = s0;
@@ -348,7 +316,9 @@ public:
 private:
     index_t cells_for_axis(int axis) const
     {
-        return (axis >= 0 && axis <= 2) ? std::max(end[axis] - start[axis] + 1, 1) : 0;
+        index_t delta = static_cast<index_t>(end[axis] - start[axis] + 1);
+        constexpr index_t one = 1;
+        return (axis >= 0 && axis <= 2) ? std::max(delta, one) : 0;
     }
 
     index_t start[3];
@@ -405,12 +375,12 @@ selection_logical::applicable(const conduit::Node &n_mesh)
     bool is_uniform = n_coords["type"].as_string() == "uniform";
     bool is_rectilinear = n_coords["type"].as_string() == "rectilinear";
     bool is_structured = n_coords["type"].as_string() == "explicit" && 
-                         n_topo["type"].as_string() == "structured");
+                         n_topo["type"].as_string() == "structured";
     if(is_uniform || is_rectilinear || is_structured)
     {
         index_t dims[3] = {1,1,1};
         const conduit::Node &n_topo = n_mesh["topologies"][0];
-        topology::logical_dims(n_topo, dims, 3);
+        conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
 
         // See that the selection starts inside the dimensions.
         if(start[0] < dims[0] && start[1] < dims[1] && start[2] < dims[2])
@@ -433,12 +403,12 @@ selection_logical::applicable(const conduit::Node &n_mesh)
         logical selections.
  */
 std::vector<std::shared_ptr<selection> >
-selection_logical::partition(const conduit::Node &n_mesh) const
+selection_logical::partition(const conduit::Node &/*n_mesh*/) const
 {
     int la = 0;
-    if(cells_for_axis(1) > cells_for_axis(longest_axis))
+    if(cells_for_axis(1) > cells_for_axis(la))
         la = 1;
-    if(cells_for_axis(2) > cells_for_axis(longest_axis))
+    if(cells_for_axis(2) > cells_for_axis(la))
         la = 2;
     auto n = cells_for_axis(la);
 
@@ -505,7 +475,7 @@ selection_logical::get_element_ids_for_topo(const conduit::Node &n_topo,
     const index_t erange[2], std::vector<index_t> &element_ids) const
 {
     index_t dims[3] = {1,1,1};
-    topology::logical_dims(n_topo, dims, 3);
+    conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
 
     element_ids.clear();
     element_ids.reserve(length());
@@ -584,14 +554,14 @@ private:
     index_t num_cells_in_mesh;
 };
 
-std::string selection_explicit::ELEMENTS_KEY("elements");
+const std::string selection_explicit::ELEMENTS_KEY("elements");
 
 //---------------------------------------------------------------------------
 /**
  @brief Returns whether the explicit selection applies to the input mesh.
  */
 bool
-selection_explicit::applicable(const conduit::Node &n_mesh)
+selection_explicit::applicable(const conduit::Node &/*n_mesh*/)
 {
     return true;
 }
@@ -607,7 +577,6 @@ selection_explicit::partition(const conduit::Node &n_mesh) const
     std::vector<index_t> ids0, ids1;
     ids0.reserve(n_2);
     ids1.reserve(n_2);
-    auto indices = get_indices();
     for(index_t i = 0; i < n; i++)
     {
         if(indices[i] < num_cells_in_mesh)
@@ -638,7 +607,7 @@ selection_explicit::partition(const conduit::Node &n_mesh) const
 
 //---------------------------------------------------------------------------
 void
-selection_explicit::get_element_ids_for_topo(const conduit::Node &n_topo,
+selection_explicit::get_element_ids_for_topo(const conduit::Node &/*n_topo*/,
     const index_t erange[2], std::vector<index_t> &element_ids) const
 {
     auto n = ids_storage.dtype().number_of_elements();
@@ -679,7 +648,7 @@ public:
 #else
             n_options_ptr->child(RANGES_KEY).to_uint64_array(ranges_storage);
 #endif
-            ok = (ranges_storage.dtype().num_elements() % 2 == 0);
+            ok = (ranges_storage.dtype().number_of_elements() % 2 == 0);
         }
         return ok;
     }
@@ -706,7 +675,7 @@ private:
     conduit::Node ranges_storage;
 };
 
-std::string selection_ranges::RANGES_KEY("ranges");
+const std::string selection_ranges::RANGES_KEY("ranges");
 
 //---------------------------------------------------------------------------
 bool
@@ -731,11 +700,12 @@ selection_ranges::length() const
 
 //---------------------------------------------------------------------------
 std::vector<std::shared_ptr<selection> >
-selection_ranges::partition(const conduit::Node &n_mesh) const
+selection_ranges::partition(const conduit::Node &/*n_mesh*/) const
 {
     index_t ncells = length();
     auto ncells_2 = ncells / 2;
     auto n = ranges_storage.dtype().number_of_elements() / 2;
+    auto ranges = get_ranges();
     index_t count = 0;
     index_t split_index = 0;
     for(index_t i = 0; i < n; i++)
@@ -762,7 +732,7 @@ selection_ranges::partition(const conduit::Node &n_mesh) const
         }
         else if(i == split_index)
         {
-            auto rc = (ranges[2*i+1] - ranges[2*i] + 1;
+            auto rc = (ranges[2*i+1] - ranges[2*i]) + 1;
             if(rc == 1)
             {
                 r0.push_back(ranges[2*i+0]);
@@ -807,10 +777,10 @@ selection_ranges::partition(const conduit::Node &n_mesh) const
 
 //---------------------------------------------------------------------------
 void
-selection_ranges::get_element_ids_for_topo(const conduit::Node &n_topo,
+selection_ranges::get_element_ids_for_topo(const conduit::Node &/*n_topo*/,
     const index_t erange[2], std::vector<index_t> &element_ids) const
 {
-    auto n = ids_storage.dtype().number_of_elements();
+    auto n = ranges_storage.dtype().number_of_elements();
     auto n_2 = n / 2;
     auto indices = get_ranges();
     for(index_t i = 0; i < n_2; i++)
@@ -837,21 +807,123 @@ selection_ranges::get_element_ids_for_topo(const conduit::Node &n_topo,
 class partitioner
 {
 public:
+    /**
+     @brief This struct is a Conduit/Blueprint mesh plus an ownership bool.
+            The mesh pointer is always assumed to be external by default
+            so we do not provide a destructor. If we want to delete it,
+            call free(), which will free the mesh if we own it.
+     */
+    struct chunk
+    {
+        chunk();
+        chunk(const Node *m, bool own);
+        void free();
+
+        const Node *mesh;
+        bool        owns;
+    };
+
+    /**
+     @brief Constructor.
+     */
     partitioner();
+
+    /**
+     @brief Destructor.
+     */
     virtual ~partitioner();
 
+    /**
+     @brief Initialize the partitioner using the input mesh (which could be
+            multidomain) and a set of options. The options specify how we
+            may be pulling apart the mesh using selections. The selections
+            are allowed to be empty, in which case we're using all of the
+            input mesh domains.
+
+     @note We initialize before execute() because we may want the opportunity
+           to split selections into an appropriate target number of domains.
+
+     @param n_mesh A Conduit node representing the Blueprint mesh.
+     @param options A Conduit node containing the partitioning options.
+
+     @return True if the options were accepted or False if they contained
+             an error.
+     */
     bool initialize(const conduit::Node &n_mesh, const conduit::Node &options);
 
-    void split_selections(const conduit::Node &options);
+    /**
+     @brief This method enables the partitioner to split the selections until
+            we arrive at a number of selections that will yield the desired
+            number of target domains.
 
-    void execute(const conduit::Node &options, conduit::Node &output);
+     @note We could oversplit at some point if we're already unstructured
+           if we want to load balance mesh sizes a little better.
+     */
+    virtual void split_selections();
 
-    virtual long get_total_selections() const;
+    /**
+     @brief Execute the partitioner so we use any options to arrive at the
+            target number of domains. This may involve splitting domains,
+            redistributing them (in parallel), and then combining them to
+            populate the output node.
 
-    virtual void get_largest_selection(int &sel_rank, int &sel_index) const;
+     @param[out] output The Conduit node that will receive the output meshes.
+     */
+    void execute(conduit::Node &output);
+
+
+    /**
+     @brief Given a vector of input Blueprint meshes, we combine them into 
+            a single Blueprint mesh stored in output.
+
+     @param domain The domain number being created out of the various inputs.
+     @param inputs A vector of Blueprint meshes representing the input
+                   meshes that will be combined.
+     @param[out] output The Conduit node to which the combined mesh's properties
+                        will be added.
+
+     @note This method is exposed so we can create a partitioner object and 
+           combine meshes with it directly, which would be useful for development
+           and unit tests. This method is serial only and will only operate on
+           its inputs to generate the single combined mesh for the output node.
+     */
+    void combine(int domain,
+                 const std::vector<const Node *> &inputs,
+                 Node &output);
 
 protected:
+    /**
+     @brief Compute the total number of selections across all ranks.
+     @return The total number of selections across all ranks.
+
+     @note Reimplement in parallel
+     */
+    virtual long get_total_selections() const;
+
+    /**
+     @brief Get the rank and index of the largest selection. In parallel, we
+            will be looking across all ranks to find the largest domains so
+            those are split first.
+
+     @note  Splitting one at a time is temporary since in parallel, it's not
+            good enough.
+
+     @param[out] sel_rank The rank that contains the largest selection.
+     @param[out] sel_index The index of the largest selection on sel_rank.
+
+     @note Reimplement in parallel
+     */
+    virtual void get_largest_selection(int &sel_rank, int &sel_index) const;
+
+    /**
+     @brief This is a factory method for creating selections based on the 
+            provided options.
+     @param n_sel A Conduit node that represents the options used for
+                  creating the selection.
+     @return A new instance of a selection that best represents the options.
+     */
     std::shared_ptr<selection> create_selection(const conduit::Node &n_sel) const;
+
     void copy_fields(const std::vector<index_t> &all_selected_vertex_ids,
                      const std::vector<index_t> &all_selected_element_ids,
                      const conduit::Node &n_mesh,
@@ -870,6 +942,16 @@ protected:
              const std::vector<index_t> &element_ids,
              std::set<index_t> &vertex_ids) const;
 
+    /**
+     @brief Extract the idx'th selection from the input mesh and return a
+            new Node containing the extracted chunk.
+
+     @param idx The selection to extract. This must be a valid selection index.
+     @param n_mesh A Conduit node representing the mesh to which we're
+                   applying the selection.
+     @return A new Conduit node (to be freed by caller) that contains the
+             extracted chunk.
+     */
     conduit::Node *extract(size_t idx, const conduit::Node &n_mesh) const;
 
     void create_new_explicit_coordset(const conduit::Node &n_coordset,
@@ -886,11 +968,90 @@ protected:
              const std::vector<index_t> &vertex_ids,
              conduit::Node &n_new_topo) const;
 
+    /**
+     @brief Given a local set of chunks, figure out starting domain index
+            that will be used when numbering domains on a rank. We figure
+            out which ranks get domains and this is the scan of the domain
+            numbers.
+     
+     @return The starting domain index on this rank.
+     */
+    virtual unsigned int starting_index(const std::vector<chunk> &chunks);
+
+    /**
+     @brief Assign the chunks on this rank a destination rank to which it will
+            be transported as well as a destination domain that indices which
+            chunks will be combined into the final domains.
+
+     @note All chunks that get the same dest_domain must also get the same
+           dest_rank since dest_rank is the MPI rank that will do the work
+           of combining the chunks it gets. Also, this method nominates
+           ranks as those who will receive chunks. If there are 4 target
+           chunks then when we run in parallel, 4 ranks will get a domain.
+           This will be overridden for parallel.
+
+     @param chunks A vector of input chunks that we are mapping to ranks
+                   and domains.
+     @param[out] dest_ranks The destination ranks that get each input chunk.
+     @param[out] dest_domain The destination domain to which a chunk is assigned.
+     */
+    virtual void map_chunks(const std::vector<chunk> &chunks,
+                            std::vector<int> &dest_ranks,
+                            std::vector<int> &dest_domain);
+
+    /**
+     @brief Communicates the input chunks to their respective destination ranks
+            and passes out the set of chunks that this rank will operate on in
+            the chunks_to_assemble vector.
+
+     @param chunks The vector of input chunks that may be redistributed to
+                   different ranks.
+     @param dest_rank A vector of integers containing the destination ranks of
+                      each chunk.
+     @param dest_domain The global numbering of each input chunk.
+     @param[out] chunks_to_assemble The vector of chunks that this rank will
+                                    combine and set into the output.
+     @param[out] chunks_to_assemble_domains The global domain numbering of each
+                                            chunk in chunks_to_assemble. Like-
+                                            numbered chunks will be combined
+                                            into a single output domain.
+
+     @note This will be overridden for parallel.
+     */
+    virtual void communicate_chunks(const std::vector<chunk> &chunks,
+                                    const std::vector<int> &dest_rank,
+                                    const std::vector<int> &dest_domain,
+                                    std::vector<chunk> &chunks_to_assemble,
+                                    std::vector<int> &chunks_to_assemble_domains);
+
     int rank, size;
     unsigned int target;
-    std::vector<Node *>                      meshes;
+    std::vector<const Node *>                meshes;
     std::vector<std::shared_ptr<selection> > selections;
 };
+
+//---------------------------------------------------------------------------
+partitioner::chunk::chunk() : mesh(nullptr), owns(false)
+{
+}
+
+//---------------------------------------------------------------------------
+partitioner::chunk::chunk(const Node *m, bool own) : mesh(m), owns(own)
+{
+}
+
+//---------------------------------------------------------------------------
+void
+partitioner::chunk::free()
+{
+    if(owns)
+    {
+        Node *m = const_cast<Node *>(mesh);
+        delete m;
+        mesh = nullptr;
+        owns = false;
+    }
+}
 
 //---------------------------------------------------------------------------
 partitioner::partitioner() : rank(0), size(1), target(1), meshes(), selections()
@@ -920,7 +1081,7 @@ partitioner::create_selection(const conduit::Node &n_sel) const
 bool
 partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &options)
 {
-    auto doms = domains(mesh);
+    auto doms = conduit::blueprint::mesh::domains(n_mesh);
 
     // Iterate over the selections in the options and check them against the
     // domains that were passed in to make a vector of meshes and selections
@@ -928,7 +1089,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     if(options.has_child("selections"))
     {
         const conduit::Node &n_selections = options["selections"];
-        for(size_t i = 0; i < n_selections.number_of_children(); i++)
+        for(index_t i = 0; i < n_selections.number_of_children(); i++)
         {
             const conduit::Node *n_sel = n_selections.child_ptr(i);
             auto sel = create_selection(*n_sel);
@@ -940,7 +1101,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                 {
                     // Q: What is the domain number for this domain?
 
-                    if(domid == sel->get_domain() && sel->applicable(doms[domid]))
+                    if(domid == sel->get_domain() && sel->applicable(*doms[domid]))
                     {
                         meshes.push_back(doms[domid]);
                         selections.push_back(sel);
@@ -961,7 +1122,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     }
 
     // Get the number of target partitions that we're making.
-    unsigned int target = 1;
+    target = 1;
     if(options.has_child("target"))
         target = options.as_unsigned_int();
 
@@ -994,7 +1155,7 @@ partitioner::get_total_selections() const
 
 //---------------------------------------------------------------------------
 void
-partitioner::split_selections(const conduit::Node &options)
+partitioner::split_selections()
 {
     long ntotal_selections = get_total_selections();
 
@@ -1008,14 +1169,14 @@ partitioner::split_selections(const conduit::Node &options)
 
         if(rank == sel_rank)
         {
-            auto ps = selections[sel_index]->partition(meshes[sel_index]);
+            auto ps = selections[sel_index]->partition(*meshes[sel_index]);
 
             if(!ps.empty())
             {
                 const conduit::Node *m = meshes[sel_index];
                 meshes.insert(meshes.begin()+sel_index, ps.size()-1, m);
                 selections.insert(selections.begin()+sel_index, ps.size()-1, nullptr);
-                for(size_t i = 0; i < sel_index; i++)
+                for(int i = 0; i < sel_index; i++)
                     selections[sel_index + i] = ps[i];
             }
         }
@@ -1116,11 +1277,9 @@ partitioner::copy_field(const conduit::Node &n_field,
 // @brief Slice the n_src array using the indices stored in ids. The 
 //        destination memory is already pointed to by n_dest.
 template <typename T>
-inline T *
-slice_array(const conduit::Node &n_src, const std::vector<index_t> &ids, Node &n_dest)
+inline void
+typed_slice_array(const T *src, const std::vector<index_t> &ids, T *dest)
 {
-    const T *src = reinterpret_cast<const T *>(n_src.data_ptr());
-    T *dest = reinterpret_cast<T *>(n_dest.data_ptr());
     size_t n = ids.size();
     for(size_t i = 0; i < n; i++)
         dest[i] = src[ids[i]];
@@ -1133,7 +1292,6 @@ void
 partitioner::slice_array(const conduit::Node &n_src_values,
     const std::vector<index_t> &ids, Node &n_dest_values) const
 {
-#if 0
     // Copy the DataType of the input conduit::Node but override the number of elements
     // before copying it in so assigning to n_dest_values triggers a memory
     // allocation.
@@ -1142,46 +1300,59 @@ partitioner::slice_array(const conduit::Node &n_src_values,
 
     // Do the slice.
     if(dt.is_int8())
-        slice_array<int8>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const conduit::int8 *>(n_src_values.data_ptr()), ids,
+                    reinterpret_cast<conduit::int8 *>(n_dest_values.data_ptr()));
     else if(dt.is_int16())
-        slice_array<int16>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const int16 *>(n_src_values.data_ptr()), ids,
+                    reinterpret_cast<conduit::int16 *>(n_dest_values.data_ptr()));
     else if(dt.is_int32())
-        slice_array<int32>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const conduit::int32 *>(n_src_values.data_ptr()), ids,
+                    reinterpret_cast<conduit::int32 *>(n_dest_values.data_ptr()));
     else if(dt.is_int64())
-        slice_array<int64>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const conduit::int64 *>(n_src_values.data_ptr()), ids,
+                    reinterpret_cast<conduit::int64 *>(n_dest_values.data_ptr()));
     else if(dt.is_uint8())
-        slice_array<uint8>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const conduit::uint8 *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<conduit::uint8 *>(n_dest_values.data_ptr()));
     else if(dt.is_uint16())
-        slice_array<uint16>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const uint16 *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<conduit::uint16 *>(n_dest_values.data_ptr()));
     else if(dt.is_uint32())
-        slice_array<uint32>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const conduit::uint32 *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<conduit::uint32 *>(n_dest_values.data_ptr()));
     else if(dt.is_uint64())
-        slice_array<uint64>(n_src_values, ids, n_dest_values);
-    else if(dt.is_float32())
-        slice_array<float32>(n_src_values, ids, n_dest_values);
-    else if(dt.is_float64())
-        slice_array<float64>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const conduit::uint64 *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<conduit::uint64 *>(n_dest_values.data_ptr()));
     else if(dt.is_char())
-        slice_array<char>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const char *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<char *>(n_dest_values.data_ptr()));
     else if(dt.is_short())
-        slice_array<short>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const short *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<short *>(n_dest_values.data_ptr()));
     else if(dt.is_int())
-        slice_array<int>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const int *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<int *>(n_dest_values.data_ptr()));
     else if(dt.is_long())
-        slice_array<long>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const long *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<long *>(n_dest_values.data_ptr()));
     else if(dt.is_unsigned_char())
-        slice_array<unsigned char>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const unsigned char *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<unsigned char *>(n_dest_values.data_ptr()));
     else if(dt.is_unsigned_short())
-        slice_array<unsigned short>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const unsigned short *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<unsigned short *>(n_dest_values.data_ptr()));
     else if(dt.is_unsigned_int())
-        slice_array<unsigned int>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const unsigned int *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<unsigned int *>(n_dest_values.data_ptr()));
     else if(dt.is_unsigned_long())
-        slice_array<unsigned long>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const unsigned long *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<unsigned long *>(n_dest_values.data_ptr()));
     else if(dt.is_float())
-        slice_array<float>(n_src_values, ids, n_dest_values);
+        typed_slice_array(reinterpret_cast<const float *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<float *>(n_dest_values.data_ptr()));
     else if(dt.is_double())
-        slice_array<double>(n_src_values, ids, n_dest_values);
-#endif
+        typed_slice_array(reinterpret_cast<const double *>(n_src_values.data_ptr()), ids,
+                          reinterpret_cast<double *>(n_dest_values.data_ptr()));
 }
 
 //---------------------------------------------------------------------------
@@ -1202,7 +1373,7 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
     if(is_base_rectilinear || is_base_structured || is_base_uniform)
     {
         index_t edims[3] = {1,1,1}, dims[3] = {0,0,0};
-        auto ndims = topology::dims(n_topo)
+        auto ndims = topology::dims(n_topo);
         conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, edims, 3);
         dims[0] = edims[0] + 1;
         dims[1] = edims[1] + 1;
@@ -1547,52 +1718,217 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
 
 //---------------------------------------------------------------------------
 void
-partitioner::execute(const conduit::Node &options, conduit::Node &output)
+partitioner::execute(conduit::Node &output)
 {
     // By this stage, we will have at least target selections spread across
     // the participating ranks. Now, we need to process the selections to
     // make chunks.
-    std::vector<Node *> chunks;
-    std::vector<bool> own_chunks;
+    std::vector<chunk> chunks;
     for(size_t i = 0; i < selections.size(); i++)
     {
         if(selections[i] == nullptr)
         {
             // We had a "null" selection so we'll take the whole mesh.
-            chunks.push_back(meshes[i]);
-            own_chunks.push_back(false);
+            chunks.push_back(chunk(meshes[i], false));
         }
         else
         {
-            conduit::Node *chunk = extract(i, *meshes[i]);
-chunk->print();
-            chunks.push_back(chunk);
-            own_chunks.push_back(true);
+            conduit::Node *c = extract(i, *meshes[i]);
+c->print();
+            chunks.push_back(chunk(c, true));
         }
     }
 
-
-#if 0
-    // Though, since Conduit permits datasets with different fields, etc, we
+    // We need to figure out ownership and make sure each rank has the parts
+    // that it needs to achieve "target" overall domains over all ranks. We
     // probably want to send/recv the data as binary blobs. Then deserialize
     // and assemble into combined grids.
-#endif
 
+    // Compute the destination rank and destination domain of each input
+    // chunk present on this rank.
+    std::vector<int> dest_rank, dest_domain;
+    map_chunks(chunks, dest_rank, dest_domain);
 
-    // Now we have chunks that are the extracted parts of the
-    // meshes that we created.
+    // Communicate chunks to the right destination ranks
+    std::vector<chunk> chunks_to_assemble;
+    std::vector<int> chunks_to_assemble_domains;
+    communicate_chunks(chunks, dest_rank, dest_domain,
+        chunks_to_assemble, chunks_to_assemble_domains);
 
+    // Now that we have all the parts we need in chunks_to_assemble, combine
+    // the chunks.
+    std::set<int> unique_doms;
+    for(size_t i = 0; i < chunks_to_assemble_domains.size(); i++)
+        unique_doms.insert(chunks_to_assemble_domains[i]);
 
-    // We need to figure out ownership and make sure each rank has the parts
-    // that it needs.
+    if(!chunks_to_assemble.empty())
+    {
+        output.reset();
 
+        for(auto dom = unique_doms.begin(); dom != unique_doms.end(); dom++)
+        {
+            // Get the chunks for this output domain.
+            std::vector<const Node *> this_dom_chunks;
+            for(size_t i = 0; i < chunks_to_assemble_domains.size(); i++)
+            {
+                if(chunks_to_assemble_domains[i] == *dom)
+                    this_dom_chunks.push_back(chunks_to_assemble[i].mesh);
+            }
 
-    // Now that we have all the parts we need, combine the partitions to
-    // arrive at the target number of partitions for this rank. This combination
-    // process appends partition meshes together.
+            // Combine the chunks for this domain and add to output or to
+            // a list in output.
+            if(dom == unique_doms.begin())
+            {
+                // First time through.
+                if(unique_doms.size() > 1)
+                    combine(*dom, this_dom_chunks, output.append());
+                else
+                    combine(*dom, this_dom_chunks, output);
+            }
+            else
+            {
+                combine(*dom, this_dom_chunks, output.append());
+            }
+        }
+    }
 
+    // Clean up
+    for(size_t i = 0; i < chunks.size(); i++)
+        chunks[i].free();
+    for(size_t i = 0; i < chunks_to_assemble.size(); i++)
+        chunks_to_assemble[i].free();
+}
 
-    // Store the combined outputs into the output conduit::Node.
+//-------------------------------------------------------------------------
+unsigned int
+partitioner::starting_index(const std::vector<partitioner::chunk> &/*chunks*/)
+{
+    return 0;
+}
+
+//-------------------------------------------------------------------------
+void
+partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
+    std::vector<int> &dest_ranks,
+    std::vector<int> &dest_domain)
+{
+    // All data stays on this rank in serial.
+    dest_ranks.resize(chunks.size());
+    for(size_t i =0 ; i < chunks.size(); i++)
+        dest_ranks[i] = rank;
+
+    // Determine average chunk size.
+    std::vector<index_t> chunk_sizes;
+    index_t total_len = 0;
+    for(size_t i =0 ; i < chunks.size(); i++)
+    {
+        auto len = conduit::blueprint::mesh::topology::length(*chunks[i].mesh);
+        total_len += len;
+        chunk_sizes.push_back(len);
+    }
+    index_t len_per_target = total_len / target;
+
+    int start_index = starting_index(chunks);
+    if(chunks.size() == static_cast<size_t>(target))
+    {
+        // The number of chunks is the same as the target.
+        for(size_t i =0 ; i < chunks.size(); i++)
+            dest_domain.push_back(start_index + static_cast<int>(i));
+    }
+    else if(chunks.size() > static_cast<size_t>(target))
+    {
+        unsigned int domid = start_index;
+        index_t total_len = 0;
+        for(size_t i = 0; i < chunks.size(); i++)
+        {
+            total_len += chunk_sizes[i];
+            if(total_len >= len_per_target && domid < target)
+            {
+                // Advance to the next domain index.
+                total_len = 0;
+                domid++;
+            }
+
+            dest_domain.push_back(domid);
+        }
+    }
+    else
+    {
+        // The number of chunks is less than the target. Something is wrong!
+        CONDUIT_ERROR("The number of chunks (" << chunks.size()
+                      << ") is smaller than requested (" << target << ").");
+    }
+}
+
+//-------------------------------------------------------------------------
+void
+partitioner::communicate_chunks(const std::vector<partitioner::chunk> &chunks,
+    const std::vector<int> &/*dest_rank*/,
+    const std::vector<int> &dest_domain,
+    std::vector<partitioner::chunk> &chunks_to_assemble,
+    std::vector<int> &chunks_to_assemble_domains)
+{
+    // In serial, communicating the chunks among ranks means passing them
+    // back in the output arguments. We mark them as not-owned so we do not
+    // double-free.
+    for(size_t i = 0; i < chunks.size(); i++)
+    {
+        chunks_to_assemble.push_back(chunk(chunks[i].mesh, false));
+        chunks_to_assemble_domains.push_back(dest_domain[i]);
+    }
+}
+
+//-------------------------------------------------------------------------
+void
+partitioner::combine(int domain,
+    const std::vector<const Node *> &inputs,
+    Node &output)
+{
+    // NOTE: Some decisions upstream, for the time being, make all the chunks
+    //       unstructured. We will try to relax that so we might end up
+    //       trying to combine multiple uniform,rectilinear,structured
+    //       topologies.
+
+    // TODO: If all topologies for chunks are some type of structured and
+    //       it looks like they all abut logically, check their coordsets
+    //       so see if they line up in a compatible way too.
+    //
+    bool structured_compatible = false;
+    if(structured_compatible)
+    {
+       // TODO: Make combined coordset and new structured topology
+
+       // Add the combined result to output node.
+    }
+    else
+    {
+       // Determine names of all coordsets
+
+       // Iterate over all coordsets and combine like-named coordsets into
+       // new explicit coordset. Pass all points through an algorithm that
+       // can combine the same points should they exist in multiple coordsets.
+       //
+       // for each coordset
+       //     for each point in coordset
+       //         new_pt_id = pointmap.get_id(point, tolerance)
+       //              
+
+       // Combine mapping information stored in chunks to assemble new field
+       // that indicates original domain,pointid values for each point
+
+       // Determine names of all topologies
+
+       // Iterate over all topology names and combine like-named topologies
+       // as new unstructured topology.
+
+       // Combine mapping info stored in chunks to assemble new field that
+       // indicates original domain,cellid values for each cell.
+
+       // Use original point and cell maps to create new fields that combine
+       // the fields from each source chunk. 
+   
+       // Add the combined result to output node.
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -1611,6 +1947,13 @@ public:
     virtual long get_total_selections() const override;
 
     virtual void get_largest_selection(int &sel_rank, int &sel_index) const override;
+
+protected:
+    virtual void communicate_chunks(const std::vector<chunk> &chunks,
+                                    const std::vector<int> &dest_rank,
+                                    const std::vector<int> &dest_domain,
+                                    std::vector<chunk> &chunks_to_assemble,
+                                    std::vector<int> &chunks_to_assemble_domains) override;
 
 private:
     MPI_Comm comm;
@@ -1690,6 +2033,23 @@ parallel_partitioner::get_largest_selection(int &sel_rank, int &sel_index) const
     if(sel_rank == rank)
         sel_index = local_index;
 }
+
+//-------------------------------------------------------------------------
+void
+parallel_partitioner::communicate_chunks(const std::vector<chunk> &chunks,
+    const std::vector<int> &dest_rank,
+    const std::vector<int> &dest_domain,
+    std::vector<chunk> &chunks_to_assemble,
+    std::vector<int> &chunks_to_assemble_domains)
+{
+    // TODO: send chunks to dest_rank if dest_rank[i] != rank.
+    //       If dest_rank[i] == rank then the chunk stays on the rank.
+    //
+    //       Do sends/recvs to send the chunks as blobs among ranks.
+    //
+    //       Populate chunks_to_assemble, chunks_to_assemble_domains
+}
+
 #endif
 
 //-------------------------------------------------------------------------
@@ -1699,8 +2059,8 @@ partition(const conduit::Node &n_mesh, const conduit::Node &options, conduit::No
     partitioner P;
     if(P.initialize(n_mesh, options))
     {
-        P.split_selections(options);
-        P.execute(options, output);
+        P.split_selections();
+        P.execute(output);
     }
 }
 
