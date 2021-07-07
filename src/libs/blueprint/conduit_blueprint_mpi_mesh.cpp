@@ -666,8 +666,10 @@ void match_nbr_elems(PolyBndry& pbnd,
                      const Node& ref_win,
                      const Node& nbr_win,
                      index_t nbr_iwidth, index_t nbr_jwidth,
+                     index_t nbr_kwidth,
                      index_t ni_lo, index_t nj_lo, index_t nk_lo,
-                     index_t ratio_i, index_t ratio_j, index_t ratio_k)
+                     index_t ratio_i, index_t ratio_j, index_t ratio_k,
+                     bool local)
 {
     index_t nbr_size_i = nbr_win["dims/i"].to_index_t();
     index_t nbr_size_j = nbr_win["dims/j"].to_index_t();
@@ -720,16 +722,35 @@ void match_nbr_elems(PolyBndry& pbnd,
 
                 pbnd.m_nbr_elems[roffset].push_back(noffset);
 
-                auto& nbr_elem = nbr_elems[noffset];
-                pbnd.m_nbr_faces[roffset][noffset].m_face_id =
-                    nside == 0 ?
-                    nbr_elem[0] :
-                    nbr_elem[1];
+                if (local)
+                { 
+                    auto& nbr_elem = nbr_elems[noffset];
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        nside == 0 ?
+                        nbr_elem[0] :
+                        nbr_elem[1];
+                }
+                else
+                {
+                    index_t jfoffset = nj*(nbr_iwidth+1);
+                    index_t kfoffset = nk*nbr_jwidth*(nbr_iwidth+1);
+                    if (nside == 0)
+                    {
+                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                            icnst + jfoffset + kfoffset;
+                    }
+                    else
+                    {
+                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                            icnst + jfoffset + kfoffset + 1;
+                    }
+                }
             }
         }
     }
     else if (side == 2 || side == 3)
     {
+        index_t jface_start = (nbr_iwidth+1)*nbr_jwidth*nbr_kwidth;
         index_t nside = (side+1)%2;     //nbr side counterpart to  ref side
         index_t shift = -(nside%2); //0 on low side, -1 on high side
         index_t jcnst = origin_j - nj_lo + shift;
@@ -757,16 +778,40 @@ void match_nbr_elems(PolyBndry& pbnd,
                 index_t roffset = rkoffset + rjcnst*ref_iwidth + ri;
 
                 pbnd.m_nbr_elems[roffset].push_back(noffset);
-                auto& nbr_elem = nbr_elems[noffset];
-                pbnd.m_nbr_faces[roffset][noffset].m_face_id =
-                    nside == 2 ?
-                    nbr_elem[2] :
-                    nbr_elem[3];
+
+                if (local)
+                {
+                    auto& nbr_elem = nbr_elems[noffset];
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        nside == 2 ?
+                        nbr_elem[2] :
+                        nbr_elem[3];
+                }
+                else
+                {
+                    index_t ifoffset = ni;
+                    index_t kfoffset = nk*(nbr_jwidth+1)*nbr_iwidth;
+                    if (nside == 2)
+                    {
+                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                            jface_start +
+                            nbr_iwidth*jcnst + ifoffset + kfoffset;
+                    }
+                    else
+                    {
+                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                            jface_start +
+                            nbr_iwidth*(jcnst+1) + ifoffset + kfoffset;
+                    }
+                }
             }
         }
     }
     else if (side == 4 || side == 5)
     {
+        index_t jface_start = (nbr_iwidth+1)*nbr_jwidth*nbr_kwidth;
+        index_t kface_start = jface_start +
+                              nbr_iwidth*(nbr_jwidth+1)*nbr_kwidth;
         index_t nside = (side+1)%2;     //nbr side counterpart to  ref side
         index_t shift = -(nside%2); //0 on low side, -1 on high side
         index_t kcnst = origin_k - nk_lo + shift;
@@ -794,11 +839,32 @@ void match_nbr_elems(PolyBndry& pbnd,
                 index_t roffset = rjoffset + ri;
 
                 pbnd.m_nbr_elems[roffset].push_back(noffset);
-                auto& nbr_elem = nbr_elems[noffset];
-                pbnd.m_nbr_faces[roffset][noffset].m_face_id =
-                    nside == 4 ?
-                    nbr_elem[4] :
-                    nbr_elem[5];
+
+                if (local)
+                { 
+                    auto& nbr_elem = nbr_elems[noffset];
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        nside == 4 ?
+                        nbr_elem[4] :
+                        nbr_elem[5];
+                }
+                else
+                {
+                    index_t ifoffset = ni;
+                    index_t jfoffset = nj*nbr_iwidth;
+                    if (nside == 4)
+                    {
+                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                            kface_start +
+                            nbr_iwidth*nbr_jwidth*kcnst + ifoffset + jfoffset;
+                    }
+                    else
+                    {
+                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                            kface_start +
+                            nbr_iwidth*nbr_jwidth*(kcnst+1) + ifoffset + jfoffset;
+                    }
+                } 
             }
         }
     }
@@ -1020,16 +1086,17 @@ void to_polyhedral(const Node &n,
 
                             if (is_side && !in_parent->has_child(nbr_name))
                             {
-                                index_t buffer[5];
+                                index_t buffer[6];
                                 buffer[0] = in_topo["elements/dims/i"].to_index_t();
                                 buffer[1] = in_topo["elements/dims/j"].to_index_t();
-                                buffer[2] = in_topo["elements/origin/i0"].to_index_t();
-                                buffer[3] = in_topo["elements/origin/j0"].to_index_t();
-                                buffer[4] = in_topo["elements/origin/k0"].to_index_t();
+                                buffer[2] = in_topo["elements/dims/k"].to_index_t();
+                                buffer[3] = in_topo["elements/origin/i0"].to_index_t();
+                                buffer[4] = in_topo["elements/origin/j0"].to_index_t();
+                                buffer[5] = in_topo["elements/origin/k0"].to_index_t();
 
                                 index_t nbr_rank = group["rank"].to_index_t();
                                 MPI_Send(buffer,
-                                         5,
+                                         6,
                                          MPI_INT64_T,
                                          nbr_rank,
                                          domain_id,
@@ -1168,7 +1235,7 @@ void to_polyhedral(const Node &n,
                                 index_t kend = kstart + ref_size_k - 1;
                                 for (index_t kidx = kstart; kidx < kend; ++kidx)
                                 {
-                                    index_t koffset = jcnst*jwidth + kidx*iwidth*jwidth;
+                                    index_t koffset = jcnst*iwidth + kidx*iwidth*jwidth;
                                     for (index_t iidx = istart; iidx < iend; ++iidx)
                                     {
                                         index_t offset = koffset + iidx;
@@ -1228,10 +1295,10 @@ void to_polyhedral(const Node &n,
                                 if (pbnd.side >= 0)
                                 {
                                     index_t nbr_rank = group["rank"].to_index_t();
-                                    index_t buffer[5];
+                                    index_t buffer[6];
 
                                     MPI_Recv(buffer,
-                                             5,
+                                             6,
                                              MPI_INT64_T,
                                              nbr_rank,
                                              nbr_id,
@@ -1240,9 +1307,10 @@ void to_polyhedral(const Node &n,
 
                                     index_t nbr_iwidth = buffer[0]; 
                                     index_t nbr_jwidth = buffer[1];
-                                    index_t ni_lo = buffer[2]; 
-                                    index_t nj_lo = buffer[3]; 
-                                    index_t nk_lo = buffer[4]; 
+                                    index_t nbr_kwidth = buffer[2];
+                                    index_t ni_lo = buffer[3]; 
+                                    index_t nj_lo = buffer[4]; 
+                                    index_t nk_lo = buffer[5]; 
 
                                     auto& nbr_elems = poly_elems_map[nbr_id];
 
@@ -1251,8 +1319,10 @@ void to_polyhedral(const Node &n,
                                     match_nbr_elems(pbnd, nbr_elems, in_topo,
                                                     ref_win, nbr_win,
                                                     nbr_iwidth, nbr_jwidth,
+                                                    nbr_kwidth,
                                                     ni_lo, nj_lo, nk_lo,
-                                                    ratio_i,ratio_j,ratio_k);
+                                                    ratio_i,ratio_j,ratio_k,
+                                                    false);
                                 }
 
                             }
@@ -1272,6 +1342,8 @@ void to_polyhedral(const Node &n,
                                    ntopo["elements/dims/i"].to_index_t();
                                 index_t nbr_jwidth =
                                    ntopo["elements/dims/j"].to_index_t();
+                                index_t nbr_kwidth =
+                                   ntopo["elements/dims/k"].to_index_t();
 
                                 auto& nbr_elems = poly_elems_map[nbr_id];
 
@@ -1282,8 +1354,10 @@ void to_polyhedral(const Node &n,
                                     match_nbr_elems(pbnd, nbr_elems, in_topo,
                                                     ref_win, nbr_win,
                                                     nbr_iwidth, nbr_jwidth,
+                                                    nbr_kwidth,
                                                     ni_lo, nj_lo, nk_lo,
-                                                    ratio_i,ratio_j,ratio_k);
+                                                    ratio_i,ratio_j,ratio_k,
+                                                    true);
                                 }
                             }
                         }
@@ -1404,7 +1478,7 @@ void to_polyhedral(const Node &n,
                                 index_t kstart = origin_k - nk_lo;
                                 index_t iend = istart + nbr_size_i;
                                 index_t jend = jstart + nbr_size_j;
-                                index_t kend = jstart + nbr_size_k;
+                                index_t kend = kstart + nbr_size_k;
                                 for (index_t kidx = kstart; kidx < kend; ++kidx)
                                 {
                                     index_t koffset = kidx*nbr_iwidth*nbr_jwidth;
@@ -1713,11 +1787,14 @@ void to_polyhedral(const Node &n,
             }
         }
 
+// above--go through other faces on ref_elem to add new edge nodes
+
         out_coords["values/x"].set(out_xvec);
         out_coords["values/y"].set(out_yvec);
         out_coords["values/z"].set(out_zvec);
     }
 
+// 3D MPI stuff needs to be fleshed out.
 
     itr = n.children();
     while(itr.has_next())
