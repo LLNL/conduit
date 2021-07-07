@@ -3422,7 +3422,7 @@ adjset_uniform(Node &res)
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 polychain(const index_t length, // how long the chain ought to be
           Node &res)
 {
