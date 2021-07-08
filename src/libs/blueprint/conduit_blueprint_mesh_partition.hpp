@@ -221,7 +221,9 @@ protected:
             those are split first.
 
      @note  Splitting one at a time is temporary since in parallel, it's not
-            good enough.
+            good enough. One of the reasons we split one at a time right now
+            is to allow really large selections to be split more than once 
+            before other selections are considered.
 
      @param[out] sel_rank The rank that contains the largest selection.
      @param[out] sel_index The index of the largest selection on sel_rank.
@@ -237,7 +239,7 @@ protected:
                   creating the selection.
      @return A new instance of a selection that best represents the options.
      */
-    std::shared_ptr<selection> create_selection(const conduit::Node &n_sel) const;
+    virtual std::shared_ptr<selection> create_selection(const conduit::Node &n_sel) const;
 
     void copy_fields(const std::vector<index_t> &all_selected_vertex_ids,
                      const std::vector<index_t> &all_selected_element_ids,
@@ -282,6 +284,50 @@ protected:
              const std::vector<index_t> &element_ids,
              const std::vector<index_t> &vertex_ids,
              conduit::Node &n_new_topo) const;
+
+    /**
+     @brief Given a set of input meshes which may have various topologies,
+            recommend a topology that can be used to capture the combined
+            meshes in a single output.
+
+     @note If the meshes contain multiple topologies then it probably
+           makes sense to recommend unstructured.
+
+     @param inputs A vector of Blueprint mesh node pointers to consider.
+
+     @return The recommended topology type that can represent the input
+             meshes as a single mesh once they are combined.
+     */
+    std::string recommended_topology(const std::vector<const Node *> &inputs) const;
+
+    /**
+     @brief Given a set of inputs that are predetermined to fit together
+            into a logically structured output, perform the actual
+            recombination to yield a single mesh (uniform, rectilinear, ...)
+            in the output.
+
+     @param domain The input domain number (in case we want to record it)
+     @param inputs A vector of Blueprint mesh nodes to combine.
+     @param output The Conduit node into which the combined mesh output
+                   will be added.
+     */
+    void combine_as_structured(int domain,
+                               const std::vector<const Node *> &inputs,
+                               Node &output);
+
+    /**
+     @brief Given a set of inputs that are of various types, assemble them
+            into a single output mesh with unstructured topology. This
+            method combines like-named coordsets and topologies.
+
+     @param domain The input domain number (in case we want to record it)
+     @param inputs A vector of Blueprint mesh nodes to combine.
+     @param output The Conduit node into which the combined mesh output
+                   will be added.
+     */
+    void combine_as_unstructured(int domain,
+                                 const std::vector<const Node *> &inputs,
+                                 Node &output);
 
     /**
      @brief Given a local set of chunks, figure out starting domain index

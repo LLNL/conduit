@@ -38,6 +38,8 @@
 //#endif
 
 using index_t=conduit::index_t;
+using std::cout;
+using std::endl;
 
 extern void grid_ijk_to_id(const index_t *ijk, const index_t *dims, index_t &grid_id);
 extern void grid_id_to_ijk(const index_t id, const index_t *dims, index_t *grid_ijk);
@@ -780,12 +782,18 @@ std::shared_ptr<selection>
 partitioner::create_selection(const conduit::Node &n_sel) const
 {
     std::shared_ptr<selection> retval;
-    if(n_sel["type"].as_string() == "logical")
+    std::string type(n_sel["type"].as_string());
+
+    if(type == "logical")
         retval = std::make_shared<selection_logical>();
-    else if(n_sel["type"].as_string() == "explicit")
+    else if(type == "explicit")
         retval = std::make_shared<selection_explicit>();
-    else if(n_sel["type"].as_string() == "ranges")
+    else if(type == "ranges")
         retval = std::make_shared<selection_ranges>();
+    else
+    {
+        CONDUIT_ERROR("Unknown selection type: " << type);
+    }
     return retval;
 }
 
@@ -804,22 +812,29 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
         for(index_t i = 0; i < n_selections.number_of_children(); i++)
         {
             const conduit::Node *n_sel = n_selections.child_ptr(i);
-            auto sel = create_selection(*n_sel);
-            if(sel != nullptr && sel->init(n_sel))
+            try
             {
-                // The selection is good. See if it applies to the domains.
-                auto n = static_cast<index_t>(doms.size());
-                for(index_t domid = 0; n; domid++)
+                auto sel = create_selection(*n_sel);
+                if(sel != nullptr && sel->init(n_sel))
                 {
-                    // Q: What is the domain number for this domain?
-
-                    if(domid == sel->get_domain() && sel->applicable(*doms[domid]))
+                    // The selection is good. See if it applies to the domains.
+                    auto n = static_cast<index_t>(doms.size());
+                    for(index_t domid = 0; n; domid++)
                     {
-                        meshes.push_back(doms[domid]);
-                        selections.push_back(sel);
-                        break;
+                        // Q: What is the domain number for this domain?
+
+                        if(domid == sel->get_domain() && sel->applicable(*doms[domid]))
+                        {
+                            meshes.push_back(doms[domid]);
+                            selections.push_back(sel);
+                            break;
+                        }
                     }
                 }
+            }
+            catch(const conduit::Error &)
+            {
+                return false;
             }
         }
     }
@@ -1440,6 +1455,8 @@ partitioner::execute(conduit::Node &output)
     {
         if(selections[i] == nullptr)
         {
+// FIXME: This is not what I want to do because it bypasses the splitting process.
+
             // We had a "null" selection so we'll take the whole mesh.
             chunks.push_back(chunk(meshes[i], false));
         }
@@ -1460,6 +1477,16 @@ c->print();
     // chunk present on this rank.
     std::vector<int> dest_rank, dest_domain;
     map_chunks(chunks, dest_rank, dest_domain);
+#if 1
+    cout << "dest_rank = {" << endl;
+    for(size_t i = 0; i < dest_rank.size(); i++)
+        cout << dest_rank[i] << ", ";
+    cout << "}" << endl;
+    cout << "dest_domain = {" << endl;
+    for(size_t i = 0; i < dest_domain.size(); i++)
+        cout << dest_domain[i] << ", ";
+    cout << "}" << endl;
+#endif
 
     // Communicate chunks to the right destination ranks
     std::vector<chunk> chunks_to_assemble;
@@ -1476,7 +1503,6 @@ c->print();
     if(!chunks_to_assemble.empty())
     {
         output.reset();
-
         for(auto dom = unique_doms.begin(); dom != unique_doms.end(); dom++)
         {
             // Get the chunks for this output domain.
@@ -1487,19 +1513,34 @@ c->print();
                     this_dom_chunks.push_back(chunks_to_assemble[i].mesh);
             }
 
-            // Combine the chunks for this domain and add to output or to
-            // a list in output.
-            if(dom == unique_doms.begin())
+            if(this_dom_chunks.size() == 1)
             {
-                // First time through.
                 if(unique_doms.size() > 1)
-                    combine(*dom, this_dom_chunks, output.append());
+                {
+                    // There are multiple domains in the output.
+                    conduit::Node &n = output.append();
+                    n.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                }
                 else
-                    combine(*dom, this_dom_chunks, output);
+                {
+                    // There is one domain in the output.
+                    output.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                }
             }
-            else
+            else if(this_dom_chunks.size() > 1)
             {
-                combine(*dom, this_dom_chunks, output.append());
+                // Combine the chunks for this domain and add to output or to
+                // a list in output.
+                if(unique_doms.size() > 1)
+                {
+                    // There are multiple domains in the output.
+                    combine(*dom, this_dom_chunks, output.append());
+                }
+                else
+                {
+                    // There is one domain in the output.
+                    combine(*dom, this_dom_chunks, output);
+                }
             }
         }
     }
@@ -1526,20 +1567,32 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
 {
     // All data stays on this rank in serial.
     dest_ranks.resize(chunks.size());
-    for(size_t i =0 ; i < chunks.size(); i++)
+    for(size_t i = 0; i < chunks.size(); i++)
         dest_ranks[i] = rank;
+#if 1
+    cout << "map_chunks:" << endl;
+    for(size_t i = 0; i < chunks.size(); i++)
+        chunks[i].mesh->print();
+#endif
 
     // Determine average chunk size.
     std::vector<index_t> chunk_sizes;
     index_t total_len = 0;
     for(size_t i =0 ; i < chunks.size(); i++)
     {
-        auto len = conduit::blueprint::mesh::topology::length(*chunks[i].mesh);
+        const conduit::Node &n_topos = chunks[i].mesh->operator[]("topologies");
+        index_t len = 0;
+        for(index_t j = 0; j < n_topos.number_of_children(); j++)
+            len += conduit::blueprint::mesh::topology::length(n_topos[j]);
         total_len += len;
         chunk_sizes.push_back(len);
     }
     index_t len_per_target = total_len / target;
-
+#if 1
+    cout << "map_chunks: total_len = " << total_len
+         << ", target=" << target
+         << ", len_per_target=" << len_per_target << endl;
+#endif
     int start_index = starting_index(chunks);
     if(chunks.size() == static_cast<size_t>(target))
     {
@@ -1549,6 +1602,10 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     }
     else if(chunks.size() > static_cast<size_t>(target))
     {
+        // NOTE: We are just grouping adjacent chunks in the overall list
+        //       while trying to target a certain number of cells per domain.
+        //       We may also want to consider the bounding boxes so we
+        //       group chunks that are close spatially.
         unsigned int domid = start_index;
         index_t total_len = 0;
         for(size_t i = 0; i < chunks.size(); i++)
@@ -1591,6 +1648,19 @@ partitioner::communicate_chunks(const std::vector<partitioner::chunk> &chunks,
 }
 
 //-------------------------------------------------------------------------
+std::string
+partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
+{
+    // TODO: See if the inputs are uniform, rectilinear, etc and could be combined
+    //       to form an output of one of those types. For example, uniform meshes
+    //       can be combined if they abut and combine into larger bricks that
+    //       cover space.
+
+    // For now, recommend unstructured.
+    return "unstructured";
+}
+
+//-------------------------------------------------------------------------
 void
 partitioner::combine(int domain,
     const std::vector<const Node *> &inputs,
@@ -1601,46 +1671,59 @@ partitioner::combine(int domain,
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
 
-    // TODO: If all topologies for chunks are some type of structured and
-    //       it looks like they all abut logically, check their coordsets
-    //       so see if they line up in a compatible way too.
-    //
-    bool structured_compatible = false;
-    if(structured_compatible)
-    {
-       // TODO: Make combined coordset and new structured topology
-
-       // Add the combined result to output node.
-    }
+    std::string rt(recommended_topology(inputs));
+    if(rt == "uniform" || rt == "rectilinear")
+        combine_as_structured(domain, inputs, output);
     else
-    {
-       // Determine names of all coordsets
+        combine_as_unstructured(domain, inputs, output);
+}
 
-       // Iterate over all coordsets and combine like-named coordsets into
-       // new explicit coordset. Pass all points through an algorithm that
-       // can combine the same points should they exist in multiple coordsets.
-       //
-       // for each coordset
-       //     for each point in coordset
-       //         new_pt_id = pointmap.get_id(point, tolerance)
-       //              
+//-------------------------------------------------------------------------
+void
+partitioner::combine_as_structured(int domain,
+    const std::vector<const Node *> &inputs,
+    Node &output)
+{
+    // TODO: Make combined coordset and new structured topology (uniform,
+    //       rectilinear, structured) suitable for the output.
 
-       // Combine mapping information stored in chunks to assemble new field
-       // that indicates original domain,pointid values for each point
+    // Add the combined result to output node.
+}
 
-       // Determine names of all topologies
+//-------------------------------------------------------------------------
+void
+partitioner::combine_as_unstructured(int domain,
+    const std::vector<const Node *> &inputs,
+    Node &output)
+{
+    // TODO:
 
-       // Iterate over all topology names and combine like-named topologies
-       // as new unstructured topology.
+    // Determine names of all coordsets
 
-       // Combine mapping info stored in chunks to assemble new field that
-       // indicates original domain,cellid values for each cell.
+    // Iterate over all coordsets and combine like-named coordsets into
+    // new explicit coordset. Pass all points through an algorithm that
+    // can combine the same points should they exist in multiple coordsets.
+    //
+    // for each coordset
+    //     for each point in coordset
+    //         new_pt_id = pointmap.get_id(point, tolerance)
+    //              
 
-       // Use original point and cell maps to create new fields that combine
-       // the fields from each source chunk. 
+    // Combine mapping information stored in chunks to assemble new field
+    // that indicates original domain,pointid values for each point
+
+    // Determine names of all topologies
+
+    // Iterate over all topology names and combine like-named topologies
+    // as new unstructured topology.
+
+    // Combine mapping info stored in chunks to assemble new field that
+    // indicates original domain,cellid values for each cell.
+
+    // Use original point and cell maps to create new fields that combine
+    // the fields from each source chunk. 
    
-       // Add the combined result to output node.
-    }
+    // Add the combined result to output node.
 }
 
 //-------------------------------------------------------------------------
@@ -1661,6 +1744,10 @@ public:
     virtual void get_largest_selection(int &sel_rank, int &sel_index) const override;
 
 protected:
+    virtual void map_chunks(const std::vector<chunk> &chunks,
+                            std::vector<int> &dest_ranks,
+                            std::vector<int> &dest_domain) override;
+
     virtual void communicate_chunks(const std::vector<chunk> &chunks,
                                     const std::vector<int> &dest_rank,
                                     const std::vector<int> &dest_domain,
@@ -1748,6 +1835,15 @@ parallel_partitioner::get_largest_selection(int &sel_rank, int &sel_index) const
 
 //-------------------------------------------------------------------------
 void
+parallel_partitioner::map_chunks(const std::vector<chunk> &chunks,
+    std::vector<int> &dest_ranks,
+    std::vector<int> &dest_domain)
+{
+    // TODO: populate dest_ranks, dest_domain
+}
+
+//-------------------------------------------------------------------------
+void
 parallel_partitioner::communicate_chunks(const std::vector<chunk> &chunks,
     const std::vector<int> &dest_rank,
     const std::vector<int> &dest_domain,
@@ -1766,12 +1862,14 @@ parallel_partitioner::communicate_chunks(const std::vector<chunk> &chunks,
 
 //-------------------------------------------------------------------------
 void
-partition(const conduit::Node &n_mesh, const conduit::Node &options, conduit::Node &output)
+partition(const conduit::Node &n_mesh, const conduit::Node &options,
+    conduit::Node &output)
 {
     partitioner P;
     if(P.initialize(n_mesh, options))
     {
         P.split_selections();
+        output.reset();
         P.execute(output);
     }
 }
@@ -1780,43 +1878,6 @@ partition(const conduit::Node &n_mesh, const conduit::Node &options, conduit::No
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
-
-#if 0//def CONDUIT_PARALLEL_PARTITION
-// -- consider moving this into conduit_blueprint_mpi_mesh.cpp
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mpi --
-//-----------------------------------------------------------------------------
-namespace mpi
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mpi::mesh --
-//-----------------------------------------------------------------------------
-namespace mesh
-{
-
-//-------------------------------------------------------------------------
-void
-partition(const conduit::Node &n, const conduit::Node &options,
-    conduit::Node &output, MPI_Comm comm)
-{
-    // Figure out the number of domains in the input mesh.
-    auto ndoms = number_of_domains(mesh, comm);
-
-
-    internal::partition(mesh, ndoms, options, output, comm);
-}
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mpi::mesh --
-//-----------------------------------------------------------------------------
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mpi --
-//-----------------------------------------------------------------------------
-#endif
 
 }
 //-----------------------------------------------------------------------------
