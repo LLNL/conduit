@@ -176,7 +176,8 @@ const std::string selection::DOMAIN_KEY("domain");
 const std::string selection::MAPPING_KEY("mapping");
 
 //---------------------------------------------------------------------------
-selection::selection() : n_options_ptr(nullptr)
+selection::selection() : n_options_ptr(nullptr),
+    whole(selection::WHOLE_UNDETERMINED)
 {
 }
 
@@ -190,6 +191,25 @@ index_t
 selection::length() const
 {
     return 0;
+}
+
+//---------------------------------------------------------------------------
+bool
+selection::get_whole(const conduit::Node &n_mesh)
+{
+    // If we have not yet determined whether the selection appears whole, 
+    // do it now.
+    if(whole == WHOLE_UNDETERMINED)
+        set_whole(determine_is_whole(n_mesh));
+
+    return whole == WHOLE_DETERMINED_TRUE;
+}
+
+//---------------------------------------------------------------------------
+void
+selection::set_whole(bool value)
+{
+    whole = value ? WHOLE_DETERMINED_TRUE : WHOLE_DETERMINED_FALSE;
 }
 
 //---------------------------------------------------------------------------
@@ -229,6 +249,8 @@ public:
     selection_logical();
     virtual ~selection_logical();
 
+    static std::string name() { return "logical"; }
+
     // Initializes the selection from a conduit::Node.
     virtual bool init(const conduit::Node *n_opt_ptr) override;
 
@@ -261,12 +283,16 @@ public:
     virtual void get_element_ids_for_topo(const conduit::Node &n_topo,
                                           const index_t erange[2],
                                           std::vector<index_t> &element_ids) const override;
-private:
+
+    virtual void print(std::ostream &os) const override;
+
+protected:
+    virtual bool determine_is_whole(const conduit::Node &n_mesh) const override;
+
     index_t cells_for_axis(int axis) const
     {
-        index_t delta = static_cast<index_t>(end[axis] - start[axis] + 1);
-        constexpr index_t one = 1;
-        return (axis >= 0 && axis <= 2) ? std::max(delta, one) : 0;
+        index_t nc = static_cast<index_t>(end[axis] - start[axis] + 1);
+        return (axis >= 0 && axis <= 2) ? nc : 0;
     }
 
     index_t start[3];
@@ -327,7 +353,6 @@ selection_logical::applicable(const conduit::Node &n_mesh)
     if(is_uniform || is_rectilinear || is_structured)
     {
         index_t dims[3] = {1,1,1};
-        const conduit::Node &n_topo = n_mesh["topologies"][0];
         conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
 
         // See that the selection starts inside the dimensions.
@@ -343,6 +368,15 @@ selection_logical::applicable(const conduit::Node &n_mesh)
     }
 
     return retval;
+}
+
+//---------------------------------------------------------------------------
+bool
+selection_logical::determine_is_whole(const conduit::Node &n_mesh) const
+{
+    const conduit::Node &n_topo = n_mesh["topologies"][0];
+    index_t len = conduit::blueprint::mesh::utils::topology::length(n_topo);
+    return len == length();
 }
 
 //---------------------------------------------------------------------------
@@ -362,6 +396,8 @@ selection_logical::partition(const conduit::Node &/*n_mesh*/) const
 
     auto p0 = std::shared_ptr<selection_logical>();
     auto p1 = std::shared_ptr<selection_logical>();
+    p0->set_whole(false);
+    p1->set_whole(false);
     if(la == 0)
     {
         p0->set_start(start[0],       start[1],       start[2]);
@@ -440,6 +476,18 @@ selection_logical::get_element_ids_for_topo(const conduit::Node &n_topo,
 }
 
 //---------------------------------------------------------------------------
+void
+selection_logical::print(std::ostream &os) const
+{
+    os << "{"
+       << "\"name\":\"" << name() << "\","
+       << "\"domain\":" << get_domain() << ", "
+       << "\"start\":[" << start[0] << ", " << start[1] << ", " << start[2] << "],"
+       << "\"end\":[" << end[0] << ", " << end[1] << ", " << end[2] << "]"
+       << "}";
+}
+
+//---------------------------------------------------------------------------
 /**
    @brief This selection explicitly defines which cells we're pulling out from
           a mesh, and in which order.
@@ -447,14 +495,15 @@ selection_logical::get_element_ids_for_topo(const conduit::Node &n_topo,
 class selection_explicit : public selection
 {
 public:
-    selection_explicit() : selection(), ids_storage(),
-        num_cells_in_selection(0), num_cells_in_mesh(0)
+    selection_explicit() : selection(), ids_storage()
     {
     }
 
     virtual ~selection_explicit()
     {
     }
+
+    static std::string name() { return "explicit"; }
 
     virtual bool init(const conduit::Node *n_opt_ptr) override
     {
@@ -480,7 +529,7 @@ public:
     // Computes the number of cells in the selection.
     virtual index_t length() const override
     {
-        return num_cells_in_selection;
+        return ids_storage.dtype().number_of_elements();
     }
 
     virtual std::vector<std::shared_ptr<selection> > partition(const conduit::Node &n_mesh) const override;
@@ -491,15 +540,29 @@ public:
         return reinterpret_cast<const index_t *>(ids_storage.data_ptr());
     }
 
+    void set_indices(const conduit::Node &n)
+    {
+        ids_storage.reset();
+#ifdef CONDUIT_INDEX_32
+        n.to_uint32_array(ids_storage);
+#else
+        n.to_uint64_array(ids_storage);
+#endif
+    }
+
+    index_t num_indices() const { return ids_storage.dtype().number_of_elements(); }
+
     virtual void get_element_ids_for_topo(const conduit::Node &n_topo,
                                           const index_t erange[2],
                                           std::vector<index_t> &element_ids) const override;
 
-private:
+    virtual void print(std::ostream &os) const override;
+
+protected:
+    virtual bool determine_is_whole(const conduit::Node &n_mesh) const override;
+
     static const std::string ELEMENTS_KEY;
     conduit::Node ids_storage;
-    index_t num_cells_in_selection;
-    index_t num_cells_in_mesh;
 };
 
 const std::string selection_explicit::ELEMENTS_KEY("elements");
@@ -515,11 +578,29 @@ selection_explicit::applicable(const conduit::Node &/*n_mesh*/)
 }
 
 //---------------------------------------------------------------------------
+bool
+selection_explicit::determine_is_whole(const conduit::Node &n_mesh) const
+{
+    bool whole = false;
+    auto num_cells_in_mesh = topology::length(n_mesh);
+    auto n = num_indices();
+    if(n == num_cells_in_mesh)
+    {
+        auto indices = get_indices();
+        std::set<index_t> unique;
+        for(index_t i = 0; i < n; i++)
+            unique.insert(indices[i]);
+        whole = static_cast<index_t>(unique.size()) == num_cells_in_mesh;
+    }
+    return whole;
+}
+
+//---------------------------------------------------------------------------
 std::vector<std::shared_ptr<selection> >
 selection_explicit::partition(const conduit::Node &n_mesh) const
 {
     auto num_cells_in_mesh = topology::length(n_mesh);
-    auto n = ids_storage.dtype().number_of_elements();
+    auto n = num_indices();
     auto n_2 = n/2;
     auto indices = get_indices();
     std::vector<index_t> ids0, ids1;
@@ -539,12 +620,9 @@ selection_explicit::partition(const conduit::Node &n_mesh) const
     auto p0 = std::make_shared<selection_explicit>();
     auto p1 = std::make_shared<selection_explicit>();
     p0->ids_storage.set(ids0);
-    p0->num_cells_in_selection = ids0.size(); 
-    p0->num_cells_in_mesh = num_cells_in_mesh;
-
     p1->ids_storage.set(ids1);
-    p1->num_cells_in_selection = ids1.size(); 
-    p1->num_cells_in_mesh = num_cells_in_mesh;
+    p0->set_whole(false);
+    p1->set_whole(false);
 
     std::vector<std::shared_ptr<selection> > parts;
     parts.push_back(p0);
@@ -570,6 +648,25 @@ selection_explicit::get_element_ids_for_topo(const conduit::Node &/*n_topo*/,
 }
 
 //---------------------------------------------------------------------------
+void
+selection_explicit::print(std::ostream &os) const
+{
+    os << "{"
+       << "\"name\":\"" << name() << "\","
+       << "\"domain\":" << get_domain() << ", "
+       << "\"indices\":[";
+    auto n = length();
+    auto indices = get_indices();
+    for(index_t i = 0; i < n; i++)
+    {
+        if(i > 0)
+            os << ", ";
+        os << indices[i];
+    }
+    os << "]}";
+}
+
+//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 class selection_ranges : public selection
 {
@@ -581,6 +678,8 @@ public:
     virtual ~selection_ranges()
     {
     }
+
+    static std::string name() { return "ranges"; }
 
     virtual bool init(const conduit::Node *n_opt_ptr) override
     {
@@ -612,13 +711,29 @@ public:
                                           const index_t erange[2],
                                           std::vector<index_t> &element_ids) const override;
 
+    void set_ranges(const conduit::Node &n)
+    {
+        ranges_storage.reset();
+#ifdef CONDUIT_INDEX_32
+        n.to_uint32_array(ranges_storage);
+#else
+        n.to_uint64_array(ranges_storage);
+#endif
+    }
+
     const index_t *get_ranges() const
     {
         // Access the converted data as index_t.
         return reinterpret_cast<const index_t *>(ranges_storage.data_ptr());
     }
 
-private:
+    index_t num_ranges() const;
+
+    virtual void print(std::ostream &os) const override;
+
+protected:
+    virtual bool determine_is_whole(const conduit::Node &n_mesh) const override;
+
     static const std::string RANGES_KEY;
     conduit::Node ranges_storage;
 };
@@ -638,12 +753,47 @@ selection_ranges::length() const
 {
     index_t ncells = 0;
     const index_t *ranges = get_ranges();
-    auto n = ranges_storage.dtype().number_of_elements() / 2;
+    auto n = num_ranges();
     for(index_t i = 0; i < n; i++)
     {
         ncells += ranges[2*i+1] - ranges[2*i] + 1;
     }
     return ncells;
+}
+
+//---------------------------------------------------------------------------
+index_t
+selection_ranges::num_ranges() const
+{
+    return ranges_storage.dtype().number_of_elements() / 2;
+}
+
+//---------------------------------------------------------------------------
+bool
+selection_ranges::determine_is_whole(const conduit::Node &n_mesh) const
+{
+    bool whole = false;
+    auto num_cells_in_mesh = topology::length(n_mesh);
+    auto n = num_ranges();
+    if(n == 1)
+    {
+        whole = get_ranges()[0] == 0 &&
+                get_ranges()[0] == num_cells_in_mesh-1;
+    }
+    else
+    {
+        auto indices = get_ranges();
+        std::set<index_t> unique;
+        for(index_t i = 0; i < n; i++)
+        {
+            index_t start = indices[2*i];
+            index_t end = indices[2*i+1];
+            for(index_t eid = start; eid <= end; eid++)
+                unique.insert(eid);
+        }
+        whole = static_cast<index_t>(unique.size()) == num_cells_in_mesh;
+    }
+    return whole;
 }
 
 //---------------------------------------------------------------------------
@@ -715,6 +865,8 @@ selection_ranges::partition(const conduit::Node &/*n_mesh*/) const
     auto p1 = std::make_shared<selection_ranges>();
     p0->ranges_storage.set(r0);
     p1->ranges_storage.set(r1);
+    p0->set_whole(false);
+    p1->set_whole(false);
 
     std::vector<std::shared_ptr<selection> > parts;
     parts.push_back(p0);
@@ -728,7 +880,7 @@ void
 selection_ranges::get_element_ids_for_topo(const conduit::Node &/*n_topo*/,
     const index_t erange[2], std::vector<index_t> &element_ids) const
 {
-    auto n = ranges_storage.dtype().number_of_elements();
+    auto n = num_ranges();
     auto n_2 = n / 2;
     auto indices = get_ranges();
     for(index_t i = 0; i < n_2; i++)
@@ -741,6 +893,25 @@ selection_ranges::get_element_ids_for_topo(const conduit::Node &/*n_topo*/,
                 element_ids.push_back(eid);
         }
     }
+}
+
+//---------------------------------------------------------------------------
+void
+selection_ranges::print(std::ostream &os) const
+{
+    os << "{"
+       << "\"name\":\"" << name() << "\","
+       << "\"domain\":" << get_domain() << ", "
+       << "\"ranges\":[";
+    auto n = num_ranges() * 2;
+    auto indices = get_ranges();
+    for(index_t i = 0; i < n; i++)
+    {
+        if(i > 0)
+            os << ", ";
+        os << indices[i];
+    }
+    os << "]}";
 }
 
 //---------------------------------------------------------------------------
@@ -779,20 +950,81 @@ partitioner::~partitioner()
 
 //---------------------------------------------------------------------------
 std::shared_ptr<selection>
-partitioner::create_selection(const conduit::Node &n_sel) const
+partitioner::create_selection(const std::string &type) const
 {
     std::shared_ptr<selection> retval;
-    std::string type(n_sel["type"].as_string());
 
-    if(type == "logical")
+    if(type == selection_logical::name())
         retval = std::make_shared<selection_logical>();
-    else if(type == "explicit")
+    else if(type == selection_explicit::name())
         retval = std::make_shared<selection_explicit>();
-    else if(type == "ranges")
+    else if(type == selection_ranges::name())
         retval = std::make_shared<selection_ranges>();
     else
     {
         CONDUIT_ERROR("Unknown selection type: " << type);
+    }
+    return retval;
+}
+
+//---------------------------------------------------------------------------
+std::shared_ptr<selection>
+partitioner::create_selection_all_cells(const conduit::Node &n_mesh) const
+{
+    std::shared_ptr<selection> retval;
+    const conduit::Node &n_coords = n_mesh["coordsets"][0];
+    const conduit::Node &n_topo = n_mesh["topologies"][0];
+    bool is_uniform = n_coords["type"].as_string() == "uniform";
+    bool is_rectilinear = n_coords["type"].as_string() == "rectilinear";
+    bool is_structured = n_coords["type"].as_string() == "explicit" && 
+                         n_topo["type"].as_string() == "structured";
+
+    if(is_uniform || is_rectilinear || is_structured)
+    {
+        index_t edims[3] = {1,1,1};
+        conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, edims, 3);
+        retval = create_selection(selection_logical::name());
+        retval->set_whole(true);
+        auto typed_sel = dynamic_cast<selection_logical *>(retval.get());
+        if(typed_sel != nullptr)
+        {
+// TODO: check output of logical_dims for ranges.
+            typed_sel->set_end(edims[0] == 0 ? 0 : edims[0]-1,
+                               edims[1] == 0 ? 0 : edims[1]-1,
+                               edims[2] == 0 ? 0 : edims[2]-1);
+        }
+    }
+    else
+    {        
+        const conduit::Node &n_topos = n_mesh["topologies"];
+        index_t total_cells = 0;
+        for(index_t i = 0; i < n_topos.number_of_children(); i++)
+        {
+            const conduit::Node &n_topo = n_topos[i];
+            auto ncells = conduit::blueprint::mesh::utils::topology::length(n_topo);
+            total_cells += ncells;
+        }
+        retval = create_selection(selection_ranges::name());
+        retval->set_whole(true);
+        auto typed_sel = dynamic_cast<selection_ranges *>(retval.get());
+        if(typed_sel != nullptr)
+        {
+#ifdef CONDUIT_INDEX_32
+            std::vector<uint32> range;
+            range.push_back(0);
+            range.push_back(static_cast<uint32>(total_cells));
+            conduit::Node n_range;
+            n_range.set(range);
+            typed_sel->set_ranges(n_range);
+#else
+            std::vector<uint64> range;
+            range.push_back(0);
+            range.push_back(static_cast<uint64>(total_cells));
+            conduit::Node n_range;
+            n_range.set(range);
+            typed_sel->set_ranges(n_range);
+#endif
+        }
     }
     return retval;
 }
@@ -814,7 +1046,8 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
             const conduit::Node *n_sel = n_selections.child_ptr(i);
             try
             {
-                auto sel = create_selection(*n_sel);
+                std::string type(n_sel->child("type").as_string());
+                auto sel = create_selection(type);
                 if(sel != nullptr && sel->init(n_sel))
                 {
                     // The selection is good. See if it applies to the domains.
@@ -843,8 +1076,9 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
         // Add null selections to indicate that we take the whole domain.
         for(size_t domid = 0; domid < doms.size(); domid++)
         {
+            auto sel = create_selection_all_cells(*doms[domid]);
+            selections.push_back(sel);
             meshes.push_back(doms[domid]);
-            selections.push_back(nullptr);
         }
     }
 
@@ -852,6 +1086,17 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     target = 1;
     if(options.has_child("target"))
         target = options.as_unsigned_int();
+
+#if 1
+    cout << "partitioner::initialize" << endl;
+    cout << "\ttarget=" << target << endl;
+    for(size_t i = 0; i < selections.size(); i++)
+    {
+        cout << "\t";
+        selections[i]->print(cout);
+        cout << endl;
+    }
+#endif
 
     return !selections.empty();
 }
@@ -908,6 +1153,16 @@ partitioner::split_selections()
             }
         }
     }
+
+#if 1
+    cout << "partitioner::split_selections" << endl;
+    for(size_t i = 0; i < selections.size(); i++)
+    {
+        cout << "\t";
+        selections[i]->print(cout);
+        cout << endl;
+    }
+#endif
 }
 
 //---------------------------------------------------------------------------
@@ -1453,7 +1708,7 @@ partitioner::execute(conduit::Node &output)
     std::vector<chunk> chunks;
     for(size_t i = 0; i < selections.size(); i++)
     {
-        if(selections[i] == nullptr)
+        if(selections[i]->get_whole(*meshes[i]))
         {
 // FIXME: This is not what I want to do because it bypasses the splitting process.
 

@@ -77,6 +77,21 @@ public:
     virtual index_t length() const;
 
     /**
+     @brief Returns whether the selection covers the whole mesh. Selections that
+            covered a subset of the mesh or were otherwise partitioned would
+            not be whole.
+     @param n_mesh A Conduit conduit::Node containing the mesh.
+     @return True of the mesh is whole. False otherwise.
+     */
+    virtual bool get_whole(const conduit::Node &n_mesh);
+
+    /**
+     @brief Set whether the selection is considered to cover the whole mesh.
+     @param value A value indicating whether the selection covers the mesh.
+     */
+    void set_whole(bool value);
+
+    /**
      @brief Partitions the selection into smaller selections.
      @param n_mesh A Conduit conduit::Node containing the mesh.
      @return A vector of selection pointers that cover the input selection.
@@ -104,11 +119,30 @@ public:
                                           const index_t erange[2],
                                           std::vector<index_t> &element_ids) const = 0;
 
+    /**
+     @brief Prints the selection to the stream.
+     @param os The stream to which the information will be printed.
+     */
+    virtual void print(std::ostream &os) const = 0;
 protected:
+    /**
+     @brief Determines whether the selection covers the whole mesh.
+     @param n_mesh A Conduit conduit::Node containing the mesh.
+     @return True of the mesh is whole. False otherwise.
+     */
+    virtual bool determine_is_whole(const conduit::Node &n_mesh) const = 0;
+
     static const std::string DOMAIN_KEY;
     static const std::string MAPPING_KEY;
 
+    enum {
+        WHOLE_UNDETERMINED,
+        WHOLE_DETERMINED_FALSE,
+        WHOLE_DETERMINED_TRUE
+    };
+
     const conduit::Node *n_options_ptr;
+    int whole;
 };
 
 //---------------------------------------------------------------------------
@@ -235,11 +269,20 @@ protected:
     /**
      @brief This is a factory method for creating selections based on the 
             provided options.
-     @param n_sel A Conduit node that represents the options used for
-                  creating the selection.
-     @return A new instance of a selection that best represents the options.
+     @param type The name of the selection type to create.
+     @return A new instance of the requested selection type.
      */
-    virtual std::shared_ptr<selection> create_selection(const conduit::Node &n_sel) const;
+    virtual std::shared_ptr<selection> create_selection(const std::string &type) const;
+
+    /**
+     @brief Create a selection of the type that best selects all of the 
+            cells in the supplied mesh. For example, if we're given a 
+            structured mesh, we'd return a logical selection that spans
+            all cells in the mesh.
+     @param n_mesh A Conduit node that contains the mesh we're selecting.
+     @return A new selection object that selects all cells in the mesh.
+     */
+    std::shared_ptr<selection> create_selection_all_cells(const conduit::Node &n_mesh) const;
 
     void copy_fields(const std::vector<index_t> &all_selected_vertex_ids,
                      const std::vector<index_t> &all_selected_element_ids,

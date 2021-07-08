@@ -28,10 +28,27 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 
     while(1);
 }
+//-----------------------------------------------------------------------------
+void
+test_logical_selection_2d(const std::string &topo)
+{
+    conduit::utils::set_error_handler(tmp_err_handler);
+
+    // Make 10x10x1 cell mesh.
+    conduit::Node input, output, options, msg;
+    conduit::index_t vdims[] = {11,11,1};
+    conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
+ 
+    // With no options, test that output==input
+    conduit::blueprint::mesh::partition(input, options, output);
+    cout << "output=";
+    output.print();
+    EXPECT_EQ(input.diff(output, msg, 0.0), false);
+}
 
 //-----------------------------------------------------------------------------
 void
-test_logical_selection(const std::string &topo)
+test_logical_selection_3d(const std::string &topo)
 {
     conduit::utils::set_error_handler(tmp_err_handler);
 
@@ -151,12 +168,18 @@ test_logical_selection(const std::string &topo)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, uniform_logical)
+TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
-    test_logical_selection("uniform");
+    test_logical_selection_2d("uniform");
 }
 
 #if 0
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, uniform_logical_3d)
+{
+    test_logical_selection_3d("uniform");
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_rectilinear)
 {
