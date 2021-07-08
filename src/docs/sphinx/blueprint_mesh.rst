@@ -1291,6 +1291,31 @@ be generated in the result.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
+polyhedral chain
+++++++++++
+
+.. figure:: polychain.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polyhedral chain example ``chain`` field.
+
+The ``polychain()`` function generates a chain of cubes and triangular prisms that extends diagonally.
+
+The scalar element-centered field ``chain`` defined in the result mesh associates with each cube
+the value 0 and with each triangular prism the value 1.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::polychain(const index_t length,
+                                                  Node &res);
+
+
+``length`` specifies how long the chain ought to be. The length is equal to the number of cubes and
+equal to half the number of prisms.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
 miscellaneous
 ++++++++++++++
 
