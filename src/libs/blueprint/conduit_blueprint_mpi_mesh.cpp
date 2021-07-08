@@ -15,6 +15,7 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mpi_mesh.hpp"
 #include "conduit_relay_mpi.hpp"
+#include <assert.h>
 #include <cmath>
 #include <limits>
 // access conduit blueprint mesh utilities
@@ -70,7 +71,6 @@ struct PolyBndry
                                                           //touch it 
     //outer map: local elem, inner map: nbr elem to face
     std::map<index_t, std::map<index_t, SharedFace> > m_nbr_faces;
-    std::set<index_t> m_shared_fine;
 };
 
 //-----------------------------------------------------------------------------
@@ -723,7 +723,7 @@ void match_nbr_elems(PolyBndry& pbnd,
                 pbnd.m_nbr_elems[roffset].push_back(noffset);
 
                 if (local)
-                { 
+                {
                     auto& nbr_elem = nbr_elems[noffset];
                     pbnd.m_nbr_faces[roffset][noffset].m_face_id =
                         nside == 0 ?
@@ -751,7 +751,7 @@ void match_nbr_elems(PolyBndry& pbnd,
     else if (side == 2 || side == 3)
     {
         index_t jface_start = (nbr_iwidth+1)*nbr_jwidth*nbr_kwidth;
-        index_t nside = (side+1)%2;     //nbr side counterpart to  ref side
+        index_t nside = 2 + (side+1)%2;     //nbr side counterpart to  ref side
         index_t shift = -(nside%2); //0 on low side, -1 on high side
         index_t jcnst = origin_j - nj_lo + shift;
         index_t istart = origin_i;
@@ -812,7 +812,7 @@ void match_nbr_elems(PolyBndry& pbnd,
         index_t jface_start = (nbr_iwidth+1)*nbr_jwidth*nbr_kwidth;
         index_t kface_start = jface_start +
                               nbr_iwidth*(nbr_jwidth+1)*nbr_kwidth;
-        index_t nside = (side+1)%2;     //nbr side counterpart to  ref side
+        index_t nside = 4 + (side+1)%2;     //nbr side counterpart to  ref side
         index_t shift = -(nside%2); //0 on low side, -1 on high side
         index_t kcnst = origin_k - nk_lo + shift;
         index_t jstart = origin_j;
@@ -873,86 +873,6 @@ void match_nbr_elems(PolyBndry& pbnd,
         //not a side
     }
 
-    if (side == 0 || side == 1)
-    {
-        index_t icnst = origin_i - ni_lo;
-        index_t jstart = origin_j;
-        index_t jend = jstart + nbr_size_j;
-        index_t kstart = origin_k;
-        index_t kend = kstart + nbr_size_k;
-
-        index_t nbr_viwidth = nbr_iwidth+1;
-        index_t nbr_vjwidth = nbr_jwidth+1;
-
-
-        for (index_t kidx = kstart; kidx < kend; ++kidx) {
-            if (kidx % ratio_k == 0)
-            {
-                for (index_t jidx = jstart; jidx < jend; ++jidx) {
-                    if (jidx % ratio_j == 0)
-                    {
-                        index_t npnt = icnst + jidx*nbr_viwidth +
-                                       kidx*nbr_viwidth*nbr_vjwidth;
-                        pbnd.m_shared_fine.insert(npnt);
-                    }
-                }
-            }
-        }
-    }
-    else if (side == 2 || side == 3)
-    {
-        index_t jcnst = origin_j - nj_lo;
-        index_t istart = origin_i;
-        index_t iend = istart + nbr_size_i;
-        index_t kstart = origin_k;
-        index_t kend = kstart + nbr_size_k;
-
-        index_t nbr_viwidth = nbr_iwidth+1;
-        index_t nbr_vjwidth = nbr_jwidth+1;
-
-        for (index_t kidx = kstart; kidx < kend; ++kidx) {
-            if (kidx % ratio_k == 0)
-            {
-                for (index_t iidx = istart; iidx < iend; ++iidx) {
-                    if (iidx % ratio_i == 0)
-                    {
-                        index_t npnt = iidx + jcnst*nbr_viwidth +
-                                       kidx*nbr_viwidth*nbr_vjwidth;
-                        pbnd.m_shared_fine.insert(npnt);
-                    }
-                }
-            }
-        }
-    }
-    else if (side == 4 || side == 5)
-    {
-        index_t kcnst = origin_k - nk_lo;
-        index_t istart = origin_i;
-        index_t iend = istart + nbr_size_i;
-        index_t jstart = origin_j;
-        index_t jend = jstart + nbr_size_j;
-
-        index_t nbr_viwidth = nbr_iwidth+1;
-        index_t nbr_vjwidth = nbr_jwidth+1;
-
-        for (index_t jidx = jstart; jidx < jend; ++jidx) {
-            if (jidx % ratio_j == 0)
-            {
-                for (index_t iidx = istart; iidx < iend; ++iidx) {
-                    if (iidx % ratio_i == 0)
-                    {
-                        index_t npnt = iidx +jidx*nbr_viwidth +
-                                       kcnst*nbr_viwidth*nbr_vjwidth;
-                        pbnd.m_shared_fine.insert(npnt);
-                    }
-                }
-            }
-        }
-    } 
-    else
-    {
-       //not a side
-    }
 }
 
 
