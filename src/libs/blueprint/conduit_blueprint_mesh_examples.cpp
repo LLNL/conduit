@@ -3423,26 +3423,28 @@ adjset_uniform(Node &res)
 
 //-----------------------------------------------------------------------------
 void 
-polyhedral_chain(index_t howmany, // how long the chain ought to be
-                 Node &chain)
+polyhedral_chain(index_t length, // how long the chain ought to be
+                 Node &res)
 {
-    Node &chain_coords = chain["coordsets/coords"];
-    Node &chain_topo = chain["topologies/topo"];
-    Node &chain_fields = chain["fields"];
+    res.reset();
+
+    Node &chain_coords = res["coordsets/coords"];
+    Node &chain_topo = res["topologies/topo"];
+    Node &chain_fields = res["fields"];
 
     chain_coords["type"] = "explicit";
 
     // Each cube requires 8 vertices, and each triangular prism requires 6
     // There are two prisms for every cube, so 8+6+6 = 20 vertices
-    chain_coords["values/x"].set(conduit::DataType::int64(howmany * 20));
-    chain_coords["values/y"].set(conduit::DataType::int64(howmany * 20));
-    chain_coords["values/z"].set(conduit::DataType::int64(howmany * 20));
+    chain_coords["values/x"].set(conduit::DataType::int64(length * 20));
+    chain_coords["values/y"].set(conduit::DataType::int64(length * 20));
+    chain_coords["values/z"].set(conduit::DataType::int64(length * 20));
 
     int64* values_x = chain_coords["values/x"].value();
     int64* values_y = chain_coords["values/y"].value();
     int64* values_z = chain_coords["values/z"].value();
 
-    for (int i = 0; i < howmany; i ++)
+    for (int i = 0; i < length; i ++)
     {
         // points for the cubes
         values_x[i * 20] = 1 + i * 2;      values_y[i * 20] = 1;        values_z[i * 20] = 1 + i * 2;
@@ -3476,28 +3478,28 @@ polyhedral_chain(index_t howmany, // how long the chain ought to be
     chain_topo["elements/shape"] = "polyhedral";
 
     // 6 cube faces + 5 prism faces * 2 prisms makes 16
-    chain_topo["elements/connectivity"].set(conduit::DataType::int64(howmany * 16));
+    chain_topo["elements/connectivity"].set(conduit::DataType::int64(length * 16));
     int64* connec = chain_topo["elements/connectivity"].value();
-    for (int i = 0; i < howmany * 16; i ++)
+    for (int i = 0; i < length * 16; i ++)
     {
         // our faces are specified in order and no faces are reused
         connec[i] = i;
     }
 
-    // this is 3 because every time howmany is increased by 1, 3 more polyhedra are added,
+    // this is 3 because every time length is increased by 1, 3 more polyhedra are added,
     // the cube and two prisms
-    chain_topo["elements/sizes"].set(conduit::DataType::int64(howmany * 3));
+    chain_topo["elements/sizes"].set(conduit::DataType::int64(length * 3));
     int64* sizes = chain_topo["elements/sizes"].value();
-    for (int i = 0; i < howmany * 3; i ++)
+    for (int i = 0; i < length * 3; i ++)
     {
         // this ensures that sizes will be of the form {6,5,5, 6,5,5, 6,5,5, ..., 6,5,5}
         sizes[i] = ((i % 3) > 0) ? 5 : 6;
     }
 
-    chain_topo["elements/offsets"].set(conduit::DataType::int64(howmany * 3));
+    chain_topo["elements/offsets"].set(conduit::DataType::int64(length * 3));
     int64* offsets = chain_topo["elements/offsets"].value();
     offsets[0] = 0;
-    for (int i = 1; i < howmany * 3; i ++)
+    for (int i = 1; i < length * 3; i ++)
     {
         offsets[i] = offsets[i - 1] + sizes[i - 1];
     }
@@ -3506,9 +3508,9 @@ polyhedral_chain(index_t howmany, // how long the chain ought to be
     // 24 points -> 6 sides -> a cube 
     // 18 points -> 5 sides -> triangular prism 
     // so 24 + 18 * 2 = 60
-    chain_topo["subelements/connectivity"].set(conduit::DataType::int64(howmany * 60));
+    chain_topo["subelements/connectivity"].set(conduit::DataType::int64(length * 60));
     int64* sub_connec = chain_topo["subelements/connectivity"].value();
-    for (int i = 0; i < howmany; i ++)
+    for (int i = 0; i < length; i ++)
     {
         // CUBE
         // top                                  // bottom
@@ -3550,19 +3552,19 @@ polyhedral_chain(index_t howmany, // how long the chain ought to be
         sub_connec[i * 60 + 56] = 16 + i * 20; sub_connec[i * 60 + 59] = 19 + i * 20;
     }
 
-    chain_topo["subelements/sizes"].set(conduit::DataType::int64(howmany * 16));
+    chain_topo["subelements/sizes"].set(conduit::DataType::int64(length * 16));
     int64* sub_sizes = chain_topo["subelements/sizes"].value();
-    for (int i = 0; i < howmany * 16; i ++)
+    for (int i = 0; i < length * 16; i ++)
     {
         // this ensures sizes will be of the form {4,4,4,4,4,4,4,4,4,3,3,4,4,4,3,3, 4,4,4,4,4,4,4,4,4,3,3,4,4,4,3,3, ...}
         int imod16 = i % 16;
         sub_sizes[i] = ((imod16 < 9) || ((imod16 > 10) && (imod16 < 14))) ? 4 : 3;
     }
 
-    chain_topo["subelements/offsets"].set(conduit::DataType::int64(howmany * 16));
+    chain_topo["subelements/offsets"].set(conduit::DataType::int64(length * 16));
     int64* sub_offsets = chain_topo["subelements/offsets"].value();
     sub_offsets[0] = 0;
-    for (int i = 1; i < howmany * 16; i ++)
+    for (int i = 1; i < length * 16; i ++)
     {
         sub_offsets[i] = sub_offsets[i - 1] + sub_sizes[i - 1];
     }
@@ -3570,10 +3572,10 @@ polyhedral_chain(index_t howmany, // how long the chain ought to be
     chain_fields["chain/topology"] = "topo";
     chain_fields["chain/association"] = "element";
     chain_fields["chain/volume_dependent"] = "false";
-    chain_fields["chain/values"].set(conduit::DataType::int64(howmany * 3));
+    chain_fields["chain/values"].set(conduit::DataType::int64(length * 3));
     int64* field_values = chain_fields["chain/values"].value();
 
-    for (int i = 0; i < howmany * 3; i ++)
+    for (int i = 0; i < length * 3; i ++)
     {
         // ensures that the field is of the form {0,1,1, 0,1,1, ..., 0,1,1}
         field_values[i] = (i % 3) == 0 ? 0 : 1;
