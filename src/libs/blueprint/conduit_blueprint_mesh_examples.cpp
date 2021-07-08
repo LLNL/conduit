@@ -3500,7 +3500,7 @@ polychain(const index_t length, // how long the chain ought to be
     for (int i = 0; i < length * num_polyhedra_per_chain_pair; i ++)
     {
         // this ensures that sizes will be of the form {6,5,5, 6,5,5, 6,5,5, ..., 6,5,5}
-        sizes[i] = ((i % num_polyhedra_per_chain_pair) > 0) ? 5 : 6;
+        sizes[i] = ((i % num_polyhedra_per_chain_pair) > 0) ? num_faces_per_triprism : num_faces_per_hex;
     }
 
     chain_topo["subelements/shape"] = "polygonal";
@@ -3566,7 +3566,7 @@ polychain(const index_t length, // how long the chain ought to be
     {
         // this ensures sizes will be of the form {4,4,4,4,4,4,4,4,4,3,3,4,4,4,3,3, 4,4,4,4,4,4,4,4,4,3,3,4,4,4,3,3, ...}
         int imodfaces = i % num_faces_per_chain_pair;
-        sub_sizes[i] = ((imodfaces < 9) || ((imodfaces > 10) && (imodfaces < 14))) ? 4 : 3;
+        sub_sizes[i] = ((imodfaces < 9) || ((imodfaces > 10) && (imodfaces < 14))) ? num_points_per_quad_face : num_points_per_tri_face;
     }
 
     blueprint::mesh::topology::unstructured::generate_offsets(chain_topo,
@@ -3575,13 +3575,13 @@ polychain(const index_t length, // how long the chain ought to be
     chain_fields["chain/topology"] = "topo";
     chain_fields["chain/association"] = "element";
     chain_fields["chain/volume_dependent"] = "false";
-    chain_fields["chain/values"].set(conduit::DataType::int64(length * 3));
+    chain_fields["chain/values"].set(conduit::DataType::int64(length * num_polyhedra_per_chain_pair));
     int64 *field_values = chain_fields["chain/values"].value();
 
-    for (int i = 0; i < length * 3; i ++)
+    for (int i = 0; i < length * num_polyhedra_per_chain_pair; i ++)
     {
         // ensures that the field is of the form {0,1,1, 0,1,1, ..., 0,1,1}
-        field_values[i] = (i % 3) == 0 ? 0 : 1;
+        field_values[i] = (i % num_polyhedra_per_chain_pair) == 0 ? 0 : 1;
     }
 }
 
