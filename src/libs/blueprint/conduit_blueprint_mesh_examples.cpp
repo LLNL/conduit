@@ -3423,8 +3423,8 @@ adjset_uniform(Node &res)
 
 //-----------------------------------------------------------------------------
 void 
-polyhedral_chain(index_t length, // how long the chain ought to be
-                 Node &res)
+polychain(const index_t length, // how long the chain ought to be
+          Node &res)
 {
     res.reset();
 
@@ -3434,146 +3434,149 @@ polyhedral_chain(index_t length, // how long the chain ought to be
 
     chain_coords["type"] = "explicit";
 
-    // Each cube requires 8 vertices, and each triangular prism requires 6
-    // There are two prisms for every cube, so 8+6+6 = 20 vertices
-    chain_coords["values/x"].set(conduit::DataType::int64(length * 20));
-    chain_coords["values/y"].set(conduit::DataType::int64(length * 20));
-    chain_coords["values/z"].set(conduit::DataType::int64(length * 20));
+    const index_t num_verts_per_hex = 8;
+    const index_t num_verts_per_triprism = 6;
+    const index_t num_verts_per_chain_pair = num_verts_per_hex + 2 * num_verts_per_triprism;
 
-    int64* values_x = chain_coords["values/x"].value();
-    int64* values_y = chain_coords["values/y"].value();
-    int64* values_z = chain_coords["values/z"].value();
+    chain_coords["values/x"].set(conduit::DataType::int64(length * num_verts_per_chain_pair));
+    chain_coords["values/y"].set(conduit::DataType::int64(length * num_verts_per_chain_pair));
+    chain_coords["values/z"].set(conduit::DataType::int64(length * num_verts_per_chain_pair));
+
+    int64 *values_x = chain_coords["values/x"].value();
+    int64 *values_y = chain_coords["values/y"].value();
+    int64 *values_z = chain_coords["values/z"].value();
 
     for (int i = 0; i < length; i ++)
     {
         // points for the cubes
-        values_x[i * 20] = 1 + i * 2;      values_y[i * 20] = 1;        values_z[i * 20] = 1 + i * 2;
-        values_x[i * 20 + 1] = 1 + i * 2;  values_y[i * 20 + 1] = 1;    values_z[i * 20 + 1] = -1 + i * 2;
-        values_x[i * 20 + 2] = -1 + i * 2; values_y[i * 20 + 2] = 1;    values_z[i * 20 + 2] = -1 + i * 2;
-        values_x[i * 20 + 3] = -1 + i * 2; values_y[i * 20 + 3] = 1;    values_z[i * 20 + 3] = 1 + i * 2;
-        values_x[i * 20 + 4] = 1 + i * 2;  values_y[i * 20 + 4] = -1;   values_z[i * 20 + 4] = 1 + i * 2;
-        values_x[i * 20 + 5] = 1 + i * 2;  values_y[i * 20 + 5] = -1;   values_z[i * 20 + 5] = -1 + i * 2;
-        values_x[i * 20 + 6] = -1 + i * 2; values_y[i * 20 + 6] = -1;   values_z[i * 20 + 6] = -1 + i * 2;
-        values_x[i * 20 + 7] = -1 + i * 2; values_y[i * 20 + 7] = -1;   values_z[i * 20 + 7] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair] = 1 + i * 2;           values_y[i * num_verts_per_chain_pair] = 1;       values_z[i * num_verts_per_chain_pair] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 1] = 1 + i * 2;       values_y[i * num_verts_per_chain_pair + 1] = 1;   values_z[i * num_verts_per_chain_pair + 1] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 2] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 2] = 1;   values_z[i * num_verts_per_chain_pair + 2] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 3] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 3] = 1;   values_z[i * num_verts_per_chain_pair + 3] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 4] = 1 + i * 2;       values_y[i * num_verts_per_chain_pair + 4] = -1;  values_z[i * num_verts_per_chain_pair + 4] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 5] = 1 + i * 2;       values_y[i * num_verts_per_chain_pair + 5] = -1;  values_z[i * num_verts_per_chain_pair + 5] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 6] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 6] = -1;  values_z[i * num_verts_per_chain_pair + 6] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 7] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 7] = -1;  values_z[i * num_verts_per_chain_pair + 7] = 1 + i * 2;
 
         // points for half the triangular prisms
-        values_x[i * 20 + 8] = 1 + i * 2;       values_y[i * 20 + 8] = 1;   values_z[i * 20 + 8] = -1 + i * 2 + 2;
-        values_x[i * 20 + 9] = -1 + i * 2;      values_y[i * 20 + 9] = 1;   values_z[i * 20 + 9] = -1 + i * 2 + 2;
-        values_x[i * 20 + 10] = -1 + i * 2 + 2; values_y[i * 20 + 10] = 1;  values_z[i * 20 + 10] = 1 + i * 2 + 2;
-        values_x[i * 20 + 11] = 1 + i * 2;      values_y[i * 20 + 11] = -1; values_z[i * 20 + 11] = -1 + i * 2 + 2;
-        values_x[i * 20 + 12] = -1 + i * 2;     values_y[i * 20 + 12] = -1; values_z[i * 20 + 12] = -1 + i * 2 + 2;
-        values_x[i * 20 + 13] = -1 + i * 2 + 2; values_y[i * 20 + 13] = -1; values_z[i * 20 + 13] = 1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 8] = 1 + i * 2;       values_y[i * num_verts_per_chain_pair + 8] = 1;   values_z[i * num_verts_per_chain_pair + 8] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 9] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 9] = 1;   values_z[i * num_verts_per_chain_pair + 9] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 10] = -1 + i * 2 + 2; values_y[i * num_verts_per_chain_pair + 10] = 1;  values_z[i * num_verts_per_chain_pair + 10] = 1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 11] = 1 + i * 2;      values_y[i * num_verts_per_chain_pair + 11] = -1; values_z[i * num_verts_per_chain_pair + 11] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 12] = -1 + i * 2;     values_y[i * num_verts_per_chain_pair + 12] = -1; values_z[i * num_verts_per_chain_pair + 12] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 13] = -1 + i * 2 + 2; values_y[i * num_verts_per_chain_pair + 13] = -1; values_z[i * num_verts_per_chain_pair + 13] = 1 + i * 2 + 2;
 
         // points for the other half
-        values_x[i * 20 + 14] = 1 + i * 2;      values_y[i * 20 + 14] = 1;  values_z[i * 20 + 14] = -1 + i * 2 + 2;
-        values_x[i * 20 + 15] = -1 + i * 2 + 2; values_y[i * 20 + 15] = 1;  values_z[i * 20 + 15] = -1 + i * 2;
-        values_x[i * 20 + 16] = -1 + i * 2 + 4; values_y[i * 20 + 16] = 1;  values_z[i * 20 + 16] = 1 + i * 2;
-        values_x[i * 20 + 17] = 1 + i * 2;      values_y[i * 20 + 17] = -1; values_z[i * 20 + 17] = -1 + i * 2 + 2;
-        values_x[i * 20 + 18] = -1 + i * 2 + 2; values_y[i * 20 + 18] = -1; values_z[i * 20 + 18] = -1 + i * 2;
-        values_x[i * 20 + 19] = -1 + i * 2 + 4; values_y[i * 20 + 19] = -1; values_z[i * 20 + 19] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 14] = 1 + i * 2;      values_y[i * num_verts_per_chain_pair + 14] = 1;  values_z[i * num_verts_per_chain_pair + 14] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 15] = -1 + i * 2 + 2; values_y[i * num_verts_per_chain_pair + 15] = 1;  values_z[i * num_verts_per_chain_pair + 15] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 16] = -1 + i * 2 + 4; values_y[i * num_verts_per_chain_pair + 16] = 1;  values_z[i * num_verts_per_chain_pair + 16] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 17] = 1 + i * 2;      values_y[i * num_verts_per_chain_pair + 17] = -1; values_z[i * num_verts_per_chain_pair + 17] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 18] = -1 + i * 2 + 2; values_y[i * num_verts_per_chain_pair + 18] = -1; values_z[i * num_verts_per_chain_pair + 18] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 19] = -1 + i * 2 + 4; values_y[i * num_verts_per_chain_pair + 19] = -1; values_z[i * num_verts_per_chain_pair + 19] = 1 + i * 2;
     }
 
     chain_topo["type"] = "unstructured";
     chain_topo["coordset"] = "coords";
     chain_topo["elements/shape"] = "polyhedral";
 
-    // 6 cube faces + 5 prism faces * 2 prisms makes 16
-    chain_topo["elements/connectivity"].set(conduit::DataType::int64(length * 16));
-    int64* connec = chain_topo["elements/connectivity"].value();
-    for (int i = 0; i < length * 16; i ++)
+    const index_t num_faces_per_hex = 6;
+    const index_t num_faces_per_triprism = 5;
+    const index_t num_faces_per_chain_pair = num_faces_per_hex + 2 * num_faces_per_triprism;
+
+    chain_topo["elements/connectivity"].set(conduit::DataType::int64(length * num_faces_per_chain_pair));
+    int64 *connec = chain_topo["elements/connectivity"].value();
+    for (int i = 0; i < length * num_faces_per_chain_pair; i ++)
     {
         // our faces are specified in order and no faces are reused
         connec[i] = i;
     }
 
     // this is 3 because every time length is increased by 1, 3 more polyhedra are added,
+    const index_t num_polyhedra_per_chain_pair = 3;
+
     // the cube and two prisms
-    chain_topo["elements/sizes"].set(conduit::DataType::int64(length * 3));
-    int64* sizes = chain_topo["elements/sizes"].value();
-    for (int i = 0; i < length * 3; i ++)
+    chain_topo["elements/sizes"].set(conduit::DataType::int64(length * num_polyhedra_per_chain_pair));
+    int64 *sizes = chain_topo["elements/sizes"].value();
+    for (int i = 0; i < length * num_polyhedra_per_chain_pair; i ++)
     {
         // this ensures that sizes will be of the form {6,5,5, 6,5,5, 6,5,5, ..., 6,5,5}
-        sizes[i] = ((i % 3) > 0) ? 5 : 6;
-    }
-
-    chain_topo["elements/offsets"].set(conduit::DataType::int64(length * 3));
-    int64* offsets = chain_topo["elements/offsets"].value();
-    offsets[0] = 0;
-    for (int i = 1; i < length * 3; i ++)
-    {
-        offsets[i] = offsets[i - 1] + sizes[i - 1];
+        sizes[i] = ((i % num_polyhedra_per_chain_pair) > 0) ? 5 : 6;
     }
 
     chain_topo["subelements/shape"] = "polygonal";
-    // 24 points -> 6 sides -> a cube 
-    // 18 points -> 5 sides -> triangular prism 
-    // so 24 + 18 * 2 = 60
-    chain_topo["subelements/connectivity"].set(conduit::DataType::int64(length * 60));
-    int64* sub_connec = chain_topo["subelements/connectivity"].value();
+
+    const index_t num_points_per_quad_face = 4;
+    const index_t num_points_per_tri_face = 3;
+    const index_t num_tri_faces_in_triprism = 2;
+    const index_t num_quad_faces_in_triprism = 3;
+    const index_t sizeof_hex_connectivity = num_faces_per_hex * num_points_per_quad_face;
+    const index_t sizeof_triprism_connectivity = num_tri_faces_in_triprism * num_points_per_tri_face +
+                                                 num_quad_faces_in_triprism * num_points_per_quad_face;
+    const index_t sizeof_chainpair_connec = sizeof_hex_connectivity + sizeof_triprism_connectivity * 2;
+
+    chain_topo["subelements/connectivity"].set(conduit::DataType::int64(length * sizeof_chainpair_connec));
+    int64 *sub_connec = chain_topo["subelements/connectivity"].value();
     for (int i = 0; i < length; i ++)
     {
         // CUBE
-        // top                                  // bottom
-        sub_connec[i * 60] = 0 + i * 20;        sub_connec[i * 60 + 4] = 4 + i * 20;
-        sub_connec[i * 60 + 1] = 1 + i * 20;    sub_connec[i * 60 + 5] = 5 + i * 20;
-        sub_connec[i * 60 + 2] = 2 + i * 20;    sub_connec[i * 60 + 6] = 6 + i * 20;
-        sub_connec[i * 60 + 3] = 3 + i * 20;    sub_connec[i * 60 + 7] = 7 + i * 20;
+        // top                                                          // bottom
+        sub_connec[i * sizeof_chainpair_connec] = 0 + i * 20;        sub_connec[i * sizeof_chainpair_connec + 4] = 4 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 1] = 1 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 5] = 5 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 2] = 2 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 6] = 6 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 3] = 3 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 7] = 7 + i * 20;
         
-        // side where x = 1                     // side where x = -1
-        sub_connec[i * 60 + 8] = 0 + i * 20;    sub_connec[i * 60 + 12] = 2 + i * 20;
-        sub_connec[i * 60 + 9] = 1 + i * 20;    sub_connec[i * 60 + 13] = 3 + i * 20;
-        sub_connec[i * 60 + 10] = 5 + i * 20;   sub_connec[i * 60 + 14] = 7 + i * 20;
-        sub_connec[i * 60 + 11] = 4 + i * 20;   sub_connec[i * 60 + 15] = 6 + i * 20;
+        // side where x = 1                                             // side where x = -1
+        sub_connec[i * sizeof_chainpair_connec + 8] = 0 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 12] = 2 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 9] = 1 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 13] = 3 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 10] = 5 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 14] = 7 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 11] = 4 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 15] = 6 + i * 20;
         
-        // side where z = 1                     // side where z = -1
-        sub_connec[i * 60 + 16] = 0 + i * 20;   sub_connec[i * 60 + 20] = 1 + i * 20;
-        sub_connec[i * 60 + 17] = 3 + i * 20;   sub_connec[i * 60 + 21] = 2 + i * 20;
-        sub_connec[i * 60 + 18] = 7 + i * 20;   sub_connec[i * 60 + 22] = 6 + i * 20;
-        sub_connec[i * 60 + 19] = 4 + i * 20;   sub_connec[i * 60 + 23] = 5 + i * 20;
+        // side where z = 1                                             // side where z = -1
+        sub_connec[i * sizeof_chainpair_connec + 16] = 0 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 20] = 1 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 17] = 3 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 21] = 2 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 18] = 7 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 22] = 6 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 19] = 4 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 23] = 5 + i * 20;
 
         // PRISM 1
-        sub_connec[i * 60 + 24] = 9 + i * 20;  sub_connec[i * 60 + 28] = 8 + i * 20;  sub_connec[i * 60 + 32] = 8 + i * 20;
-        sub_connec[i * 60 + 25] = 10 + i * 20; sub_connec[i * 60 + 29] = 9 + i * 20;  sub_connec[i * 60 + 33] = 10 + i * 20;
-        sub_connec[i * 60 + 26] = 13 + i * 20; sub_connec[i * 60 + 30] = 12 + i * 20; sub_connec[i * 60 + 34] = 13 + i * 20;
-        sub_connec[i * 60 + 27] = 12 + i * 20; sub_connec[i * 60 + 31] = 11 + i * 20; sub_connec[i * 60 + 35] = 11 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 24] = 9 + i * 20;  sub_connec[i * sizeof_chainpair_connec + 28] = 8 + i * 20;  sub_connec[i * sizeof_chainpair_connec + 32] = 8 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 25] = 10 + i * 20; sub_connec[i * sizeof_chainpair_connec + 29] = 9 + i * 20;  sub_connec[i * sizeof_chainpair_connec + 33] = 10 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 26] = 13 + i * 20; sub_connec[i * sizeof_chainpair_connec + 30] = 12 + i * 20; sub_connec[i * sizeof_chainpair_connec + 34] = 13 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 27] = 12 + i * 20; sub_connec[i * sizeof_chainpair_connec + 31] = 11 + i * 20; sub_connec[i * sizeof_chainpair_connec + 35] = 11 + i * 20;
 
-        sub_connec[i * 60 + 36] = 8 + i * 20;   sub_connec[i * 60 + 39] = 11 + i * 20;
-        sub_connec[i * 60 + 37] = 9 + i * 20;   sub_connec[i * 60 + 40] = 12 + i * 20;
-        sub_connec[i * 60 + 38] = 10 + i * 20;  sub_connec[i * 60 + 41] = 13 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 36] = 8 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 39] = 11 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 37] = 9 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 40] = 12 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 38] = 10 + i * 20;  sub_connec[i * sizeof_chainpair_connec + 41] = 13 + i * 20;
 
         // PRISM 2
-        sub_connec[i * 60 + 42] = 15 + i * 20; sub_connec[i * 60 + 46] = 14 + i * 20; sub_connec[i * 60 + 50] = 14 + i * 20;
-        sub_connec[i * 60 + 43] = 16 + i * 20; sub_connec[i * 60 + 47] = 15 + i * 20; sub_connec[i * 60 + 51] = 16 + i * 20;
-        sub_connec[i * 60 + 44] = 19 + i * 20; sub_connec[i * 60 + 48] = 18 + i * 20; sub_connec[i * 60 + 52] = 19 + i * 20;
-        sub_connec[i * 60 + 45] = 18 + i * 20; sub_connec[i * 60 + 49] = 17 + i * 20; sub_connec[i * 60 + 53] = 17 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 42] = 15 + i * 20; sub_connec[i * sizeof_chainpair_connec + 46] = 14 + i * 20; sub_connec[i * sizeof_chainpair_connec + 50] = 14 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 43] = 16 + i * 20; sub_connec[i * sizeof_chainpair_connec + 47] = 15 + i * 20; sub_connec[i * sizeof_chainpair_connec + 51] = 16 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 44] = 19 + i * 20; sub_connec[i * sizeof_chainpair_connec + 48] = 18 + i * 20; sub_connec[i * sizeof_chainpair_connec + 52] = 19 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 45] = 18 + i * 20; sub_connec[i * sizeof_chainpair_connec + 49] = 17 + i * 20; sub_connec[i * sizeof_chainpair_connec + 53] = 17 + i * 20;
 
-        sub_connec[i * 60 + 54] = 14 + i * 20; sub_connec[i * 60 + 57] = 17 + i * 20;
-        sub_connec[i * 60 + 55] = 15 + i * 20; sub_connec[i * 60 + 58] = 18 + i * 20;
-        sub_connec[i * 60 + 56] = 16 + i * 20; sub_connec[i * 60 + 59] = 19 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 54] = 14 + i * 20; sub_connec[i * sizeof_chainpair_connec + 57] = 17 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 55] = 15 + i * 20; sub_connec[i * sizeof_chainpair_connec + 58] = 18 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 56] = 16 + i * 20; sub_connec[i * sizeof_chainpair_connec + 59] = 19 + i * 20;
     }
 
-    chain_topo["subelements/sizes"].set(conduit::DataType::int64(length * 16));
-    int64* sub_sizes = chain_topo["subelements/sizes"].value();
-    for (int i = 0; i < length * 16; i ++)
+    chain_topo["subelements/sizes"].set(conduit::DataType::int64(length * num_faces_per_chain_pair));
+
+    int64 *sub_sizes = chain_topo["subelements/sizes"].value();
+
+    for (int i = 0; i < length * num_faces_per_chain_pair; i ++)
     {
         // this ensures sizes will be of the form {4,4,4,4,4,4,4,4,4,3,3,4,4,4,3,3, 4,4,4,4,4,4,4,4,4,3,3,4,4,4,3,3, ...}
-        int imod16 = i % 16;
-        sub_sizes[i] = ((imod16 < 9) || ((imod16 > 10) && (imod16 < 14))) ? 4 : 3;
+        int imodfaces = i % num_faces_per_chain_pair;
+        sub_sizes[i] = ((imodfaces < 9) || ((imodfaces > 10) && (imodfaces < 14))) ? 4 : 3;
     }
 
-    chain_topo["subelements/offsets"].set(conduit::DataType::int64(length * 16));
-    int64* sub_offsets = chain_topo["subelements/offsets"].value();
-    sub_offsets[0] = 0;
-    for (int i = 1; i < length * 16; i ++)
-    {
-        sub_offsets[i] = sub_offsets[i - 1] + sub_sizes[i - 1];
-    }
-
+    blueprint::mesh::topology::unstructured::generate_offsets(chain_topo,
+                                                              chain_topo["elements/offsets"]);
+    
     chain_fields["chain/topology"] = "topo";
     chain_fields["chain/association"] = "element";
     chain_fields["chain/volume_dependent"] = "false";
     chain_fields["chain/values"].set(conduit::DataType::int64(length * 3));
-    int64* field_values = chain_fields["chain/values"].value();
+    int64 *field_values = chain_fields["chain/values"].value();
 
     for (int i = 0; i < length * 3; i ++)
     {

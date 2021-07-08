@@ -967,17 +967,16 @@ TEST(conduit_blueprint_mesh_examples, number_of_domains)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_examples, polyhedral_chain)
+TEST(conduit_blueprint_mesh_examples, polychain)
 {
     Node res;
-    blueprint::mesh::examples::polyhedral_chain(7, // number of cubes
-                                                res);
+    blueprint::mesh::examples::polychain(7, res);
 
     Node info;
     EXPECT_TRUE(blueprint::mesh::verify(res,info));
     CONDUIT_INFO(info.to_yaml());
 
-    test_save_mesh_helper(res,"polyhedral_chain_example");
+    test_save_mesh_helper(res,"polychain_example");
 }
 
 
