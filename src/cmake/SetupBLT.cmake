@@ -23,6 +23,10 @@ if(NOT ENABLE_FOLDERS)
     set(ENABLE_FOLDERS TRUE CACHE STRING "")
 endif()
 
+################################################################
+# Make sure BLT exports its built in targets
+################################################################
+set(BLT_EXPORT_THIRDPARTY ON CACHE BOOL "")
 
 ################################################################
 # init blt using BLT_SOURCE_DIR
