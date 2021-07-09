@@ -967,6 +967,20 @@ TEST(conduit_blueprint_mesh_examples, number_of_domains)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polychain)
+{
+    Node res;
+    blueprint::mesh::examples::polychain(7, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res,"polychain_example");
+}
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
