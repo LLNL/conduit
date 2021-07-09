@@ -433,21 +433,32 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
         Node &dim_conn = dim_topos[di]["elements/connectivity"];
-        Node data_conn(DataType::int64(dim_buffers[di].size()),
-            &(dim_buffers[di][0]), true);
-
         dim_conn.set(DataType(int_dtype.id(), dim_buffers[di].size()));
-        data_conn.to_data_type(int_dtype.id(), dim_conn);
 
-        // Initialize element/sizes for polygonal mesh using polyhedral's
-        // subelement/sizes
+        data.reset();
+        data.set_external(DataType::int64(dim_buffers[di].size()),
+            &(dim_buffers[di][0]));
+        data.to_data_type(int_dtype.id(), dim_conn);
+
+        // Initialize element sizes for 2D polygonal mesh generating
+        // from 3D polyhedral mesh
         if(di == 2 && topo_shape.is_polyhedral())
         {
-            Node &polygonal_size = dim_topos[di]["elements/sizes"];
-            Node &polyhedral_subsize = dim_topos[3]["subelements/sizes"];
-            if (polygonal_size.dtype().is_empty())
+            Node &poly_sizes = dim_topos[di]["elements/sizes"];
+            poly_sizes.set(DataType(int_dtype.id(), dim_geid_maps[di].size()));
+
+            temp.reset();
+            data.reset();
+
+            for(const auto &poly_pair : dim_geid_maps[di])
             {
-                polygonal_size = polyhedral_subsize;
+                const std::set<index_t> &poly_verts = poly_pair.first;
+                const index_t &poly_geid = poly_pair.second;
+
+                temp.set_external(DataType(int_dtype.id(), 1),
+                    poly_sizes.element_ptr(poly_geid));
+                data.set((index_t)poly_verts.size());
+                data.to_data_type(int_dtype.id(), temp);
             }
         }
 

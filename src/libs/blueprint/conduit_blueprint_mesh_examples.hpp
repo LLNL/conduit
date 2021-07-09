@@ -80,6 +80,10 @@ namespace examples
 
     /// Generates a mesh that uses uniform adjsets
     void CONDUIT_BLUEPRINT_API adjset_uniform(conduit::Node &res);
+
+    // Generates a chain of cubes and triangular prisms
+    void CONDUIT_BLUEPRINT_API polychain(const conduit::index_t length,
+                                         conduit::Node &res);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --
