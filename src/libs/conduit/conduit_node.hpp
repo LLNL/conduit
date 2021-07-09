@@ -4313,6 +4313,13 @@ private:
     void             allocate(const DataType &dtype);
     void             mmap(const std::string &stream_path,
                           index_t dsize);
+    //-------------------------------------------------------------------------
+    // private memory manager static maps for registered allocators 
+    //-------------------------------------------------------------------------
+public:
+    static std::map<index_t,void*(*)(size_t, size_t)> &allocator_map();
+    static std::map<index_t,void(*)(void*)>           &free_map();
+private:
     // release any alloced or memory mapped data
     void             release();
     // clean up everything (used by destructor)
