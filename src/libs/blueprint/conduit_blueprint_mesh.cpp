@@ -2980,7 +2980,7 @@ map_field(Node &field_out,
 template<typename T>
 void 
 map_fields_specific(const Node &poly_mesh,
-                    const Node &s2t_map,
+                    const Node &d2smap,
                     Node &side_mesh,
                     std::string topology)
 {
@@ -3001,7 +3001,7 @@ map_fields_specific(const Node &poly_mesh,
         CONDUIT_ERROR(((std::string) "Bad shape in ").append(poly_mesh["topologies/" + topology + "/elements/shape"].as_string()));
     }
     
-    const T *tri_to_poly = s2t_map["values"].value();
+    const T *tri_to_poly = d2smap["values"].value();
 
     while(fields_itr.has_next())
     {
@@ -3078,34 +3078,34 @@ map_fields_specific(const Node &poly_mesh,
     original_elements["association"] = "element";
     original_elements["volume_dependent"] = "false";
 
-    s2t_map["values"].to_uint32_array(original_elements["values"]);
+    d2smap["values"].to_uint32_array(original_elements["values"]);
 }
 
 void 
 mesh::topology::unstructured::map_fields(const Node &poly_mesh,
-                                         const Node &s2t_map,
+                                         const Node &d2smap,
                                          Node &side_mesh,
                                          std::string topology)
 {
-    if (s2t_map["values"].dtype().is_uint64())
+    if (d2smap["values"].dtype().is_uint64())
     {
-        map_fields_specific<uint64>(poly_mesh, s2t_map, side_mesh, topology);
+        map_fields_specific<uint64>(poly_mesh, d2smap, side_mesh, topology);
     }
-    else if (s2t_map["values"].dtype().is_uint32())
+    else if (d2smap["values"].dtype().is_uint32())
     {
-        map_fields_specific<uint32>(poly_mesh, s2t_map, side_mesh, topology);
+        map_fields_specific<uint32>(poly_mesh, d2smap, side_mesh, topology);
     }
-    else if (s2t_map["values"].dtype().is_int64())
+    else if (d2smap["values"].dtype().is_int64())
     {
-        map_fields_specific<int64>(poly_mesh, s2t_map, side_mesh, topology);
+        map_fields_specific<int64>(poly_mesh, d2smap, side_mesh, topology);
     }
-    else if (s2t_map["values"].dtype().is_int32())
+    else if (d2smap["values"].dtype().is_int32())
     {
-        map_fields_specific<int32>(poly_mesh, s2t_map, side_mesh, topology);
+        map_fields_specific<int32>(poly_mesh, d2smap, side_mesh, topology);
     }
     else
     {
-        CONDUIT_ERROR("Unsupported field type in " << s2t_map["values"].dtype().to_yaml());
+        CONDUIT_ERROR("Unsupported field type in " << d2smap["values"].dtype().to_yaml());
     }
 }
 
