@@ -3966,7 +3966,6 @@ mesh::adjset::verify(const Node &adjset,
             }
             else if(chld.has_child("windows"))
             {
-
                 group_res &= verify_object_field(protocol, chld,
                     chld_info, "windows");
 
