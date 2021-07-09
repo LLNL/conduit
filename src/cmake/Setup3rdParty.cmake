@@ -160,7 +160,7 @@ endif()
 # cmake < 3.15, we use BLT's mpi target and need to export
 # it for use downstream
 if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
-    blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS mpi IF ENABLE_MPI)
+    blt_list_append(TO CONDUIT_BLT_TPL_DEPS_EXPORTS ELEMENTS mpi IF ENABLE_MPI)
 endif()
 
 foreach(dep ${CONDUIT_BLT_TPL_DEPS_EXPORTS})
