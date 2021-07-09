@@ -62,9 +62,10 @@ IF(ENABLE_MPI)
     endif()
 
     # bundle both std lib  and read only libs as 'adios_mpi'
-    blt_register_library(NAME adios_mpi
-                         INCLUDES ${adios_mpi_includes}
-                         LIBRARIES ${adios_mpi_libs})
+    blt_import_library(NAME adios_mpi
+                       INCLUDES ${adios_mpi_includes}
+                       LIBRARIES ${adios_mpi_libs}
+                       EXPORTABLE ON)
 
      # generate libs and include strs to export to config.mk
      set(adios_mpi_make_incs "")
@@ -133,9 +134,10 @@ set("CONDUIT_ADIOS_NOMPI_MAKE_INCLUDES_STR" "${adios_nompi_make_incs}")
 set("CONDUIT_ADIOS_NOMPI_MAKE_LIBS_STR" "${adios_nompi_make_libs}")
 
 # bundle both seq and seq read only libs as 'adios_nompi'
-blt_register_library(NAME adios_nompi
-                     INCLUDES  ${adios_nompi_includes}
-                     LIBRARIES ${adios_nompi_libs})
+blt_import_library(NAME adios_nompi
+                   INCLUDES  ${adios_nompi_includes}
+                   LIBRARIES ${adios_nompi_libs}
+                   EXPORTABLE ON)
 
 
 # Print out some results.

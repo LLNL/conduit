@@ -47,7 +47,8 @@ find_package_handle_standard_args(H5zZfp  DEFAULT_MSG
                                   H5ZZFP_LIBRARIES H5ZZFP_INCLUDE_DIR)
 
 
-blt_register_library(NAME h5zzfp
-                     INCLUDES ${H5ZZFP_INCLUDE_DIR}
-                     LIBRARIES ${H5ZZFP_LIBRARIES})
+blt_import_library(NAME h5zzfp
+                   INCLUDES ${H5ZZFP_INCLUDE_DIR}
+                   LIBRARIES ${H5ZZFP_LIBRARIES}
+                   EXPORTABLE ON)
 

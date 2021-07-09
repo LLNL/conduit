@@ -268,8 +268,9 @@ else()
     message(STATUS "HDF5_DEFINITIONS:  ${HDF5_DEFINITIONS}")
     message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
     message(STATUS "HDF5_LIBRARIES:    ${HDF5_LIBRARIES}")
-    blt_register_library(NAME hdf5
-                         DEFINES   ${HDF5_DEFINITIONS}
-                         INCLUDES  ${HDF5_INCLUDE_DIRS}
-                         LIBRARIES ${HDF5_LIBRARIES})
+    blt_import_library(NAME hdf5
+                       DEFINES   ${HDF5_DEFINITIONS}
+                       INCLUDES  ${HDF5_INCLUDE_DIRS}
+                       LIBRARIES ${HDF5_LIBRARIES}
+                       EXPORTABLE ON )
 endif()
