@@ -2961,6 +2961,167 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 }
 
 //-----------------------------------------------------------------------------
+template<typename T, typename U> 
+void 
+map_field(Node &field_out, 
+          const Node &field, 
+          int num_shapes, 
+          const U *tri_to_poly)
+{
+    T* values_array = field_out["values"].value();
+    const T* poly_field_data = field["values"].value();
+
+    for (int i = 0; i < num_shapes; i ++)
+    {
+        values_array[i] = poly_field_data[tri_to_poly[i]];
+    }
+}
+
+template<typename T>
+void 
+map_fields_specific(const Node &poly_mesh,
+                    const Node &s2t_map,
+                    Node &side_mesh,
+                    std::string topology)
+{
+    NodeConstIterator fields_itr = poly_mesh["fields"].children();
+
+    int num_shapes;
+
+    if (side_mesh["topologies/" + topology + "/elements/shape"].as_string() == "tet")
+    {
+        num_shapes = side_mesh["topologies/" + topology + "/elements/connectivity"].dtype().number_of_elements() / 4;
+    }
+    else if (side_mesh["topologies/" + topology + "/elements/shape"].as_string() == "tri")
+    {
+        num_shapes = side_mesh["topologies/" + topology + "/elements/connectivity"].dtype().number_of_elements() / 3;
+    }
+    else
+    {
+        CONDUIT_ERROR(((std::string) "Bad shape in ").append(poly_mesh["topologies/" + topology + "/elements/shape"].as_string()));
+    }
+    
+    const T *tri_to_poly = s2t_map["values"].value();
+
+    while(fields_itr.has_next())
+    {
+        const Node &field = fields_itr.next();
+        std::string field_name = fields_itr.name();
+        Node &field_out = side_mesh["fields"][field_name];
+
+        if (field.has_child("association"))
+        {
+            if (field["association"].as_string() != "element")
+            {
+                CONDUIT_ERROR("Vertex associated fields are not supported.");
+            }
+            if (field["volume_dependent"].as_string() != "false")
+            {
+                CONDUIT_ERROR("Volume dependent fields are not supported.");
+            }
+        }
+
+        NodeConstIterator itr = field.children();
+        while (itr.has_next())
+        {
+            const Node &cld = itr.next();
+            std::string cld_name = itr.name();
+
+            if (cld_name != "values")
+            {
+                field_out[cld_name] = cld;
+            }
+        }
+
+        if (field["values"].dtype().is_uint64())
+        {
+            field_out["values"].set(conduit::DataType::uint64(num_shapes));
+            map_field<uint64, T>(field_out, field, num_shapes, tri_to_poly);
+        }
+        else if (field["values"].dtype().is_uint32())
+        {
+            field_out["values"].set(conduit::DataType::uint32(num_shapes));
+            map_field<uint32, T>(field_out, field, num_shapes, tri_to_poly);
+        }
+        else if (field["values"].dtype().is_int64())
+        {
+            field_out["values"].set(conduit::DataType::int64(num_shapes));
+            map_field<int64, T>(field_out, field, num_shapes, tri_to_poly);
+        }
+        else if (field["values"].dtype().is_int32())
+        {
+            field_out["values"].set(conduit::DataType::int32(num_shapes));
+            map_field<int32, T>(field_out, field, num_shapes, tri_to_poly);
+        }
+        else if (field["values"].dtype().is_float64())
+        {
+            field_out["values"].set(conduit::DataType::float64(num_shapes));
+            map_field<float64, T>(field_out, field, num_shapes, tri_to_poly);
+        }
+        else if (field["values"].dtype().is_float32())
+        {
+            field_out["values"].set(conduit::DataType::float32(num_shapes));
+            map_field<float32, T>(field_out, field, num_shapes, tri_to_poly);
+        }
+        else
+        {
+            CONDUIT_ERROR("Unsupported field type in " << field["values"].dtype().to_yaml());
+        }
+    }
+
+    Node &original_elements = side_mesh["fields/original_element_ids"];
+    original_elements["topology"] = topology;
+    original_elements["association"] = "element";
+    original_elements["volume_dependent"] = "false";
+
+    s2t_map["values"].to_uint32_array(original_elements["values"]);
+}
+
+void 
+mesh::topology::unstructured::map_fields(const Node &poly_mesh,
+                                         const Node &s2t_map,
+                                         Node &side_mesh,
+                                         std::string topology)
+{
+    if (s2t_map["values"].dtype().is_uint64())
+    {
+        map_fields_specific<uint64>(poly_mesh, s2t_map, side_mesh, topology);
+    }
+    else if (s2t_map["values"].dtype().is_uint32())
+    {
+        map_fields_specific<uint32>(poly_mesh, s2t_map, side_mesh, topology);
+    }
+    else if (s2t_map["values"].dtype().is_int64())
+    {
+        map_fields_specific<int64>(poly_mesh, s2t_map, side_mesh, topology);
+    }
+    else if (s2t_map["values"].dtype().is_int32())
+    {
+        map_fields_specific<int32>(poly_mesh, s2t_map, side_mesh, topology);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported field type in " << s2t_map["values"].dtype().to_yaml());
+    }
+}
+
+void 
+mesh::topology::unstructured::generate_sides_and_map_fields(const Node &poly_mesh,
+                                                            Node &side_mesh,
+                                                            std::string topology)
+{
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/" + topology];
+    blueprint::mesh::topology::unstructured::generate_sides(poly_mesh["topologies/" + topology], 
+                                                            side_topo, 
+                                                            side_coords, 
+                                                            s2dmap, 
+                                                            d2smap);
+    map_fields(poly_mesh, d2smap, side_mesh, topology);
+}
+
+//-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &dest,
