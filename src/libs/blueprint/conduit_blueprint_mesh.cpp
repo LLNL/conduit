@@ -3015,6 +3015,10 @@ map_fields_specific(const Node &poly_mesh,
             {
                 CONDUIT_ERROR("Vertex associated fields are not supported.");
             }
+        }
+
+        if (field.has_child("volume_dependent"))
+        {
             if (field["volume_dependent"].as_string() != "false")
             {
                 CONDUIT_ERROR("Volume dependent fields are not supported.");
