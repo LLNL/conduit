@@ -318,12 +318,35 @@ protected:
              const std::vector<index_t> &vertex_ids,
              conduit::Node &n_new_coordset) const;
 
+    /**
+     @brief Creates a new unstructured topology from a subset of the 
+            input topology. Any topologies that are not unstructured are
+            currently converted to unstructured.
+
+     @param n_topo A Conduit node containing source topology.
+     @param csname The name of the coordset to use in the new topology.
+     @param element_ids The element ids to include from the source topology.
+     @param vertex_ids The vertex ids that are used from the source topology's coordset.
+     @param n_new_topo A Conduit node that will contain the new topology.
+     */
     void create_new_unstructured_topo(const conduit::Node &n_topo,
+             const std::string &csname,
              const std::vector<index_t> &element_ids,
              const std::vector<index_t> &vertex_ids,
              conduit::Node &n_new_topo) const;
 
+    /**
+     @brief Creates a new unstructured topology from a subset of the 
+            input unstructured topology.
+
+     @param n_topo A Conduit node containing source topology.
+     @param csname The name of the coordset to use in the new topology.
+     @param element_ids The element ids to include from the source topology.
+     @param vertex_ids The vertex ids that are used from the source topology's coordset.
+     @param n_new_topo A Conduit node that will contain the new topology.
+     */
     void unstructured_topo_from_unstructured(const conduit::Node &n_topo,
+             const std::string &csname,
              const std::vector<index_t> &element_ids,
              const std::vector<index_t> &vertex_ids,
              conduit::Node &n_new_topo) const;

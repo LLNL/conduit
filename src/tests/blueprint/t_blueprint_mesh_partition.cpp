@@ -38,12 +38,22 @@ test_logical_selection_2d(const std::string &topo)
     conduit::Node input, output, options, msg;
     conduit::index_t vdims[] = {11,11,1};
     conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
- 
+#if 0
     // With no options, test that output==input
     conduit::blueprint::mesh::partition(input, options, output);
-    cout << "output=";
     output.print();
     EXPECT_EQ(input.diff(output, msg, 0.0), false);
+#endif
+    // Select the whole thing but divide it into target domains.
+    const char *opt1 =
+"target: 2";
+    options.parse(opt1, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(output.number_of_children(), 2);
+    EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), true);
+    // TODO: test output mesh contents.
+//    output.print();
+
 }
 
 //-----------------------------------------------------------------------------

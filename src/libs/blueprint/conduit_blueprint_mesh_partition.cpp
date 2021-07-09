@@ -394,8 +394,8 @@ selection_logical::partition(const conduit::Node &/*n_mesh*/) const
         la = 2;
     auto n = cells_for_axis(la);
 
-    auto p0 = std::shared_ptr<selection_logical>();
-    auto p1 = std::shared_ptr<selection_logical>();
+    auto p0 = std::make_shared<selection_logical>();
+    auto p1 = std::make_shared<selection_logical>();
     p0->set_whole(false);
     p1->set_whole(false);
     if(la == 0)
@@ -1085,7 +1085,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     // Get the number of target partitions that we're making.
     target = 1;
     if(options.has_child("target"))
-        target = options.as_unsigned_int();
+        target = options["target"].to_unsigned_int();
 
 #if 1
     cout << "partitioner::initialize" << endl;
@@ -1129,10 +1129,9 @@ partitioner::get_total_selections() const
 void
 partitioner::split_selections()
 {
-    long ntotal_selections = get_total_selections();
-
     // Splitting.
-    while(target > ntotal_selections)
+    int iteration = 1;
+    while(target > get_total_selections())
     {
         // Get the rank with the largest selection and get that local
         // selection index.
@@ -1148,21 +1147,23 @@ partitioner::split_selections()
                 const conduit::Node *m = meshes[sel_index];
                 meshes.insert(meshes.begin()+sel_index, ps.size()-1, m);
                 selections.insert(selections.begin()+sel_index, ps.size()-1, nullptr);
-                for(int i = 0; i < sel_index; i++)
+                for(size_t i = 0; i < ps.size(); i++)
                     selections[sel_index + i] = ps[i];
+
+#if 1
+                cout << "partitioner::split_selections (after split "
+                     << iteration << ")" << endl;
+                for(size_t i = 0; i < selections.size(); i++)
+                {
+                    cout << "\t";
+                    selections[i]->print(cout);
+                    cout << endl;
+                }
+                iteration++;
+#endif
             }
         }
     }
-
-#if 1
-    cout << "partitioner::split_selections" << endl;
-    for(size_t i = 0; i < selections.size(); i++)
-    {
-        cout << "\t";
-        selections[i]->print(cout);
-        cout << endl;
-    }
-#endif
 }
 
 //---------------------------------------------------------------------------
@@ -1358,8 +1359,8 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
         auto ndims = topology::dims(n_topo);
         conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, edims, 3);
         dims[0] = edims[0] + 1;
-        dims[1] = edims[1] + 1;
-        dims[2] = edims[2] + 1;
+        dims[1] = edims[1] + (ndims > 1 ? 1 : 0);
+        dims[2] = edims[2] + (ndims > 2 ? 1 : 0);
 
         index_t cell_ijk[3]={0,0,0}, pt_ijk[3] = {0,0,0}, ptid = 0;
         static const index_t offsets[8][3] = {
@@ -1445,6 +1446,9 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
 {
     if(idx >= selections.size())
         return nullptr;
+cout << "**************************************" << endl;
+n_mesh.print();
+cout << "**************************************" << endl;
 
     const conduit::Node &n_topo = n_mesh["topologies"];
     const conduit::Node &n_coordsets = n_mesh["coordsets"];
@@ -1467,27 +1471,31 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
         {
             topo_element_ids[this_topo.name()] = std::make_shared<std::vector<index_t>>();
             eit = topo_element_ids.find(this_topo.name());
+cout << "** Added topo_element_ids " << eit->first << endl;
         }
         // Get the selected element ids that are in this topology.
         std::vector<index_t> &element_ids = *eit->second;
 
 // NOTE: we could pass back ranges for the element ids...
         // Get the selected element ids that are in this topology.
+cout << "** Gathering element ids for topo " << this_topo.name() << endl;
         selections[idx]->get_element_ids_for_topo(this_topo, erange, element_ids);
 
         // What's its coordset name?
-        std::string csname(this_topo["coordset"].name());
+        std::string csname(this_topo["coordset"].as_string());
         auto vit = coordset_vertex_ids.find(csname);
         if(vit == coordset_vertex_ids.end())
         {
             coordset_vertex_ids[csname] = std::make_shared<std::set<index_t>>();
             vit = coordset_vertex_ids.find(csname);
+cout << "** Added coordset_vertex_ids " << csname << endl;
         }
 
 // NOTE: we could pass back ranges for the vertex ids...
         // Add the vertex ids for the elements in the selection. This lets us
         // build up a comprehensive set of the vertex ids we need from the
         // coordset, as determined by multiple topologies.
+cout << "** Gathering vertex ids for elements from coordset " << vit->first << endl;
         get_vertex_ids_for_element_ids(this_topo, *eit->second, *vit->second);
 
         erange[0] += topo_num_elements;
@@ -1512,18 +1520,28 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
     {
         const conduit::Node &n_coordset = n_coordsets[i];
         auto vit = coordset_vertex_ids.find(n_coordset.name());
+        if(vit != coordset_vertex_ids.end())
+        {
+            // TODO: avoid copying back to std::vector multiple times.
+            std::vector<index_t> vertex_ids;
+            index_t_set_to_vector(*vit->second, vertex_ids);
 
-        // TODO: avoid copying back to std::vector multiple times.
-        std::vector<index_t> vertex_ids;
-        index_t_set_to_vector(*vit->second, vertex_ids);
+            // Build up a mapping of old to new vertices over all coordsets that we
+            // can use to remap fields.
+            for(auto it = vit->second->begin(); it != vit->second->end(); it++)
+                all_selected_vertex_ids.push_back(*it);
 
-        // Build up a mapping of old to new vertices over all coordsets that we
-        // can use to remap fields.
-        for(auto it = vit->second->begin(); it != vit->second->end(); it++)
-            all_selected_vertex_ids.push_back(*it);
-
-        // Create the new coordset.
-        create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[n_coordset.name()]);
+            // Create the new coordset.
+            create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[n_coordset.name()]);
+        }
+        else
+        {
+cout << "Could not locate coordset_vertex_ids with name " << n_coordset.name() << endl;
+cout << "Available names: ";
+for(auto vit = coordset_vertex_ids.begin(); vit != coordset_vertex_ids.end(); vit++)
+   cout << vit->first << ", ";
+cout << endl;
+        }
     }
 
     // Create new topologies containing the selected cells.
@@ -1532,11 +1550,12 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
     for(index_t i = 0; i < n_topo.number_of_children(); i++)
     {
         const conduit::Node &n_this_topo = n_topo[i];
+cout << "** Looking for topo_element_ids " << n_this_topo.name() << endl;
         auto eit = topo_element_ids.find(n_this_topo.name());
         if(!eit->second->empty())
         {
             const conduit::Node &n_coordset = n_this_topo["coordset"];
-            auto vit = coordset_vertex_ids.find(n_coordset.name());
+            auto vit = coordset_vertex_ids.find(n_coordset.as_string());
             if(vit != coordset_vertex_ids.end())
             {
                 // Build up a mapping of old to new elements over all topos
@@ -1548,16 +1567,26 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
                 std::vector<index_t> vertex_ids;
                 index_t_set_to_vector(*vit->second, vertex_ids);
 
-                create_new_unstructured_topo(n_this_topo, vertex_ids, 
+                create_new_unstructured_topo(n_this_topo, vit->first, vertex_ids, 
                     *eit->second, n_new_topos[n_this_topo.name()]);
             }
         }
+        else
+        {
+cout << "******* topo not found in map!" << endl;
+        }
     }
 
+#if 0
     // Now that we've made new coordsets and topologies, make new fields.
     copy_fields(all_selected_vertex_ids, all_selected_element_ids,
                 n_mesh, n_output,
                 selections[idx]->preserve_mapping());
+#endif
+
+cout << "**************************************" << endl;
+n_output.print();
+cout << "**************************************" << endl;
 
     return retval;
 }
@@ -1611,8 +1640,13 @@ partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
 }
 
 //---------------------------------------------------------------------------
+/**
+ @note We pass in the coordset name because the conversion routines in here
+       result in topologies that do not set a coordset name.
+ */
 void
 partitioner::create_new_unstructured_topo(const conduit::Node &n_topo,
+    const std::string &csname,
     const std::vector<index_t> &element_ids,
     const std::vector<index_t> &vertex_ids,
     conduit::Node &n_new_topo) const
@@ -1621,34 +1655,36 @@ partitioner::create_new_unstructured_topo(const conduit::Node &n_topo,
     {
         conduit::Node n_uns, cdest; // what is cdest?
         conduit::blueprint::mesh::topology::uniform::to_unstructured(n_topo, n_uns, cdest);
-        unstructured_topo_from_unstructured(n_uns, element_ids, vertex_ids, n_new_topo);
+        unstructured_topo_from_unstructured(n_uns, csname, element_ids, vertex_ids, n_new_topo);
     }
     else if(n_topo["type"].as_string() == "rectilinear")
     {
         conduit::Node n_uns, cdest; // what is cdest?
         conduit::blueprint::mesh::topology::rectilinear::to_unstructured(n_topo, n_uns, cdest);
-        unstructured_topo_from_unstructured(n_uns, element_ids, vertex_ids, n_new_topo);
+        unstructured_topo_from_unstructured(n_uns, csname, element_ids, vertex_ids, n_new_topo);
     }
     else if(n_topo["type"].as_string() == "structured")
     {
         conduit::Node n_uns, cdest; // what is cdest?
         conduit::blueprint::mesh::topology::structured::to_unstructured(n_topo, n_uns, cdest);
-        unstructured_topo_from_unstructured(n_uns, element_ids, vertex_ids, n_new_topo);
+        unstructured_topo_from_unstructured(n_uns, csname, element_ids, vertex_ids, n_new_topo);
     }
     else if(n_topo["type"].as_string() == "unstructured")
     {
-        unstructured_topo_from_unstructured(n_topo, element_ids, vertex_ids, n_new_topo);
+        unstructured_topo_from_unstructured(n_topo, csname, element_ids, vertex_ids, n_new_topo);
     }
 }
 
 //---------------------------------------------------------------------------
 void
 partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
-    const std::vector<index_t> &element_ids, const std::vector<index_t> &vertex_ids,
+    const std::string &csname,
+    const std::vector<index_t> &element_ids,
+    const std::vector<index_t> &vertex_ids,
     conduit::Node &n_new_topo) const
 {
     n_new_topo["type"].set("unstructured");
-    n_new_topo["coordset"].set(n_topo["coordset"]);
+    n_new_topo["coordset"].set(csname);
 
     // vertex_ids contains the list of old vertex ids that our selection uses
     // from the old coordset. It can serve as a new to old map.
@@ -1688,8 +1724,21 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
         for(size_t i = 0; i < element_ids.size(); i++)
         {
             auto elem_conn = iptr + element_ids[i] * nverts_in_shape;
+#if 1
+            cout << "cell " << element_ids[i] << ": ";
             for(index_t j = 0; j < nverts_in_shape; j++)
+                cout << elem_conn[j] << ", ";
+            cout << endl;
+#endif
+            for(index_t j = 0; j < nverts_in_shape; j++)
+            {
+#if 1
+                auto it = old2new.find(elem_conn[j]);
+                if(it == old2new.end())
+                    cout << "Error mapping old vertex " << elem_conn[j] << endl;
+#endif
                 new_conn.push_back(old2new[elem_conn[j]]);
+            }
         }
     }
 
@@ -1824,7 +1873,7 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     dest_ranks.resize(chunks.size());
     for(size_t i = 0; i < chunks.size(); i++)
         dest_ranks[i] = rank;
-#if 1
+#if 0
     cout << "map_chunks:" << endl;
     for(size_t i = 0; i < chunks.size(); i++)
         chunks[i].mesh->print();
