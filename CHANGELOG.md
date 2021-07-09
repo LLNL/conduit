@@ -12,7 +12,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Avoid compile issue with using `_Pragma()` with Python 3.8 on Windows
 
 #### Blueprint
-- Added the `blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. Also updated the docs to reflect this change.
+- Added the `blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
 
 ## [0.7.2] - Released 2021-05-19
 
