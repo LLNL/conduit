@@ -950,6 +950,15 @@ void to_polyhedral(const Node &n,
 
         const Node& in_topo = chld["topologies"][name];
 
+        Node in_cset;
+        bputils::find_reference_node(in_topo, "coordset", in_cset);
+
+        const index_t i_lo = in_topo["elements/origin/i0"].to_index_t();
+        const index_t j_lo = in_topo["elements/origin/j0"].to_index_t();
+        const index_t k_lo = in_topo["elements/origin/j0"].to_index_t();
+        const index_t niwidth = in_topo["elements/dims/i"].to_index_t() + 1;
+        const index_t njwidth = in_topo["elements/dims/j"].to_index_t() + 1;
+
         const Node* in_parent = chld.parent();
 
         std::ostringstream win_oss;
@@ -1021,6 +1030,123 @@ void to_polyhedral(const Node &n,
                                          nbr_rank,
                                          domain_id,
                                          MPI_COMM_WORLD);
+
+                                std::vector<index_t> vertices;
+                                std::vector<double> xbuffer, ybuffer, zbuffer;
+                                const Node &fcoords = in_cset["values"];
+
+                                const index_t origin_i = ref_win["origin/i"].to_index_t();
+                                const index_t origin_j = ref_win["origin/j"].to_index_t();
+                                const index_t origin_k = ref_win["origin/k"].to_index_t();
+
+                                Node temp;
+
+                                if (ref_size_i == 1)
+                                {
+                                    const index_t icnst = origin_i - i_lo;
+                                    const index_t jstart = origin_j - j_lo;
+                                    const index_t jend = jstart + ref_size_j;
+                                    const index_t kstart = origin_k - k_lo;
+                                    const index_t kend = kstart + ref_size_k;
+                                    for (index_t kidx = kstart; kidx < kend; ++kidx)
+                                    {
+                                        const index_t koffset = kidx * niwidth * njwidth;
+                                        for (index_t jidx = jstart; jidx < jend; ++jidx)
+                                        {
+                                            const index_t offset = koffset + jidx * niwidth + icnst;
+                                            vertices.push_back(offset);
+                                            temp.set_external(DataType(fcoords["x"].dtype().id(), 1),
+                                                              (void*)fcoords["x"].element_ptr(offset));
+                                            xbuffer.push_back(temp.to_double());
+                                            temp.set_external(DataType(fcoords["y"].dtype().id(), 1),
+                                                              (void*)fcoords["y"].element_ptr(offset));
+                                            ybuffer.push_back(temp.to_double());
+                                            temp.set_external(DataType(fcoords["z"].dtype().id(), 1),
+                                                              (void*)fcoords["z"].element_ptr(offset));
+                                            zbuffer.push_back(temp.to_double());
+                                        }
+                                    }
+                                }
+                                else if (ref_size_j == 1)
+                                {
+                                    const index_t istart = origin_i - i_lo;
+                                    const index_t iend = istart + ref_size_i;
+                                    const index_t jcnst = origin_j - j_lo;
+                                    const index_t kstart = origin_k - k_lo;
+                                    const index_t kend = kstart + ref_size_k;
+                                    for (index_t kidx = kstart; kidx < kend; ++kidx)
+                                    {
+                                        const index_t koffset = kidx * niwidth * njwidth;
+                                        for (index_t iidx = istart; iidx < iend; ++iidx)
+                                        {
+                                            const index_t offset = koffset + jcnst * niwidth + iidx;
+                                            vertices.push_back(offset);
+                                            temp.set_external(DataType(fcoords["x"].dtype().id(), 1),
+                                                              (void*)fcoords["x"].element_ptr(offset));
+                                            xbuffer.push_back(temp.to_double());
+                                            temp.set_external(DataType(fcoords["y"].dtype().id(), 1),
+                                                              (void*)fcoords["y"].element_ptr(offset));
+                                            ybuffer.push_back(temp.to_double());
+                                            temp.set_external(DataType(fcoords["z"].dtype().id(), 1),
+                                                              (void*)fcoords["z"].element_ptr(offset));
+                                            zbuffer.push_back(temp.to_double());
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    const index_t istart = origin_i - i_lo;
+                                    const index_t iend = istart + ref_size_i;
+                                    const index_t jstart = origin_j - j_lo;
+                                    const index_t jend = jstart + ref_size_j;
+                                    const index_t kcnst = origin_k - k_lo;
+                                    const index_t koffset = kcnst * niwidth * njwidth;
+                                    for (index_t jidx = jstart; jidx < jend; ++jidx)
+                                    {
+                                        const index_t joffset = jidx * niwidth;
+                                        for (index_t iidx = istart; iidx < iend; ++iidx)
+                                        {
+                                            const index_t offset = koffset + joffset + iidx;
+                                            vertices.push_back(offset);
+                                            temp.set_external(DataType(fcoords["x"].dtype().id(), 1),
+                                                              (void*)fcoords["x"].element_ptr(offset));
+                                            xbuffer.push_back(temp.to_double());
+                                            temp.set_external(DataType(fcoords["y"].dtype().id(), 1),
+                                                              (void*)fcoords["y"].element_ptr(offset));
+                                            ybuffer.push_back(temp.to_double());
+                                            temp.set_external(DataType(fcoords["z"].dtype().id(), 1),
+                                                              (void*)fcoords["z"].element_ptr(offset));
+                                            zbuffer.push_back(temp.to_double());
+                                        }
+                                    }
+                                }
+
+
+                                MPI_Send(&vertices[0],
+                                         vertices.size(),
+                                         MPI_INT64_T,
+                                         nbr_rank,
+                                         domain_id,
+                                         MPI_COMM_WORLD);
+                                MPI_Send(&xbuffer[0],
+                                         xbuffer.size(),
+                                         MPI_DOUBLE,
+                                         nbr_rank,
+                                         domain_id,
+                                         MPI_COMM_WORLD);
+                                MPI_Send(&ybuffer[0],
+                                         ybuffer.size(),
+                                         MPI_DOUBLE,
+                                         nbr_rank,
+                                         domain_id,
+                                         MPI_COMM_WORLD);
+                                MPI_Send(&zbuffer[0],
+                                         zbuffer.size(),
+                                         MPI_DOUBLE,
+                                         nbr_rank,
+                                         domain_id,
+                                         MPI_COMM_WORLD);
+
 
                             }
                         }
@@ -1210,43 +1336,7 @@ void to_polyhedral(const Node &n,
                                     << std::setfill('0') << nbr_id;
                             std::string nbr_name = nbr_oss.str();
 
-                            if (!in_parent->has_child(nbr_name))
-                            {
-                                if (pbnd.side >= 0)
-                                {
-                                    index_t nbr_rank = group["rank"].to_index_t();
-                                    index_t buffer[6];
-
-                                    MPI_Recv(buffer,
-                                             6,
-                                             MPI_INT64_T,
-                                             nbr_rank,
-                                             nbr_id,
-                                             MPI_COMM_WORLD,
-                                             MPI_STATUS_IGNORE);
-
-                                    index_t nbr_iwidth = buffer[0]; 
-                                    index_t nbr_jwidth = buffer[1];
-                                    index_t nbr_kwidth = buffer[2];
-                                    index_t ni_lo = buffer[3]; 
-                                    index_t nj_lo = buffer[4]; 
-                                    index_t nk_lo = buffer[5]; 
-
-                                    auto& nbr_elems = poly_elems_map[nbr_id];
-
-                                    pbnd.m_nbr_rank = nbr_rank;
-                                    pbnd.m_nbr_id = nbr_id;
-                                    match_nbr_elems(pbnd, nbr_elems, in_topo,
-                                                    ref_win, nbr_win,
-                                                    nbr_iwidth, nbr_jwidth,
-                                                    nbr_kwidth,
-                                                    ni_lo, nj_lo, nk_lo,
-                                                    ratio_i,ratio_j,ratio_k,
-                                                    false);
-                                }
-
-                            }
-                            else
+                            if (in_parent->has_child(nbr_name))
                             {
                                 const Node& nbr_dom =
                                    (*in_parent)[nbr_name];
@@ -1299,6 +1389,7 @@ void to_polyhedral(const Node &n,
         std::string domain_name = itr.name();
 
         index_t domain_id = chld["state/domain_id"].to_index_t();
+        const Node& in_topo = chld["topologies"][name];
 
         std::ostringstream win_oss;
         win_oss << "window_" << std::setw(6) << std::setfill('0') << domain_id;
@@ -1334,6 +1425,10 @@ void to_polyhedral(const Node &n,
                     const Node& nbr_win = in_windows[nbr_win_name];
                     if (nbr_win["level_id"].to_index_t() > ref_win["level_id"].to_index_t())
                     {
+                        index_t ratio_i = nbr_win["ratio/i"].to_index_t();
+                        index_t ratio_j = nbr_win["ratio/j"].to_index_t();
+                        index_t ratio_k = nbr_win["ratio/k"].to_index_t();
+
                         index_t ref_size_i = ref_win["dims/i"].to_index_t();
                         index_t ref_size_j = ref_win["dims/j"].to_index_t();
                         index_t ref_size_k = ref_win["dims/k"].to_index_t();
@@ -1346,6 +1441,7 @@ void to_polyhedral(const Node &n,
 
                         if (nbr_size > ref_size)
                         {
+                            std::vector<index_t> vertices;
                             auto& buffidx = nbr_to_buffidx[nbr_id];
                             auto& xbuffer = nbr_to_xbuffer[nbr_id];
                             auto& ybuffer = nbr_to_ybuffer[nbr_id];
@@ -1358,7 +1454,97 @@ void to_polyhedral(const Node &n,
 
                             if (!in_parent->has_child(nbr_name))
                             {
-                                //MPI xyz buffer communication
+                                PolyBndry& pbnd = poly_bndry_map[domain_id][nbr_id];
+
+                                if (pbnd.side >= 0)
+                                {
+                                    index_t nbr_rank = group["rank"].to_index_t();
+                                    index_t buffer[6];
+
+                                    MPI_Recv(buffer,
+                                             6,
+                                             MPI_INT64_T,
+                                             nbr_rank,
+                                             nbr_id,
+                                             MPI_COMM_WORLD,
+                                             MPI_STATUS_IGNORE);
+
+                                    index_t nbr_iwidth = buffer[0];
+                                    index_t nbr_jwidth = buffer[1];
+                                    index_t nbr_kwidth = buffer[2];
+                                    index_t ni_lo = buffer[3];
+                                    index_t nj_lo = buffer[4];
+                                    index_t nk_lo = buffer[5];
+
+                                    auto& nbr_elems = poly_elems_map[nbr_id];
+
+                                    pbnd.m_nbr_rank = nbr_rank;
+                                    pbnd.m_nbr_id = nbr_id;
+                                    match_nbr_elems(pbnd, nbr_elems, in_topo,
+                                                    ref_win, nbr_win,
+                                                    nbr_iwidth, nbr_jwidth,
+                                                    nbr_kwidth,
+                                                    ni_lo, nj_lo, nk_lo,
+                                                    ratio_i,ratio_j,ratio_k,
+                                                    false);
+                                    if (nbr_size_i == 1)
+                                    {
+                                        vertices.resize(nbr_size_j*nbr_size_k);
+                                        xbuffer.resize(nbr_size_j*nbr_size_k);
+                                        ybuffer.resize(nbr_size_j*nbr_size_k);
+                                        zbuffer.resize(nbr_size_j*nbr_size_k);
+                                    }
+                                    else if (nbr_size_j == 1)
+                                    {
+                                        vertices.resize(nbr_size_i*nbr_size_k);
+                                        xbuffer.resize(nbr_size_i*nbr_size_k);
+                                        ybuffer.resize(nbr_size_i*nbr_size_k);
+                                        zbuffer.resize(nbr_size_i*nbr_size_k);
+                                    }
+                                    else
+                                    {
+                                        vertices.resize(nbr_size_i*nbr_size_j);
+                                        xbuffer.resize(nbr_size_i*nbr_size_j);
+                                        ybuffer.resize(nbr_size_i*nbr_size_j);
+                                        zbuffer.resize(nbr_size_i*nbr_size_j);
+                                    }
+    
+                                    MPI_Recv(&vertices[0],
+                                             vertices.size(),
+                                             MPI_INT64_T,
+                                             nbr_rank,
+                                             nbr_id,
+                                             MPI_COMM_WORLD,
+                                             MPI_STATUS_IGNORE);
+                                    MPI_Recv(&xbuffer[0],
+                                             xbuffer.size(),
+                                             MPI_DOUBLE,
+                                             nbr_rank,
+                                             nbr_id,
+                                             MPI_COMM_WORLD,
+                                             MPI_STATUS_IGNORE);
+                                    MPI_Recv(&ybuffer[0],
+                                             ybuffer.size(),
+                                             MPI_DOUBLE,
+                                             nbr_rank,
+                                             nbr_id,
+                                             MPI_COMM_WORLD,
+                                             MPI_STATUS_IGNORE);
+                                    MPI_Recv(&zbuffer[0],
+                                             zbuffer.size(),
+                                             MPI_DOUBLE,
+                                             nbr_rank,
+                                             nbr_id,
+                                             MPI_COMM_WORLD,
+                                             MPI_STATUS_IGNORE);
+                                    index_t v = 0;
+                                    for (auto vitr = vertices.begin();
+                                         vitr != vertices.end(); ++vitr)
+                                    {
+                                        buffidx[*vitr] = v;
+                                        ++v;
+                                    }
+                                }
                             }
                             else
                             {
@@ -1602,69 +1788,16 @@ void to_polyhedral(const Node &n,
                     }
                 }
 
-                //Below:: Create a map from coarse subelems to xyz values.
-                //of vertices of the fine subelems
-                std::ostringstream nbr_oss;
-                nbr_oss << "domain_" << std::setw(6)
-                        << std::setfill('0') << nbr_id;
-                std::string nbr_name = nbr_oss.str();
-
-                std::map<index_t, std::map< index_t, std::vector<double> > > xv_map;
-                std::map<index_t, std::map< index_t, std::vector<double> > > yv_map;
-                std::map<index_t, std::map< index_t, std::vector<double> > > zv_map;
-                //loop over fv_map, fill xyz doubles into these maps
-                for (auto fitr = fv_map.begin(); fitr != fv_map.end(); ++fitr)
-                {
-                    index_t ref_offset = fitr->first;
-                    auto& xnbrs = xv_map[ref_offset];
-                    auto& ynbrs = yv_map[ref_offset];
-                    auto& znbrs = zv_map[ref_offset];
-
-                    auto& nbrs = fitr->second;
-                    for (auto nitr = nbrs.begin(); nitr != nbrs.end(); ++nitr)
-                    {
-                        index_t nbr_face = nitr->first;
-                        auto& xv = xnbrs[nbr_face];
-                        auto& yv = ynbrs[nbr_face];
-                        auto& zv = znbrs[nbr_face];
-
-                        auto& verts = nitr->second;
-                        for (auto vitr = verts.begin(); vitr != verts.end(); ++vitr)
-                        {
-                            index_t idx = buffidx[*vitr];
-                            xv.push_back(xbuffer[idx]);
-                            yv.push_back(ybuffer[idx]);
-                            zv.push_back(zbuffer[idx]);
-                        }
-                    }
-                }
-
                 index_t num_vertices = out_xvec.size();
 
-                //Get map_subelem, the coarse face touching the boundary.
-                //Need to change it to new subelems.
-                //
-                //Here we have:
-                //ref_elem--Coarse element with face on coarse-fine bdry
-                //map_subelem--The coarse face touching the boundary
-                //nbr_subelems--The fine faces touching map_subelem
-                //
-                //Need to divide map_subelem into new subelems corresponding
-                //to each member of nbr_subelems.  The new subelems need to
-                //be added to ref_elem, replacing the original map_subelem.
-                //
                 //For a 2x refinement ratio, nbr_subelems provide 5 new
                 //vertices in addition to the 4 vertices that are coincident
                 //with the coarse element.
-                //
-                //Also we need to get the real coordinate values into the
-                //coordset arrays.
                 for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr)
                 {
                     index_t ref_offset = eitr->first;
                     bputils::connectivity::ElemType& ref_elem = poly_elems[ref_offset];
                     index_t ref_face = ref_elem[pbnd.side];
-                    auto& map_subelem = allfaces[ref_face];
 
                     auto& nbr_subelems = fv_map[ref_offset];
 
@@ -1713,8 +1846,6 @@ void to_polyhedral(const Node &n,
         out_coords["values/y"].set(out_yvec);
         out_coords["values/z"].set(out_zvec);
     }
-
-// 3D MPI stuff needs to be fleshed out.
 
     itr = n.children();
     while(itr.has_next())
