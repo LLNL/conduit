@@ -52,3 +52,4 @@ blt_import_library(NAME h5zzfp
                    LIBRARIES ${H5ZZFP_LIBRARIES}
                    EXPORTABLE ON)
 
+list(APPEND CONDUIT_BLT_TPL_DEPS_EXPORTS h5zzfp)

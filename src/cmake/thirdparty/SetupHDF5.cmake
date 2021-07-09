@@ -273,4 +273,5 @@ else()
                        INCLUDES  ${HDF5_INCLUDE_DIRS}
                        LIBRARIES ${HDF5_LIBRARIES}
                        EXPORTABLE ON )
+    list(APPEND CONDUIT_BLT_TPL_DEPS_EXPORTS hdf5)
 endif()

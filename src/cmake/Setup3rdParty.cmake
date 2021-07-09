@@ -6,6 +6,8 @@
 # Conduit 3rd Party Dependencies
 ################################
 
+# used to track the blt imported libs we need to export
+set(CONDUIT_BLT_TPL_DEPS_EXPORTS)
 
 ################################
 # BLT provides support for:
@@ -155,14 +157,13 @@ endif()
 # Export BLT Targets when needed
 ##################################
 
-set(BLT_TPL_DEPS_EXPORTS)
 # cmake < 3.15, we use BLT's mpi target and need to export
 # it for use downstream
 if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
     blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS mpi IF ENABLE_MPI)
 endif()
 
-foreach(dep ${BLT_TPL_DEPS_EXPORTS})
+foreach(dep ${CONDUIT_BLT_TPL_DEPS_EXPORTS})
     # If the target is EXPORTABLE, add it to the export set
     get_target_property(_is_imported ${dep} IMPORTED)
     if(NOT ${_is_imported})
@@ -173,3 +174,4 @@ foreach(dep ${BLT_TPL_DEPS_EXPORTS})
         set_target_properties(${dep} PROPERTIES EXPORT_NAME conduit::blt_${dep})
     endif()
 endforeach()
+

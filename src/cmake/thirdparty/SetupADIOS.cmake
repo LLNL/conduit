@@ -67,6 +67,8 @@ IF(ENABLE_MPI)
                        LIBRARIES ${adios_mpi_libs}
                        EXPORTABLE ON)
 
+    list(APPEND CONDUIT_BLT_TPL_DEPS_EXPORTS adios_mpi)
+
      # generate libs and include strs to export to config.mk
      set(adios_mpi_make_incs "")
      set(adios_mpi_make_libs "")
@@ -139,7 +141,8 @@ blt_import_library(NAME adios_nompi
                    LIBRARIES ${adios_nompi_libs}
                    EXPORTABLE ON)
 
-
+list(APPEND CONDUIT_BLT_TPL_DEPS_EXPORTS adios_nompi)
+    
 # Print out some results.
 MESSAGE(STATUS "  ADIOS_INC=${ADIOS_INC}")
 MESSAGE(STATUS "  ADIOS_LIB=${ADIOS_LIB}")
