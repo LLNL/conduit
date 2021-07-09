@@ -55,16 +55,17 @@ public:
     virtual ~selection();
 
     /**
-     @brief Initializes the selection from the provided Conduit node. The
-            selection will keep a pointer to the node.
-     @param n_opt_ptr A pointer to the Conduit node containing the options
-                      for this selection.
+     @brief Initializes the selection from the provided Conduit node.
+     @param n_options A Conduit node containing the options for this
+                      selection.
      @return True if the selection was initialized successfully; False otherwise.
      */
-    virtual bool init(const conduit::Node *n_opt_ptr) = 0;
+    virtual bool init(const conduit::Node &n_options);
 
     /**
      @brief Determines whether the selection can be applied to the supplied mesh.
+     @note  This is a check that the selection type makes sense for the input
+            mesh type.
      @param n_mesh A Conduit conduit::Node containing the mesh.
      @return True if the selection can be applied to the mesh; False otherwise.
      */
@@ -105,10 +106,22 @@ public:
     index_t get_domain() const;
 
     /**
-     @brief Return whether element and vertex mapping will be preserved in the output.
-     @return True if mapping information is preserved, false otherwise.
+     @brief Set the domain index to which the selection is being applied.
+     @param value The new domain index.
      */
-    bool preserve_mapping() const;
+    void set_domain(index_t value);
+
+    /**
+     @brief Get the name of the topology for this selection.
+     */
+    const std::string &get_topology() const;
+
+    /**
+     @brief Set the topology used for selection. The topology needs to be 
+            valid for the selection mesh.
+     @param value The new topology name.
+     */
+    void set_topology(const std::string &value);  
 
     /**
      @brief Returns the cells in this selection that are contained in the
@@ -120,10 +133,19 @@ public:
                                           std::vector<index_t> &element_ids) const = 0;
 
     /**
+     @brief Returns a topology node that we can use from the mesh.
+     @note This method throws an exception if the topology does not exist.
+     @param n_mesh A Conduit node that contains the mesh.
+     @return A reference to the selected topology node.
+     */
+    const conduit::Node &selected_topology(const conduit::Node &n_mesh) const;
+
+    /**
      @brief Prints the selection to the stream.
      @param os The stream to which the information will be printed.
      */
     virtual void print(std::ostream &os) const = 0;
+
 protected:
     /**
      @brief Determines whether the selection covers the whole mesh.
@@ -133,7 +155,7 @@ protected:
     virtual bool determine_is_whole(const conduit::Node &n_mesh) const = 0;
 
     static const std::string DOMAIN_KEY;
-    static const std::string MAPPING_KEY;
+    static const std::string TOPOLOGY_KEY;
 
     enum {
         WHOLE_UNDETERMINED,
@@ -141,8 +163,9 @@ protected:
         WHOLE_DETERMINED_TRUE
     };
 
-    const conduit::Node *n_options_ptr;
-    int whole;
+    int         whole;
+    index_t     domain;
+    std::string topology;
 };
 
 //---------------------------------------------------------------------------
@@ -276,13 +299,13 @@ protected:
 
     /**
      @brief Create a selection of the type that best selects all of the 
-            cells in the supplied mesh. For example, if we're given a 
+            elements in the supplied mesh. For example, if we're given a 
             structured mesh, we'd return a logical selection that spans
             all cells in the mesh.
      @param n_mesh A Conduit node that contains the mesh we're selecting.
      @return A new selection object that selects all cells in the mesh.
      */
-    std::shared_ptr<selection> create_selection_all_cells(const conduit::Node &n_mesh) const;
+    std::shared_ptr<selection> create_selection_all_elements(const conduit::Node &n_mesh) const;
 
     void copy_fields(const std::vector<index_t> &all_selected_vertex_ids,
                      const std::vector<index_t> &all_selected_element_ids,
@@ -455,6 +478,7 @@ protected:
     unsigned int target;
     std::vector<const Node *>                meshes;
     std::vector<std::shared_ptr<selection> > selections;
+    std::vector<std::string>                 selected_fields;
 };
 
 //---------------------------------------------------------------------------
