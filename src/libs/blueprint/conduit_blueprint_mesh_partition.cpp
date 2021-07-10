@@ -268,11 +268,11 @@ selection::selected_topology(const conduit::Node &n_mesh) const
 {
     if(n_mesh.has_child("topologies"))
     {
-        const conduit::Node n_topos = n_mesh.fetch_existing("topologies");
+        const conduit::Node &n_topos = n_mesh["topologies"];
         if(topology.empty())
             return n_topos[0];
         else if(n_topos.has_child(topology))
-            return n_topos.fetch_existing(topology);
+            return n_topos[topology];
     }
 
     std::stringstream oss;
@@ -343,9 +343,8 @@ public:
         end[2] = e2;
     }
 
-    virtual void get_element_ids_for_topo(const conduit::Node &n_topo,
-                                          const index_t erange[2],
-                                          std::vector<index_t> &element_ids) const override;
+    virtual void get_element_ids(const conduit::Node &n_mesh,
+                                 std::vector<index_t> &element_ids) const override;
 
     virtual void print(std::ostream &os) const override;
 
@@ -550,23 +549,36 @@ selection_logical::get_vertex_ids(const conduit::Node &n_mesh,
 
 //---------------------------------------------------------------------------
 void
-selection_logical::get_element_ids_for_topo(const conduit::Node &n_topo,
-    const index_t erange[2], std::vector<index_t> &element_ids) const
+selection_logical::get_element_ids(const conduit::Node &n_mesh,
+    std::vector<index_t> &element_ids) const
 {
-    index_t dims[3] = {1,1,1};
-    conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
-
-    element_ids.clear();
-    element_ids.reserve(length());
-    auto mesh_CXCY = dims[0] * dims[1];
-    auto mesh_CX   = dims[0];
-    for(index_t k = start[2]; k <= end[2]; k++)
-    for(index_t j = start[1]; j <= end[1]; j++)
-    for(index_t i = start[0]; i <= end[0]; i++)
+    try
     {
-        auto eid = k*mesh_CXCY + j*mesh_CX + i;
-        if(eid >= erange[0] && eid <= erange[1])
+        const conduit::Node &n_topo = selected_topology(n_mesh);
+        index_t dims[3] = {1,1,1};
+        conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
+cout << "selection_logical::get_element_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
+
+        element_ids.clear();
+        element_ids.reserve(length());
+        auto mesh_CXCY = dims[0] * dims[1];
+        auto mesh_CX   = dims[0];
+        for(index_t k = start[2]; k <= end[2]; k++)
+        for(index_t j = start[1]; j <= end[1]; j++)
+        for(index_t i = start[0]; i <= end[0]; i++)
+        {
+            auto eid = k*mesh_CXCY + j*mesh_CX + i;
             element_ids.push_back(eid);
+        }
+#if 1
+        cout << "selection_logical::get_element_ids={";
+        for(size_t i = 0; i < element_ids.size(); i++)
+            cout << element_ids[i] << ", ";
+        cout << "}" << endl;
+#endif
+    }
+    catch(conduit::Error &)
+    {
     }
 }
 
@@ -577,7 +589,7 @@ selection_logical::print(std::ostream &os) const
     os << "{"
        << "\"name\":\"" << name() << "\","
        << "\"domain\":" << get_domain() << ", "
-       << "\"topology\":" << get_topology() << "\", "
+       << "\"topology\":\"" << get_topology() << "\", "
        << "\"start\":[" << start[0] << ", " << start[1] << ", " << start[2] << "],"
        << "\"end\":[" << end[0] << ", " << end[1] << ", " << end[2] << "]"
        << "}";
@@ -627,9 +639,8 @@ public:
 
     index_t num_indices() const { return ids_storage.dtype().number_of_elements(); }
 
-    virtual void get_element_ids_for_topo(const conduit::Node &n_topo,
-                                          const index_t erange[2],
-                                          std::vector<index_t> &element_ids) const override;
+    virtual void get_element_ids(const conduit::Node &n_mesh,
+                                 std::vector<index_t> &element_ids) const override;
 
     virtual void print(std::ostream &os) const override;
 
@@ -770,17 +781,26 @@ selection_explicit::partition(const conduit::Node &n_mesh) const
 
 //---------------------------------------------------------------------------
 void
-selection_explicit::get_element_ids_for_topo(const conduit::Node &/*n_topo*/,
-    const index_t erange[2], std::vector<index_t> &element_ids) const
+selection_explicit::get_element_ids(const conduit::Node &n_mesh,
+    std::vector<index_t> &element_ids) const
 {
-    auto n = ids_storage.dtype().number_of_elements();
-    auto indices = get_indices();
-    element_ids.reserve(n);
-    for(index_t i = 0; i < n; i++)
+    try
     {
-        auto eid = indices[i];
-        if(eid >= erange[0] && eid <= erange[1])
-            element_ids.push_back(eid);
+        const conduit::Node &n_topo = selected_topology(n_mesh);
+        auto topolen = topology::length(n_topo);
+        
+        auto n = ids_storage.dtype().number_of_elements();
+        auto indices = get_indices();
+        element_ids.reserve(n);
+        for(index_t i = 0; i < n; i++)
+        {
+            auto eid = indices[i];
+            if(eid < topolen)
+                element_ids.push_back(eid);
+        }
+    }
+    catch(conduit::Error &)
+    {
     }
 }
 
@@ -791,7 +811,7 @@ selection_explicit::print(std::ostream &os) const
     os << "{"
        << "\"name\":\"" << name() << "\","
        << "\"domain\":" << get_domain() << ", "
-       << "\"topology\":" << get_topology() << "\", "
+       << "\"topology\":\"" << get_topology() << "\", "
        << "\"indices\":[";
     auto n = length();
     auto indices = get_indices();
@@ -823,9 +843,8 @@ public:
 
     virtual std::vector<std::shared_ptr<selection> > partition(const conduit::Node &n_mesh) const override;
 
-    virtual void get_element_ids_for_topo(const conduit::Node &n_topo,
-                                          const index_t erange[2],
-                                          std::vector<index_t> &element_ids) const override;
+    virtual void get_element_ids(const conduit::Node &n_mesh,
+                                 std::vector<index_t> &element_ids) const override;
 
     void set_ranges(const conduit::Node &n)
     {
@@ -1043,20 +1062,28 @@ selection_ranges::partition(const conduit::Node &/*n_mesh*/) const
 
 //---------------------------------------------------------------------------
 void
-selection_ranges::get_element_ids_for_topo(const conduit::Node &/*n_topo*/,
-    const index_t erange[2], std::vector<index_t> &element_ids) const
+selection_ranges::get_element_ids(const conduit::Node &n_mesh,
+    std::vector<index_t> &element_ids) const
 {
-    auto n = num_ranges();
-    auto indices = get_ranges();
-    for(index_t i = 0; i < n; i++)
+    try
     {
-        index_t start = indices[2*i];
-        index_t end = indices[2*i+1];
-        for(index_t eid = start; eid <= end; eid++)
+        const conduit::Node &n_topo = selected_topology(n_mesh);
+        auto topolen = topology::length(n_topo);
+        auto n = num_ranges();
+        auto indices = get_ranges();
+        for(index_t i = 0; i < n; i++)
         {
-            if(eid >= erange[0] && eid <= erange[1])
-                element_ids.push_back(eid);
+            index_t start = indices[2*i];
+            index_t end = indices[2*i+1];
+            for(index_t eid = start; eid <= end; eid++)
+            {
+                if(eid < topolen)
+                    element_ids.push_back(eid);
+            }
         }
+    }
+    catch(conduit::Error &)
+    {
     }
 }
 
@@ -1067,7 +1094,7 @@ selection_ranges::print(std::ostream &os) const
     os << "{"
        << "\"name\":\"" << name() << "\","
        << "\"domain\":" << get_domain() << ", "
-       << "\"topology\":" << get_topology() << "\", "
+       << "\"topology\":\"" << get_topology() << "\", "
        << "\"ranges\":[";
     auto n = num_ranges() * 2;
     auto indices = get_ranges();
@@ -1106,7 +1133,7 @@ partitioner::chunk::free()
 
 //---------------------------------------------------------------------------
 partitioner::partitioner() : rank(0), size(1), target(1), meshes(), selections(),
-    selected_fields()
+    selected_fields(), mapping(true), merge_tolerance(1.e-8)
 {
 }
 
@@ -1162,9 +1189,9 @@ partitioner::create_selection_all_elements(const conduit::Node &n_mesh) const
         auto typed_sel = dynamic_cast<selection_logical *>(retval.get());
         if(typed_sel != nullptr)
         {
-            typed_sel->set_end(edims[0] > 1 ? edims[0]-1 : 1,
-                               edims[1] > 1 ? edims[1]-1 : 1,
-                               edims[2] > 1 ? edims[2]-1 : 1);
+            typed_sel->set_end(edims[0] > 0 ? edims[0]-1 : 0,
+                               edims[1] > 0 ? edims[1]-1 : 0,
+                               edims[2] > 0 ? edims[2]-1 : 0);
         }
     }
     else
@@ -1270,6 +1297,15 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
             selected_fields.push_back(n_fields[i].name());
     }
 
+    // Get whether we want to preserve old numbering of vertices, elements.
+    if(options.has_child("mapping"))
+        mapping = options["mapping"].to_unsigned_int() != 0;
+
+    // Get whether we want to preserve old numbering of vertices, elements.
+    if(options.has_child("merge_tolerance"))
+        merge_tolerance = options["merge_tolerance"].to_double();
+
+
 #if 1
     cout << "partitioner::initialize" << endl;
     cout << "\ttarget=" << target << endl;
@@ -1351,16 +1387,16 @@ partitioner::split_selections()
 
 //---------------------------------------------------------------------------
 void
-partitioner::copy_fields(const std::vector<index_t> &all_selected_vertex_ids,
-    const std::vector<index_t> &all_selected_element_ids,
+partitioner::copy_fields(index_t domain, const std::string &topology,
+    const std::vector<index_t> &vertex_ids,
+    const std::vector<index_t> &element_ids,
     const conduit::Node &n_mesh,
-    conduit::Node &n_output,
-    bool preserve_mapping) const
+    conduit::Node &n_output) const
 {
     if(n_mesh.has_child("fields"))
     {
         const conduit::Node &n_fields = n_mesh["fields"];
-        if(!all_selected_vertex_ids.empty())
+        if(!vertex_ids.empty())
         {
             conduit::Node &n_output_fields = n_output["fields"];
             for(index_t i = 0; i < n_fields.number_of_children(); i++)
@@ -1371,18 +1407,25 @@ partitioner::copy_fields(const std::vector<index_t> &all_selected_vertex_ids,
                     auto association = n_field["association"].as_string();
                     if(association == "vertex")
                     {
-                        copy_field(n_field, all_selected_vertex_ids, n_output_fields);
+                        copy_field(n_field, vertex_ids, n_output_fields);
                     }
                 }
             }
 
-            if(preserve_mapping)
+            if(mapping)
             {
-                // TODO: save the all_selected_vertex_ids as a new field.
+                // Save the vertex_ids as a new MC field.
+                conduit::Node &n_field = n_output_fields["original_vertex_ids"];
+                n_field["association"] = "vertex";
+                if(!topology.empty())
+                    n_field["topology"] = topology;
+                std::vector<index_t> domain_ids(vertex_ids.size(), domain);
+                n_field["domains"].set(domain_ids);
+                n_field["ids"].set(vertex_ids);
             }
         }
 
-        if(!all_selected_element_ids.empty())
+        if(!element_ids.empty())
         {
             conduit::Node &n_output_fields = n_output["fields"];
             for(index_t i = 0; i < n_fields.number_of_children(); i++)
@@ -1393,14 +1436,21 @@ partitioner::copy_fields(const std::vector<index_t> &all_selected_vertex_ids,
                     auto association = n_field["association"].as_string();
                     if(association == "element")
                     {
-                        copy_field(n_field, all_selected_element_ids, n_output_fields);
+                        copy_field(n_field, element_ids, n_output_fields);
                     }
                 }
             }
 
-            if(preserve_mapping)
+            if(mapping)
             {
-                // TODO: save the all_selected_element_ids as a new field.
+                // Save the element_ids as a new MC field.
+                conduit::Node &n_field = n_output_fields["original_element_ids"];
+                n_field["association"] = "element";
+                if(!topology.empty())
+                    n_field["topology"] = topology;
+                std::vector<index_t> domain_ids(vertex_ids.size(), domain);
+                n_field["domains"].set(domain_ids);
+                n_field["ids"].set(element_ids);
             }
         }
     }
@@ -1549,9 +1599,11 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
         index_t edims[3] = {1,1,1}, dims[3] = {0,0,0};
         auto ndims = topology::dims(n_topo);
         conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, edims, 3);
+cout << "get_vertex_ids_for_element_ids: edims=" << edims[0] << ", " << edims[1] << ", " << edims[2] << endl;
         dims[0] = edims[0] + 1;
         dims[1] = edims[1] + (ndims > 1 ? 1 : 0);
         dims[2] = edims[2] + (ndims > 2 ? 1 : 0);
+cout << "get_vertex_ids_for_element_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
 
         index_t cell_ijk[3]={0,0,0}, pt_ijk[3] = {0,0,0}, ptid = 0;
         static const index_t offsets[8][3] = {
@@ -1570,7 +1622,7 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
         {
             // Get the IJK coordinate of the element.
             grid_id_to_ijk(element_ids[i], edims, cell_ijk);
-
+cout << element_ids[i] << "-> " << cell_ijk[0] << "," << cell_ijk[1] << "," << cell_ijk[2] << endl;
             // Turn the IJK into vertex ids.
             for(int i = 0; i < np; i++)
             {
@@ -1578,6 +1630,8 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
                 pt_ijk[1] = cell_ijk[1] + offsets[i][1];
                 pt_ijk[2] = cell_ijk[2] + offsets[i][2];
                 grid_ijk_to_id(pt_ijk, dims, ptid);
+
+cout << "\t" << pt_ijk[0] << "," << pt_ijk[1] << "," << pt_ijk[2] << "-> " << ptid << endl;
 
                 vertex_ids.insert(ptid);
             }
@@ -1637,147 +1691,102 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
 {
     if(idx >= selections.size())
         return nullptr;
-cout << "**************************************" << endl;
-n_mesh.print();
-cout << "**************************************" << endl;
 
-    const conduit::Node &n_topo = n_mesh["topologies"];
-    const conduit::Node &n_coordsets = n_mesh["coordsets"];
-    std::map<std::string, std::shared_ptr<std::vector<index_t>>> topo_element_ids;
-    std::map<std::string, std::shared_ptr<std::set<index_t>>> coordset_vertex_ids;
-    index_t erange[] = {0,0};
-    for(index_t i = 0; i < n_topo.number_of_children(); i++)
+    conduit::Node *retval = nullptr;
+    try
     {
-        // Get the current topology.
-        const conduit::Node &this_topo = n_topo[i];
+        // Get the appropriate topology and coordset nodes.
+        const conduit::Node &n_topo = selections[idx]->selected_topology(n_mesh);
+        const conduit::Node &n_coordsets = n_mesh["coordsets"];
+        std::string csname(n_topo["coordset"].as_string());
+        const conduit::Node &n_coordset = n_coordsets[csname];
 
-        // Get the number of elements in the topology.
-        index_t topo_num_elements = topology::length(this_topo);
-        erange[1] += topo_num_elements-1;
 
-        // Create a vector to which we'll add the element ids for this topo.
-        // We have to keep it around 
-        auto eit = topo_element_ids.find(this_topo.name());
-        if(eit == topo_element_ids.end())
+// NOTE: The following code is geared towards pulling out an unstructured mesh
+//       defined by an arbitrary set of element ids. We need to add some
+//       special cases to handle uniform, rectilinear, and structured if the
+//       selection indicates that it is structured.
+
+/*
+        if(selections[idx]->is_logical())
         {
-            topo_element_ids[this_topo.name()] = std::make_shared<std::vector<index_t>>();
-            eit = topo_element_ids.find(this_topo.name());
-cout << "** Added topo_element_ids " << eit->first << endl;
-        }
-        // Get the selected element ids that are in this topology.
-        std::vector<index_t> &element_ids = *eit->second;
+            auto typed_sel = dynamic_cast<selection_logical *>(selections[idx].get());
 
-// NOTE: we could pass back ranges for the element ids...
-        // Get the selected element ids that are in this topology.
-cout << "** Gathering element ids for topo " << this_topo.name() << endl;
-        selections[idx]->get_element_ids_for_topo(this_topo, erange, element_ids);
+            index_t start[3], end[3];
+            typed_sel->get_start(start[0], start[1], start[2]);
+            typed_sel->get_end(end[0], end[1], end[2]);
 
-        // What's its coordset name?
-        std::string csname(this_topo["coordset"].as_string());
-        auto vit = coordset_vertex_ids.find(csname);
-        if(vit == coordset_vertex_ids.end())
-        {
-            coordset_vertex_ids[csname] = std::make_shared<std::set<index_t>>();
-            vit = coordset_vertex_ids.find(csname);
-cout << "** Added coordset_vertex_ids " << csname << endl;
-        }
+            // Get the indices of the selected elements. (needed for field extraction)
+            std::vector<index_t> element_ids, vertex_ids;
+            selections[idx]->get_element_ids(n_mesh, element_ids);
 
-// NOTE: we could pass back ranges for the vertex ids...
-        // Add the vertex ids for the elements in the selection. This lets us
-        // build up a comprehensive set of the vertex ids we need from the
-        // coordset, as determined by multiple topologies.
-cout << "** Gathering vertex ids for elements from coordset " << vit->first << endl;
-        get_vertex_ids_for_element_ids(this_topo, *eit->second, *vit->second);
+            // Get the vertex ids of the selected elements. We can do it like
+            // this faster than using a set. (needed for field extraction)
+            selections[idx]->get_vertex_ids(n_mesh, vertex_ids);
 
-        erange[0] += topo_num_elements;
-    }
-
-    // We now have vectors of element ids that we need to extract from each topo.
-    // We also have sets of vertex ids that we need to extract from each coordset.
-
-    conduit::Node *retval = new conduit::Node;
-    conduit::Node &n_output = *retval;
-
-// HEY, a concern I have about this way as opposed to making each selection do the
-//      extract is that this way makes the output unstructured all the time. With
-//      making the logical selection do the extraction, I can still output a logical
-//      structured output for those topologies. This way can't really do that.
-
-    // Create new coordsets that include the vertices that are relevant for the
-    // selection.
-    conduit::Node &n_new_coordsets = n_output["coordsets"];
-    std::vector<index_t> all_selected_vertex_ids;
-    for(index_t i = 0; i < n_coordsets.number_of_children(); i++)
-    {
-        const conduit::Node &n_coordset = n_coordsets[i];
-        auto vit = coordset_vertex_ids.find(n_coordset.name());
-        if(vit != coordset_vertex_ids.end())
-        {
-            // TODO: avoid copying back to std::vector multiple times.
-            std::vector<index_t> vertex_ids;
-            index_t_set_to_vector(*vit->second, vertex_ids);
-
-            // Build up a mapping of old to new vertices over all coordsets that we
-            // can use to remap fields.
-            for(auto it = vit->second->begin(); it != vit->second->end(); it++)
-                all_selected_vertex_ids.push_back(*it);
-
-            // Create the new coordset.
-            create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[n_coordset.name()]);
-        }
-        else
-        {
-cout << "Could not locate coordset_vertex_ids with name " << n_coordset.name() << endl;
-cout << "Available names: ";
-for(auto vit = coordset_vertex_ids.begin(); vit != coordset_vertex_ids.end(); vit++)
-   cout << vit->first << ", ";
-cout << endl;
-        }
-    }
-
-    // Create new topologies containing the selected cells.
-    conduit::Node &n_new_topos = n_output["topologies"];
-    std::vector<index_t> all_selected_element_ids;
-    for(index_t i = 0; i < n_topo.number_of_children(); i++)
-    {
-        const conduit::Node &n_this_topo = n_topo[i];
-cout << "** Looking for topo_element_ids " << n_this_topo.name() << endl;
-        auto eit = topo_element_ids.find(n_this_topo.name());
-        if(!eit->second->empty())
-        {
-            const conduit::Node &n_coordset = n_this_topo["coordset"];
-            auto vit = coordset_vertex_ids.find(n_coordset.as_string());
-            if(vit != coordset_vertex_ids.end())
+            if(n_coordset["type"].as_string() == "uniform")
+                create_new_uniform_coordset(n_coordset, start, end, n_new_coordsets[csname]);
+            else if(n_coordset["type"].as_string() == "uniform")
+                create_new_rectilinear_coordset(n_coordset, start, end, n_new_coordsets[csname]);
+            else if(n_coordset["type"].as_string() == "explicit" &&
+                    n_topo["type"].as_string() == "structured")
             {
-                // Build up a mapping of old to new elements over all topos
-                // can use to remap fields.
-                for(size_t j = 0; j < eit->second->size(); j++)
-                    all_selected_element_ids.push_back(eit->second->operator[](j));
-
-                // TODO: avoid copying back to std::vector multiple times.
-                std::vector<index_t> vertex_ids;
-                index_t_set_to_vector(*vit->second, vertex_ids);
-
-                create_new_unstructured_topo(n_this_topo, vit->first, vertex_ids, 
-                    *eit->second, n_new_topos[n_this_topo.name()]);
+                create_new_structured_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
             }
+
+            // Now, create new topologies.
+            if(n_topo["type"].as_string() == "uniform")
+                create_new_uniform_topo(n_topo, csname, n_new_topos[n_topo.name()]);
+            else if(n_topo["type"].as_string() == "rectilinear")
+                create_new_rectilinear_topo(n_topo, csname, n_new_topos[n_topo.name()]);
+            else if(n_topo["type"].as_string() == "rectilinear")
+                create_new_structured_topo(n_topo, csname, start, end, n_new_topos[n_topo.name()]);
+
         }
         else
         {
-cout << "******* topo not found in map!" << endl;
-        }
-    }
+*/
 
-#if 0
-    // Now that we've made new coordsets and topologies, make new fields.
-    copy_fields(all_selected_vertex_ids, all_selected_element_ids,
-                n_mesh, n_output,
-                selections[idx]->preserve_mapping());
+
+        // Get the indices of the selected elements.
+        std::vector<index_t> element_ids;
+        selections[idx]->get_element_ids(n_mesh, element_ids);
+
+        // Get the unique set of vertex ids used by the elements.
+        std::set<index_t> vertex_ids_set;
+        get_vertex_ids_for_element_ids(n_topo, element_ids, vertex_ids_set);
+        std::vector<index_t> vertex_ids;
+        index_t_set_to_vector(vertex_ids_set, vertex_ids);
+
+#if 1
+cout << "vertex_ids=";
+for(size_t i = 0; i < vertex_ids.size(); i++)
+    cout << vertex_ids[i] << ", ";
+cout << endl;
 #endif
 
-cout << "**************************************" << endl;
-n_output.print();
-cout << "**************************************" << endl;
+        // Make output.
+        retval = new conduit::Node;
+        conduit::Node &n_output = *retval;
+
+        // Create a new coordset consisting of the selected vertex ids.
+        conduit::Node &n_new_coordsets = n_output["coordsets"];
+        create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
+
+        // Create a new topology consisting of the selected element ids.
+        conduit::Node &n_new_topos = n_output["topologies"];
+        create_new_unstructured_topo(n_topo, csname, 
+            element_ids, vertex_ids, n_new_topos[n_topo.name()]);
+
+        // Create new fields.
+        copy_fields(selections[idx]->get_domain(), n_topo.name(),
+            vertex_ids, element_ids, n_mesh, n_output);
+    }
+    catch(conduit::Error &)
+    {
+        delete retval;
+        retval = nullptr;
+    }
 
     return retval;
 }
@@ -1881,9 +1890,12 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
     // from the old coordset. It can serve as a new to old map.
 
     std::map<index_t,index_t> old2new;
+cout << "old2new=" << endl;
     for(size_t i = 0; i < vertex_ids.size(); i++)
+{
+cout << "  " << vertex_ids[i] << "-> " << i << endl;
         old2new[vertex_ids[i]] = static_cast<index_t>(i);
-
+}
     const conduit::Node &n_conn = n_topo["elements/connectivity"];
 // Conduit needs to_index_t_array() and as_index_t_ptr() methods.
     conduit::Node indices;
@@ -1958,7 +1970,6 @@ partitioner::execute(conduit::Node &output)
         else
         {
             conduit::Node *c = extract(i, *meshes[i]);
-c->print();
             chunks.push_back(chunk(c, true));
         }
     }

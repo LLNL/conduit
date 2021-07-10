@@ -49,6 +49,7 @@ test_logical_selection_2d(const std::string &topo)
 "target: 2";
     options.parse(opt1, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
+output.print();
     EXPECT_EQ(output.number_of_children(), 2);
     EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), true);
     // TODO: test output mesh contents.

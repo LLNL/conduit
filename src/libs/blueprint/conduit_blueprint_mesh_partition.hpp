@@ -125,12 +125,12 @@ public:
 
     /**
      @brief Returns the cells in this selection that are contained in the
-            supplied topology. Such cells will have cell ranges in erange,
-            inclusive. The element ids are returned in element_ids.
+            selected topology.
+     @param n_mesh A Conduit node that contains the mesh.
+     @param[out] element_ids A vector of element ids that are selected.
      */
-    virtual void get_element_ids_for_topo(const conduit::Node &n_topo,
-                                          const index_t erange[2],
-                                          std::vector<index_t> &element_ids) const = 0;
+    virtual void get_element_ids(const conduit::Node &n_mesh,
+                                 std::vector<index_t> &element_ids) const = 0;
 
     /**
      @brief Returns a topology node that we can use from the mesh.
@@ -307,11 +307,25 @@ protected:
      */
     std::shared_ptr<selection> create_selection_all_elements(const conduit::Node &n_mesh) const;
 
-    void copy_fields(const std::vector<index_t> &all_selected_vertex_ids,
-                     const std::vector<index_t> &all_selected_element_ids,
+    /**
+     @brief Use the vertex_ids and element_ids to copy from the original
+            fields to make new, restricted fields. We also add some mapping
+            variables so we preserve the old vertex and element ids in the
+            new field output.
+
+     @param domain The domain associated the mesh's fields.
+     @param topology The name of the topology we're using.
+     @param vertex_ids The vertex ids that we're copying to the new fields.
+     @param element_ids The element ids that we're copying to the new fields.
+     @param n_mesh A Conduit node containing the source mesh.
+     @param output A new Conduit node to contain the new mesh.
+     */
+    void copy_fields(index_t domain,
+                     const std::string &topology,
+                     const std::vector<index_t> &vertex_ids,
+                     const std::vector<index_t> &element_ids,
                      const conduit::Node &n_mesh,
-                     conduit::Node &output,
-                     bool preserve_mapping) const;
+                     conduit::Node &output) const;
 
     void copy_field(const conduit::Node &n_field,
                     const std::vector<index_t> &ids,
@@ -479,6 +493,8 @@ protected:
     std::vector<const Node *>                meshes;
     std::vector<std::shared_ptr<selection> > selections;
     std::vector<std::string>                 selected_fields;
+    bool                                     mapping;
+    double                                   merge_tolerance;
 };
 
 //---------------------------------------------------------------------------
