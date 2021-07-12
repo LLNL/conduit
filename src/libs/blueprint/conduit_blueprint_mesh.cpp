@@ -2998,7 +2998,7 @@ map_fields_specific(const Node &poly_mesh,
     }
     else
     {
-        CONDUIT_ERROR(((std::string) "Bad shape in ").append(poly_mesh["topologies/" + topology + "/elements/shape"].as_string()));
+        CONDUIT_ERROR(((std::string) "Bad shape in ").append(side_mesh["topologies/" + topology + "/elements/shape"].as_string()));
     }
     
     const T *tri_to_poly = d2smap["values"].value();
