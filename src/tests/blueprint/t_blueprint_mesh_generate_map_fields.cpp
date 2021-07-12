@@ -21,23 +21,6 @@
 using namespace conduit;
 using namespace conduit::blueprint::mesh;
 
-// void 
-// generate_sides_and_map_fields(const Node &poly_mesh,
-//                                                             Node &side_mesh,
-//                                                             const std::string &topology)
-// {
-//     Node s2dmap, d2smap;
-//     Node &side_coords = side_mesh["coordsets/coords"];
-//     Node &side_topo = side_mesh["topologies/" + topology];
-//     blueprint::mesh::topology::unstructured::generate_sides(poly_mesh["topologies/" + topology], 
-//                                                             side_topo, 
-//                                                             side_coords, 
-//                                                             s2dmap, 
-//                                                             d2smap);
-//     map_fields_to_generated_sides(poly_mesh, d2smap, side_mesh, topology);
-// }
-
-
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_2D)
 {
