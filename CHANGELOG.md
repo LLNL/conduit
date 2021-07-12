@@ -14,6 +14,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Added the `blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
 - Fixed a bug that was causing the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
+- Added `blueprint::mesh::topology::unstructured::map_fields_to_generated_sides`, a companion function to `generate_sides` that takes fields from the topology before `generate_sides` and maps it onto the new topology.
 
 ## [0.7.2] - Released 2021-05-19
 
