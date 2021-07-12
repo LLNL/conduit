@@ -2982,10 +2982,10 @@ namespace detail
     template<typename T>
     void 
     map_fields_to_generated_sides(const Node &poly_mesh,
-                                       const Node &d2smap,
-                                       Node &side_mesh,
-                                       std::string topology,
-                                       const std::string &field_prefix)
+                                  const Node &d2smap,
+                                  Node &side_mesh,
+                                  std::string topology,
+                                  const std::string &field_prefix)
     {
         NodeConstIterator fields_itr = poly_mesh["fields"].children();
 
@@ -3088,10 +3088,10 @@ namespace detail
 // may want a prefix for the generated fields (a string name)
 void 
 mesh::topology::unstructured::map_fields_to_generated_sides(const Node &poly_mesh,
-                                         const Node &d2smap,
-                                         Node &side_mesh,
-                                         const std::string &topology,
-                                         const std::string &field_prefix)
+                                                            const Node &d2smap,
+                                                            Node &side_mesh,
+                                                            const std::string &topology,
+                                                            const std::string &field_prefix)
 {
     if (d2smap["values"].dtype().is_uint64())
     {
