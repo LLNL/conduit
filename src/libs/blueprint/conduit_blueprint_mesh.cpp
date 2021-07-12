@@ -3010,7 +3010,7 @@ namespace detail
         {
             const Node &field = fields_itr.next();
             std::string field_name = fields_itr.name();
-            Node &field_out = side_mesh["fields"][field_name];
+            Node &field_out = side_mesh["fields"][field_prefix + field_name];
 
             if (field.has_child("association"))
             {
