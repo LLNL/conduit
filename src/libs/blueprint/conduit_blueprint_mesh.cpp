@@ -2963,10 +2963,10 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 //-----------------------------------------------------------------------------
 template<typename T, typename U> 
 void 
-map_field(Node &field_out, 
-          const Node &field, 
-          int num_shapes, 
-          const U *tri_to_poly)
+map_field_to_generated_sides(Node &field_out, 
+                             const Node &field, 
+                             int num_shapes, 
+                             const U *tri_to_poly)
 {
     T* values_array = field_out["values"].value();
     const T* poly_field_data = field["values"].value();
@@ -2979,10 +2979,10 @@ map_field(Node &field_out,
 
 template<typename T>
 void 
-map_fields_specific(const Node &poly_mesh,
-                    const Node &d2smap,
-                    Node &side_mesh,
-                    std::string topology)
+map_fields_to_generated_sides_template(const Node &poly_mesh,
+                                       const Node &d2smap,
+                                       Node &side_mesh,
+                                       std::string topology)
 {
     NodeConstIterator fields_itr = poly_mesh["fields"].children();
 
@@ -3040,32 +3040,32 @@ map_fields_specific(const Node &poly_mesh,
         if (field["values"].dtype().is_uint64())
         {
             field_out["values"].set(conduit::DataType::uint64(num_shapes));
-            map_field<uint64, T>(field_out, field, num_shapes, tri_to_poly);
+            map_field_to_generated_sides<uint64, T>(field_out, field, num_shapes, tri_to_poly);
         }
         else if (field["values"].dtype().is_uint32())
         {
             field_out["values"].set(conduit::DataType::uint32(num_shapes));
-            map_field<uint32, T>(field_out, field, num_shapes, tri_to_poly);
+            map_field_to_generated_sides<uint32, T>(field_out, field, num_shapes, tri_to_poly);
         }
         else if (field["values"].dtype().is_int64())
         {
             field_out["values"].set(conduit::DataType::int64(num_shapes));
-            map_field<int64, T>(field_out, field, num_shapes, tri_to_poly);
+            map_field_to_generated_sides<int64, T>(field_out, field, num_shapes, tri_to_poly);
         }
         else if (field["values"].dtype().is_int32())
         {
             field_out["values"].set(conduit::DataType::int32(num_shapes));
-            map_field<int32, T>(field_out, field, num_shapes, tri_to_poly);
+            map_field_to_generated_sides<int32, T>(field_out, field, num_shapes, tri_to_poly);
         }
         else if (field["values"].dtype().is_float64())
         {
             field_out["values"].set(conduit::DataType::float64(num_shapes));
-            map_field<float64, T>(field_out, field, num_shapes, tri_to_poly);
+            map_field_to_generated_sides<float64, T>(field_out, field, num_shapes, tri_to_poly);
         }
         else if (field["values"].dtype().is_float32())
         {
             field_out["values"].set(conduit::DataType::float32(num_shapes));
-            map_field<float32, T>(field_out, field, num_shapes, tri_to_poly);
+            map_field_to_generated_sides<float32, T>(field_out, field, num_shapes, tri_to_poly);
         }
         else
         {
@@ -3082,26 +3082,26 @@ map_fields_specific(const Node &poly_mesh,
 }
 
 void 
-mesh::topology::unstructured::map_fields(const Node &poly_mesh,
+mesh::topology::unstructured::map_fields_to_generated_sides(const Node &poly_mesh,
                                          const Node &d2smap,
                                          Node &side_mesh,
-                                         std::string topology)
+                                         const std::string &topology)
 {
     if (d2smap["values"].dtype().is_uint64())
     {
-        map_fields_specific<uint64>(poly_mesh, d2smap, side_mesh, topology);
+        map_fields_to_generated_sides_template<uint64>(poly_mesh, d2smap, side_mesh, topology);
     }
     else if (d2smap["values"].dtype().is_uint32())
     {
-        map_fields_specific<uint32>(poly_mesh, d2smap, side_mesh, topology);
+        map_fields_to_generated_sides_template<uint32>(poly_mesh, d2smap, side_mesh, topology);
     }
     else if (d2smap["values"].dtype().is_int64())
     {
-        map_fields_specific<int64>(poly_mesh, d2smap, side_mesh, topology);
+        map_fields_to_generated_sides_template<int64>(poly_mesh, d2smap, side_mesh, topology);
     }
     else if (d2smap["values"].dtype().is_int32())
     {
-        map_fields_specific<int32>(poly_mesh, d2smap, side_mesh, topology);
+        map_fields_to_generated_sides_template<int32>(poly_mesh, d2smap, side_mesh, topology);
     }
     else
     {
@@ -3109,10 +3109,11 @@ mesh::topology::unstructured::map_fields(const Node &poly_mesh,
     }
 }
 
+// may want a prefix for the generated fields (a string name)
 void 
 mesh::topology::unstructured::generate_sides_and_map_fields(const Node &poly_mesh,
                                                             Node &side_mesh,
-                                                            std::string topology)
+                                                            const std::string &topology)
 {
     Node s2dmap, d2smap;
     Node &side_coords = side_mesh["coordsets/coords"];
@@ -3122,7 +3123,7 @@ mesh::topology::unstructured::generate_sides_and_map_fields(const Node &poly_mes
                                                             side_coords, 
                                                             s2dmap, 
                                                             d2smap);
-    map_fields(poly_mesh, d2smap, side_mesh, topology);
+    map_fields_to_generated_sides(poly_mesh, d2smap, side_mesh, topology);
 }
 
 //-----------------------------------------------------------------------------

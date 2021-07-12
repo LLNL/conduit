@@ -175,7 +175,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_exce
     d2smap["values"].set(conduit::DataType::float64(1));
     try
     {
-        blueprint::mesh::topology::unstructured::map_fields(n, d2smap, side_mesh, "topo");
+        blueprint::mesh::topology::unstructured::map_fields_to_generated_sides(n, d2smap, side_mesh, "topo");
         FAIL();
     }
     catch(const std::exception& err)
@@ -194,7 +194,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_exce
     side_mesh["topologies/topo/elements/shape"] = "strange_shape";
     try
     {
-        blueprint::mesh::topology::unstructured::map_fields(n, d2smap, side_mesh, "topo");
+        blueprint::mesh::topology::unstructured::map_fields_to_generated_sides(n, d2smap, side_mesh, "topo");
         FAIL();
     }
     catch(const std::exception& err)
@@ -213,7 +213,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_exce
     n["fields/level/association"] = "vertex";
     try
     {
-        blueprint::mesh::topology::unstructured::map_fields(n, d2smap, side_mesh, "topo");
+        blueprint::mesh::topology::unstructured::map_fields_to_generated_sides(n, d2smap, side_mesh, "topo");
         FAIL();
     }
     catch(const std::exception& err)
@@ -233,7 +233,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_exce
     n["fields/level/volume_dependent"] = "true";
     try
     {
-        blueprint::mesh::topology::unstructured::map_fields(n, d2smap, side_mesh, "topo");
+        blueprint::mesh::topology::unstructured::map_fields_to_generated_sides(n, d2smap, side_mesh, "topo");
         FAIL();
     }
     catch(const std::exception& err)
