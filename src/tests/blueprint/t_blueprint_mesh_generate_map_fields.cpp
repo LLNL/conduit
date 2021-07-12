@@ -21,6 +21,23 @@
 using namespace conduit;
 using namespace conduit::blueprint::mesh;
 
+// void 
+// generate_sides_and_map_fields(const Node &poly_mesh,
+//                                                             Node &side_mesh,
+//                                                             const std::string &topology)
+// {
+//     Node s2dmap, d2smap;
+//     Node &side_coords = side_mesh["coordsets/coords"];
+//     Node &side_topo = side_mesh["topologies/" + topology];
+//     blueprint::mesh::topology::unstructured::generate_sides(poly_mesh["topologies/" + topology], 
+//                                                             side_topo, 
+//                                                             side_coords, 
+//                                                             s2dmap, 
+//                                                             d2smap);
+//     map_fields_to_generated_sides(poly_mesh, d2smap, side_mesh, topology);
+// }
+
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_2D)
 {
@@ -31,7 +48,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_2D)
     examples::polytess(nlevels, n);
     EXPECT_TRUE(verify(n, info));
 
-    topology::unstructured::generate_sides_and_map_fields(n, side_mesh, "topo");
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"], 
+                                                            side_topo, 
+                                                            side_coords, 
+                                                            s2dmap, 
+                                                            d2smap);
+    topology::unstructured::map_fields_to_generated_sides(n, d2smap, side_mesh, "topo");
     EXPECT_TRUE(verify(side_mesh, info));
 
     EXPECT_EQ(side_mesh["fields/level/topology"].as_string(), "topo");
@@ -100,7 +125,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_3D)
     examples::polychain(length, n);
     EXPECT_TRUE(verify(n, info));
 
-    topology::unstructured::generate_sides_and_map_fields(n, side_mesh, "topo");
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"], 
+                                                            side_topo, 
+                                                            side_coords, 
+                                                            s2dmap, 
+                                                            d2smap);
+    topology::unstructured::map_fields_to_generated_sides(n, d2smap, side_mesh, "topo");
     EXPECT_TRUE(verify(side_mesh, info));
 
     EXPECT_EQ(side_mesh["fields/chain/topology"].as_string(), "topo");
@@ -242,6 +275,24 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_and_map_fields_exce
         std::string actual = err.what();
         EXPECT_TRUE(actual.find(msg) != std::string::npos);
     }
+    n["fields/level/volume_dependent"] = "false";
 
-    // next error to catch is on line 3072
+    // catch if field has wrong data type
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"], 
+                                                            side_topo, 
+                                                            side_coords, 
+                                                            s2dmap, 
+                                                            d2smap);
+    n["fields/level/values"].set(conduit::DataType::int8(1));
+    try
+    {
+        blueprint::mesh::topology::unstructured::map_fields_to_generated_sides(n, d2smap, side_mesh, "topo");
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "Unsupported field type in dtype: \"int8\"";
+        std::string actual = err.what();
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
 }
