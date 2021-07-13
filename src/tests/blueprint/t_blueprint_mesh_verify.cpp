@@ -2685,3 +2685,16 @@ TEST(conduit_blueprint_mesh_verify, mesh_bad_spacing_name)
     Node n_idx;
     blueprint::mesh::generate_index(n_test,"",1,n_idx);
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, empty_mesh_vs_gen_index)
+{
+    Node empty;
+    Node info;
+    //empty.append();
+    bool res = blueprint::mesh::verify(empty,info);
+    EXPECT_TRUE(res);
+    Node n_idx;
+    blueprint::mesh::generate_index(empty,"",1,n_idx);
+}
+
