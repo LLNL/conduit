@@ -48,6 +48,7 @@ test_logical_selection_2d(const std::string &topo)
     const char *opt1 =
 "target: 2";
     options.parse(opt1, "yaml");
+input.print();
     conduit::blueprint::mesh::partition(input, options, output);
 output.print();
     EXPECT_EQ(output.number_of_children(), 2);

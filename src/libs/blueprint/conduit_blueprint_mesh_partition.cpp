@@ -1420,8 +1420,9 @@ partitioner::copy_fields(index_t domain, const std::string &topology,
                 if(!topology.empty())
                     n_field["topology"] = topology;
                 std::vector<index_t> domain_ids(vertex_ids.size(), domain);
-                n_field["domains"].set(domain_ids);
-                n_field["ids"].set(vertex_ids);
+                conduit::Node &n_values = n_field["values"];
+                n_values["domains"].set(domain_ids);
+                n_values["ids"].set(vertex_ids);
             }
         }
 
@@ -1449,8 +1450,9 @@ partitioner::copy_fields(index_t domain, const std::string &topology,
                 if(!topology.empty())
                     n_field["topology"] = topology;
                 std::vector<index_t> domain_ids(vertex_ids.size(), domain);
-                n_field["domains"].set(domain_ids);
-                n_field["ids"].set(element_ids);
+                conduit::Node &n_values = n_field["values"];
+                n_values["domains"].set(domain_ids);
+                n_values["ids"].set(element_ids);
             }
         }
     }
@@ -1484,16 +1486,38 @@ partitioner::copy_field(const conduit::Node &n_field,
     }
 
     const conduit::Node &n_values = n_field["values"];
+    conduit::Node &new_values = n_new_field["values"];
     if(n_values.dtype().is_compact()) 
     {
-        slice_array(n_values, ids, n_new_field["values"]);
+        if(n_values.number_of_children() > 0)
+        {
+            // mcarray.
+            for(index_t i = 0; i < n_values.number_of_children(); i++)
+            {
+                const conduit::Node &n_vals = n_values[i];
+                slice_array(n_vals, ids, new_values[n_vals.name()]);
+            }
+        }
+        else
+            slice_array(n_values, ids, new_values);
     }
     else
     {
         // otherwise, we need to compact our data first
         conduit::Node n;
         n_values.compact_to(n);
-        slice_array(n, ids, n_new_field["values"]);
+        if(n.number_of_children() > 0)
+        {
+            // mcarray.
+            conduit::Node &new_values = n_new_field["values"];
+            for(index_t i = 0; i < n.number_of_children(); i++)
+            {
+                const conduit::Node &n_vals = n[i];
+                slice_array(n_vals, ids, new_values[n_vals.name()]);
+            }
+        }
+        else
+            slice_array(n, ids, new_values);
     }
 }
 
@@ -1769,6 +1793,13 @@ cout << endl;
         retval = new conduit::Node;
         conduit::Node &n_output = *retval;
 
+        // Copy state.
+        if(n_mesh.has_child("state"))
+        {
+            const conduit::Node &n_state = n_mesh["state"];
+            n_output["state"].set(n_state);
+        }
+
         // Create a new coordset consisting of the selected vertex ids.
         conduit::Node &n_new_coordsets = n_output["coordsets"];
         create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
@@ -1797,6 +1828,7 @@ partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
     const std::vector<index_t> &vertex_ids, conduit::Node &n_new_coordset) const
 {
     conduit::Node n_explicit;
+    n_new_coordset["type"] = "explicit";
     if(n_coordset["type"].as_string() == "uniform")
     {
         conduit::blueprint::mesh::coordset::uniform::to_explicit(n_coordset, n_explicit);
@@ -1928,20 +1960,22 @@ cout << "  " << vertex_ids[i] << "-> " << i << endl;
         {
             auto elem_conn = iptr + element_ids[i] * nverts_in_shape;
 #if 1
-            cout << "cell " << element_ids[i] << ": ";
+            cout << "cell " << element_ids[i] << ":  old(";
             for(index_t j = 0; j < nverts_in_shape; j++)
                 cout << elem_conn[j] << ", ";
-            cout << endl;
-#endif
+            cout << "), new(";
             for(index_t j = 0; j < nverts_in_shape; j++)
             {
-#if 1
                 auto it = old2new.find(elem_conn[j]);
                 if(it == old2new.end())
-                    cout << "Error mapping old vertex " << elem_conn[j] << endl;
-#endif
-                new_conn.push_back(old2new[elem_conn[j]]);
+                    cout << "ERROR" << ", ";
+                else
+                    cout << it->second << ", ";
             }
+            cout << ")" << endl;
+#endif
+            for(index_t j = 0; j < nverts_in_shape; j++)
+                new_conn.push_back(old2new[elem_conn[j]]);
         }
     }
 
