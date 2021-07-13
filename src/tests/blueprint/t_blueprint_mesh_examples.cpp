@@ -979,6 +979,24 @@ TEST(conduit_blueprint_mesh_examples, polychain)
     test_save_mesh_helper(res,"polychain_example");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polytess_3d)
+{
+    Node res;
+    blueprint::mesh::examples::polytess_3d(3, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_yaml());
+
+    if(conduit::utils::is_file("polytess_3d_example_hdf5.root"))
+    {
+        conduit::utils::remove_file("polytess_3d_example_hdf5.root");
+    }
+
+    test_save_mesh_helper(res,"polytess_3d_example");
+}
+
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

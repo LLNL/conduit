@@ -1291,6 +1291,35 @@ be generated in the result.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
+
+polytess 3d
+++++++++++
+
+.. figure:: polytess_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess 3d example ``level`` field.
+
+The ``polytess_3d()`` function generates a polyhedral tessellation based off of the polytess example. 
+It does this by extending the polytess into 3D.
+
+The scalar element-centered field ``level`` defined in the result mesh associates each element with its
+topological distance from the center of the tessellation.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::polytess_3d(index_t nlevels,
+                                                    Node &res);
+
+
+``nlevels`` specifies the number of tessellation levels/layers to generate. If this value is specified
+as 1 or less, only the central tessellation level (i.e. the octagon in the center of the geometry) will
+be generated in the result.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
 polyhedral chain
 ++++++++++
 
