@@ -9,6 +9,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
+#include "conduit_relay.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_relay.hpp"
@@ -21,6 +22,72 @@
 using std::cout;
 using std::endl;
 
+// Enable this macro to generate baselines.
+//#define GENERATE_BASELINES
+
+//-----------------------------------------------------------------------------
+#ifdef GENERATE_BASELINES
+  #ifdef _WIN32
+    #include <direct.h>
+    void create_path(const std::string &path) { _mkdir(path.c_str()); }
+  #else
+    #include <sys/stat.h>
+    #include <sys/types.h>
+    void create_path(const std::string &path) { mkdir(path.c_str(), S_IRWXU); }
+  #endif
+#else
+  void create_path(const std::string &) {}
+#endif
+
+//-----------------------------------------------------------------------------
+#ifdef _WIN32
+const std::string sep("\\");
+#else
+const std::string sep("/");
+#endif
+
+//-----------------------------------------------------------------------------
+std::string
+baseline_dir()
+{
+    std::string path(__FILE__);
+    auto idx = path.rfind(sep);
+    if(idx != std::string::npos)
+        path = path.substr(0, idx);
+    path = path + sep + std::string("baselines");
+    return path;
+}
+
+//-----------------------------------------------------------------------------
+std::string
+baseline_file(const std::string &basename)
+{
+    std::string path(baseline_dir());
+    create_path(path);
+    path += (sep + std::string("t_blueprint_mesh_partition"));
+    create_path(path);
+    path += (sep + basename + ".yaml");
+    return path;
+}
+
+//-----------------------------------------------------------------------------
+void
+make_baseline(const std::string &filename, const conduit::Node &n)
+{
+    conduit::relay::io::save(n, filename, "yaml");
+}
+
+//-----------------------------------------------------------------------------
+bool
+compare_baseline(const std::string &filename, const conduit::Node &n)
+{
+    const double tolerance = 1.e-6;
+    conduit::Node baseline, msg;
+    conduit::relay::io::load(filename, "yaml", baseline);
+    return baseline.diff(n, msg, tolerance);
+}
+
+//-----------------------------------------------------------------------------
 void
 tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 {
@@ -28,6 +95,7 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 
     while(1);
 }
+
 //-----------------------------------------------------------------------------
 void
 test_logical_selection_2d(const std::string &topo)
@@ -48,13 +116,15 @@ test_logical_selection_2d(const std::string &topo)
     const char *opt1 =
 "target: 2";
     options.parse(opt1, "yaml");
-input.print();
     conduit::blueprint::mesh::partition(input, options, output);
-output.print();
     EXPECT_EQ(output.number_of_children(), 2);
     EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), true);
-    // TODO: test output mesh contents.
-//    output.print();
+    std::string b00 = baseline_file("test_logical_selection_2d_00");
+#ifdef GENERATE_BASELINES
+    make_baseline(b00, output);
+#else
+    EXPECT_EQ(compare_baseline(b00, output), true);
+#endif
 
 }
 
