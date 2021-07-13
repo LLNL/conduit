@@ -476,48 +476,50 @@ selection_logical::determine_is_whole(const conduit::Node &n_mesh) const
 std::vector<std::shared_ptr<selection> >
 selection_logical::partition(const conduit::Node &/*n_mesh*/) const
 {
-    int la = 0;
-    if(cells_for_axis(1) > cells_for_axis(la))
-        la = 1;
-    if(cells_for_axis(2) > cells_for_axis(la))
-        la = 2;
-    auto n = cells_for_axis(la);
-
-    auto p0 = std::make_shared<selection_logical>();
-    auto p1 = std::make_shared<selection_logical>();
-    p0->set_whole(false);
-    p1->set_whole(false);
-    p0->set_domain(domain);
-    p1->set_domain(domain);
-    p0->set_topology(topology);
-    p1->set_topology(topology);
-
-    if(la == 0)
-    {
-        p0->set_start(start[0],       start[1],       start[2]);
-        p0->set_end(start[0]+n/2,     end[1],         end[2]);
-        p1->set_start(start[0]+n/2+1, start[1],       start[2]);
-        p1->set_end(end[0],           end[1],         end[2]);
-    }
-    else if(la == 1)
-    {
-        p0->set_start(start[0],       start[1],       start[2]);
-        p0->set_end(start[0],         end[1]+n/2,     end[2]);
-        p1->set_start(start[0],       start[1]+n/2+1, start[2]);
-        p1->set_end(end[0],           end[1],         end[2]);
-    }
-    else
-    {
-        p0->set_start(start[0],       start[1],       start[2]);
-        p0->set_end(start[0],         end[1],         end[2]+n/2);
-        p1->set_start(start[0],       start[1],       start[2]+n/2+1);
-        p1->set_end(end[0],           end[1],         end[2]);
-    }
-
     std::vector<std::shared_ptr<selection> > parts;
-    parts.push_back(p0);
-    parts.push_back(p1);
+    if(length() > 1)
+    {
+        int la = 0;
+        if(cells_for_axis(1) > cells_for_axis(la))
+            la = 1;
+        if(cells_for_axis(2) > cells_for_axis(la))
+            la = 2;
+        auto n = cells_for_axis(la);
 
+        auto p0 = std::make_shared<selection_logical>();
+        auto p1 = std::make_shared<selection_logical>();
+        p0->set_whole(false);
+        p1->set_whole(false);
+        p0->set_domain(domain);
+        p1->set_domain(domain);
+        p0->set_topology(topology);
+        p1->set_topology(topology);
+
+        if(la == 0)
+        {
+            p0->set_start(start[0],       start[1],       start[2]);
+            p0->set_end(start[0]+n/2-1,   end[1],         end[2]);
+            p1->set_start(start[0]+n/2,   start[1],       start[2]);
+            p1->set_end(end[0],           end[1],         end[2]);
+        }
+        else if(la == 1)
+        {
+            p0->set_start(start[0],       start[1],       start[2]);
+            p0->set_end(start[0],         end[1]+n/2-1,   end[2]);
+            p1->set_start(start[0],       start[1]+n/2,   start[2]);
+            p1->set_end(end[0],           end[1],         end[2]);
+        }
+        else
+        {
+            p0->set_start(start[0],       start[1],       start[2]);
+            p0->set_end(start[0],         end[1],         end[2]+n/2-1);
+            p1->set_start(start[0],       start[1],       start[2]+n/2);
+            p1->set_end(end[0],           end[1],         end[2]);
+        }
+
+        parts.push_back(p0);
+        parts.push_back(p1);
+    }
     return parts;
 }
 

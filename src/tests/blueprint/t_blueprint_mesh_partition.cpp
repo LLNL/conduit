@@ -82,9 +82,27 @@ bool
 compare_baseline(const std::string &filename, const conduit::Node &n)
 {
     const double tolerance = 1.e-6;
-    conduit::Node baseline, msg;
+    conduit::Node baseline, info;
     conduit::relay::io::load(filename, "yaml", baseline);
-    return baseline.diff(n, msg, tolerance);
+    const char *line = "*************************************************************";
+#if 0
+    cout << line << endl;
+    baseline.print();
+    cout << line << endl;
+    n.print();
+    cout << line << endl;
+#endif
+
+    // Node::diff returns true if the nodes are different. We want not different.
+    bool equal = !baseline.diff(n, info, tolerance);
+
+    if(!equal)
+    {
+       cout << "Difference!" << endl;
+       cout << line << endl;
+       info.print();
+    }
+    return equal;
 }
 
 //-----------------------------------------------------------------------------
@@ -106,6 +124,10 @@ test_logical_selection_2d(const std::string &topo)
     conduit::Node input, output, options, msg;
     conduit::index_t vdims[] = {11,11,1};
     conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
+    // Override with int64 because YAML loses int/uint information.
+    conduit::int64 i100 = 100;
+    input["state/cycle"].set(i100);
+
 #if 0
     // With no options, test that output==input
     conduit::blueprint::mesh::partition(input, options, output);
@@ -139,7 +161,9 @@ test_logical_selection_3d(const std::string &topo)
     conduit::Node input, output, options, msg;
     conduit::index_t vdims[] = {11,11,11};
     conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
- 
+    conduit::int64 i100 = 100;
+    input["state/cycle"].set(i100); // override with int64.
+
     // With no options, test that output==input
     conduit::blueprint::mesh::partition(input, options, output);
     cout << "output=";
