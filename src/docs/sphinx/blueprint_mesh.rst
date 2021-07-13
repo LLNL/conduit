@@ -1292,7 +1292,7 @@ be generated in the result.
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
 
-polytess 3d
+polytess_3d
 ++++++++++
 
 .. figure:: polytess_3d_render.png
@@ -1320,7 +1320,7 @@ be generated in the result.
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
 
-polyhedral chain
+polychain
 ++++++++++
 
 .. figure:: polychain.png
