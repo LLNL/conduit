@@ -3585,7 +3585,273 @@ polychain(const index_t length, // how long the chain ought to be
     }
 }
 
+//-----------------------------------------------------------------------------
+void polytess_3d(conduit::index_t nlevels, Node &res)
+{
+    // Our goal here is to take the original polytess and extend it
+    // into 3 dimensions. The way we will accomplish this is by
+    // placing the original polytess into the z = 0 plane, placing a 
+    // copy of it into the z = 1 plane, and constructing "walls" between
+    // the top and bottom edges. Then we will specify polyhedra that use
+    // all the faces at our disposal.
+    Node poly;
+    conduit::blueprint::mesh::examples::polytess(nlevels, poly);
+
+    Node &res_coords = res["coordsets/coords"];
+    Node &res_topo = res["topologies/topo"];
+    Node &res_fields = res["fields"];
+
+    // SET UP COORDINATES
+
+    res_coords["type"] = poly["coordsets/coords/type"];
+
+    int num_orig_points = poly["coordsets/coords/values/x"].dtype().number_of_elements();
+    int num_points = 2 * num_orig_points;
+
+    res_coords["values/x"].set(conduit::DataType::float64(num_points));
+    res_coords["values/y"].set(conduit::DataType::float64(num_points));
+    res_coords["values/z"].set(conduit::DataType::float64(num_points));
+
+    float64 *poly_x_vals = poly["coordsets/coords/values/x"].value();
+    float64 *poly_y_vals = poly["coordsets/coords/values/y"].value();
+
+    float64 *x_vals = res_coords["values/x"].value();
+    float64 *y_vals = res_coords["values/y"].value();
+    float64 *z_vals = res_coords["values/z"].value();
+
+    // all the original points are added twice, the first time with a z-value of 0,
+    // and the second time with a z-value of 1.
+    for (int i = 0; i < num_points; i ++)
+    {
+        int i_mod_num_orig_points = i % num_orig_points;
+        x_vals[i] = poly_x_vals[i_mod_num_orig_points];
+        y_vals[i] = poly_y_vals[i_mod_num_orig_points];
+        z_vals[i] = (i < num_orig_points) ? 0 : 1;
+    }
+
+    res_topo["type"] = poly["topologies/topo/type"];
+    res_topo["coordset"] = poly["topologies/topo/coordset"];
+
+    // SUBELEMENTS
+
+        // If we take our polytess and reflect it, we have two polytessalations on top of one another,
+        // with a distance of 1 unit in between. If we go through each polygon, and for each one, 
+        // select every pair of adjacent points and add a new polygon that uses the points from that pair
+        // as well as the points directly above in the reflected polytess, then we will have duplicate
+        // polygons, simply because the polygons share vertices with one another, so multiple polygons
+        // will have the same "walls". This section accounts for that.
+
+        res_topo["subelements/shape"] = poly["topologies/topo/elements/shape"];
+
+        // CALCULATE THE NUMBER OF NEW POLYGONS
+        int num_duplicate_polygons = 0;
+        for (int n = 1; n < nlevels; n ++)
+        {
+            // this formula is the sum of two other formulas:
+            // 1) the number of outward edges for an (n - 1) polytess, and
+            // 2) the number of edges that squares in the polytess share with 
+            //    neighboring octagons in their level.
+            // This sum is again summed for each level, which will produce the 
+            // number of duplicates we would have gotten had we simply made a 
+            // polygon for each pair of adjacent points in each polygon, 
+            // as described above.
+            num_duplicate_polygons += 8 * (3 * n - 1);
+        }
+        int num_new_polygons = -1 * num_duplicate_polygons;
+        int sizeof_poly_sizes = poly["topologies/topo/elements/sizes"].dtype().number_of_elements();
+        uint64 *poly_sizes = poly["topologies/topo/elements/sizes"].value();
+        for (int i = 0; i < sizeof_poly_sizes; i ++)
+        {
+            num_new_polygons += poly_sizes[i];
+        }
+
+        // SET UP SIZES
+        const int points_per_quad = 4;
+        int length_of_new_sizes = sizeof_poly_sizes * 2 + num_new_polygons;
+        // the sizes must have space for the original sizes, array, a copy of it for the 
+        // reflected polytess, and all the walls; hence the addition of the num_new_polygons.
+        res_topo["subelements/sizes"].set(conduit::DataType::uint64(length_of_new_sizes));
+        uint64 *sizes = res_topo["subelements/sizes"].value();
+        for (int i = 0; i < length_of_new_sizes; i ++)
+        {
+            // the original and reflected polytess sizes
+            if (i < sizeof_poly_sizes * 2)
+            {
+                sizes[i] = poly_sizes[i % sizeof_poly_sizes];
+            }
+            // all the new polygons are quads
+            else
+            {
+                sizes[i] = points_per_quad;
+            }
+        }
+
+        // SET UP OFFSETS
+        res_topo["subelements/offsets"].set(conduit::DataType::uint64(length_of_new_sizes));
+        uint64 *offsets = res_topo["subelements/offsets"].value();
+        offsets[0] = 0;
+        for (int i = 1; i < length_of_new_sizes; i ++)
+        {
+            offsets[i] = sizes[i - 1] + offsets[i - 1];
+        }
+
+        // SET UP CONNECTIVITY
+
+        int sizeof_poly_connec = poly["topologies/topo/elements/connectivity"].dtype().number_of_elements();
+        res_topo["subelements/connectivity"].set(conduit::DataType::uint64(sizeof_poly_connec * 2 + num_new_polygons * points_per_quad));
+        uint64 *connec = res_topo["subelements/connectivity"].value();
+        uint64 *poly_connec = poly["topologies/topo/elements/connectivity"].value();
+
+        // first, copy the original connectivity, then the reflected connectivity, which luckily
+        // is as simple as adding an offset to the original.
+        for (int i = 0; i < sizeof_poly_connec * 2; i ++)
+        {
+            if (i < sizeof_poly_connec)
+            {
+                connec[i] = poly_connec[i];
+            }
+            else
+            {
+                connec[i] = poly_connec[i % sizeof_poly_connec] + num_orig_points;
+            }
+        }
+
+        // now the tricky part, where we want to add new faces for the quads that make 
+        // up the walls, and, most importantly, keep track of them.
+        // To do this, we use a map. Put simply, it maps quad faces to polyhedra that 
+        // will use them.
+
+        // map a quad (a set of 4 ints) to a pair,
+        // where car is the index of the quad in connec (an int)
+        // and cdr is the list of associated polyhedra (a vector of integers)
+        std::map<std::set<int>, std::pair<int, std::vector<int>>> quad_map;
+
+        int k = 0;
+        for (int i = 0; i < sizeof_poly_sizes; i ++)
+        {
+            for (int j = 0; j < sizes[i]; j ++)
+            {
+                int curr = connec[offsets[i] + j];
+                int next = connec[(j + 1) % sizes[i] + offsets[i]];
+
+                std::set<int> quad = {curr, next, next + num_orig_points, curr + num_orig_points};
+                std::vector<int> associated_polyhedra{i};
+                int currpos = sizeof_poly_sizes * 2 + k / points_per_quad;
+
+                if (quad_map.insert(std::make_pair(quad, std::make_pair(currpos, associated_polyhedra))).second)
+                {
+                    connec[sizeof_poly_connec * 2 + k] = curr;
+                    k ++;
+                    connec[sizeof_poly_connec * 2 + k] = next;
+                    k ++;
+                    connec[sizeof_poly_connec * 2 + k] = next + num_orig_points;
+                    k ++;
+                    connec[sizeof_poly_connec * 2 + k] = curr + num_orig_points;
+                    k ++;
+                }
+                else
+                {
+                    quad_map[quad].second.push_back(i);
+                }
+            }
+        }
+
+    // ELEMENTS
+
+        res_topo["elements/shape"] = "polyhedral";
+
+        int num_polyhedra = sizeof_poly_sizes;
+
+        // SET UP SIZES
+        const int points_per_octagon = 8;
+        const int faces_per_octaprism = 10;
+        const int faces_per_hex = 6;
+        res_topo["elements/sizes"].set(conduit::DataType::uint64(num_polyhedra));
+        uint64 *elements_sizes = res_topo["elements/sizes"].value();
+        for (int i = 0; i < num_polyhedra; i ++)
+        {
+            // this ensures that each original octagon is associated with an octagonal prism,
+            // and each original square gets a cube.
+            elements_sizes[i] = (poly_sizes[i] == points_per_octagon) ? faces_per_octaprism : faces_per_hex;
+        }
+
+        // SET UP OFFSETS
+        res_topo["elements/offsets"].set(conduit::DataType::uint64(num_polyhedra));
+        uint64 *elements_offsets = res_topo["elements/offsets"].value();
+        elements_offsets[0] = 0;
+        for (int i = 1; i < num_polyhedra; i ++)
+        {
+            elements_offsets[i] = elements_sizes[i - 1] + elements_offsets[i - 1];
+        }
+
+        // SET UP CONNECTIVITY
+        std::map<int, std::vector<int>> polyhedra_to_quads;
+        std::map<std::set<int>, std::pair<int, std::vector<int>>>::iterator itr;
+        // the one-to-many map we set up before must be reversed. Before, we mapped
+        // quads to polyhedra that used them, now, we wish to map polyhedra to
+        // quads they use.
+        for (itr = quad_map.begin(); itr != quad_map.end(); itr ++)
+        {
+            int pos = itr->second.first;
+            std::vector<int> curr = itr->second.second;
+            for (int i = 0; i < curr.size(); i ++)
+            {
+                std::vector<int> quads{pos};
+                if (!polyhedra_to_quads.insert(std::make_pair(curr[i], quads)).second)
+                {
+                    polyhedra_to_quads[curr[i]].push_back(pos);
+                }
+            }
+        }
+
+        int sizeof_polyhedra_connec = 0;
+        for (int i = 0; i < num_polyhedra; i ++)
+        {
+            sizeof_polyhedra_connec += elements_sizes[i];
+        }
+
+        res_topo["elements/connectivity"].set(conduit::DataType::uint64(sizeof_polyhedra_connec));
+        uint64 *elements_connec = res_topo["elements/connectivity"].value();
+        int l = 0;
+        for (int i = 0; i < num_polyhedra; i ++)
+        {
+            // to the polyhedral connectivity array, for each polyhedron, we first add 
+            // the polygon from the original polytess, then the reflected polygon,
+            // then each of the vertical faces, thanks to the maps we set up earlier
+            elements_connec[l] = i;
+            l ++;
+            elements_connec[l] = i + sizeof_poly_sizes;
+            l ++;
+            std::vector<int> quads = polyhedra_to_quads[i];
+            for (int j = 0; j < quads.size(); j ++)
+            {
+                elements_connec[l] = quads[j];
+                l ++;
+            }
+        }
+
+    // SET UP FIELDS
+    res_fields["level/topology"] = poly["fields/level/topology"];
+    res_fields["level/association"] = poly["fields/level/association"];
+    res_fields["level/volume_dependent"] = poly["fields/level/volume_dependent"];
+
+    res_fields["level/values"].set(conduit::DataType::uint32(num_polyhedra));
+
+    uint32 *values = res_fields["level/values"].value();
+    uint32 *poly_values = poly["fields/level/values"].value();
+
+    // because for each original polygon we have made a new polyhedron with that polygon
+    // as the base, setting up the field is a simple matter of just copying over our 
+    // original field data.
+    for (int i = 0; i < num_polyhedra; i ++)
+    {
+        values[i] = poly_values[i];
+    }
 }
+
+}
+
+
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --
 //-----------------------------------------------------------------------------
