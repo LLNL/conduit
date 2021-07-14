@@ -106,6 +106,78 @@ compare_baseline(const std::string &filename, const conduit::Node &n)
 }
 
 //-----------------------------------------------------------------------------
+bool
+check_if_hdf5_enabled()
+{
+    conduit::Node io_protos;
+    conduit::relay::io::about(io_protos["io"]);
+    return io_protos["io/protocols/hdf5"].as_string() == "enabled";
+}
+
+//-----------------------------------------------------------------------------
+void
+save_visit(const std::string &filename, const conduit::Node &n)
+{
+    // NOTE: My VisIt only wants to read HDF5 root files for some reason.
+    bool hdf5_enabled = check_if_hdf5_enabled();
+
+    auto pos = filename.rfind("/");
+    std::string fn(filename.substr(pos+1,filename.size()-pos-1));
+    pos = fn.rfind(".");
+    std::string fn_noext(fn.substr(0, pos));
+
+    // Save all the domains to individual files.
+    auto ndoms = conduit::blueprint::mesh::number_of_domains(n);
+
+    char dnum[20];
+    if(ndoms == 1)
+    {
+        sprintf(dnum, "%05d", 0);
+        std::stringstream ss;
+        ss << fn_noext << "." << dnum;
+
+        if(hdf5_enabled)
+            conduit::relay::io::save(n, ss.str() + ".hdf5", "hdf5");
+        // VisIt won't read it:
+        //conduit::relay::io::save(n, ss.str() + ".yaml", "yaml");
+    }
+    else
+    {
+        for(size_t i = 0; i < ndoms; i++)
+        {
+            sprintf(dnum, "%05d", static_cast<int>(i));
+            std::stringstream ss;
+            ss << fn_noext << "." << dnum;
+
+            if(hdf5_enabled)
+                conduit::relay::io::save(n[i], ss.str() + ".hdf5", "hdf5");
+            // VisIt won't read it:
+            conduit::relay::io::save(n[i], ss.str() + ".yaml", "yaml");
+        }
+    }   
+ 
+    // Add index stuff to it so we can plot it in VisIt.
+    conduit::Node root;
+    if(ndoms == 1)
+        conduit::blueprint::mesh::generate_index(n, "", ndoms, root["blueprint_index/mesh"]);
+    else
+        conduit::blueprint::mesh::generate_index(n[0], "", ndoms, root["blueprint_index/mesh"]);
+    root["protocol/name"] = "hdf5";
+    root["protocol/version"] = CONDUIT_VERSION;
+    root["number_of_files"] = ndoms;
+    root["number_of_trees"] = ndoms;
+    root["file_pattern"] = (fn_noext + ".%05d.hdf5");
+    root["tree_pattern"] = "/";
+
+    if(hdf5_enabled)
+        conduit::relay::io::save(root, fn_noext + "_hdf5.root", "hdf5");
+
+    root["file_pattern"] = (fn_noext + ".%05d.yaml");
+    // VisIt won't read it:
+    conduit::relay::io::save(root, fn_noext + "_yaml.root", "yaml");
+}
+
+//-----------------------------------------------------------------------------
 void
 tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 {
@@ -128,12 +200,13 @@ test_logical_selection_2d(const std::string &topo)
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
 
-#if 0
     // With no options, test that output==input
     conduit::blueprint::mesh::partition(input, options, output);
     output.print();
     EXPECT_EQ(input.diff(output, msg, 0.0), false);
-#endif
+    std::string b00 = baseline_file("test_logical_selection_2d_00");
+    save_visit(b00, output);
+
     // Select the whole thing but divide it into target domains.
     const char *opt1 =
 "target: 2";
@@ -141,13 +214,13 @@ test_logical_selection_2d(const std::string &topo)
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(output.number_of_children(), 2);
     EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), true);
-    std::string b00 = baseline_file("test_logical_selection_2d_00");
+    std::string b01 = baseline_file("test_logical_selection_2d_01");
+    save_visit(b01, output);
 #ifdef GENERATE_BASELINES
-    make_baseline(b00, output);
+    make_baseline(b01, output);
 #else
-    EXPECT_EQ(compare_baseline(b00, output), true);
+    EXPECT_EQ(compare_baseline(b01, output), true);
 #endif
-
 }
 
 //-----------------------------------------------------------------------------
