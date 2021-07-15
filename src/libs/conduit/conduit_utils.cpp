@@ -76,19 +76,19 @@ namespace conduit
 namespace utils
 {
 
-// //-----------------------------------------------------------------------------
-// void *
-// default_alloc_handler(size_t items, size_t item_size)
-// {
-//   return calloc(items, item_size);
-// }
-//
-// //-----------------------------------------------------------------------------
-// void
-// default_free_handler(void *data_ptr)
-// {
-//   free(data_ptr);
-// }
+//-----------------------------------------------------------------------------
+void *
+default_alloc_handler(size_t items, size_t item_size)
+{
+  return calloc(items, item_size);
+}
+
+//-----------------------------------------------------------------------------
+void
+default_free_handler(void *data_ptr)
+{
+  free(data_ptr);
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -135,39 +135,22 @@ set_memset_handler(void(*conduit_hnd_memset)(void*,
     conduit_handle_memset = conduit_hnd_memset;
 }
 
-class AllocMap
+//-----------------------------------------------------------------------------
+static std::map<index_t,void*(*)(size_t, size_t)> &allocator_map()
 {
-    friend class Node;
+    static std::map<index_t,void*(*)(size_t, size_t)> _allocator_map
+            = {{0, &default_alloc_handler}};
+    return _allocator_map;
+}
 
-public:
-    static std::map<index_t,void*(*)(size_t, size_t)> &allocator_map()
-    {
-        return Node::allocator_map();
-    }
-
-    static std::map<index_t,void(*)(void*)> &free_map()
-    {
-        return Node::free_map();
-    }
-
-};
-
-// //-----------------------------------------------------------------------------
-// static std::map<index_t,void*(*)(size_t, size_t)> &allocator_map()
-// {
-//     static std::map<index_t,void*(*)(size_t, size_t)> _allocator_map
-//             = {{0, &default_alloc_handler}};
-//     return _allocator_map;
-// }
-//
-// //-----------------------------------------------------------------------------
-// static std::map<index_t,void(*)(void*)> &free_map()
-// {
-//     //-----------------------------------------------------------------------------
-//     static std::map<index_t,void(*)(void*)> _free_map
-//         = {{0, default_free_handler}};
-//     return _free_map;
-// }
+//-----------------------------------------------------------------------------
+static std::map<index_t,void(*)(void*)> &free_map()
+{
+    //-----------------------------------------------------------------------------
+    static std::map<index_t,void(*)(void*)> _free_map
+        = {{0, default_free_handler}};
+    return _free_map;
+}
 
 //-----------------------------------------------------------------------------
 index_t
@@ -175,8 +158,8 @@ register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
                    void(*conduit_hnd_free)(void *))
 {
     static index_t allocator_id = 1;
-    AllocMap::allocator_map()[allocator_id] = conduit_hnd_allocate;
-    AllocMap::free_map()[allocator_id]      = conduit_hnd_free;
+    allocator_map()[allocator_id] = conduit_hnd_allocate;
+    free_map()[allocator_id]      = conduit_hnd_free;
     return allocator_id++;
 }
 
@@ -187,7 +170,7 @@ conduit_allocate(size_t n_items,
                  size_t item_size,
                  index_t allocator_id)
 {
-  return AllocMap::allocator_map()[allocator_id](n_items, item_size);
+  return allocator_map()[allocator_id](n_items, item_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -195,7 +178,7 @@ void
 conduit_free(void *ptr,
              index_t allocator_id)
 {
-  AllocMap::free_map()[allocator_id](ptr);
+  free_map()[allocator_id](ptr);
 }
 
 //-----------------------------------------------------------------------------

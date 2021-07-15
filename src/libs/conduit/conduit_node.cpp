@@ -16175,39 +16175,6 @@ Node::mmap(const std::string &stream_path, index_t data_size)
     m_mmaped  = true;
 }
 
-//-----------------------------------------------------------------------------
-void *
-default_alloc_handler(size_t items, size_t item_size)
-{
-  return calloc(items, item_size);
-}
-
-//-----------------------------------------------------------------------------
-void
-default_free_handler(void *data_ptr)
-{
-  free(data_ptr);
-}
-
-//-----------------------------------------------------------------------------
-std::map<index_t,void*(*)(size_t, size_t)> &
-Node::allocator_map()
-{
-    static std::map<index_t,void*(*)(size_t, size_t)> _allocator_map
-            = {{0, &default_alloc_handler}};
-    return _allocator_map;
-}
-
-//-----------------------------------------------------------------------------
-std::map<index_t,void(*)(void*)> &
-Node::free_map()
-{
-    //-----------------------------------------------------------------------------
-    static std::map<index_t,void(*)(void*)> _free_map
-        = {{0, default_free_handler}};
-    return _free_map;
-}
-
 
 //---------------------------------------------------------------------------//
 void
