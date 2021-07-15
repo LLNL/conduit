@@ -317,6 +317,10 @@ namespace utils
 /// Primary interface used by the conduit API to allocate memory.
 //-----------------------------------------------------------------------------
 
+
+    void * CONDUIT_API default_alloc_handler(size_t items, size_t item_size);
+    void CONDUIT_API default_free_handler(void *data_ptr);
+
     // register a custom allocator
     index_t CONDUIT_API register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
                                            void(*conduit_hnd_free)(void *));
