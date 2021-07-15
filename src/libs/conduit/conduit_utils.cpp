@@ -138,7 +138,7 @@ set_memset_handler(void(*conduit_hnd_memset)(void*,
 namespace detail
 {
     //
-    // AllocManager: A singleton that holds our alloc and free maps
+    // AllocManager: A singleton that holds our alloc and free function maps
     //
     //
     // NOTE: THE SINGLETON INSTNACE IS INTENTIONALLY LEAKED!
@@ -175,7 +175,7 @@ namespace detail
             //
             // NOTE: THIS IS INTENTIONALLY LEAKED
             // See note above.
-            // 
+            //
             static AllocManager *inst = new AllocManager();
             return *inst;
           }
@@ -205,49 +205,32 @@ namespace detail
           }
 
      private:
+          // constructor
           AllocManager()
           : m_allocator_map(),
             m_free_map()
           {
-              std::cout << "GIVE ME A SECOND ...." << std::endl;
+              // register default handlers
               m_allocator_map[0] = &default_alloc_handler;
               m_free_map[0]      = &default_free_handler;
 
               m_allocator_id = 1;
 
-              std::cout << "I AM HERE TO HELP!" << std::endl;
           }
 
+          // destructor
           ~AllocManager()
           {
-              std::cout << "SOMEONE HAS CALLED ME HOME!" << std::endl;
+
           }
 
-          //-----------------------------------------------------------------------
-          index_t m_allocator_id;
+          // vars
+          index_t                                    m_allocator_id;
           std::map<index_t,void*(*)(size_t, size_t)> m_allocator_map;
-          std::map<index_t,void(*)(void*)> m_free_map;
+          std::map<index_t,void(*)(void*)>           m_free_map;
 
     };
 }
-
-
-// //-----------------------------------------------------------------------------
-// static std::map<index_t,void*(*)(size_t, size_t)> &allocator_map()
-// {
-//     static std::map<index_t,void*(*)(size_t, size_t)> _allocator_map
-//             = {{0, &default_alloc_handler}};
-//     return _allocator_map;
-// }
-//
-// //-----------------------------------------------------------------------------
-// static std::map<index_t,void(*)(void*)> &free_map()
-// {
-//     //-----------------------------------------------------------------------------
-//     static std::map<index_t,void(*)(void*)> _free_map
-//         = {{0, default_free_handler}};
-//     return _free_map;
-// }
 
 //-----------------------------------------------------------------------------
 index_t
@@ -256,10 +239,6 @@ register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
 {
     return detail::AllocManager::instance().register_allocator(conduit_hnd_allocate,
                                                                conduit_hnd_free);
-    // static index_t allocator_id = 1;
-    // allocator_map()[allocator_id] = conduit_hnd_allocate;
-    // free_map()[allocator_id]      = conduit_hnd_free;
-    // return allocator_id++;
 }
 
 
@@ -272,10 +251,6 @@ conduit_allocate(size_t n_items,
     return detail::AllocManager::instance().allocate(n_items,
                                                      item_size,
                                                      allocator_id);
-  // return conduit::Node::conduit_allocate(n_items,
-  //                                        item_size,
-  //                                        allocator_id);
-  // return allocator_map()[allocator_id](n_items, item_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -284,9 +259,6 @@ conduit_free(void *ptr,
              index_t allocator_id)
 {
     detail::AllocManager::instance().free(ptr,allocator_id);
-  // conduit::Node::conduit_free(ptr,
-  //                             allocator_id);
-  // free_map()[allocator_id](ptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -295,7 +267,6 @@ conduit_memcpy(void *destination,
                const void *source,
                size_t num)
 {
-    // memcpy_map[allocator_id](destination,source,num_bytes);
     conduit_handle_memcpy(destination,source,num);
 }
 
@@ -305,7 +276,6 @@ void conduit_memset(void *ptr,
                     int value,
                     size_t num)
 {
-    // memset_map[allocator_id](ptr,value,num);
     conduit_handle_memset(ptr,value,num);
 }
 //-----------------------------------------------------------------------------
