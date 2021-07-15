@@ -60,7 +60,7 @@ TEST(conduit_array, basic_construction)
     da_3[0] = -16;
 
     std::cout << da_3.to_string() << std::endl;
-    
+
     // test other variants of to_string and to stream, etc
     da_3.to_string_stream(std::cout);
     da_3.to_json_stream(std::cout);
@@ -90,7 +90,7 @@ TEST(conduit_array, array_stride_int8)
         std::cout << (int64) data[i] << " ";
     }
     std::cout << std::endl;
- 
+
     DataType arr_t(DataType::INT8_ID,
                    10,
                    0,
@@ -115,7 +115,7 @@ TEST(conduit_array, array_stride_int8)
 
     arr[1] = 100;
     EXPECT_EQ(data[2],100);
-    
+
         std::cout << "Full Data" << std::endl;
 
     for(int i=0;i<20;i++)
@@ -130,18 +130,18 @@ TEST(conduit_array, array_stride_int8)
             true); /// true for external
 
     int8_array arr_2 = n2.as_int8_array();
-    
+
     for(int i=0;i<10;i++)
     {
         // note: the cast is for proper printing to std::out
         std::cout << "value[" << i << "] = " <<  ((int64)arr_2[i] ) << std::endl;
     }
     std::cout << std::endl;
-    
-    EXPECT_EQ(arr_2[0],0);
-    EXPECT_EQ(arr_2[9],-9);   
 
-}    
+    EXPECT_EQ(arr_2[0],0);
+    EXPECT_EQ(arr_2[9],-9);
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_array, array_stride_int8_external)
@@ -164,7 +164,7 @@ TEST(conduit_array, array_stride_int8_external)
         std::cout << (int64) data[i] << " ";
     }
     std::cout << std::endl;
- 
+
     Node n;
     n["value"].set_external(data);
 
@@ -208,7 +208,7 @@ TEST(conduit_array, set_using_ptrs)
 
 
     Node n;
-    
+
     // int8_array
     n["vint8"].set(DataType::int8(10));
     n["vint8"].as_int8_array().set(&v_int8[0],10);
@@ -334,7 +334,7 @@ TEST(conduit_array, set_using_data_array)
 
 
     Node n;
-    
+
     // int8_array
     n["vint8"].set(DataType::int8(10));
     n["vint8"].as_int8_array().set(va_int8);
@@ -448,7 +448,7 @@ TEST(conduit_array, set_using_std_vectors)
 
 
     Node n;
-    
+
     // int8_array
     n["vint8"].set(DataType::int8(10));
     n["vint8"].as_int8_array().set(v_int8);
@@ -702,7 +702,33 @@ TEST(conduit_array, fill)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_array, compact_to_bytes)
+{
+    std::vector<int64> vals(8,0);
 
+    vals[0] = 3;
+    vals[2] = 7;
+    vals[4] = 9;
+    vals[6] = 11;
+
+    // stride every 16 bytes (2 int64s)
+    int64_array   varray(&vals[0],
+                         DataType::int64(4,0,16));
+
+    std::cout << varray.to_string() << std::endl;
+
+    uint8 buff[64*4];
+    
+    varray.compact_elements_to(buff);
+
+    int64 *vals_cpt = (int64*)buff;
+
+    EXPECT_EQ(vals_cpt[0],3);
+    EXPECT_EQ(vals_cpt[1],7);
+    EXPECT_EQ(vals_cpt[2],9);
+    EXPECT_EQ(vals_cpt[3],11);
+}
 
 //-----------------------------------------------------------------------------
 #ifdef CONDUIT_USE_CXX11
@@ -718,7 +744,7 @@ TEST(conduit_array, summary_stats)
     int64_array   va_int64(&v_int64[0],DataType::int64(3));
     uint64_array  va_uint64(&v_uint64[0],DataType::uint64(3));
     float64_array  va_float64(&v_float64[0],DataType::float64(3));
-    
+
     va_int64.set({-1,0,1});
     va_uint64.set({1,2,3});
     va_float64.set({-1.0,0.0,1.0});
@@ -739,6 +765,8 @@ TEST(conduit_array, summary_stats)
     EXPECT_EQ(va_float64.sum(),0.0);
 
 }
+
+
 //-----------------------------------------------------------------------------
 TEST(conduit_array, summary_print)
 {
@@ -884,7 +912,7 @@ TEST(conduit_array, cxx_11_init_lists)
         EXPECT_EQ(va_int8[1],2);
         EXPECT_EQ(va_int8[2],3);
         va_int8.print();
-        
+
         va_int8 = {1ul,2ul,3ul};
         va_int8.print();
         EXPECT_EQ(va_int8[0],1);
@@ -1148,7 +1176,7 @@ TEST(conduit_array, cxx_11_init_lists)
         va_uint8 = {1.0,2.0,3.0};
         va_uint8.print();
     }
-    
+
     // uint 16
     {
         va_uint16.set({1,2,3});
@@ -1373,7 +1401,7 @@ TEST(conduit_array, cxx_11_init_lists)
         va_float32 = {1.0,2.0,3.0};
         va_float32.print();
     }
-    
+
     // float 64
     {
         va_float64.set({-1,-2,-3});
@@ -1419,6 +1447,9 @@ TEST(conduit_array, cxx_11_init_lists)
 //-----------------------------------------------------------------------------
 #endif // end CONDUIT_USE_CXX11
 //-----------------------------------------------------------------------------
+
+
+
 
 
 

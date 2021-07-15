@@ -1,5 +1,3 @@
-// Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
-// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 // other details. No copyright assignment is required to contribute to Conduit.
 
 //-----------------------------------------------------------------------------
@@ -12,7 +10,7 @@
 #define CONDUIT_ENDIANNESS_TYPES_H
 
 //-----------------------------------------------------------------------------
-/// conduit_endianness_type_id is an Enumeration used to describe the  
+/// conduit_endianness_type_id is an Enumeration used to describe the
 /// endianness cases supported by conduit
 //-----------------------------------------------------------------------------
 typedef enum
