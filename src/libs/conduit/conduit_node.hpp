@@ -4244,20 +4244,20 @@ public:
 //
 //-----------------------------------------------------------------------------
 
-
-    // register a custom allocator
-    static index_t CONDUIT_API register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
-                                                  void(*conduit_hnd_free)(void *));
-
-    // generic allocate interface
-    // allocator_id 0 is the default
-    static void CONDUIT_API * conduit_allocate(size_t num_items,
-                                               size_t item_size,
-                                               index_t allocator_id = 0);
-
-    // generic free interface
-    static void CONDUIT_API conduit_free(void *data_ptr,
-                                         index_t allocator_id = 0);
+    //
+    // // register a custom allocator
+    // static index_t CONDUIT_API register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
+    //                                               void(*conduit_hnd_free)(void *));
+    //
+    // // generic allocate interface
+    // // allocator_id 0 is the default
+    // static void CONDUIT_API * conduit_allocate(size_t num_items,
+    //                                            size_t item_size,
+    //                                            index_t allocator_id = 0);
+    //
+    // // generic free interface
+    // static void CONDUIT_API conduit_free(void *data_ptr,
+    //                                      index_t allocator_id = 0);
 
 
 private:

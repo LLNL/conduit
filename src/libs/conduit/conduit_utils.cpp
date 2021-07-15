@@ -135,6 +135,103 @@ set_memset_handler(void(*conduit_hnd_memset)(void*,
     conduit_handle_memset = conduit_hnd_memset;
 }
 
+namespace detail
+{
+    //
+    // AllocManager: A singleton that holds our alloc and free maps
+    //
+    //
+    // NOTE: THE SINGLETON INSTNACE IS INTENTIONALLY LEAKED!
+    // 
+    // These maps are used by Node instances to alloc and free
+    // memory, they need to exist as long as any Node object exists!
+    //
+    // We are doing static init correctly here, so we
+    // avoid the C++ static obj init fiasco:
+    // https://isocpp.org/wiki/faq/ctors#static-init-order 
+    //
+    // However, we still can't apply fine grained control
+    // to when these objects are cleaned up. This means
+    // if you use a statically initialized Node object
+    // you could get a crash on exit
+    //  (unless we leak the singleton)
+    //
+    // One strategy to avoid this is to move everything
+    // into the same compilation unit. We tried this
+    // but we still hit an on exit cleanup where
+    // the alloc maps were destructed, but a static Node
+    // object still needed to cleanup. 
+    //
+    // If leaking this singleton offends your sensibilities,
+    // I am sorry. Ideally, these would be cleaned up on 
+    // exit absolutely last - meaning you could never use
+    // those few precious bytes for anything else.
+    //
+    class AllocManager {
+
+     public:
+          static AllocManager& instance()
+          {
+            //
+            // NOTE: THIS IS INTENTIONALLY LEAKED
+            // See note above.
+            // 
+            static AllocManager *inst = new AllocManager();
+            return *inst;
+          }
+
+          // reg interface
+          index_t register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
+                                     void(*conduit_hnd_free)(void *))
+          {
+              m_allocator_map[m_allocator_id] = conduit_hnd_allocate;
+              m_free_map[m_allocator_id]      = conduit_hnd_free;
+              return m_allocator_id++;
+          }
+
+          // alloc interface
+          void *allocate(size_t n_items,
+                         size_t item_size,
+                         index_t allocator_id)
+          {
+              return m_allocator_map[allocator_id](n_items, item_size);
+          }
+
+          // free interface
+          void free(void *ptr,
+                   index_t allocator_id)
+          {
+              m_free_map[allocator_id](ptr);
+          }
+
+     private:
+          AllocManager()
+          : m_allocator_map(),
+            m_free_map()
+          {
+              std::cout << "GIVE ME A SECOND ...." << std::endl;
+              m_allocator_map[0] = &default_alloc_handler;
+              m_free_map[0]      = &default_free_handler;
+
+              m_allocator_id = 1;
+
+              std::cout << "I AM HERE TO HELP!" << std::endl;
+          }
+
+          ~AllocManager()
+          {
+              std::cout << "SOMEONE HAS CALLED ME HOME!" << std::endl;
+          }
+
+          //-----------------------------------------------------------------------
+          index_t m_allocator_id;
+          std::map<index_t,void*(*)(size_t, size_t)> m_allocator_map;
+          std::map<index_t,void(*)(void*)> m_free_map;
+
+    };
+}
+
+
 // //-----------------------------------------------------------------------------
 // static std::map<index_t,void*(*)(size_t, size_t)> &allocator_map()
 // {
@@ -157,8 +254,8 @@ index_t
 register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
                    void(*conduit_hnd_free)(void *))
 {
-    return conduit::Node::register_allocator(conduit_hnd_allocate,
-                                             conduit_hnd_free);
+    return detail::AllocManager::instance().register_allocator(conduit_hnd_allocate,
+                                                               conduit_hnd_free);
     // static index_t allocator_id = 1;
     // allocator_map()[allocator_id] = conduit_hnd_allocate;
     // free_map()[allocator_id]      = conduit_hnd_free;
@@ -172,9 +269,12 @@ conduit_allocate(size_t n_items,
                  size_t item_size,
                  index_t allocator_id)
 {
-  return conduit::Node::conduit_allocate(n_items,
-                                         item_size,
-                                         allocator_id);
+    return detail::AllocManager::instance().allocate(n_items,
+                                                     item_size,
+                                                     allocator_id);
+  // return conduit::Node::conduit_allocate(n_items,
+  //                                        item_size,
+  //                                        allocator_id);
   // return allocator_map()[allocator_id](n_items, item_size);
 }
 
@@ -183,8 +283,9 @@ void
 conduit_free(void *ptr,
              index_t allocator_id)
 {
-  conduit::Node::conduit_free(ptr,
-                              allocator_id);
+    detail::AllocManager::instance().free(ptr,allocator_id);
+  // conduit::Node::conduit_free(ptr,
+  //                             allocator_id);
   // free_map()[allocator_id](ptr);
 }
 
