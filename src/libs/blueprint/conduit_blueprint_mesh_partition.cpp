@@ -1493,6 +1493,10 @@ partitioner::copy_field(const conduit::Node &n_field,
     {
         if(n_values.number_of_children() > 0)
         {
+
+// The vel data must be interleaved. We need to use the DataArray element methods for access.
+
+
             // mcarray.
             for(index_t i = 0; i < n_values.number_of_children(); i++)
             {
@@ -1524,11 +1528,12 @@ partitioner::copy_field(const conduit::Node &n_field,
 }
 
 //---------------------------------------------------------------------------
-// @brief Slice the n_src array using the indices stored in ids. The 
-//        destination memory is already pointed to by n_dest.
+// @brief Slice the n_src array using the indices stored in ids. We use the
+//        array classes for their [] operators that deal with interleaved
+//        and non-interleaved arrays.
 template <typename T>
 inline void
-typed_slice_array(const T *src, const std::vector<index_t> &ids, T *dest)
+typed_slice_array(const T &src, const std::vector<index_t> &ids, T &dest)
 {
     size_t n = ids.size();
     for(size_t i = 0; i < n; i++)
@@ -1550,59 +1555,95 @@ partitioner::slice_array(const conduit::Node &n_src_values,
 
     // Do the slice.
     if(dt.is_int8())
-        typed_slice_array(reinterpret_cast<const conduit::int8 *>(n_src_values.data_ptr()), ids,
-                    reinterpret_cast<conduit::int8 *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_int8_array());
+        typed_slice_array(n_src_values.as_int8_array(), ids, dest);
+    }
     else if(dt.is_int16())
-        typed_slice_array(reinterpret_cast<const int16 *>(n_src_values.data_ptr()), ids,
-                    reinterpret_cast<conduit::int16 *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_int16_array());
+        typed_slice_array(n_src_values.as_int16_array(), ids, dest);
+    }
     else if(dt.is_int32())
-        typed_slice_array(reinterpret_cast<const conduit::int32 *>(n_src_values.data_ptr()), ids,
-                    reinterpret_cast<conduit::int32 *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_int32_array());
+        typed_slice_array(n_src_values.as_int32_array(), ids, dest);
+    }
     else if(dt.is_int64())
-        typed_slice_array(reinterpret_cast<const conduit::int64 *>(n_src_values.data_ptr()), ids,
-                    reinterpret_cast<conduit::int64 *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_int64_array());
+        typed_slice_array(n_src_values.as_int64_array(), ids, dest);
+    }
     else if(dt.is_uint8())
-        typed_slice_array(reinterpret_cast<const conduit::uint8 *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<conduit::uint8 *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_uint8_array());
+        typed_slice_array(n_src_values.as_uint8_array(), ids, dest);
+    }
     else if(dt.is_uint16())
-        typed_slice_array(reinterpret_cast<const uint16 *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<conduit::uint16 *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_uint16_array());
+        typed_slice_array(n_src_values.as_uint16_array(), ids, dest);
+    }
     else if(dt.is_uint32())
-        typed_slice_array(reinterpret_cast<const conduit::uint32 *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<conduit::uint32 *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_uint32_array());
+        typed_slice_array(n_src_values.as_uint32_array(), ids, dest);
+    }
     else if(dt.is_uint64())
-        typed_slice_array(reinterpret_cast<const conduit::uint64 *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<conduit::uint64 *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_uint64_array());
+        typed_slice_array(n_src_values.as_uint64_array(), ids, dest);
+    }
     else if(dt.is_char())
-        typed_slice_array(reinterpret_cast<const char *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<char *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_char_array());
+        typed_slice_array(n_src_values.as_char_array(), ids, dest);
+    }
     else if(dt.is_short())
-        typed_slice_array(reinterpret_cast<const short *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<short *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_short_array());
+        typed_slice_array(n_src_values.as_short_array(), ids, dest);
+    }
     else if(dt.is_int())
-        typed_slice_array(reinterpret_cast<const int *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<int *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_int_array());
+        typed_slice_array(n_src_values.as_int_array(), ids, dest);
+    }
     else if(dt.is_long())
-        typed_slice_array(reinterpret_cast<const long *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<long *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_long_array());
+        typed_slice_array(n_src_values.as_long_array(), ids, dest);
+    }
     else if(dt.is_unsigned_char())
-        typed_slice_array(reinterpret_cast<const unsigned char *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<unsigned char *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_unsigned_char_array());
+        typed_slice_array(n_src_values.as_unsigned_char_array(), ids, dest);
+    }
     else if(dt.is_unsigned_short())
-        typed_slice_array(reinterpret_cast<const unsigned short *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<unsigned short *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_unsigned_short_array());
+        typed_slice_array(n_src_values.as_unsigned_short_array(), ids, dest);
+    }
     else if(dt.is_unsigned_int())
-        typed_slice_array(reinterpret_cast<const unsigned int *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<unsigned int *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_unsigned_int_array());
+        typed_slice_array(n_src_values.as_unsigned_int_array(), ids, dest);
+    }
     else if(dt.is_unsigned_long())
-        typed_slice_array(reinterpret_cast<const unsigned long *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<unsigned long *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_unsigned_long_array());
+        typed_slice_array(n_src_values.as_unsigned_long_array(), ids, dest);
+    }
     else if(dt.is_float())
-        typed_slice_array(reinterpret_cast<const float *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<float *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_float_array());
+        typed_slice_array(n_src_values.as_float_array(), ids, dest);
+    }
     else if(dt.is_double())
-        typed_slice_array(reinterpret_cast<const double *>(n_src_values.data_ptr()), ids,
-                          reinterpret_cast<double *>(n_dest_values.data_ptr()));
+    {
+        auto dest(n_dest_values.as_double_array());
+        typed_slice_array(n_src_values.as_double_array(), ids, dest);
+    }
 }
 
 //---------------------------------------------------------------------------

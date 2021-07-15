@@ -139,7 +139,7 @@ save_visit(const std::string &filename, const conduit::Node &n)
         if(hdf5_enabled)
             conduit::relay::io::save(n, ss.str() + ".hdf5", "hdf5");
         // VisIt won't read it:
-        //conduit::relay::io::save(n, ss.str() + ".yaml", "yaml");
+        conduit::relay::io::save(n, ss.str() + ".yaml", "yaml");
     }
     else
     {
