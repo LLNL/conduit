@@ -388,8 +388,12 @@ selection_logical::init(const conduit::Node &n_options)
     {
         if(n_options.has_child(START_KEY) && n_options.has_child(END_KEY))
         {
-            unsigned_int_array s = n_options[START_KEY].value();
-            unsigned_int_array e = n_options[END_KEY].value();
+            conduit::Node n_s, n_e;
+            n_options[START_KEY].to_uint64_array(n_s);
+            n_options[END_KEY].to_uint64_array(n_e);
+
+            auto s = n_s.as_uint64_array();
+            auto e = n_e.as_uint64_array();
             if(s.number_of_elements() == 3 &&  e.number_of_elements() == 3)
             {
                 for(int i = 0; i < 3; i++)
@@ -505,18 +509,24 @@ selection_logical::partition(const conduit::Node &/*n_mesh*/) const
         else if(la == 1)
         {
             p0->set_start(start[0],       start[1],       start[2]);
-            p0->set_end(start[0],         end[1]+n/2-1,   end[2]);
+            p0->set_end(end[0],           start[1]+n/2-1, end[2]);
             p1->set_start(start[0],       start[1]+n/2,   start[2]);
             p1->set_end(end[0],           end[1],         end[2]);
         }
         else
         {
             p0->set_start(start[0],       start[1],       start[2]);
-            p0->set_end(start[0],         end[1],         end[2]+n/2-1);
+            p0->set_end(end[0],           end[1],         start[2]+n/2-1);
             p1->set_start(start[0],       start[1],       start[2]+n/2);
             p1->set_end(end[0],           end[1],         end[2]);
         }
-
+#if 0
+cout << "****\nselection_logical::partition: la=" << la << endl << "\t";
+p0->print(cout);
+cout << endl << "\t";
+p1->print(cout);
+cout << endl << "****" << endl;
+#endif
         parts.push_back(p0);
         parts.push_back(p1);
     }
@@ -1286,9 +1296,13 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     }
 
     // Get the number of target partitions that we're making.
-    target = 1;
     if(options.has_child("target"))
         target = options["target"].to_unsigned_int();
+    else
+    {
+        // target was not provided. Use the number of selections as the target.
+        target = selections.size();
+    }
 
     // Get any fields that we're using to limit the selection.
     if(options.has_child("fields"))
@@ -1666,11 +1680,11 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
         index_t edims[3] = {1,1,1}, dims[3] = {0,0,0};
         auto ndims = topology::dims(n_topo);
         conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, edims, 3);
-cout << "get_vertex_ids_for_element_ids: edims=" << edims[0] << ", " << edims[1] << ", " << edims[2] << endl;
+//cout << "get_vertex_ids_for_element_ids: edims=" << edims[0] << ", " << edims[1] << ", " << edims[2] << endl;
         dims[0] = edims[0] + 1;
         dims[1] = edims[1] + (ndims > 1 ? 1 : 0);
         dims[2] = edims[2] + (ndims > 2 ? 1 : 0);
-cout << "get_vertex_ids_for_element_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
+//cout << "get_vertex_ids_for_element_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
 
         index_t cell_ijk[3]={0,0,0}, pt_ijk[3] = {0,0,0}, ptid = 0;
         static const index_t offsets[8][3] = {
@@ -1689,7 +1703,7 @@ cout << "get_vertex_ids_for_element_ids: dims=" << dims[0] << ", " << dims[1] <<
         {
             // Get the IJK coordinate of the element.
             grid_id_to_ijk(element_ids[i], edims, cell_ijk);
-cout << element_ids[i] << "-> " << cell_ijk[0] << "," << cell_ijk[1] << "," << cell_ijk[2] << endl;
+//cout << element_ids[i] << "-> " << cell_ijk[0] << "," << cell_ijk[1] << "," << cell_ijk[2] << endl;
             // Turn the IJK into vertex ids.
             for(int i = 0; i < np; i++)
             {
@@ -1698,7 +1712,7 @@ cout << element_ids[i] << "-> " << cell_ijk[0] << "," << cell_ijk[1] << "," << c
                 pt_ijk[2] = cell_ijk[2] + offsets[i][2];
                 grid_ijk_to_id(pt_ijk, dims, ptid);
 
-cout << "\t" << pt_ijk[0] << "," << pt_ijk[1] << "," << pt_ijk[2] << "-> " << ptid << endl;
+//cout << "\t" << pt_ijk[0] << "," << pt_ijk[1] << "," << pt_ijk[2] << "-> " << ptid << endl;
 
                 vertex_ids.insert(ptid);
             }
@@ -1825,7 +1839,7 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
         std::vector<index_t> vertex_ids;
         index_t_set_to_vector(vertex_ids_set, vertex_ids);
 
-#if 1
+#if 0
 cout << "vertex_ids=";
 for(size_t i = 0; i < vertex_ids.size(); i++)
     cout << vertex_ids[i] << ", ";
@@ -1965,10 +1979,10 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
     // from the old coordset. It can serve as a new to old map.
 
     std::map<index_t,index_t> old2new;
-cout << "old2new=" << endl;
+//cout << "old2new=" << endl;
     for(size_t i = 0; i < vertex_ids.size(); i++)
 {
-cout << "  " << vertex_ids[i] << "-> " << i << endl;
+//cout << "  " << vertex_ids[i] << "-> " << i << endl;
         old2new[vertex_ids[i]] = static_cast<index_t>(i);
 }
     const conduit::Node &n_conn = n_topo["elements/connectivity"];
@@ -2002,7 +2016,7 @@ cout << "  " << vertex_ids[i] << "-> " << i << endl;
         for(size_t i = 0; i < element_ids.size(); i++)
         {
             auto elem_conn = iptr + element_ids[i] * nverts_in_shape;
-#if 1
+#if 0
             cout << "cell " << element_ids[i] << ":  old(";
             for(index_t j = 0; j < nverts_in_shape; j++)
                 cout << elem_conn[j] << ", ";
@@ -2060,7 +2074,7 @@ partitioner::execute(conduit::Node &output)
     // chunk present on this rank.
     std::vector<int> dest_rank, dest_domain;
     map_chunks(chunks, dest_rank, dest_domain);
-#if 1
+#if 0
     cout << "dest_rank = {" << endl;
     for(size_t i = 0; i < dest_rank.size(); i++)
         cout << dest_rank[i] << ", ";
@@ -2171,7 +2185,7 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         chunk_sizes.push_back(len);
     }
     index_t len_per_target = total_len / target;
-#if 1
+#if 0
     cout << "map_chunks: total_len = " << total_len
          << ", target=" << target
          << ", len_per_target=" << len_per_target << endl;
