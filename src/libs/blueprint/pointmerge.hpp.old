@@ -12,10 +12,8 @@
 //-----------------------------------------------------------------------------
 // std lib includes
 //-----------------------------------------------------------------------------
-#include <cstddef>
-#include <cmath>
-#include <utility>
-#include <algorithm>
+#include <tuple>
+#include <map>
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -29,146 +27,6 @@ namespace conduit
 namespace blueprint
 {
 
-inline double distance2(const double A[3], const double B[3])
-{
-    const double dx = B[0] - A[0];
-    const double dy = B[1] - A[1];
-    const double dz = B[2] - A[2];
-    return dx*dx + dy*dy + dz*dz;
-}
-
-inline double distance(const double A[3], const double B[3])
-{
-    return std::sqrt(distance2(A, B));
-}
-
-template<size_t Dimension, typename record>
-class kdtree
-{
-public:
-    template<typename Precision, size_t D>
-    struct kdnode
-    {
-        using node = kdnode<Precision, D>;
-        Precision loc[D];
-        node *left{nullptr};
-        node *right{nullptr};
-        record r;
-    };
-    using node = kdnode<double, Dimension>;
-    using pair = std::pair<node*, bool>;
-
-    kdtree() = default;
-    ~kdtree()
-    { 
-        const auto lambda = [](node *node, unsigned int)
-        {
-            delete node;
-        };
-        if(root) { traverse_lrn(lambda, root); }
-    }
-
-    pair insert(const record &r, const double loc[Dimension])
-    {
-        auto p = insert(root, 0, loc, r);
-        if(!root) 
-        {
-            root = p.first;
-        }
-        return p;
-    }
-
-    size_t size()  const { return nnodes; }
-    size_t depth() const { return tree_depth; }
-
-    void set_tolerance(double t) { tolerance = t; }
-    double get_tolerance() const { return tolerance; }
-
-    template<typename Func>
-    void traverse(Func &&func) 
-    {
-        if(root) { traverse_lnr(func, root); }
-    }
-
-    void print_tree(std::ostream &oss)
-    {
-        traverse([&oss](node *n, unsigned int depth){
-            for(auto i = 0u; i < depth; i++) oss << "   ";
-            oss << depth << "(" << n->loc[0] << " " << n->loc[1] << " " << n->loc[2] << ")\n";
-        });
-        std::flush(oss);
-    }
-
-private:
-    node *create_node(const double loc[Dimension], const record &r)
-    {
-        node *newnode = new node;
-        for(auto i = 0u; i < Dimension; i++)
-        {
-            newnode->loc[i] = loc[i];
-        }
-        newnode->left = nullptr;
-        newnode->right = nullptr;
-        newnode->r = r;
-        nnodes++;
-        return newnode;
-    }
-
-    pair insert(node *current, unsigned int depth, const double loc[Dimension], const record &r)
-    {
-        if(!current)
-        {
-            return {create_node(loc, r), true};
-        }
-
-        // Determine if we are in the tolerance threshold
-        const double dist = std::abs(distance(current->loc, loc));
-        if(dist < tolerance)
-        {
-            return {current, false};
-        }
-
-        const unsigned int dim = depth % Dimension;
-        const unsigned int next_depth = depth + 1;
-        tree_depth = std::max(tree_depth, static_cast<size_t>(next_depth));
-        if(loc[dim] < current->loc[dim])
-        {
-            auto p = insert(current->left, next_depth, loc, r);
-            if(!current->left) current->left = p.first;
-            return p;
-        }
-        else
-        {
-            auto p = insert(current->right, next_depth, loc, r);
-            if(!current->right) current->right = p.first;
-            return p;
-        }
-    }
-
-    template<typename Func>
-    void traverse_lnr(Func &&func, node *node, unsigned int depth = 0)
-    {
-        if(node->left) { traverse_lnr(func, node->left, depth + 1); }
-        func(node, depth);
-        if(node->right) { traverse_lnr(func, node->right, depth + 1); }
-    }
-
-    template<typename Func>
-    void traverse_lrn(Func &&func, node *node, unsigned int depth = 0)
-    {
-        if(node->left) { traverse_lrn(func, node->left, depth + 1); }
-        if(node->right) { traverse_lrn(func, node->right, depth + 1); }
-        func(node, depth);
-    }
-
-    // Keep track of tree performance
-    size_t nnodes{0u};
-    size_t tree_depth{0u};
-
-    node *root{nullptr};
-    double tolerance{0.};
-};
-
 class CONDUIT_BLUEPRINT_API point_merge
 {
 public:
@@ -179,25 +37,29 @@ public:
         spherical
     };
 
+
     void execute(const std::vector<conduit::Node *> coordsets, double tolerance,
                 Node &output);
 
 private:
-    struct record
-    {
-        using index_t = conduit_index_t;
-        index_t orig_domain;
-        index_t orig_id;
-    };
+    static double determine_scale(double tolerance);
 
     void iterate_coordinates(index_t domain_id, coord_system cs,
         const Node *xnode, const Node *ynode, const Node *znode);
-
+    
     void insert(index_t dom_id, index_t pid, coord_system system,
-        double x, double y, double z);
+                double x, double y = 0., double z = 0.);
 
-    using merge_tree = kdtree<3, record>;
-    merge_tree merge;
+    struct record
+    {
+        std::vector<index_t> orig_domains;
+        std::vector<index_t> orig_ids;
+    };
+    using fp_type = std::int64_t;
+    using tup = std::tuple<fp_type, fp_type, fp_type>;
+    using point_records_type = std::map<tup, record>;
+    point_records_type point_records;
+    double scale;
     coord_system out_system;
 };
 
@@ -233,7 +95,7 @@ inline void
 point_merge::execute(const std::vector<Node *> coordsets, double tolerance,
                     Node &output)
 {
-    merge.set_tolerance(tolerance);
+    scale = determine_scale(tolerance);
 
     // Determine best output coordinate system
     out_system = coord_system::cartesian;
@@ -275,7 +137,7 @@ point_merge::execute(const std::vector<Node *> coordsets, double tolerance,
     }
 
     // Iterate the record map
-    const auto npoints = merge.size();
+    const auto npoints = point_records.size();
     output.reset();
     auto &coordset = output.add_child("coordsets");
     auto &coords = coordset.add_child("coords");
@@ -295,15 +157,41 @@ point_merge::execute(const std::vector<Node *> coordsets, double tolerance,
     double_array x_a = values["x"].value();
     double_array y_a = values["y"].value();
     double_array z_a = values["z"].value();
-    index_t point_id = 0;
-    merge.traverse([&point_id, &x_a, &y_a, &z_a](merge_tree::node *node, unsigned int) {
-        x_a[point_id] = node->loc[0];
-        y_a[point_id] = node->loc[1];
-        z_a[point_id] = node->loc[2];
-        point_id++;
-    });
-    merge.print_tree(std::cout);
+    auto itr = point_records.begin();
+    std::cout << npoints << std::endl;
+    for(size_t i = 0; i < npoints; i++, itr++)
+    {
+        const auto pair = *itr;
+        x_a[i] = (double)std::get<0>(pair.first) / (double)scale;
+        y_a[i] = (double)std::get<1>(pair.first) / (double)scale;
+        z_a[i] = (double)std::get<2>(pair.first) / (double)scale;
+    }
     // output.print();
+}
+
+inline double
+point_merge::determine_scale(double)
+{
+    auto decimal_places = 4u;
+    double retval = 0.;
+    static const std::array<double, 7u> lookup = {
+        1.,
+        (2u << 4),
+        (2u << 7),
+        (2u << 10),
+        (2u << 14),
+        (2u << 17),
+        (2u << 20)
+    };
+    if(decimal_places < lookup.size())
+    {
+        retval = lookup[decimal_places];
+    }
+    else
+    {
+        retval = lookup[6];
+    }
+    return retval;
 }
 
 inline void
@@ -362,11 +250,34 @@ inline void
 point_merge::insert(index_t dom_id, index_t pid, coord_system system,
                     double x, double y, double z)
 {
-    double point[3] = {x, y, z};
-    record r{dom_id, pid};
+    tup key;
+    // Translate to correct system
+    switch(system)
+    {
+    case coord_system::cartesian: // TODO: Implement other systems
+    default:
+        switch(out_system)
+        {
+        case coord_system::cartesian: // TODO: Implement other systems
+        default:
+        {
+            key = std::make_tuple(
+                static_cast<fp_type>(std::round(x * scale)),
+                static_cast<fp_type>(std::round(y * scale)),
+                static_cast<fp_type>(std::round(z * scale)));
+            break;
+        }
+        }
+        break;
+    }
 
-    // TODO: Handle coordinate systems
-    merge.insert(r, point);
+    auto res = point_records.insert({key, {}});
+    if(res.first != point_records.end())
+    {
+        auto &r = res.first->second;
+        r.orig_domains.push_back(dom_id);
+        r.orig_ids.push_back(pid);
+    }
 }
 
 //-----------------------------------------------------------------------------
