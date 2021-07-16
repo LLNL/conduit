@@ -15,6 +15,7 @@
 #include <deque>
 #include <string>
 #include <map>
+#include <memory>
 #include <vector>
 
 //-----------------------------------------------------------------------------
@@ -24,6 +25,9 @@
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+
+// access one-to-many index types
+namespace O2MIndex = conduit::blueprint::o2mrelation;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -545,6 +549,10 @@ TopologyMetadata::get_entity_data(IndexType type, index_t entity_id, index_t ent
     const DataType off_dtype(dim_off.dtype().id(), 1);
     const DataType data_dtype = data.dtype().is_number() ? data.dtype() : DataType::int64(1);
 
+    // FIXME(JRC): This code assumes that the per-element index data is packed
+    // in memory, which isn't guaranteed to be the case (could be stride between
+    // values, etc.).
+
     const index_t entity_gid = (type == IndexType::LOCAL) ?
         dim_le2ge_maps[entity_dim][entity_id] : entity_id;
     temp.set_external(off_dtype, dim_off.element_ptr(entity_gid));
@@ -740,11 +748,10 @@ find_widest_dtype(const Node &node, const DataType &default_dtype)
 }
 
 //-----------------------------------------------------------------------------
-bool
-find_reference_node(const Node &node, const std::string &ref_key, Node &ref)
+const Node *
+find_reference_node(const Node &node, const std::string &ref_key)
 {
-    bool res = false;
-    ref.reset();
+    const Node *res = nullptr;
 
     // NOTE: This segment of code is necessary to transform "topology" into
     // "topologies" while keeping all other dependency names (e.g. "coordset")
@@ -764,8 +771,7 @@ find_reference_node(const Node &node, const std::string &ref_key, Node &ref)
                 const Node &ref_parent = traverse_node->fetch(ref_section);
                 if(ref_parent.has_child(ref_value))
                 {
-                    ref.set_external(ref_parent[ref_value]);
-                    res = true;
+                    res = &ref_parent[ref_value];
                 }
                 break;
             }
@@ -922,8 +928,27 @@ coordset::coordsys(const Node &n)
     return get_coordset_info(n).first;
 }
 
+
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::utils::coorset --
+std::vector<float64>
+coordset::_explicit::coords(const Node &n, const index_t i)
+{
+    std::vector<float64> cvals;
+
+    Node temp;
+    for(const std::string &axis : coordset::axes(n))
+    {
+        const Node &axis_node = n["values"][axis];
+        temp.set_external(DataType(axis_node.dtype().id(), 1),
+            (void*)axis_node.element_ptr(i));
+        cvals.push_back(temp.to_float64());
+    }
+
+    return std::vector<float64>(std::move(cvals));
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::coordset --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -939,9 +964,8 @@ topology::dims(const Node &n)
     const std::string type = n["type"].as_string();
     if(type != "unstructured")
     {
-        Node coordset;
-        find_reference_node(n, "coordset", coordset);
-        topology_dims = coordset::dims(coordset);
+        const Node *coordset = find_reference_node(n, "coordset");
+        topology_dims = coordset::dims(*coordset);
     }
     else // if(type == "unstructured")
     {
@@ -962,15 +986,13 @@ topology::length(const Node &n)
     const std::string type = n["type"].as_string();
     if(type == "uniform" || type == "rectilinear")
     {
-        Node coordset;
-        find_reference_node(n, "coordset", coordset);
-
-        const std::vector<std::string> csys_axes = coordset::axes(coordset);
+        const Node *coordset = find_reference_node(n, "coordset");
+        const std::vector<std::string> csys_axes = coordset::axes(*coordset);
         for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
         {
             topology_length *= ((type == "uniform") ?
-                coordset["dims"][LOGICAL_AXES[i]].to_index_t() :
-                coordset["values"][csys_axes[i]].dtype().number_of_elements()) - 1;
+                (*coordset)["dims"][LOGICAL_AXES[i]].to_index_t() :
+                (*coordset)["values"][csys_axes[i]].dtype().number_of_elements()) - 1;
         }
     }
     else if(type == "structured")
@@ -1001,6 +1023,10 @@ topology::unstructured::generate_offsets(Node &n,
                                          Node &dest)
 {
     dest.reset();
+
+    // FIXME(JRC): There are weird cases wherein a polyhedral topology can have only
+    // the 'elements/offsets' defined and not 'subelements/offsets', which isn't currently
+    // properly handled by this function.
 
     if(n["elements"].has_child("offsets") && !n["elements/offsets"].dtype().is_empty())
     {
@@ -1119,6 +1145,85 @@ topology::unstructured::generate_offsets(const Node &n,
         subelem_node.set_external(shape_array);
         subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
     }
+}
+
+
+//-----------------------------------------------------------------------------
+std::vector<index_t>
+topology::unstructured::points(const Node &n,
+                               const index_t ei)
+{
+    // NOTE(JRC): This is a workaround to ensure offsets are generated up-front
+    // if they don't exist and aren't regenerated for each subcall that needs them.
+    Node ntemp;
+    ntemp.set_external(n);
+    generate_offsets(ntemp, ntemp["elements/offsets"]);
+
+    Node temp;
+    const ShapeType topo_shape(ntemp);
+
+    std::set<index_t> pidxs;
+    if(!topo_shape.is_polyhedral())
+    {
+        const Node &poffs_node = ntemp["elements/offsets"];
+        temp.set_external(DataType(poffs_node.dtype().id(), 1),
+            (void*)poffs_node.element_ptr(ei));
+        const index_t eoff = temp.to_index_t();
+
+        const Node &pidxs_node = ntemp["elements/connectivity"];
+        for(index_t pi = 0; pi < topo_shape.indices; pi++)
+        {
+            temp.set_external(DataType(pidxs_node.dtype().id(), 1),
+                (void*)pidxs_node.element_ptr(eoff + pi));
+            pidxs.insert(temp.to_index_t());
+        }
+    }
+    else // if(topo_shape.is_polyhedral())
+    {
+        Node enode;
+        std::set<index_t> eidxs;
+        if(topo_shape.is_polygonal())
+        {
+            enode.set_external(ntemp["elements"]);
+
+            eidxs.insert(ei);
+        }
+        else // if(topo_shape.is_polyhedral())
+        {
+            enode.set_external(ntemp["subelements"]);
+
+            const Node &eidxs_node = ntemp["elements/connectivity"];
+            o2mrelation::O2MIterator eiter(ntemp["elements"]);
+            eiter.to(ei, O2MIndex::ONE);
+            eiter.to_front(O2MIndex::MANY);
+            while(eiter.has_next(O2MIndex::MANY))
+            {
+                eiter.next(O2MIndex::MANY);
+                const index_t ii = eiter.index(O2MIndex::DATA);
+                temp.set_external(DataType(eidxs_node.dtype().id(), 1),
+                    (void*)eidxs_node.element_ptr(ii));
+                eidxs.insert(temp.to_index_t());
+            }
+        }
+
+        for(const index_t eidx : eidxs)
+        {
+            const Node &pidxs_node = enode["connectivity"];
+            o2mrelation::O2MIterator piter(enode);
+            piter.to(eidx, O2MIndex::ONE);
+            piter.to_front(O2MIndex::MANY);
+            while(piter.has_next(O2MIndex::MANY))
+            {
+                piter.next(O2MIndex::MANY);
+                const index_t pi = piter.index(O2MIndex::DATA);
+                temp.set_external(DataType(pidxs_node.dtype().id(), 1),
+                    (void*)pidxs_node.element_ptr(pi));
+                pidxs.insert(temp.to_index_t());
+            }
+        }
+    }
+
+    return std::vector<index_t>(pidxs.begin(), pidxs.end());
 }
 
 //-----------------------------------------------------------------------------

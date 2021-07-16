@@ -948,9 +948,8 @@ convert_topology_to_rectilinear(const std::string &/*base_type*/,
     dest.reset();
     cdest.reset();
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-    blueprint::mesh::coordset::uniform::to_rectilinear(coordset, cdest);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    blueprint::mesh::coordset::uniform::to_rectilinear(*coordset, cdest);
 
     dest.set(topo);
     dest["type"].set("rectilinear");
@@ -970,15 +969,14 @@ convert_topology_to_structured(const std::string &base_type,
     dest.reset();
     cdest.reset();
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
     if(is_base_rectilinear)
     {
-        blueprint::mesh::coordset::rectilinear::to_explicit(coordset, cdest);
+        blueprint::mesh::coordset::rectilinear::to_explicit(*coordset, cdest);
     }
     else if(is_base_uniform)
     {
-        blueprint::mesh::coordset::uniform::to_explicit(coordset, cdest);
+        blueprint::mesh::coordset::uniform::to_explicit(*coordset, cdest);
     }
 
     dest["type"].set("structured");
@@ -992,14 +990,14 @@ convert_topology_to_structured(const std::string &base_type,
     // and use its types to inform those of the topology?
     DataType int_dtype = bputils::find_widest_dtype(topo, bputils::DEFAULT_INT_DTYPES);
 
-    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
     const std::vector<std::string> &logical_axes = bputils::LOGICAL_AXES;
     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
     {
         Node src_dlen_node;
         src_dlen_node.set(is_base_uniform ?
-            coordset["dims"][logical_axes[i]].to_int64() :
-            coordset["values"][csys_axes[i]].dtype().number_of_elements());
+            (*coordset)["dims"][logical_axes[i]].to_int64() :
+            (*coordset)["values"][csys_axes[i]].dtype().number_of_elements());
         // NOTE: The number of elements in the topology is one less
         // than the number of points along each dimension.
         src_dlen_node.set(src_dlen_node.to_int64() - 1);
@@ -1023,19 +1021,18 @@ convert_topology_to_unstructured(const std::string &base_type,
     dest.reset();
     cdest.reset();
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
     if(is_base_structured)
     {
-        cdest.set(coordset);
+        cdest.set(*coordset);
     }
     else if(is_base_rectilinear)
     {
-        blueprint::mesh::coordset::rectilinear::to_explicit(coordset, cdest);
+        blueprint::mesh::coordset::rectilinear::to_explicit(*coordset, cdest);
     }
     else if(is_base_uniform)
     {
-        blueprint::mesh::coordset::uniform::to_explicit(coordset, cdest);
+        blueprint::mesh::coordset::uniform::to_explicit(*coordset, cdest);
     }
 
     dest["type"].set("unstructured");
@@ -1049,7 +1046,7 @@ convert_topology_to_unstructured(const std::string &base_type,
     // and use its types to inform those of the topology?
     DataType int_dtype = bputils::find_widest_dtype(topo, bputils::DEFAULT_INT_DTYPES);
 
-    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
     dest["elements/shape"].set(
         (csys_axes.size() == 1) ? "line" : (
         (csys_axes.size() == 2) ? "quad" : (
@@ -1067,7 +1064,7 @@ convert_topology_to_unstructured(const std::string &base_type,
     }
     else if(is_base_rectilinear)
     {
-        const conduit::Node &dim_node = coordset["values"];
+        const conduit::Node &dim_node = (*coordset)["values"];
         for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
         {
             edims_axes[i] =
@@ -1076,7 +1073,7 @@ convert_topology_to_unstructured(const std::string &base_type,
     }
     else if(is_base_uniform)
     {
-        const conduit::Node &dim_node = coordset["dims"];
+        const conduit::Node &dim_node = (*coordset)["dims"];
         for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
         {
             edims_axes[i] = dim_node[logical_axes[i]].to_int() - 1;
@@ -1453,6 +1450,33 @@ mesh::number_of_domains(const conduit::Node &n)
     {
         return n.number_of_children();
     }
+}
+
+
+//-------------------------------------------------------------------------
+std::vector<conduit::Node *>
+mesh::domains(conduit::Node &n)
+{
+    // this is a blueprint property, we can assume it will be called
+    // only when mesh verify is true. Given that - it is easy to
+    // aggregate all of the domains into a list
+
+    std::vector<conduit::Node *> doms;
+
+    if(!mesh::is_multi_domain(n))
+    {
+        doms.push_back(&n);
+    }
+    else if(!n.dtype().is_empty())
+    {
+        NodeIterator nitr = n.children();
+        while(nitr.has_next())
+        {
+            doms.push_back(&nitr.next());
+        }
+    }
+
+    return std::vector<conduit::Node *>(std::move(doms));
 }
 
 
@@ -2666,11 +2690,8 @@ mesh::topology::unstructured::generate_points(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
-    Node coordset;
-
-    bputils::find_reference_node(topo, "coordset", coordset);
-
-    TopologyMetadata topo_data(topo, coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[0]);
 
@@ -2688,10 +2709,8 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-
-    TopologyMetadata topo_data(topo, coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[1]);
 
@@ -2709,10 +2728,8 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-
-    TopologyMetadata topo_data(topo, coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[2]);
 
@@ -2731,10 +2748,8 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_centroids".
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-
-    calculate_unstructured_centroids(topo, coordset, dest, cdest);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    calculate_unstructured_centroids(topo, *coordset, dest, cdest);
 
     Node map_node;
     std::vector<index_t> map_vec;
@@ -2745,7 +2760,7 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
     }
     map_node.set(map_vec);
 
-    DataType int_dtype = bputils::find_widest_dtype(bputils::link_nodes(topo, coordset), bputils::DEFAULT_INT_DTYPES);
+    DataType int_dtype = bputils::find_widest_dtype(bputils::link_nodes(topo, *coordset), bputils::DEFAULT_INT_DTYPES);
     s2dmap.reset();
     d2smap.reset();
     map_node.to_data_type(int_dtype.id(), s2dmap);
@@ -2762,9 +2777,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 {
     // Retrieve Relevent Coordinate/Topology Metadata //
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
 
     const ShapeCascade topo_cascade(topo);
     const ShapeType topo_shape = topo_cascade.get_shape();
@@ -2778,7 +2792,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     // Extract Derived Coordinate/Topology Data //
 
-    const TopologyMetadata topo_data(topo, coordset);
+    const TopologyMetadata topo_data(topo, *coordset);
     const DataType &int_dtype = topo_data.int_dtype;
     const DataType &float_dtype = topo_data.float_dtype;
 
@@ -2792,7 +2806,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         if(di == line_shape.dim) { continue; }
 
         calculate_unstructured_centroids(
-            topo_data.dim_topos[di], coordset,
+            topo_data.dim_topos[di], *coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
@@ -2832,10 +2846,14 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         {
             dim_coord_offsets[di] = doffset;
 
+            // TODO(JRC): This comment may be important for parallel processing;
+            // there are a lot of assumptions in that code on how ordering is
+            // presented via 'TopologyMataData'.
+            //
             // NOTE: The centroid ordering for the positions is different
             // from the base ordering, which messes up all subsequent indexing.
             // We must use the coordinate set associated with the base topology.
-            const Node &cset = (di != 0) ? dim_cent_coords[di] : coordset;
+            const Node &cset = (di != 0) ? dim_cent_coords[di] : *coordset;
             if(!cset.dtype().is_empty())
             {
                 const Node &cset_axis = cset["values"][csys_axes[ai]];
@@ -2970,9 +2988,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 {
     // Retrieve Relevent Coordinate/Topology Metadata //
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
 
     const ShapeCascade topo_cascade(topo);
     const ShapeType topo_shape = topo_cascade.get_shape();
@@ -2989,7 +3006,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     // Extract Derived Coordinate/Topology Data //
 
-    const TopologyMetadata topo_data(topo, coordset);
+    const TopologyMetadata topo_data(topo, *coordset);
     const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
     const DataType &int_dtype = topo_data.int_dtype;
     const DataType &float_dtype = topo_data.float_dtype;
@@ -2999,7 +3016,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
         calculate_unstructured_centroids(
-            topo_data.dim_topos[di], coordset,
+            topo_data.dim_topos[di], *coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
@@ -3040,6 +3057,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         Node dst_data;
         Node &dst_axis = cdest["values"][csys_axes[ai]];
 
+        // TODO(JRC): This is how centroids offsets are generated in the
+        // final topology!
         for(index_t di = 0, doffset = 0; di <= topo_shape.dim; di++)
         {
             dim_coord_offsets[di] = doffset;
@@ -3047,7 +3066,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             // NOTE: The centroid ordering for the positions is different
             // from the base ordering, which messes up all subsequent indexing.
             // We must use the coordinate set associated with the base topology.
-            const Node &cset = (di != 0) ? dim_cent_coords[di] : coordset;
+            const Node &cset = (di != 0) ? dim_cent_coords[di] : *coordset;
             const Node &cset_axis = cset["values"][csys_axes[ai]];
             index_t cset_length = cset_axis.dtype().number_of_elements();
 

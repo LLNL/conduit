@@ -347,6 +347,34 @@ O2MIterator::to_back(IndexType itype)
 }
 
 //-----------------------------------------------------------------------------
+/// Iterator direct control.
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+O2MIterator::to(const index_t i, IndexType itype)
+{
+    if(itype == DATA)
+    {
+        // FIXME(JRC): Make this more efficient if possible.
+        to_front(DATA);
+        next(DATA);
+        for(index_t ii = 0; ii < i; ii++)
+        {
+            next(DATA);
+        }
+    }
+    else if(itype == ONE)
+    {
+        m_one_index = i;
+    }
+    else // if(itype == MANY)
+    {
+        m_many_index = i + 1;
+    }
+}
+
+//-----------------------------------------------------------------------------
 /// Human readable info about this iterator
 //-----------------------------------------------------------------------------
 

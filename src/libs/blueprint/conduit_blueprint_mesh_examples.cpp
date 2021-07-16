@@ -578,6 +578,9 @@ void braid_init_example_adjset(Node &mesh)
     const index_t dim_count = blueprint::mesh::coordset::dims(
         mesh.child(0).fetch("coordsets").child(0));
 
+    // FIXME(JRC): Update this code to use the utilities provided in
+    // 'conduit_blueprint_mesh_utils.hpp'.
+
     // From mesh data, create a map from domain combination tuple to point list.
     // These domain combination tuples represent groups and the point lists contain
     // the points that lie on the shared boundary between these domains.
@@ -668,7 +671,7 @@ void braid_init_example_adjset(Node &mesh)
           std::vector<index_t> dom_neighbors(group_doms.begin(), group_doms.end());
           dom_neighbors.erase(dom_neighbors.begin()+d);
 
-          conduit::Node& dom_node = mesh[dom_name]["adjsets"]["mesh_adj"];
+          conduit::Node& dom_node = mesh[dom_name]["adjsets/mesh_adj"];
           dom_node["association"].set("vertex");
           dom_node["topology"].set("mesh");
           dom_node["groups"][group_name]["neighbors"].set(
@@ -2746,7 +2749,7 @@ void
 misc(const std::string &mesh_type,
      index_t npts_x, // number of points in x
      index_t npts_y, // number of points in y
-     index_t /*npts_z*/, // number of points in z
+     index_t npts_z, // number of points in z
      Node &res)
 {
     // TODO(JRC): Improve these examples so that they use different example
@@ -2775,7 +2778,14 @@ misc(const std::string &mesh_type,
                 const std::string domain_name = oss.str();
 
                 Node &domain_node = res[domain_name];
-                braid_quads(npts_x,npts_y,domain_node);
+                if(npts_z == 0)
+                {
+                    braid_quads(npts_x,npts_y,domain_node);
+                }
+                else
+                {
+                    braid_hexs(npts_x,npts_y,npts_z,domain_node);
+                }
                 domain_node["state/domain_id"].set(domain_id);
 
                 Node &domain_coords = domain_node["coordsets/coords/values"];
