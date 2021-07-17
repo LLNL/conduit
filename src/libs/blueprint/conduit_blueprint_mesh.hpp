@@ -352,11 +352,14 @@ namespace topology
                                                   conduit::Node &d2smap);
 
         //---------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API map_fields_to_generated_sides(const conduit::Node &poly_mesh,
-                                                                 const conduit::Node &d2smap,
-                                                                 conduit::Node &side_mesh,
-                                                                 const std::string &topology,
-                                                                 const std::string &field_prefix = "");
+        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &topo_src,
+                                                  const conduit::Node &fields_src,
+                                                  conduit::Node &topo_dest,
+                                                  conduit::Node &coordset_dest,
+                                                  conduit::Node &fields_dest,
+                                                  conduit::Node &s2dmap,
+                                                  conduit::Node &d2smap,
+                                                  const conduit::Node &options);
 
         //---------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_corners(const conduit::Node &n,
