@@ -292,3 +292,155 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_field_datatype_ex)
         EXPECT_TRUE(actual.find(msg) != std::string::npos);
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_prefix_ex)
+{
+    index_t nlevels = 2;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+    options["field_prefix"] = 123;
+    options["field_names"] = "level";
+
+    // catch if field_prefix is not a string
+    try
+    {
+        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "field_prefix must be a string.";
+        std::string actual = err.what();
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex1)
+{
+    index_t nlevels = 2;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+    options["field_names"] = 1;
+
+    // catch if field_names is not a string
+    try
+    {
+        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "field_names must be a string or a list of strings.";
+        std::string actual = err.what();
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex2)
+{
+    index_t nlevels = 2;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+    options["field_names"].append().set(1);
+    options["field_names"].append().set(2);
+    options["field_names"].append().set(3);
+
+    // catch if field_names is not a string
+    try
+    {
+        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "field_names must be a string or a list of strings.";
+        std::string actual = err.what();
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex3)
+{
+    index_t nlevels = 2;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+    options["field_names"].append().set("level");
+    options["field_names"].append().set("level2");
+
+    // catch if field_names is not a string
+    try
+    {
+        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "field level2 not found in target.";
+        std::string actual = err.what();
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
+}
