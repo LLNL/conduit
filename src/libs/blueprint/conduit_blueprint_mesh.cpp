@@ -3170,19 +3170,7 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
     // check that the discovered field names exist in the target fields
     for (uint64 i = 0; i < field_names.size(); i ++)
     {
-        bool found = false;
-        NodeConstIterator itr = fields_src.children();
-        std::string cld_name = "";
-        while (itr.has_next() && !found)
-        {
-            itr.next();
-            cld_name = itr.name();
-            if (cld_name == field_names[i])
-            {
-                found = true;
-            }
-        }
-        if (!found)
+        if (! fields_src.has_child(field_names[i]))
         {
             CONDUIT_ERROR("field " + field_names[i] + " not found in target.");
         }
