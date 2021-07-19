@@ -2990,6 +2990,7 @@ namespace detail
     {
         NodeConstIterator fields_itr = fields_src.children();
         std::string topo = topo_dest.name();
+        bool no_field_names = field_names.empty();
         int num_shapes;
 
         if (topo_dest["elements/shape"].as_string() == "tet")
@@ -3013,13 +3014,21 @@ namespace detail
             std::string field_name = fields_itr.name();
 
             // check that the field is one of the selected fields specified in the options node
-            bool found;
-            for (uint64 i = 0; i < field_names.size(); i ++)
+            bool found = false;
+            if (no_field_names)
             {
-                if (field_names[i] == field_name)
+                // we want to copy all fields if no field names were provided
+                found = true;
+            }
+            else
+            {
+                for (uint64 i = 0; i < field_names.size(); i ++)
                 {
-                    found = true;
-                    break;
+                    if (field_names[i] == field_name)
+                    {
+                        found = true;
+                        break;
+                    }
                 }
             }
 
@@ -3093,10 +3102,10 @@ namespace detail
             }
             else
             {
-                // if we couldn't find the field in the specified field_names, then we don't care
+                // if we couldn't find the field in the specified field_names, then we don't care;
                 // but if it was found, and we are here, then that means that the field we want
                 // uses the wrong topology
-                if (found)
+                if (! no_field_names && found)
                 {
                     CONDUIT_ERROR("field " + field_name + " does not use " + topo + ".");
                 }
