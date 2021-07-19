@@ -39,7 +39,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
     options["field_names"] = "level";
 
     blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-                                                            n["fields"],
                                                             side_topo,
                                                             side_coords,
                                                             side_fields,
@@ -123,7 +122,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D)
     options["field_names"] = "chain";
 
     blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-                                                            n["fields"],
                                                             side_topo,
                                                             side_coords,
                                                             side_fields,
@@ -203,7 +201,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_vertex_ex)
     {
         n["fields/level/association"] = "vertex";
         blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-                                                                n["fields"],
                                                                 side_topo,
                                                                 side_coords,
                                                                 side_fields,
@@ -242,7 +239,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_vol_dep_ex)
     {
         n["fields/level/volume_dependent"] = "true";
         blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-                                                                n["fields"],
                                                                 side_topo,
                                                                 side_coords,
                                                                 side_fields,
@@ -281,13 +277,12 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_field_datatype_ex)
     {
         n["fields/level/values"].set(conduit::DataType::int8(1));
         blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-                                                                        n["fields"],
-                                                                        side_topo,
-                                                                        side_coords,
-                                                                        side_fields,
-                                                                        s2dmap,
-                                                                        d2smap,
-                                                                        options);
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
         FAIL();
     }
     catch(const std::exception& err)

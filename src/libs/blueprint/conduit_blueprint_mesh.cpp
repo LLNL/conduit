@@ -3114,7 +3114,6 @@ namespace detail
 
 void
 mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
-                                             const conduit::Node &fields_src,
                                              conduit::Node &topo_dest,
                                              conduit::Node &coordset_dest,
                                              conduit::Node &fields_dest,
@@ -3124,6 +3123,7 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
 {
     std::string field_prefix = "";
     std::vector<std::string> field_names;
+    const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
 
     // check for existence of field prefix
     if (options.has_child("field_prefix"))

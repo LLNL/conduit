@@ -353,7 +353,6 @@ namespace topology
 
         //---------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &topo_src,
-                                                  const conduit::Node &fields_src,
                                                   conduit::Node &topo_dest,
                                                   conduit::Node &coordset_dest,
                                                   conduit::Node &fields_dest,
