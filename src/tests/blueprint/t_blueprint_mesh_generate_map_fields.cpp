@@ -105,6 +105,91 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_skip_bad_field)
+{
+    index_t nlevels = 2;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+    n["fields/level_fake/topology"] = "bad_topo";
+
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                            side_topo,
+                                                            side_coords,
+                                                            side_fields,
+                                                            s2dmap,
+                                                            d2smap,
+                                                            options);
+
+    EXPECT_TRUE(verify(side_mesh, info));
+
+    EXPECT_TRUE(! side_mesh["fields"].has_child("level_fake"));
+
+    EXPECT_EQ(side_mesh["fields/level/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/level/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/level/volume_dependent"].as_string(), "false");
+
+    index_t num_field_values = 56;
+    index_t num_polygons = 9;
+    EXPECT_EQ(side_mesh["fields/level/values"].dtype().number_of_elements(), num_field_values);
+
+    uint32 *level_values = side_mesh["fields/level/values"].value();
+
+    for (int i = 0; i < num_field_values; i ++)
+    {
+        if (i < 8)
+        {
+            EXPECT_EQ(level_values[i], 1);
+        }
+        else
+        {
+            EXPECT_EQ(level_values[i], 2);
+        }
+    }
+
+    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
+
+    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+
+    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    
+    int i = 0;
+    for (int j = 0; j < num_polygons; j ++)
+    {
+        if (j % 2)
+        {
+            EXPECT_EQ(id_values[i], j);
+            EXPECT_EQ(id_values[i + 1], j);
+            EXPECT_EQ(id_values[i + 2], j);
+            EXPECT_EQ(id_values[i + 3], j);
+            i += 4;
+        }
+        else
+        {
+            EXPECT_EQ(id_values[i], j);
+            EXPECT_EQ(id_values[i + 1], j);
+            EXPECT_EQ(id_values[i + 2], j);
+            EXPECT_EQ(id_values[i + 3], j);
+            EXPECT_EQ(id_values[i + 4], j);
+            EXPECT_EQ(id_values[i + 5], j);
+            EXPECT_EQ(id_values[i + 6], j);
+            EXPECT_EQ(id_values[i + 7], j);
+            i += 8;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_no_field_names)
 {
     index_t nlevels = 2;
@@ -605,6 +690,45 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
     catch(const std::exception& err)
     {
         std::string msg = "field level2 not found in target.";
+        std::string actual = err.what();
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex4)
+{
+    index_t nlevels = 2;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+    options["field_names"].append().set("level");
+    options["field_names"].append().set("level_fake");
+    n["fields/level_fake/topology"] = "bad_topo";
+
+    // catch if a field is requested that does not use the chosen topology
+    try
+    {
+        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "field level_fake does not use topo.";
         std::string actual = err.what();
         EXPECT_TRUE(actual.find(msg) != std::string::npos);
     }
