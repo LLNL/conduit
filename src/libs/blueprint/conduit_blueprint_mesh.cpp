@@ -3014,7 +3014,7 @@ namespace detail
 
             // check that the field is one of the selected fields specified in the options node
             bool found;
-            for (int i = 0; i < field_names.size(); i ++)
+            for (uint64 i = 0; i < field_names.size(); i ++)
             {
                 if (field_names[i] == field_name)
                 {
@@ -3168,14 +3168,14 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
     }
 
     // check that the discovered field names exist in the target fields
-    for (int i = 0; i < field_names.size(); i ++)
+    for (uint64 i = 0; i < field_names.size(); i ++)
     {
         bool found = false;
         NodeConstIterator itr = fields_src.children();
         std::string cld_name = "";
         while (itr.has_next() && !found)
         {
-            const Node &cld = itr.next();
+            itr.next();
             cld_name = itr.name();
             if (cld_name == field_names[i])
             {
