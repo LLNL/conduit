@@ -346,6 +346,9 @@ public:
     virtual void get_element_ids(const conduit::Node &n_mesh,
                                  std::vector<index_t> &element_ids) const override;
 
+    void get_vertex_ids(const conduit::Node &n_mesh,
+                        std::vector<index_t> &element_ids) const;
+
     virtual void print(std::ostream &os) const override;
 
 protected:
@@ -534,30 +537,49 @@ cout << endl << "****" << endl;
 }
 
 //---------------------------------------------------------------------------
-/*void
+void
 selection_logical::get_vertex_ids(const conduit::Node &n_mesh,
     std::vector<index_t> &ids) const
 {
-    index_t dims[3] = {1,1,1};
-    const conduit::Node &n_topo = n_mesh["topologies"][0];
-    topology::logical_dims(n_topo, dims, 3);
-
-    ids.clear();
-    ids.reserve(dims[0] * dims[1] * dims[2]);
-    auto mesh_NXNY = dims[0] * dims[1];
-    auto mesh_NX   = dims[0];  
-    index_t n_end[3];
-    n_end[0] = end[0] + 1;
-    n_end[1] = end[1] + 1;
-    n_end[2] = end[2] + 1;
-    for(index_t k = start[2]; k <= n_end[2]; k++)
-    for(index_t j = start[1]; j <= n_end[1]; j++)
-    for(index_t i = start[0]; i <= n_end[0]; i++)
+    try
     {
-        ids.push_back(k*mesh_NXNY + j*mesh_NX + i);
+        const conduit::Node &n_topo = selected_topology(n_mesh);
+        index_t dims[3] = {1,1,1};
+        conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
+cout << "selection_logical::get_vertex_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
+        index_t ndims = conduit::blueprint::mesh::utils::topology::dims(n_topo);
+        dims[0]++;
+        dims[1]++;
+        if(ndims > 2)
+            dims[2]++;
+cout << "selection_logical::get_vertex_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
+
+        ids.clear();
+        ids.reserve(dims[0] * dims[1] * dims[2]);
+        auto mesh_NXNY = dims[0] * dims[1];
+        auto mesh_NX   = dims[0];  
+        index_t n_end[3];
+        n_end[0] = end[0] + 1;
+        n_end[1] = end[1] + 1;
+        n_end[2] = (ndims > 2) ? (end[2] + 1) : start[2];
+cout << "selection_logical::get_vertex_ids: start=" << start[0] << ", " << start[1] << ", " << start[2] << endl;
+
+cout << "selection_logical::get_vertex_ids: n_end=" << n_end[0] << ", " << n_end[1] << ", " << n_end[2] << endl;
+cout << "ids = {";
+        for(index_t k = start[2]; k <= n_end[2]; k++)
+        for(index_t j = start[1]; j <= n_end[1]; j++)
+        for(index_t i = start[0]; i <= n_end[0]; i++)
+        {
+            index_t id = k*mesh_NXNY + j*mesh_NX + i;
+cout << id << ", ";
+            ids.push_back(id);
+        }
+cout << "}" << endl;
+    }
+    catch(conduit::Error &)
+    {
     }
 }
-*/
 
 //---------------------------------------------------------------------------
 void
@@ -1782,73 +1804,11 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
         std::string csname(n_topo["coordset"].as_string());
         const conduit::Node &n_coordset = n_coordsets[csname];
 
-
-// NOTE: The following code is geared towards pulling out an unstructured mesh
-//       defined by an arbitrary set of element ids. We need to add some
-//       special cases to handle uniform, rectilinear, and structured if the
-//       selection indicates that it is structured.
-
-/*
-        if(selections[idx]->is_logical())
-        {
-            auto typed_sel = dynamic_cast<selection_logical *>(selections[idx].get());
-
-            index_t start[3], end[3];
-            typed_sel->get_start(start[0], start[1], start[2]);
-            typed_sel->get_end(end[0], end[1], end[2]);
-
-            // Get the indices of the selected elements. (needed for field extraction)
-            std::vector<index_t> element_ids, vertex_ids;
-            selections[idx]->get_element_ids(n_mesh, element_ids);
-
-            // Get the vertex ids of the selected elements. We can do it like
-            // this faster than using a set. (needed for field extraction)
-            selections[idx]->get_vertex_ids(n_mesh, vertex_ids);
-
-            if(n_coordset["type"].as_string() == "uniform")
-                create_new_uniform_coordset(n_coordset, start, end, n_new_coordsets[csname]);
-            else if(n_coordset["type"].as_string() == "uniform")
-                create_new_rectilinear_coordset(n_coordset, start, end, n_new_coordsets[csname]);
-            else if(n_coordset["type"].as_string() == "explicit" &&
-                    n_topo["type"].as_string() == "structured")
-            {
-                create_new_structured_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
-            }
-
-            // Now, create new topologies.
-            if(n_topo["type"].as_string() == "uniform")
-                create_new_uniform_topo(n_topo, csname, n_new_topos[n_topo.name()]);
-            else if(n_topo["type"].as_string() == "rectilinear")
-                create_new_rectilinear_topo(n_topo, csname, n_new_topos[n_topo.name()]);
-            else if(n_topo["type"].as_string() == "rectilinear")
-                create_new_structured_topo(n_topo, csname, start, end, n_new_topos[n_topo.name()]);
-
-        }
-        else
-        {
-*/
-
-
-        // Get the indices of the selected elements.
-        std::vector<index_t> element_ids;
-        selections[idx]->get_element_ids(n_mesh, element_ids);
-
-        // Get the unique set of vertex ids used by the elements.
-        std::set<index_t> vertex_ids_set;
-        get_vertex_ids_for_element_ids(n_topo, element_ids, vertex_ids_set);
-        std::vector<index_t> vertex_ids;
-        index_t_set_to_vector(vertex_ids_set, vertex_ids);
-
-#if 0
-cout << "vertex_ids=";
-for(size_t i = 0; i < vertex_ids.size(); i++)
-    cout << vertex_ids[i] << ", ";
-cout << endl;
-#endif
-
         // Make output.
         retval = new conduit::Node;
         conduit::Node &n_output = *retval;
+        conduit::Node &n_new_coordsets = n_output["coordsets"];
+        conduit::Node &n_new_topos = n_output["topologies"];
 
         // Copy state.
         if(n_mesh.has_child("state"))
@@ -1857,14 +1817,58 @@ cout << endl;
             n_output["state"].set(n_state);
         }
 
-        // Create a new coordset consisting of the selected vertex ids.
-        conduit::Node &n_new_coordsets = n_output["coordsets"];
-        create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
+        // Get the indices of the selected elements.
+        std::vector<index_t> element_ids, vertex_ids;
+        selections[idx]->get_element_ids(n_mesh, element_ids);
 
-        // Create a new topology consisting of the selected element ids.
-        conduit::Node &n_new_topos = n_output["topologies"];
-        create_new_unstructured_topo(n_topo, csname, 
-            element_ids, vertex_ids, n_new_topos[n_topo.name()]);
+        // Try special case for logical selections.
+        auto log_sel = dynamic_cast<selection_logical *>(selections[idx].get());
+        if(log_sel != nullptr)
+        {
+            index_t start[3], end[3];
+            log_sel->get_start(start[0], start[1], start[2]);
+            log_sel->get_end(end[0], end[1], end[2]);
+
+            // Get the vertex ids of the selected elements. We can do it like
+            // this faster than using a set. (needed for field extraction)
+            log_sel->get_vertex_ids(n_mesh, vertex_ids);
+
+            if(n_coordset["type"].as_string() == "uniform")
+                create_new_uniform_coordset(n_coordset, start, end, n_new_coordsets[csname]);
+            else if(n_coordset["type"].as_string() == "rectilinear")
+                create_new_rectilinear_coordset(n_coordset, start, end, n_new_coordsets[csname]);
+            else
+                create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
+
+            // Now, create new topologies.
+            if(n_topo["type"].as_string() == "uniform")
+                create_new_uniform_topo(n_topo, csname, start, n_new_topos[n_topo.name()]);
+            else if(n_topo["type"].as_string() == "rectilinear")
+                create_new_rectilinear_topo(n_topo, csname, start, n_new_topos[n_topo.name()]);
+            else if(n_topo["type"].as_string() == "rectilinear")
+                create_new_structured_topo(n_topo, csname, start, end, n_new_topos[n_topo.name()]);
+        }
+        else
+        {
+            // Get the unique set of vertex ids used by the elements.
+            std::set<index_t> vertex_ids_set;
+            get_vertex_ids_for_element_ids(n_topo, element_ids, vertex_ids_set);
+            index_t_set_to_vector(vertex_ids_set, vertex_ids);
+
+#if 0
+cout << "vertex_ids=";
+for(size_t i = 0; i < vertex_ids.size(); i++)
+    cout << vertex_ids[i] << ", ";
+cout << endl;
+#endif
+
+            // Create a new coordset consisting of the selected vertex ids.
+            create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
+
+            // Create a new topology consisting of the selected element ids.
+            create_new_unstructured_topo(n_topo, csname, 
+                element_ids, vertex_ids, n_new_topos[n_topo.name()]);
+        }
 
         // Create new fields.
         copy_fields(selections[idx]->get_domain(), n_topo.name(),
@@ -1877,6 +1881,55 @@ cout << endl;
     }
 
     return retval;
+}
+
+//---------------------------------------------------------------------------
+void
+partitioner::create_new_uniform_coordset(const conduit::Node &n_coordset,
+    const index_t start[3], const index_t end[3], conduit::Node &n_new_coordset) const
+{
+    // Set coordset dimensions from element start/end.
+    index_t ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coordset);
+    n_new_coordset["type"] = "uniform";
+    n_new_coordset["dims/i"] = end[0] - start[0] + 2;
+    n_new_coordset["dims/j"] = end[1] - start[1] + 2;
+    if(ndims > 2)
+        n_new_coordset["dims/k"] = end[2] - start[2] + 2;
+
+    // Adjust the origins to the right start values.
+    auto axes(conduit::blueprint::mesh::utils::coordset::axes(n_coordset));
+    const conduit::Node &n_origin = n_coordset["origin"];
+    const conduit::Node &n_spacing = n_coordset["spacing"];
+    conduit::Node &n_new_origin = n_new_coordset["origin"];
+    for(index_t i = 0; i < ndims; i++)
+    {
+        conduit::Node &origin_i = n_new_origin[n_origin[i].name()];
+        double org = n_origin[i].to_double() + n_spacing[i].to_double() * start[i];
+        origin_i.set(org);
+    }
+    // Copy all the spacings
+    n_new_coordset["spacing"].set(n_coordset["spacing"]);
+}
+
+//---------------------------------------------------------------------------
+void
+partitioner::create_new_rectilinear_coordset(const conduit::Node &n_coordset,
+    const index_t start[3], const index_t end[3], conduit::Node &n_new_coordset) const
+{
+    const conduit::Node &n_values = n_coordset["values"];
+    conduit::Node &n_new_values = n_new_coordset["values"];
+    n_new_coordset["type"] = "rectilinear";
+    // Slice each axis logically.
+    index_t ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coordset);
+    for(index_t d = 0; d < ndims; d++)
+    {
+        std::vector<index_t> indices;
+        for(index_t i = start[d]; i <= end[d]; i++)
+            indices.push_back(i);
+
+        const conduit::Node &src = n_values[d];
+        slice_array(src, indices, n_new_values[src.name()]);
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -1924,6 +1977,74 @@ partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
             slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+partitioner::create_new_uniform_topo(const conduit::Node &n_topo,
+    const std::string &csname, const index_t start[3],
+    conduit::Node &n_new_topo) const
+{
+    n_new_topo["type"] = "uniform";
+    n_new_topo["coordset"] = csname;
+    const char *keys[] = {"elements/origin/i",
+        "elements/origin/j",
+        "elements/origin/k"};
+    for(int i = 0; i < 3; i++)
+    {
+        if(n_topo.has_child(keys[i]))
+        {
+            const conduit::Node &value = n_topo[keys[i]];
+            n_new_topo[keys[i]] = value.to_uint64() + start[i];
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+partitioner::create_new_rectilinear_topo(const conduit::Node &n_topo,
+    const std::string &csname, const index_t start[3],
+    conduit::Node &n_new_topo) const
+{
+    n_new_topo["type"] = "rectilinear";
+    n_new_topo["coordset"] = csname;
+    const char *keys[] = {"elements/origin/i",
+        "elements/origin/j",
+        "elements/origin/k"};
+    for(int i = 0; i < 3; i++)
+    {
+        if(n_topo.has_child(keys[i]))
+        {
+            const conduit::Node &value = n_topo[keys[i]];
+            n_new_topo[keys[i]] = value.to_uint64() + start[i];
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+partitioner::create_new_structured_topo(const conduit::Node &n_topo,
+    const std::string &csname, const index_t start[3], const index_t end[3],
+    conduit::Node &n_new_topo) const
+{
+    n_new_topo["type"] = "structured";
+    n_new_topo["coordset"] = csname;
+    conduit::Node &n_dims = n_new_topo["elements/dims"];
+    n_dims["i"] = end[0] - start[0] + 1;
+    n_dims["j"] = end[1] - start[1] + 1;
+    if(n_topo.has_child("elements/dims/k"))
+        n_dims["k"] = end[2] - start[2] + 1;
+    const char *keys[] = {"elements/origin/i0",
+        "elements/origin/j0",
+        "elements/origin/k0"};
+    for(int i = 0; i < 3; i++)
+    {
+        if(n_topo.has_child(keys[i]))
+        {
+            const conduit::Node &value = n_topo[keys[i]];
+            n_new_topo[keys[i]] = value.to_uint64() + start[i];
         }
     }
 }

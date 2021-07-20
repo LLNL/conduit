@@ -195,7 +195,7 @@ TODO: we pass in the topo. I'll want to include that in the baseline names so
       the baselines are unstructured.
 */
 void
-test_logical_selection_2d(const std::string &topo)
+test_logical_selection_2d(const std::string &topo, const std::string &base)
 {
     conduit::utils::set_error_handler(tmp_err_handler);
 
@@ -210,7 +210,7 @@ test_logical_selection_2d(const std::string &topo)
     // With no options, test that output==input
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(input.diff(output, msg, 0.0), false);
-    std::string b00 = baseline_file("test_logical_selection_2d_00");
+    std::string b00 = baseline_file(base + "_00");
     save_visit(b00, output);
 
     // Select the whole thing but divide it into target domains.
@@ -219,7 +219,7 @@ test_logical_selection_2d(const std::string &topo)
     options.reset(); options.parse(opt1, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 2);
-    std::string b01 = baseline_file("test_logical_selection_2d_01");
+    std::string b01 = baseline_file(base + "_01");
     save_visit(b01, output);
 #ifdef GENERATE_BASELINES
     make_baseline(b01, output);
@@ -233,7 +233,7 @@ test_logical_selection_2d(const std::string &topo)
     options.reset(); options.parse(opt2, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
-    std::string b02 = baseline_file("test_logical_selection_2d_02");
+    std::string b02 = baseline_file(base + "_02");
     save_visit(b02, output);
 #ifdef GENERATE_BASELINES
     make_baseline(b02, output);
@@ -254,7 +254,7 @@ test_logical_selection_2d(const std::string &topo)
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
     EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), false);
-    std::string b03 = baseline_file("test_logical_selection_2d_03");
+    std::string b03 = baseline_file(base + "_03");
     save_visit(b03, output);
 #ifdef GENERATE_BASELINES
     make_baseline(b03, output);
@@ -283,7 +283,7 @@ test_logical_selection_2d(const std::string &topo)
     options.reset(); options.parse(opt4, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 3);
-    std::string b04 = baseline_file("test_logical_selection_2d_04");
+    std::string b04 = baseline_file(base + "_04");
     save_visit(b04, output);
 #ifdef GENERATE_BASELINES
     make_baseline(b04, output);
@@ -313,7 +313,7 @@ test_logical_selection_2d(const std::string &topo)
     options.reset(); options.parse(opt5, "yaml"); options.print();
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
-    std::string b05 = baseline_file("test_logical_selection_2d_05");
+    std::string b05 = baseline_file(base + "_05");
     save_visit(b05, output);
 #ifdef GENERATE_BASELINES
     make_baseline(b05, output);
@@ -450,8 +450,22 @@ test_logical_selection_3d(const std::string &topo)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
-    test_logical_selection_2d("uniform");
+    test_logical_selection_2d("uniform", "uniform_logical_2d");
 }
+
+#if 0
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, rectilinear_logical_2d)
+{
+    test_logical_selection_2d("rectilinear", "rectilinear_logical_2d");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, structured_logical_2d)
+{
+    test_logical_selection_2d("structured", "structured_logical_2d");
+}
+#endif
 
 #if 0
 //-----------------------------------------------------------------------------
