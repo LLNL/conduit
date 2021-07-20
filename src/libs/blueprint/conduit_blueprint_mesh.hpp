@@ -352,6 +352,22 @@ namespace topology
                                                   conduit::Node &d2smap);
 
         //---------------------------------------------------------------------
+        // this variant of the function call will also map the fields specified in
+        // the options node. The options node can have a child "field_prefix", 
+        // which should be a string that allows the user to specify a prefix
+        // to insert into the names of the fields stored in fields_dest. The options
+        // node can also have a child "field_names", which should be a string or list
+        // of strings that allow the user to specify which fields they want to be 
+        // mapped from the original set of fields.
+        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &topo_src,
+                                                  conduit::Node &topo_dest,
+                                                  conduit::Node &coordset_dest,
+                                                  conduit::Node &fields_dest,
+                                                  conduit::Node &s2dmap,
+                                                  conduit::Node &d2smap,
+                                                  const conduit::Node &options);
+
+        //---------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_corners(const conduit::Node &n,
                                                     conduit::Node &dest,
                                                     conduit::Node &cdest,
