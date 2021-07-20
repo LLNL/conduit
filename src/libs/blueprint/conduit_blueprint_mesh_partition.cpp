@@ -1924,7 +1924,8 @@ partitioner::create_new_rectilinear_coordset(const conduit::Node &n_coordset,
     for(index_t d = 0; d < ndims; d++)
     {
         std::vector<index_t> indices;
-        for(index_t i = start[d]; i <= end[d]; i++)
+        auto nend = end[d] + 1;
+        for(index_t i = start[d]; i <= nend; i++)
             indices.push_back(i);
 
         const conduit::Node &src = n_values[d];
