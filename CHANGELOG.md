@@ -11,11 +11,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Avoid compile issue with using `_Pragma()` with Python 3.8 on Windows
 - `conduit_node` and `conduit_datatype` in the C API are no longer aliases to `void` so that callers cannot pass just any pointer to the APIs.
+- Fixed overread issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
 
 #### Blueprint
 - Added the `blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
 - Fixed a bug that was causing the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
 - Added a new function signature for `blueprint::mesh::topology::unstructured::generated_sides`, which performs the same task as the original and also takes fields from the original topology and maps them onto the new topology.
+
 
 ## [0.7.2] - Released 2021-05-19
 
@@ -48,7 +50,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Fixed missing implementation of DataType::is_index_t
 - Fixed issue with compiling t_h5z_zfp_smoke.cpp against an MPI-enabled HDF5.
-- Fixed overread issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
 
 #### Blueprint
 - Fixed a bug that caused HDF5 reference paths to appear twice in Relay HDF5 Error messages.
