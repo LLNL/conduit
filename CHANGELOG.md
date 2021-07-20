@@ -48,6 +48,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Fixed missing implementation of DataType::is_index_t
 - Fixed issue with compiling t_h5z_zfp_smoke.cpp against an MPI-enabled HDF5.
+- Fixed overread issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
 
 #### Blueprint
 - Fixed a bug that caused HDF5 reference paths to appear twice in Relay HDF5 Error messages.
