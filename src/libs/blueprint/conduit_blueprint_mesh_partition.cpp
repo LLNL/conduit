@@ -546,13 +546,11 @@ selection_logical::get_vertex_ids(const conduit::Node &n_mesh,
         const conduit::Node &n_topo = selected_topology(n_mesh);
         index_t dims[3] = {1,1,1};
         conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
-cout << "selection_logical::get_vertex_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
         index_t ndims = conduit::blueprint::mesh::utils::topology::dims(n_topo);
         dims[0]++;
         dims[1]++;
         if(ndims > 2)
             dims[2]++;
-cout << "selection_logical::get_vertex_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
 
         ids.clear();
         ids.reserve(dims[0] * dims[1] * dims[2]);
@@ -562,19 +560,14 @@ cout << "selection_logical::get_vertex_ids: dims=" << dims[0] << ", " << dims[1]
         n_end[0] = end[0] + 1;
         n_end[1] = end[1] + 1;
         n_end[2] = (ndims > 2) ? (end[2] + 1) : start[2];
-cout << "selection_logical::get_vertex_ids: start=" << start[0] << ", " << start[1] << ", " << start[2] << endl;
 
-cout << "selection_logical::get_vertex_ids: n_end=" << n_end[0] << ", " << n_end[1] << ", " << n_end[2] << endl;
-cout << "ids = {";
         for(index_t k = start[2]; k <= n_end[2]; k++)
         for(index_t j = start[1]; j <= n_end[1]; j++)
         for(index_t i = start[0]; i <= n_end[0]; i++)
         {
             index_t id = k*mesh_NXNY + j*mesh_NX + i;
-cout << id << ", ";
             ids.push_back(id);
         }
-cout << "}" << endl;
     }
     catch(conduit::Error &)
     {
@@ -1821,7 +1814,8 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
         std::vector<index_t> element_ids, vertex_ids;
         selections[idx]->get_element_ids(n_mesh, element_ids);
 
-        // Try special case for logical selections.
+        // Try special case for logical selections. We do this so we can make
+        // logically structured outputs.
         auto log_sel = dynamic_cast<selection_logical *>(selections[idx].get());
         if(log_sel != nullptr)
         {
@@ -1845,7 +1839,7 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
                 create_new_uniform_topo(n_topo, csname, start, n_new_topos[n_topo.name()]);
             else if(n_topo["type"].as_string() == "rectilinear")
                 create_new_rectilinear_topo(n_topo, csname, start, n_new_topos[n_topo.name()]);
-            else if(n_topo["type"].as_string() == "rectilinear")
+            else if(n_topo["type"].as_string() == "structured")
                 create_new_structured_topo(n_topo, csname, start, end, n_new_topos[n_topo.name()]);
         }
         else

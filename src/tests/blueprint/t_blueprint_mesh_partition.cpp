@@ -188,12 +188,6 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 }
 
 //-----------------------------------------------------------------------------
-/**
-TODO: we pass in the topo. I'll want to include that in the baseline names so
-      we can make sure that the outputs have the same topo/coordset combo as
-      the inputs once that's working. Then I'll need to rebaseline. Right now
-      the baselines are unstructured.
-*/
 void
 test_logical_selection_2d(const std::string &topo, const std::string &base)
 {
@@ -447,25 +441,24 @@ test_logical_selection_3d(const std::string &topo)
 #endif
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
     test_logical_selection_2d("uniform", "uniform_logical_2d");
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, rectilinear_logical_2d)
 {
     test_logical_selection_2d("rectilinear", "rectilinear_logical_2d");
 }
-
+#endif
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, structured_logical_2d)
 {
     test_logical_selection_2d("structured", "structured_logical_2d");
 }
-#endif
 
 #if 0
 //-----------------------------------------------------------------------------
