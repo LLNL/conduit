@@ -1282,7 +1282,13 @@ polytess
     :width: 400px
     :align: center
 
-    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 3.
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 10.
+
+.. figure:: polytess_3d_big_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 6.
 
 The ``polytess()`` function generates a polygonal tessellation in the 2D
 plane comprised of octagons and squares (known formally as a `two-color
