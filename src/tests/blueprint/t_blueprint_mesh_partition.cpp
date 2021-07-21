@@ -23,7 +23,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-//#define GENERATE_BASELINES
+#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -489,13 +489,13 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 
 //-----------------------------------------------------------------------------
 void
-test_explicit_selection_2d(const std::string &topo, const std::string &base)
+test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3],
+    const std::string &base)
 {
     conduit::utils::set_error_handler(tmp_err_handler);
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
-    conduit::index_t vdims[] = {11,11,1};
     conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
     // Override with int64 because YAML loses int/uint information.
     conduit::int64 i100 = 100;
@@ -617,9 +617,16 @@ test_explicit_selection_2d(const std::string &topo, const std::string &base)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
-    test_explicit_selection_2d("uniform", "uniform_explicit_2d");
+    conduit::index_t vdims[] = {11,11,1};
+    test_explicit_selection("uniform", vdims, "uniform_explicit_2d");
 }
 #endif
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
+{
+    conduit::index_t vdims[] = {11,11,2};
+    test_explicit_selection("hexs", vdims, "hexs_explicit_3d");
+}
 
 // TODO: need to extract unstructured from polygonal, 3D, polyhedral.
 
@@ -764,6 +771,7 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
 #endif
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_ranges_2d)
 {
@@ -787,3 +795,4 @@ TEST(conduit_blueprint_mesh_partition, quads_ranges_2d)
 {
     test_ranges_selection_2d("quads", "quads_ranges_2d");
 }
+#endif
