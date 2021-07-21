@@ -1989,7 +1989,7 @@ partitioner::create_new_uniform_topo(const conduit::Node &n_topo,
         "elements/origin/k"};
     for(int i = 0; i < 3; i++)
     {
-        if(n_topo.has_child(keys[i]))
+        if(n_topo.has_path(keys[i]))
         {
             const conduit::Node &value = n_topo[keys[i]];
             n_new_topo[keys[i]].set(static_cast<conduit::int64>(value.to_uint64() + start[i]));
@@ -2010,7 +2010,7 @@ partitioner::create_new_rectilinear_topo(const conduit::Node &n_topo,
         "elements/origin/k"};
     for(int i = 0; i < 3; i++)
     {
-        if(n_topo.has_child(keys[i]))
+        if(n_topo.has_path(keys[i]))
         {
             const conduit::Node &value = n_topo[keys[i]];
             n_new_topo[keys[i]].set(static_cast<conduit::int64>(value.to_uint64() + start[i]));
@@ -2029,7 +2029,7 @@ partitioner::create_new_structured_topo(const conduit::Node &n_topo,
     conduit::Node &n_dims = n_new_topo["elements/dims"];
     n_dims["i"].set(static_cast<conduit::int64>(end[0] - start[0] + 1));
     n_dims["j"].set(static_cast<conduit::int64>(end[1] - start[1] + 1));
-    if(n_topo.has_child("elements/dims/k"))
+    if(n_topo.has_path("elements/dims/k"))
         n_dims["k"].set(static_cast<conduit::int64>(end[2] - start[2] + 1));
     const char *keys[] = {"elements/origin/i0",
         "elements/origin/j0",
