@@ -258,6 +258,16 @@ namespace coordset
 
     //-----------------------------------------------------------------------------
     std::string coordsys(const Node &n);
+
+    //-----------------------------------------------------------------------------
+    /**
+    @brief Reads the coordset's data and determines min/max for each axis.
+    NOTE: This simply takes the min/max of each data array for recilinear/explicit,
+    are there any special considerations for cylindrical and spherical coordinates?
+    For uniform it calculates min/max based off of origin/spacing/dims.
+    @return A vector of float64 if the format {d0min, d0max, ... , dNmin, dNmax}
+    */
+    std::vector<float64> extents(const Node &n);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::coorset --
