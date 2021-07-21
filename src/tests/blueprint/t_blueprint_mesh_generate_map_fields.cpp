@@ -25,10 +25,11 @@ using namespace conduit::blueprint::mesh;
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -108,10 +109,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_skip_bad_field)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -193,10 +195,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_skip_bad_field)
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_no_field_names)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -275,10 +278,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_no_field
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_field_prefix)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -433,10 +437,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D)
 TEST(conduit_blueprint_generate_unstructured, generate_sides_vertex_ex)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -471,10 +476,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_vertex_ex)
 TEST(conduit_blueprint_generate_unstructured, generate_sides_vol_dep_ex)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -509,10 +515,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_vol_dep_ex)
 TEST(conduit_blueprint_generate_unstructured, generate_sides_field_datatype_ex)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -547,10 +554,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_field_datatype_ex)
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_prefix_ex)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -585,10 +593,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_prefi
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex1)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -622,10 +631,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex2)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -661,10 +671,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex3)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
@@ -699,10 +710,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex4)
 {
     index_t nlevels = 2;
+    index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
-    examples::polytess(nlevels, n);
+    examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
     Node s2dmap, d2smap;
