@@ -449,7 +449,6 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -462,7 +461,6 @@ TEST(conduit_blueprint_mesh_partition, rectilinear_logical_2d)
     test_logical_selection_2d("rectilinear", "rectilinear_logical_2d");
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, structured_logical_2d)
 {
@@ -486,7 +484,6 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 {
     test_logical_selection_3d("structured", "structured_logical_3d");
 }
-#endif
 
 void
 test_explicit_selection_2d(const std::string &topo, const std::string &base)
@@ -622,85 +619,92 @@ TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 //-----------------------------------------------------------------------------
 //-- Point merge
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, point_merge)
-{
-#if 1
-    const bool always_print = false;
+#ifndef ALWAYS_PRINT
+static const bool always_print = false;
 #else
-    const bool always_print = true;
+static const bool always_print = true;
 #endif
 
-    const double tolerance = 0.00001;
+// The tolerance used by all of the point merge tests
+static const double tolerance = 0.00001;
+
+TEST(conduit_blueprint_mesh_partition_point_merge, one)
+{
     conduit::Node braid;
     conduit::blueprint::mesh::examples::braid("tets", 2, 2, 2, braid);
     auto &braid_coordset = braid["coordsets/coords"];
 
     // Test that 1 coordset in gives the exact same coordset out
+    std::vector<const conduit::Node*> one;
+    one.push_back(&braid_coordset);
+
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(one, output, tolerance);
+
+    conduit::Node info;
+    bool different = braid_coordset.diff(output["coordsets/coords"], info);
+    EXPECT_FALSE(different);
+    if(different || always_print)
     {
-        std::cout << "Case \"one\": " << std::endl;
-        std::vector<const conduit::Node*> one;
-        one.push_back(&braid_coordset);
-
-        conduit::Node output;
-        conduit::blueprint::mesh::coordset::merge(one, output, tolerance);
-
-        conduit::Node info;
-        bool different = braid_coordset.diff(output["coordsets/coords"], info);
-        EXPECT_FALSE(different);
-        if(different || always_print)
-        {
-            braid_coordset.print();
-            output.print();
-        }
+        braid_coordset.print();
+        output.print();
     }
+}
 
+TEST(conduit_blueprint_mesh_partition_point_merge, same)
+{
     // Test that two identical coordsets create the same coordset
+    conduit::Node braid;
+    conduit::blueprint::mesh::examples::braid("tets", 2, 2, 2, braid);
+    auto &braid_coordset = braid["coordsets/coords"];
+
+    std::vector<const conduit::Node*> same;
+    same.push_back(&braid_coordset); same.push_back(&braid_coordset);
+    
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(same, output, tolerance);
+
+    conduit::Node info;
+    bool different = braid_coordset.diff(output["coordsets/coords"], info);
+    EXPECT_FALSE(different);
+    if(different || always_print)
     {
-        std::cout << "Case \"same\": " << std::endl;
-        std::vector<const conduit::Node*> same;
-        same.push_back(&braid_coordset); same.push_back(&braid_coordset);
-        
-        conduit::Node output;
-        conduit::blueprint::mesh::coordset::merge(same, output, tolerance);
-
-        conduit::Node info;
-        bool different = braid_coordset.diff(output["coordsets/coords"], info);
-        EXPECT_FALSE(different);
-        if(different || always_print)
-        {
-            braid_coordset.print();
-            output.print();
-        }
+        braid_coordset.print();
+        output.print();
     }
+}
 
+TEST(conduit_blueprint_mesh_partition_point_merge, different)
+{
+    // Test that two different coordsets create the union of their coordinates
+    conduit::Node braid;
+    conduit::blueprint::mesh::examples::braid("tets", 2, 2, 2, braid);
+    auto &braid_coordset = braid["coordsets/coords"];
     conduit::Node polytess;
     conduit::blueprint::mesh::examples::polytess(1, polytess);
     auto &polytess_coordset = polytess["coordsets/coords"];
     
-    // Test that two different coordsets create the union of their coordinates
+    std::vector<const conduit::Node*> different;
+    different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
+    
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(different, output, tolerance);
+
+    conduit::Node info;
+    bool is_different0 = different[0]->diff(output["coordsets/coords"], info);
+    EXPECT_TRUE(is_different0);
+    bool is_different1 = different[1]->diff(output["coordsets/coords"], info);
+    EXPECT_TRUE(is_different1);
+    if(!is_different0 || !is_different1 || always_print)
     {
-        std::cout << "Case \"different\": " << std::endl;
-        std::vector<const conduit::Node*> different;
-        different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
-        
-        conduit::Node output;
-        conduit::blueprint::mesh::coordset::merge(different, output, tolerance);
+        std::cout << "Inputs:" << std::endl;
+        different[0]->print();
+        different[1]->print();
+        std::cout << "Output:" << std::endl;
+        output.print();
+    }
 
-        conduit::Node info;
-        bool is_different0 = different[0]->diff(output["coordsets/coords"], info);
-        EXPECT_TRUE(is_different0);
-        bool is_different1 = different[1]->diff(output["coordsets/coords"], info);
-        EXPECT_TRUE(is_different1);
-        if(!is_different0 || !is_different1 || always_print)
-        {
-            std::cout << "Inputs:" << std::endl;
-            different[0]->print();
-            different[1]->print();
-            std::cout << "Output:" << std::endl;
-            output.print();
-        }
-
-        static const std::string baseline =
+    static const std::string baseline =
 R"(coordsets: 
   coords: 
     type: "explicit"
@@ -711,35 +715,36 @@ R"(coordsets:
 pointmaps: 
   - [0, 1, 2, 3, 4, 5, 6, 7]
   - [8, 9, 10, 11, 12, 13, 14, 15])";
-        conduit::Node ans; ans.parse(baseline, "yaml");
-        bool is_output_different = ans.diff(output, info);
-        EXPECT_FALSE(is_output_different);
-        if(is_output_different)
-        {
-            std::cout << "Baseline:" << std::endl;
-            ans.print();
-            std::cout << "Output:" << std::endl;
-            output.print();
-        }
-    }
-
+    conduit::Node ans; ans.parse(baseline, "yaml");
+    bool is_output_different = ans.diff(output, info);
+    EXPECT_FALSE(is_output_different);
+    if(is_output_different)
     {
-        std::cout << "Case \"multidomain\": " << std::endl;
-        conduit::Node spiral;
-        conduit::blueprint::mesh::examples::spiral(4, spiral);
-        std::vector<const conduit::Node*> multidomain;
+        std::cout << "Baseline:" << std::endl;
+        ans.print();
+        std::cout << "Output:" << std::endl;
+        output.print();
+    }
+}
 
-        const conduit::index_t ndom = spiral.number_of_children();
-        for(conduit::index_t i = 0; i < ndom; i++)
-        {
-            conduit::Node &dom = spiral.child(i);
-            multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
-        }
-        
-        conduit::Node output;
-        conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
+{
+    // Use the spiral example to attach domains that we know are connected
+    conduit::Node spiral;
+    conduit::blueprint::mesh::examples::spiral(4, spiral);
+    std::vector<const conduit::Node*> multidomain;
 
-        static const std::string baseline =
+    const conduit::index_t ndom = spiral.number_of_children();
+    for(conduit::index_t i = 0; i < ndom; i++)
+    {
+        conduit::Node &dom = spiral.child(i);
+        multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
+    }
+    
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+
+    static const std::string baseline =
 R"(coordsets: 
   coords: 
     type: "explicit"
@@ -751,37 +756,38 @@ pointmaps:
   - [1, 4, 3, 5]
   - [2, 3, 5, 6, 7, 8, 9, 10, 11]
   - [12, 13, 14, 0, 15, 16, 17, 2, 18, 19, 20, 6, 21, 22, 23, 9])";
-        conduit::Node ans; ans.parse(baseline, "yaml");
+    conduit::Node ans; ans.parse(baseline, "yaml");
 
-        conduit::Node info;
-        bool is_different = ans.diff(output, info);
-        EXPECT_FALSE(is_different);
-        if(is_different || always_print)
-        {
-            std::cout << "Baseline:" << std::endl;
-            ans.print();
-            std::cout << "Output:" << std::endl;
-            output.print();
-        }
-    }
-
+    conduit::Node info;
+    bool is_different = ans.diff(output, info);
+    EXPECT_FALSE(is_different);
+    if(is_different || always_print)
     {
-        std::cout << "Case \"multidomain2\": " << std::endl;
-        conduit::Node spiral;
-        conduit::blueprint::mesh::examples::spiral(8, spiral);
-        std::vector<const conduit::Node*> multidomain;
+        std::cout << "Baseline:" << std::endl;
+        ans.print();
+        std::cout << "Output:" << std::endl;
+        output.print();
+    }
+}
 
-        const conduit::index_t ndom = spiral.number_of_children();
-        for(conduit::index_t i = 0; i < ndom; i++)
-        {
-            conduit::Node &dom = spiral.child(i);
-            multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
-        }
-        
-        conduit::Node output;
-        conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
-#if 1
-        static const std::string baseline =
+TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
+{
+    // Use the spiral example to attach domains that we know are connected, with more data
+    //   this makes sure that multiple nodes are used in the spatial search implementation
+    conduit::Node spiral;
+    conduit::blueprint::mesh::examples::spiral(8, spiral);
+    std::vector<const conduit::Node*> multidomain;
+
+    const conduit::index_t ndom = spiral.number_of_children();
+    for(conduit::index_t i = 0; i < ndom; i++)
+    {
+        conduit::Node &dom = spiral.child(i);
+        multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
+    }
+    
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+    static const std::string baseline =
 R"(coordsets: 
   coords: 
     type: "explicit"
@@ -797,18 +803,16 @@ pointmaps:
   - [29, 54, 55, 56, 57, 58, 59, 60, 61, 35, 62, 63, 64, 65, 66, 67, 68, 69, 41, 70, 71, 72, 73, 74, 75, 76, 77, 47, 78, 79, 80, 81, 82, 83, 84, 85, 53, 86, 87, 88, 89, 90, 91, 92, 93, 4, 94, 95, 96, 97, 98, 99, 100, 101, 5, 102, 103, 104, 105, 106, 107, 108, 109, 8, 110, 111, 112, 113, 114, 115, 116, 117, 11, 118, 119, 120, 121, 122, 123, 124, 125]
   - [21, 22, 23, 9, 10, 11, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307]
   - [308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 24, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 30, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 36, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 390, 391, 42, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 48, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 12, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 15, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 18, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 21, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 126, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 538, 140, 539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551, 552, 553, 554, 555, 556, 557, 558, 559, 154, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575, 576, 577, 578, 579, 580, 168, 581, 582, 583, 584, 585, 586, 587, 588, 589, 590, 591, 592, 593, 594, 595, 596, 597, 598, 599, 600, 601, 182, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 620, 621, 622, 196, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633, 634, 635, 636, 637, 638, 639, 640, 641, 642, 643, 210, 644, 645, 646, 647, 648, 649, 650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 660, 661, 662, 663, 664, 224, 665, 666, 667, 668, 669, 670, 671, 672, 673, 674, 675, 676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 238, 686, 687, 688, 689, 690, 691, 692, 693, 694, 695, 696, 697, 698, 699, 700, 701, 702, 703, 704, 705, 706, 252, 707, 708, 709, 710, 711, 712, 713, 714, 715, 716, 717, 718, 719, 720, 721, 722, 723, 724, 725, 726, 727, 266, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 738, 739, 740, 741, 742, 743, 744, 745, 746, 747, 748, 280, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 767, 768, 769, 294])";
-        conduit::Node ans; ans.parse(baseline, "yaml");
+    conduit::Node ans; ans.parse(baseline, "yaml");
 
-        conduit::Node info;
-        bool is_different = ans.diff(output, info);
-        EXPECT_FALSE(is_different);
-        if(is_different || always_print)
-        {
-            std::cout << "Baseline:" << std::endl;
-            ans.print();
-            std::cout << "Output:" << std::endl;
-            output.print();
-        }
-#endif
+    conduit::Node info;
+    bool is_different = ans.diff(output, info);
+    EXPECT_FALSE(is_different);
+    if(is_different || always_print)
+    {
+        std::cout << "Baseline:" << std::endl;
+        ans.print();
+        std::cout << "Output:" << std::endl;
+        output.print();
     }
 }
