@@ -3731,14 +3731,16 @@ public:
     //  the results digest in the provided data node
     bool             diff(const Node &n,
                           Node &info,
-                          const float64 epsilon = CONDUIT_EPSILON) const;
+                          const float64 epsilon = CONDUIT_EPSILON,
+                          bool relaxint = false) const;
 
     /// diff this node to the given node for compatibility (i.e. validate it
     //  has everything that the instance node has), storing the results
     //  digest in the provided data node
     bool             diff_compatible(const Node &n,
                                      Node &info,
-                                     const float64 epsilon = CONDUIT_EPSILON) const;
+                                     const float64 epsilon = CONDUIT_EPSILON,
+                                     bool relaxint = false) const;
 
     ///
     /// info() creates a node that contains metadata about the current

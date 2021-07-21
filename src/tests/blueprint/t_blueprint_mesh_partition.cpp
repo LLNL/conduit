@@ -23,7 +23,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-//#define GENERATE_BASELINES
+#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -94,7 +94,7 @@ compare_baseline(const std::string &filename, const conduit::Node &n)
 #endif
 
     // Node::diff returns true if the nodes are different. We want not different.
-    bool equal = !baseline.diff(n, info, tolerance);
+    bool equal = !baseline.diff(n, info, tolerance, true);
 
     if(!equal)
     {
@@ -128,7 +128,8 @@ save_visit(const std::string &filename, const conduit::Node &n)
 
     // Save all the domains to individual files.
     auto ndoms = conduit::blueprint::mesh::number_of_domains(n);
-
+    if(ndoms < 1)
+        return;
     char dnum[20];
     if(ndoms == 1)
     {
@@ -139,7 +140,7 @@ save_visit(const std::string &filename, const conduit::Node &n)
         if(hdf5_enabled)
             conduit::relay::io::save(n, ss.str() + ".hdf5", "hdf5");
         // VisIt won't read it:
-        //conduit::relay::io::save(n, ss.str() + ".yaml", "yaml");
+        conduit::relay::io::save(n, ss.str() + ".yaml", "yaml");
     }
     else
     {
@@ -188,7 +189,7 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 
 //-----------------------------------------------------------------------------
 void
-test_logical_selection_2d(const std::string &topo)
+test_logical_selection_2d(const std::string &topo, const std::string &base)
 {
     conduit::utils::set_error_handler(tmp_err_handler);
 
@@ -202,175 +203,421 @@ test_logical_selection_2d(const std::string &topo)
 
     // With no options, test that output==input
     conduit::blueprint::mesh::partition(input, options, output);
-    output.print();
     EXPECT_EQ(input.diff(output, msg, 0.0), false);
-    std::string b00 = baseline_file("test_logical_selection_2d_00");
+    std::string b00 = baseline_file(base + "_00");
     save_visit(b00, output);
 
     // Select the whole thing but divide it into target domains.
     const char *opt1 =
 "target: 2";
-    options.parse(opt1, "yaml");
+    options.reset(); options.parse(opt1, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
-    EXPECT_EQ(output.number_of_children(), 2);
-    EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), true);
-    std::string b01 = baseline_file("test_logical_selection_2d_01");
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 2);
+    std::string b01 = baseline_file(base + "_01");
     save_visit(b01, output);
 #ifdef GENERATE_BASELINES
     make_baseline(b01, output);
 #else
     EXPECT_EQ(compare_baseline(b01, output), true);
 #endif
-}
 
-//-----------------------------------------------------------------------------
-void
-test_logical_selection_3d(const std::string &topo)
-{
-    conduit::utils::set_error_handler(tmp_err_handler);
-
-
-    // Make 10x10x10 cell mesh.
-    conduit::Node input, output, options, msg;
-    conduit::index_t vdims[] = {11,11,11};
-    conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
-    conduit::int64 i100 = 100;
-    input["state/cycle"].set(i100); // override with int64.
-
-    // With no options, test that output==input
-    conduit::blueprint::mesh::partition(input, options, output);
-    cout << "output=";
-    output.print();
-    EXPECT_EQ(input.diff(output, msg, 0.0), false);
-#if 0
     // Select the whole thing but divide it into target domains.
-    const char *opt1 =
-"target: 4";
-    options.parse(opt1, "yaml");
-    conduit::blueprint::mesh::partition(input, options, output);
-    EXPECT_EQ(output.number_of_children(), 4);
-    EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), true);
-    // TODO: test output mesh contents.
-    output.print();
-
-    // Select a portion of the input mesh cells using options.
     const char *opt2 =
-"selections:\n"
-"   -\n"
-"     type: \"logical\"\n"
-"     domain: 0\n"
-"     start: [0,0,0]\n"
-"     end:   [4,4,4]\n";
-    options.parse(opt2, "yaml");
+"target: 4";
+    options.reset(); options.parse(opt2, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
-//    EXPECT_EQ(conduit::blueprint::mesh::utils::topology::length(output[0]), 5*5*5);
-    output.print();
-    // TODO: test output mesh contents.
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
+    std::string b02 = baseline_file(base + "_02");
+    save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b02, output);
+#else
+    EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
 
-    // Select a larger portion of the input mesh using options but split into
-    // multiple domains.
+    // Select the whole thing but go out of bounds to see if the selections
+    // clamp to good values.
     const char *opt3 =
 "selections:\n"
 "   -\n"
 "     type: \"logical\"\n"
 "     domain: 0\n"
 "     start: [0,0,0]\n"
-"     end:   [4,9,9]\n"
-"target: 8\n";
-    options.parse(opt3, "yaml");
+"     end:   [100,100,100]";
+    options.reset(); options.parse(opt3, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
-    EXPECT_EQ(conduit::blueprint::mesh::utils::topology::length(output[0]), 5*5*5);
-    output.print();
-    // TODO: test output mesh contents.
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), false);
+    std::string b03 = baseline_file(base + "_03");
+    save_visit(b03, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b03, output);
+#else
+    EXPECT_EQ(compare_baseline(b03, output), true);
+#endif
 
-    // Select 2 logical subsets of the input mesh using options.
-    //   - expect 2 output domains.
+    // Select 3 parts.
     const char *opt4 =
 "selections:\n"
 "   -\n"
-"     type: \"logical\"\n"
+"     type: logical\n"
 "     domain: 0\n"
 "     start: [0,0,0]\n"
-"     end:   [4,4,4]\n"
+"     end:   [4,9,0]\n"
 "   -\n"
-"     type: \"logical\"\n"
+"     type: logical\n"
 "     domain: 0\n"
 "     start: [5,0,0]\n"
-"     end:   [9,4,4]\n";
-    options.parse(opt2, "yaml");
+"     end:   [9,4,0]\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [5,5,0]\n"
+"     end:   [9,9,0]";
+    options.reset(); options.parse(opt4, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
-    output.print();
-    EXPECT_EQ(output.number_of_children(), 2);
-    EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), true);
-// These fail right now.
-//    EXPECT_EQ(output[0]["type"].as_string(), topo);
-//    EXPECT_EQ(output[1]["type"].as_string(), topo);
-    EXPECT_EQ(conduit::blueprint::mesh::utils::topology::length(output[0]), 5*5*5);
-    EXPECT_EQ(conduit::blueprint::mesh::utils::topology::length(output[1]), 5*5*5);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 3);
+    std::string b04 = baseline_file(base + "_04");
+    save_visit(b04, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b04, output);
+#else
+    EXPECT_EQ(compare_baseline(b04, output), true);
+#endif
 
-    // Select 2 logical subsets of the input mesh using options but turn them
-    // into 1 domain.
-    //  - expect 1 domain
+    // Select 3 parts with 4 targets.
     const char *opt5 =
+"selections:\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [0,0,0]\n"
+"     end:   [4,9,0]\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [5,0,0]\n"
+"     end:   [9,4,0]\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [5,5,0]\n"
+"     end:   [9,9,0]\n"
+"target: 4";
+    options.reset(); options.parse(opt5, "yaml"); options.print();
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
+    std::string b05 = baseline_file(base + "_05");
+    save_visit(b05, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b05, output);
+#else
+    EXPECT_EQ(compare_baseline(b05, output), true);
+#endif
+
+    // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
+}
+
+//-----------------------------------------------------------------------------
+void
+test_logical_selection_3d(const std::string &topo, const std::string &base)
+{
+    conduit::utils::set_error_handler(tmp_err_handler);
+
+    // Make 10x10x1 cell mesh.
+    conduit::Node input, output, options, msg;
+    conduit::index_t vdims[] = {11,11,4};
+    conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
+    // Override with int64 because YAML loses int/uint information.
+    conduit::int64 i100 = 100;
+    input["state/cycle"].set(i100);
+
+    // With no options, test that output==input
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(input.diff(output, msg, 0.0), false);
+    std::string b00 = baseline_file(base + "_00");
+    save_visit(b00, output);
+
+    // Select the whole thing but divide it into target domains.
+    const char *opt1 =
+"target: 2";
+    options.reset(); options.parse(opt1, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 2);
+    std::string b01 = baseline_file(base + "_01");
+    save_visit(b01, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b01, output);
+#else
+    EXPECT_EQ(compare_baseline(b01, output), true);
+#endif
+
+    // Select the whole thing but divide it into target domains.
+    const char *opt2 =
+"target: 4";
+    options.reset(); options.parse(opt2, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
+    std::string b02 = baseline_file(base + "_02");
+    save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b02, output);
+#else
+    EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
+
+    // Select the whole thing but go out of bounds to see if the selections
+    // clamp to good values.
+    const char *opt3 =
 "selections:\n"
 "   -\n"
 "     type: \"logical\"\n"
 "     domain: 0\n"
 "     start: [0,0,0]\n"
-"     end:   [9,7,4]\n"
-"   -\n"
-"     type: \"logical\"\n"
-"     domain: 0\n"
-"     start: [0,0,5]\n"
-"     end:   [9,7,9]\n"
-"target: 1\n";
-
-    options.parse(opt5, "yaml");
+"     end:   [100,100,100]";
+    options.reset(); options.parse(opt3, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
-    output.print();
-    EXPECT_EQ(output.number_of_children(), 1);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
     EXPECT_EQ(conduit::blueprint::mesh::is_multi_domain(output), false);
-// These fail right now.
-//    EXPECT_EQ(output[0]["type"].as_string(), topo);
-//    EXPECT_EQ(output[1]["type"].as_string(), topo);
-//    EXPECT_EQ(conduit::blueprint::mesh::utils::topology::length(output[0]), 10*8*5);
-//    EXPECT_EQ(conduit::blueprint::mesh::utils::topology::length(output[1]), 10*8*5);
-
-
-    // TODO: Make a multi domain mesh and test pulling out multiple logical
-    //       selections from it.
-
-
-    // TODO: Make a multi domain mesh and test pulling out multiple logical
-    //       selections from it and set target to 1 or 2 so we trigger combining.
+    std::string b03 = baseline_file(base + "_03");
+    save_visit(b03, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b03, output);
+#else
+    EXPECT_EQ(compare_baseline(b03, output), true);
 #endif
+
+    // Select 3 parts.
+    const char *opt4 =
+"selections:\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [0,0,0]\n"
+"     end:   [4,9,2]\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [5,0,0]\n"
+"     end:   [9,4,2]\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [5,5,0]\n"
+"     end:   [9,9,2]";
+    options.reset(); options.parse(opt4, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 3);
+    std::string b04 = baseline_file(base + "_04");
+    save_visit(b04, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b04, output);
+#else
+    EXPECT_EQ(compare_baseline(b04, output), true);
+#endif
+
+    // Select 3 parts with 4 targets.
+    const char *opt5 =
+"selections:\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [0,0,0]\n"
+"     end:   [4,9,2]\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [5,0,0]\n"
+"     end:   [9,4,2]\n"
+"   -\n"
+"     type: logical\n"
+"     domain: 0\n"
+"     start: [5,5,0]\n"
+"     end:   [9,9,2]\n"
+"target: 4";
+    options.reset(); options.parse(opt5, "yaml"); options.print();
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
+    std::string b05 = baseline_file(base + "_05");
+    save_visit(b05, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b05, output);
+#else
+    EXPECT_EQ(compare_baseline(b05, output), true);
+#endif
+
+    // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
 #if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
-    test_logical_selection_2d("uniform");
+    test_logical_selection_2d("uniform", "uniform_logical_2d");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, rectilinear_logical_2d)
+{
+    test_logical_selection_2d("rectilinear", "rectilinear_logical_2d");
+}
+
+#if 0
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, structured_logical_2d)
+{
+    test_logical_selection_2d("structured", "structured_logical_2d");
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_3d)
 {
-    test_logical_selection_3d("uniform");
+    test_logical_selection_3d("uniform", "uniform_logical_3d");
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, uniform_rectilinear)
+TEST(conduit_blueprint_mesh_partition, rectilinear_logical_3d)
 {
-    test_logical_selection("rectilinear");
+    test_logical_selection_3d("rectilinear", "rectilinear_logical_3d");
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, uniform_structured)
+TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 {
-    test_logical_selection("structured");
+    test_logical_selection_3d("structured", "structured_logical_3d");
 }
 #endif
+
+void
+test_explicit_selection_2d(const std::string &topo, const std::string &base)
+{
+    conduit::utils::set_error_handler(tmp_err_handler);
+
+    // Make 10x10x1 cell mesh.
+    conduit::Node input, output, options, msg;
+    conduit::index_t vdims[] = {11,11,1};
+    conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
+    // Override with int64 because YAML loses int/uint information.
+    conduit::int64 i100 = 100;
+    input["state/cycle"].set(i100);
+
+    conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
+
+    // Select the whole thing. Check output==input
+    options.reset();
+    {
+        std::vector<conduit::index_t> elem;
+        for(conduit::index_t i = 0; i < nelem; i++)
+            elem.push_back(i);
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "explicit";
+        sel1["elements"] = elem;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b00 = baseline_file(base + "_00");
+    save_visit(b00, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b00, output);
+#else
+    EXPECT_EQ(compare_baseline(b00, output), true);
+#endif
+
+    // Select half of the cells.
+    options.reset();
+    {
+        auto n2 = nelem / 2;
+        std::vector<conduit::index_t> elem;
+        for(conduit::index_t i = 0; i < n2; i++)
+            elem.push_back(i);
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "explicit";
+        sel1["elements"] = elem;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b01 = baseline_file(base + "_01");
+    save_visit(b01, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b01, output);
+#else
+    EXPECT_EQ(compare_baseline(b01, output), true);
+#endif
+
+    // Select a checkerboard of cells
+    options.reset();
+    {
+        std::vector<conduit::index_t> elem;
+        conduit::index_t ci = 0;
+        for(conduit::index_t j = 0; j < vdims[1]-1; j++)
+        for(conduit::index_t i = 0; i < vdims[0]-1; i++)
+        {
+            if((i+j) % 2 == 0)
+                elem.push_back(ci);
+            ci++;
+        }
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "explicit";
+        sel1["elements"] = elem;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b02 = baseline_file(base + "_02");
+    save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b02, output);
+#else
+    EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
+
+    // Make 2 selections
+    options.reset();
+    {
+        auto n2 = nelem / 2;
+        std::vector<conduit::index_t> elem, elem2;
+        for(conduit::index_t i = 0; i < nelem; i++)
+        {
+            if(i < n2)
+                elem.push_back(i);
+            else
+                elem2.push_back(i);
+        }
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "explicit";
+        sel1["elements"] = elem;
+        conduit::Node &sel2 = options["selections"].append();
+        sel2["type"] = "explicit";
+        sel2["elements"] = elem2;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 2);
+    std::string b03 = baseline_file(base + "_03");
+    save_visit(b03, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b03, output);
+#else
+    EXPECT_EQ(compare_baseline(b03, output), true);
+#endif
+
+    // Take previous 2 domain selection and partition it into 5 domains.
+    options["target"] = 5;
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 5);
+    std::string b04 = baseline_file(base + "_04");
+    save_visit(b04, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b04, output);
+#else
+    EXPECT_EQ(compare_baseline(b04, output), true);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
+{
+    test_explicit_selection_2d("uniform", "uniform_explicit_2d");
+}
+
 
 //-----------------------------------------------------------------------------
 //-- Point merge

@@ -124,7 +124,7 @@ public:
     void set_topology(const std::string &value);  
 
     /**
-     @brief Returns the cells in this selection that are contained in the
+     @brief Returns the cell ids in this selection that are contained in the
             selected topology.
      @param n_mesh A Conduit node that contains the mesh.
      @param[out] element_ids A vector of element ids that are selected.
@@ -351,9 +351,35 @@ protected:
      */
     conduit::Node *extract(size_t idx, const conduit::Node &n_mesh) const;
 
+    void create_new_uniform_coordset(const conduit::Node &n_coordset,
+             const index_t start[3],
+             const index_t end[3],
+             conduit::Node &n_new_coordset) const;
+
+    void create_new_rectilinear_coordset(const conduit::Node &n_coordset,
+             const index_t start[3],
+             const index_t end[3],
+             conduit::Node &n_new_coordset) const;
+
     void create_new_explicit_coordset(const conduit::Node &n_coordset,
              const std::vector<index_t> &vertex_ids,
              conduit::Node &n_new_coordset) const;
+
+    void create_new_uniform_topo(const conduit::Node &n_topo,
+             const std::string &csname,
+             const index_t start[3],
+             conduit::Node &n_new_topo) const;
+
+    void create_new_rectilinear_topo(const conduit::Node &n_topo,
+             const std::string &csname,
+             const index_t start[3],
+             conduit::Node &n_new_topo) const;
+
+    void create_new_structured_topo(const conduit::Node &n_topo,
+             const std::string &csname,
+             const index_t start[3],
+             const index_t end[3],
+             conduit::Node &n_new_topo) const;
 
     /**
      @brief Creates a new unstructured topology from a subset of the 
