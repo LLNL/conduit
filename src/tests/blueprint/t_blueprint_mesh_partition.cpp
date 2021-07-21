@@ -23,7 +23,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-//#define GENERATE_BASELINES
+#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -449,6 +449,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -484,23 +485,136 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 {
     test_logical_selection_3d("structured", "structured_logical_3d");
 }
-
-#if 0
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, uniform_logical_3d)
-{
-    test_logical_selection_3d("uniform");
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, uniform_rectilinear)
-{
-    test_logical_selection("rectilinear");
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, uniform_structured)
-{
-    test_logical_selection("structured");
-}
 #endif
+
+//-----------------------------------------------------------------------------
+void
+test_explicit_selection_2d(const std::string &topo, const std::string &base)
+{
+    conduit::utils::set_error_handler(tmp_err_handler);
+
+    // Make 10x10x1 cell mesh.
+    conduit::Node input, output, options, msg;
+    conduit::index_t vdims[] = {11,11,1};
+    conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
+    // Override with int64 because YAML loses int/uint information.
+    conduit::int64 i100 = 100;
+    input["state/cycle"].set(i100);
+
+    conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
+
+    // Select the whole thing. Check output==input
+    options.reset();
+    {
+        std::vector<conduit::index_t> elem;
+        for(conduit::index_t i = 0; i < nelem; i++)
+            elem.push_back(i);
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "explicit";
+        sel1["elements"] = elem;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b00 = baseline_file(base + "_00");
+    save_visit(b00, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b00, output);
+#else
+    EXPECT_EQ(compare_baseline(b00, output), true);
+#endif
+
+    // Select half of the cells.
+    options.reset();
+    {
+        auto n2 = nelem / 2;
+        std::vector<conduit::index_t> elem;
+        for(conduit::index_t i = 0; i < n2; i++)
+            elem.push_back(i);
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "explicit";
+        sel1["elements"] = elem;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b01 = baseline_file(base + "_01");
+    save_visit(b01, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b01, output);
+#else
+    EXPECT_EQ(compare_baseline(b01, output), true);
+#endif
+
+    // Select a checkerboard of cells
+    options.reset();
+    {
+        std::vector<conduit::index_t> elem;
+        conduit::index_t ci = 0;
+        for(conduit::index_t j = 0; j < vdims[1]-1; j++)
+        for(conduit::index_t i = 0; i < vdims[0]-1; i++)
+        {
+            if((i+j) % 2 == 0)
+                elem.push_back(ci);
+            ci++;
+        }
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "explicit";
+        sel1["elements"] = elem;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b02 = baseline_file(base + "_02");
+    save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b02, output);
+#else
+    EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
+
+    // Make 2 selections
+    options.reset();
+    {
+        auto n2 = nelem / 2;
+        std::vector<conduit::index_t> elem, elem2;
+        for(conduit::index_t i = 0; i < nelem; i++)
+        {
+            if(i < n2)
+                elem.push_back(i);
+            else
+                elem2.push_back(i);
+        }
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "explicit";
+        sel1["elements"] = elem;
+        conduit::Node &sel2 = options["selections"].append();
+        sel2["type"] = "explicit";
+        sel2["elements"] = elem2;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 2);
+    std::string b03 = baseline_file(base + "_03");
+    save_visit(b03, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b03, output);
+#else
+    EXPECT_EQ(compare_baseline(b03, output), true);
+#endif
+
+    // Take previous 2 domain selection and partition it into 5 domains.
+    options["target"] = 5;
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 5);
+    std::string b04 = baseline_file(base + "_04");
+    save_visit(b04, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b04, output);
+#else
+    EXPECT_EQ(compare_baseline(b04, output), true);
+#endif
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
+{
+    test_explicit_selection_2d("uniform", "uniform_explicit_2d");
+}
