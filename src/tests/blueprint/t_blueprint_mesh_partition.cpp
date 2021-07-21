@@ -375,8 +375,6 @@ TEST(conduit_blueprint_mesh_partition, uniform_structured)
 //-----------------------------------------------------------------------------
 //-- Point merge
 //-----------------------------------------------------------------------------
-#include "../../libs/blueprint/pointmerge.hpp"
-
 TEST(conduit_blueprint_mesh_partition, point_merge)
 {
 #if 1
@@ -393,12 +391,11 @@ TEST(conduit_blueprint_mesh_partition, point_merge)
     // Test that 1 coordset in gives the exact same coordset out
     {
         std::cout << "Case \"one\": " << std::endl;
-        conduit::blueprint::point_merge pm;
-        std::vector<conduit::Node*> one;
+        std::vector<const conduit::Node*> one;
         one.push_back(&braid_coordset);
 
         conduit::Node output;
-        pm.execute(one, tolerance, output);
+        conduit::blueprint::mesh::coordset::merge(one, output, tolerance);
 
         conduit::Node info;
         bool different = braid_coordset.diff(output["coordsets/coords"], info);
@@ -413,12 +410,11 @@ TEST(conduit_blueprint_mesh_partition, point_merge)
     // Test that two identical coordsets create the same coordset
     {
         std::cout << "Case \"same\": " << std::endl;
-        conduit::blueprint::point_merge pm;
-        std::vector<conduit::Node*> same;
+        std::vector<const conduit::Node*> same;
         same.push_back(&braid_coordset); same.push_back(&braid_coordset);
         
         conduit::Node output;
-        pm.execute(same, tolerance, output);
+        conduit::blueprint::mesh::coordset::merge(same, output, tolerance);
 
         conduit::Node info;
         bool different = braid_coordset.diff(output["coordsets/coords"], info);
@@ -437,12 +433,11 @@ TEST(conduit_blueprint_mesh_partition, point_merge)
     // Test that two different coordsets create the union of their coordinates
     {
         std::cout << "Case \"different\": " << std::endl;
-        conduit::blueprint::point_merge pm;
-        std::vector<conduit::Node*> different;
+        std::vector<const conduit::Node*> different;
         different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
         
         conduit::Node output;
-        pm.execute(different, tolerance, output);
+        conduit::blueprint::mesh::coordset::merge(different, output, tolerance);
 
         conduit::Node info;
         bool is_different0 = different[0]->diff(output["coordsets/coords"], info);
@@ -485,8 +480,7 @@ pointmaps:
         std::cout << "Case \"multidomain\": " << std::endl;
         conduit::Node spiral;
         conduit::blueprint::mesh::examples::spiral(4, spiral);
-        conduit::blueprint::point_merge pm;
-        std::vector<conduit::Node*> multidomain;
+        std::vector<const conduit::Node*> multidomain;
 
         const conduit::index_t ndom = spiral.number_of_children();
         for(conduit::index_t i = 0; i < ndom; i++)
@@ -496,7 +490,7 @@ pointmaps:
         }
         
         conduit::Node output;
-        pm.execute(multidomain, tolerance, output);
+        conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
 
         static const std::string baseline =
 R"(coordsets: 
@@ -528,8 +522,7 @@ pointmaps:
         std::cout << "Case \"multidomain2\": " << std::endl;
         conduit::Node spiral;
         conduit::blueprint::mesh::examples::spiral(8, spiral);
-        conduit::blueprint::point_merge pm;
-        std::vector<conduit::Node*> multidomain;
+        std::vector<const conduit::Node*> multidomain;
 
         const conduit::index_t ndom = spiral.number_of_children();
         for(conduit::index_t i = 0; i < ndom; i++)
@@ -539,7 +532,7 @@ pointmaps:
         }
         
         conduit::Node output;
-        pm.execute(multidomain, tolerance, output);
+        conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
 #if 1
         static const std::string baseline =
 R"(coordsets: 

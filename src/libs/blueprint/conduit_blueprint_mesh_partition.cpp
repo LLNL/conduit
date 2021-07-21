@@ -23,10 +23,14 @@
 #include <memory>
 #include <set>
 #include <vector>
+#include <cstddef>
+#include <type_traits>
+#include <map>
 
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
+#include "conduit_node.hpp"
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
@@ -2189,6 +2193,1366 @@ partitioner::communicate_chunks(const std::vector<partitioner::chunk> &chunks,
     }
 }
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::coordset --
+//-----------------------------------------------------------------------------
+namespace coordset
+{
+
+#define DEBUG_POINT_MERGE
+#ifndef DEBUG_POINT_MERGE
+#define PM_DEBUG_PRINT(stream)
+#else
+#define PM_DEBUG_PRINT(stream) do { std::cerr << stream; } while(0)
+#endif
+
+/**
+ @brief The implmentation of conduit::blueprint::mesh::coordset::merge
+*/
+class point_merge
+{
+public:
+    void execute(const std::vector<const conduit::Node *> &coordsets, 
+                 double tolerance,
+                 Node &output);
+
+private:
+    enum class coord_system
+    {
+        cartesian,
+        cylindrical,
+        spherical
+    };
+
+    int examine_extents(std::vector<std::vector<float64>> &extents) const;
+
+    /**
+    @brief Useful when none of the coordsets overlap. Combines all coordinates
+        to one array.
+    */
+    void append_data(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t dimension);
+
+    /**
+    @brief Used when coordsets overlap. Combines all coordinates into
+        one array; merging points within tolerance.
+    */
+    void merge_data(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t, double tolerance);
+
+    void create_output(index_t dimension, Node &output) const;
+
+    /**
+    @brief Iterates the coordinates in the given coordinate set,
+        invoking the given lambda function with the signature
+        void (float64 *point, index_t dim)
+    NOTE: It will always be valid to index the "point" as if its
+        "dim" was 3. For example if the original data was only 2D then
+        point[2] will be 0 and dim will be 2.
+    */
+    template<typename Func>
+    void iterate_coordinates(const Node &coordset, Func &&func);
+
+    /**
+    @brief Determines how many points there are and reserves space in member vectors
+        new_points and old_to_new_ids
+    @return npoints*dimension
+    */
+    index_t reserve_vectors(const std::vector<Node> &coordsets, index_t dimension);
+
+    /**
+    @brief The simple (slow) approach to merging the data based off distance.
+    */
+    void simple_merge_data(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t dimension,
+        double tolerance);
+
+    void spatial_search_merge(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t dimension,
+        double tolerance);
+
+    void truncate_merge(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t dimension, double tolerance);
+
+    static void xyz_to_rtp(double x, double y, double z, double &out_r, double &out_t, double &out_p);
+    // TODO
+    static void xyz_to_rz (double x, double y, double z, double &out_r, double &out_z);
+
+    // TODO
+    static void rz_to_xyz (double r, double z, double &out_x, double &out_y, double &out_z);
+    // TODO
+    static void rz_to_rtp (double r, double z, double &out_r, double &out_t, double &out_p);
+
+    static void rtp_to_xyz(double r, double t, double p, double &out_x, double &out_y, double &out_z);
+    // TODO
+    static void rtp_to_rz (double r, double t, double p, double &out_r, double &out_z);
+
+    static void translate_system(coord_system in_system, coord_system out_system,
+        float64 p0, float64 p1, float64 p2, float64 &out_p1, float64 &out_p2, float64 &out_p3);
+
+    /**
+    @brief Returns the axis names for the given coordinate system
+    */
+    static const std::vector<std::string> &get_axes_for_system(coord_system);
+
+    coord_system out_system;
+
+    // Outputs
+    std::vector<std::vector<index_t>> old_to_new_ids;
+    std::vector<float64> new_coords;
+};
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::coordset::utils --
+//-----------------------------------------------------------------------------
+namespace utils
+{
+
+/**
+ @brief A simple vector struct to be used by the kdtree
+*/
+template<typename T, size_t Size>
+struct vector
+{
+    using this_type = vector<T, Size>;
+    using data_type = std::array<T, Size>;
+    using value_type = T;
+private:
+    // Used to alias vector data
+    template<size_t Index>
+    struct accessor
+    {
+        data_type data;
+
+        constexpr operator T() const
+        {
+            static_assert(Index < Size, "Invalid access into data.");
+            return data[Index];
+        }
+
+        T operator=(T v)
+        {
+            static_assert(Index < Size, "Invalid access into data.");
+            return data[Index] = v;
+        }
+    };
+
+public:
+    // Possible to access vector data with x/y/z
+    union
+    {
+        data_type    v;
+        accessor<0>  x;
+        accessor<1>  y;
+        accessor<2>  z;
+    };
+
+    constexpr size_t size() const 
+    {
+        return Size;
+    }
+
+    T operator[](size_t index) const
+    {
+        return v[index];
+    }
+
+    T &operator[](size_t index) 
+    {
+        return v[index];
+    }
+
+    void zero() 
+    {
+        set_all(0);
+    }
+
+    void set_all(T val)
+    {
+        for(size_t i = 0u; i < size(); i++)
+        {
+            v[i] = val;
+        }
+    }
+
+    // NOTE: Defining operator= makes this non-POD type
+    // this_type operator=(const this_type &other)
+    // {
+    //     for(size_t i = 0u; i < size(); i++)
+    //     {
+    //         v[i] = other[i];
+    //     }
+    //     return *this;
+    // }
+
+    void copy(const this_type &other)
+    {
+        for(auto i = 0u; i < size(); i++)
+            other.v[i] = v[i];
+    }
+
+    bool operator<=(const this_type &other) const
+    {
+        bool retval = true;
+        for(size_t i = 0u; i < size(); i++)
+            retval &= v[i] <= other[i];
+        return retval;
+    }
+
+    bool operator>=(const this_type &other) const
+    {
+        bool retval = true;
+        for(size_t i = 0u; i < size(); i++)
+            retval &= v[i] >= other[i];
+        return retval;
+    }
+
+    this_type operator+(T scalar) const
+    {
+        this_type retval;
+        for(size_t i = 0u; i < size(); i++)
+        {
+            retval[i] = v[i] + scalar;
+        }
+        return retval;
+    }
+
+    this_type operator-(T scalar) const
+    {
+        this_type retval;
+        for(size_t i = 0u; i < size(); i++)
+        {
+            retval[i] = v[i] - scalar;
+        }
+        return retval;
+    }
+
+    double distance2(const this_type &other) const
+    {
+        double d2 = 0.;
+        for(size_t i = 0u; i < size(); i++)
+        {
+            const auto diff = other[i] - v[i];
+            d2 += (diff*diff);
+        }
+        return d2;
+    }
+
+    double distance(const this_type &other) const
+    {
+        return std::sqrt(distance2(other));
+    }
+};
+
+/**
+ @brief A simple bounding box struct to be used by the kdtree
+*/
+template<typename VectorType>
+struct bounding_box
+{
+    using value_type = typename VectorType::value_type;
+    using data_type = typename VectorType::data_type;
+    using T = value_type;
+    VectorType min;
+    VectorType max;
+
+    bool contains(const VectorType &point) const
+    {
+        return (point >= min && point <= max);
+    }
+
+    bool contains(const VectorType &point, double tolerance) const
+    {
+        return (point >= (min - tolerance) && point <= (max + tolerance));
+    }
+
+    void expand(const VectorType &point)
+    {
+        for(size_t i = 0u; i < min.size(); i++)
+        {
+            min[i] = std::min(min[i], point[i]);
+            max[i] = std::max(max[i], point[i]);
+        }
+    }
+};
+
+using vec2f = vector<float,2>;
+using vec3f = vector<float,3>;
+using vec2  = vector<double,2>;
+using vec3  = vector<double,3>;
+
+/**
+ @brief A spatial search structure used to merge points within a given tolerance
+*/
+template<typename VectorType, typename DataType>
+class kdtree
+{
+private:
+    using Float = typename VectorType::value_type;
+    // using IndexType = conduit_index_t;
+public:
+    constexpr static auto dimension = std::tuple_size<typename VectorType::data_type>::value;
+    using vector_type = VectorType;
+    using data_type = DataType;
+    using IndexType = size_t;
+
+    template<typename Precision, size_t D>
+    struct kdnode
+    {
+        using node = kdnode<Precision, D>;
+        std::vector<VectorType> points;
+        std::vector<DataType> data;
+        bounding_box<VectorType> bb;
+        node *left{nullptr};
+        node *right{nullptr};
+        Float split{0.0};
+        unsigned int dim;
+        bool has_split{false};
+    };
+    using node = kdnode<Float, dimension>;
+    using pair = std::pair<std::pair<node*,DataType&>, bool>;
+
+    kdtree() = default;
+    ~kdtree()
+    { 
+        const auto lambda = [](node *node, unsigned int)
+        {
+            delete node;
+        };
+        if(root) { traverse_lrn(lambda, root); }
+    }
+
+    /**
+    @brief Searches the tree for the given point using
+            tolerance as an acceptable distance to merge like-points.
+    */
+    DataType *find_point(const VectorType &point, Float tolerance)
+    {
+        DataType *retval = nullptr;
+        if(!root)
+        {
+            retval = nullptr;
+        }
+        else if(root->bb.contains(point, tolerance))
+        {
+            retval = find_point(root, 0, point, tolerance);
+        }
+        return retval;
+    }
+
+    void insert(const VectorType &point, const DataType &r)
+    {
+        scratch.reserve(point_vec_size*2);
+        if(!root)
+        {
+            root = create_node(point, r);
+            npoints++;
+        }
+        else
+        {
+            insert(root, 0, point, r);
+        }
+    }
+
+    IndexType size()  const { return npoints; }
+    IndexType nodes() const { return nnodes; }
+    IndexType depth() const { return tree_depth; }
+
+    void set_bucket_size(IndexType n) { point_vec_size = n; }
+    IndexType get_bucket_size() const { return point_vec_size; }
+
+    template<typename Func>
+    void iterate_points(Func &&func)
+    {
+        IndexType point_id = 0u;
+        const auto lambda = [&](node *n, unsigned int) {
+            for(IndexType i = 0u; i < n->points.size(); i++)
+            {
+                func(point_id, n->points[i], n->data[i]);
+                point_id++;
+            }
+        };
+        if(root) { traverse_lnr(lambda, root); }
+    }
+
+    template<typename Func>
+    void traverse_nodes(Func &&func) 
+    {
+        if(root) { traverse_lnr(func, root); }
+    }
+
+private:
+    // Create an empty node
+    node *create_node()
+    {
+        node *newnode = new node;
+        newnode->points.reserve(point_vec_size);
+        newnode->data.reserve(point_vec_size);
+        newnode->bb.min[0] = std::numeric_limits<Float>::max();
+        newnode->bb.min[1] = std::numeric_limits<Float>::max();
+        newnode->bb.min[2] = std::numeric_limits<Float>::max();
+        newnode->bb.max[0] = std::numeric_limits<Float>::lowest();
+        newnode->bb.max[1] = std::numeric_limits<Float>::lowest();
+        newnode->bb.max[2] = std::numeric_limits<Float>::lowest();
+        newnode->left = nullptr;
+        newnode->right = nullptr;
+        newnode->split = 0;
+        newnode->dim = 0;
+        newnode->has_split = false;
+        nnodes++;
+        return newnode;
+    }
+
+    // Create a node with initial values inserted
+    node *create_node(VectorType loc, const DataType &r)
+    {
+        node *newnode = create_node();
+        node_add_data(newnode, loc, r);
+        return newnode;
+    }
+
+    static void node_add_data(node *n, const VectorType &p, const DataType &d)
+    {
+        n->bb.expand(p);
+        n->points.push_back(p);
+        n->data.push_back(d);
+    }
+
+    /**
+    @brief Splits the given node and inserts point/data into the proper child
+    */
+    void node_split(node *n, const VectorType &point, const DataType &data)
+    {
+        // Determine which dim to split on
+        IndexType dim = 0;
+        {
+            Float longest_dim = std::numeric_limits<Float>::lowest();
+            for(IndexType i = 0; i < n->bb.min.size(); i++)
+            {
+                const Float dim_len = n->bb.max[i] - n->bb.min[i];
+                if(longest_dim < dim_len)
+                {
+                    dim = i;
+                    longest_dim = dim_len;
+                }
+            }
+            n->dim = dim;
+        }
+
+        // Determine what value on the dim to split on
+        {
+            scratch.clear();
+            for(IndexType i = 0; i < point_vec_size; i++)
+            {
+                scratch.push_back(i);
+            }
+            std::sort(scratch.begin(), scratch.end(), [=](IndexType i0, IndexType i1) {
+                return n->points[i0][dim] < n->points[i1][dim];
+            });
+
+            // If the index stored in scratch is point_vec_size
+            const IndexType scratch_idx = scratch.size() / 2;
+            const IndexType median_idx = scratch[scratch_idx];
+            Float median = n->points[median_idx][dim];
+            // Check if the new point is our actual median
+            if(point[dim] > n->points[scratch[scratch_idx-1]][dim] && point[dim] < median)
+            {
+                median = point[dim];
+            }
+
+            n->split = median;
+            n->left = create_node();
+            n->right = create_node();
+            n->has_split = true;
+
+            for(IndexType i = 0; i < point_vec_size; i++)
+            {
+                const Float temp = n->points[i][dim];
+                if(temp < median)
+                {
+                    node_add_data(n->left, n->points[i], n->data[i]);
+                }
+                else
+                {
+                    node_add_data(n->right, n->points[i], n->data[i]);
+                }
+            }
+
+            if(point[dim] < median)
+            {
+                node_add_data(n->left, point, data);
+            }
+            else
+            {
+                node_add_data(n->right, point, data);
+            }
+
+            // Clear the data from the parent node
+            std::vector<VectorType>{}.swap(n->points);
+            std::vector<DataType>{}.swap(n->data);
+        }
+    }
+
+    DataType *find_point(node *current, unsigned int depth, const VectorType &point, Float tolerance)
+    {
+        // If we got here we know that the point was in this node's bounding box
+        DataType *retval = nullptr;
+
+        // This node has children
+        if(current->has_split)
+        {
+            const bool left_contains = current->left->bb.contains(point, tolerance);
+            const bool right_contains = current->right->bb.contains(point, tolerance);
+            if(!left_contains && !right_contains)
+            {
+                // ERROR! This shouldn't happen, the tree must've been built improperly
+                retval = nullptr;
+            }
+            else if(left_contains)
+            {
+                // Traverse left
+                retval = find_point(current->left, depth+1, point, tolerance);
+            }
+            else if(right_contains)
+            {
+                // Traverse right
+                retval = find_point(current->right, depth+1, point, tolerance);
+            }
+            else // (left_contains && right_contains)
+            {
+                // Rare, but possible due to tolerance.
+                // Check if the left side has the point without tolerance
+                const bool pref_left = current->left->bb.contains(point);
+                retval = (pref_left)
+                    ? find_point(current->left, depth+1, point, tolerance)
+                    : find_point(current->right, depth+1, point, tolerance);
+                // We tried the preferred side but it didn't contain the point
+                if(retval == nullptr)
+                {
+                    retval = (pref_left)
+                        ? find_point(current->right, depth+1, point, tolerance)
+                        : find_point(current->left, depth+1, point, tolerance);
+                }
+            }
+        }
+        else
+        {
+            // This is a leaf node.
+            const auto t2 = tolerance * tolerance;
+            const IndexType N = current->points.size();
+            IndexType idx = 0;
+            for(idx = 0; idx < N; idx++)
+            {
+                const auto &p = current->points[idx];
+                const auto dist2 = point.distance2(p);
+                if(dist2 <= t2)
+                {
+                    break;
+                }
+            }
+
+            // Did not find point
+            if(idx == N)
+            {
+                retval = nullptr;
+            }
+            else
+            {
+                retval = &current->data[idx];
+            }
+        }
+        return retval;
+    }
+
+    void insert(node *current, unsigned int depth, const VectorType &loc, const DataType &r)
+    {
+        // No matter what we need to add this point to the current bounding box
+        current->bb.expand(loc);
+        
+        // This node has children
+        if(current->has_split)
+        {
+            const auto dim = current->dim;
+            if(loc[dim] < current->split)
+            {
+                // Go left
+                insert(current->left, depth+1, loc, r);
+            }
+            else // (loc[dim] >= current->split)
+            {
+                // Go right
+                insert(current->right, depth+1, loc, r);
+            }
+        }
+        else
+        {
+            // This is a leaf node
+            // Determine if the node needs to be split
+            if((current->points.size()) == point_vec_size)
+            {
+                // This will add the point and data to the correct child
+                node_split(current, loc, r);
+                tree_depth = std::max(tree_depth, (IndexType)depth+1);
+                npoints++;
+            }
+            else
+            {
+                // This node does not need to be split
+                node_add_data(current, loc, r);
+                npoints++;
+            }
+        }
+    }
+
+    template<typename Func>
+    void traverse_lnr(Func &&func, node *node, unsigned int depth = 0)
+    {
+        if(node->left) { traverse_lnr(func, node->left, depth + 1); }
+        func(node, depth);
+        if(node->right) { traverse_lnr(func, node->right, depth + 1); }
+    }
+
+    template<typename Func>
+    void traverse_lrn(Func &&func, node *node, unsigned int depth = 0)
+    {
+        if(node->left) { traverse_lrn(func, node->left, depth + 1); }
+        if(node->right) { traverse_lrn(func, node->right, depth + 1); }
+        func(node, depth);
+    }
+
+    // Keep track of tree performance
+    IndexType npoints{0u};
+    IndexType nnodes{0u};
+    IndexType tree_depth{0u};
+
+    node *root{nullptr};
+    IndexType point_vec_size{32};
+    std::vector<IndexType> scratch;
+};
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::coordset::utils --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+point_merge::xyz_to_rtp(double x, double y, double z, double &out_r, double &out_t, double &out_p)
+{
+    const auto r = std::sqrt(x*x + y*y + z*z);
+    out_r = r;
+    out_t = std::acos(r / z);
+    out_p = std::atan(y / x);
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::rtp_to_xyz(double r, double t, double p, double &out_x, double &out_y, double &out_z)
+{
+    out_x = r * std::cos(p) * std::sin(t);
+    out_y = r * std::sin(p) * std::sin(t);
+    out_z = r * std::cos(t);
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::translate_system(coord_system in_system, coord_system out_system,
+        float64 p0, float64 p1, float64 p2, 
+        float64 &out_p0, float64 &out_p1, float64 &out_p2)
+{
+    // TODO: Handle rz
+    switch(out_system)
+    {
+    case coord_system::cartesian:
+        switch(in_system)
+        {
+        case coord_system::cylindrical:
+            // TODO
+            break;
+        case coord_system::spherical:
+            rtp_to_xyz(p0,p1,p2, out_p0,out_p1,out_p2);
+            break;
+        default:    // case coord_system:: cartesian Can't happen
+            out_p0 = p0;
+            out_p1 = p1;
+            out_p2 = p2;
+            break;
+        }
+        break;
+    case coord_system::cylindrical:
+        switch(in_system)
+        {
+        case coord_system::cartesian:
+            // TODO
+            break;
+        case coord_system::spherical:
+            // TODO
+            break;
+        default:
+            out_p0 = p0;
+            out_p1 = p1;
+            out_p2 = p2;
+            break;
+        }
+        break;
+    case coord_system::spherical:
+        switch(in_system)
+        {
+        case coord_system::cartesian:
+            xyz_to_rtp(p0,p1,p2, out_p0,out_p1,out_p2);
+            break;
+        case coord_system::cylindrical:
+            // TODO
+            break;
+        default:
+            out_p0 = p0;
+            out_p1 = p1;
+            out_p2 = p2;
+            break;
+        }
+        break;
+    }
+}
+
+//-----------------------------------------------------------------------------
+const std::vector<std::string> &
+point_merge::get_axes_for_system(coord_system cs)
+{
+    const std::vector<std::string> *retval = &mesh::utils::CARTESIAN_AXES;
+    switch(cs)
+    {
+    case coord_system::cylindrical:
+        retval = &mesh::utils::CYLINDRICAL_AXES;
+        break;
+    case coord_system::spherical:
+        retval = &mesh::utils::SPHERICAL_AXES;
+        break;
+    case coord_system::cartesian: // Do nothing
+        break;
+    }
+    return *retval;
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::execute(const std::vector<const Node *> &coordsets, 
+                     double tolerance,
+                     Node &output)
+{
+    if(coordsets.empty())
+        return;
+    
+    if(coordsets.size() == 1)
+    {
+        if(coordsets[0] != nullptr)
+        {
+            output.reset();
+            output["coordsets/coords"] = *coordsets[0];
+        }
+        return;
+    }
+
+    // What do we need to know about the coordsets before we execute the algorithm
+    //  - Systems
+    //  - Types
+    //  - Dimension
+
+    std::vector<Node> working_sets;
+    std::vector<coord_system> systems;
+    std::vector<std::vector<float64>> extents;
+    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0;
+    index_t dimension = 0;
+    for(size_t i = 0u; i < coordsets.size(); i++)
+    {
+        const Node *cset = coordsets[i];
+        if(!cset)
+        {
+            // ERROR! You passed me a nullptr for a coordset!
+            continue;
+        }
+
+        if(!cset->has_child("type"))
+        {
+            // Error! Invalid coordset!
+            continue;
+        }
+        const std::string type = cset->child("type").as_string();
+
+        // Track some information about each set
+        dimension = std::max(dimension, mesh::utils::coordset::dims(*cset));
+        extents.push_back(mesh::utils::coordset::extents(*cset));
+
+        // Translate coordsystem string to enum
+        std::string system = mesh::utils::coordset::coordsys(*cset);
+        if(system == "cylindrical")
+        {
+            ncylindrical++;
+            systems.push_back(coord_system::cylindrical);
+        }
+        else if(system == "spherical")
+        {
+            nspherical++;
+            systems.push_back(coord_system::spherical);
+        }
+        else // system == cartesian
+        {
+            ncartesian++;
+            systems.push_back(coord_system::cartesian);
+        }
+
+        // We only work on explicit sets
+        working_sets.emplace_back();
+        if(type == "uniform")
+        {
+            mesh::coordset::uniform::to_explicit(*cset, working_sets.back());
+        }
+        else if(type == "rectilinear")
+        {
+            mesh::coordset::rectilinear::to_explicit(*cset, working_sets.back());
+        }
+        else // type == "explicit"
+        {
+            working_sets.back() = *cset;
+        }
+    }
+
+    // Determine best output coordinate system
+    // Prefer cartesian, if they are all the same use that coordinate system
+    if(ncartesian > 0 || (ncylindrical > 0 && nspherical > 0))
+    {
+        out_system = coord_system::cartesian;
+    }
+    else if(nspherical > 0)
+    {
+        out_system = coord_system::spherical;
+    }
+    else if(ncylindrical > 0)
+    {
+        out_system = coord_system::cylindrical;
+    }
+    else
+    {
+        // Error! Unhandled case!
+        std::cerr << "UNHANDLED CASE " << ncartesian << " " << ncylindrical << " " << nspherical << std::endl;
+        return;
+    }
+
+    int noverlapping_sets = examine_extents(extents);
+    PM_DEBUG_PRINT("noverlapping sets: " << noverlapping_sets << std::endl);
+    if(noverlapping_sets == 0)
+    {
+        // We don't need to do any kind of merging
+        append_data(working_sets, systems, dimension);
+    }
+    else
+    {
+        merge_data(working_sets, systems, dimension, tolerance);
+    }
+
+    create_output(dimension, output);
+}
+
+//-----------------------------------------------------------------------------
+int
+point_merge::examine_extents(std::vector<std::vector<float64>> &extents) const
+{
+    const auto overlap = [](const float64 box1[6], const float64 box2[6]) -> bool {
+        bool retval = true;
+        for(auto i = 0u; i < 3u; i++)
+        {
+            const auto idx  = i * 2;
+            const auto min1 = box1[idx];
+            const auto max1 = box1[idx+1];
+            const auto min2 = box2[idx];
+            const auto max2 = box2[idx+1];
+            retval &= (max1 >= min2 && max2 >= min1);
+        }
+        return retval;
+    };
+
+    int retval = 0;
+    for(auto i = 0u; i < extents.size(); i++)
+    {
+        float64 box1[6] = {0.,0.,0.,0.,0.,0.};
+        const auto &ext1 = extents[i];
+        for(auto j = 0u; j < ext1.size(); j++)
+        {
+            box1[j] = ext1[j];
+        }
+
+        for(auto j = 0u; j < extents.size(); j++)
+        {
+            if(i == j) { continue; }
+            const auto ext2 = extents[j];
+            float64 box2[6] = {0.,0.,0.,0.,0.,0.};
+            for(auto k = 0u; k < ext2.size(); k++)
+            {
+                box2[k] = ext2[k];
+            }
+
+            retval += overlap(box1, box2);
+        }
+    }
+    return retval;
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::append_data(const std::vector<Node> &coordsets,
+    const std::vector<coord_system> &systems, index_t dimension)
+{
+    reserve_vectors(coordsets, dimension);
+
+    index_t newid = 0;
+    for(size_t i = 0u; i < coordsets.size(); i++)
+    {
+        const auto append = [&](float64 *p, index_t)
+        {
+            old_to_new_ids[i].push_back(newid);
+            for(auto i = 0; i < dimension; i++)
+            {
+                new_coords.push_back(p[i]);
+            }
+            newid++;
+        };
+        
+        const auto translate_append = [&](float64 *p, index_t d) {
+            translate_system(systems[i], out_system,
+                p[0], p[1], p[2], p[0], p[1], p[2]);
+            append(p, d);
+        };
+
+
+        if(systems[i] == out_system)
+        {
+            iterate_coordinates(coordsets[i], append);
+        }
+        else
+        {
+            iterate_coordinates(coordsets[i], translate_append);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::merge_data(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t dimension, double tolerance)
+{
+#define USE_SPATIAL_SEARCH_MERGE
+#if   defined(USE_TRUNCATE_PRECISION_MERGE)
+    truncate_merge(coordsets, systems, dimension, tolerance);
+#elif defined(USE_SPATIAL_SEARCH_MERGE)
+    spatial_search_merge(coordsets, systems, dimension, tolerance);
+#else
+    simple_merge_data(coordsets, systems, dimension, tolerance);
+#endif
+#undef USE_SPATIAL_SEARCH_MERGE
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::create_output(index_t dimension, Node &output) const
+{
+    if(dimension < 0 || dimension > 3)
+    {
+        // ERROR! Invalid dimension!
+        return;
+    }
+    
+    output.reset();
+
+    // Add the new coordset
+    {
+        auto &coordset = output.add_child("coordsets");
+        auto &coords = coordset.add_child("coords");
+        coords["type"] = "explicit";
+        auto &values = coords.add_child("values");
+        
+        // Define the node schema for coords
+        Schema s;
+        const auto npoints = new_coords.size() / dimension;
+        const index_t stride = sizeof(float64) * dimension;
+        const index_t size = sizeof(float64);
+        const auto &axes = get_axes_for_system(out_system);
+        for(auto i = 0; i < dimension; i++)
+        {
+            s[axes[i]].set(DataType::float64(npoints,i*size,stride));
+        }
+
+        // Copy out coordinate values
+        values.set(s);
+        float64_array coord_arrays[3];
+        for(auto i = 0; i < dimension; i++)
+        {
+            coord_arrays[i] = values[axes[i]].value();
+        }
+
+        index_t point_id = 0;
+        for(auto itr = new_coords.begin(); itr != new_coords.end();)
+        {
+            for(auto d = 0; d < dimension; d++)
+            {
+                coord_arrays[d][point_id] = *itr++;
+            }
+            point_id++;
+        }
+    }
+
+    // Add the pointmaps
+    {
+        auto &pointmaps = output["pointmaps"];
+        for(const auto &idmap : old_to_new_ids)
+        {
+            const auto size = idmap.size();
+            // Create the list entry
+            auto &ids = pointmaps.append();
+            ids.set(DataType::index_t(size));
+            // Copy the contents into the node
+            DataArray<index_t> ids_data = ids.value();
+            for(size_t i = 0u; i < size; i++)
+            {
+                ids_data[i] = idmap[i];
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+template<typename Func>
+void
+point_merge::iterate_coordinates(const Node &coordset, Func &&func)
+{
+    if(!coordset.has_child("type"))
+        return;
+
+    if(coordset["type"].as_string() != "explicit")
+        return;
+    
+    if(!coordset.has_child("values"))
+        return;
+    
+    const Node &coords = coordset["values"];
+
+    // Fetch the nodes for the coordinate values
+    const Node *xnode = coords.fetch_ptr("x");
+    const Node *ynode = nullptr, *znode = nullptr;
+    if(xnode)
+    {
+        // Cartesian
+        ynode = coords.fetch_ptr("y");
+        znode = coords.fetch_ptr("z");
+    }
+    else if((xnode = coords.fetch_ptr("r")))
+    {
+        if((ynode = coords.fetch_ptr("z")))
+        {
+            // Cylindrical
+        }
+        else if((ynode = coords.fetch_ptr("theta")))
+        {
+            // Spherical
+            znode = coords.fetch_ptr("phi");
+        }
+    }
+
+    // Iterate accordingly
+    float64 p[3] {0., 0., 0.};
+    if(xnode && ynode && znode)
+    {
+        // 3D
+        const auto xtype = xnode->dtype();
+        const auto ytype = ynode->dtype();
+        const auto ztype = znode->dtype();
+        // TODO: Handle different types
+        auto xarray = xnode->as_double_array();
+        auto yarray = ynode->as_double_array();
+        auto zarray = znode->as_double_array();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
+        {
+            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
+            func(p, 3);
+        }
+    }
+    else if(xnode && ynode)
+    {
+        // 2D
+        const auto xtype = xnode->dtype();
+        const auto ytype = ynode->dtype();
+        // TODO: Handle different types
+        auto xarray = xnode->as_double_array();
+        auto yarray = ynode->as_double_array();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
+        {
+            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
+            func(p, 2);
+        }
+    }
+    else if(xnode)
+    {
+        // 1D
+        const auto xtype = xnode->dtype();
+        // TODO: Handle different types
+        auto xarray = xnode->as_double_array();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
+        {
+            p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
+            func(p, 1);
+        }
+    }
+    else
+    {
+        // ERROR! No valid nodes passed.
+    }
+}
+
+//-----------------------------------------------------------------------------
+index_t
+point_merge::reserve_vectors(const std::vector<Node> &coordsets, index_t dimension)
+{
+    old_to_new_ids.reserve(coordsets.size());
+    index_t new_size = 0;
+    for(size_t i = 0u; i < coordsets.size(); i++)
+    {
+        const Node *values = coordsets[i].fetch_ptr("values");
+        index_t npts = 0;
+        if(values)
+        {
+            const Node *xnode = values->fetch_ptr("x");
+            if(!xnode)
+            {
+                xnode = values->fetch_ptr("r");
+            }
+
+            if(xnode)
+            {
+                npts = xnode->dtype().number_of_elements();
+            }
+        }        
+
+        old_to_new_ids.push_back({});
+        old_to_new_ids.back().reserve(npts);
+        new_size += npts*dimension;
+    }
+    new_coords.reserve(new_size);
+    return new_size;
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::simple_merge_data(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t dimension, double tolerance)
+{
+    PM_DEBUG_PRINT("Simple merging!" << std::endl);
+    reserve_vectors(coordsets, dimension);
+
+    const auto t2 = (tolerance*tolerance);
+    for(size_t i = 0u; i < coordsets.size(); i++)
+    {
+        const index_t end_check = (index_t)new_coords.size();
+        const Node &coordset = coordsets[i];
+        auto &idmap = old_to_new_ids[i];
+
+        // To be invoked on each coordinate
+        const auto merge = [&](float64 *p, index_t) {
+            for(index_t idx = 0; idx < end_check; idx += dimension)
+            {
+                float64 dist2 = 0.;
+                for(index_t d = 0; d < dimension; d++)
+                {
+                    const auto diff = p[d] - new_coords[idx+d];
+                    dist2 += (diff*diff);
+                }
+
+                // Within tolerance!
+                if(dist2 < t2)
+                {
+                    // idx / dim should truncate to the proper id
+                    idmap.push_back(idx / dimension);
+                    return;
+                }
+            }
+
+            // Did not find another point within tolerance
+            const auto newid = (index_t)(new_coords.size() / dimension);
+            idmap.push_back(newid);
+            for(index_t d = 0; d < dimension; d++)
+            {
+                new_coords.push_back(p[d]);
+            }
+        };
+
+        const auto translate_merge = [&](float64 *p, index_t d) {
+            translate_system(systems[i], coord_system::cartesian,
+                p[0], p[1], p[2], p[0], p[1], p[2]);
+            merge(p, d);
+        };
+
+        // Invoke the proper lambda on each coordinate
+        if(systems[i] != coord_system::cartesian)
+        {
+            iterate_coordinates(coordset, translate_merge);
+        }
+        else
+        {
+            iterate_coordinates(coordset, merge);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t dimension,
+        double tolerance)
+{
+    PM_DEBUG_PRINT("Spatial search merging!" << std::endl);
+    reserve_vectors(coordsets, dimension);
+
+    using namespace utils;
+    kdtree<vec3, index_t> point_records;
+    point_records.set_bucket_size(32);
+    for(size_t i = 0u; i < coordsets.size(); i++)
+    {
+        const auto &coordset = coordsets[i];
+
+        // To be invoked on every coordinate
+        const auto merge = [&](float64 *p, index_t) {
+            vec3 key;
+            key.v[0] = p[0]; key.v[1] = p[1]; key.v[2] = p[2];
+            const auto potential_id = new_coords.size() / dimension;
+            const index_t *existing_id = point_records.find_point(key, tolerance);
+            // Point wasn't already in the tree, insert it
+            if(!existing_id)
+            {
+                old_to_new_ids[i].push_back(potential_id);
+                for(index_t d = 0; d < dimension; d++)
+                {
+                    new_coords.push_back(p[d]);
+                }
+                // Store the point in the tree so we can look it up later
+                point_records.insert(key, potential_id);
+            }
+            else
+            {
+                // Point already existed in the tree, reference the known id
+                old_to_new_ids[i].push_back(*existing_id);
+            }
+        };
+
+        const auto translate_merge = [&](float64 *p, index_t d) {
+            translate_system(systems[i], coord_system::cartesian,
+                p[0], p[1], p[2], p[0], p[1], p[2]);
+            merge(p, d);
+        };
+
+        // Invoke the proper lambda on each coordinate
+        if(systems[i] != coord_system::cartesian)
+        {
+            iterate_coordinates(coordset, translate_merge);
+        }
+        else
+        {
+            iterate_coordinates(coordset, merge);
+        }
+    }
+
+    PM_DEBUG_PRINT("Number of points in tree " << point_records.size()
+        << ", depth of tree " << point_records.depth()
+        << ", nodes in tree " << point_records.nodes() << std::endl);
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::truncate_merge(const std::vector<Node> &coordsets,
+        const std::vector<coord_system> &systems, index_t dimension, double tolerance)
+{
+    PM_DEBUG_PRINT("Truncate merging!" << std::endl);
+    // Determine what to scale each value by
+    // TODO: Be dynamic
+    (void)tolerance;
+    double scale = 0.;
+    {
+        auto decimal_places = 4u;
+        static const std::array<double, 7u> lookup = {
+            1.,
+            (2u << 4),
+            (2u << 7),
+            (2u << 10),
+            (2u << 14),
+            (2u << 17),
+            (2u << 20)
+        };
+        if(decimal_places < lookup.size())
+        {
+            scale = lookup[decimal_places];
+        }
+        else
+        {
+            scale = lookup[6];
+        }
+    }
+
+    /*index_t size = */reserve_vectors(coordsets, dimension);
+
+    // Iterate each of the coordinate sets
+    using fp_type = int64;
+    using tup = std::tuple<fp_type, fp_type, fp_type>;
+    std::map<tup, index_t> point_records;
+
+    for(size_t i = 0u; i < coordsets.size(); i++)
+    {
+        const auto &coordset = coordsets[i];
+
+        // To be invoked on every coordinate
+        const auto merge = [&](float64 *p, index_t) {
+            tup key = std::make_tuple(
+                static_cast<fp_type>(std::round(p[0] * scale)),
+                static_cast<fp_type>(std::round(p[1] * scale)),
+                static_cast<fp_type>(std::round(p[2] * scale)));
+            auto res = point_records.insert({key, {}});
+            if(res.second)
+            {
+                const index_t id = (index_t)(new_coords.size() / dimension);
+                res.first->second = id;
+                old_to_new_ids[i].push_back(id);
+                for(index_t j = 0; j < dimension; j++)
+                {
+                    new_coords.push_back(p[j]);
+                }
+            }
+            else
+            {
+                old_to_new_ids[i].push_back(res.first->second);
+            }
+        };
+
+        const auto translate_merge = [&](float64 *p, index_t d) {
+            translate_system(systems[i], out_system,
+                p[0], p[1], p[2], p[0], p[1], p[2]);
+            merge(p, d);
+        };
+
+        // Invoke the proper lambda on each coordinate
+        if(systems[i] != out_system)
+        {
+            iterate_coordinates(coordset, translate_merge);
+        }
+        else
+        {
+            iterate_coordinates(coordset, merge);
+        }
+    }
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::coordset --
+//-----------------------------------------------------------------------------
+
 //-------------------------------------------------------------------------
 std::string
 partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
@@ -2414,6 +3778,19 @@ partition(const conduit::Node &n_mesh, const conduit::Node &options,
         output.reset();
         P.execute(output);
     }
+}
+
+namespace coordset
+{
+
+void CONDUIT_BLUEPRINT_API merge(const std::vector<const conduit::Node *> &coordsets,
+                                 conduit::Node &output,
+                                 double tolerance)
+{
+    point_merge pm;
+    pm.execute(coordsets, tolerance, output);
+}
+
 }
 
 }
