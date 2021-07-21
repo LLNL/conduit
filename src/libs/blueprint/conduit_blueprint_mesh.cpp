@@ -2961,6 +2961,257 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 }
 
 //-----------------------------------------------------------------------------
+namespace detail
+{
+    template<typename T, typename U> 
+    void 
+    map_field_to_generated_sides(Node &field_out, 
+                                 const Node &field, 
+                                 int num_shapes, 
+                                 const U *tri_to_poly)
+    {
+        T* values_array = field_out["values"].value();
+        const T* poly_field_data = field["values"].value();
+
+        for (int i = 0; i < num_shapes; i ++)
+        {
+            values_array[i] = poly_field_data[tri_to_poly[i]];
+        }
+    }
+
+    template<typename T>
+    void 
+    map_fields_to_generated_sides(const Node &fields_src,
+                                  const Node &d2smap,
+                                  const Node &topo_dest,
+                                  Node &fields_dest,
+                                  const std::vector<std::string> &field_names,
+                                  const std::string &field_prefix)
+    {
+        NodeConstIterator fields_itr = fields_src.children();
+        std::string topo = topo_dest.name();
+        bool no_field_names = field_names.empty();
+        int num_shapes;
+
+        if (topo_dest["elements/shape"].as_string() == "tet")
+        {
+            num_shapes = topo_dest["elements/connectivity"].dtype().number_of_elements() / 4;
+        }
+        else if (topo_dest["elements/shape"].as_string() == "tri")
+        {
+            num_shapes = topo_dest["elements/connectivity"].dtype().number_of_elements() / 3;
+        }
+        else
+        {
+            CONDUIT_ERROR(((std::string) "Bad shape in ").append(topo_dest["elements/shape"].as_string()));
+        }
+        
+        const T *tri_to_poly = d2smap["values"].value();
+
+        while(fields_itr.has_next())
+        {
+            const Node &field = fields_itr.next();
+            std::string field_name = fields_itr.name();
+
+            // check that the field is one of the selected fields specified in the options node
+            bool found = false;
+            if (no_field_names)
+            {
+                // we want to copy all fields if no field names were provided
+                found = true;
+            }
+            else
+            {
+                for (uint64 i = 0; i < field_names.size(); i ++)
+                {
+                    if (field_names[i] == field_name)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            // check that the current field uses the chosen topology
+            if (found && field["topology"].as_string() == topo)
+            {
+                Node &field_out = fields_dest[field_prefix + field_name];
+
+                if (field.has_child("association"))
+                {
+                    if (field["association"].as_string() != "element")
+                    {
+                        CONDUIT_ERROR("Vertex associated fields are not supported.");
+                    }
+                }
+
+                if (field.has_child("volume_dependent"))
+                {
+                    if (field["volume_dependent"].as_string() != "false")
+                    {
+                        CONDUIT_ERROR("Volume dependent fields are not supported.");
+                    }
+                }
+
+                NodeConstIterator itr = field.children();
+                while (itr.has_next())
+                {
+                    const Node &cld = itr.next();
+                    std::string cld_name = itr.name();
+
+                    if (cld_name != "values")
+                    {
+                        field_out[cld_name] = cld;
+                    }
+                }
+
+                if (field["values"].dtype().is_uint64())
+                {
+                    field_out["values"].set(conduit::DataType::uint64(num_shapes));
+                    map_field_to_generated_sides<uint64, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_uint32())
+                {
+                    field_out["values"].set(conduit::DataType::uint32(num_shapes));
+                    map_field_to_generated_sides<uint32, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_int64())
+                {
+                    field_out["values"].set(conduit::DataType::int64(num_shapes));
+                    map_field_to_generated_sides<int64, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_int32())
+                {
+                    field_out["values"].set(conduit::DataType::int32(num_shapes));
+                    map_field_to_generated_sides<int32, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_float64())
+                {
+                    field_out["values"].set(conduit::DataType::float64(num_shapes));
+                    map_field_to_generated_sides<float64, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_float32())
+                {
+                    field_out["values"].set(conduit::DataType::float32(num_shapes));
+                    map_field_to_generated_sides<float32, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else
+                {
+                    CONDUIT_ERROR("Unsupported field type in " << field["values"].dtype().to_yaml());
+                }
+            }
+            else
+            {
+                // if we couldn't find the field in the specified field_names, then we don't care;
+                // but if it was found, and we are here, then that means that the field we want
+                // uses the wrong topology
+                if (! no_field_names && found)
+                {
+                    CONDUIT_ERROR("field " + field_name + " does not use " + topo + ".");
+                }
+            }
+        }
+
+        Node &original_elements = fields_dest["original_element_ids"];
+        original_elements["topology"] = topo;
+        original_elements["association"] = "element";
+        original_elements["volume_dependent"] = "false";
+
+        d2smap["values"].to_uint32_array(original_elements["values"]);
+    }
+}
+
+void
+mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
+                                             conduit::Node &topo_dest,
+                                             conduit::Node &coordset_dest,
+                                             conduit::Node &fields_dest,
+                                             conduit::Node &s2dmap,
+                                             conduit::Node &d2smap,
+                                             const conduit::Node &options)
+{
+    std::string field_prefix = "";
+    std::vector<std::string> field_names;
+    const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
+
+    // check for existence of field prefix
+    if (options.has_child("field_prefix"))
+    {
+        if (options["field_prefix"].dtype().is_string())
+        {
+            field_prefix = options["field_prefix"].as_string();
+        }
+        else
+        {
+            CONDUIT_ERROR("field_prefix must be a string.");
+        }
+    }
+
+    // check for target field names
+    if (options.has_child("field_names"))
+    {
+        if (options["field_names"].dtype().is_string())
+        {
+            field_names.push_back(options["field_names"].as_string());
+        }
+        else if (options["field_names"].dtype().is_list())
+        {
+            NodeConstIterator itr = options["field_names"].children();
+            while (itr.has_next())
+            {
+                const Node &cld = itr.next();
+                if (cld.dtype().is_string())
+                {
+                    field_names.push_back(cld.as_string());
+                }
+                else
+                {
+                    CONDUIT_ERROR("field_names must be a string or a list of strings.");
+                }
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR("field_names must be a string or a list of strings.");
+        }
+    }
+
+    // check that the discovered field names exist in the target fields
+    for (uint64 i = 0; i < field_names.size(); i ++)
+    {
+        if (! fields_src.has_child(field_names[i]))
+        {
+            CONDUIT_ERROR("field " + field_names[i] + " not found in target.");
+        }
+    }
+
+    // generate sides as usual
+    generate_sides(topo_src, topo_dest, coordset_dest, s2dmap, d2smap);
+
+    // now map fields
+    if (d2smap["values"].dtype().is_uint64())
+    {
+        detail::map_fields_to_generated_sides<uint64>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+    }
+    else if (d2smap["values"].dtype().is_uint32())
+    {
+        detail::map_fields_to_generated_sides<uint32>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+    }
+    else if (d2smap["values"].dtype().is_int64())
+    {
+        detail::map_fields_to_generated_sides<int64>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+    }
+    else if (d2smap["values"].dtype().is_int32())
+    {
+        detail::map_fields_to_generated_sides<int32>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported field type in " << d2smap["values"].dtype().to_yaml());
+    }
+}
+
+//-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &dest,
