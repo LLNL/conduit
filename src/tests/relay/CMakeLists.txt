@@ -15,7 +15,8 @@ set(RELAY_TESTS t_relay_smoke
                 t_relay_io_handle
                 t_relay_io_handle_sidre
                 t_relay_node_viewer
-                t_relay_websocket)
+                t_relay_websocket
+                t_conduit_intro_bp_and_relay)
 
 ################################
 # Optional Unit Tests
