@@ -41,6 +41,13 @@
 //#include <mpi.h>
 //#endif
 
+// #define DEBUG_POINT_MERGE
+#ifndef DEBUG_POINT_MERGE
+#define PM_DEBUG_PRINT(stream)
+#else
+#define PM_DEBUG_PRINT(stream) do { std::cerr << stream; } while(0)
+#endif
+
 using index_t=conduit::index_t;
 using std::cout;
 using std::endl;
@@ -2199,13 +2206,6 @@ partitioner::communicate_chunks(const std::vector<partitioner::chunk> &chunks,
 namespace coordset
 {
 
-#define DEBUG_POINT_MERGE
-#ifndef DEBUG_POINT_MERGE
-#define PM_DEBUG_PRINT(stream)
-#else
-#define PM_DEBUG_PRINT(stream) do { std::cerr << stream; } while(0)
-#endif
-
 /**
  @brief The implmentation of conduit::blueprint::mesh::coordset::merge
 */
@@ -2837,104 +2837,6 @@ private:
 
 //-----------------------------------------------------------------------------
 void
-point_merge::xyz_to_rtp(double x, double y, double z, double &out_r, double &out_t, double &out_p)
-{
-    const auto r = std::sqrt(x*x + y*y + z*z);
-    out_r = r;
-    out_t = std::acos(r / z);
-    out_p = std::atan(y / x);
-}
-
-//-----------------------------------------------------------------------------
-void
-point_merge::rtp_to_xyz(double r, double t, double p, double &out_x, double &out_y, double &out_z)
-{
-    out_x = r * std::cos(p) * std::sin(t);
-    out_y = r * std::sin(p) * std::sin(t);
-    out_z = r * std::cos(t);
-}
-
-//-----------------------------------------------------------------------------
-void
-point_merge::translate_system(coord_system in_system, coord_system out_system,
-        float64 p0, float64 p1, float64 p2, 
-        float64 &out_p0, float64 &out_p1, float64 &out_p2)
-{
-    // TODO: Handle rz
-    switch(out_system)
-    {
-    case coord_system::cartesian:
-        switch(in_system)
-        {
-        case coord_system::cylindrical:
-            // TODO
-            break;
-        case coord_system::spherical:
-            rtp_to_xyz(p0,p1,p2, out_p0,out_p1,out_p2);
-            break;
-        default:    // case coord_system:: cartesian Can't happen
-            out_p0 = p0;
-            out_p1 = p1;
-            out_p2 = p2;
-            break;
-        }
-        break;
-    case coord_system::cylindrical:
-        switch(in_system)
-        {
-        case coord_system::cartesian:
-            // TODO
-            break;
-        case coord_system::spherical:
-            // TODO
-            break;
-        default:
-            out_p0 = p0;
-            out_p1 = p1;
-            out_p2 = p2;
-            break;
-        }
-        break;
-    case coord_system::spherical:
-        switch(in_system)
-        {
-        case coord_system::cartesian:
-            xyz_to_rtp(p0,p1,p2, out_p0,out_p1,out_p2);
-            break;
-        case coord_system::cylindrical:
-            // TODO
-            break;
-        default:
-            out_p0 = p0;
-            out_p1 = p1;
-            out_p2 = p2;
-            break;
-        }
-        break;
-    }
-}
-
-//-----------------------------------------------------------------------------
-const std::vector<std::string> &
-point_merge::get_axes_for_system(coord_system cs)
-{
-    const std::vector<std::string> *retval = &mesh::utils::CARTESIAN_AXES;
-    switch(cs)
-    {
-    case coord_system::cylindrical:
-        retval = &mesh::utils::CYLINDRICAL_AXES;
-        break;
-    case coord_system::spherical:
-        retval = &mesh::utils::SPHERICAL_AXES;
-        break;
-    case coord_system::cartesian: // Do nothing
-        break;
-    }
-    return *retval;
-}
-
-//-----------------------------------------------------------------------------
-void
 point_merge::execute(const std::vector<const Node *> &coordsets, 
                      double tolerance,
                      Node &output)
@@ -3546,6 +3448,104 @@ point_merge::truncate_merge(const std::vector<Node> &coordsets,
             iterate_coordinates(coordset, merge);
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::xyz_to_rtp(double x, double y, double z, double &out_r, double &out_t, double &out_p)
+{
+    const auto r = std::sqrt(x*x + y*y + z*z);
+    out_r = r;
+    out_t = std::acos(r / z);
+    out_p = std::atan(y / x);
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::rtp_to_xyz(double r, double t, double p, double &out_x, double &out_y, double &out_z)
+{
+    out_x = r * std::cos(p) * std::sin(t);
+    out_y = r * std::sin(p) * std::sin(t);
+    out_z = r * std::cos(t);
+}
+
+//-----------------------------------------------------------------------------
+void
+point_merge::translate_system(coord_system in_system, coord_system out_system,
+        float64 p0, float64 p1, float64 p2, 
+        float64 &out_p0, float64 &out_p1, float64 &out_p2)
+{
+    // TODO: Handle rz
+    switch(out_system)
+    {
+    case coord_system::cartesian:
+        switch(in_system)
+        {
+        case coord_system::cylindrical:
+            // TODO
+            break;
+        case coord_system::spherical:
+            rtp_to_xyz(p0,p1,p2, out_p0,out_p1,out_p2);
+            break;
+        default:    // case coord_system:: cartesian Can't happen
+            out_p0 = p0;
+            out_p1 = p1;
+            out_p2 = p2;
+            break;
+        }
+        break;
+    case coord_system::cylindrical:
+        switch(in_system)
+        {
+        case coord_system::cartesian:
+            // TODO
+            break;
+        case coord_system::spherical:
+            // TODO
+            break;
+        default:
+            out_p0 = p0;
+            out_p1 = p1;
+            out_p2 = p2;
+            break;
+        }
+        break;
+    case coord_system::spherical:
+        switch(in_system)
+        {
+        case coord_system::cartesian:
+            xyz_to_rtp(p0,p1,p2, out_p0,out_p1,out_p2);
+            break;
+        case coord_system::cylindrical:
+            // TODO
+            break;
+        default:
+            out_p0 = p0;
+            out_p1 = p1;
+            out_p2 = p2;
+            break;
+        }
+        break;
+    }
+}
+
+//-----------------------------------------------------------------------------
+const std::vector<std::string> &
+point_merge::get_axes_for_system(coord_system cs)
+{
+    const std::vector<std::string> *retval = &mesh::utils::CARTESIAN_AXES;
+    switch(cs)
+    {
+    case coord_system::cylindrical:
+        retval = &mesh::utils::CYLINDRICAL_AXES;
+        break;
+    case coord_system::spherical:
+        retval = &mesh::utils::SPHERICAL_AXES;
+        break;
+    case coord_system::cartesian: // Do nothing
+        break;
+    }
+    return *retval;
 }
 
 }
