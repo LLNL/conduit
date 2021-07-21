@@ -33,13 +33,6 @@ public:
                 Node &output);
 
 private:
-    struct record
-    {
-        using index_t = conduit_index_t;
-        index_t orig_domain;
-        index_t orig_id;
-    };
-
     enum class coord_system
     {
         cartesian,
@@ -64,7 +57,6 @@ private:
         const std::vector<coord_system> &systems, index_t, double tolerance);
 
     void create_output(index_t dimension, Node &output) const;
-
 
     /**
     @brief Iterates the coordinates in the given coordinate set,
@@ -147,6 +139,7 @@ private:
 #include <utility>
 #include <algorithm>
 #include <map>
+#include "pointmerge_impl.hpp"
 
 #define DEBUG_POINT_MERGE
 #ifndef DEBUG_POINT_MERGE
@@ -490,7 +483,7 @@ inline void
 point_merge::merge_data(const std::vector<Node> &coordsets,
         const std::vector<coord_system> &systems, index_t dimension, double tolerance)
 {
-// #define USE_SPATIAL_SEARCH_MERGE
+#define USE_SPATIAL_SEARCH_MERGE
 #if   defined(USE_TRUNCATE_PRECISION_MERGE)
     truncate_merge(coordsets, systems, dimension, tolerance);
 #elif defined(USE_SPATIAL_SEARCH_MERGE)
@@ -498,6 +491,7 @@ point_merge::merge_data(const std::vector<Node> &coordsets,
 #else
     simple_merge_data(coordsets, systems, dimension, tolerance);
 #endif
+#undef USE_SPATIAL_SEARCH_MERGE
 }
 
 //-----------------------------------------------------------------------------
@@ -753,7 +747,6 @@ point_merge::simple_merge_data(const std::vector<Node> &coordsets,
     }
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 inline void
 point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
@@ -764,7 +757,6 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
     reserve_vectors(coordsets, dimension);
 
     kdtree<vec3, index_t> point_records;
-    point_records.set_tolerance(tolerance);
     point_records.set_bucket_size(32);
     for(size_t i = 0u; i < coordsets.size(); i++)
     {
@@ -775,32 +767,22 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
             vec3 key;
             key.v[0] = p[0]; key.v[1] = p[1]; key.v[2] = p[2];
             const auto potential_id = new_coords.size() / dimension;
-            auto res = point_records.insert(key, potential_id);
-            if(res.second)
+            const index_t *existing_id = point_records.find_point(key, tolerance);
+            // Point wasn't already in the tree, insert it
+            if(!existing_id)
             {
-                // Potential id was inserted successfully
                 old_to_new_ids[i].push_back(potential_id);
-                for(index_t j = 0; j < dimension; j++)
+                for(index_t d = 0; d < dimension; d++)
                 {
-                    new_coords.push_back(p[j]);
+                    new_coords.push_back(p[d]);
                 }
+                // Store the point in the tree so we can look it up later
+                point_records.insert(key, potential_id);
             }
             else
             {
-                PM_DEBUG_PRINT("Found point (" << p[0] << "," << p[1] << ") at " << res.first.second << std::endl);
-                PM_DEBUG_PRINT("[");
-                for(auto v : res.first.first->points)
-                {
-                    PM_DEBUG_PRINT("(" << v.x << "," << v.y << "),");
-                }
-                PM_DEBUG_PRINT("]" << std::endl);
-                PM_DEBUG_PRINT("[");
-                for(auto idx : res.first.first->data)
-                {
-                    PM_DEBUG_PRINT(idx << ",");
-                }
-                PM_DEBUG_PRINT("]" << std::endl);
-                old_to_new_ids[i].push_back(res.first.second);
+                // Point already existed in the tree, reference the known id
+                old_to_new_ids[i].push_back(*existing_id);
             }
         };
 
@@ -820,8 +802,11 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
             iterate_coordinates(coordset, merge);
         }
     }
+
+    PM_DEBUG_PRINT("Number of points in tree " << point_records.size()
+        << ", depth of tree " << point_records.depth()
+        << ", nodes in tree " << point_records.nodes() << std::endl);
 }
-#endif
 
 //-----------------------------------------------------------------------------
 inline void
