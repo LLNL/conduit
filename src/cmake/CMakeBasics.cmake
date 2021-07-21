@@ -245,56 +245,6 @@ endmacro()
 
 
 ###############################################################################
-# Provide macros to simplify adding compile and link flags to a target
-###############################################################################
-
-macro(add_target_compile_flags)
-    set(options)
-    set(singleValuedArgs TARGET FLAGS)
-    set(multiValuedArgs)
-
-    ## parse the arguments to the macro
-    cmake_parse_arguments(args
-         "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
-
-    if(NOT "${args_FLAGS}" STREQUAL "")
-        # get prev flags
-        get_target_property(_COMP_FLAGS ${args_TARGET} COMPILE_FLAGS)
-        if(NOT _COMP_FLAGS)
-            set(_COMP_FLAGS "")
-        endif()
-        # append new flags
-        set(_COMP_FLAGS "${args_FLAGS} ${_COMP_FLAGS}")
-        set_target_properties(${args_TARGET}
-                              PROPERTIES COMPILE_FLAGS "${_COMP_FLAGS}" )
-    endif()
-
-endmacro()
-
-macro(add_target_link_flags)
-    set(options)
-    set(singleValuedArgs TARGET FLAGS)
-    set(multiValuedArgs)
-
-    ## parse the arguments to the macro
-    cmake_parse_arguments(args
-         "${options}" "${singleValuedArgs}" "${multiValuedArgs}" ${ARGN} )
-
-    if(NOT "${args_FLAGS}" STREQUAL "")
-        # get prev flags
-        get_target_property(_LINK_FLAGS ${args_TARGET} LINK_FLAGS)
-        if(NOT _LINK_FLAGS)
-            set(_LINK_FLAGS "")
-        endif()
-        # append new flag
-        set(_LINK_FLAGS "${args_FLAGS} ${_LINK_FLAGS}")
-        set_target_properties(${args_TARGET}
-                              PROPERTIES LINK_FLAGS "${_LINK_FLAGS}" )
-    endif()
-
-endmacro()
-
-###############################################################################
 # This macro converts a cmake path to a platform specific string literal
 # usable in C++. (For example, on windows C:/Path will be come C:\\Path)
 ###############################################################################
