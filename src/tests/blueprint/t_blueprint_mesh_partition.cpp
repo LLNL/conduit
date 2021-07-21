@@ -23,7 +23,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-//#define GENERATE_BASELINES
+// #define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -75,6 +75,13 @@ void
 make_baseline(const std::string &filename, const conduit::Node &n)
 {
     conduit::relay::io::save(n, filename, "yaml");
+}
+
+//-----------------------------------------------------------------------------
+void
+load_baseline(const std::string &filename, conduit::Node &n)
+{
+    conduit::relay::io::load(filename, "yaml", n);
 }
 
 //-----------------------------------------------------------------------------
@@ -449,7 +456,6 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -485,9 +491,7 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 {
     test_logical_selection_3d("structured", "structured_logical_3d");
 }
-#endif
 
-//-----------------------------------------------------------------------------
 void
 test_explicit_selection_2d(const std::string &topo, const std::string &base)
 {
@@ -610,7 +614,6 @@ test_explicit_selection_2d(const std::string &topo, const std::string &base)
 #else
     EXPECT_EQ(compare_baseline(b04, output), true);
 #endif
-
 }
 
 #if 0
@@ -786,4 +789,172 @@ TEST(conduit_blueprint_mesh_partition, structured_ranges_2d)
 TEST(conduit_blueprint_mesh_partition, quads_ranges_2d)
 {
     test_ranges_selection_2d("quads", "quads_ranges_2d");
+}
+
+//-----------------------------------------------------------------------------
+//-- Point merge
+//-----------------------------------------------------------------------------
+#ifndef ALWAYS_PRINT
+static const bool always_print = false;
+#else
+static const bool always_print = true;
+#endif
+
+// The tolerance used by all of the point merge tests
+static const double tolerance = 0.00001;
+
+TEST(conduit_blueprint_mesh_partition_point_merge, one)
+{
+    conduit::Node braid;
+    conduit::blueprint::mesh::examples::braid("tets", 2, 2, 2, braid);
+    auto &braid_coordset = braid["coordsets/coords"];
+
+    // Test that 1 coordset in gives the exact same coordset out
+    std::vector<const conduit::Node*> one;
+    one.push_back(&braid_coordset);
+
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(one, output, tolerance);
+
+    conduit::Node info;
+    bool different = braid_coordset.diff(output["coordsets/coords"], info);
+    EXPECT_FALSE(different);
+    if(different || always_print)
+    {
+        braid_coordset.print();
+        output.print();
+    }
+}
+
+TEST(conduit_blueprint_mesh_partition_point_merge, same)
+{
+    // Test that two identical coordsets create the same coordset
+    conduit::Node braid;
+    conduit::blueprint::mesh::examples::braid("tets", 2, 2, 2, braid);
+    auto &braid_coordset = braid["coordsets/coords"];
+
+    std::vector<const conduit::Node*> same;
+    same.push_back(&braid_coordset); same.push_back(&braid_coordset);
+    
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(same, output, tolerance);
+
+    conduit::Node info;
+    bool different = braid_coordset.diff(output["coordsets/coords"], info);
+    EXPECT_FALSE(different);
+    if(different || always_print)
+    {
+        braid_coordset.print();
+        output.print();
+    }
+}
+
+TEST(conduit_blueprint_mesh_partition_point_merge, different)
+{
+    // Test that two different coordsets create the union of their coordinates
+    conduit::Node braid;
+    conduit::blueprint::mesh::examples::braid("tets", 2, 2, 2, braid);
+    auto &braid_coordset = braid["coordsets/coords"];
+    conduit::Node polytess;
+    conduit::blueprint::mesh::examples::polytess(1, polytess);
+    auto &polytess_coordset = polytess["coordsets/coords"];
+    
+    std::vector<const conduit::Node*> different;
+    different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
+    
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(different, output, tolerance);
+
+    conduit::Node info;
+    bool is_different0 = different[0]->diff(output["coordsets/coords"], info);
+    EXPECT_TRUE(is_different0);
+    bool is_different1 = different[1]->diff(output["coordsets/coords"], info);
+    EXPECT_TRUE(is_different1);
+
+    static const std::string filename = baseline_file("pointmerge_different");
+#ifdef GENERATE_BASELINES
+    make_baseline(filename, output);
+#else
+    conduit::Node ans; load_baseline(filename, ans);
+    bool is_output_different = ans.diff(output, info);
+    EXPECT_FALSE(is_output_different);
+    if(is_output_different)
+    {
+        std::cout << "Baseline:" << std::endl;
+        ans.print();
+        std::cout << "Output:" << std::endl;
+        output.print();
+    }
+#endif
+}
+
+TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
+{
+    // Use the spiral example to attach domains that we know are connected
+    conduit::Node spiral;
+    conduit::blueprint::mesh::examples::spiral(4, spiral);
+    std::vector<const conduit::Node*> multidomain;
+
+    const conduit::index_t ndom = spiral.number_of_children();
+    for(conduit::index_t i = 0; i < ndom; i++)
+    {
+        conduit::Node &dom = spiral.child(i);
+        multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
+    }
+    
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+
+    static const std::string filename = baseline_file("pointmerge_multidomain4");
+#ifdef GENERATE_BASELINES
+    make_baseline(filename, output);
+#else
+    conduit::Node ans; load_baseline(filename, ans);
+    conduit::Node info;
+    bool is_different = ans.diff(output, info);
+    EXPECT_FALSE(is_different);
+    if(is_different || always_print)
+    {
+        std::cout << "Baseline:" << std::endl;
+        ans.print();
+        std::cout << "Output:" << std::endl;
+        output.print();
+    }
+#endif
+}
+
+TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
+{
+    // Use the spiral example to attach domains that we know are connected, with more data
+    //   this makes sure that multiple nodes are used in the spatial search implementation
+    conduit::Node spiral;
+    conduit::blueprint::mesh::examples::spiral(8, spiral);
+    std::vector<const conduit::Node*> multidomain;
+
+    const conduit::index_t ndom = spiral.number_of_children();
+    for(conduit::index_t i = 0; i < ndom; i++)
+    {
+        conduit::Node &dom = spiral.child(i);
+        multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
+    }
+    
+    conduit::Node output;
+    conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+
+    static const std::string filename = baseline_file("pointmerge_multidomain8");
+#ifdef GENERATE_BASELINES
+    make_baseline(filename, output);
+#else
+    conduit::Node ans; load_baseline(filename, ans);
+    conduit::Node info;
+    bool is_different = ans.diff(output, info);
+    EXPECT_FALSE(is_different);
+    if(is_different || always_print)
+    {
+        std::cout << "Baseline:" << std::endl;
+        ans.print();
+        std::cout << "Output:" << std::endl;
+        output.print();
+    }
+#endif
 }

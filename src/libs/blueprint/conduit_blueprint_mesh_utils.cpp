@@ -912,6 +912,101 @@ coordset::coordsys(const Node &n)
 }
 
 //-----------------------------------------------------------------------------
+template<typename data_array>
+static void
+typed_minmax(const data_array &da, float64 &out_min, float64 &out_max)
+{
+    // Figure out what primitive type we are dealing with
+    using T = decltype(std::declval<data_array>().min());
+    const index_t nelem = da.number_of_elements();
+    T min = std::numeric_limits<T>::max();
+    T max = std::numeric_limits<T>::lowest();
+    for(index_t i = 0; i < nelem; i++)
+    {
+        min = std::min(min, da[i]);
+        max = std::max(max, da[i]);
+    }
+    out_min = (float64)min;
+    out_max = (float64)max;
+}
+
+//-----------------------------------------------------------------------------
+std::vector<float64>
+coordset::extents(const Node &n)
+{
+    std::vector<float64> cset_extents;
+    const std::string csys_type = n["type"].as_string();
+    const std::vector<std::string> csys_axes = coordset::axes(n);
+    const index_t naxes = (index_t)csys_axes.size();
+    cset_extents.reserve(naxes*2);
+    for(index_t i = 0; i < naxes; i++)
+    {
+        float64 min, max;
+        if(csys_type == "uniform")
+        {
+            index_t origin = 0;
+            float64 spacing = 1.0;
+            index_t dim = n["dims"][LOGICAL_AXES[i]].to_index_t();
+            if(n.has_child("origin"))
+            {
+                origin = n["origin"][LOGICAL_AXES[i]].to_index_t();
+            }
+            if(n.has_child("spacing"))
+            {
+                spacing = n["spacing"]["d" + LOGICAL_AXES[i]].to_float64();
+            }
+            min = (float64)origin;
+            max = (float64)origin + (spacing * (float64)dim);
+            if(spacing < 0.)
+            {
+                std::swap(min, max);
+            }
+        }
+        else // csys_type == "rectilinear" || csys_type == "explicit"
+        {
+            const auto &axis = n["values"][csys_axes[i]];
+            const auto id = axis.dtype().id();
+            switch(id)
+            {
+            case conduit::DataType::INT8_ID:
+                typed_minmax(axis.as_int8_array(), min, max);
+                break;
+            case conduit::DataType::INT16_ID:
+                typed_minmax(axis.as_int16_array(), min, max);
+                break;
+            case conduit::DataType::INT32_ID:
+                typed_minmax(axis.as_int32_array(), min, max);
+                break;
+            case conduit::DataType::INT64_ID:
+                typed_minmax(axis.as_int64_array(), min, max);
+                break;
+            case conduit::DataType::UINT8_ID:
+                typed_minmax(axis.as_uint8_array(), min, max);
+                break;
+            case conduit::DataType::UINT16_ID:
+                typed_minmax(axis.as_uint16_array(), min, max);
+                break;
+            case conduit::DataType::UINT32_ID:
+                typed_minmax(axis.as_uint32_array(), min, max);
+                break;
+            case conduit::DataType::UINT64_ID:
+                typed_minmax(axis.as_uint64_array(), min, max);
+                break;
+            case conduit::DataType::FLOAT32_ID:
+                typed_minmax(axis.as_float32_array(), min, max);
+                break;
+            case conduit::DataType::FLOAT64_ID:
+                typed_minmax(axis.as_float64_array(), min, max);
+                break;
+            }
+        }
+        cset_extents.push_back(min);
+        cset_extents.push_back(max);
+    }
+    return cset_extents;
+}
+
+//-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::coorset --
 //-----------------------------------------------------------------------------
 
