@@ -54,11 +54,10 @@ contains
             
             call n_den%print()
             
-            print *,
             print *,"Density (", (units(i),i=1,units_len), "):"
             
             do i = 1,4
-                write(*,"(f5.2,1x)",advance="no"), d_arr(i)
+                write (*,"(f5.2,1x)",advance="no") d_arr(i)
             enddo
             print *
             
