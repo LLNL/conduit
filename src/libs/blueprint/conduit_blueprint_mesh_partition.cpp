@@ -555,7 +555,7 @@ selection_logical::get_vertex_ids(const conduit::Node &n_mesh,
         ids.clear();
         ids.reserve(dims[0] * dims[1] * dims[2]);
         auto mesh_NXNY = dims[0] * dims[1];
-        auto mesh_NX   = dims[0];  
+        auto mesh_NX   = dims[0];
         index_t n_end[3];
         n_end[0] = end[0] + 1;
         n_end[1] = end[1] + 1;
@@ -1992,7 +1992,7 @@ partitioner::create_new_uniform_topo(const conduit::Node &n_topo,
         if(n_topo.has_child(keys[i]))
         {
             const conduit::Node &value = n_topo[keys[i]];
-            n_new_topo[keys[i]] = value.to_uint64() + start[i];
+            n_new_topo[keys[i]].set(static_cast<conduit::int64>(value.to_uint64() + start[i]));
         }
     }
 }
@@ -2013,7 +2013,7 @@ partitioner::create_new_rectilinear_topo(const conduit::Node &n_topo,
         if(n_topo.has_child(keys[i]))
         {
             const conduit::Node &value = n_topo[keys[i]];
-            n_new_topo[keys[i]] = value.to_uint64() + start[i];
+            n_new_topo[keys[i]].set(static_cast<conduit::int64>(value.to_uint64() + start[i]));
         }
     }
 }
@@ -2027,10 +2027,10 @@ partitioner::create_new_structured_topo(const conduit::Node &n_topo,
     n_new_topo["type"] = "structured";
     n_new_topo["coordset"] = csname;
     conduit::Node &n_dims = n_new_topo["elements/dims"];
-    n_dims["i"] = end[0] - start[0] + 1;
-    n_dims["j"] = end[1] - start[1] + 1;
+    n_dims["i"].set(static_cast<conduit::int64>(end[0] - start[0] + 1));
+    n_dims["j"].set(static_cast<conduit::int64>(end[1] - start[1] + 1));
     if(n_topo.has_child("elements/dims/k"))
-        n_dims["k"] = end[2] - start[2] + 1;
+        n_dims["k"].set(static_cast<conduit::int64>(end[2] - start[2] + 1));
     const char *keys[] = {"elements/origin/i0",
         "elements/origin/j0",
         "elements/origin/k0"};
@@ -2039,7 +2039,7 @@ partitioner::create_new_structured_topo(const conduit::Node &n_topo,
         if(n_topo.has_child(keys[i]))
         {
             const conduit::Node &value = n_topo[keys[i]];
-            n_new_topo[keys[i]] = value.to_uint64() + start[i];
+            n_new_topo[keys[i]].set(static_cast<conduit::int64>(value.to_uint64() + start[i]));
         }
     }
 }

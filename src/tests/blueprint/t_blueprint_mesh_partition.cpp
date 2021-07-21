@@ -94,7 +94,7 @@ compare_baseline(const std::string &filename, const conduit::Node &n)
 #endif
 
     // Node::diff returns true if the nodes are different. We want not different.
-    bool equal = !baseline.diff(n, info, tolerance);
+    bool equal = !baseline.diff(n, info, tolerance, true);
 
     if(!equal)
     {
