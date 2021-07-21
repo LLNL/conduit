@@ -985,8 +985,9 @@ selection_ranges::determine_is_whole(const conduit::Node &n_mesh) const
     auto n = num_ranges();
     if(n == 1)
     {
+        auto upper_bound = std::min(get_ranges()[1], num_elem_in_topo-1);
         whole = get_ranges()[0] == 0 &&
-                get_ranges()[1] == num_elem_in_topo-1;
+                upper_bound == num_elem_in_topo-1;
     }
     else
     {
@@ -995,12 +996,13 @@ selection_ranges::determine_is_whole(const conduit::Node &n_mesh) const
         for(index_t i = 0; i < n; i++)
         {
             index_t start = indices[2*i];
-            index_t end = indices[2*i+1];
+            index_t end = std::min(indices[2*i+1], num_elem_in_topo-1);
             for(index_t eid = start; eid <= end; eid++)
                 unique.insert(eid);
         }
         whole = static_cast<index_t>(unique.size()) == num_elem_in_topo;
     }
+
     return whole;
 }
 

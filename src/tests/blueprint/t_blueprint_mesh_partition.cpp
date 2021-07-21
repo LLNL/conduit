@@ -23,7 +23,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-#define GENERATE_BASELINES
+//#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -613,8 +613,177 @@ test_explicit_selection_2d(const std::string &topo, const std::string &base)
 
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
     test_explicit_selection_2d("uniform", "uniform_explicit_2d");
+}
+#endif
+
+// TODO: need to extract unstructured from polygonal, 3D, polyhedral.
+
+//-----------------------------------------------------------------------------
+void
+test_ranges_selection_2d(const std::string &topo, const std::string &base)
+{
+    conduit::utils::set_error_handler(tmp_err_handler);
+
+    // Make 10x10x1 cell mesh.
+    conduit::Node input, output, options, msg;
+    conduit::index_t vdims[] = {11,11,1};
+    conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
+    // Override with int64 because YAML loses int/uint information.
+    conduit::int64 i100 = 100;
+    input["state/cycle"].set(i100);
+
+    conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
+    auto n2 = nelem / 2;
+
+    // Select the whole thing. Check output==input
+    options.reset();
+    {
+        std::vector<conduit::index_t> ranges;
+        ranges.push_back(0);
+        ranges.push_back(nelem-1);
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "ranges";
+        sel1["ranges"] = ranges;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b00 = baseline_file(base + "_00");
+    save_visit(b00, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b00, output);
+#else
+    EXPECT_EQ(compare_baseline(b00, output), true);
+#endif
+
+    // Select out of bounds to make sure it clamps the range.
+    options.reset();
+    {
+        std::vector<conduit::index_t> ranges;
+        ranges.push_back(0);
+        ranges.push_back(nelem * 2);
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "ranges";
+        sel1["ranges"] = ranges;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b01 = baseline_file(base + "_01");
+    save_visit(b01, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b01, output);
+#else
+    EXPECT_EQ(compare_baseline(b01, output), true);
+#endif
+
+    // Select a single cell
+    options.reset();
+    {
+        std::vector<conduit::index_t> ranges;
+        ranges.push_back(0);
+        ranges.push_back(0);
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "ranges";
+        sel1["ranges"] = ranges;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b02 = baseline_file(base + "_02");
+    save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b02, output);
+#else
+    EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
+
+    // Select multiple ranges
+    options.reset();
+    {
+        std::vector<conduit::index_t> ranges;
+        // bottom half
+        ranges.push_back(0);
+        ranges.push_back(n2-1);
+        // top row
+        ranges.push_back((vdims[1]-1-1) * (vdims[0]-1));
+        ranges.push_back((vdims[1]-1)   * (vdims[0]-1));
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "ranges";
+        sel1["ranges"] = ranges;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 1);
+    std::string b03 = baseline_file(base + "_03");
+    save_visit(b03, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b03, output);
+#else
+    EXPECT_EQ(compare_baseline(b03, output), true);
+#endif
+
+    // Multiple range selections
+    options.reset();
+    {
+        std::vector<conduit::index_t> ranges, ranges2;
+        // domain 1
+        ranges.push_back(0);
+        ranges.push_back(n2-1);
+        // domain 2
+        ranges2.push_back(n2);
+        ranges2.push_back(nelem-1);
+        conduit::Node &sel1 = options["selections"].append();
+        sel1["type"] = "ranges";
+        sel1["ranges"] = ranges;
+        conduit::Node &sel2 = options["selections"].append();
+        sel2["type"] = "ranges";
+        sel2["ranges"] = ranges2;
+    }
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 2);
+    std::string b04 = baseline_file(base + "_04");
+    save_visit(b04, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b04, output);
+#else
+    EXPECT_EQ(compare_baseline(b04, output), true);
+#endif
+
+    // Take previous selection and target 5 domains to test partitioning
+    options["target"] = 5;
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 5);
+    std::string b05 = baseline_file(base + "_05");
+    save_visit(b05, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b05, output);
+#else
+    EXPECT_EQ(compare_baseline(b05, output), true);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, uniform_ranges_2d)
+{
+    test_ranges_selection_2d("uniform", "uniform_ranges_2d");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, rectilinear_ranges_2d)
+{
+    test_ranges_selection_2d("rectilinear", "rectilinear_ranges_2d");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, structured_ranges_2d)
+{
+    test_ranges_selection_2d("structured", "structured_ranges_2d");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, quads_ranges_2d)
+{
+    test_ranges_selection_2d("quads", "quads_ranges_2d");
 }
