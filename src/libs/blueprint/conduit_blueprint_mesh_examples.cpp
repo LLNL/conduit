@@ -3586,7 +3586,7 @@ polychain(const index_t length, // how long the chain ought to be
 }
 
 //-----------------------------------------------------------------------------
-void polytess_3d(conduit::index_t nlevels, Node &res)
+void polytess_3d(conduit::index_t nlevels, conduit::index_t nz, Node &res)
 {
     // Our goal here is to take the original polytess and extend it
     // into 3 dimensions. The way we will accomplish this is by
@@ -3606,7 +3606,7 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
     res_coords["type"] = poly["coordsets/coords/type"];
 
     int num_orig_points = poly["coordsets/coords/values/x"].dtype().number_of_elements();
-    int num_points = 2 * num_orig_points;
+    int num_points = nz * num_orig_points;
 
     res_coords["values/x"].set(conduit::DataType::float64(num_points));
     res_coords["values/y"].set(conduit::DataType::float64(num_points));
@@ -3619,14 +3619,14 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
     float64 *y_vals = res_coords["values/y"].value();
     float64 *z_vals = res_coords["values/z"].value();
 
-    // all the original points are added twice, the first time with a z-value of 0,
-    // and the second time with a z-value of 1.
+    // all the original points are added nz times, the first time with a z-value of 0,
+    // and the second time with a z-value of 1, etc.
     for (int i = 0; i < num_points; i ++)
     {
         int i_mod_num_orig_points = i % num_orig_points;
         x_vals[i] = poly_x_vals[i_mod_num_orig_points];
         y_vals[i] = poly_y_vals[i_mod_num_orig_points];
-        z_vals[i] = (i < num_orig_points) ? 0 : 1;
+        z_vals[i] = i / num_orig_points;
     }
 
     res_topo["type"] = poly["topologies/topo/type"];
@@ -3664,10 +3664,12 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
         {
             num_new_polygons += poly_sizes[i];
         }
+        // we need this number of polygons for each level we add
+        num_new_polygons *= nz - 1;
 
         // SET UP SIZES
         const int points_per_quad = 4;
-        int length_of_new_sizes = sizeof_poly_sizes * 2 + num_new_polygons;
+        int length_of_new_sizes = sizeof_poly_sizes * nz + num_new_polygons;
         // the sizes must have space for the original sizes, array, a copy of it for the 
         // reflected polytess, and all the walls; hence the addition of the num_new_polygons.
         res_topo["subelements/sizes"].set(conduit::DataType::uint64(length_of_new_sizes));
@@ -3675,7 +3677,7 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
         for (int i = 0; i < length_of_new_sizes; i ++)
         {
             // the original and reflected polytess sizes
-            if (i < sizeof_poly_sizes * 2)
+            if (i < sizeof_poly_sizes * nz)
             {
                 sizes[i] = poly_sizes[i % sizeof_poly_sizes];
             }
@@ -3696,24 +3698,17 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
         }
 
         // SET UP CONNECTIVITY
-
-        int sizeof_poly_connec = poly["topologies/topo/elements/connectivity"].dtype().number_of_elements();
-        res_topo["subelements/connectivity"].set(conduit::DataType::uint64(sizeof_poly_connec * 2 + num_new_polygons * points_per_quad));
+        const int sizeof_poly_connec = poly["topologies/topo/elements/connectivity"].dtype().number_of_elements();
+        const int sizeof_sub_connec = sizeof_poly_connec * nz + num_new_polygons * points_per_quad;
+        res_topo["subelements/connectivity"].set(conduit::DataType::uint64(sizeof_sub_connec));
         uint64 *connec = res_topo["subelements/connectivity"].value();
         uint64 *poly_connec = poly["topologies/topo/elements/connectivity"].value();
 
         // first, copy the original connectivity, then the reflected connectivity, which luckily
         // is as simple as adding an offset to the original.
-        for (int i = 0; i < sizeof_poly_connec * 2; i ++)
+        for (int i = 0; i < sizeof_poly_connec * nz; i ++)
         {
-            if (i < sizeof_poly_connec)
-            {
-                connec[i] = poly_connec[i];
-            }
-            else
-            {
-                connec[i] = poly_connec[i % sizeof_poly_connec] + num_orig_points;
-            }
+            connec[i] = poly_connec[i % sizeof_poly_connec] + (i / sizeof_poly_connec) * num_orig_points;
         }
 
         // now the tricky part, where we want to add new faces for the quads that make 
@@ -3727,26 +3722,27 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
         std::map<std::set<int>, std::pair<int, std::vector<int>>> quad_map;
 
         int k = 0;
-        for (int i = 0; i < sizeof_poly_sizes; i ++)
+        for (int i = 0; i < sizeof_poly_sizes * (nz - 1); i ++)
         {
             for (int j = 0; j < sizes[i]; j ++)
             {
                 int curr = connec[offsets[i] + j];
                 int next = connec[(j + 1) % sizes[i] + offsets[i]];
 
+                // adding num_orig_points will give us the points directly above in our mesh
                 std::set<int> quad = {curr, next, next + num_orig_points, curr + num_orig_points};
                 std::vector<int> associated_polyhedra{i};
-                int currpos = sizeof_poly_sizes * 2 + k / points_per_quad;
+                int currpos = sizeof_poly_sizes * nz + k / points_per_quad;
 
                 if (quad_map.insert(std::make_pair(quad, std::make_pair(currpos, associated_polyhedra))).second)
                 {
-                    connec[sizeof_poly_connec * 2 + k] = curr;
+                    connec[sizeof_poly_connec * nz + k] = curr;
                     k ++;
-                    connec[sizeof_poly_connec * 2 + k] = next;
+                    connec[sizeof_poly_connec * nz + k] = next;
                     k ++;
-                    connec[sizeof_poly_connec * 2 + k] = next + num_orig_points;
+                    connec[sizeof_poly_connec * nz + k] = next + num_orig_points;
                     k ++;
-                    connec[sizeof_poly_connec * 2 + k] = curr + num_orig_points;
+                    connec[sizeof_poly_connec * nz + k] = curr + num_orig_points;
                     k ++;
                 }
                 else
@@ -3760,7 +3756,7 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
 
         res_topo["elements/shape"] = "polyhedral";
 
-        int num_polyhedra = sizeof_poly_sizes;
+        const int num_polyhedra = sizeof_poly_sizes * (nz - 1);
 
         // SET UP SIZES
         const int points_per_octagon = 8;
@@ -3772,7 +3768,7 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
         {
             // this ensures that each original octagon is associated with an octagonal prism,
             // and each original square gets a cube.
-            elements_sizes[i] = (poly_sizes[i] == points_per_octagon) ? faces_per_octaprism : faces_per_hex;
+            elements_sizes[i] = (poly_sizes[i % sizeof_poly_sizes] == points_per_octagon) ? faces_per_octaprism : faces_per_hex;
         }
 
         // SET UP OFFSETS
@@ -3804,13 +3800,13 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
             }
         }
 
-        int sizeof_polyhedra_connec = 0;
+        int sizeof_elements_connec = 0;
         for (int i = 0; i < num_polyhedra; i ++)
         {
-            sizeof_polyhedra_connec += elements_sizes[i];
+            sizeof_elements_connec += elements_sizes[i];
         }
 
-        res_topo["elements/connectivity"].set(conduit::DataType::uint64(sizeof_polyhedra_connec));
+        res_topo["elements/connectivity"].set(conduit::DataType::uint64(sizeof_elements_connec));
         uint64 *elements_connec = res_topo["elements/connectivity"].value();
         int l = 0;
         for (int i = 0; i < num_polyhedra; i ++)
@@ -3835,6 +3831,7 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
     res_fields["level/association"] = poly["fields/level/association"];
     res_fields["level/volume_dependent"] = poly["fields/level/volume_dependent"];
 
+    const int sizeof_poly_field_values = poly["fields/level/values"].dtype().number_of_elements();
     res_fields["level/values"].set(conduit::DataType::uint32(num_polyhedra));
 
     uint32 *values = res_fields["level/values"].value();
@@ -3845,7 +3842,7 @@ void polytess_3d(conduit::index_t nlevels, Node &res)
     // original field data.
     for (int i = 0; i < num_polyhedra; i ++)
     {
-        values[i] = poly_values[i];
+        values[i] = poly_values[i % sizeof_poly_field_values];
     }
 }
 

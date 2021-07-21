@@ -983,11 +983,33 @@ TEST(conduit_blueprint_mesh_examples, polychain)
 TEST(conduit_blueprint_mesh_examples, polytess_3d)
 {
     Node res;
-    blueprint::mesh::examples::polytess_3d(3, res);
+    blueprint::mesh::examples::polytess_3d(3, 2, res);
 
     Node info;
     EXPECT_TRUE(blueprint::mesh::verify(res,info));
     CONDUIT_INFO(info.to_yaml());
+
+    Node side_mesh;
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+
+    blueprint::mesh::topology::unstructured::generate_sides(res["topologies/topo"],
+                                                             side_topo,
+                                                             side_coords,
+                                                             side_fields,
+                                                             s2dmap,
+                                                             d2smap,
+                                                             options);
+
+    if(conduit::utils::is_file("polytess.root"))
+    {
+        conduit::utils::remove_file("polytess.root");
+    }
+    conduit::relay::io::blueprint::save_mesh(side_mesh, "polytess", "hdf5");
+
 
     if(conduit::utils::is_file("polytess_3d_example_hdf5.root"))
     {

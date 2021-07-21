@@ -76,6 +76,7 @@ namespace examples
     /// are added, and finally polyhedra are specified that use faces from
     /// the original polytess, the reflected copy, and the walls.
     void CONDUIT_BLUEPRINT_API polytess_3d(conduit::index_t nlevels,
+                                           conduit::index_t nz,
                                            conduit::Node &res);
 
     /// Generates an assortment of extra meshes that demonstrate the use of
