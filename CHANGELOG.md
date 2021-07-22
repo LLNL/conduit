@@ -12,6 +12,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Avoid compile issue with using `_Pragma()` with Python 3.8 on Windows
 - `conduit_node` and `conduit_datatype` in the C API are no longer aliases to `void` so that callers cannot pass just any pointer to the APIs.
 - Fixed overread issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
+- Fixed a subtle bug with Node fetch and Object role initialization.
 
 #### Blueprint
 - Added the `blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
