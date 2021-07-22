@@ -452,8 +452,10 @@ TEST(conduit_blueprint_mesh_examples, spiral)
 TEST(conduit_blueprint_mesh_examples, polytess)
 {
     const index_t nlevels = 3;
+    const index_t nz = 1;
     Node res;
     blueprint::mesh::examples::polytess(nlevels,
+                                        nz,
                                         res);
 
     Node info;
@@ -461,6 +463,25 @@ TEST(conduit_blueprint_mesh_examples, polytess)
     CONDUIT_INFO(info.to_yaml());
 
     test_save_mesh_helper(res,"polytess_example");
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polytess_3d)
+{
+    Node res;
+    blueprint::mesh::examples::polytess(3, 10, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_yaml());
+
+    if(conduit::utils::is_file("polytess_3d_example_hdf5.root"))
+    {
+        conduit::utils::remove_file("polytess_3d_example_hdf5.root");
+    }
+
+    test_save_mesh_helper(res,"polytess_3d_example");
 }
 
 
