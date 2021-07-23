@@ -949,11 +949,11 @@ coordset::extents(const Node &n)
             index_t dim = n["dims"][LOGICAL_AXES[i]].to_index_t();
             if(n.has_child("origin"))
             {
-                origin = n["origin"][LOGICAL_AXES[i]].to_index_t();
+                origin = n["origin"][csys_axes[i]].to_index_t();
             }
             if(n.has_child("spacing"))
             {
-                spacing = n["spacing"]["d" + LOGICAL_AXES[i]].to_float64();
+                spacing = n["spacing"]["d" + csys_axes[i]].to_float64();
             }
             min = (float64)origin;
             max = (float64)origin + (spacing * (float64)dim);
