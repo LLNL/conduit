@@ -814,7 +814,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, one)
     one.push_back(&braid_coordset);
 
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(one, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(one, output, tolerance);
 
     conduit::Node info;
     bool different = braid_coordset.diff(output["coordsets/coords"], info);
@@ -837,14 +837,17 @@ TEST(conduit_blueprint_mesh_partition_point_merge, same)
     same.push_back(&braid_coordset); same.push_back(&braid_coordset);
     
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(same, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(same, output, tolerance);
 
     conduit::Node info;
-    bool different = braid_coordset.diff(output["coordsets/coords"], info);
+    bool different = braid_coordset["type"].diff(output["type"], info);
+    different &= braid_coordset["values"].diff(output["values"], info);
     EXPECT_FALSE(different);
     if(different || always_print)
     {
+        std::cout << "Input (x2):" << std::endl;
         braid_coordset.print();
+        std::cout << "Output:" << std::endl;
         output.print();
     }
 }
@@ -863,7 +866,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
     
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(different, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(different, output, tolerance);
 
     conduit::Node info;
     bool is_different0 = different[0]->diff(output["coordsets/coords"], info);
@@ -876,7 +879,10 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     make_baseline(filename, output);
 #else
     conduit::Node ans; load_baseline(filename, ans);
-    bool is_output_different = ans.diff(output, info);
+    // NOTE: If rebaselined we won't need to compare paths anymore
+    bool is_output_different = ans["coordsets/coords/type"].diff(output["type"], info);
+    is_output_different |= ans["coordsets/coords/values"].diff(output["values"], info);
+    is_output_different |= ans["pointmaps"].diff(output["pointmaps"], info);
     EXPECT_FALSE(is_output_different);
     if(is_output_different)
     {
@@ -903,7 +909,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
     }
     
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
 
     static const std::string filename = baseline_file("pointmerge_multidomain4");
 #ifdef GENERATE_BASELINES
@@ -911,7 +917,10 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
 #else
     conduit::Node ans; load_baseline(filename, ans);
     conduit::Node info;
-    bool is_different = ans.diff(output, info);
+    // NOTE: If rebaselined we won't need to compare paths anymore
+    bool is_different = ans["coordsets/coords/type"].diff(output["type"], info);
+    is_different |= ans["coordsets/coords/values"].diff(output["values"], info);
+    is_different |= ans["pointmaps"].diff(output["pointmaps"], info);
     EXPECT_FALSE(is_different);
     if(is_different || always_print)
     {
@@ -939,7 +948,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
     }
     
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
 
     static const std::string filename = baseline_file("pointmerge_multidomain8");
 #ifdef GENERATE_BASELINES
@@ -947,7 +956,10 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
 #else
     conduit::Node ans; load_baseline(filename, ans);
     conduit::Node info;
-    bool is_different = ans.diff(output, info);
+    // NOTE: If rebaselined we won't need to compare paths anymore
+    bool is_different = ans["coordsets/coords/type"].diff(output["type"], info);
+    is_different |= ans["coordsets/coords/values"].diff(output["values"], info);
+    is_different |= ans["pointmaps"].diff(output["pointmaps"], info);
     EXPECT_FALSE(is_different);
     if(is_different || always_print)
     {
@@ -957,4 +969,33 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
         output.print();
     }
 #endif
+}
+
+//-----------------------------------------------------------------------------
+//-- Combine topology --
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_combine, multidomain4)
+{
+    // Use the spiral example to attach domains that we know are connected
+    conduit::Node spiral;
+    conduit::blueprint::mesh::examples::spiral(4, spiral);
+
+    std::vector<const conduit::Node*> multidomain;
+    const conduit::index_t ndom = spiral.number_of_children();
+    for(conduit::index_t i = 0; i < ndom; i++)
+    {
+        multidomain.push_back(spiral.child_ptr(i));
+    }
+
+    conduit::Node output;
+    conduit::blueprint::mesh::partitioner p;
+    p.combine(0, multidomain, output);
+
+    std::cout << "Input: " << std::endl;
+    spiral.print();
+    std::cout << "Output: " << std::endl;
+    output.print();
+
+    save_visit("before_combine_topology", spiral);
+    save_visit("after_combine_topology", output);
 }

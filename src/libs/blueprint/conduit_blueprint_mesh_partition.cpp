@@ -3239,10 +3239,8 @@ point_merge::create_output(index_t dimension, Node &output) const
 
     // Add the new coordset
     {
-        auto &coordset = output.add_child("coordsets");
-        auto &coords = coordset.add_child("coords");
-        coords["type"] = "explicit";
-        auto &values = coords.add_child("values");
+        output["type"] = "explicit";
+        auto &values = output.add_child("values");
         
         // Define the node schema for coords
         Schema s;
@@ -3725,6 +3723,51 @@ point_merge::get_axes_for_system(coord_system cs)
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::coordset --
 //-----------------------------------------------------------------------------
+template<typename T, typename Func>
+static void iterate_int_data(const conduit::Node &node, Func &&func)
+{
+    conduit::DataArray<T> int_da = node.value();
+    const index_t nele = int_da.number_of_elements();
+    for(index_t i = 0; i < nele; i++)
+    {
+        func((index_t)int_da[i]);
+    }
+}
+
+template<typename Func>
+static void iterate_connectivity(const conduit::Node &node, Func &&func)
+{
+    const auto id = node.dtype().id();
+    switch(id)
+    {
+    case conduit::DataType::INT8_ID:
+        iterate_int_data<int8>(node, func);
+        break;
+    case conduit::DataType::INT16_ID:
+        iterate_int_data<int16>(node, func);
+        break;
+    case conduit::DataType::INT32_ID:
+        iterate_int_data<int32>(node, func);
+        break;
+    case conduit::DataType::INT64_ID:
+        iterate_int_data<int64>(node, func);
+        break;
+    case conduit::DataType::UINT8_ID:
+        iterate_int_data<uint8>(node, func);
+        break;
+    case conduit::DataType::UINT16_ID:
+        iterate_int_data<uint16>(node, func);
+        break;
+    case conduit::DataType::UINT32_ID:
+        iterate_int_data<uint32>(node, func);
+        break;
+    case conduit::DataType::UINT64_ID:
+        iterate_int_data<uint64>(node, func);
+        break;
+    default:
+        break;
+    }
+}
 
 //-------------------------------------------------------------------------
 std::string
@@ -3775,18 +3818,52 @@ partitioner::combine_as_unstructured(int domain,
     const std::vector<const Node *> &inputs,
     Node &output)
 {
-    // TODO:
-
     // Determine names of all coordsets
+    std::vector<std::string> coordset_names;
+    Node &output_coordsets = output.add_child("coordsets");
+    {
+        // Group all the like-named coordsets
+        std::vector<std::vector<const Node*>> coordset_groups;
+        const index_t ninputs = (index_t)inputs.size();
+        for(index_t i = 0; i < ninputs; i++)
+        {
+            const Node *input = inputs[i];
+            if(!input) { continue; }
 
-    // Iterate over all coordsets and combine like-named coordsets into
-    // new explicit coordset. Pass all points through an algorithm that
-    // can combine the same points should they exist in multiple coordsets.
-    //
-    // for each coordset
-    //     for each point in coordset
-    //         new_pt_id = pointmap.get_id(point, tolerance)
-    //              
+            const Node *csets = input->fetch_ptr("coordsets");
+            if(!csets) { continue; }
+
+            const auto &cset_names = csets->child_names();
+            const index_t ncset_names = (index_t)cset_names.size();
+            for(index_t j = 0; j < ncset_names; j++)
+            {
+                const auto &cset_name = cset_names[j];
+                const Node *cset = csets->fetch_ptr(cset_name);
+                if(!cset) { continue; }
+
+                auto itr = std::find(coordset_names.begin(), coordset_names.end(), cset_name);
+                if(itr != coordset_names.end())
+                {
+                    const auto idx = itr - coordset_names.begin();
+                    coordset_groups[idx].push_back(cset);
+                }
+                else // (itr == names.end())
+                {
+                    const auto idx = coordset_groups.size();
+                    coordset_names.push_back(cset_name);
+                    coordset_groups.emplace_back();
+                    coordset_groups[idx].push_back(cset);
+                }
+            }
+        }
+
+        const index_t ngroups = (index_t)coordset_groups.size();
+        for(index_t i = 0; i < ngroups; i++)
+        {
+            const auto &coordset_group = coordset_groups[i];
+            coordset::combine(coordset_group, output_coordsets.add_child(coordset_names[i]));
+        }
+    }
 
     // Combine mapping information stored in chunks to assemble new field
     // that indicates original domain,pointid values for each point
@@ -3795,6 +3872,75 @@ partitioner::combine_as_unstructured(int domain,
 
     // Iterate over all topology names and combine like-named topologies
     // as new unstructured topology.
+    Node &output_topologies = output.add_child("topologies");
+    {
+        // Group all the like-named toplogies
+        std::vector<std::string> names;
+        std::vector<std::vector<const Node*>> topo_groups;
+        const index_t ninputs = (index_t)inputs.size();
+        for(index_t i = 0; i < ninputs; i++)
+        {
+            const Node *input = inputs[i];
+            if(!input) { continue; }
+
+            const Node *topos = input->fetch_ptr("topologies");
+            if(!topos) { continue; }
+
+            const auto &topo_names = topos->child_names();
+            const index_t ntopo_names = (index_t)topo_names.size();
+            for(index_t j = 0; j < ntopo_names; j++)
+            {
+                const auto &topo_name = topo_names[j];
+                const Node *topo = topos->fetch_ptr(topo_name);
+                if(!topo) { continue; }
+
+                auto itr = std::find(names.begin(), names.end(), topo_name);
+                if(itr != names.end())
+                {
+                    const auto idx = itr - names.begin();
+                    // Need to check if the topologies in this group have the same coordset
+                    const Node *group_cset = topo_groups[idx][0]->fetch_ptr("coordset");
+                    if(!group_cset) { continue; }
+                    const Node *this_cset = topo->fetch_ptr("coordset");
+                    if(!this_cset) { continue; }
+                    if(group_cset->as_string() != this_cset->as_string())
+                    {
+                        // Error! Cannot merge two topologies that reference different named coordsets
+                        continue;
+                    }
+                    topo_groups[idx].push_back(topo);
+                }
+                else // (itr == names.end())
+                {
+                    const auto idx = topo_groups.size();
+                    names.push_back(topo_name);
+                    topo_groups.emplace_back();
+                    topo_groups[idx].push_back(topo);
+                }
+            }
+        }
+
+        const index_t ngroups = topo_groups.size();
+        for(index_t i = 0; i < ngroups; i++)
+        {
+            const auto &topo_group = topo_groups[i];
+            // All topologies in the same group must reference a coordset with the same name
+            const Node *group_cset = topo_group[0]->fetch_ptr("coordset");
+            if(!group_cset) { continue; }
+
+            auto itr = std::find(coordset_names.begin(), coordset_names.end(), group_cset->as_string());
+            if(itr == coordset_names.end())
+            {
+                // Error invalid coordset name!
+                continue;
+            }
+
+            const Node *pointmaps = output_coordsets[*itr].fetch_ptr("pointmaps");
+            if(!pointmaps) { continue; }
+
+            topology::combine(topo_group, *pointmaps, output_topologies.add_child(names[i]));
+        }
+    }
 
     // Combine mapping info stored in chunks to assemble new field that
     // indicates original domain,cellid values for each cell.
@@ -3956,12 +4102,196 @@ partition(const conduit::Node &n_mesh, const conduit::Node &options,
 namespace coordset
 {
 
-void CONDUIT_BLUEPRINT_API merge(const std::vector<const conduit::Node *> &coordsets,
+void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coordsets,
                                  conduit::Node &output,
                                  double tolerance)
 {
     point_merge pm;
     pm.execute(coordsets, tolerance, output);
+}
+
+}
+
+namespace topology
+{
+
+void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
+                                   const conduit::Node &pointmaps,
+                                   conduit::Node &output)
+{
+    if(topologies.size() == 0)
+    {
+        return;
+    }
+
+    const std::string &cset_name = topologies[0]->child("coordset").as_string();
+    std::vector<const Node*> working_topologies;
+    std::vector<Node> temporary_nodes;
+    temporary_nodes.reserve(topologies.size());
+
+    // Validate / translate inputs
+    {
+        const index_t ntopos = topologies.size();
+        for(index_t i = 0; i < ntopos; i++)
+        {
+            const Node *topo = topologies[i];
+            Node temp;
+            if(!topo) { continue; }
+
+            const Node *type = topo->fetch_ptr("type");
+            if(!type) { continue; }
+
+            const Node *cset = topo->fetch_ptr("coordset");
+            if(!cset) { continue; }
+
+            const std::string &t = type->as_string();
+            if(t == "points")
+            {
+                temporary_nodes.emplace_back();
+                // topology::points::to_explicit(topo, temporary_nodes.back());
+                working_topologies.push_back(&temporary_nodes.back());
+            }
+            else if(t == "uniform")
+            {
+                temporary_nodes.emplace_back();
+                topology::uniform::to_unstructured(*topo, temporary_nodes.back(), temp);
+                working_topologies.push_back(&temporary_nodes.back());
+            }
+            else if(t == "rectilinear")
+            {
+                temporary_nodes.emplace_back();
+                topology::rectilinear::to_unstructured(*topo, temporary_nodes.back(), temp);
+                working_topologies.push_back(&temporary_nodes.back());
+            }
+            else if(t == "structured")
+            {
+                temporary_nodes.emplace_back();
+                topology::structured::to_unstructured(*topo, temporary_nodes.back(), temp);
+                working_topologies.push_back(&temporary_nodes.back());
+            }
+            else if(t == "unstructured")
+            {
+                working_topologies.push_back(topo);
+            }
+            else
+            {
+                //  ERROR!
+                continue;
+            }
+        }
+
+        // Make sure we have the correct number of point maps
+        if(pointmaps.number_of_children() != (index_t)working_topologies.size())
+        {
+            std::cerr << "ERROR: Number of input pointmaps and number of input topologies do not match!" << std::endl;
+            return;
+        }
+    }
+
+    for(const Node *topo : working_topologies)
+    {
+        topo->print();
+    }
+
+    // Start building the output
+    if(working_topologies.size())
+    {
+        output.reset();
+        output["type"].set("unstructured");
+        output["coordset"].set(cset_name);
+
+        std::vector<std::string>          shape_types;
+        std::vector<std::vector<index_t>> out_connectivity;
+        const index_t ntopos = (index_t)working_topologies.size();
+        for(index_t i = 0; i < ntopos; i++)
+        {
+            const Node *topo = working_topologies[i];
+            const Node *elements = topo->fetch_ptr("elements");
+            if(!elements)
+            {
+                // ERROR
+                continue;
+            }
+
+            const Node *pointmap = pointmaps.child_ptr(i);
+            if(!pointmap)
+            {
+                // ERROR
+                continue;
+            }
+            DataArray<index_t> pmap_da = pointmap->value();
+
+            // Build a vector of all the "elements" buckets
+            std::vector<const Node*> elements_vec;
+
+            // Single shape topology
+            if(elements->has_child("shape"))
+            {
+                elements_vec.push_back(elements);
+            }
+            else if(elements->dtype().is_list()
+                    || elements->dtype().is_object())
+            {
+                // It is a collection of single element topologies
+                // Q: Should we preserve the names when they exist?
+                auto itr = elements->children();
+                while(itr.has_next())
+                {
+                   elements_vec.push_back(&itr.next());
+                }
+            }
+
+            // Iterate the buckets of elements
+            for(const Node *bucket : elements_vec)
+            {
+                const Node *shape = bucket->fetch_ptr("shape");
+                const Node *connectivity = bucket->fetch_ptr("connectivity");
+                if(!shape || !connectivity)
+                {
+                    // ERROR!
+                    continue;
+                }
+
+                // See if we already have a bucket for this shape in our output
+                const std::string &shape_string = shape->as_string();
+                const auto itr = std::find(shape_types.begin(), shape_types.end(), shape_string);
+                index_t idx = 0;
+                if(itr == shape_types.end())
+                {
+                    idx = shape_types.size();
+                    shape_types.push_back(shape_string);
+                    out_connectivity.emplace_back();
+                }
+                else
+                {
+                    idx = (index_t)(itr - shape_types.begin());
+                }
+
+                std::vector<index_t> &out_conn = out_connectivity[idx];
+                iterate_connectivity(*connectivity, [&out_conn, &pmap_da](index_t id)
+                {
+                    out_conn.push_back(pmap_da[id]);
+                });
+            }
+        }
+
+        Node &out_elements = output["elements"];
+        if(shape_types.size() == 1)
+        {
+            out_elements["shape"].set(shape_types[0]);
+            out_elements["connectivity"].set(out_connectivity[0]);
+        }
+        else if(shape_types.size() > 1)
+        {
+            const index_t nshapes = (index_t)shape_types.size();
+            for(index_t i = 0; i < nshapes; i++)
+            {
+                Node &bucket = out_elements.append();
+                bucket["shape"].set(shape_types[i]);
+                bucket["connectivity"].set(out_connectivity[i]);
+            }
+        }
+    }
 }
 
 }

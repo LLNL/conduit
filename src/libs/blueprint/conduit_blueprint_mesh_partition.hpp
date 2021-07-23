@@ -546,29 +546,24 @@ namespace coordset
 /**
  @brief Combines the given vector of coordsets into one explicit coordset.
  @param coordsets A vector of conduit nodes containing blueprint coordsets
- @param[out] output A conduit node containing an explicit coordset representing
-       the union of all coordsets passed in the input.
-       Output node is in this format:
-
-<code><pre>
-coordsets:
-  coords:
-     (explicit coordset blueprint)
-pointmaps:
-  -
-    [index_t array of point mappings for coordset0]
-  -
-    [index_t array of point mappings for coordset1]
-  ...
-  -
-    [index_t array of point mappings for coordsetN]
-</pre></code>
-
+ @param[out] output A blueprint coordset representing the combined input coordsets.
+       There is an additional field on this node called "pointmaps" which contains
+       a list of index_t arrays (one list entry for each input coordset) that represent
+       the new point id to use for each point in the original set.
  @param tolerance The tolerance factor used for merging like-points.
 */
-void CONDUIT_BLUEPRINT_API merge(const std::vector<const conduit::Node *> &coordsets,
+void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coordsets,
                                  conduit::Node &output,
                                  double tolerance = CONDUIT_EPSILON);
+
+}
+
+namespace topology
+{
+
+void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
+                                   const conduit::Node &pointmaps,
+                                   conduit::Node &output);
 
 }
 //-----------------------------------------------------------------------------
