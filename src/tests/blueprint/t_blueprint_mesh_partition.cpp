@@ -184,7 +184,7 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 {
     cout << "s1=" << s1 << ", s2=" << s2 << ", i1=" << i1 << endl;
 
-    while(1);
+//    while(1);
 }
 
 //-----------------------------------------------------------------------------
@@ -492,7 +492,7 @@ void
 test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3],
     const std::string &base)
 {
-    conduit::utils::set_error_handler(tmp_err_handler);
+//    conduit::utils::set_error_handler(tmp_err_handler);
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -500,7 +500,7 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
     // Override with int64 because YAML loses int/uint information.
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
-
+input.print();
     conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
 
     // Select the whole thing. Check output==input
@@ -612,7 +612,6 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
 #endif
 
 }
-
 #if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
@@ -620,12 +619,28 @@ TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
     conduit::index_t vdims[] = {11,11,1};
     test_explicit_selection("uniform", vdims, "uniform_explicit_2d");
 }
-#endif
+
+//-----------------------------------------------------------------------------
+// NOTE: VisIt does not support polygonal cells from Blueprint at this time so
+//       I could not visually verify the mesh. The files look okay.
+TEST(conduit_blueprint_mesh_partition, quads_poly_explicit_2d)
+{
+    conduit::index_t vdims[] = {11,11,1};
+    test_explicit_selection("quads_poly", vdims, "quads_poly_explicit_2d");
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
     conduit::index_t vdims[] = {11,11,2};
     test_explicit_selection("hexs", vdims, "hexs_explicit_3d");
+}
+#endif
+
+TEST(conduit_blueprint_mesh_partition, hexs_poly_explicit_3d)
+{
+    conduit::index_t vdims[] = {11,11,2};
+    test_explicit_selection("hexs_poly", vdims, "hexs_poly_explicit_3d");
 }
 
 // TODO: need to extract unstructured from polygonal, 3D, polyhedral.
