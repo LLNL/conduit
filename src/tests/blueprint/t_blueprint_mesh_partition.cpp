@@ -23,7 +23,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-#define GENERATE_BASELINES
+//#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -449,7 +449,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -492,7 +492,7 @@ void
 test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3],
     const std::string &base)
 {
-//    conduit::utils::set_error_handler(tmp_err_handler);
+    conduit::utils::set_error_handler(tmp_err_handler);
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -500,7 +500,7 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
     // Override with int64 because YAML loses int/uint information.
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
-input.print();
+
     conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
 
     // Select the whole thing. Check output==input
@@ -612,7 +612,8 @@ input.print();
 #endif
 
 }
-#if 0
+
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
@@ -630,20 +631,22 @@ TEST(conduit_blueprint_mesh_partition, quads_poly_explicit_2d)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
+TEST(conduit_blueprint_mesh_partition, hexs_explicit_2d)
 {
     conduit::index_t vdims[] = {11,11,2};
     test_explicit_selection("hexs", vdims, "hexs_explicit_3d");
 }
-#endif
 
+//-----------------------------------------------------------------------------
+// NOTE: verified by converting to VTK in another tool.
 TEST(conduit_blueprint_mesh_partition, hexs_poly_explicit_3d)
 {
     conduit::index_t vdims[] = {11,11,2};
     test_explicit_selection("hexs_poly", vdims, "hexs_poly_explicit_3d");
 }
+#endif
 
-// TODO: need to extract unstructured from polygonal, 3D, polyhedral.
+// TODO: need to extract unstructured from mixed cell type meshes.
 
 //-----------------------------------------------------------------------------
 void
@@ -786,7 +789,7 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
 #endif
 }
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_ranges_2d)
 {
