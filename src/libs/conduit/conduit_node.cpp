@@ -13412,7 +13412,7 @@ Node&
 Node::fetch(const std::string &path)
 {
     // fetch w/ path forces OBJECT_ID
-    if(dtype().is_object())
+    if(!dtype().is_object())
     {
         init(DataType::object());
     }
