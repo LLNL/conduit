@@ -13,3 +13,4 @@ conduit.docker.src.tar.gz
 Testing/
 .idea
 .vscode/settings.json
+.vscode/launch.json
