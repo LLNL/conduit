@@ -1774,19 +1774,13 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
     }
     else
     {
-        const conduit::Node &n_conn = n_topo["elements/connectivity"];
-// Conduit needs to_index_t_array() and as_index_t_ptr() methods.
-        conduit::Node indices;
-#ifdef CONDUIT_INDEX_32
-        n_conn.to_unsigned_int_array(indices);
-        auto iptr = indices.as_unsigned_int_ptr();
-#else
-        n_conn.to_unsigned_long_array(indices);
-        auto iptr = indices.as_unsigned_long_ptr();
-#endif
         conduit::blueprint::mesh::utils::ShapeType shape(n_topo);
         if(shape.is_polygonal())
         {
+            conduit::Node n_indices;
+            as_index_t(n_topo["elements/connectivity"], n_indices);
+            auto iptr = as_index_t_array(n_indices);
+
             // Make sure we have offsets we can use.
             conduit::Node n_offsets, n_sizes;
 #ifdef CONDUIT_INDEX_32
@@ -1808,13 +1802,16 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
             {
                 auto offset = offsets[element_ids[i]];
                 auto sz = sizes[element_ids[i]];
-                auto elem_conn = iptr + offset;
                 for(unsigned int ptid = 0; ptid < sz; ptid++)
-                    vertex_ids.insert(elem_conn[ptid]);
+                    vertex_ids.insert(iptr[offset + ptid]);
             }
         }
         else if(shape.is_polyhedral())
         {
+            conduit::Node n_indices;
+            as_index_t(n_topo["elements/connectivity"], n_indices);
+            auto iptr = as_index_t_array(n_indices);
+
             // NOTE: I'm assuming that offsets are built already.
             conduit::Node n_offsets, n_sizes;
             as_index_t(n_topo["elements/offsets"], n_offsets);
@@ -1847,15 +1844,73 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
                 }
             }
         }
+        else if(n_topo.has_path("elements/element_types"))
+        {
+            // It looks like the topology is unstructured but contains multiple
+            // element types.
+
+            // Determine the number of points for each stream id and shape.
+            std::map<int,int> stream_id_npts;
+            const conduit::Node &n_element_types = n_topo["elements/element_types"];
+            for(index_t i = 0; i < n_element_types.number_of_children(); i++)
+            {
+                const conduit::Node &n = n_element_types[i];
+                auto stream_id = n["stream_id"].to_int();
+                std::string shape(n["shape"].as_string());
+                for(size_t j = 0; j < utils::TOPO_SHAPES.size(); j++)
+                {
+                    if(shape == utils::TOPO_SHAPES[j])
+                    {
+                        stream_id_npts[stream_id] = utils::TOPO_SHAPE_EMBED_COUNTS[j];
+                        break;
+                    }
+                }
+            }
+
+            conduit::Node n_stream_ids, n_element_counts, n_stream;
+            as_index_t(n_topo["elements/element_index/stream_ids"], n_stream_ids);
+            as_index_t(n_topo["elements/element_index/element_counts"], n_element_counts);
+            as_index_t(n_topo["elements/stream"], n_stream);
+            auto stream_ids = as_index_t_array(n_stream_ids);
+            auto element_counts = as_index_t_array(n_element_counts);
+            auto stream = as_index_t_array(n_stream);
+
+            // Compute some size,offsets into the stream to help
+            std::vector<index_t> sizes, offsets;
+            index_t offset = 0, elemid = 0;
+            for(index_t j = 0; j < stream_ids.number_of_elements(); j++)
+            {
+                auto n = static_cast<index_t>(element_counts[j]);
+                auto npts = stream_id_npts[stream_ids[j]];
+                for(index_t i = 0; i < n; i++)
+                {
+                    sizes.push_back(npts);
+                    offsets.push_back(offset);
+                    offset += npts;
+                    elemid++;
+                }
+            }
+
+            // Now, for each element, insert its vertices.
+            for(size_t i = 0; i < element_ids.size(); i++)
+            {
+                auto npts = sizes[element_ids[i]];
+                for(index_t j = 0; j < npts; j++)
+                    vertex_ids.insert(stream[offsets[i] + j]);
+            }
+        }
         else
         {
             // Shapes are single types one after the next in the connectivity.
+            conduit::Node n_indices;
+            as_index_t(n_topo["elements/connectivity"], n_indices);
+            auto iptr = as_index_t_array(n_indices);
             auto nverts_in_shape = conduit::blueprint::mesh::utils::TOPO_SHAPE_INDEX_COUNTS[shape.id];
             for(size_t i = 0; i < element_ids.size(); i++)
             {
-                auto elem_conn = iptr + element_ids[i] * nverts_in_shape;
+                auto offset = element_ids[i] * nverts_in_shape;
                 for(index_t j = 0; j < nverts_in_shape; j++)
-                    vertex_ids.insert(elem_conn[j]);
+                    vertex_ids.insert(iptr[offset + j]);
             }
         }
     }
@@ -2182,28 +2237,22 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
 
     // vertex_ids contains the list of old vertex ids that our selection uses
     // from the old coordset. It can serve as a new to old map.
-
     std::map<index_t,index_t> old2new;
 //cout << "old2new=" << endl;
     for(size_t i = 0; i < vertex_ids.size(); i++)
-{
+    {
 //cout << "  " << vertex_ids[i] << "-> " << i << endl;
         old2new[vertex_ids[i]] = static_cast<index_t>(i);
-}
-    const conduit::Node &n_conn = n_topo["elements/connectivity"];
-// Conduit needs to_index_t_array() and as_index_t_ptr() methods.
-    conduit::Node indices;
-#ifdef CONDUIT_INDEX_32
-    n_conn.to_unsigned_int_array(indices);
-    auto iptr = indices.as_unsigned_int_ptr();
-#else
-    n_conn.to_unsigned_long_array(indices);
-    auto iptr = indices.as_unsigned_long_ptr();
-#endif
+    }
+
     conduit::blueprint::mesh::utils::ShapeType shape(n_topo);
     std::vector<index_t> new_conn;
     if(shape.is_polygonal())
     {
+        conduit::Node n_indices;
+        as_index_t(n_topo["elements/connectivity"], n_indices);
+        auto iptr = as_index_t_array(n_indices);
+
         // Make sure we have offsets we can use.
         conduit::Node n_offsets, n_sizes;
 #ifdef CONDUIT_INDEX_32
@@ -2228,18 +2277,23 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
         {
             auto offset = offsets[element_ids[i]];
             auto sz = sizes[element_ids[i]];
-            auto elem_conn = iptr + offset;
             for(unsigned int ptid = 0; ptid < sz; ptid++)
-                new_conn.push_back(old2new[elem_conn[ptid]]);
+                new_conn.push_back(old2new[iptr[offset + ptid]]);
             new_sizes.push_back(sz);
             new_offsets.push_back(next_offset);
             next_offset += sz;
         }
+        n_new_topo["elements/shape"].set(n_topo["elements/shape"]);
+        n_new_topo["elements/connectivity"].set(new_conn);
         n_new_topo["elements/sizes"] = new_sizes;
         n_new_topo["elements/offsets"] = new_offsets;
     }
     else if(shape.is_polyhedral())
     {
+        conduit::Node n_indices;
+        as_index_t(n_topo["elements/connectivity"], n_indices);
+        auto iptr = as_index_t_array(n_indices);
+
         // NOTE: I'm assuming that offsets are built already.
         conduit::Node n_offsets, n_sizes;
         as_index_t(n_topo["elements/offsets"], n_offsets);
@@ -2305,26 +2359,169 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
 
         n_new_topo["elements/sizes"].set(new_sizes);
         n_new_topo["elements/offsets"].set(new_offsets);
+        n_new_topo["elements/shape"].set(n_topo["elements/shape"]);
+        n_new_topo["elements/connectivity"].set(new_conn);
         n_new_topo["subelements/shape"].set(n_topo["subelements/shape"].as_string());
         n_new_topo["subelements/connectivity"].set(new_se_conn);
         n_new_topo["subelements/sizes"].set(new_se_sizes);
         n_new_topo["subelements/offsets"].set(new_se_offsets);
     }
+    else if(n_topo.has_path("elements/element_types"))
+    {
+        const conduit::Node &n_element_types = n_topo["elements/element_types"];
+
+        // Determine the number of points for each stream id and shape.
+        std::map<int,int> stream_id_npts;
+        std::set<int> unique_shape_types;
+        std::map<std::string, int> shape_stream_id;
+        std::map<int, std::string> stream_id_shape;
+
+        for(index_t i = 0; i < n_element_types.number_of_children(); i++)
+        {
+            const conduit::Node &n = n_element_types[i];
+            auto stream_id = n["stream_id"].to_int();
+            std::string shape(n["shape"].as_string());
+            for(size_t j = 0; j < utils::TOPO_SHAPES.size(); j++)
+            {
+                if(shape == utils::TOPO_SHAPES[j])
+                {
+                    stream_id_npts[stream_id] = utils::TOPO_SHAPE_EMBED_COUNTS[j];
+                    unique_shape_types.insert(utils::TOPO_SHAPE_EMBED_COUNTS[j]);
+
+                    shape_stream_id[shape] = stream_id;
+                    stream_id_shape[stream_id] = shape;
+                    break;
+                }
+            }
+        }
+
+        if(unique_shape_types.size() > 1)
+        {
+            // Elements are different types.
+
+            conduit::Node n_stream_ids, n_element_counts, n_stream;
+            as_index_t(n_topo["elements/element_index/stream_ids"], n_stream_ids);
+            as_index_t(n_topo["elements/element_index/element_counts"], n_element_counts);
+            as_index_t(n_topo["elements/stream"], n_stream);
+            auto stream_ids = as_index_t_array(n_stream_ids);
+            auto element_counts = as_index_t_array(n_element_counts);
+            auto stream = as_index_t_array(n_stream);
+
+            // Compute some size,offsets into the stream to help
+            std::vector<index_t> stream_ids_expanded, offsets;
+            index_t offset = 0, elemid = 0;
+            for(index_t j = 0; j < stream_ids.number_of_elements(); j++)
+            {
+                auto n = static_cast<index_t>(element_counts[j]);
+                auto npts = stream_id_npts[stream_ids[j]];
+                for(index_t i = 0; i < n; i++)
+                {
+                    stream_ids_expanded.push_back(stream_ids[j]);
+                    offsets.push_back(offset);
+                    offset += npts;
+                    elemid++;
+                }
+            }
+
+            // Now, for each element, add its topology to the new stream.
+            int current_stream_id = -1;
+            index_t current_stream_count = 0;
+            std::vector<index_t> new_stream_ids, new_element_counts;
+            for(size_t i = 0; i < element_ids.size(); i++)
+            {
+                int sid = stream_ids_expanded[element_ids[i]];
+                auto npts = stream_id_npts[sid];
+
+                // Save the element's vertices into the new stream.
+                for(index_t j = 0; j < npts; j++)
+                {
+                    auto vid = stream[offsets[i] + j];
+                    new_conn.push_back(old2new[vid]);
+                }
+
+                if(current_stream_id == -1)
+                {
+                    current_stream_id = sid;
+                    current_stream_count = 1;
+                }
+                else if(current_stream_id != sid)
+                {
+                    new_stream_ids.push_back(current_stream_id);
+                    new_element_counts.push_back(current_stream_count);
+
+                    current_stream_id = sid;
+                    current_stream_count = 1;
+                }
+                else
+                {
+                    current_stream_count++;
+                }
+            }
+            if(current_stream_count > 0)
+            {
+                new_stream_ids.push_back(current_stream_id);
+                new_element_counts.push_back(current_stream_count);
+            }
+
+            n_new_topo["elements/element_types"].set(n_topo["elements/element_types"]);
+            n_new_topo["elements/element_index/stream_ids"].set(new_stream_ids);
+            n_new_topo["elements/element_index/element_counts"].set(new_element_counts);
+            n_new_topo["elements/stream"].set(new_conn);            
+        }
+        else
+        {
+            // All elements are actually a single type.
+            int nverts_in_shape = -1;
+            const conduit::Node &n_et = n_topo["elements/element_types"][0];
+            std::string shape(n_et["shape"].as_string());
+            for(size_t j = 0; j < utils::TOPO_SHAPES.size(); j++)
+            {
+                if(shape == utils::TOPO_SHAPES[j])
+                {
+                    nverts_in_shape = utils::TOPO_SHAPE_EMBED_COUNTS[j];
+                    break;
+                }
+            }
+            if(nverts_in_shape == -1)
+            {
+                CONDUIT_ERROR("Invalid shape");
+            }
+            else
+            {
+                conduit::Node n_indices;
+                as_index_t(n_topo["elements/stream"], n_indices);
+                auto iptr = as_index_t_array(n_indices);
+                for(size_t i = 0; i < element_ids.size(); i++)
+                {
+                    auto offset = element_ids[i] * nverts_in_shape;
+                    for(index_t j = 0; j < nverts_in_shape; j++)
+                        new_conn.push_back(old2new[iptr[offset + j]]);
+                }
+
+                n_new_topo["elements/shape"].set(n_topo["elements/shape"]);
+                n_new_topo["elements/connectivity"].set(new_conn);
+            }
+        }
+    }
     else
     {
         // Shapes are single types one after the next in the connectivity.
+        conduit::Node n_indices;
+        as_index_t(n_topo["elements/connectivity"], n_indices);
+        auto iptr = as_index_t_array(n_indices);
+
         auto nverts_in_shape = conduit::blueprint::mesh::utils::TOPO_SHAPE_INDEX_COUNTS[shape.id];
         for(size_t i = 0; i < element_ids.size(); i++)
         {
-            auto elem_conn = iptr + element_ids[i] * nverts_in_shape;
+            auto offset = element_ids[i] * nverts_in_shape;
 #if 0
             cout << "cell " << element_ids[i] << ":  old(";
             for(index_t j = 0; j < nverts_in_shape; j++)
-                cout << elem_conn[j] << ", ";
+                cout << iptr[offset + j] << ", ";
             cout << "), new(";
             for(index_t j = 0; j < nverts_in_shape; j++)
             {
-                auto it = old2new.find(elem_conn[j]);
+                auto it = old2new.find(iptr[offset + j]);
                 if(it == old2new.end())
                     cout << "ERROR" << ", ";
                 else
@@ -2333,12 +2530,12 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
             cout << ")" << endl;
 #endif
             for(index_t j = 0; j < nverts_in_shape; j++)
-                new_conn.push_back(old2new[elem_conn[j]]);
+                new_conn.push_back(old2new[iptr[offset + j]]);
         }
-    }
 
-    n_new_topo["elements/shape"].set(n_topo["elements/shape"]);
-    n_new_topo["elements/connectivity"].set(new_conn);
+        n_new_topo["elements/shape"].set(n_topo["elements/shape"]);
+        n_new_topo["elements/connectivity"].set(new_conn);
+    }
 }
 
 //---------------------------------------------------------------------------

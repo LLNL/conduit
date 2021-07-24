@@ -24,7 +24,7 @@
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
-
+using std::cout; using std::endl;
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -1120,7 +1120,10 @@ topology::unstructured::generate_offsets(const Node &n,
 {
     const ShapeType topo_shape(n);
     const DataType int_dtype = find_widest_dtype(n, DEFAULT_INT_DTYPES);
-    const Node &topo_conn = n["elements/connectivity"];
+    std::string key("elements/connectivity"), stream_key("elements/stream");
+    if(!n.has_path(key))
+        key = stream_key;
+    const Node &topo_conn = n[key];
 
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
@@ -1132,10 +1135,66 @@ topology::unstructured::generate_offsets(const Node &n,
             dest.set_external(n["elements/offsets"]);
         }
     }
-    else if(!topo_shape.is_poly())
+    else if(n.has_path(stream_key))
     {
         dest.reset();
+        // Mixed element types
+        std::map<int,int> stream_id_npts;
+        const conduit::Node &n_element_types = n["elements/element_types"];
+        for(index_t i = 0; i < n_element_types.number_of_children(); i++)
+        {
+            const Node &n_et = n_element_types[i];
+            auto stream_id = n_et["stream_id"].to_int();
+            std::string shape(n_et["shape"].as_string());
+            for(size_t j = 0; j < TOPO_SHAPES.size(); j++)
+            {
+                if(shape == TOPO_SHAPES[j])
+                {
+                    stream_id_npts[stream_id] = TOPO_SHAPE_EMBED_COUNTS[j];
+                    break;
+                }
+            }
+        }
 
+        const Node &n_stream_ids = n["elements/element_index/stream_ids"];
+        const Node &n_element_counts = n["elements/element_index/element_counts"];
+
+        std::vector<index_t> offsets;
+        index_t offset = 0, elemid = 0;
+#if 1
+cout << "$$$$ stream_ids.size() = " << n_stream_ids.dtype().number_of_elements() << endl;
+#endif
+        for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
+        {
+            // Get the j'th elements from n_stream_ids, n_element_counts
+            const Node n_elem_ct_j(int_dtype,
+                           const_cast<void*>(n_element_counts.element_ptr(j)), true);
+            const Node n_stream_ids_j(int_dtype,
+                           const_cast<void*>(n_stream_ids.element_ptr(j)), true);
+            auto ec = static_cast<index_t>(n_elem_ct_j.to_int64());
+            auto sid = static_cast<index_t>(n_stream_ids_j.to_int64());
+            auto npts = stream_id_npts[sid];
+            for(index_t i = 0; i < ec; i++)
+            {
+                offsets.push_back(offset);
+                offset += npts;
+                elemid++;
+            }
+        }
+#if 1
+        cout << "$$$$ offsets = {" << endl;
+        for(size_t i = 0 ; i < offsets.size(); i++)
+            cout << offsets[i] << ", ";
+        cout << "}" << endl;
+#endif
+        Node off_node;
+        off_node.set_external(offsets);
+        off_node.to_data_type(int_dtype.id(), dest);
+    }
+    else if(!topo_shape.is_poly())
+    {
+        dest.reset();       
+        // Single element type
         const index_t num_topo_shapes =
             topo_conn.dtype().number_of_elements() / topo_shape.indices;
 

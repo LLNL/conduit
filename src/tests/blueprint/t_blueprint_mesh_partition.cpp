@@ -23,7 +23,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-// #define GENERATE_BASELINES
+//#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -191,7 +191,7 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 {
     cout << "s1=" << s1 << ", s2=" << s2 << ", i1=" << i1 << endl;
 
-//    while(1);
+    while(1);
 }
 
 //-----------------------------------------------------------------------------
@@ -507,7 +507,7 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
     // Override with int64 because YAML loses int/uint information.
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
-
+input.print();
     conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
 
     // Select the whole thing. Check output==input
@@ -649,6 +649,16 @@ TEST(conduit_blueprint_mesh_partition, hexs_poly_explicit_3d)
 {
     conduit::index_t vdims[] = {11,11,2};
     test_explicit_selection("hexs_poly", vdims, "hexs_poly_explicit_3d");
+}
+#endif
+
+#if 0
+//-----------------------------------------------------------------------------
+// Hey Chris, this is the one with the mixed cell connectivity.
+TEST(conduit_blueprint_mesh_partition, quads_and_tris_explicit_2d)
+{
+    conduit::index_t vdims[] = {11,11,1};
+    test_explicit_selection("quads_and_tris", vdims, "quads_end_tris_explicit_2d");
 }
 #endif
 
