@@ -11,9 +11,29 @@
 
 # first Check for PARMETIS_DIR
 
+if(NOT METIS_DIR)
+    MESSAGE(FATAL_ERROR "Parmetis support needs explicit METIS_DIR")
+endif()
+
 if(NOT PARMETIS_DIR)
     MESSAGE(FATAL_ERROR "Parmetis support needs explicit PARMETIS_DIR")
 endif()
+
+find_path(METIS_INCLUDE_DIR metis.h
+          PATHS ${METIS_DIR}/include
+          NO_DEFAULT_PATH
+          NO_CMAKE_ENVIRONMENT_PATH
+          NO_CMAKE_PATH
+          NO_SYSTEM_ENVIRONMENT_PATH
+          NO_CMAKE_SYSTEM_PATH)
+
+find_library(METIS_LIB NAMES metis
+             PATHS ${METIS_DIR}/lib
+             NO_DEFAULT_PATH
+             NO_CMAKE_ENVIRONMENT_PATH
+             NO_CMAKE_PATH
+             NO_SYSTEM_ENVIRONMENT_PATH
+             NO_CMAKE_SYSTEM_PATH)
 
 
 find_path(PARMETIS_INCLUDE_DIR parmetis.h
@@ -33,8 +53,8 @@ find_library(PARMETIS_LIB NAMES parmetis
              NO_SYSTEM_ENVIRONMENT_PATH
              NO_CMAKE_SYSTEM_PATH)
 
-set(PARMETIS_LIBRARIES  ${PARMETIS_LIB})
-set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR} )
+set(PARMETIS_LIBRARIES  ${PARMETIS_LIB} ${METIS_LIB})
+set(PARMETIS_INCLUDE_DIRS ${PARMETIS_INCLUDE_DIR} ${METIS_INCLUDE_DIR})
 
 
 include(FindPackageHandleStandardArgs)
