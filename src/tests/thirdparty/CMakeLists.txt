@@ -24,28 +24,32 @@ add_cpp_test(TEST t_libyaml_smoke
 add_cpp_test(TEST t_fmt_smoke
              FOLDER tests/thirdparty)
 
-
-set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
-
-if(UNIX AND NOT APPLE)
-    # we need these for civetweb on linux, we may need similar libs
-    # on windows (OSX appears ok without them)
-    list(APPEND civet_test_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
-endif()
-
-
-if (MINGW)
-  list(APPEND civet_test_deps ws2_32)
-endif ()
-
-add_cpp_test(TEST t_civetweb_smoke
-             SOURCES $<TARGET_OBJECTS:conduit_civetweb>
-             DEPENDS_ON ${civet_test_deps}
-             FOLDER tests/thirdparty)
-
 ################################
 # Optional TPL Unit Tests
 ################################
+
+if(ENABLE_RELAY_WEBSERVER)
+    message(STATUS "Relay Web Server enabled: Added related third party unit tests")
+    set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})
+    if(UNIX AND NOT APPLE)
+        # we need these for civetweb on linux, we may need similar libs
+        # on windows (OSX appears ok without them)
+        list(APPEND civet_test_deps dl rt ${CMAKE_THREAD_LIBS_INIT})
+    endif()
+
+
+    if (MINGW)
+      list(APPEND civet_test_deps ws2_32)
+    endif ()
+
+    add_cpp_test(TEST t_civetweb_smoke
+                 SOURCES $<TARGET_OBJECTS:conduit_civetweb>
+                 DEPENDS_ON ${civet_test_deps}
+                 FOLDER tests/thirdparty)
+else()
+    message(STATUS "Relay Web Server disabled: Skipping related third party tests")
+endif()
+
 
 if(PYTHON_FOUND)
     message(STATUS "Python enabled: Adding related unit tests")

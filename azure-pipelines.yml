@@ -63,6 +63,7 @@ stages:
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: OFF
           ENABLE_DOCS: OFF
+          ENABLE_RELAY_WEBSERVER: OFF
           ENABLE_SILO: OFF
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: OFF
@@ -76,6 +77,7 @@ stages:
           ENABLE_COVERAGE: ON
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
@@ -90,6 +92,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: ON
+          ENABLE_RELAY_WEBSERVER: ON
           ENABLE_DOCS: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
@@ -105,6 +108,22 @@ stages:
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_SILO: ON
+          ENABLE_ADIOS: OFF
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.7.6
+          CMAKE_VERSION: 3.14.2
+          BLT_CXX_STD: c++11
+
+        shared_py37:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
@@ -119,6 +138,7 @@ stages:
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
@@ -134,6 +154,7 @@ stages:
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON

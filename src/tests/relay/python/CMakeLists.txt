@@ -8,8 +8,9 @@
 set(PYTHON_MODULE_TESTS t_python_relay_smoke
                         t_python_relay_io
                         t_python_relay_io_blueprint
-                        t_python_relay_io_handle
-                        t_python_relay_web)
+                        t_python_relay_io_handle)
+
+set(PYTHON_MODULE_RELAY_WEB_TESTS t_python_relay_web)
 
 set(PYTHON_MODULE_MPI_TESTS t_python_relay_mpi)
 
@@ -17,6 +18,13 @@ foreach(TEST ${PYTHON_MODULE_TESTS})
     add_python_test(TEST ${TEST}
                     FOLDER tests/relay/python)
 endforeach()
+
+if(ENABLE_RELAY_WEBSERVER)
+    foreach(TEST ${PYTHON_MODULE_RELAY_WEB_TESTS})
+        add_python_test(TEST ${TEST}
+                        FOLDER tests/relay/python)
+    endforeach()
+endif()
 
 if(MPI_FOUND)
     foreach(TEST ${PYTHON_MODULE_MPI_TESTS})
