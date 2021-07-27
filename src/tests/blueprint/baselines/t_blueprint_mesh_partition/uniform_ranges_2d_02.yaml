@@ -40,5 +40,5 @@ fields:
     association: "element"
     topology: "mesh"
     values: 
-      domains: [0, 0, 0, 0]
+      domains: 0
       ids: 0
