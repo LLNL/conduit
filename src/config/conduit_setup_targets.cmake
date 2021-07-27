@@ -53,11 +53,6 @@ else()
     set(CONDUIT_RELAY_SILO_ENABLED FALSE)
 endif()
 
-if(EXISTS  ${_IMPORT_ROOT}/include/conduit/conduit_relay_web.hpp)
-    set(CONDUIT_RELAY_WEBSERVER_ENABLED TRUE)
-else()
-    set(CONDUIT_RELAY_WEBSERVER_ENABLED FALSE)
-endif()
 
 # create convenience target that bundles all reg conduit deps (conduit::conduit)
 
