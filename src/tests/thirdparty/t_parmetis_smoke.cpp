@@ -190,8 +190,5 @@ int main(int argc, char** argv)
     // Finalize MPI
     MPI_Finalize();
 
-    if(res == METIS_OK)
-        return 0;
-    else // (res == METIS_ERROR)
-        return (res == METIS_OK) ? 0 : -1;
+    return (res == METIS_OK) ? 0 : -1;
 }
