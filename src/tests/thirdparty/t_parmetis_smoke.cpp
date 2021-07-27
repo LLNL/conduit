@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 
     // elems across processors,
     // first rank has [0,1,2], second rank has [3]
-    idx_t eldist[3]  = {0, 2, 4};
+    idx_t eldist[] = {0, 3, 4};
 
     /*
     The eptr and eind arrays are similar in nature to the xadj and adjncy
@@ -50,47 +50,47 @@ int main(int argc, char** argv)
     */
 
     // e0 vertices 0,1,3,4
-    // e1 vertices 1,2,3,4
+    // e1 vertices 1,2,4,5
     // e2 vertices 3,4,6,7
 
-    idx_t eind_rank_0[12] = {0,1,3,4,
-                             1,2,3,4,
-                             3,4,6,7};
+    idx_t eind_rank_0[] = {0,1,3,4,
+                           1,2,4,5,
+                           3,4,6,7};
 
-    idx_t eptr_rank_0[3]  = {0,4,8};
+    idx_t eptr_rank_0[] = {0,4,8};
 
     // e3 vertices 4,5,7,8
-    idx_t eind_rank_1[4] = {4,5,7,8};
-    idx_t eptr_rank_1[2] = {0,4};
+    idx_t eind_rank_1[] = {4,5,7,8};
+    idx_t eptr_rank_1[] = {0,4};
 
-    idx_t wgtflag = 0;
-    idx_t numflag = 0;
-    idx_t ncon = 1;
-    idx_t ncommonnodes = 2;
-    idx_t nparts = 2;
-    idx_t edgecut = 0;
-
+    idx_t wgtflag = 0; // weights are NULL
+    idx_t numflag = 0; // C-style numbering
+    idx_t ncon = 1; // the number of weights per vertex
+    idx_t ncommonnodes = 4; // we have quads
+    idx_t nparts = 2; //
     // equal weights for each proc
-    real_t tpwgts[2] = {1.0/2.0,1.0/2.0};
+    real_t tpwgts[] = {0.5,0.5};
     real_t ubvec=1.050000;
 
     // options == extra output
-    idx_t options[3] = {1,
-                        PARMETIS_DBGLVL_TIME |
-                        PARMETIS_DBGLVL_INFO |
-                        PARMETIS_DBGLVL_PROGRESS |
-                        PARMETIS_DBGLVL_REFINEINFO |
-                        PARMETIS_DBGLVL_MATCHINFO |
-                        PARMETIS_DBGLVL_RMOVEINFO |
-                        PARMETIS_DBGLVL_REMAP,
-                        0};
+    idx_t options[] = {1,
+                       PARMETIS_DBGLVL_TIME |
+                       PARMETIS_DBGLVL_INFO |
+                       PARMETIS_DBGLVL_PROGRESS |
+                       PARMETIS_DBGLVL_REFINEINFO |
+                       PARMETIS_DBGLVL_MATCHINFO |
+                       PARMETIS_DBGLVL_RMOVEINFO |
+                       PARMETIS_DBGLVL_REMAP,
+                       0};
+    // outputs
+    idx_t edgecut = 0; // will hold # of cut edges
 
     // each proc will have its local answer 
     // rank 0 has 3 eles to label
-    idx_t part_rank_0[3] = {10,10,10};
+    idx_t part_rank_0[] = {10,10,10};
 
     // rank 1 has 1 ele to label
-    idx_t part_rank_1[1] = {20};
+    idx_t part_rank_1[] = {20};
 
     MPI_Comm mpi_comm = MPI_COMM_WORLD;
 
