@@ -138,13 +138,17 @@ private:
 //---------------------------------------------------------------------------//
 struct ShapeCascade
 {
+public:
     ShapeCascade(const conduit::Node &topology);
+    ShapeCascade(const ShapeType &shape_type);
 
     index_t get_num_embedded(const index_t level) const;
     const ShapeType& get_shape(const index_t level = -1) const;
 
     ShapeType dim_types[4];
     index_t dim;
+private:
+    void init(const ShapeType &shape_type);
 };
 
 //---------------------------------------------------------------------------//

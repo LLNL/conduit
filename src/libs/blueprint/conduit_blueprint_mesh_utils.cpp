@@ -160,15 +160,14 @@ ShapeType::is_valid() const
 ShapeCascade::ShapeCascade(const conduit::Node &topology)
 {
     ShapeType base_type(topology);
-    dim = base_type.dim;
-
-    dim_types[base_type.dim] = base_type;
-    for(index_t di = base_type.dim - 1; di >= 0; di--)
-    {
-        dim_types[di] = ShapeType(dim_types[di + 1].embed_id);
-    }
+    init(base_type);
 }
 
+//---------------------------------------------------------------------------//
+ShapeCascade::ShapeCascade(const ShapeType &base_type)
+{
+    init(base_type);
+}
 
 //---------------------------------------------------------------------------//
 index_t
@@ -196,6 +195,18 @@ ShapeCascade::get_shape(const index_t level) const
     return dim_types[level < 0 ? dim : level];
 }
 
+//---------------------------------------------------------------------------//
+void
+ShapeCascade::init(const ShapeType &base_type)
+{
+    dim = base_type.dim;
+
+    dim_types[base_type.dim] = base_type;
+    for(index_t di = base_type.dim - 1; di >= 0; di--)
+    {
+        dim_types[di] = ShapeType(dim_types[di + 1].embed_id);
+    }
+}
 
 //---------------------------------------------------------------------------//
 TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset) :
