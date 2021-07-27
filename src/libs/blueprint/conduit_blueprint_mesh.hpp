@@ -321,7 +321,7 @@ namespace topology
 
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_points(const conduit::Node &topo,
-                                                   conduit::Node &topo_dest,
+                                                   conduit::Node &dest,
                                                    conduit::Node &s2dmap,
                                                    conduit::Node &d2smap);
 
