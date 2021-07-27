@@ -2275,7 +2275,7 @@ mesh::topology::length(const Node &topology)
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::points::verify(const Node & topo,
+mesh::topology::points::verify(const Node &topo,
                                Node &info)
 {
     const std::string protocol = "mesh::topology::points";
