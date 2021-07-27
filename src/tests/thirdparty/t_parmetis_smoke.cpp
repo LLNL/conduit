@@ -57,7 +57,7 @@ int main(int argc, char** argv)
                            1,2,4,5,
                            3,4,6,7};
 
-    idx_t eptr_rank_0[] = {0,4,8};
+    idx_t eptr_rank_0[] = {0,4,8,12};
 
     // e3 vertices 4,5,7,8
     idx_t eind_rank_1[] = {4,5,7,8};
@@ -105,6 +105,12 @@ int main(int argc, char** argv)
         {
             std::cout << part_rank_0[i] << " ";
         }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if(par_rank == 1)
+    {
         std::cout << std::endl;
         std::cout << "part_rank_1: ";
         for(int i=0;i<1;i++)
@@ -151,10 +157,13 @@ int main(int argc, char** argv)
                                        &mpi_comm);
     }
 
-    // Finalize MPI
-    MPI_Finalize();
-
     // make sure everything is ok 
+    if(res == METIS_ERROR)
+    {
+        std::cout <<  "METIS_ERROR!" << std::endl;
+    }
+
+    // print results
     if(par_rank == 0)
     {
         std::cout << "after:" << std::endl;
@@ -164,6 +173,12 @@ int main(int argc, char** argv)
             std::cout << part_rank_0[i] << " ";
         }
         std::cout << std::endl;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if(par_rank == 1)
+    {
         std::cout << "part_rank_1: ";
         for(int i=0;i<1;i++)
         {
@@ -171,12 +186,13 @@ int main(int argc, char** argv)
         }
         std::cout << std::endl;
     }
-    
-    if(res == METIS_ERROR)
-    {
-        std::cout <<  "METIS_ERROR!" << std::endl;
-    }
 
-    return (res == METIS_OK);
+    // Finalize MPI
+    MPI_Finalize();
+
+    if(res == METIS_OK)
+        return 0;
+    else // (res == METIS_ERROR)
+        return -1;
 }
 
