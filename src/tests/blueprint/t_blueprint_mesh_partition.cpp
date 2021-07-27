@@ -25,6 +25,8 @@ using std::endl;
 // Enable this macro to generate baselines.
 // #define GENERATE_BASELINES
 
+#define USE_ERROR_HANDLER
+
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
   #ifdef _WIN32
@@ -194,11 +196,14 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
     while(1);
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 void
 test_logical_selection_2d(const std::string &topo, const std::string &base)
 {
+#ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
+#endif
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -329,7 +334,9 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
 void
 test_logical_selection_3d(const std::string &topo, const std::string &base)
 {
+#ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
+#endif
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -495,7 +502,9 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 void
 test_explicit_selection_2d(const std::string &topo, const std::string &base)
 {
+#ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
+#endif
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -630,7 +639,9 @@ TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 void
 test_ranges_selection_2d(const std::string &topo, const std::string &base)
 {
+#ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
+#endif
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -835,7 +846,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, same)
 
     std::vector<const conduit::Node*> same;
     same.push_back(&braid_coordset); same.push_back(&braid_coordset);
-    
+
     conduit::Node output;
     conduit::blueprint::mesh::coordset::combine(same, output, tolerance);
 
@@ -861,10 +872,10 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     conduit::Node polytess;
     conduit::blueprint::mesh::examples::polytess(1, polytess);
     auto &polytess_coordset = polytess["coordsets/coords"];
-    
+
     std::vector<const conduit::Node*> different;
     different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
-    
+
     conduit::Node output;
     conduit::blueprint::mesh::coordset::combine(different, output, tolerance);
 
@@ -907,7 +918,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
         conduit::Node &dom = spiral.child(i);
         multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
     }
-    
+
     conduit::Node output;
     conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
 
@@ -946,7 +957,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
         conduit::Node &dom = spiral.child(i);
         multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
     }
-    
+
     conduit::Node output;
     conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
 
