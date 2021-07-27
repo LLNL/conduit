@@ -2520,7 +2520,7 @@ public:
         accessor<2>  z;
     };
 
-    constexpr size_t size() const 
+    constexpr size_t size() const
     {
         return Size;
     }
@@ -2530,12 +2530,12 @@ public:
         return v[index];
     }
 
-    T &operator[](size_t index) 
+    T &operator[](size_t index)
     {
         return v[index];
     }
 
-    void zero() 
+    void zero()
     {
         set_all(0);
     }
@@ -2687,7 +2687,7 @@ public:
 
     kdtree() = default;
     ~kdtree()
-    { 
+    {
         const auto lambda = [](node *node, unsigned int)
         {
             delete node;
@@ -2749,7 +2749,7 @@ public:
     }
 
     template<typename Func>
-    void traverse_nodes(Func &&func) 
+    void traverse_nodes(Func &&func)
     {
         if(root) { traverse_lnr(func, root); }
     }
@@ -2941,7 +2941,7 @@ private:
     {
         // No matter what we need to add this point to the current bounding box
         current->bb.expand(loc);
-        
+
         // This node has children
         if(current->has_split)
         {
@@ -3010,13 +3010,13 @@ private:
 
 //-----------------------------------------------------------------------------
 void
-point_merge::execute(const std::vector<const Node *> &coordsets, 
+point_merge::execute(const std::vector<const Node *> &coordsets,
                      double tolerance,
                      Node &output)
 {
     if(coordsets.empty())
         return;
-    
+
     if(coordsets.size() == 1)
     {
         if(coordsets[0] != nullptr)
@@ -3190,7 +3190,7 @@ point_merge::append_data(const std::vector<Node> &coordsets,
             }
             newid++;
         };
-        
+
         const auto translate_append = [&](float64 *p, index_t d) {
             translate_system(systems[i], out_system,
                 p[0], p[1], p[2], p[0], p[1], p[2]);
@@ -3234,14 +3234,14 @@ point_merge::create_output(index_t dimension, Node &output) const
         // ERROR! Invalid dimension!
         return;
     }
-    
+
     output.reset();
 
     // Add the new coordset
     {
         output["type"] = "explicit";
         auto &values = output.add_child("values");
-        
+
         // Define the node schema for coords
         Schema s;
         const auto npoints = new_coords.size() / dimension;
@@ -3301,10 +3301,10 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
 
     if(coordset["type"].as_string() != "explicit")
         return;
-    
+
     if(!coordset.has_child("values"))
         return;
-    
+
     const Node &coords = coordset["values"];
 
     // Fetch the nodes for the coordinate values
@@ -3404,7 +3404,7 @@ point_merge::reserve_vectors(const std::vector<Node> &coordsets, index_t dimensi
             {
                 npts = xnode->dtype().number_of_elements();
             }
-        }        
+        }
 
         old_to_new_ids.push_back({});
         old_to_new_ids.back().reserve(npts);
@@ -3643,7 +3643,7 @@ point_merge::rtp_to_xyz(double r, double t, double p, double &out_x, double &out
 //-----------------------------------------------------------------------------
 void
 point_merge::translate_system(coord_system in_system, coord_system out_system,
-        float64 p0, float64 p1, float64 p2, 
+        float64 p0, float64 p1, float64 p2,
         float64 &out_p0, float64 &out_p1, float64 &out_p2)
 {
     // TODO: Handle rz
@@ -3723,8 +3723,446 @@ point_merge::get_axes_for_system(coord_system cs)
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::coordset --
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::topology --
+//-----------------------------------------------------------------------------
+namespace topology
+{
+
+struct entity
+{
+    utils::ShapeType                  shape;
+    // utils::ShapeCascade               cascade; // User can make the cascade if they want using the shape
+    std::vector<index_t>              element_ids;
+    std::vector<std::vector<index_t>> subelement_ids;
+    index_t                           entity_id; // Local entity id.
+};
+
+// static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
+// Q: Why doesn't this exist in conduit_blueprint_mesh_utils.hpp ?
+enum class ShapeId : index_t
+{
+    Vertex     = 0,
+    Line       = 1,
+    Tri        = 2,
+    Quad       = 3,
+    Tet        = 4,
+    Hex        = 5,
+    Polygonal  = 6,
+    Polyhedral = 7
+};
+
+template<typename Func>
+static void iterate_elements(const Node &topo, Func &&func)
+{
+/*
+Multiple topology formats
+0. Single shape topology - Fixed celltype, polygonal celltype, polyhedral celltype
+  topo:
+    coordset: (String name of coordset)
+    type: unstructured
+    elements:
+      shape: (String name of shape)
+      connectivity: (Integer array of vertex ids)
+1. Mixed shape topology 1 - Fixed celltype, polygonal celltype, polyhedral celltype
+  topo:
+    coordset: (String name of coordset)
+    type: unstructured
+    elements:
+      -
+        shape: (String name of shape)
+        connectivity: (Integer array of vertex ids)
+2. Mixed shape topology 2 - Fixed celltype, polygonal celltype, polyhedral celltype
+  topo:
+    coordset: (String name of coordset)
+    type: unstructured
+    elements:
+      (String name):
+        shape: (String name of shape)
+        connectivity: (Integer array of vertex ids)
+3. Stream based toplogy 1
+  mesh: 
+    type: "unstructured"
+    coordset: "coords"
+    elements: 
+      element_types: 
+        (String name): (Q: Could this also be a list entry?) 
+          stream_id: (index_t id)
+          shape: (String name of shape)
+      element_index: 
+        stream_ids: (index_t array of stream ids, must be one of the ids listed in element_types)
+        element_counts: (index_t array of element counts at a given index (IE 2 would mean 2 of the associated stream ID))
+      stream: (index_t array of vertex ids)
+4. Stream based topology 2
+  topo: 
+    type: unstructured
+    coordset: (String name of coordset)
+    elements: 
+      element_types: 
+        (String name): (Q: Could this also be a list entry?)
+          stream_id: (index_t id)
+          shape: (String name of shape)
+      element_index: 
+        stream_ids: (index_t array of stream ids, must be one of the ids listed in element_types)
+        offsets: (index_t array of offsets into stream for each element)
+      stream: (index_t array of vertex ids)
+*/
+
+    int case_num = -1;
+    // Determine case number
+    {
+        const Node *shape = topo.fetch_ptr("elements/shape");
+        if(shape)
+        {
+            // This is a single shape topology
+            const utils::ShapeType st(shape->as_string());
+            if(!st.is_valid())
+            {
+                CONDUIT_ERROR("Invalid topology passed to iterate_elements.");
+                return;
+            }
+            else
+            {
+                case_num = 0;
+            }
+        }
+        else
+        {
+            const Node *elements = topo.fetch_ptr("elements");
+            if(!elements)
+            {
+                CONDUIT_ERROR("Invalid topology passed to iterate elements, no \"elements\" node.");
+                return;
+            }
+
+            const Node *etypes = elements->fetch_ptr("element_types");
+            const Node *eindex = elements->fetch_ptr("element_index");
+            const Node *estream = elements->fetch_ptr("stream");
+            if(!etypes && !eindex && !estream)
+            {
+                // Not a stream based toplogy, either a list or object of element buckets
+                if(elements->dtype().is_list())
+                {
+                    case_num = 1;
+                }
+                else if(elements->dtype().is_object())
+                {
+                    case_num = 2;
+                }
+            }
+            else if(etypes && eindex && estream)
+            {
+                // Stream based topology, either offsets or counts
+                const Node *eoffsets = eindex->fetch_ptr("offsets");
+                const Node *ecounts  = eindex->fetch_ptr("element_counts");
+                if(ecounts)
+                {
+                    case_num = 3;
+                }
+                else if(eoffsets)
+                {
+                    case_num = 4;
+                }
+            }
+        }
+    }
+    if(case_num < 0)
+    {
+        CONDUIT_ERROR("Could not figure out the type of toplogy passed to iterate elements.");
+        return;
+    }
+
+    // Define the lambda functions to be invoked for each topology type
+    const auto traverse_fixed_elements = [&func](const Node &eles, const utils::ShapeType &shape, index_t &ent_id) {
+        // Single celltype
+        entity e;
+        e.shape = shape;
+        const auto ent_size = e.shape.indices;
+        e.element_ids.resize(ent_size, 0);
+
+        const Node &conn = eles["connectivity"];
+        const auto &conn_dtype = conn.dtype();
+        const auto &id_dtype = DataType(conn_dtype.id(), 1);
+        const index_t nents = conn_dtype.number_of_elements() / ent_size;
+        Node temp;
+        index_t ei = 0;
+        for(index_t i = 0; i < nents; i++)
+        {
+            e.entity_id = ent_id;
+            for(index_t j = 0; j < ent_size; j++)
+            {
+                // Pull out vertex id at ei then cast to index_t
+                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
+                e.element_ids[j] = temp.to_index_t();
+                ei++;
+            }
+
+            func(e);
+            ent_id++;
+        }
+    };
+
+    const auto traverse_polygonal_elements = [&func](const Node &elements, index_t &ent_id) {
+        entity e;
+        e.shape = utils::ShapeType((index_t)ShapeId::Polygonal);
+        const Node &conn = elements["connectivity"];
+        const Node &sizes = elements["sizes"];
+        const auto &sizes_dtype = sizes.dtype();
+        const DataType size_dtype(sizes_dtype.id(), 1);
+        const DataType id_dtype(sizes.dtype().id(), 1);
+        const index_t nents = sizes_dtype.number_of_elements();
+        Node temp;
+        index_t ei = 0;
+        for(index_t i = 0; i < nents; i++)
+        {
+            e.entity_id = ent_id;
+            temp.set_external(size_dtype, const_cast<void*>(sizes.element_ptr(i)));
+            const index_t sz = temp.to_index_t();
+            e.element_ids.resize(sz);
+            for(index_t j = 0; j < sz; j++)
+            {
+                // Pull out vertex id at ei then cast to index_t
+                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
+                e.element_ids[j] = temp.to_index_t();
+                ei++;
+            }
+
+            func(e);
+            ent_id++;
+        }
+    };
+
+    const auto traverse_polyhedral_elements = [&func](const Node &elements, const Node &subelements, index_t &ent_id) {
+        entity e;
+        e.shape = utils::ShapeType((index_t)ShapeId::Polyhedral);
+        const Node &conn = elements["connectivity"];
+        const Node &sizes = elements["sizes"];
+        const Node &subconn = subelements["connectivity"];
+        const Node &subsizes = subelements["sizes"];
+        const Node &suboffsets = subelements["offsets"];
+        const auto &sizes_dtype = sizes.dtype();
+        const DataType size_dtype(sizes_dtype.id(), 1);
+        const DataType id_dtype(sizes.dtype().id(), 1);
+        const DataType subid_dtype(subconn.dtype().id(), 1);
+        const DataType suboff_dtype(suboffsets.dtype().id(), 1);
+        const DataType subsize_dtype(subsizes.dtype().id(), 1);
+        const index_t nents = sizes_dtype.number_of_elements();
+        Node temp;
+        index_t ei = 0;
+        for(index_t i = 0; i < nents; i++)
+        {
+            e.entity_id = ent_id;
+            temp.set_external(size_dtype, const_cast<void*>(sizes.element_ptr(i)));
+            const index_t sz = temp.to_index_t();
+            e.element_ids.resize(sz);
+            for(index_t j = 0; j < sz; j++)
+            {
+                // Pull out vertex id at ei then cast to index_t
+                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
+                e.element_ids[j] = temp.to_index_t();
+                ei++;
+            }
+
+            e.subelement_ids.resize(sz);
+            for(index_t j = 0; j < sz; j++)
+            {
+                // Get the size of the subelement so we can define it in the proper index of subelement_ids
+                auto &subele = e.subelement_ids[j];
+                temp.set_external(subsize_dtype, const_cast<void*>(subsizes.element_ptr(e.element_ids[j])));
+                const index_t subsz = temp.to_index_t();
+                subele.resize(subsz);
+
+                // Find the offset of the face definition so we can write the vertex ids
+                temp.set_external(suboff_dtype, const_cast<void*>(suboffsets.element_ptr(e.element_ids[j])));
+                index_t offset = temp.to_index_t();
+                for(index_t k = 0; k < subsz; k++)
+                {
+                    temp.set_external(subid_dtype, const_cast<void*>(subconn.element_ptr(offset)));
+                    subele[k] = temp.to_index_t();
+                    offset++;
+                }
+            }
+
+            func(e);
+            ent_id++;
+        }
+    };
+
+    using id_elem_pair =  std::pair<index_t, entity>;
+    const auto build_element_vector = [](const Node &element_types, std::vector<id_elem_pair> &eles)
+    {
+    /*
+      element_types: 
+        (String name): (Q: Could this also be a list entry?) 
+          stream_id: (index_t id)
+          shape: (String name of shape)
+    */
+        eles.clear();
+        auto itr = element_types.children();
+        while(itr.has_next())
+        {
+            const Node &n = itr.next();
+            const index_t id = n["stream_id"].to_index_t();
+            const utils::ShapeType shape(n["shape"].as_string());
+            eles.push_back({{id}, {}});
+            eles.back().second.shape = shape;
+            if(!shape.is_poly())
+            {
+                eles.back().second.element_ids.resize(shape.indices);
+            }
+            else
+            {
+                CONDUIT_ERROR("I cannot handle a stream of polygonal/polyhedral elements!");
+                return;
+            }
+        }
+    };
+
+    index_t ent_id = 0;
+    switch(case_num)
+    {
+    case 0:
+    {
+        utils::ShapeType shape(topo);
+        if(shape.is_polyhedral())
+        {
+            traverse_polyhedral_elements(topo["elements"], topo["subelements"], ent_id);
+        }
+        else if(shape.is_polygonal())
+        {
+            traverse_polygonal_elements(topo["elements"], ent_id);
+        }
+        else // (known celltype case)
+        {
+            traverse_fixed_elements(topo["elements"], shape, ent_id);
+        }
+        break;
+    }
+    case 1: /* Fallthrough */
+    case 2:
+    {
+        // Mixed celltype
+        const Node &elements = topo["elements"];
+        auto ele_itr = elements.children();
+        while(ele_itr.has_next())
+        {
+            const Node &bucket = ele_itr.next();
+            const std::string &shape_name = bucket["shape"].as_string();
+            utils::ShapeType shape(shape_name);
+
+            if(shape.is_polyhedral())
+            {
+                // Need to find corresponding subelements
+                const std::string bucket_name = bucket.name();
+                if(!topo.has_child("subelements"))
+                {
+                    CONDUIT_ERROR("Invalid toplogy, shape == polygonal but no subelements node present.");
+                    return;
+                }
+                const Node &subelements = topo["subelements"];
+                if(!subelements.has_child(bucket_name))
+                {
+                    CONDUIT_ERROR("Invalid toplogy, shape == polygonal but no matching subelements node present.");
+                    return;
+                }
+                const Node &subbucket = subelements[bucket_name];
+                traverse_polyhedral_elements(bucket, subbucket, ent_id);
+            }
+            else if(shape.is_polygonal())
+            {
+                traverse_polygonal_elements(bucket, ent_id);
+            }
+            else
+            {
+                traverse_fixed_elements(bucket, shape, ent_id);
+            }
+        }
+        break;
+    }
+    case 3: /* Fallthrough */
+    case 4:
+    {
+        // Stream with element counts or offsets
+        const Node &elements = topo["elements"];
+        std::vector<id_elem_pair> etypes;
+        build_element_vector(elements["element_types"], etypes);
+        const Node &eindex = elements["element_index"];
+        const Node &stream = elements["stream"];
+        const Node &stream_ids = eindex["stream_ids"];
+        const Node *stream_offs = eindex.fetch_ptr("offsets");
+        const Node *stream_counts = eindex.fetch_ptr("element_counts");
+        const index_t nstream = stream_ids.dtype().number_of_elements();
+        const DataType sid_dtype(stream_ids.dtype().id(), 1);
+        const DataType stream_dtype(stream.dtype().id(), 1);
+        index_t ent_id = 0;
+        // For count based this number just keeps rising, for offset based it gets overwritten
+        //   by what is stored in the offsets node.
+        index_t idx = 0;
+        Node temp;
+        for(index_t i = 0; i < nstream; i++)
+        {
+            // Determine which shape we are working with
+            temp.set_external(sid_dtype, const_cast<void*>(stream_ids.element_ptr(i)));
+            const index_t stream_id = temp.to_index_t();
+            auto itr = std::find_if(etypes.begin(), etypes.end(), [=](const id_elem_pair &p){
+                return p.first == stream_id;
+            });
+            entity &e = itr->second;
+
+            // Determine how many elements are in this section of the stream
+            index_t start = 0, end = 0;
+            if(stream_offs)
+            {
+                const DataType dt(stream_offs->dtype().id(), 1);
+                temp.set_external(dt, const_cast<void*>(stream_offs->element_ptr(i)));
+                start = temp.to_index_t();
+                if(i == nstream - 1)
+                {
+                    end = stream_offs->dtype().number_of_elements();
+                }
+                else
+                {
+                    temp.set_external(dt, const_cast<void*>(stream_offs->element_ptr(i+1)));
+                    end = temp.to_index_t();
+                }
+            }
+            else if(stream_counts)
+            {
+                const DataType dt(stream_counts->dtype().id(), 1);
+                temp.set_external(dt, const_cast<void*>(stream_counts->element_ptr(i)));
+                start = idx;
+                end   = start + (temp.to_index_t() * e.shape.indices);
+            }
+
+            // Iterate the elements in this section
+            idx = start;
+            while(idx < end)
+            {
+                const index_t sz = e.shape.indices;
+                for(index_t j = 0; j < sz; j++)
+                {
+                    temp.set_external(stream_dtype, const_cast<void*>(stream.element_ptr(idx)));
+                    e.element_ids[j] = temp.to_index_t();
+                    idx++;
+                }
+                e.entity_id = ent_id;
+                func(e);
+                ent_id++;
+            }
+            idx = end;
+        }
+        break;
+    }
+    default:
+        CONDUIT_ERROR("Unsupported topology passed to iterate_elements")
+        return;
+    }
+}
+
+//-----------------------------------------------------------------------------
 template<typename T, typename Func>
-static void iterate_int_data(const conduit::Node &node, Func &&func)
+static void iterate_int_data_impl(const conduit::Node &node, Func &&func)
 {
     conduit::DataArray<T> int_da = node.value();
     const index_t nele = int_da.number_of_elements();
@@ -3734,40 +4172,363 @@ static void iterate_int_data(const conduit::Node &node, Func &&func)
     }
 }
 
+//-----------------------------------------------------------------------------
 template<typename Func>
-static void iterate_connectivity(const conduit::Node &node, Func &&func)
+static void iterate_int_data(const conduit::Node &node, Func &&func)
 {
     const auto id = node.dtype().id();
     switch(id)
     {
     case conduit::DataType::INT8_ID:
-        iterate_int_data<int8>(node, func);
+        iterate_int_data_impl<int8>(node, func);
         break;
     case conduit::DataType::INT16_ID:
-        iterate_int_data<int16>(node, func);
+        iterate_int_data_impl<int16>(node, func);
         break;
     case conduit::DataType::INT32_ID:
-        iterate_int_data<int32>(node, func);
+        iterate_int_data_impl<int32>(node, func);
         break;
     case conduit::DataType::INT64_ID:
-        iterate_int_data<int64>(node, func);
+        iterate_int_data_impl<int64>(node, func);
         break;
     case conduit::DataType::UINT8_ID:
-        iterate_int_data<uint8>(node, func);
+        iterate_int_data_impl<uint8>(node, func);
         break;
     case conduit::DataType::UINT16_ID:
-        iterate_int_data<uint16>(node, func);
+        iterate_int_data_impl<uint16>(node, func);
         break;
     case conduit::DataType::UINT32_ID:
-        iterate_int_data<uint32>(node, func);
+        iterate_int_data_impl<uint32>(node, func);
         break;
     case conduit::DataType::UINT64_ID:
-        iterate_int_data<uint64>(node, func);
+        iterate_int_data_impl<uint64>(node, func);
         break;
     default:
+        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
         break;
     }
 }
+
+//-----------------------------------------------------------------------------
+static void
+append_remapped_ids(const Node &connectivity, const DataArray<index_t> map, std::vector<index_t> &out)
+{
+    iterate_int_data(connectivity, [&](index_t id) {
+        out.push_back(map[id]);
+    });
+}
+
+//-----------------------------------------------------------------------------
+static void
+build_unstructured_output(const std::vector<const Node*> &topologies,
+                          const Node &pointmaps,
+                          const std::string &cset_name,
+                          Node &output)
+{
+    std::cout << "Building unstructured output!" << std::endl;
+    output.reset();
+    output["type"].set("unstructured");
+    output["coordset"].set(cset_name);
+    std::vector<std::string>          shape_types;
+    std::vector<std::vector<index_t>> out_connectivity;
+    const index_t ntopos = (index_t)topologies.size();
+    for(index_t i = 0; i < ntopos; i++)
+    {
+        const Node *topo = topologies[i];
+        const Node *elements = topo->fetch_ptr("elements");
+        if(!elements)
+        {
+            // ERROR
+            continue;
+        }
+
+        const Node *pointmap = pointmaps.child_ptr(i);
+        if(!pointmap)
+        {
+            // ERROR
+            continue;
+        }
+        DataArray<index_t> pmap_da = pointmap->value();
+#if 1
+        iterate_elements(*topo, [&](const entity &e) {
+            // See if we already have a bucket for this shape in our output
+            const std::string &shape_string = e.shape.type;
+            // Find the index for this shape's bucket
+            const auto itr = std::find(shape_types.begin(), shape_types.end(), shape_string);
+            index_t idx = (index_t)(itr - shape_types.begin());
+            if(itr == shape_types.end())
+            {
+                idx = shape_types.size();
+                shape_types.push_back(shape_string);
+                out_connectivity.emplace_back();
+            }
+
+            // Translate the point ids using the pointmap.
+            std::vector<index_t> &out_conn = out_connectivity[idx];
+            for(const index_t id : e.element_ids)
+            {
+                out_conn.push_back(pmap_da[id]);
+            }
+        });
+#else
+        // Build a vector of all the "elements" buckets
+        std::vector<const Node*> elements_vec;
+
+        // Single shape topology
+        if(elements->has_child("shape"))
+        {
+            elements_vec.push_back(elements);
+        }
+        else if(elements->dtype().is_list()
+                || elements->dtype().is_object())
+        {
+            // It is a collection of single element topologies
+            // Q: Should we preserve the names when they exist?
+            auto itr = elements->children();
+            while(itr.has_next())
+            {
+                elements_vec.push_back(&itr.next());
+            }
+        }
+
+        // Iterate the buckets of elements
+        for(const Node *bucket : elements_vec)
+        {
+            const Node *shape = bucket->fetch_ptr("shape");
+            const Node *connectivity = bucket->fetch_ptr("connectivity");
+            if(!shape || !connectivity)
+            {
+                // ERROR!
+                continue;
+            }
+
+            // See if we already have a bucket for this shape in our output
+            const std::string &shape_string = shape->as_string();
+            // Find the index for this shape's bucket
+            const auto itr = std::find(shape_types.begin(), shape_types.end(), shape_string);
+            index_t idx = (index_t)(itr - shape_types.begin());
+            if(itr == shape_types.end())
+            {
+                idx = shape_types.size();
+                shape_types.push_back(shape_string);
+                out_connectivity.emplace_back();
+            }
+
+            // Translate the point ids using the pointmap.
+            std::vector<index_t> &out_conn = out_connectivity[idx];
+            append_remapped_ids(*connectivity, pmap_da, out_conn);
+        }
+#endif
+    }
+
+    if(shape_types.size() == 1)
+    {
+        output["elements/shape"].set(shape_types[0]);
+        output["elements/connectivity"].set(out_connectivity[0]);
+    }
+    else if(shape_types.size() > 1)
+    {
+        const index_t nshapes = (index_t)shape_types.size();
+        for(index_t i = 0; i < nshapes; i++)
+        {
+            const std::string name = shape_types[i] + "s";
+            Node &bucket = output["elements"].add_child(name);
+            bucket["shape"].set(shape_types[i]);
+            bucket["connectivity"].set(out_connectivity[i]);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void
+build_polygonal_output(const std::vector<const Node*> &topologies,
+                       const Node &pointmaps,
+                       const std::string &cset_name,
+                       Node &output)
+{
+    std::cout << "Building polygonal output!" << std::endl;
+    output["type"].set("unstructured");
+    output["coordset"].set(cset_name);
+    output["elements/shape"].set("polygonal");
+
+    std::vector<index_t> out_offsets;
+    std::vector<index_t> out_conn;
+    std::vector<index_t> out_sizes;
+    const index_t ntopos = (index_t)topologies.size();
+    for(index_t i = 0; i < ntopos; i++)
+    {
+        const Node &topo = *topologies[i];
+        const Node *pointmap = pointmaps.child_ptr(i);
+        if(!pointmap)
+        {
+            CONDUIT_WARN("Could not merge topology " << i <<  ", no associated pointmap.");
+            continue;
+        }
+        DataArray<index_t> pmap_da = pointmap->value();
+
+        iterate_elements(topo, [&out_offsets, &out_conn, &out_sizes, &pmap_da](const entity &e) {
+            // If it is a polygon or 2D/1D the remapping is trivial
+            if(e.shape.is_polygonal() || e.shape.dim == 2 || e.shape.dim == 1)
+            {
+                const index_t sz = (index_t)e.element_ids.size();
+                out_offsets.push_back(out_conn.size());
+                out_sizes.push_back(sz);
+                for(index_t j = 0; j < sz; j++)
+                {
+                    out_conn.push_back(pmap_da[e.element_ids[j]]);
+                }
+            }
+            else if(e.shape.is_polyhedral())
+            {
+                // Q: Will this even be a case? I'd imagine if polyhedra are present then
+                //  everything would need to be promoted to polyhedra
+            }
+            else if(e.shape.id == (index_t)ShapeId::Tet || e.shape.id == (index_t)ShapeId::Hex)
+            {
+                // Q: Will this even be a case? I'd imagine if 3D elements exist then the output
+                //  would have to be a 3D topology
+                // TODO: If this case needs to exist then we need to track original cells
+                const index_t embeded_sz = mesh::utils::TOPO_SHAPE_INDEX_COUNTS[e.shape.embed_id];
+                index_t ei = 0;
+                for(index_t j = 0; j < e.shape.embed_count; j++)
+                {
+                    out_offsets.push_back(out_conn.size());
+                    out_sizes.push_back(embeded_sz);
+                    for(index_t k = 0; k < embeded_sz; k++)
+                    {
+                        // Use the embedding table to find the correct index into the element_ids
+                        //  array. Then map the element_id through the pointmap to get the new id.
+                        out_conn.push_back(pmap_da[e.element_ids[e.shape.embedding[ei]]]);
+                        ei++;
+                    }
+                }
+            }
+            else // (e.shape.dim == 0 || !e.shape.is_valid()) Q: Any other cases caught in here?
+            {
+                CONDUIT_ERROR("Encountered invalid element! At element " << e.entity_id);
+                return;
+            }
+        });
+    }
+    output["elements/sizes"].set(out_sizes);
+    output["elements/offsets"].set(out_offsets);
+    output["elements/connectivity"].set(out_conn);
+}
+
+//-----------------------------------------------------------------------------
+static void
+build_polyhedral_output(const std::vector<const Node*> &topologies,
+                       const Node &pointmaps,
+                       const std::string &cset_name,
+                       Node &output)
+{
+    std::cout << "Building polyhedra output!" << std::endl;
+    output.reset();
+    output["type"].set("unstructured");
+    output["coordset"].set(cset_name);
+    output["elements/shape"].set("polyhedral");
+    output["subelements/shape"].set("polygonal");
+    std::vector<index_t> out_conn;
+    std::vector<index_t> out_sizes;
+    std::vector<index_t> out_offsets;
+    std::vector<index_t> out_subconn;
+    std::vector<index_t> out_subsizes;
+    std::vector<index_t> out_suboffsets;
+    const index_t ntopos = (index_t)topologies.size();
+    for(index_t i = 0; i < ntopos; i++)
+    {
+        const Node &topo = *topologies[i];
+        const Node *pointmap = pointmaps.child_ptr(i);
+        if(!pointmap)
+        {
+            CONDUIT_WARN("Could not merge topology " << i <<  ", no associated pointmap.");
+            continue;
+        }
+        DataArray<index_t> pmap_da = pointmap->value();
+
+        iterate_elements(topo, [&](const entity &e) {
+            if(e.shape.is_polyhedral())
+            {
+                // Copy the subelements to their new offsets
+                const index_t sz = e.element_ids.size();
+                const index_t offset = out_conn.size();
+                out_offsets.push_back(offset);
+                out_sizes.push_back(sz);
+                for(index_t i = 0; i < sz; i++)
+                {
+                    const index_t subidx = out_subsizes.size();
+                    const index_t subsz = e.subelement_ids[i].size();
+                    const index_t suboffset = out_subconn.size();
+                    out_conn.push_back(subidx);
+                    out_suboffsets.push_back(suboffset);
+                    out_subsizes.push_back(subsz);
+                    for(index_t j = 0; j < subsz; j++)
+                    {
+                        out_subconn.push_back(pmap_da[e.subelement_ids[i][j]]);
+                    }
+                }
+            }
+            else if(utils::TOPO_SHAPE_IDS[e.shape.id] == "f" || utils::TOPO_SHAPE_IDS[e.shape.id] == "l")
+            {
+                // 2D faces / 1D lines: Line, Tri, Quad
+                // Add the shape to the sub elements
+                const index_t subidx = out_subsizes.size();
+                const index_t suboffset = out_subconn.size();
+                out_suboffsets.push_back(suboffset);
+                const index_t subsz = e.element_ids.size();
+                out_subsizes.push_back(subsz);
+                for(index_t j = 0; j < subsz; j++)
+                {
+                    out_subconn.push_back(pmap_da[e.element_ids[j]]);
+                }
+                // Then create a polyhedron with only 1 subelement
+                out_offsets.push_back(out_conn.size());
+                out_sizes.push_back(1);
+                out_conn.push_back(subidx);
+            }
+            else if(utils::TOPO_SHAPE_IDS[e.shape.id] == "c")
+            {
+                // 3D cells: Tet, Hex
+                const index_t nfaces = e.shape.embed_count;
+                const index_t embeded_sz = mesh::utils::TOPO_SHAPE_INDEX_COUNTS[e.shape.embed_id];
+                out_offsets.push_back(out_conn.size());
+                out_sizes.push_back(nfaces);
+                index_t ei = 0;
+                for(index_t j = 0; j < nfaces; j++)
+                {
+                    out_conn.push_back(out_subsizes.size());
+                    out_suboffsets.push_back(out_subconn.size());
+                    out_subsizes.push_back(embeded_sz);
+                    for(index_t k = 0; k < embeded_sz; k++)
+                    {
+                        // Use the embedding table to find the correct index into the element_ids
+                        //  array. Then map the element_id through the pointmap to get the new id.
+                        out_subconn.push_back(pmap_da[e.element_ids[e.shape.embedding[ei]]]);
+                        ei++;
+                    }
+                }
+            }
+            else // (utils::TOPO_SHAPE_IDS[e.shape.id] == "p" || !e.shape.is_valid()) Q: Any other cases caught in here?
+            {
+                CONDUIT_ERROR("Encountered invalid element! At element " << e.entity_id);
+                return;
+            }
+        });
+    }
+    output["elements/sizes"].set(out_sizes);
+    output["elements/offsets"].set(out_offsets);
+    output["elements/connectivity"].set(out_conn);
+    output["subelements/sizes"].set(out_subsizes);
+    output["subelements/offsets"].set(out_suboffsets);
+    output["subelements/connectivity"].set(out_subconn);
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::topology --
+//-----------------------------------------------------------------------------
+
+
 
 //-------------------------------------------------------------------------
 std::string
@@ -3858,6 +4619,17 @@ partitioner::combine_as_unstructured(int domain,
         }
 
         const index_t ngroups = (index_t)coordset_groups.size();
+#if 0
+        // Some debug output to see how coordsets were grouped
+        std::cout << "Coordsets:\n";
+        for(index_t i = 0; i < ngroups; i++)
+        {
+            std::cout << "  -\n"
+                << "    name: " << coordset_names[i] << "\n"
+                << "    size: " << coordset_groups[i].size() << "\n";
+        }
+        std::cout << std::endl;
+#endif
         for(index_t i = 0; i < ngroups; i++)
         {
             const auto &coordset_group = coordset_groups[i];
@@ -3946,8 +4718,8 @@ partitioner::combine_as_unstructured(int domain,
     // indicates original domain,cellid values for each cell.
 
     // Use original point and cell maps to create new fields that combine
-    // the fields from each source chunk. 
-   
+    // the fields from each source chunk.
+
     // Add the combined result to output node.
 }
 
@@ -4117,11 +4889,27 @@ namespace topology
 
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
                                    const conduit::Node &pointmaps,
-                                   conduit::Node &output)
+                                   conduit::Node &output,
+                                   conduit::Node *options)
 {
     if(topologies.size() == 0)
     {
         return;
+    }
+
+    bool force_polyhedral = false;
+    bool force_polygonal = false;
+    if(options)
+    {
+        if(options->has_child("force_polyhedral"))
+        {
+            force_polyhedral = true;
+        }
+
+        if(options->has_child("force_polygonal"))
+        {
+            force_polygonal = true;
+        }
     }
 
     const std::string &cset_name = topologies[0]->child("coordset").as_string();
@@ -4188,108 +4976,41 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &top
         }
     }
 
-    for(const Node *topo : working_topologies)
-    {
-        topo->print();
-    }
-
     // Start building the output
+    output.reset();
     if(working_topologies.size())
     {
-        output.reset();
-        output["type"].set("unstructured");
-        output["coordset"].set(cset_name);
-
-        std::vector<std::string>          shape_types;
-        std::vector<std::vector<index_t>> out_connectivity;
-        const index_t ntopos = (index_t)working_topologies.size();
-        for(index_t i = 0; i < ntopos; i++)
+        bool do_polyhedral = force_polyhedral;
+        bool do_polygonal  = force_polygonal;
+        index_t dim = 0;
+        for(const Node *topo : topologies)
         {
-            const Node *topo = working_topologies[i];
-            const Node *elements = topo->fetch_ptr("elements");
-            if(!elements)
+            const Node *shape = topo->fetch_ptr("elements/shape");
+            if(!shape) { continue; }
+            const utils::ShapeType s(shape->as_string());
+            if(s.is_polyhedral())
             {
-                // ERROR
-                continue;
+                do_polyhedral = true;
             }
-
-            const Node *pointmap = pointmaps.child_ptr(i);
-            if(!pointmap)
+            else if(s.is_polygonal())
             {
-                // ERROR
-                continue;
+                do_polygonal = true;
             }
-            DataArray<index_t> pmap_da = pointmap->value();
-
-            // Build a vector of all the "elements" buckets
-            std::vector<const Node*> elements_vec;
-
-            // Single shape topology
-            if(elements->has_child("shape"))
-            {
-                elements_vec.push_back(elements);
-            }
-            else if(elements->dtype().is_list()
-                    || elements->dtype().is_object())
-            {
-                // It is a collection of single element topologies
-                // Q: Should we preserve the names when they exist?
-                auto itr = elements->children();
-                while(itr.has_next())
-                {
-                   elements_vec.push_back(&itr.next());
-                }
-            }
-
-            // Iterate the buckets of elements
-            for(const Node *bucket : elements_vec)
-            {
-                const Node *shape = bucket->fetch_ptr("shape");
-                const Node *connectivity = bucket->fetch_ptr("connectivity");
-                if(!shape || !connectivity)
-                {
-                    // ERROR!
-                    continue;
-                }
-
-                // See if we already have a bucket for this shape in our output
-                const std::string &shape_string = shape->as_string();
-                const auto itr = std::find(shape_types.begin(), shape_types.end(), shape_string);
-                index_t idx = 0;
-                if(itr == shape_types.end())
-                {
-                    idx = shape_types.size();
-                    shape_types.push_back(shape_string);
-                    out_connectivity.emplace_back();
-                }
-                else
-                {
-                    idx = (index_t)(itr - shape_types.begin());
-                }
-
-                std::vector<index_t> &out_conn = out_connectivity[idx];
-                iterate_connectivity(*connectivity, [&out_conn, &pmap_da](index_t id)
-                {
-                    out_conn.push_back(pmap_da[id]);
-                });
-            }
+            dim = std::max(dim, s.dim);
+            if(do_polyhedral) break;
         }
 
-        Node &out_elements = output["elements"];
-        if(shape_types.size() == 1)
+        if(do_polyhedral || (do_polygonal && dim > 2))
         {
-            out_elements["shape"].set(shape_types[0]);
-            out_elements["connectivity"].set(out_connectivity[0]);
+            build_polyhedral_output(working_topologies, pointmaps, cset_name, output);
         }
-        else if(shape_types.size() > 1)
+        else if(do_polygonal)
         {
-            const index_t nshapes = (index_t)shape_types.size();
-            for(index_t i = 0; i < nshapes; i++)
-            {
-                Node &bucket = out_elements.append();
-                bucket["shape"].set(shape_types[i]);
-                bucket["connectivity"].set(out_connectivity[i]);
-            }
+            build_polygonal_output(working_topologies, pointmaps, cset_name, output);
+        }
+        else // Single shape & multi shape topologies
+        {
+            build_unstructured_output(working_topologies, pointmaps, cset_name, output);
         }
     }
 }

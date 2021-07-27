@@ -563,7 +563,8 @@ namespace topology
 
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
                                    const conduit::Node &pointmaps,
-                                   conduit::Node &output);
+                                   conduit::Node &output,
+                                   conduit::Node *options = nullptr);
 
 }
 //-----------------------------------------------------------------------------
