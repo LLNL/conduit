@@ -4599,6 +4599,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
     output["coordset"].set(cset_name);
     std::vector<std::string>          shape_types;
     std::vector<std::vector<index_t>> out_connectivity;
+    std::vector<std::vector<index_t>> out_elem_map;
     const index_t ntopos = (index_t)topologies.size();
     for(index_t i = 0; i < ntopos; i++)
     {
@@ -4630,6 +4631,9 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
                 shape_types.push_back(shape_string);
                 out_connectivity.emplace_back();
             }
+
+            out_elem_map[idx].push_back(i);
+            out_elem_map[idx].push_back(e.entity_id);
 
             // Translate the point ids using the pointmap.
             std::vector<index_t> &out_conn = out_connectivity[idx];
@@ -4691,11 +4695,13 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
 
     if(shape_types.size() == 1)
     {
+        output["element_map"].set(out_elem_map[0]);
         output["elements/shape"].set(shape_types[0]);
         output["elements/connectivity"].set(out_connectivity[0]);
     }
     else if(shape_types.size() > 1)
     {
+        std::vector<index_t> elem_map;
         const index_t nshapes = (index_t)shape_types.size();
         for(index_t i = 0; i < nshapes; i++)
         {
@@ -4703,7 +4709,13 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
             Node &bucket = output["elements"].add_child(name);
             bucket["shape"].set(shape_types[i]);
             bucket["connectivity"].set(out_connectivity[i]);
+            for(index_t id : out_elem_map[i])
+            {
+                elem_map.push_back(id);
+            }
+            std::vector<index_t>().swap(out_elem_map[i]);
         }
+        output["elementmap"].set(elem_map);
     }
 }
 
@@ -4722,6 +4734,7 @@ build_polygonal_output(const std::vector<const Node*> &topologies,
     std::vector<index_t> out_offsets;
     std::vector<index_t> out_conn;
     std::vector<index_t> out_sizes;
+    std::vector<index_t> out_elem_map;
     const index_t ntopos = (index_t)topologies.size();
     for(index_t i = 0; i < ntopos; i++)
     {
@@ -4734,10 +4747,12 @@ build_polygonal_output(const std::vector<const Node*> &topologies,
         }
         DataArray<index_t> pmap_da = pointmap->value();
 
-        iterate_elements(topo, [&out_offsets, &out_conn, &out_sizes, &pmap_da](const entity &e) {
+        iterate_elements(topo, [&out_offsets, &out_conn, &out_sizes, &pmap_da, &out_elem_map, i](const entity &e) {
             // If it is a polygon or 2D/1D the remapping is trivial
             if(e.shape.is_polygonal() || e.shape.dim == 2 || e.shape.dim == 1)
             {
+                out_elem_map.push_back(i);
+                out_elem_map.push_back(e.entity_id);
                 const index_t sz = (index_t)e.element_ids.size();
                 out_offsets.push_back(out_conn.size());
                 out_sizes.push_back(sz);
@@ -4755,11 +4770,12 @@ build_polygonal_output(const std::vector<const Node*> &topologies,
             {
                 // Q: Will this even be a case? I'd imagine if 3D elements exist then the output
                 //  would have to be a 3D topology
-                // TODO: If this case needs to exist then we need to track original cells
                 const index_t embeded_sz = mesh::utils::TOPO_SHAPE_INDEX_COUNTS[e.shape.embed_id];
                 index_t ei = 0;
                 for(index_t j = 0; j < e.shape.embed_count; j++)
                 {
+                    out_elem_map.push_back(i);
+                    out_elem_map.push_back(e.entity_id);
                     out_offsets.push_back(out_conn.size());
                     out_sizes.push_back(embeded_sz);
                     for(index_t k = 0; k < embeded_sz; k++)
@@ -4778,6 +4794,7 @@ build_polygonal_output(const std::vector<const Node*> &topologies,
             }
         });
     }
+    output["element_map"].set(out_elem_map);
     output["elements/sizes"].set(out_sizes);
     output["elements/offsets"].set(out_offsets);
     output["elements/connectivity"].set(out_conn);
@@ -4802,6 +4819,7 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
     std::vector<index_t> out_subconn;
     std::vector<index_t> out_subsizes;
     std::vector<index_t> out_suboffsets;
+    std::vector<index_t> out_elem_map;
     const index_t ntopos = (index_t)topologies.size();
     for(index_t i = 0; i < ntopos; i++)
     {
@@ -4815,6 +4833,8 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
         DataArray<index_t> pmap_da = pointmap->value();
 
         iterate_elements(topo, [&](const entity &e) {
+            out_elem_map.push_back(i);
+            out_elem_map.push_back(e.entity_id);
             if(e.shape.is_polyhedral())
             {
                 // Copy the subelements to their new offsets
@@ -4883,6 +4903,7 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
             }
         });
     }
+    output["element_map"].set(out_elem_map);
     output["elements/sizes"].set(out_sizes);
     output["elements/offsets"].set(out_offsets);
     output["elements/connectivity"].set(out_conn);
@@ -4921,6 +4942,17 @@ partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
+    const auto sz = inputs.size();
+    if(sz == 0)
+    {
+        CONDUIT_ERROR("partitioner::combine called with 0 inputs, cannot combine 0 inputs.")
+        return;
+    }
+    else if(sz == 1)
+    {
+        output = *inputs[0];
+        return;
+    }
 
     std::string rt(recommended_topology(inputs));
     if(rt == "uniform" || rt == "rectilinear")
@@ -5013,10 +5045,10 @@ partitioner::combine_as_unstructured(int domain,
     // Iterate over all topology names and combine like-named topologies
     // as new unstructured topology.
     Node &output_topologies = output.add_child("topologies");
+    using topo_group_t = std::pair<std::string, std::vector<const Node*>>;
+    std::vector<topo_group_t> topo_groups;
     {
         // Group all the like-named toplogies
-        std::vector<std::string> names;
-        std::vector<std::vector<const Node*>> topo_groups;
         const index_t ninputs = (index_t)inputs.size();
         for(index_t i = 0; i < ninputs; i++)
         {
@@ -5034,12 +5066,14 @@ partitioner::combine_as_unstructured(int domain,
                 const Node *topo = topos->fetch_ptr(topo_name);
                 if(!topo) { continue; }
 
-                auto itr = std::find(names.begin(), names.end(), topo_name);
-                if(itr != names.end())
+                auto itr = std::find_if(topo_groups.begin(), topo_groups.end(), [&](const topo_group_t &g) {
+                    return g.first == topo_name;
+                });
+                if(itr != topo_groups.end())
                 {
-                    const auto idx = itr - names.begin();
+                    const auto idx = itr - topo_groups.begin();
                     // Need to check if the topologies in this group have the same coordset
-                    const Node *group_cset = topo_groups[idx][0]->fetch_ptr("coordset");
+                    const Node *group_cset = topo_groups[idx].second[0]->fetch_ptr("coordset");
                     if(!group_cset) { continue; }
                     const Node *this_cset = topo->fetch_ptr("coordset");
                     if(!this_cset) { continue; }
@@ -5048,14 +5082,14 @@ partitioner::combine_as_unstructured(int domain,
                         // Error! Cannot merge two topologies that reference different named coordsets
                         continue;
                     }
-                    topo_groups[idx].push_back(topo);
+                    topo_groups[idx].second.push_back(topo);
                 }
                 else // (itr == names.end())
                 {
                     const auto idx = topo_groups.size();
-                    names.push_back(topo_name);
                     topo_groups.emplace_back();
-                    topo_groups[idx].push_back(topo);
+                    topo_groups[idx].first = topo_name;
+                    topo_groups[idx].second.push_back(topo);
                 }
             }
         }
@@ -5065,28 +5099,255 @@ partitioner::combine_as_unstructured(int domain,
         {
             const auto &topo_group = topo_groups[i];
             // All topologies in the same group must reference a coordset with the same name
-            const Node *group_cset = topo_group[0]->fetch_ptr("coordset");
+            const Node *group_cset = topo_group.second[0]->fetch_ptr("coordset");
             if(!group_cset) { continue; }
 
             auto itr = std::find(coordset_names.begin(), coordset_names.end(), group_cset->as_string());
             if(itr == coordset_names.end())
             {
-                // Error invalid coordset name!
+                CONDUIT_ERROR("Topology " << topo_group.first << " references unknown coordset " << group_cset->as_string());
                 continue;
             }
 
             const Node *pointmaps = output_coordsets[*itr].fetch_ptr("pointmaps");
             if(!pointmaps) { continue; }
 
-            topology::combine(topo_group, *pointmaps, output_topologies.add_child(names[i]));
+            topology::combine(topo_group.second, *pointmaps, output_topologies.add_child(topo_group.first));
         }
     }
 
-    // Combine mapping info stored in chunks to assemble new field that
-    // indicates original domain,cellid values for each cell.
+    // All inputs must have a fields object to merge fields
+    bool have_fields = true;
+    for(const Node *n : inputs)
+    {
+        if(n->has_child("fields"))
+        {
+            have_fields = false;
+            break;
+        }
+    }
 
-    // Use original point and cell maps to create new fields that combine
-    // the fields from each source chunk.
+    if(have_fields)
+    {
+        Node &output_fields = output["fields"];
+
+        // Note: It should already be verified that they have a "fields" child
+        using field_group_t = std::pair<std::string, std::vector<const Node*>>;
+        std::vector<field_group_t> field_groups;
+        for(const Node *n : inputs)
+        {
+            const Node &fields = n->child("fields");
+            auto itr = fields.children();
+            while(itr.has_next())
+            {
+                const Node &n = itr.next();
+                auto itr = std::find_if(field_groups.begin(), field_groups.end(), [&](const field_group_t &g) {
+                    return g.first == n.name();
+                });
+                if(itr != field_groups.end())
+                {
+                    itr->second.push_back(&n);
+                }
+                else
+                {
+                    field_groups.emplace_back();
+                    field_groups.back().first = n.name();
+                    field_groups.back().second.push_back(&n);
+                }
+            }
+        }
+
+        // Use node 0 as a reference
+        for(size_t i = 0; i < field_groups.size(); i++)
+        {
+            const auto &field_name = field_groups[i].first;
+            const auto &field_group = field_groups[i].second;
+            // Figure out field association and topology
+            if(!field_group[0]->has_child("topology") || !field_group[0]->has_child("values"))
+            {
+                CONDUIT_WARN("Field " << field_name << " is not topology based, TODO: Implement material based field combinations.");
+                continue;
+            }
+            const std::string &ref_topo_name = field_group[0]->child("topology").as_string();
+
+            // Make sure we have a toplogy group for the given name
+            auto itr = std::find_if(topo_groups.begin(), topo_groups.end(), [&](topo_group_t &g){
+                return g.first == ref_topo_name;
+            });
+            if(itr == topo_groups.end())
+            {
+                CONDUIT_ERROR("Field " << field_name << " references " << ref_topo_name << " which doesn't exist.");
+                continue;
+            }
+            const auto &topo_group = itr->second;
+
+            // Figure out num components and out dtype
+            index_t ncomps = 0;
+            Schema out_schema;
+            {
+                const Node &values = field_group[0]->child("values");
+                if(values.number_of_children())
+                {
+                    // MCArray
+                    auto vitr = values.children();
+                    while(vitr.has_next())
+                    {
+                        const Node &n = vitr.next();
+                        out_schema[n.name()].set(n.dtype().id());
+                        ncomps++;
+                    }
+                }
+                else
+                {
+                    // Just data
+                    ncomps = 1;
+                    out_schema.set(values.dtype().id());
+                }
+            }
+
+            const std::string &assoc = field_group[0]->child("association").as_string();
+            Node &fout = output_fields[field_name];
+            fout["topology"] = ref_topo_name;
+            fout["association"] = assoc;
+            // Determine if we are vertex or element associated
+            if(assoc == utils::ASSOCIATIONS[0])
+            {
+                // Vertex association
+                // Need to use pointmaps to map this field
+                // Get the point map
+                const Node *group_cset = topo_group[0]->fetch_ptr("coordset");
+                auto itr = std::find(coordset_names.begin(), coordset_names.end(), group_cset->as_string());
+                if(itr == coordset_names.end())
+                {
+                    CONDUIT_ERROR("Could not find coordset " << group_cset->as_string() << " when building fields.");
+                    continue;
+                }
+                const Node &out_coordset = output_coordsets[*itr];
+                std::vector<DataArray<index_t>> pmaps;
+                {
+
+                    const Node *pointmaps = out_coordset.fetch_ptr("pointmaps");
+                    if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); continue; }
+                    for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
+                    {
+                        pmaps.emplace_back(pointmaps->child(i).value());
+                    }
+                }
+
+                const index_t nt = coordset::length(out_coordset);
+                Node &out_values = fout["values"];
+                std::vector<Node *> out_values_comps;
+                if(ncomps > 1)
+                {
+                    for(index_t si = 0; si < out_schema.number_of_children(); si++)
+                    {
+                        const DataType dt(out_schema[i].dtype().id(), nt);
+                        out_schema[i].set(dt);
+                    }
+                    out_values.set(out_schema);
+                    for(index_t ci = 0; ci < out_values.number_of_children(); ci++)
+                    {
+                        out_values_comps.push_back(&out_values[ci]);
+                    }
+                }
+                else
+                {
+                    const DataType dt(out_schema.dtype().id(), nt);
+                    out_schema.set(dt);
+                    out_values.set(out_schema);
+                    out_values_comps.push_back(&out_values);
+                }
+
+                const index_t npmaps = (index_t)pmaps.size();
+                for(index_t fi = 0; fi < npmaps; fi++)
+                {
+                    const auto &pmap = pmaps[fi];
+                    const Node &data = field_group[fi]->child("values");
+                    for(index_t idx = 0; idx < pmap.number_of_elements(); idx++)
+                    {
+                        const index_t out_idx = pmap[idx];
+                        for(index_t ci = 0; ci < ncomps; ci++)
+                        {
+                            const auto bytes = out_values_comps[ci]->dtype().element_bytes();
+                            void *out_data = out_values_comps[ci]->element_ptr(out_idx);
+                            const void *in_data;
+                            if(data.number_of_children())
+                            {
+                                in_data = data[ci].element_ptr(idx);
+                            }
+                            else
+                            {
+                                in_data = data.element_ptr(idx);
+                            }
+                            memcpy(out_data, in_data, bytes);
+                        }
+                    }
+                }
+            }
+            else if(assoc == utils::ASSOCIATIONS[1])
+            {
+                // Element association
+                // Need to use element maps to map this field
+                const Node &out_topo_map = output["topologies"][ref_topo_name]["element_map"];
+                const DataArray<index_t> tmap = out_topo_map.value();
+                const index_t sz = tmap.number_of_elements();
+                const index_t nt = sz / 2;
+                Node &out_values = fout["values"];
+                std::vector<Node *> out_values_comps;
+                if(ncomps > 1)
+                {
+                    for(index_t si = 0; si < out_schema.number_of_children(); si++)
+                    {
+                        const DataType dt(out_schema[i].dtype().id(), nt);
+                        out_schema[i].set(dt);
+                    }
+                    out_values.set(out_schema);
+                    for(index_t ci = 0; ci < out_values.number_of_children(); ci++)
+                    {
+                        out_values_comps.push_back(&out_values[ci]);
+                    }
+                }
+                else
+                {
+                    const DataType dt(out_schema.dtype().id(), nt);
+                    out_schema.set(dt);
+                    out_values.set(out_schema);
+                    out_values_comps.push_back(&out_values);
+                }
+
+                index_t map_idx = 0;
+
+                while(map_idx < sz)
+                {
+                    const index_t idx = map_idx / 2;
+                    const index_t dom_idx = tmap[map_idx++];
+                    const index_t elem_idx = tmap[map_idx++];
+                    const Node &data = field_group[dom_idx]->child("values");
+                    if(data.number_of_children())
+                    {
+                        for(index_t ci = 0; ci < data.number_of_children(); ci++)
+                        {
+                            void *out_data = out_values_comps[i]->element_ptr(idx);
+                            const void *in_data = data[i].element_ptr(elem_idx);
+                            memcpy(out_data, in_data, data[i].dtype().element_bytes());
+                        }
+                    }
+                    else
+                    {
+                        void *out_data = out_values_comps[0]->element_ptr(idx);
+                        const void *in_data = data.element_ptr(elem_idx);
+                        memcpy(out_data, in_data, data[i].dtype().element_bytes());
+                    }
+                }
+            }
+            else
+            {
+                CONDUIT_WARN("Unsupported association for field " << field_name << " " << assoc);
+                continue;
+            }
+        }
+    }
+
 
     // Add the combined result to output node.
 }
