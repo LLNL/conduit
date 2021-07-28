@@ -208,7 +208,7 @@ stages:
            if [ $ENABLE_ADIOS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
            #parmetis
            if [ $ENABLE_PARMETIS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+parmetis"; fi
-           if [ $ENABLE_PARMETIS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~parmetis"; f
+           if [ $ENABLE_PARMETIS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~parmetis"; fi
            # python
            if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+python"; fi
            if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
