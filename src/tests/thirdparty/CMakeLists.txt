@@ -130,3 +130,14 @@ else()
     message(STATUS "h5z-zfp disabled: Skipping related tests")
 endif()
 
+
+if(PARMETIS_FOUND)
+    message(STATUS "Parmetis enabled: Adding related unit tests")
+    add_cpp_mpi_test(TEST t_parmetis_smoke
+                     NUM_MPI_TASKS 2
+                     DEPENDS_ON parmetis
+                     FOLDER tests/thirdparty)
+else()
+    message(STATUS "Parmetis disabled: Skipping related tests")
+endif()
+

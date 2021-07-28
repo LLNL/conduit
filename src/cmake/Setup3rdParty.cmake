@@ -158,4 +158,15 @@ if(H5ZZFP_DIR)
     endif()
 endif()
 
+################################
+# Setup Parmetis if available
+################################
+if(PARMETIS_DIR)
+    include(cmake/thirdparty/SetupParmetis.cmake)
+    include_directories(${PARMETIS_INCLUDE_DIR})
+    # if we don't find it, throw a fatal error
+    if(NOT PARMETIS_FOUND)
+        message(FATAL_ERROR "PARMETIS_DIR is set, but parmetis wasn't found.")
+    endif()
+endif()
 
