@@ -8,10 +8,12 @@ include(CMakeFindDependencyMacro)
 # Setup Threads
 ###############################################################################
 if(UNIX AND NOT APPLE)
-# we depend on Threads::Threads in our exported targets
-# so we need to bootstrap that here
-    if(NOT TARGET Threads::Threads)
-        find_package( Threads REQUIRED )
+    if(CONDUIT_RELAY_WEBSERVER_ENABLED)
+        # we depend on Threads::Threads in our exported targets
+        # so we need to bootstrap that here
+        if(NOT TARGET Threads::Threads)
+            find_package( Threads REQUIRED )
+        endif()
     endif()
 endif()
 
