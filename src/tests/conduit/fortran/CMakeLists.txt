@@ -12,7 +12,8 @@ set(FORTRAN_TESTS
     t_f_conduit_node
     t_f_conduit_node_int
     t_f_conduit_node_float
-    t_f_conduit_node_char8_str)
+    t_f_conduit_node_char8_str
+    t_f_conduit_intro_ftn_example)
 
 if(ENABLE_FORTRAN_OBJ_INTERFACE)
     list(APPEND FORTRAN_TESTS t_f_conduit_node_obj)

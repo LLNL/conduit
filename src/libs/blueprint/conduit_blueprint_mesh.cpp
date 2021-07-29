@@ -1403,7 +1403,7 @@ mesh::verify(const std::string &protocol,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::verify(const Node &n,
+mesh::verify(const Node &mesh,
              Node &info)
 {
     bool res = true;
@@ -1411,20 +1411,20 @@ mesh::verify(const Node &n,
 
     // if n has the child "coordsets", we assume it is a single domain
     // mesh
-    if(n.has_child("coordsets"))
+    if(mesh.has_child("coordsets"))
     {
-        res = verify_single_domain(n, info);
+        res = verify_single_domain(mesh, info);
     }
     else
     {
-       res = verify_multi_domain(n, info);
+       res = verify_multi_domain(mesh, info);
     }
     return res;
 }
 
 
 //-------------------------------------------------------------------------
-bool mesh::is_multi_domain(const conduit::Node &n)
+bool mesh::is_multi_domain(const conduit::Node &mesh)
 {
     // this is a blueprint property, we can assume it will be called
     // only when mesh verify is true. Given that - the only check
@@ -1433,32 +1433,32 @@ bool mesh::is_multi_domain(const conduit::Node &n)
     // checking for a child named "coordsets" mirrors the
     // top level verify check
 
-    return !n.has_child("coordsets");
+    return !mesh.has_child("coordsets");
 }
 
 
 //-------------------------------------------------------------------------
 index_t
-mesh::number_of_domains(const conduit::Node &n)
+mesh::number_of_domains(const conduit::Node &mesh)
 {
     // this is a blueprint property, we can assume it will be called
     // only when mesh verify is true. Given that - it is easy to
     // answer the number of domains
 
-    if(!is_multi_domain(n))
+    if(!is_multi_domain(mesh))
     {
         return 1;
     }
     else
     {
-        return n.number_of_children();
+        return mesh.number_of_children();
     }
 }
 
 
 //-------------------------------------------------------------------------
 std::vector<const conduit::Node *>
-mesh::domains(const conduit::Node &n)
+mesh::domains(const conduit::Node &mesh)
 {
     // this is a blueprint property, we can assume it will be called
     // only when mesh verify is true. Given that - it is easy to
@@ -1466,13 +1466,13 @@ mesh::domains(const conduit::Node &n)
 
     std::vector<const conduit::Node *> doms;
 
-    if(!mesh::is_multi_domain(n))
+    if(!mesh::is_multi_domain(mesh))
     {
-        doms.push_back(&n);
+        doms.push_back(&mesh);
     }
-    else if(!n.dtype().is_empty())
+    else if(!mesh.dtype().is_empty())
     {
-        NodeConstIterator nitr = n.children();
+        NodeConstIterator nitr = mesh.children();
         while(nitr.has_next())
         {
             doms.push_back(&nitr.next());
@@ -1484,19 +1484,19 @@ mesh::domains(const conduit::Node &n)
 
 
 //-------------------------------------------------------------------------
-void mesh::to_multi_domain(const conduit::Node &n,
+void mesh::to_multi_domain(const conduit::Node &mesh,
                            conduit::Node &dest)
 {
     dest.reset();
 
-    if(mesh::is_multi_domain(n))
+    if(mesh::is_multi_domain(mesh))
     {
-        dest.set_external(n);
+        dest.set_external(mesh);
     }
     else
     {
         conduit::Node &dest_dom = dest.append();
-        dest_dom.set_external(n);
+        dest_dom.set_external(mesh);
     }
 }
 
@@ -1989,7 +1989,7 @@ mesh::coordset::rectilinear::verify(const Node &coordset,
 //-----------------------------------------------------------------------------
 bool
 mesh::coordset::_explicit::verify(const Node &coordset,
-                                 Node &info)
+                                  Node &info)
 {
     const std::string protocol = "mesh::coordset::explicit";
     bool res = true;
@@ -2275,7 +2275,7 @@ mesh::topology::length(const Node &topology)
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::points::verify(const Node & topo,
+mesh::topology::points::verify(const Node &topo,
                                Node &info)
 {
     const std::string protocol = "mesh::topology::points";
@@ -2301,7 +2301,7 @@ mesh::topology::points::verify(const Node & topo,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::topology::uniform::verify(const Node & topo,
+mesh::topology::uniform::verify(const Node &topo,
                                 Node &info)
 {
     const std::string protocol = "mesh::topology::uniform";
@@ -2325,30 +2325,30 @@ mesh::topology::uniform::verify(const Node & topo,
 //-------------------------------------------------------------------------
 void
 mesh::topology::uniform::to_rectilinear(const conduit::Node &topo,
-                                        conduit::Node &dest,
-                                        conduit::Node &cdest)
+                                        conduit::Node &topo_dest,
+                                        conduit::Node &coords_dest)
 {
-    convert_topology_to_rectilinear("uniform", topo, dest, cdest);
+    convert_topology_to_rectilinear("uniform", topo, topo_dest, coords_dest);
 }
 
 
 //-------------------------------------------------------------------------
 void
 mesh::topology::uniform::to_structured(const conduit::Node &topo,
-                                       conduit::Node &dest,
-                                       conduit::Node &cdest)
+                                       conduit::Node &topo_dest,
+                                       conduit::Node &coords_dest)
 {
-    convert_topology_to_structured("uniform", topo, dest, cdest);
+    convert_topology_to_structured("uniform", topo, topo_dest, coords_dest);
 }
 
 
 //-------------------------------------------------------------------------
 void
 mesh::topology::uniform::to_unstructured(const conduit::Node &topo,
-                                         conduit::Node &dest,
-                                         conduit::Node &cdest)
+                                         conduit::Node &topo_dest,
+                                         conduit::Node &coords_dest)
 {
-    convert_topology_to_unstructured("uniform", topo, dest, cdest);
+    convert_topology_to_unstructured("uniform", topo, topo_dest, coords_dest);
 }
 
 //-----------------------------------------------------------------------------
@@ -2381,20 +2381,20 @@ mesh::topology::rectilinear::verify(const Node &topo,
 //-------------------------------------------------------------------------
 void
 mesh::topology::rectilinear::to_structured(const conduit::Node &topo,
-                                           conduit::Node &dest,
-                                           conduit::Node &cdest)
+                                           conduit::Node &topo_dest,
+                                           conduit::Node &coords_dest)
 {
-    convert_topology_to_structured("rectilinear", topo, dest, cdest);
+    convert_topology_to_structured("rectilinear", topo, topo_dest, coords_dest);
 }
 
 
 //-------------------------------------------------------------------------
 void
 mesh::topology::rectilinear::to_unstructured(const conduit::Node &topo,
-                                             conduit::Node &dest,
-                                             conduit::Node &cdest)
+                                             conduit::Node &topo_dest,
+                                             conduit::Node &coords_dest)
 {
-    convert_topology_to_unstructured("rectilinear", topo, dest, cdest);
+    convert_topology_to_unstructured("rectilinear", topo, topo_dest, coords_dest);
 }
 
 //-----------------------------------------------------------------------------
@@ -2444,10 +2444,10 @@ mesh::topology::structured::verify(const Node &topo,
 //-------------------------------------------------------------------------
 void
 mesh::topology::structured::to_unstructured(const conduit::Node &topo,
-                                            conduit::Node &dest,
-                                            conduit::Node &cdest)
+                                            conduit::Node &topo_dest,
+                                            conduit::Node &coords_dest)
 {
-    convert_topology_to_unstructured("structured", topo, dest, cdest);
+    convert_topology_to_unstructured("structured", topo, topo_dest, coords_dest);
 }
 
 //-----------------------------------------------------------------------------
@@ -2724,8 +2724,8 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
 //-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_centroids(const Node &topo,
-                                                 Node &dest,
-                                                 Node &cdest,
+                                                 Node &topo_dest,
+                                                 Node &coords_dest,
                                                  Node &s2dmap,
                                                  Node &d2smap)
 {
@@ -2734,7 +2734,7 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
     Node coordset;
     bputils::find_reference_node(topo, "coordset", coordset);
 
-    calculate_unstructured_centroids(topo, coordset, dest, cdest);
+    calculate_unstructured_centroids(topo, coordset, topo_dest, coords_dest);
 
     Node map_node;
     std::vector<index_t> map_vec;
@@ -2755,8 +2755,8 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
 //-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_sides(const Node &topo,
-                                             Node &dest,
-                                             Node &cdest,
+                                             Node &topo_dest,
+                                             Node &coords_dest,
                                              Node &s2dmap,
                                              Node &d2smap)
 {
@@ -2805,18 +2805,18 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         topo_data.get_embed_length(topo_shape.dim, line_shape.dim);
     const index_t sides_elem_degree = (topo_shape.dim - line_shape.dim) + 2;
 
-    dest.reset();
-    dest["type"].set("unstructured");
-    dest["coordset"].set(cdest.name());
-    dest["elements/shape"].set(side_shape.type);
-    dest["elements/connectivity"].set(DataType(int_dtype.id(),
+    topo_dest.reset();
+    topo_dest["type"].set("unstructured");
+    topo_dest["coordset"].set(coords_dest.name());
+    topo_dest["elements/shape"].set(side_shape.type);
+    topo_dest["elements/connectivity"].set(DataType(int_dtype.id(),
         side_shape.indices * sides_num_elems));
 
-    cdest.reset();
-    cdest["type"].set("explicit");
+    coords_dest.reset();
+    coords_dest["type"].set("explicit");
     for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
     {
-        cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(),
+        coords_dest["values"][csys_axes[ai]].set(DataType(float_dtype.id(),
             sides_num_coords));
     }
 
@@ -2826,7 +2826,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
     {
         Node dst_data;
-        Node &dst_axis = cdest["values"][csys_axes[ai]];
+        Node &dst_axis = coords_dest["values"][csys_axes[ai]];
 
         for(index_t di = 0, doffset = 0; di <= topo_shape.dim; di++)
         {
@@ -2873,7 +2873,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     d2smap["sizes"].set(DataType(int_dtype.id(), sides_num_elems));
     d2smap["offsets"].set(DataType(int_dtype.id(), sides_num_elems));
 
-    Node &dest_conn = dest["elements/connectivity"];
+    Node &dest_conn = topo_dest["elements/connectivity"];
     for(; elem_index < (int64)topo_num_elems; elem_index++)
     {
         std::deque< index_t > elem_embed_stack(1, elem_index);
@@ -2961,10 +2961,261 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 }
 
 //-----------------------------------------------------------------------------
+namespace detail
+{
+    template<typename T, typename U> 
+    void 
+    map_field_to_generated_sides(Node &field_out, 
+                                 const Node &field, 
+                                 int num_shapes, 
+                                 const U *tri_to_poly)
+    {
+        T* values_array = field_out["values"].value();
+        const T* poly_field_data = field["values"].value();
+
+        for (int i = 0; i < num_shapes; i ++)
+        {
+            values_array[i] = poly_field_data[tri_to_poly[i]];
+        }
+    }
+
+    template<typename T>
+    void 
+    map_fields_to_generated_sides(const Node &fields_src,
+                                  const Node &d2smap,
+                                  const Node &topo_dest,
+                                  Node &fields_dest,
+                                  const std::vector<std::string> &field_names,
+                                  const std::string &field_prefix)
+    {
+        NodeConstIterator fields_itr = fields_src.children();
+        std::string topo = topo_dest.name();
+        bool no_field_names = field_names.empty();
+        int num_shapes;
+
+        if (topo_dest["elements/shape"].as_string() == "tet")
+        {
+            num_shapes = topo_dest["elements/connectivity"].dtype().number_of_elements() / 4;
+        }
+        else if (topo_dest["elements/shape"].as_string() == "tri")
+        {
+            num_shapes = topo_dest["elements/connectivity"].dtype().number_of_elements() / 3;
+        }
+        else
+        {
+            CONDUIT_ERROR(((std::string) "Bad shape in ").append(topo_dest["elements/shape"].as_string()));
+        }
+        
+        const T *tri_to_poly = d2smap["values"].value();
+
+        while(fields_itr.has_next())
+        {
+            const Node &field = fields_itr.next();
+            std::string field_name = fields_itr.name();
+
+            // check that the field is one of the selected fields specified in the options node
+            bool found = false;
+            if (no_field_names)
+            {
+                // we want to copy all fields if no field names were provided
+                found = true;
+            }
+            else
+            {
+                for (uint64 i = 0; i < field_names.size(); i ++)
+                {
+                    if (field_names[i] == field_name)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            // check that the current field uses the chosen topology
+            if (found && field["topology"].as_string() == topo)
+            {
+                Node &field_out = fields_dest[field_prefix + field_name];
+
+                if (field.has_child("association"))
+                {
+                    if (field["association"].as_string() != "element")
+                    {
+                        CONDUIT_ERROR("Vertex associated fields are not supported.");
+                    }
+                }
+
+                if (field.has_child("volume_dependent"))
+                {
+                    if (field["volume_dependent"].as_string() != "false")
+                    {
+                        CONDUIT_ERROR("Volume dependent fields are not supported.");
+                    }
+                }
+
+                NodeConstIterator itr = field.children();
+                while (itr.has_next())
+                {
+                    const Node &cld = itr.next();
+                    std::string cld_name = itr.name();
+
+                    if (cld_name != "values")
+                    {
+                        field_out[cld_name] = cld;
+                    }
+                }
+
+                if (field["values"].dtype().is_uint64())
+                {
+                    field_out["values"].set(conduit::DataType::uint64(num_shapes));
+                    map_field_to_generated_sides<uint64, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_uint32())
+                {
+                    field_out["values"].set(conduit::DataType::uint32(num_shapes));
+                    map_field_to_generated_sides<uint32, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_int64())
+                {
+                    field_out["values"].set(conduit::DataType::int64(num_shapes));
+                    map_field_to_generated_sides<int64, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_int32())
+                {
+                    field_out["values"].set(conduit::DataType::int32(num_shapes));
+                    map_field_to_generated_sides<int32, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_float64())
+                {
+                    field_out["values"].set(conduit::DataType::float64(num_shapes));
+                    map_field_to_generated_sides<float64, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else if (field["values"].dtype().is_float32())
+                {
+                    field_out["values"].set(conduit::DataType::float32(num_shapes));
+                    map_field_to_generated_sides<float32, T>(field_out, field, num_shapes, tri_to_poly);
+                }
+                else
+                {
+                    CONDUIT_ERROR("Unsupported field type in " << field["values"].dtype().to_yaml());
+                }
+            }
+            else
+            {
+                // if we couldn't find the field in the specified field_names, then we don't care;
+                // but if it was found, and we are here, then that means that the field we want
+                // uses the wrong topology
+                if (! no_field_names && found)
+                {
+                    CONDUIT_ERROR("field " + field_name + " does not use " + topo + ".");
+                }
+            }
+        }
+
+        Node &original_elements = fields_dest["original_element_ids"];
+        original_elements["topology"] = topo;
+        original_elements["association"] = "element";
+        original_elements["volume_dependent"] = "false";
+
+        d2smap["values"].to_uint32_array(original_elements["values"]);
+    }
+}
+
+void
+mesh::topology::unstructured::generate_sides(const conduit::Node &topo,
+                                             conduit::Node &topo_dest,
+                                             conduit::Node &coordset_dest,
+                                             conduit::Node &fields_dest,
+                                             conduit::Node &s2dmap,
+                                             conduit::Node &d2smap,
+                                             const conduit::Node &options)
+{
+    std::string field_prefix = "";
+    std::vector<std::string> field_names;
+    const Node &fields_src = (*(topo.parent()->parent()))["fields"];
+
+    // check for existence of field prefix
+    if (options.has_child("field_prefix"))
+    {
+        if (options["field_prefix"].dtype().is_string())
+        {
+            field_prefix = options["field_prefix"].as_string();
+        }
+        else
+        {
+            CONDUIT_ERROR("field_prefix must be a string.");
+        }
+    }
+
+    // check for target field names
+    if (options.has_child("field_names"))
+    {
+        if (options["field_names"].dtype().is_string())
+        {
+            field_names.push_back(options["field_names"].as_string());
+        }
+        else if (options["field_names"].dtype().is_list())
+        {
+            NodeConstIterator itr = options["field_names"].children();
+            while (itr.has_next())
+            {
+                const Node &cld = itr.next();
+                if (cld.dtype().is_string())
+                {
+                    field_names.push_back(cld.as_string());
+                }
+                else
+                {
+                    CONDUIT_ERROR("field_names must be a string or a list of strings.");
+                }
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR("field_names must be a string or a list of strings.");
+        }
+    }
+
+    // check that the discovered field names exist in the target fields
+    for (uint64 i = 0; i < field_names.size(); i ++)
+    {
+        if (! fields_src.has_child(field_names[i]))
+        {
+            CONDUIT_ERROR("field " + field_names[i] + " not found in target.");
+        }
+    }
+
+    // generate sides as usual
+    generate_sides(topo, topo_dest, coordset_dest, s2dmap, d2smap);
+
+    // now map fields
+    if (d2smap["values"].dtype().is_uint64())
+    {
+        detail::map_fields_to_generated_sides<uint64>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+    }
+    else if (d2smap["values"].dtype().is_uint32())
+    {
+        detail::map_fields_to_generated_sides<uint32>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+    }
+    else if (d2smap["values"].dtype().is_int64())
+    {
+        detail::map_fields_to_generated_sides<int64>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+    }
+    else if (d2smap["values"].dtype().is_int32())
+    {
+        detail::map_fields_to_generated_sides<int32>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported field type in " << d2smap["values"].dtype().to_yaml());
+    }
+}
+
+//-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_corners(const Node &topo,
-                                               Node &dest,
-                                               Node &cdest,
+                                               Node &topo_dest,
+                                               Node &coords_dest,
                                                Node &s2dmap,
                                                Node &d2smap)
 {
@@ -3008,24 +3259,24 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     const index_t corners_num_coords = topo_data.get_length();
     const index_t corners_face_degree = 4;
 
-    dest.reset();
-    dest["type"].set("unstructured");
-    dest["coordset"].set(cdest.name());
-    dest["elements/shape"].set(corner_shape.type);
+    topo_dest.reset();
+    topo_dest["type"].set("unstructured");
+    topo_dest["coordset"].set(coords_dest.name());
+    topo_dest["elements/shape"].set(corner_shape.type);
     if (is_topo_3d)
     {
-        dest["subelements/shape"].set("polygonal");
+        topo_dest["subelements/shape"].set("polygonal");
     }
     // TODO(JRC): I wasn't able to find a good way to compute the connectivity
     // length a priori because of the possibility of polygonal 3D inputs, but
     // having this information would improve the performance of the method.
     // dest["elements/connectivity"].set(DataType(int_dtype.id(), ???);
 
-    cdest.reset();
-    cdest["type"].set("explicit");
+    coords_dest.reset();
+    coords_dest["type"].set("explicit");
     for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
     {
-        cdest["values"][csys_axes[ai]].set(DataType(float_dtype.id(),
+        coords_dest["values"][csys_axes[ai]].set(DataType(float_dtype.id(),
             corners_num_coords));
     }
 
@@ -3038,7 +3289,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
     {
         Node dst_data;
-        Node &dst_axis = cdest["values"][csys_axes[ai]];
+        Node &dst_axis = coords_dest["values"][csys_axes[ai]];
 
         for(index_t di = 0, doffset = 0; di <= topo_shape.dim; di++)
         {
@@ -3298,12 +3549,12 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             DataType::int64(conn_data_raw.size()),
             conn_data_raw.data());
         raw_data.to_data_type(int_dtype.id(),
-            dest["elements/connectivity"]);
+            topo_dest["elements/connectivity"]);
         raw_data.set_external(
             DataType::int64(size_data_raw.size()),
             size_data_raw.data());
         raw_data.to_data_type(int_dtype.id(),
-            dest["elements/sizes"]);
+            topo_dest["elements/sizes"]);
 
         if (is_topo_3d)
         {
@@ -3311,12 +3562,12 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                 DataType::int64(subconn_data_raw.size()),
                 subconn_data_raw.data());
             raw_data.to_data_type(int_dtype.id(),
-                dest["subelements/connectivity"]);
+                topo_dest["subelements/connectivity"]);
             raw_data.set_external(
                 DataType::int64(subsize_data_raw.size()),
                 subsize_data_raw.data());
             raw_data.to_data_type(int_dtype.id(),
-                dest["subelements/sizes"]);
+                topo_dest["subelements/sizes"]);
         }
 
         raw_data.set_external(
@@ -3339,7 +3590,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
         // TODO(JRC): Implement these counts in-line instead of being lazy and
         // taking care of it at the end of the function w/ a helper.
-        generate_offsets(dest, dest["elements/offsets"]);
+        generate_offsets(topo_dest, topo_dest["elements/offsets"]);
         blueprint::o2mrelation::generate_offsets(s2dmap, info);
         blueprint::o2mrelation::generate_offsets(d2smap, info);
     }

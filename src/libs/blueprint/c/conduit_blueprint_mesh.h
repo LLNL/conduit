@@ -54,7 +54,36 @@ CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_generate_index(const conduit_n
 //-----------------------------------------------------------------------------
 /// Interface to generate example mesh blueprint data.
 //-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_basic(const char *mesh_type,
+                                                                 conduit_index_t nx,
+                                                                 conduit_index_t ny,
+                                                                 conduit_index_t nz,
+                                                                 conduit_node *cres);
+
 CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_braid(const char *mesh_type,
+                                                                 conduit_index_t nx,
+                                                                 conduit_index_t ny,
+                                                                 conduit_index_t nz,
+                                                                 conduit_node *cres);
+
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_julia(conduit_index_t nx,
+                                                                 conduit_index_t ny,
+                                                                 conduit_float64 x_min,
+                                                                 conduit_float64 x_max,
+                                                                 conduit_float64 y_min,
+                                                                 conduit_float64 y_max,
+                                                                 conduit_float64 c_re,
+                                                                 conduit_float64 c_im,
+                                                                 conduit_node *cres);
+
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_spiral(conduit_index_t ndomains,
+                                                                  conduit_node *cres);
+
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_polytess(conduit_index_t nlevels,
+                                                                    conduit_index_t nz,
+                                                                    conduit_node *cres);
+
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_misc(const char *mesh_type,
                                                                  conduit_index_t nx,
                                                                  conduit_index_t ny,
                                                                  conduit_index_t nz,

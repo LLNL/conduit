@@ -1302,5 +1302,22 @@ TEST(conduit_node, describe)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, avoid_crazy_town)
+{
+    Node n;
+    n.append() = "here";
+    n.append() = "there";
+    n.print();
+    n["crazy_town"] = "not here";
+    std::string res = n.to_string();
+    std::cout << "res = " << res << std::endl;
+    EXPECT_EQ(res,"\ncrazy_town: \"not here\"\n");
+}
+
+
+
+
+
 
 

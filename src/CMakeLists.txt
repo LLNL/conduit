@@ -20,11 +20,13 @@ project(conduit VERSION "0.7.2")
 ################################ 
 # Build Options
 ################################
-option(BUILD_SHARED_LIBS  "Build shared libraries"      ON)
-option(ENABLE_TESTS       "Build conduit tests"         ON)
-option(ENABLE_EXAMPLES    "Build Examples"              ON)
-option(ENABLE_UTILS       "Build Utilities"             ON)
-option(ENABLE_DOCS        "Build conduit documentation" ON)
+option(BUILD_SHARED_LIBS       "Build shared libraries"         ON)
+option(ENABLE_TESTS            "Build conduit tests"            ON)
+option(ENABLE_EXAMPLES         "Build Examples"                 ON)
+option(ENABLE_UTILS            "Build Utilities"                ON)
+option(ENABLE_DOCS             "Build conduit documentation"    ON)
+option(ENABLE_RELAY_WEBSERVER  "Build Relay Web Server Support" ON)
+
 option(ENABLE_COVERAGE    "Build with coverage flags"   OFF)
 
 option(ENABLE_PYTHON      "Build Python Support"        OFF)
@@ -128,7 +130,5 @@ add_subdirectory(config)
 ################################
 # install exports to comply with standard find_package search path expectations
 install(EXPORT conduit DESTINATION lib/cmake/conduit)
-# also install to support our old export directory layout 
-# (preserving for now to avoid issues with downstream packages using old layout)
-install(EXPORT conduit DESTINATION lib/cmake)
+
 
