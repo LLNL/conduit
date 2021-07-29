@@ -1172,9 +1172,6 @@ topology::unstructured::generate_offsets(const Node &n,
 
         std::vector<index_t> offsets;
         index_t offset = 0, elemid = 0;
-#if 1
-cout << "$$$$ stream_ids.size() = " << n_stream_ids.dtype().number_of_elements() << endl;
-#endif
         for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
         {
             // Get the j'th elements from n_stream_ids, n_element_counts
@@ -1192,12 +1189,7 @@ cout << "$$$$ stream_ids.size() = " << n_stream_ids.dtype().number_of_elements()
                 elemid++;
             }
         }
-#if 1
-        cout << "$$$$ offsets = {" << endl;
-        for(size_t i = 0 ; i < offsets.size(); i++)
-            cout << offsets[i] << ", ";
-        cout << "}" << endl;
-#endif
+
         Node off_node;
         off_node.set_external(offsets);
         off_node.to_data_type(int_dtype.id(), dest);

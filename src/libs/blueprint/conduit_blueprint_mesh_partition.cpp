@@ -1896,7 +1896,7 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
             {
                 auto npts = sizes[element_ids[i]];
                 for(index_t j = 0; j < npts; j++)
-                    vertex_ids.insert(stream[offsets[i] + j]);
+                    vertex_ids.insert(stream[offsets[element_ids[i]] + j]);
             }
         }
         else
@@ -1992,13 +1992,6 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
             std::set<index_t> vertex_ids_set;
             get_vertex_ids_for_element_ids(n_topo, element_ids, vertex_ids_set);
             index_t_set_to_vector(vertex_ids_set, vertex_ids);
-
-#if 0
-cout << "vertex_ids=";
-for(size_t i = 0; i < vertex_ids.size(); i++)
-    cout << vertex_ids[i] << ", ";
-cout << endl;
-#endif
 
             // Create a new coordset consisting of the selected vertex ids.
             create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
@@ -2238,12 +2231,8 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
     // vertex_ids contains the list of old vertex ids that our selection uses
     // from the old coordset. It can serve as a new to old map.
     std::map<index_t,index_t> old2new;
-//cout << "old2new=" << endl;
     for(size_t i = 0; i < vertex_ids.size(); i++)
-    {
-//cout << "  " << vertex_ids[i] << "-> " << i << endl;
         old2new[vertex_ids[i]] = static_cast<index_t>(i);
-    }
 
     conduit::blueprint::mesh::utils::ShapeType shape(n_topo);
     std::vector<index_t> new_conn;
@@ -2435,7 +2424,7 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
                 // Save the element's vertices into the new stream.
                 for(index_t j = 0; j < npts; j++)
                 {
-                    auto vid = stream[offsets[i] + j];
+                    auto vid = stream[offsets[element_ids[i]] + j];
                     new_conn.push_back(old2new[vid]);
                 }
 

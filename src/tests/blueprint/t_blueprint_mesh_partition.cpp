@@ -448,7 +448,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
 "     start: [5,5,0]\n"
 "     end:   [9,9,2]\n"
 "target: 4";
-    options.reset(); options.parse(opt5, "yaml"); options.print();
+    options.reset(); options.parse(opt5, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
     std::string b05 = baseline_file(base + "_05");
@@ -462,7 +462,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -515,11 +515,11 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
     // Override with int64 because YAML loses int/uint information.
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
-input.print();
+
     conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
 
     // Select the whole thing. Check output==input
-/*
+
     options.reset();
     {
         std::vector<conduit::index_t> elem;
@@ -559,13 +559,12 @@ input.print();
 #else
     EXPECT_EQ(compare_baseline(b01, output), true);
 #endif
-*/
+
     // Select a checkerboard of cells
     options.reset();
     {
         std::vector<conduit::index_t> elem;
         conduit::index_t ci = 0;
-cout << "%%%% elements={";
         for(conduit::index_t j = 0; j < vdims[1]-1; j++)
         for(conduit::index_t i = 0; i < vdims[0]-1; i++)
         {
@@ -575,10 +574,7 @@ cout << "%%%% elements={";
                 for(int k = 0; k < n; k++)
                 {
                     if((i+j) % 2 == 0)
-{
-cout << ci << ", ";
                         elem.push_back(ci);
-}
                     ci++;
                 }
             }
@@ -589,7 +585,6 @@ cout << ci << ", ";
                 ci++;
             }
         }
-cout << "}" << endl;
         conduit::Node &sel1 = options["selections"].append();
         sel1["type"] = "explicit";
         sel1["elements"] = elem;
@@ -603,7 +598,7 @@ cout << "}" << endl;
 #else
     EXPECT_EQ(compare_baseline(b02, output), true);
 #endif
-/*
+
     // Make 2 selections
     options.reset();
     {
@@ -644,10 +639,9 @@ cout << "}" << endl;
 #else
     EXPECT_EQ(compare_baseline(b04, output), true);
 #endif
-*/
 }
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
@@ -678,19 +672,14 @@ TEST(conduit_blueprint_mesh_partition, hexs_poly_explicit_3d)
     conduit::index_t vdims[] = {11,11,2};
     test_explicit_selection("hexs_poly", vdims, "hexs_poly_explicit_3d");
 }
-#endif
 
-#if 1
 //-----------------------------------------------------------------------------
-// Hey Chris, this is the one with the mixed cell connectivity.
 TEST(conduit_blueprint_mesh_partition, quads_and_tris_explicit_2d)
 {
     conduit::index_t vdims[] = {11,11,1};
     test_explicit_selection("quads_and_tris", vdims, "quads_end_tris_explicit_2d", true);
 }
 #endif
-
-// TODO: need to extract unstructured from mixed cell type meshes.
 
 //-----------------------------------------------------------------------------
 void
@@ -835,7 +824,7 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
 #endif
 }
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_ranges_2d)
 {
@@ -861,6 +850,7 @@ TEST(conduit_blueprint_mesh_partition, quads_ranges_2d)
 }
 #endif
 
+#if 0
 //-----------------------------------------------------------------------------
 //-- Point merge
 //-----------------------------------------------------------------------------
@@ -1229,3 +1219,4 @@ target: 2
     save_visit("After_combine", combined);
 #endif
 }
+#endif
