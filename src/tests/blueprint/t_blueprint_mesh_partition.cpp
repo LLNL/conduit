@@ -25,6 +25,8 @@ using std::endl;
 // Enable this macro to generate baselines.
 //#define GENERATE_BASELINES
 
+#define USE_ERROR_HANDLER
+
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
   #ifdef _WIN32
@@ -162,8 +164,8 @@ save_visit(const std::string &filename, const conduit::Node &n)
             // VisIt won't read it:
             conduit::relay::io::save(n[i], ss.str() + ".yaml", "yaml");
         }
-    }   
- 
+    }
+
     // Add index stuff to it so we can plot it in VisIt.
     conduit::Node root;
     if(ndoms == 1)
@@ -198,7 +200,9 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 void
 test_logical_selection_2d(const std::string &topo, const std::string &base)
 {
+#ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
+#endif
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -329,7 +333,9 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
 void
 test_logical_selection_3d(const std::string &topo, const std::string &base)
 {
+#ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
+#endif
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -499,7 +505,9 @@ void
 test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3],
     const std::string &base, bool quad_tris = false)
 {
+#ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
+#endif
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -688,7 +696,9 @@ TEST(conduit_blueprint_mesh_partition, quads_and_tris_explicit_2d)
 void
 test_ranges_selection_2d(const std::string &topo, const std::string &base)
 {
+#ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
+#endif
 
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
@@ -875,7 +885,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, one)
     one.push_back(&braid_coordset);
 
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(one, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(one, output, tolerance);
 
     conduit::Node info;
     bool different = braid_coordset.diff(output["coordsets/coords"], info);
@@ -897,16 +907,19 @@ TEST(conduit_blueprint_mesh_partition_point_merge, same)
 
     std::vector<const conduit::Node*> same;
     same.push_back(&braid_coordset); same.push_back(&braid_coordset);
-    
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(same, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(same, output, tolerance);
 
     conduit::Node info;
-    bool different = braid_coordset.diff(output["coordsets/coords"], info);
+    bool different = braid_coordset["type"].diff(output["type"], info);
+    different &= braid_coordset["values"].diff(output["values"], info);
     EXPECT_FALSE(different);
     if(different || always_print)
     {
+        std::cout << "Input (x2):" << std::endl;
         braid_coordset.print();
+        std::cout << "Output:" << std::endl;
         output.print();
     }
 }
@@ -921,12 +934,12 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     conduit::Node polytess;
     conduit::blueprint::mesh::examples::polytess(1, polytess);
     auto &polytess_coordset = polytess["coordsets/coords"];
-    
+
     std::vector<const conduit::Node*> different;
     different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
-    
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(different, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(different, output, tolerance);
 
     conduit::Node info;
     bool is_different0 = different[0]->diff(output["coordsets/coords"], info);
@@ -939,7 +952,10 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     make_baseline(filename, output);
 #else
     conduit::Node ans; load_baseline(filename, ans);
-    bool is_output_different = ans.diff(output, info);
+    // NOTE: If rebaselined we won't need to compare paths anymore
+    bool is_output_different = ans["coordsets/coords/type"].diff(output["type"], info);
+    is_output_different |= ans["coordsets/coords/values"].diff(output["values"], info);
+    is_output_different |= ans["pointmaps"].diff(output["pointmaps"], info);
     EXPECT_FALSE(is_output_different);
     if(is_output_different)
     {
@@ -965,9 +981,9 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
         conduit::Node &dom = spiral.child(i);
         multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
     }
-    
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
 
     static const std::string filename = baseline_file("pointmerge_multidomain4");
 #ifdef GENERATE_BASELINES
@@ -975,7 +991,10 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
 #else
     conduit::Node ans; load_baseline(filename, ans);
     conduit::Node info;
-    bool is_different = ans.diff(output, info);
+    // NOTE: If rebaselined we won't need to compare paths anymore
+    bool is_different = ans["coordsets/coords/type"].diff(output["type"], info);
+    is_different |= ans["coordsets/coords/values"].diff(output["values"], info);
+    is_different |= ans["pointmaps"].diff(output["pointmaps"], info);
     EXPECT_FALSE(is_different);
     if(is_different || always_print)
     {
@@ -1002,9 +1021,9 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
         conduit::Node &dom = spiral.child(i);
         multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
     }
-    
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::merge(multidomain, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
 
     static const std::string filename = baseline_file("pointmerge_multidomain8");
 #ifdef GENERATE_BASELINES
@@ -1012,7 +1031,10 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
 #else
     conduit::Node ans; load_baseline(filename, ans);
     conduit::Node info;
-    bool is_different = ans.diff(output, info);
+    // NOTE: If rebaselined we won't need to compare paths anymore
+    bool is_different = ans["coordsets/coords/type"].diff(output["type"], info);
+    is_different |= ans["coordsets/coords/values"].diff(output["values"], info);
+    is_different |= ans["pointmaps"].diff(output["pointmaps"], info);
     EXPECT_FALSE(is_different);
     if(is_different || always_print)
     {
@@ -1021,5 +1043,189 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
         std::cout << "Output:" << std::endl;
         output.print();
     }
+#endif
+}
+
+//-----------------------------------------------------------------------------
+//-- Combine topology --
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_combine, multidomain4)
+{
+    // Use the spiral example to attach domains that we know are connected
+    conduit::Node spiral;
+    conduit::blueprint::mesh::examples::spiral(4, spiral);
+
+    std::vector<const conduit::Node*> multidomain;
+    const conduit::index_t ndom = spiral.number_of_children();
+    for(conduit::index_t i = 0; i < ndom; i++)
+    {
+        multidomain.push_back(spiral.child_ptr(i));
+    }
+
+    conduit::Node output;
+    conduit::blueprint::mesh::partitioner p;
+    p.combine(0, multidomain, output);
+
+    std::cout << "Input: " << std::endl;
+    spiral.print();
+    std::cout << "Output: " << std::endl;
+    output.print();
+
+    save_visit("before_combine_topology", spiral);
+    save_visit("after_combine_topology", output);
+}
+
+TEST(conduit_blueprint_mesh_combine, partition)
+{
+    conduit::index_t vdims[] = {11,11,2};
+    conduit::Node stream;
+    conduit::blueprint::mesh::examples::braid("quads_and_tris", vdims[0], vdims[1], vdims[2], stream);
+    
+    conduit::Node nonstream;
+    conduit::blueprint::mesh::examples::braid("quads_and_tris_offsets", vdims[0], vdims[1], vdims[2], nonstream);
+
+    save_visit("AStream", stream);
+    save_visit("ANonStream", nonstream);
+
+    std::cout << "ASTREAM:" << std::endl;
+    stream.print();
+    std::cout << "----------------------------------------------" << std::endl;
+
+    std::cout << "ANONSTREAM:" << std::endl;
+    nonstream.print();
+    std::cout << "----------------------------------------------" << std::endl;
+
+    std::vector<const conduit::Node*> csets;
+    csets.push_back(&stream["coordsets/coords"]); csets.push_back(&stream["coordsets/coords"]);
+    conduit::Node combined_csets;
+    conduit::blueprint::mesh::coordset::combine(csets, combined_csets);
+
+    std::vector<const conduit::Node*> topos;
+    topos.push_back(&stream["topologies/mesh"]); topos.push_back(&stream["topologies/mesh"]);
+    conduit::Node opts;
+    // opts["force_polygonal"] = "true";
+    conduit::Node combined_topos;
+    conduit::blueprint::mesh::topology::combine(topos, combined_csets["pointmaps"], combined_topos, &opts);
+
+    // combined_topos.print();
+    // braid["topologies/mesh"].print();
+
+    conduit::Node dom;
+    dom["state/time"].set(3.1415);
+    dom["state/cycle"].set(100);
+    dom["coordsets/coords"].set(combined_csets);
+    dom["topologies/mesh"].set(combined_topos);
+    dom["fields"].set(stream["fields"]);
+
+    conduit::Node info;
+    bool v = conduit::blueprint::mesh::verify(dom, info);
+    if(!v) { info.print(); std::cout << "-----" << std::endl; dom.print();};
+    save_visit("ACombinedTopology", dom);
+
+    // conduit::blueprint::mesh::utils::TopologyMetadata tm(braid["topologies/mesh"], braid["coordsets/coords"]);
+    // conduit::blueprint::mesh::utils::ShapeCascade sc(braid["topologies/mesh"]);
+    // conduit::blueprint::mesh::utils::ShapeType st(braid["topologies/mesh"]);
+    // std::cout << st.is_valid() << std::endl;
+
+
+//    conduit::blueprint::mesh::utils::TopologyMetadata
+
+#if 0
+    conduit::Node options;
+    static const std::string split_yaml =
+R"(selections:
+  -
+    type: logical
+    domain: 0
+    start: [0,0,0]
+    end:   [4,9,0]
+  -
+    type: logical
+    domain: 0
+    start: [5,0,0]
+    end:   [9,4,0]
+  -
+    type: logical
+    domain: 0
+    start: [5,5,0]
+    end:   [9,9,0]
+target: 2
+)";
+    options.reset(); options.parse(split_yaml, "yaml");
+
+    conduit::Node split;
+    conduit::blueprint::mesh::partition(braid, options, split);
+    // split.print();
+    std::cout << "---- end split ----" << std::endl;
+
+    std::vector<const conduit::Node*> chunks;
+    const conduit::index_t ndom = split.number_of_children();
+    for(conduit::index_t i = 0; i < ndom; i++)
+    {
+        chunks.push_back(split.child_ptr(i));
+    }
+
+    // Logical not working with uniform
+#if 1
+    static const std::string combine_yaml = R"(target: 2)";
+    options.reset(); options.parse(combine_yaml, "yaml");
+#else
+    options.reset();
+    options.add_child("selections");
+    {
+//     start: [0,0,0]
+//     end:   [4,9,0]
+//   -
+//     type: logical
+//     domain: 0
+//     start: [5,0,0]
+//     end:   [9,4,0]
+//   -
+//     type: logical
+//     domain: 0
+//     start: [5,5,0]
+//     end:   [9,9,0]
+        const auto build_elem_list = [](std::vector<conduit::index_t> &elem, conduit::index_t vdims[3]) {
+            elem.clear();
+            conduit::index_t ci = 0;
+            for(conduit::index_t k = 0; k < vdims[2]; k++)
+            {
+                for(conduit::index_t j = 0; j < vdims[1]; j++)
+                {
+                    for(conduit::index_t i = 0; i < vdims[0]; i++)
+                    {
+                        elem.push_back(ci);
+                        ci++;
+                    }
+                }
+            }
+        };
+
+        conduit::index_t ldims[3][3] = {
+            {4, 9, 0},
+            {4, 4, 0},
+            {4, 4, 0}
+        };
+
+        for(conduit::index_t i = 0; i < 3; i++)
+        {
+            conduit::Node &temp = options["selections"].append();
+            std::vector<conduit::index_t> elem;
+            build_elem_list(elem, ldims[i]);
+            std::cout << elem.size() << std::endl;
+            temp["type"] = "explicit";
+            temp["elements"] = elem;
+        }
+        options["target"] = 1;
+    }
+#endif
+
+    conduit::Node combined;
+    conduit::blueprint::mesh::partition(split, options, combined);
+    // combined.print();
+
+    save_visit("After_partition", split);
+
+    save_visit("After_combine", combined);
 #endif
 }
