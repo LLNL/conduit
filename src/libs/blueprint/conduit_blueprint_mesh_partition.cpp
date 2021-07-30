@@ -595,7 +595,6 @@ selection_logical::get_element_ids(const conduit::Node &n_mesh,
         const conduit::Node &n_topo = selected_topology(n_mesh);
         index_t dims[3] = {1,1,1};
         conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
-cout << "selection_logical::get_element_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
 
         element_ids.clear();
         element_ids.reserve(length());
@@ -608,12 +607,6 @@ cout << "selection_logical::get_element_ids: dims=" << dims[0] << ", " << dims[1
             auto eid = k*mesh_CXCY + j*mesh_CX + i;
             element_ids.push_back(eid);
         }
-#if 1
-        cout << "selection_logical::get_element_ids={";
-        for(size_t i = 0; i < element_ids.size(); i++)
-            cout << element_ids[i] << ", ";
-        cout << "}" << endl;
-#endif
     }
     catch(conduit::Error &)
     {
@@ -1292,13 +1285,17 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                 {
                     // The selection is good. See if it applies to the domains.
                     auto n = static_cast<index_t>(doms.size());
-                    for(index_t domid = 0; n; domid++)
+                    for(index_t di = 0; di < n; di++)
                     {
-                        // Q: What is the overall domain number for this domain?
+                        // Get the overall index for this domain if it exists.
+                        // Otherwise, we use the position in the list.
+                        index_t domid = di;
+                        if(doms[di]->has_path("state/domain_id"))
+                            domid = doms[di]->operator[]("state/domain_id").as_int64();
 
-                        if(domid == sel->get_domain() && sel->applicable(*doms[domid]))
+                        if(domid == sel->get_domain() && sel->applicable(*doms[di]))
                         {
-                            meshes.push_back(doms[domid]);
+                            meshes.push_back(doms[di]);
                             selections.push_back(sel);
                             break;
                         }
@@ -1896,7 +1893,7 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
             {
                 auto npts = sizes[element_ids[i]];
                 for(index_t j = 0; j < npts; j++)
-                    vertex_ids.insert(stream[offsets[i] + j]);
+                    vertex_ids.insert(stream[offsets[element_ids[i]] + j]);
             }
         }
         else
@@ -1992,13 +1989,6 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
             std::set<index_t> vertex_ids_set;
             get_vertex_ids_for_element_ids(n_topo, element_ids, vertex_ids_set);
             index_t_set_to_vector(vertex_ids_set, vertex_ids);
-
-#if 0
-cout << "vertex_ids=";
-for(size_t i = 0; i < vertex_ids.size(); i++)
-    cout << vertex_ids[i] << ", ";
-cout << endl;
-#endif
 
             // Create a new coordset consisting of the selected vertex ids.
             create_new_explicit_coordset(n_coordset, vertex_ids, n_new_coordsets[csname]);
@@ -2238,12 +2228,8 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
     // vertex_ids contains the list of old vertex ids that our selection uses
     // from the old coordset. It can serve as a new to old map.
     std::map<index_t,index_t> old2new;
-//cout << "old2new=" << endl;
     for(size_t i = 0; i < vertex_ids.size(); i++)
-    {
-//cout << "  " << vertex_ids[i] << "-> " << i << endl;
         old2new[vertex_ids[i]] = static_cast<index_t>(i);
-    }
 
     conduit::blueprint::mesh::utils::ShapeType shape(n_topo);
     std::vector<index_t> new_conn;
@@ -2435,7 +2421,7 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
                 // Save the element's vertices into the new stream.
                 for(index_t j = 0; j < npts; j++)
                 {
-                    auto vid = stream[offsets[i] + j];
+                    auto vid = stream[offsets[element_ids[i]] + j];
                     new_conn.push_back(old2new[vid]);
                 }
 
