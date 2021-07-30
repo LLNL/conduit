@@ -595,7 +595,6 @@ selection_logical::get_element_ids(const conduit::Node &n_mesh,
         const conduit::Node &n_topo = selected_topology(n_mesh);
         index_t dims[3] = {1,1,1};
         conduit::blueprint::mesh::utils::topology::logical_dims(n_topo, dims, 3);
-cout << "selection_logical::get_element_ids: dims=" << dims[0] << ", " << dims[1] << ", " << dims[2] << endl;
 
         element_ids.clear();
         element_ids.reserve(length());
@@ -608,12 +607,6 @@ cout << "selection_logical::get_element_ids: dims=" << dims[0] << ", " << dims[1
             auto eid = k*mesh_CXCY + j*mesh_CX + i;
             element_ids.push_back(eid);
         }
-#if 1
-        cout << "selection_logical::get_element_ids={";
-        for(size_t i = 0; i < element_ids.size(); i++)
-            cout << element_ids[i] << ", ";
-        cout << "}" << endl;
-#endif
     }
     catch(conduit::Error &)
     {
@@ -1292,13 +1285,17 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                 {
                     // The selection is good. See if it applies to the domains.
                     auto n = static_cast<index_t>(doms.size());
-                    for(index_t domid = 0; n; domid++)
+                    for(index_t di = 0; di < n; di++)
                     {
-                        // Q: What is the overall domain number for this domain?
+                        // Get the overall index for this domain if it exists.
+                        // Otherwise, we use the position in the list.
+                        index_t domid = di;
+                        if(doms[di]->has_path("state/domain_id"))
+                            domid = doms[di]->operator[]("state/domain_id").as_int64();
 
-                        if(domid == sel->get_domain() && sel->applicable(*doms[domid]))
+                        if(domid == sel->get_domain() && sel->applicable(*doms[di]))
                         {
-                            meshes.push_back(doms[domid]);
+                            meshes.push_back(doms[di]);
                             selections.push_back(sel);
                             break;
                         }
