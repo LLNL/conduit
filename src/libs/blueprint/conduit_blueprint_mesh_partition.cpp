@@ -5339,20 +5339,6 @@ partitioner::combine_as_unstructured(int domain,
 }
 
 //-------------------------------------------------------------------------
-void
-partition(const conduit::Node &n_mesh, const conduit::Node &options,
-    conduit::Node &output)
-{
-    partitioner P;
-    if(P.initialize(n_mesh, options))
-    {
-        P.split_selections();
-        output.reset();
-        P.execute(output);
-    }
-}
-
-//-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 namespace coordset
 {
