@@ -4943,6 +4943,8 @@ partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
+    // std::cout << "domain " << domain << std::endl;
+    output.reset();
     const auto sz = inputs.size();
     if(sz == 0)
     {
@@ -4952,8 +4954,15 @@ partitioner::combine(int domain,
     else if(sz == 1)
     {
         output = *inputs[0];
+        output["state/domain_id"] = domain;
         return;
     }
+
+    if(inputs[0]->has_child("state"))
+    {
+        output["state"] = inputs[0]->child("state");
+    }
+    output["state/domain_id"] = domain;
 
     std::string rt(recommended_topology(inputs));
     if(rt == "uniform" || rt == "rectilinear")
