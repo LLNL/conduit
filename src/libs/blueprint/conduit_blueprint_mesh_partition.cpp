@@ -4601,6 +4601,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
     std::vector<std::vector<index_t>> out_connectivity;
     std::vector<std::vector<index_t>> out_elem_map;
     const index_t ntopos = (index_t)topologies.size();
+    out_elem_map.resize(ntopos);
     for(index_t i = 0; i < ntopos; i++)
     {
         const Node *topo = topologies[i];
