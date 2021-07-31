@@ -4587,7 +4587,6 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
     std::vector<std::vector<index_t>> out_connectivity;
     std::vector<std::vector<index_t>> out_elem_map;
     const index_t ntopos = (index_t)topologies.size();
-    out_elem_map.resize(ntopos);
     for(index_t i = 0; i < ntopos; i++)
     {
         const Node *topo = topologies[i];
@@ -4617,6 +4616,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
                 idx = shape_types.size();
                 shape_types.push_back(shape_string);
                 out_connectivity.emplace_back();
+                out_elem_map.emplace_back();
             }
 
             out_elem_map[idx].push_back(i);
@@ -4702,7 +4702,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
             }
             std::vector<index_t>().swap(out_elem_map[i]);
         }
-        output["elementmap"].set(elem_map);
+        output["element_map"].set(elem_map);
     }
 }
 
@@ -5116,7 +5116,7 @@ partitioner::combine_as_unstructured(int domain,
     bool have_fields = true;
     for(const Node *n : inputs)
     {
-        if(n->has_child("fields"))
+        if(!n->has_child("fields"))
         {
             have_fields = false;
             break;
@@ -5153,11 +5153,19 @@ partitioner::combine_as_unstructured(int domain,
             }
         }
 
-        // Use node 0 as a reference
-        for(size_t i = 0; i < field_groups.size(); i++)
+#if 0
+        std::cout << "Number of fields: " << field_groups.size() << std::endl;
+        for(const auto &pair : field_groups)
         {
-            const auto &field_name = field_groups[i].first;
-            const auto &field_group = field_groups[i].second;
+            std::cout << "  " << pair.first << std::endl;
+        }
+#endif
+
+        // Use node 0 as a reference
+        for(size_t fgi = 0; fgi < field_groups.size(); fgi++)
+        {
+            const auto &field_name = field_groups[fgi].first;
+            const auto &field_group = field_groups[fgi].second;
             // Figure out field association and topology
             if(!field_group[0]->has_child("topology") || !field_group[0]->has_child("values"))
             {
@@ -5226,7 +5234,7 @@ partitioner::combine_as_unstructured(int domain,
                     if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); continue; }
                     for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
                     {
-                        pmaps.emplace_back(pointmaps->child(i).value());
+                        pmaps.emplace_back(pointmaps->child(pi).value());
                     }
                 }
 
@@ -5237,8 +5245,8 @@ partitioner::combine_as_unstructured(int domain,
                 {
                     for(index_t si = 0; si < out_schema.number_of_children(); si++)
                     {
-                        const DataType dt(out_schema[i].dtype().id(), nt);
-                        out_schema[i].set(dt);
+                        const DataType dt(out_schema[si].dtype().id(), nt);
+                        out_schema[si].set(dt);
                     }
                     out_values.set(out_schema);
                     for(index_t ci = 0; ci < out_values.number_of_children(); ci++)
@@ -5294,8 +5302,8 @@ partitioner::combine_as_unstructured(int domain,
                 {
                     for(index_t si = 0; si < out_schema.number_of_children(); si++)
                     {
-                        const DataType dt(out_schema[i].dtype().id(), nt);
-                        out_schema[i].set(dt);
+                        const DataType dt(out_schema[si].dtype().id(), nt);
+                        out_schema[si].set(dt);
                     }
                     out_values.set(out_schema);
                     for(index_t ci = 0; ci < out_values.number_of_children(); ci++)
@@ -5323,16 +5331,16 @@ partitioner::combine_as_unstructured(int domain,
                     {
                         for(index_t ci = 0; ci < data.number_of_children(); ci++)
                         {
-                            void *out_data = out_values_comps[i]->element_ptr(idx);
-                            const void *in_data = data[i].element_ptr(elem_idx);
-                            memcpy(out_data, in_data, data[i].dtype().element_bytes());
+                            void *out_data = out_values_comps[ci]->element_ptr(idx);
+                            const void *in_data = data[ci].element_ptr(elem_idx);
+                            memcpy(out_data, in_data, data[ci].dtype().element_bytes());
                         }
                     }
                     else
                     {
                         void *out_data = out_values_comps[0]->element_ptr(idx);
                         const void *in_data = data.element_ptr(elem_idx);
-                        memcpy(out_data, in_data, data[i].dtype().element_bytes());
+                        memcpy(out_data, in_data, data.dtype().element_bytes());
                     }
                 }
             }
