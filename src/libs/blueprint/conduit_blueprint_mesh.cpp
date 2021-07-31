@@ -2963,43 +2963,269 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 //-----------------------------------------------------------------------------
 namespace detail
 {
+    // given three points in 2D, calculates the area of the triangle formed by those points
+    float triangle_area(float x1, float y1, 
+                        float x2, float y2, 
+                        float x3, float y3)
+    {
+        return 0.5f * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+    }
+
+    float tetrahedron_volume(float x1, float y1, float z1,
+                             float x2, float y2, float z2,
+                             float x3, float y3, float z3,
+                             float x4, float y4, float z4)
+    {
+        CONDUIT_ERROR("not yet implemented");
+        return 0.0f;
+    }
+
+    // T is the type of 'tri_to_poly' values
+    // U is the type of connectivity values
+    // V is the type of coordset values
+    template<typename T, typename U, typename V>
+    Node*
+    // we want access to the new topology so we can calculate the areas
+    // of the new triangles/volumes of the new tetrahedra
+    volume_dependent_helper(const Node &topo_dest,
+                            const Node &coordset_dest,
+                            const std::string coordset_name,
+                            const int dimensions,
+                            const int num_new_shapes, // number of new triangles or tetrahedrons
+                            const int num_orig_shapes, // number of original polygons or polyhedra
+                            const T *tri_to_poly) 
+    {
+
+        // TODO we want to make volume into a field
+
+        Node *volumes = new Node;
+
+        // first we calculate the volume of each triangle
+        (*volumes)["tri"].set(conduit::DataType::float64(num_new_shapes));
+        float64 *tri_volumes = (*volumes)["tri"].value();
+
+        const U *connec = topo_dest["elements/connectivity"].value();
+        const V *coords_x = coordset_dest[coordset_name + "/values/x"].value();
+        const V *coords_y = coordset_dest[coordset_name + "/values/y"].value();
+
+        if (dimensions == 2)
+        {
+            for (int i = 0; i < num_new_shapes; i ++)
+            {
+                float x1 = coords_x[connec[i * 3 + 0]];
+                float y1 = coords_y[connec[i * 3 + 0]];
+                float x2 = coords_x[connec[i * 3 + 1]];
+                float y2 = coords_y[connec[i * 3 + 1]];
+                float x3 = coords_x[connec[i * 3 + 2]];
+                float y3 = coords_y[connec[i * 3 + 2]];
+
+                tri_volumes[i] = triangle_area(x1, y1, x2, y2, x3, y3);
+            }
+        }
+        else if (dimensions == 3)
+        {
+            const V *coords_z = coordset_dest[coordset_name + "/values/z"].value();
+
+            for (int i = 0; i < num_new_shapes; i ++)
+            {
+                float x1 = coords_x[connec[i * 4 + 0]];
+                float y1 = coords_y[connec[i * 4 + 0]];
+                float z1 = coords_z[connec[i * 4 + 0]];
+                float x2 = coords_x[connec[i * 4 + 1]];
+                float y2 = coords_y[connec[i * 4 + 1]];
+                float z2 = coords_z[connec[i * 4 + 1]];
+                float x3 = coords_x[connec[i * 4 + 2]];
+                float y3 = coords_y[connec[i * 4 + 2]];
+                float z3 = coords_z[connec[i * 4 + 2]];
+                float x4 = coords_x[connec[i * 4 + 3]];
+                float y4 = coords_y[connec[i * 4 + 3]];
+                float z4 = coords_z[connec[i * 4 + 3]];
+
+                tri_volumes[i] = tetrahedron_volume(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4);
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR("Higher dimensions are not supported.");
+        }
+
+        // next we calculate the volume of each polygon
+        (*volumes)["poly"].set(conduit::DataType::float64(num_orig_shapes));
+        float64 *poly_volumes = (*volumes)["poly"].value();
+
+        for (int i = 0; i < num_orig_shapes; i ++)
+        {
+            poly_volumes[i] = 0;
+        }
+        for (int i = 0; i < num_new_shapes; i ++)
+        {
+            poly_volumes[tri_to_poly[i]] += tri_volumes[i];
+        }
+
+        // finally we calculate the volume ratio
+        (*volumes)["ratio"].set(conduit::DataType::float64(num_new_shapes));
+        float64 *ratio = (*volumes)["ratio"].value();
+
+        for (int i = 0; i < num_new_shapes; i ++)
+        {
+            ratio[i] = tri_volumes[i] / poly_volumes[tri_to_poly[i]];
+        }
+
+        return volumes;
+    }
+
+    // T is the type of 'tri_to_poly' values
+    // U is the type of connectivity values
+    template<typename T, typename U>
+    // determines the type of the coordinate values and calls 
+    // volume_dependent_helper to do the work
+    Node*
+    volume_dependent(const Node &topo_dest,
+                     const Node &coordset_dest,
+                     const std::string coordset_name,
+                     const int dimensions,
+                     const int num_new_shapes, // number of new triangles or tetrahedrons
+                     const int num_orig_shapes, // number of original polygons or polyhedra
+                     const T *tri_to_poly)
+    {
+        if (coordset_dest[coordset_name + "/values/x"].dtype().is_uint64())
+        {
+            return volume_dependent_helper<T, U, uint64>(topo_dest,
+                                                         coordset_dest,
+                                                         coordset_name,
+                                                         dimensions,
+                                                         num_new_shapes,
+                                                         num_orig_shapes,
+                                                         tri_to_poly);
+        }
+        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_uint32())
+        {
+            return volume_dependent_helper<T, U, uint32>(topo_dest,
+                                                         coordset_dest,
+                                                         coordset_name,
+                                                         dimensions,
+                                                         num_new_shapes,
+                                                         num_orig_shapes,
+                                                         tri_to_poly);
+        }
+        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_int64())
+        {
+            return volume_dependent_helper<T, U, int64>(topo_dest,
+                                                        coordset_dest,
+                                                        coordset_name,
+                                                        dimensions,
+                                                        num_new_shapes,
+                                                        num_orig_shapes,
+                                                        tri_to_poly);
+        }
+        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_int32())
+        {
+            return volume_dependent_helper<T, U, int32>(topo_dest,
+                                                        coordset_dest,
+                                                        coordset_name,
+                                                        dimensions,
+                                                        num_new_shapes,
+                                                        num_orig_shapes,
+                                                        tri_to_poly);
+        }
+        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_float64())
+        {
+            return volume_dependent_helper<T, U, float64>(topo_dest,
+                                                          coordset_dest,
+                                                          coordset_name,
+                                                          dimensions,
+                                                          num_new_shapes,
+                                                          num_orig_shapes,
+                                                          tri_to_poly);
+        }
+        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_float32())
+        {
+            return volume_dependent_helper<T, U, float32>(topo_dest,
+                                                          coordset_dest,
+                                                          coordset_name,
+                                                          dimensions,
+                                                          num_new_shapes,
+                                                          num_orig_shapes,
+                                                          tri_to_poly);
+        }
+        else
+        {
+            CONDUIT_ERROR("Unsupported coordinate type in " << coordset_dest[coordset_name + "/values/x"].dtype().to_yaml());
+        }
+
+        // we should never get here
+        return NULL;
+    }
+
+    // T is the type of 'tri_to_poly' values
+    // U is the type of field values
     template<typename T, typename U> 
     void 
     map_field_to_generated_sides(Node &field_out, 
-                                 const Node &field, 
-                                 int num_shapes, 
-                                 const U *tri_to_poly)
+                                 const Node &field_src, 
+                                 int num_new_shapes, 
+                                 const T *tri_to_poly,
+                                 float64 *volume_ratio)
     {
-        T* values_array = field_out["values"].value();
-        const T* poly_field_data = field["values"].value();
+        // a pointer to the destination for field values
+        U *values_array = field_out["values"].value();
 
-        for (int i = 0; i < num_shapes; i ++)
+        // a pointer to the original field values
+        const U *poly_field_data = field_src["values"].value();
+
+        for (int i = 0; i < num_new_shapes; i ++)
         {
-            values_array[i] = poly_field_data[tri_to_poly[i]];
+            // tri_to_poly[i] is the index of the original polygon 
+            // that triangle 'i' is associated with.
+            // If we use that to index into poly_field_data we
+            // get the field value of the original polygon,
+            // which we then assign to the destination field values.
+
+            // if our field is volume dependent
+            if (volume_ratio)
+            {
+                values_array[i] = poly_field_data[tri_to_poly[i]] * volume_ratio[i];
+            }
+            else
+            {
+                values_array[i] = poly_field_data[tri_to_poly[i]];
+            }
         }
     }
 
+    // T is the type of 'tri_to_poly' values
     template<typename T>
     void 
-    map_fields_to_generated_sides(const Node &fields_src,
+    map_fields_to_generated_sides(const Node &topo_src,
+                                  const Node &fields_src,
                                   const Node &d2smap,
                                   const Node &topo_dest,
+                                  const Node &coordset_dest,
                                   Node &fields_dest,
                                   const std::vector<std::string> &field_names,
                                   const std::string &field_prefix)
     {
-        NodeConstIterator fields_itr = fields_src.children();
-        std::string topo = topo_dest.name();
-        bool no_field_names = field_names.empty();
-        int num_shapes;
+        NodeConstIterator fields_itr = fields_src.children(); // to iterate through the fields
+        std::string topo_name = topo_src.name(); // the name of the topology we are working with
+        std::string coordset_name = coordset_dest.name();
+        bool no_field_names = field_names.empty(); // true if the user has specified no fields to be copied, meaning all should be copied
+        bool vol_dep = false; // true if the current field is volume dependent
+        bool vert_assoc = false; // true if the current field is vertex associated
+        int dimensions = 0; // are we in 2D or 3D?
+        int num_new_shapes; // the number of new triangles or tetrahedrons
+        int num_orig_shapes = topo_src["elements/sizes"].dtype().number_of_elements(); // the number of original polygons or polyhedra
+        Node *volumes; // a pointer to the volumes of the new and old shapes
+        float64 *volume_ratio = NULL; // a pointer to the ratio between new and old volumes for each new shape
 
         if (topo_dest["elements/shape"].as_string() == "tet")
         {
-            num_shapes = topo_dest["elements/connectivity"].dtype().number_of_elements() / 4;
+            num_new_shapes = topo_dest["elements/connectivity"].dtype().number_of_elements() / 4;
+            dimensions = 3;
         }
         else if (topo_dest["elements/shape"].as_string() == "tri")
         {
-            num_shapes = topo_dest["elements/connectivity"].dtype().number_of_elements() / 3;
+            num_new_shapes = topo_dest["elements/connectivity"].dtype().number_of_elements() / 3;
+            dimensions = 2;
         }
         else
         {
@@ -3007,6 +3233,13 @@ namespace detail
         }
         
         const T *tri_to_poly = d2smap["values"].value();
+
+        Node &original_elements = fields_dest["original_element_ids"];
+        original_elements["topology"] = topo_name;
+        original_elements["association"] = "element";
+        original_elements["volume_dependent"] = "false";
+
+        d2smap["values"].to_uint32_array(original_elements["values"]);
 
         while(fields_itr.has_next())
         {
@@ -3033,7 +3266,7 @@ namespace detail
             }
 
             // check that the current field uses the chosen topology
-            if (found && field["topology"].as_string() == topo)
+            if (found && field["topology"].as_string() == topo_name)
             {
                 Node &field_out = fields_dest[field_prefix + field_name];
 
@@ -3041,7 +3274,7 @@ namespace detail
                 {
                     if (field["association"].as_string() != "element")
                     {
-                        CONDUIT_ERROR("Vertex associated fields are not supported.");
+                        vert_assoc = true;
                     }
                 }
 
@@ -3049,7 +3282,12 @@ namespace detail
                 {
                     if (field["volume_dependent"].as_string() != "false")
                     {
-                        CONDUIT_ERROR("Volume dependent fields are not supported.");
+                        vol_dep = true;
+                        if (vert_assoc)
+                        {
+                            CONDUIT_ERROR("Volume-dependent vertex-associated fields are not supported.");
+                        }
+
                     }
                 }
 
@@ -3065,39 +3303,123 @@ namespace detail
                     }
                 }
 
+                // handle volume dependent fields
+                if (vol_dep)
+                {
+                    // get the volumes and ratio
+                    if (topo_dest["elements/connectivity"].dtype().is_uint64())
+                    {
+                        volumes = volume_dependent<T, uint64>(topo_dest,
+                                                              coordset_dest,
+                                                              coordset_name,
+                                                              dimensions,
+                                                              num_new_shapes,
+                                                              num_orig_shapes,
+                                                              tri_to_poly);
+                    }
+                    else if (topo_dest["elements/connectivity"].dtype().is_uint32())
+                    {
+                        volumes = volume_dependent<T, uint32>(topo_dest,
+                                                              coordset_dest,
+                                                              coordset_name,
+                                                              dimensions,
+                                                              num_new_shapes,
+                                                              num_orig_shapes,
+                                                              tri_to_poly);
+                    }
+                    else if (topo_dest["elements/connectivity"].dtype().is_int64())
+                    {
+                        volumes = volume_dependent<T, int64>(topo_dest,
+                                                             coordset_dest,
+                                                             coordset_name,
+                                                             dimensions,
+                                                             num_new_shapes,
+                                                             num_orig_shapes,
+                                                             tri_to_poly);
+                    }
+                    else if (topo_dest["elements/connectivity"].dtype().is_int32())
+                    {
+                        volumes = volume_dependent<T, int32>(topo_dest,
+                                                             coordset_dest,
+                                                             coordset_name,
+                                                             dimensions,
+                                                             num_new_shapes,
+                                                             num_orig_shapes,
+                                                             tri_to_poly);
+                    }
+
+                    volume_ratio = (*volumes)["ratio"].value();
+
+                    // make volume into a field
+                    Node &volumes_field = fields_dest["volume"];
+                    volumes_field["topology"] = topo_name;
+                    volumes_field["association"] = "element";
+                    volumes_field["volume_dependent"] = "true";
+                    (*volumes)["tri"].to_float64_array(volumes_field["values"]);
+                }
+
                 if (field["values"].dtype().is_uint64())
                 {
-                    field_out["values"].set(conduit::DataType::uint64(num_shapes));
-                    map_field_to_generated_sides<uint64, T>(field_out, field, num_shapes, tri_to_poly);
+                    field_out["values"].set(conduit::DataType::uint64(num_new_shapes));
+                    map_field_to_generated_sides<T, uint64>(field_out, 
+                                                            field, 
+                                                            num_new_shapes, 
+                                                            tri_to_poly, 
+                                                            volume_ratio);
                 }
                 else if (field["values"].dtype().is_uint32())
                 {
-                    field_out["values"].set(conduit::DataType::uint32(num_shapes));
-                    map_field_to_generated_sides<uint32, T>(field_out, field, num_shapes, tri_to_poly);
+                    field_out["values"].set(conduit::DataType::uint32(num_new_shapes));
+                    map_field_to_generated_sides<T, uint32>(field_out, 
+                                                            field, 
+                                                            num_new_shapes, 
+                                                            tri_to_poly, 
+                                                            volume_ratio);
                 }
                 else if (field["values"].dtype().is_int64())
                 {
-                    field_out["values"].set(conduit::DataType::int64(num_shapes));
-                    map_field_to_generated_sides<int64, T>(field_out, field, num_shapes, tri_to_poly);
+                    field_out["values"].set(conduit::DataType::int64(num_new_shapes));
+                    map_field_to_generated_sides<T, int64>(field_out, 
+                                                           field, 
+                                                           num_new_shapes, 
+                                                           tri_to_poly, 
+                                                           volume_ratio);
                 }
                 else if (field["values"].dtype().is_int32())
                 {
-                    field_out["values"].set(conduit::DataType::int32(num_shapes));
-                    map_field_to_generated_sides<int32, T>(field_out, field, num_shapes, tri_to_poly);
+                    field_out["values"].set(conduit::DataType::int32(num_new_shapes));
+                    map_field_to_generated_sides<T, int32>(field_out, 
+                                                           field, 
+                                                           num_new_shapes, 
+                                                           tri_to_poly, 
+                                                           volume_ratio);
                 }
                 else if (field["values"].dtype().is_float64())
                 {
-                    field_out["values"].set(conduit::DataType::float64(num_shapes));
-                    map_field_to_generated_sides<float64, T>(field_out, field, num_shapes, tri_to_poly);
+                    field_out["values"].set(conduit::DataType::float64(num_new_shapes));
+                    map_field_to_generated_sides<T, float64>(field_out, 
+                                                             field, 
+                                                             num_new_shapes, 
+                                                             tri_to_poly, 
+                                                             volume_ratio);
                 }
                 else if (field["values"].dtype().is_float32())
                 {
-                    field_out["values"].set(conduit::DataType::float32(num_shapes));
-                    map_field_to_generated_sides<float32, T>(field_out, field, num_shapes, tri_to_poly);
+                    field_out["values"].set(conduit::DataType::float32(num_new_shapes));
+                    map_field_to_generated_sides<T, float32>(field_out, 
+                                                             field, 
+                                                             num_new_shapes, 
+                                                             tri_to_poly, 
+                                                             volume_ratio);
                 }
                 else
                 {
                     CONDUIT_ERROR("Unsupported field type in " << field["values"].dtype().to_yaml());
+                }
+
+                if (vol_dep)
+                {
+                    delete volumes;
                 }
             }
             else
@@ -3107,22 +3429,15 @@ namespace detail
                 // uses the wrong topology
                 if (! no_field_names && found)
                 {
-                    CONDUIT_ERROR("field " + field_name + " does not use " + topo + ".");
+                    CONDUIT_ERROR("field " + field_name + " does not use " + topo_name + ".");
                 }
             }
         }
-
-        Node &original_elements = fields_dest["original_element_ids"];
-        original_elements["topology"] = topo;
-        original_elements["association"] = "element";
-        original_elements["volume_dependent"] = "false";
-
-        d2smap["values"].to_uint32_array(original_elements["values"]);
     }
-}
+} // end namespace detail
 
 void
-mesh::topology::unstructured::generate_sides(const conduit::Node &topo,
+mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
                                              conduit::Node &topo_dest,
                                              conduit::Node &coordset_dest,
                                              conduit::Node &fields_dest,
@@ -3132,7 +3447,7 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo,
 {
     std::string field_prefix = "";
     std::vector<std::string> field_names;
-    const Node &fields_src = (*(topo.parent()->parent()))["fields"];
+    const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
 
     // check for existence of field prefix
     if (options.has_child("field_prefix"))
@@ -3186,24 +3501,52 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo,
     }
 
     // generate sides as usual
-    generate_sides(topo, topo_dest, coordset_dest, s2dmap, d2smap);
+    generate_sides(topo_src, topo_dest, coordset_dest, s2dmap, d2smap);
 
     // now map fields
     if (d2smap["values"].dtype().is_uint64())
     {
-        detail::map_fields_to_generated_sides<uint64>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+        detail::map_fields_to_generated_sides<uint64>(topo_src, 
+                                                      fields_src, 
+                                                      d2smap, 
+                                                      topo_dest,
+                                                      coordset_dest, 
+                                                      fields_dest, 
+                                                      field_names, 
+                                                      field_prefix);
     }
     else if (d2smap["values"].dtype().is_uint32())
     {
-        detail::map_fields_to_generated_sides<uint32>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+        detail::map_fields_to_generated_sides<uint32>(topo_src, 
+                                                      fields_src, 
+                                                      d2smap, 
+                                                      topo_dest,
+                                                      coordset_dest, 
+                                                      fields_dest, 
+                                                      field_names, 
+                                                      field_prefix);
     }
     else if (d2smap["values"].dtype().is_int64())
     {
-        detail::map_fields_to_generated_sides<int64>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+        detail::map_fields_to_generated_sides<int64>(topo_src, 
+                                                     fields_src, 
+                                                     d2smap, 
+                                                     topo_dest,
+                                                     coordset_dest, 
+                                                     fields_dest, 
+                                                     field_names, 
+                                                     field_prefix);
     }
     else if (d2smap["values"].dtype().is_int32())
     {
-        detail::map_fields_to_generated_sides<int32>(fields_src, d2smap, topo_dest, fields_dest, field_names, field_prefix);
+        detail::map_fields_to_generated_sides<int32>(topo_src, 
+                                                     fields_src, 
+                                                     d2smap, 
+                                                     topo_dest,
+                                                     coordset_dest, 
+                                                     fields_dest, 
+                                                     field_names, 
+                                                     field_prefix);
     }
     else
     {
