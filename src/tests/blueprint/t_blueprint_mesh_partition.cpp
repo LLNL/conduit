@@ -17,6 +17,7 @@
 
 #include <math.h>
 #include <iostream>
+#include <array>
 #include "gtest/gtest.h"
 
 using std::cout;
@@ -25,7 +26,7 @@ using std::endl;
 // Enable this macro to generate baselines.
 //#define GENERATE_BASELINES
 
-#define USE_ERROR_HANDLER
+// #define USE_ERROR_HANDLER
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -125,6 +126,13 @@ check_if_hdf5_enabled()
 
 //-----------------------------------------------------------------------------
 void
+save_node(const std::string &filename, const conduit::Node &mesh)
+{
+    conduit::relay::io::blueprint::save_mesh(mesh, filename + ".yaml", "yaml");
+}
+
+//-----------------------------------------------------------------------------
+void
 save_visit(const std::string &filename, const conduit::Node &n)
 {
     // NOTE: My VisIt only wants to read HDF5 root files for some reason.
@@ -134,6 +142,7 @@ save_visit(const std::string &filename, const conduit::Node &n)
     std::string fn(filename.substr(pos+1,filename.size()-pos-1));
     pos = fn.rfind(".");
     std::string fn_noext(fn.substr(0, pos));
+
 
     // Save all the domains to individual files.
     auto ndoms = conduit::blueprint::mesh::number_of_domains(n);
@@ -850,7 +859,6 @@ TEST(conduit_blueprint_mesh_partition, quads_ranges_2d)
 }
 #endif
 
-#if 0
 //-----------------------------------------------------------------------------
 //-- Point merge
 //-----------------------------------------------------------------------------
@@ -1065,158 +1073,99 @@ TEST(conduit_blueprint_mesh_combine, multidomain4)
     save_visit("after_combine_topology", output);
 }
 
-TEST(conduit_blueprint_mesh_combine, partition)
+#define DEBUG_RECOMBINE_BRAID
+TEST(conduit_blueprint_mesh_combine, recombine_braid)
 {
-    conduit::index_t vdims[] = {11,11,2};
-    conduit::Node stream;
-    conduit::blueprint::mesh::examples::braid("quads_and_tris", vdims[0], vdims[1], vdims[2], stream);
-    
-    conduit::Node nonstream;
-    conduit::blueprint::mesh::examples::braid("quads_and_tris_offsets", vdims[0], vdims[1], vdims[2], nonstream);
-
-    save_visit("AStream", stream);
-    save_visit("ANonStream", nonstream);
-
-    std::cout << "ASTREAM:" << std::endl;
-    stream.print();
-    std::cout << "----------------------------------------------" << std::endl;
-
-    std::cout << "ANONSTREAM:" << std::endl;
-    nonstream.print();
-    std::cout << "----------------------------------------------" << std::endl;
-
-    std::vector<const conduit::Node*> csets;
-    csets.push_back(&stream["coordsets/coords"]); csets.push_back(&stream["coordsets/coords"]);
-    conduit::Node combined_csets;
-    conduit::blueprint::mesh::coordset::combine(csets, combined_csets);
-
-    std::vector<const conduit::Node*> topos;
-    topos.push_back(&stream["topologies/mesh"]); topos.push_back(&stream["topologies/mesh"]);
-    conduit::Node opts;
-    // opts["force_polygonal"] = "true";
-    conduit::Node combined_topos;
-    conduit::blueprint::mesh::topology::combine(topos, combined_csets["pointmaps"], combined_topos, &opts);
-
-    // combined_topos.print();
-    // braid["topologies/mesh"].print();
-
-    conduit::Node dom;
-    dom["state/time"].set(3.1415);
-    dom["state/cycle"].set(100);
-    dom["coordsets/coords"].set(combined_csets);
-    dom["topologies/mesh"].set(combined_topos);
-    dom["fields"].set(stream["fields"]);
-
-    conduit::Node info;
-    bool v = conduit::blueprint::mesh::verify(dom, info);
-    if(!v) { info.print(); std::cout << "-----" << std::endl; dom.print();};
-    save_visit("ACombinedTopology", dom);
-
-    // conduit::blueprint::mesh::utils::TopologyMetadata tm(braid["topologies/mesh"], braid["coordsets/coords"]);
-    // conduit::blueprint::mesh::utils::ShapeCascade sc(braid["topologies/mesh"]);
-    // conduit::blueprint::mesh::utils::ShapeType st(braid["topologies/mesh"]);
-    // std::cout << st.is_valid() << std::endl;
-
-
-//    conduit::blueprint::mesh::utils::TopologyMetadata
-
-#if 0
-    conduit::Node options;
-    static const std::string split_yaml =
-R"(selections:
-  -
-    type: logical
-    domain: 0
-    start: [0,0,0]
-    end:   [4,9,0]
-  -
-    type: logical
-    domain: 0
-    start: [5,0,0]
-    end:   [9,4,0]
-  -
-    type: logical
-    domain: 0
-    start: [5,5,0]
-    end:   [9,9,0]
-target: 2
-)";
-    options.reset(); options.parse(split_yaml, "yaml");
-
-    conduit::Node split;
-    conduit::blueprint::mesh::partition(braid, options, split);
-    // split.print();
-    std::cout << "---- end split ----" << std::endl;
-
-    std::vector<const conduit::Node*> chunks;
-    const conduit::index_t ndom = split.number_of_children();
-    for(conduit::index_t i = 0; i < ndom; i++)
+    const auto recombine_braid_case = [](const std::string &case_name, const conduit::index_t *vdims)
     {
-        chunks.push_back(split.child_ptr(i));
-    }
+        std::cout << "-------- Start case " << case_name << " --------" << std::endl;
+        conduit::Node braid;
+        conduit::blueprint::mesh::examples::braid(case_name, vdims[0], vdims[1], vdims[2], braid);
+    #ifdef DEBUG_RECOMBINE_BRAID
+        const std::string base_name = "recombine_" + case_name;
+        save_visit(base_name + "_original", braid);
+    #endif
 
-    // Logical not working with uniform
-#if 1
-    static const std::string combine_yaml = R"(target: 2)";
-    options.reset(); options.parse(combine_yaml, "yaml");
-#else
-    options.reset();
-    options.add_child("selections");
-    {
-//     start: [0,0,0]
-//     end:   [4,9,0]
-//   -
-//     type: logical
-//     domain: 0
-//     start: [5,0,0]
-//     end:   [9,4,0]
-//   -
-//     type: logical
-//     domain: 0
-//     start: [5,5,0]
-//     end:   [9,9,0]
-        const auto build_elem_list = [](std::vector<conduit::index_t> &elem, conduit::index_t vdims[3]) {
-            elem.clear();
-            conduit::index_t ci = 0;
-            for(conduit::index_t k = 0; k < vdims[2]; k++)
-            {
-                for(conduit::index_t j = 0; j < vdims[1]; j++)
-                {
-                    for(conduit::index_t i = 0; i < vdims[0]; i++)
-                    {
-                        elem.push_back(ci);
-                        ci++;
-                    }
-                }
-            }
-        };
-
-        conduit::index_t ldims[3][3] = {
-            {4, 9, 0},
-            {4, 4, 0},
-            {4, 4, 0}
-        };
-
-        for(conduit::index_t i = 0; i < 3; i++)
+        // First split the braid mesh
+        conduit::Node split;
         {
-            conduit::Node &temp = options["selections"].append();
-            std::vector<conduit::index_t> elem;
-            build_elem_list(elem, ldims[i]);
-            std::cout << elem.size() << std::endl;
-            temp["type"] = "explicit";
-            temp["elements"] = elem;
+            static const std::string split_yaml = "target: 2";
+
+            conduit::Node split_opts; split_opts.parse(split_yaml, "yaml");
+
+            conduit::blueprint::mesh::partition(braid, split_opts, split);
+        #ifdef DEBUG_RECOMBINE_BRAID
+            save_visit(base_name + "_split", split);
+        #endif
+
+            conduit::Node verify_info;
+            bool is_valid = conduit::blueprint::mesh::verify(split, verify_info);
+            if(!is_valid)
+            {
+                verify_info.print();
+            }
+            EXPECT_TRUE(is_valid);
         }
-        options["target"] = 1;
+
+        // Now put it back together
+        conduit::Node combine;
+        {
+            static const std::string combine_yaml = R"(target: 1)";
+            conduit::Node combine_opts; combine_opts.parse(combine_yaml, "yaml");
+
+            std::vector<const conduit::Node*> chunks;
+            for(conduit_index_t i = 0; i < split.number_of_children(); i++)
+            {
+                chunks.push_back(&split[i]);
+            }
+
+            conduit::blueprint::mesh::partitioner p;
+            p.combine(0, chunks, combine);
+        #ifdef DEBUG_RECOMBINE_BRAID
+            save_visit(base_name + "_combined", combine);
+        #endif
+            conduit::Node verify_info;
+            bool is_valid = conduit::blueprint::mesh::verify(combine, verify_info);
+            if(!is_valid)
+            {
+                verify_info.print();
+            }
+            EXPECT_TRUE(is_valid);
+        }
+
+        // Test that the mesh we made is the same mesh we put in
+        // conduit::Node mesh_info;
+        // bool is_diff = braid.diff(combine, mesh_info);
+        // if(is_diff)
+        // {
+        //     mesh_info.print();
+        // }
+        // EXPECT_TRUE(is_diff);
+        std::cout << "-------- End case " << case_name << "   --------" << std::endl;
+    };
+
+    static const conduit::index_t dims2[] = {11,11,1};
+    static const std::array<std::string, 4> cases2 = {
+        "tris",
+        "quads",
+        "quads_poly",
+        "quads_and_tris"
+    //    "quads_and_tris_offsets"
+    };
+    for(const auto &c : cases2)
+    {
+        recombine_braid_case(c, dims2);
     }
-#endif
 
-    conduit::Node combined;
-    conduit::blueprint::mesh::partition(split, options, combined);
-    // combined.print();
-
-    save_visit("After_partition", split);
-
-    save_visit("After_combine", combined);
-#endif
+    static const conduit::index_t dims3[] = {3,3,2};
+    static const std::array<std::string, 4> cases3 = {
+        "tets",
+        "hexs",
+        "hexs_poly",
+        "hexs_and_tets"
+    };
+    for(const auto &c : cases3)
+    {
+        recombine_braid_case(c, dims3);
+    }
 }
-#endif
