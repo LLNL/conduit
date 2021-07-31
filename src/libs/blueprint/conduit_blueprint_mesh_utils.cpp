@@ -1168,26 +1168,66 @@ topology::unstructured::generate_offsets(const Node &n,
         }
 
         const Node &n_stream_ids = n["elements/element_index/stream_ids"];
-        const Node &n_element_counts = n["elements/element_index/element_counts"];
-
         std::vector<index_t> offsets;
-        index_t offset = 0, elemid = 0;
-        for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
+        if(n.has_path("elements/element_index/element_counts"))
         {
-            // Get the j'th elements from n_stream_ids, n_element_counts
-            const Node n_elem_ct_j(int_dtype,
-                           const_cast<void*>(n_element_counts.element_ptr(j)), true);
-            const Node n_stream_ids_j(int_dtype,
-                           const_cast<void*>(n_stream_ids.element_ptr(j)), true);
-            auto ec = static_cast<index_t>(n_elem_ct_j.to_int64());
-            auto sid = static_cast<index_t>(n_stream_ids_j.to_int64());
-            auto npts = stream_id_npts[sid];
-            for(index_t i = 0; i < ec; i++)
+            const Node &n_element_counts = n["elements/element_index/element_counts"];
+
+            index_t offset = 0, elemid = 0;
+            for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
             {
-                offsets.push_back(offset);
-                offset += npts;
-                elemid++;
+                // Get the j'th elements from n_stream_ids, n_element_counts
+                const Node n_elem_ct_j(int_dtype,
+                            const_cast<void*>(n_element_counts.element_ptr(j)), true);
+                const Node n_stream_ids_j(int_dtype,
+                            const_cast<void*>(n_stream_ids.element_ptr(j)), true);
+                auto ec = static_cast<index_t>(n_elem_ct_j.to_int64());
+                auto sid = static_cast<index_t>(n_stream_ids_j.to_int64());
+                auto npts = stream_id_npts[sid];
+                for(index_t i = 0; i < ec; i++)
+                {
+                    offsets.push_back(offset);
+                    offset += npts;
+                    elemid++;
+                }
             }
+        }
+        else if(n.has_path("elements/element_index/offsets"))
+        {
+            const Node &n_stream = n["elements/stream"];
+            const Node &n_element_offsets = n["elements/element_index/offsets"];
+            index_t offset = 0, elemid = 0;
+            for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
+            {
+                // Get the j'th elements from n_stream_ids, n_element_offsets
+                const Node n_stream_ids_j(int_dtype,
+                            const_cast<void*>(n_stream_ids.element_ptr(j)), true);
+                const Node n_element_offsets_j(int_dtype,
+                            const_cast<void*>(n_element_offsets.element_ptr(j)), true);
+                offset = n_element_offsets.to_index_t();
+                index_t next_offset = offset;
+                if(j == n_stream_ids.dtype().number_of_elements() - 1)
+                {
+                    next_offset = n_stream.dtype().number_of_elements();
+                }
+                else
+                {
+                    const Node n_element_offsets_j1(int_dtype,
+                                const_cast<void*>(n_element_offsets.element_ptr(j)), true);
+                    next_offset = n_element_offsets_j1.to_index_t();
+                }
+                const auto sid = static_cast<index_t>(n_stream_ids_j.to_int64());
+                const auto npts = stream_id_npts[sid];
+                while(offset < next_offset) {
+                    offsets.push_back(offset);
+                    offset += npts;
+                    elemid++;
+                }
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR("Stream based mixed topology has no element_counts or offsets.")
         }
 
         Node off_node;
