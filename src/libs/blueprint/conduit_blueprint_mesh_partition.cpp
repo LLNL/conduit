@@ -5135,7 +5135,7 @@ partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
-    std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
+    // std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
     output.reset();
     const auto sz = inputs.size();
     if(sz == 0)

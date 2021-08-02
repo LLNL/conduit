@@ -1099,7 +1099,6 @@ TEST(conduit_blueprint_mesh_combine, multidomain4)
     save_visit("after_combine_topology", output);
 }
 
-#define DEBUG_RECOMBINE_BRAID
 TEST(conduit_blueprint_mesh_combine, recombine_braid)
 {
     const auto recombine_braid_case = [](const std::string &case_name, const conduit::index_t *vdims)
@@ -1202,8 +1201,6 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
         recombine_braid_case(c, dims3);
     }
 }
-
-#define DEBUG_COMBINE_MULTIDOMAIN
 
 TEST(conduit_blueprint_mesh_combine, multidomain)
 {
