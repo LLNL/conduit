@@ -2685,19 +2685,19 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         //       while trying to target a certain number of cells per domain.
         //       We may also want to consider the bounding boxes so we
         //       group chunks that are close spatially.
-        unsigned int domid = start_index;
-        index_t total_len = 0;
+        int domid = 0;
+        index_t running_len = 0;
         for(size_t i = 0; i < chunks.size(); i++)
         {
-            total_len += chunk_sizes[i];
-            if(total_len >= len_per_target && domid < target)
+            running_len += chunk_sizes[i];
+            if(running_len > len_per_target && domid < target)
             {
                 // Advance to the next domain index.
-                total_len = 0;
+                running_len = 0;
                 domid++;
             }
 
-            dest_domain.push_back(domid);
+            dest_domain.push_back(start_index + domid);
         }
     }
     else
@@ -2706,6 +2706,16 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         CONDUIT_ERROR("The number of chunks (" << chunks.size()
                       << ") is smaller than requested (" << target << ").");
     }
+#if 0
+    cout << "dest_ranks={";
+    for(size_t i = 0; i < dest_ranks.size(); i++)
+        cout << dest_ranks[i] << ", ";
+    cout << "}" << endl;
+    cout << "dest_domain={";
+    for(size_t i = 0; i < dest_domain.size(); i++)
+        cout << dest_domain[i] << ", ";
+    cout << "}" << endl;
+#endif
 }
 
 //-------------------------------------------------------------------------
