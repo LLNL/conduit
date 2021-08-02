@@ -462,7 +462,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
-#if 1
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -503,7 +503,7 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 //-----------------------------------------------------------------------------
 void
 test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3],
-    const std::string &base, bool quad_tris = false)
+    const std::string &base, int nele = 1)
 {
 #ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
@@ -568,17 +568,8 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
         for(conduit::index_t j = 0; j < vdims[1]-1; j++)
         for(conduit::index_t i = 0; i < vdims[0]-1; i++)
         {
-            if(quad_tris)
-            {
-                int n = (i % 2 == 0) ? 1 : 2;
-                for(int k = 0; k < n; k++)
-                {
-                    if((i+j) % 2 == 0)
-                        elem.push_back(ci);
-                    ci++;
-                }
-            }
-            else
+            int n = (i % 2 == 0) ? 1 : nele;
+            for(int k = 0; k < n; k++)
             {
                 if((i+j) % 2 == 0)
                     elem.push_back(ci);
@@ -641,7 +632,7 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
 #endif
 }
 
-#if 1
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
@@ -677,9 +668,15 @@ TEST(conduit_blueprint_mesh_partition, hexs_poly_explicit_3d)
 TEST(conduit_blueprint_mesh_partition, quads_and_tris_explicit_2d)
 {
     conduit::index_t vdims[] = {11,11,1};
-    test_explicit_selection("quads_and_tris", vdims, "quads_end_tris_explicit_2d", true);
+    test_explicit_selection("quads_and_tris", vdims, "quads_end_tris_explicit_2d", 2);
 }
 #endif
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, hexs_and_tets_explicit_2d)
+{
+    conduit::index_t vdims[] = {11,11,2};
+    test_explicit_selection("hexs_and_tets", vdims, "hexs_and_tets_explicit_2d", 6);
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -824,7 +821,7 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
 #endif
 }
 
-#if 1
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_ranges_2d)
 {
