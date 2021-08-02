@@ -1203,3 +1203,55 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
     }
 }
 
+#define DEBUG_COMBINE_MULTIDOMAIN
+
+TEST(conduit_blueprint_mesh_combine, multidomain)
+{
+    const std::string base_name = "combine_multidomain";
+
+    const auto combine_multidomain_case = [&base_name](conduit::index_t ndom) {
+        std::cout << "-------- Start case " << ndom << " --------" << std::endl;
+        conduit::Node spiral;
+        conduit::blueprint::mesh::examples::spiral(ndom, spiral);
+    #ifdef DEBUG_COMBINE_MULTIDOMAIN
+        save_visit(base_name + std::to_string(ndom) + "_input", spiral);
+    #endif
+
+        static const std::string opts_yaml = "target: 1";
+        conduit::Node opts; opts.parse(opts_yaml, "yaml");
+
+        conduit::Node output;
+        conduit::blueprint::mesh::partition(spiral, opts, output);
+
+    #ifdef DEBUG_COMBINE_MULTIDOMAIN
+        save_visit(base_name + std::to_string(ndom) + "_output", output);
+    #endif
+
+    // TODO: Rebaseline when rectilinear -> rectilinear is supported
+    const std::string filename = baseline_file(base_name + std::to_string(ndom));
+    #ifdef GENERATE_BASELINES
+        make_baseline(filename, output);
+    #else
+        conduit::Node ans; load_baseline(filename, ans);
+        conduit::Node info;
+        bool is_different = ans.diff(output, info, CONDUIT_EPSILON, true);
+        EXPECT_FALSE(is_different);
+        if(is_different || always_print)
+        {
+            info.print();
+        }
+    #endif
+        std::cout << "-------- End case " << ndom << " --------" << std::endl;
+    };
+
+    std::array<conduit::index_t, 4> cases{
+        2,
+        4,
+        7,
+        13
+    };
+    for(const auto c : cases)
+    {
+        combine_multidomain_case(c);
+    }
+}
