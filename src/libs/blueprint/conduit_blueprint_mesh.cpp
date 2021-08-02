@@ -31,6 +31,7 @@
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_mesh_partition.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
 
@@ -4374,6 +4375,19 @@ mesh::index::verify(const Node &n,
     return res;
 }
 
+//-------------------------------------------------------------------------
+void
+mesh::partition(const conduit::Node &n_mesh, const conduit::Node &options,
+    conduit::Node &output)
+{
+    mesh::partitioner P;
+    if(P.initialize(n_mesh, options))
+    {
+        P.split_selections();
+        output.reset();
+        P.execute(output);
+    }
+}
 
 }
 //-----------------------------------------------------------------------------

@@ -89,6 +89,13 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           Node &index_out);
 
 //-------------------------------------------------------------------------
+/**
+ @brief Partition an input mesh or set of mesh domains into a different decomposition,
+        according to options. This is the serial implementation.
+ @param n_mesh  A Conduit node containing a Blueprint mesh or set of mesh domains.
+ @param options A Conduit node containing options that govern the partitioning.
+ @param[out]    A Conduit node to accept the repartitioned mesh(es).
+ */
 void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
                                      const conduit::Node &options,
                                      conduit::Node &output);

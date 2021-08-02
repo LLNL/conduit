@@ -843,7 +843,7 @@ selection_explicit::print(std::ostream &os) const
        << "\"name\":\"" << name() << "\","
        << "\"domain\":" << get_domain() << ", "
        << "\"topology\":\"" << get_topology() << "\", "
-       << "\"indices\":[";
+       << "\"elements\":[";
     auto n = length();
     auto indices = get_indices();
     for(index_t i = 0; i < n; i++)
@@ -1267,6 +1267,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     // Iterate over the selections in the options and check them against the
     // domains that were passed in to make a vector of meshes and selections
     // that can be used to partition the meshes.
+    selections.clear();
     if(options.has_child("selections"))
     {
         const conduit::Node &n_selections = options["selections"];
@@ -1858,7 +1859,7 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
                 {
                     if(shape == utils::TOPO_SHAPES[j])
                     {
-                        stream_id_npts[stream_id] = utils::TOPO_SHAPE_EMBED_COUNTS[j];
+                        stream_id_npts[stream_id] = utils::TOPO_SHAPE_INDEX_COUNTS[j];
                         break;
                     }
                 }
@@ -2371,9 +2372,8 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
             {
                 if(shape == utils::TOPO_SHAPES[j])
                 {
-                    stream_id_npts[stream_id] = utils::TOPO_SHAPE_EMBED_COUNTS[j];
-                    unique_shape_types.insert(utils::TOPO_SHAPE_EMBED_COUNTS[j]);
-
+                    stream_id_npts[stream_id] = utils::TOPO_SHAPE_INDEX_COUNTS[j];
+                    unique_shape_types.insert(utils::TOPO_SHAPE_INDEX_COUNTS[j]);
                     shape_stream_id[shape] = stream_id;
                     stream_id_shape[stream_id] = shape;
                     break;
@@ -2464,7 +2464,7 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
             {
                 if(shape == utils::TOPO_SHAPES[j])
                 {
-                    nverts_in_shape = utils::TOPO_SHAPE_EMBED_COUNTS[j];
+                    nverts_in_shape = utils::TOPO_SHAPE_INDEX_COUNTS[j];
                     break;
                 }
             }
@@ -2536,9 +2536,8 @@ partitioner::execute(conduit::Node &output)
     {
         if(selections[i]->get_whole(*meshes[i]))
         {
-// FIXME: This is not what I want to do because it bypasses the splitting process.
-
-            // We had a "null" selection so we'll take the whole mesh.
+            // We had a selection that spanned the entire mesh so we'll take
+            // the whole mesh rather than extracting.
             chunks.push_back(chunk(meshes[i], false));
         }
         else
@@ -2686,19 +2685,19 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         //       while trying to target a certain number of cells per domain.
         //       We may also want to consider the bounding boxes so we
         //       group chunks that are close spatially.
-        unsigned int domid = start_index;
-        index_t total_len = 0;
+        int domid = 0;
+        index_t running_len = 0;
         for(size_t i = 0; i < chunks.size(); i++)
         {
-            total_len += chunk_sizes[i];
-            if(total_len >= len_per_target && domid < target)
+            running_len += chunk_sizes[i];
+            if(running_len > len_per_target && domid < target)
             {
                 // Advance to the next domain index.
-                total_len = 0;
+                running_len = 0;
                 domid++;
             }
 
-            dest_domain.push_back(domid);
+            dest_domain.push_back(start_index + domid);
         }
     }
     else
@@ -2707,6 +2706,16 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         CONDUIT_ERROR("The number of chunks (" << chunks.size()
                       << ") is smaller than requested (" << target << ").");
     }
+#if 0
+    cout << "dest_ranks={";
+    for(size_t i = 0; i < dest_ranks.size(); i++)
+        cout << dest_ranks[i] << ", ";
+    cout << "}" << endl;
+    cout << "dest_domain={";
+    for(size_t i = 0; i < dest_domain.size(); i++)
+        cout << dest_domain[i] << ", ";
+    cout << "}" << endl;
+#endif
 }
 
 //-------------------------------------------------------------------------
@@ -5482,156 +5491,10 @@ partitioner::combine_as_unstructured(int domain,
 }
 
 //-------------------------------------------------------------------------
-/**
- @brief This class accepts a set of input meshes and repartitions them
-        according to input options. This class subclasses the partitioner
-        class to add some parallel functionality.
- */
-#if 0
-class parallel_partitioner : public partitioner
-{
-public:
-    parallel_partitioner(MPI_Comm c);
-    virtual ~parallel_partitioner();
-
-    virtual long get_total_selections() const override;
-
-    virtual void get_largest_selection(int &sel_rank, int &sel_index) const override;
-
-protected:
-    virtual void map_chunks(const std::vector<chunk> &chunks,
-                            std::vector<int> &dest_ranks,
-                            std::vector<int> &dest_domain) override;
-
-    virtual void communicate_chunks(const std::vector<chunk> &chunks,
-                                    const std::vector<int> &dest_rank,
-                                    const std::vector<int> &dest_domain,
-                                    std::vector<chunk> &chunks_to_assemble,
-                                    std::vector<int> &chunks_to_assemble_domains) override;
-
-private:
-    MPI_Comm comm;
-};
-
-//---------------------------------------------------------------------------
-parallel_partitioner::~parallel_partitioner(MPI_Comm c) : partitioner()
-{
-    comm = c;
-    MPI_Comm_size(comm, &size);
-    MPI_Comm_rank(comm, &rank);
-}
-
-//---------------------------------------------------------------------------
-parallel_partitioner::~parallel_partitioner()
-{
-}
-
-//---------------------------------------------------------------------------
-long
-parallel_partitioner::get_total_selections() const
-{
-    // Gather the number of selections on each rank.
-    long nselections = static_cast<long>(selections.size());
-    long ntotal_selections = nparts;
-    MPI_Allreduce(&nselections, 1, MPI_LONG,
-                  &ntotal_selections, 1, MPI_LONG, MPI_SUM, comm);
-
-    return ntotal_selections;
-}
-
-//---------------------------------------------------------------------------
-/**
- @note This method is called iteratively until we have the number of target
-       selections that we want to make. We could do better by identifying
-       more selections to split in each pass.
- */
-void
-parallel_partitioner::get_largest_selection(int &sel_rank, int &sel_index) const
-{
-    // Find largest selection locally.
-    long largest_selection_size = 0;
-    int  largest_selection_index = 0;
-    for(size_t i = 0; i < selections.size(); i++)
-    {
-        long ssize = static_cast<long>(selections[i]->length());
-        if(ssize > largest_selection_size)
-        {
-            largest_selection_size = ssize;
-            largest_selection_index = static_cast<int>(i);
-        }
-    }
-
-    // What's the largest selection across ranks?
-    long global_largest_selection_size = 0;
-    MPI_Allreduce(&largest_selection_size, 1, MPI_LONG,
-                  &global_largest_selection_size, 1, MPI_LONG,
-                  MPI_MAX, comm);
-
-    // See if this rank has the largest selection.
-    int rank_that_matches = -1, largest_rank_that_matches = -1;
-    int local_index = -1;
-    for(size_t i = 0; i < selections.size(); i++)
-    {
-        long ssize = static_cast<long>(selections[i]->length());
-        if(ssize == global_largest_selection_size)
-        {
-            rank_that_matches = rank;
-            local_index = -1;
-        }
-    }
-    MPI_Allreduce(&rank_that_matches, 1, MPI_INT,
-                  &largest_rank_that_matches, 1, MPI_INT,
-                  MPI_MAX, comm);
-
-    sel_rank = largest_rank_that_matches;
-    if(sel_rank == rank)
-        sel_index = local_index;
-}
-
 //-------------------------------------------------------------------------
-void
-parallel_partitioner::map_chunks(const std::vector<chunk> &chunks,
-    std::vector<int> &dest_ranks,
-    std::vector<int> &dest_domain)
-{
-    // TODO: populate dest_ranks, dest_domain
-}
-
-//-------------------------------------------------------------------------
-void
-parallel_partitioner::communicate_chunks(const std::vector<chunk> &chunks,
-    const std::vector<int> &dest_rank,
-    const std::vector<int> &dest_domain,
-    std::vector<chunk> &chunks_to_assemble,
-    std::vector<int> &chunks_to_assemble_domains)
-{
-    // TODO: send chunks to dest_rank if dest_rank[i] != rank.
-    //       If dest_rank[i] == rank then the chunk stays on the rank.
-    //
-    //       Do sends/recvs to send the chunks as blobs among ranks.
-    //
-    //       Populate chunks_to_assemble, chunks_to_assemble_domains
-}
-
-#endif
-
-//-------------------------------------------------------------------------
-void
-partition(const conduit::Node &n_mesh, const conduit::Node &options,
-    conduit::Node &output)
-{
-    partitioner P;
-    if(P.initialize(n_mesh, options))
-    {
-        P.split_selections();
-        output.reset();
-        P.execute(output);
-    }
-}
-
 namespace coordset
 {
-
+// Q: Why is this exposed?
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coordsets,
                                  conduit::Node &output,
                                  double tolerance)
@@ -5642,9 +5505,12 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coo
 
 }
 
+//-------------------------------------------------------------------------
+//-------------------------------------------------------------------------
 namespace topology
 {
 
+// Q: Why is this exposed?
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
                                    const conduit::Node &pointmaps,
                                    conduit::Node &output,
