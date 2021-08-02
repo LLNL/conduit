@@ -3419,7 +3419,13 @@ namespace detail
 
                 if (vol_dep)
                 {
+                    volume_ratio = NULL;
                     delete volumes;
+                    vol_dep = false;
+                }
+                if (vert_assoc)
+                {
+                    vert_assoc = false;
                 }
             }
             else
