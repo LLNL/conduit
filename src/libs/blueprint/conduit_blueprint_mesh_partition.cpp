@@ -4904,6 +4904,161 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
 // -- end conduit::blueprint::mesh::topology --
 //-----------------------------------------------------------------------------
 
+namespace fields
+{
+
+static void
+determine_schema(const Node &in,
+        const index_t ntuples, index_t &out_ncomps,
+        Schema &out_schema)
+{
+    out_ncomps = 0;
+    out_schema.reset();
+
+    const index_t num_children = in.number_of_children();
+    if(num_children)
+    {
+        out_ncomps = num_children;
+        index_t offset = 0;
+        // TODO: Keep track of whether the original field was interleaved
+        //  and preserve the interleaved-ness
+        for(index_t i = 0; i < num_children; i++)
+        {
+            const DataType dt(in[i].dtype().id(), ntuples, offset,
+                in[i].dtype().element_bytes(), in[i].dtype().element_bytes(),
+                in[i].dtype().endianness());
+            out_schema[in[i].name()].set(dt);
+            offset += dt.number_of_elements() * dt.element_bytes();
+        }
+    }
+    else
+    {
+        out_ncomps = num_children;
+        out_schema.set(DataType(in.dtype().id(), ntuples));
+    }
+}
+
+//-------------------------------------------------------------------------
+static void
+map_vertex_field(const std::vector<const Node*> &in_nodes,
+        const std::vector<DataArray<index_t>> &pointmaps,
+        const index_t num_verticies,
+        Node &out_node)
+{
+    out_node.reset();
+    if(in_nodes.empty() || pointmaps.empty())
+    {
+        return;
+    }
+
+    if(in_nodes.size() != pointmaps.size())
+    {
+        CONDUIT_WARN("Number of input fields and number of pointmaps should be equal!");
+    }
+
+    // Figure out num components and out dtype
+    index_t ncomps = 0;
+    Schema out_schema;
+    determine_schema((*in_nodes[0])["values"], num_verticies, ncomps, out_schema);
+    out_node.set(out_schema);
+
+    // out_schema.print();
+    // out_node.print();
+
+    const index_t npmaps = (index_t)pointmaps.size();
+    if(ncomps > 1)
+    {
+        for(index_t fi = 0; fi < npmaps; fi++)
+        {
+            const auto &pmap = pointmaps[fi];
+            const Node &in_values = in_nodes[fi]->child("values");
+            for(index_t idx = 0; idx < pmap.number_of_elements(); idx++)
+            {
+                const index_t out_idx = pmap[idx];
+                for(index_t ci = 0; ci < ncomps; ci++)
+                {
+                    const auto bytes = out_node[ci].dtype().element_bytes();
+                    void *out_data = out_node[ci].element_ptr(out_idx);
+                    const void *in_data = in_values[ci].element_ptr(idx);
+                    memcpy(out_data, in_data, bytes);
+                }
+            }
+        }
+    }
+    else
+    {
+        const auto bytes = out_node.dtype().element_bytes();
+        for(index_t fi = 0; fi < npmaps; fi++)
+        {
+            const auto &pmap = pointmaps[fi];
+            const Node &in_values = in_nodes[fi]->child("values");
+            for(index_t idx = 0; idx < pmap.number_of_elements(); idx++)
+            {
+                const index_t out_idx = pmap[idx];
+                void *out_data = out_node.element_ptr(out_idx);
+                const void *in_data = in_values.element_ptr(idx);
+                memcpy(out_data, in_data, bytes);
+            }
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+static void
+map_element_field(const std::vector<const Node*> &in_nodes,
+        const DataArray<index_t> &elemmap,
+        Node &out_node)
+{
+    out_node.reset();
+    if(in_nodes.empty())
+    {
+        return;
+    }
+
+    const index_t nelements = elemmap.number_of_elements() / 2;
+
+    index_t ncomps = 0;
+    Schema out_schema;
+    determine_schema(in_nodes[0]->child("values"), nelements, ncomps, out_schema);
+    out_node.set(out_schema);
+    if(ncomps > 1)
+    {
+        for(index_t out_idx = 0; out_idx < nelements; out_idx++)
+        {
+            const index_t idx      = out_idx * 2;
+            const index_t dom_idx  = elemmap[idx];
+            const index_t elem_idx = elemmap[idx+1];
+            const Node &data = in_nodes[dom_idx]->child("values");
+            for(index_t ci = 0; ci < ncomps; ci++)
+            {
+                const auto bytes = out_node[ci].dtype().element_bytes();
+                void *out_data = out_node[ci].element_ptr(out_idx);
+                const void *in_data = data[ci].element_ptr(elem_idx);
+                memcpy(out_data, in_data, bytes);
+            }
+        }
+    }
+    else
+    {
+        const auto bytes = out_node.dtype().element_bytes();
+        for(index_t out_idx = 0; out_idx < nelements; out_idx++)
+        {
+            const index_t idx      = out_idx * 2;
+            const index_t dom_idx  = elemmap[idx];
+            const index_t elem_idx = elemmap[idx+1];
+            const Node &data = in_nodes[dom_idx]->child("values");
+            void *out_data = out_node.element_ptr(out_idx);
+            const void *in_data = data.element_ptr(elem_idx);
+            memcpy(out_data, in_data, bytes);
+        }
+    }
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::fields --
+//-----------------------------------------------------------------------------
+
 
 
 //-------------------------------------------------------------------------
@@ -4929,7 +5084,7 @@ partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
-    // std::cout << "domain " << domain << std::endl;
+    std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
     output.reset();
     const auto sz = inputs.size();
     if(sz == 0)
@@ -5185,30 +5340,6 @@ partitioner::combine_as_unstructured(int domain,
             }
             const auto &topo_group = itr->second;
 
-            // Figure out num components and out dtype
-            index_t ncomps = 0;
-            Schema out_schema;
-            {
-                const Node &values = field_group[0]->child("values");
-                if(values.number_of_children())
-                {
-                    // MCArray
-                    auto vitr = values.children();
-                    while(vitr.has_next())
-                    {
-                        const Node &n = vitr.next();
-                        out_schema[n.name()].set(n.dtype().id());
-                        ncomps++;
-                    }
-                }
-                else
-                {
-                    // Just data
-                    ncomps = 1;
-                    out_schema.set(values.dtype().id());
-                }
-            }
-
             const std::string &assoc = field_group[0]->child("association").as_string();
             Node &fout = output_fields[field_name];
             fout["topology"] = ref_topo_name;
@@ -5239,54 +5370,7 @@ partitioner::combine_as_unstructured(int domain,
                 }
 
                 const index_t nt = coordset::length(out_coordset);
-                Node &out_values = fout["values"];
-                std::vector<Node *> out_values_comps;
-                if(ncomps > 1)
-                {
-                    for(index_t si = 0; si < out_schema.number_of_children(); si++)
-                    {
-                        const DataType dt(out_schema[si].dtype().id(), nt);
-                        out_schema[si].set(dt);
-                    }
-                    out_values.set(out_schema);
-                    for(index_t ci = 0; ci < out_values.number_of_children(); ci++)
-                    {
-                        out_values_comps.push_back(&out_values[ci]);
-                    }
-                }
-                else
-                {
-                    const DataType dt(out_schema.dtype().id(), nt);
-                    out_schema.set(dt);
-                    out_values.set(out_schema);
-                    out_values_comps.push_back(&out_values);
-                }
-
-                const index_t npmaps = (index_t)pmaps.size();
-                for(index_t fi = 0; fi < npmaps; fi++)
-                {
-                    const auto &pmap = pmaps[fi];
-                    const Node &data = field_group[fi]->child("values");
-                    for(index_t idx = 0; idx < pmap.number_of_elements(); idx++)
-                    {
-                        const index_t out_idx = pmap[idx];
-                        for(index_t ci = 0; ci < ncomps; ci++)
-                        {
-                            const auto bytes = out_values_comps[ci]->dtype().element_bytes();
-                            void *out_data = out_values_comps[ci]->element_ptr(out_idx);
-                            const void *in_data;
-                            if(data.number_of_children())
-                            {
-                                in_data = data[ci].element_ptr(idx);
-                            }
-                            else
-                            {
-                                in_data = data.element_ptr(idx);
-                            }
-                            memcpy(out_data, in_data, bytes);
-                        }
-                    }
-                }
+                fields::map_vertex_field(field_group, pmaps, nt, fout["values"]);
             }
             else if(assoc == utils::ASSOCIATIONS[1])
             {
@@ -5294,55 +5378,7 @@ partitioner::combine_as_unstructured(int domain,
                 // Need to use element maps to map this field
                 const Node &out_topo_map = output["topologies"][ref_topo_name]["element_map"];
                 const DataArray<index_t> tmap = out_topo_map.value();
-                const index_t sz = tmap.number_of_elements();
-                const index_t nt = sz / 2;
-                Node &out_values = fout["values"];
-                std::vector<Node *> out_values_comps;
-                if(ncomps > 1)
-                {
-                    for(index_t si = 0; si < out_schema.number_of_children(); si++)
-                    {
-                        const DataType dt(out_schema[si].dtype().id(), nt);
-                        out_schema[si].set(dt);
-                    }
-                    out_values.set(out_schema);
-                    for(index_t ci = 0; ci < out_values.number_of_children(); ci++)
-                    {
-                        out_values_comps.push_back(&out_values[ci]);
-                    }
-                }
-                else
-                {
-                    const DataType dt(out_schema.dtype().id(), nt);
-                    out_schema.set(dt);
-                    out_values.set(out_schema);
-                    out_values_comps.push_back(&out_values);
-                }
-
-                index_t map_idx = 0;
-
-                while(map_idx < sz)
-                {
-                    const index_t idx = map_idx / 2;
-                    const index_t dom_idx = tmap[map_idx++];
-                    const index_t elem_idx = tmap[map_idx++];
-                    const Node &data = field_group[dom_idx]->child("values");
-                    if(data.number_of_children())
-                    {
-                        for(index_t ci = 0; ci < data.number_of_children(); ci++)
-                        {
-                            void *out_data = out_values_comps[ci]->element_ptr(idx);
-                            const void *in_data = data[ci].element_ptr(elem_idx);
-                            memcpy(out_data, in_data, data[ci].dtype().element_bytes());
-                        }
-                    }
-                    else
-                    {
-                        void *out_data = out_values_comps[0]->element_ptr(idx);
-                        const void *in_data = data.element_ptr(elem_idx);
-                        memcpy(out_data, in_data, data.dtype().element_bytes());
-                    }
-                }
+                fields::map_element_field(field_group, tmap, fout["values"]);
             }
             else
             {
