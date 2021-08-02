@@ -324,7 +324,7 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
 "     start: [5,5,0]\n"
 "     end:   [9,9,0]\n"
 "target: 4";
-    options.reset(); options.parse(opt5, "yaml"); options.print();
+    options.reset(); options.parse(opt5, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
     std::string b05 = baseline_file(base + "_05");
@@ -471,7 +471,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -512,7 +512,7 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 //-----------------------------------------------------------------------------
 void
 test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3],
-    const std::string &base, int nele = 1)
+    const std::string &base, int (*spc)(conduit::index_t, conduit::index_t))
 {
 #ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
@@ -528,7 +528,6 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
     conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
 
     // Select the whole thing. Check output==input
-
     options.reset();
     {
         std::vector<conduit::index_t> elem;
@@ -571,13 +570,13 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
 
     // Select a checkerboard of cells
     options.reset();
+    std::vector<conduit::index_t> elem;
     {
-        std::vector<conduit::index_t> elem;
         conduit::index_t ci = 0;
         for(conduit::index_t j = 0; j < vdims[1]-1; j++)
         for(conduit::index_t i = 0; i < vdims[0]-1; i++)
         {
-            int n = (i % 2 == 0) ? 1 : nele;
+            int n = spc(i,j);
             for(int k = 0; k < n; k++)
             {
                 if((i+j) % 2 == 0)
@@ -585,6 +584,7 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
                 ci++;
             }
         }
+
         conduit::Node &sel1 = options["selections"].append();
         sel1["type"] = "explicit";
         sel1["elements"] = elem;
@@ -641,12 +641,38 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
 #endif
 }
 
-#if 0
+//-----------------------------------------------------------------------------
+int spc(conduit::index_t i, conduit::index_t j)
+{
+    return 1;
+}
+
+//-----------------------------------------------------------------------------
+int quads_and_tris_spc(conduit::index_t i, conduit::index_t j)
+{
+    return (i % 2 == 0) ? 1 : 2;
+}
+
+//-----------------------------------------------------------------------------
+int hexs_and_tets_spc(conduit::index_t i, conduit::index_t j)
+{
+    int n;
+    if((i == 0 && j == 0) || (i == 0 && j == 5))
+        n = 1;
+    else if(i == 1 && j == 0)
+        n = 6;
+    else if(j < 5)
+        n = 1;
+    else
+        n = 6;
+    return n;
+}
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
     conduit::index_t vdims[] = {11,11,1};
-    test_explicit_selection("uniform", vdims, "uniform_explicit_2d");
+    test_explicit_selection("uniform", vdims, "uniform_explicit_2d", spc);
 }
 
 //-----------------------------------------------------------------------------
@@ -655,14 +681,14 @@ TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 TEST(conduit_blueprint_mesh_partition, quads_poly_explicit_2d)
 {
     conduit::index_t vdims[] = {11,11,1};
-    test_explicit_selection("quads_poly", vdims, "quads_poly_explicit_2d");
+    test_explicit_selection("quads_poly", vdims, "quads_poly_explicit_2d", spc);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, hexs_explicit_2d)
 {
     conduit::index_t vdims[] = {11,11,2};
-    test_explicit_selection("hexs", vdims, "hexs_explicit_3d");
+    test_explicit_selection("hexs", vdims, "hexs_explicit_3d", spc);
 }
 
 //-----------------------------------------------------------------------------
@@ -670,22 +696,25 @@ TEST(conduit_blueprint_mesh_partition, hexs_explicit_2d)
 TEST(conduit_blueprint_mesh_partition, hexs_poly_explicit_3d)
 {
     conduit::index_t vdims[] = {11,11,2};
-    test_explicit_selection("hexs_poly", vdims, "hexs_poly_explicit_3d");
+    test_explicit_selection("hexs_poly", vdims, "hexs_poly_explicit_3d", spc);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, quads_and_tris_explicit_2d)
 {
     conduit::index_t vdims[] = {11,11,1};
-    test_explicit_selection("quads_and_tris", vdims, "quads_end_tris_explicit_2d", 2);
+    test_explicit_selection("quads_and_tris", vdims, "quads_end_tris_explicit_2d",
+        quads_and_tris_spc);
 }
-#endif
+
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_partition, hexs_and_tets_explicit_2d)
+TEST(conduit_blueprint_mesh_partition, hexs_and_tets_explicit_3d)
 {
     conduit::index_t vdims[] = {11,11,2};
-    test_explicit_selection("hexs_and_tets", vdims, "hexs_and_tets_explicit_2d", 6);
+    test_explicit_selection("hexs_and_tets", vdims, "hexs_and_tets_explicit_3d",
+        hexs_and_tets_spc);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 void
@@ -830,7 +859,7 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
 #endif
 }
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_ranges_2d)
 {
@@ -1166,3 +1195,4 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
         recombine_braid_case(c, dims3);
     }
 }
+

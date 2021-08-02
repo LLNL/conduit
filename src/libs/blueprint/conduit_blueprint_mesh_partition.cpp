@@ -843,7 +843,7 @@ selection_explicit::print(std::ostream &os) const
        << "\"name\":\"" << name() << "\","
        << "\"domain\":" << get_domain() << ", "
        << "\"topology\":\"" << get_topology() << "\", "
-       << "\"indices\":[";
+       << "\"elements\":[";
     auto n = length();
     auto indices = get_indices();
     for(index_t i = 0; i < n; i++)
@@ -1859,7 +1859,7 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
                 {
                     if(shape == utils::TOPO_SHAPES[j])
                     {
-                        stream_id_npts[stream_id] = utils::TOPO_SHAPE_EMBED_COUNTS[j];
+                        stream_id_npts[stream_id] = utils::TOPO_SHAPE_INDEX_COUNTS[j];
                         break;
                     }
                 }
@@ -2372,9 +2372,8 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
             {
                 if(shape == utils::TOPO_SHAPES[j])
                 {
-                    stream_id_npts[stream_id] = utils::TOPO_SHAPE_EMBED_COUNTS[j];
-                    unique_shape_types.insert(utils::TOPO_SHAPE_EMBED_COUNTS[j]);
-
+                    stream_id_npts[stream_id] = utils::TOPO_SHAPE_INDEX_COUNTS[j];
+                    unique_shape_types.insert(utils::TOPO_SHAPE_INDEX_COUNTS[j]);
                     shape_stream_id[shape] = stream_id;
                     stream_id_shape[stream_id] = shape;
                     break;
@@ -2465,7 +2464,7 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
             {
                 if(shape == utils::TOPO_SHAPES[j])
                 {
-                    nverts_in_shape = utils::TOPO_SHAPE_EMBED_COUNTS[j];
+                    nverts_in_shape = utils::TOPO_SHAPE_INDEX_COUNTS[j];
                     break;
                 }
             }
