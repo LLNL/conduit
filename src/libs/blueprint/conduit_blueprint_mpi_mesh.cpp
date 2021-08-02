@@ -194,6 +194,9 @@ number_of_domains(const conduit::Node &n,
  @brief This class accepts a set of input meshes and repartitions them
         according to input options. This class subclasses the partitioner
         class to add some parallel functionality.
+ @note This class overrides a small amount of code from the partitioner class
+       so this class is in here so we do not have to make it public via a
+       hpp file.
  */
 class parallel_partitioner : public partitioner
 {
@@ -300,7 +303,199 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     std::vector<int> &dest_ranks,
     std::vector<int> &dest_domain)
 {
-    // TODO: populate dest_ranks, dest_domain
+    // Determine local chunk sizes.
+    std::vector<uint64> local_chunk_sizes;
+    for(size_t i =0 ; i < chunks.size(); i++)
+    {
+        const conduit::Node &n_topos = chunks[i].mesh->operator[]("topologies");
+        uint64 len = 0;
+        for(index_t j = 0; j < n_topos.number_of_children(); j++)
+            len += conduit::blueprint::mesh::topology::length(n_topos[j]);
+        local_chunk_sizes.push_back(len);
+    }
+
+    // Gather sizes of all local chunks.
+    auto nlocal_chunks = static_cast<int>(local_chunk_sizes.size());
+    std::vector<int> nglobal_chunks(size, 0);
+    MPI_Allgather(&nlocal_chunks, 1, MPI_INT,
+                  &nglobal_chunks[0], 1, MPI_INT,
+                  comm);
+    // Compute total chunks
+    uint64 ntotal_chunks = 0;
+    for(size_t i = 0; i < nglobal_chunks.size(); i++)
+        ntotal_chunks += static_cast<uint64>(nglobal_chunks[i]);
+#if 1
+if(rank == 0)
+{
+cout << "ntotal_chunks = " << ntotal_chunks << endl;
+}
+#endif
+    // Compute offsets
+    std::vector<int> offsets(size, 0);
+    for(size_t i = 1; i < nglobal_chunks.size(); i++)
+        offsets = offsets[i-1] + nglobal_chunks[i-1];   
+
+    // Get all chunk sizes across all ranks.
+    std::vector<uint64> global_chunk_sizes(ntotal_chunks, 0);
+    MPI_Allgatherv(&local_chunk_sizes[0],
+                   static_cast<int>(local_chunk_sizes.size()),
+                   MPI_UNSIGNED_LONG_LONG,
+                   &global_chunk_sizes[0],
+                   &nglobal_chunks[0],
+                   &offsets[0],
+                   MPI_UNSIGNED_LONG_LONG,
+                   comm);
+
+    // What we have at this point is a list of chunk sizes for all chunks
+    // across all ranks. Let's get a global list of chunk destinations
+    // and domains. A chunk may already know where it wants to go. If it
+    // doesn't then we can assign it to move around. A chunk is free to 
+    // move around if its destination rank is -1.
+    std::vector<int> local_chunk_dest_rank(chunks.size(), rank);
+    std::vector<int> local_chunk_dest_domain(chunks.size(), rank);
+    for(size_t i =0 ; i < chunks.size(); i++)
+    {
+        local_chunk_dest_rank[i] = chunks[i]->destination_rank();
+        local_chunk_dest_domain[i] = chunks[i]->destination_domain();
+    }
+    std::vector<int> global_chunk_dest_rank(ntotal_chunks, 0);
+    std::vector<int> global_chunk_dest_domain(ntotal_chunks, 0);
+    MPI_Allgatherv(&local_chunk_dest_rank[0],
+                   static_cast<int>(local_chunk_dest_rank.size()),
+                   MPI_INT,
+                   &global_chunk_dest_rank[0],
+                   &nglobal_chunks[0],
+                   &offsets[0],
+                   MPI_INT,
+                   comm);
+    MPI_Allgatherv(&local_chunk_dest_domain[0],
+                   static_cast<int>(local_chunk_dest_domain.size()),
+                   MPI_INT,
+                   &global_chunk_dest_domain[0],
+                   &nglobal_chunks[0],
+                   &offsets[0],
+                   MPI_INT,
+                   comm);
+
+    // Make sure that the global_chunk_dest_rank obeys the target number of
+    // domains we're looking for.
+    std::set<int> allowed_ranks;
+    std::map<int,int> domain_sizes;
+    uint64 free_to_move = 0;
+    for(size_t i = 0; i < ntotal_chunks; i++)
+    {
+        int dest = global_chunk_dest_domain[i];
+        if(dest >= 0)
+        {
+            std::map<int,int>::iterator it = domain_sizes.find(dest);
+            if(it == domain_sizes.end())
+                domain_sizes[dest] = 1;
+            else
+                it->second++;
+        }
+        else
+            free_to_move++;
+    }
+
+    if(domain_sizes.size() == target && free_to_move == 0)
+    {
+        // The number of domains is equal to the number of targets
+        // and we know the ranks where they are supposed to go so
+        // we can pass back what the chunks told us to do.
+        for(size_t i = 0; i < nlocal_chunks; i++)
+        {
+            dest_ranks.push_back(local_chunk_dest_rank[i]);
+            dest_domain.push_back(local_chunk_dest_domain[i]);
+        }
+    }    
+    else if(domain_sizes.empty() && free_to_move == ntotal_chunks)
+    {
+        // No chunks told us where they go so all chunks are free to move.
+
+        // We want to make target chunks.
+        std::vector<int> target_cell_counts(target, 0);       
+        std::vector<int> global_dest_rank(ntotal_domains, 0);
+        std::vector<int> global_dest_domain(ntotal_domains, 0);
+        for(size_t i = 0; i < ntotal_chunks; i++)
+        {
+            // Add the size of this chunk to the sizes of the target domains.
+            std::vector<int> next_target_cell_counts(target);
+            for(size_t r = 0; r < target_cell_counts.size(); r++)
+                next_target_cell_counts[r] = target_cell_counts[r] + global_chunk_sizes[i];
+
+            // Find the index of the min value in next_target_cell_counts.
+            size_t idx = 0;
+            for(size_t r = 1; r < target_cell_counts.size(); r++)
+            {
+                if(next_target_cell_counts[r] < next_target_cell_counts[idx])
+                    idx = r;
+            }
+
+            // Add the current chunk to the specified target domain.
+            rank_cell_counts[idx] += global_chunk_sizes[i];
+            global_dest_domain[i] = idx;
+        }
+
+        // We now have a global map indicating the final domain to which
+        // each chunk will contribute. Now we need to map the target
+        // domains to mpi ranks.
+
+
+    }
+    else if(dest_rank_counts.size() != target)
+    {
+        // The destination ranks that were specified by the chunks.
+        // The set of ranks does not equal the target chunks though
+        for(const auto &it : dest_rank_counts)
+        {
+            if(allowed_ranks.size() < target)
+                allowed_ranks.push_back(it->first);
+        }
+
+        if(allowed_ranks.size() < target && free_to_move > 0)
+        {
+        }
+
+        // Take the first #target ranks that we found and consider those
+        // the ranks that will receive data. Any ranks beyond those
+        // that were destination ranks will get their chunks reassigned
+        // among those ranks.
+        for(size_t i = 0; i < ntotal_chunks; i++)
+        {
+            for(size_t t = target; t < ranks.size(); t++)
+            {
+                if(global_chunk_dest_rank[i] == ranks[t])
+                {
+                    global_chunk_dest_rank[i] = -1;
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        //
+    }
+
+    // Count the element counts that we know of now so we get an idea of
+    // the counts on all the ranks.
+    std::vector<uint64> element_counts(size, 0);
+    for(size_t i = 0; i < ntotal_chunks; i++)
+    {
+        if(global_chunk_dest_rank[i] >= 0)
+            element_counts[global_chunk_dest_rank[i]] += global_chunk_sizes[i];
+    }
+
+    // Now, try to assign the free domains to the ranks that have the
+    // smaller element counts.
+    
+    for(size_t i = 0; i < ntotal_chunks; i++)
+    {
+        if(global_chunk_dest_rank[i] < 0)
+        {
+            // global chunk i is free to move. Find the first, lowest
+            element_counts[global_chunk_dest_rank[i]] += global_chunk_sizes[i];
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -308,7 +503,7 @@ void
 parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &chunks,
     const std::vector<int> &dest_rank,
     const std::vector<int> &dest_domain,
-    std::vector<chunk> &chunks_to_assemble,
+    std::vector<partitioner::chunk> &chunks_to_assemble,
     std::vector<int> &chunks_to_assemble_domains)
 {
     // TODO: send chunks to dest_rank if dest_rank[i] != rank.
