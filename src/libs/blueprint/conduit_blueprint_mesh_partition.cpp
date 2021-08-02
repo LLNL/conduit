@@ -5054,6 +5054,48 @@ map_element_field(const std::vector<const Node*> &in_nodes,
     }
 }
 
+//-----------------------------------------------------------------------------
+static void
+combine(const std::vector<const Node*> &in_fields,
+        const Node &assoc_topology, const Node &assoc_coordset, Node &output)
+{
+    const std::string &assoc = in_fields[0]->child("association").as_string();
+    const std::string &assoc_topo = in_fields[0]->child("topology").as_string();
+    output["topology"] = assoc_topo;
+    output["association"] = assoc;
+    // Determine if we are vertex or element associated
+    if(assoc == utils::ASSOCIATIONS[0])
+    {
+        // Vertex association
+        // Need to use pointmaps to map this field
+        // Get the point map
+        std::vector<DataArray<index_t>> pmaps;
+        {
+            const Node *pointmaps = assoc_coordset.fetch_ptr("pointmaps");
+            if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); return; }
+            for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
+            {
+                pmaps.emplace_back(pointmaps->child(pi).value());
+            }
+        }
+
+        const index_t nt = coordset::length(assoc_coordset);
+        fields::map_vertex_field(in_fields, pmaps, nt, output["values"]);
+    }
+    else if(assoc == utils::ASSOCIATIONS[1])
+    {
+        // Element association
+        // Need to use element maps to map this field
+        const Node &out_topo_map = assoc_topology["element_map"];
+        const DataArray<index_t> tmap = out_topo_map.value();
+        fields::map_element_field(in_fields, tmap, output["values"]);
+    }
+    else
+    {
+        CONDUIT_WARN("Unsupported association for field " << assoc);
+    }
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::fields --
@@ -5278,10 +5320,9 @@ partitioner::combine_as_unstructured(int domain,
         }
     }
 
+    Node &output_fields = output["fields"];
     if(have_fields)
     {
-        Node &output_fields = output["fields"];
-
         // Note: It should already be verified that they have a "fields" child
         using field_group_t = std::pair<std::string, std::vector<const Node*>>;
         std::vector<field_group_t> field_groups;
@@ -5308,15 +5349,6 @@ partitioner::combine_as_unstructured(int domain,
             }
         }
 
-#if 0
-        std::cout << "Number of fields: " << field_groups.size() << std::endl;
-        for(const auto &pair : field_groups)
-        {
-            std::cout << "  " << pair.first << std::endl;
-        }
-#endif
-
-        // Use node 0 as a reference
         for(size_t fgi = 0; fgi < field_groups.size(); fgi++)
         {
             const auto &field_name = field_groups[fgi].first;
@@ -5327,69 +5359,126 @@ partitioner::combine_as_unstructured(int domain,
                 CONDUIT_WARN("Field " << field_name << " is not topology based, TODO: Implement material based field combinations.");
                 continue;
             }
-            const std::string &ref_topo_name = field_group[0]->child("topology").as_string();
+            const std::string &assoc_topo_name = field_group[0]->child("topology").as_string();
 
-            // Make sure we have a toplogy group for the given name
-            auto itr = std::find_if(topo_groups.begin(), topo_groups.end(), [&](topo_group_t &g){
-                return g.first == ref_topo_name;
-            });
-            if(itr == topo_groups.end())
+            // Make sure we have an output toplogy for the given name
+            if(!output_topologies.has_child(assoc_topo_name))
             {
-                CONDUIT_ERROR("Field " << field_name << " references " << ref_topo_name << " which doesn't exist.");
+                CONDUIT_ERROR("Field " << field_name << " references " << assoc_topo_name
+                    << " which doesn't exist.");
                 continue;
             }
-            const auto &topo_group = itr->second;
+            Node &out_topo = output_topologies[assoc_topo_name];
 
-            const std::string &assoc = field_group[0]->child("association").as_string();
-            Node &fout = output_fields[field_name];
-            fout["topology"] = ref_topo_name;
-            fout["association"] = assoc;
-            // Determine if we are vertex or element associated
-            if(assoc == utils::ASSOCIATIONS[0])
+            // Make sure we have an output coordset for the given name
+            const std::string &assoc_cset_name = out_topo["coordset"].as_string();
+            if(!output_coordsets.has_child(assoc_cset_name))
             {
-                // Vertex association
-                // Need to use pointmaps to map this field
-                // Get the point map
-                const Node *group_cset = topo_group[0]->fetch_ptr("coordset");
-                auto itr = std::find(coordset_names.begin(), coordset_names.end(), group_cset->as_string());
-                if(itr == coordset_names.end())
-                {
-                    CONDUIT_ERROR("Could not find coordset " << group_cset->as_string() << " when building fields.");
-                    continue;
-                }
-                const Node &out_coordset = output_coordsets[*itr];
-                std::vector<DataArray<index_t>> pmaps;
-                {
-
-                    const Node *pointmaps = out_coordset.fetch_ptr("pointmaps");
-                    if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); continue; }
-                    for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
-                    {
-                        pmaps.emplace_back(pointmaps->child(pi).value());
-                    }
-                }
-
-                const index_t nt = coordset::length(out_coordset);
-                fields::map_vertex_field(field_group, pmaps, nt, fout["values"]);
-            }
-            else if(assoc == utils::ASSOCIATIONS[1])
-            {
-                // Element association
-                // Need to use element maps to map this field
-                const Node &out_topo_map = output["topologies"][ref_topo_name]["element_map"];
-                const DataArray<index_t> tmap = out_topo_map.value();
-                fields::map_element_field(field_group, tmap, fout["values"]);
-            }
-            else
-            {
-                CONDUIT_WARN("Unsupported association for field " << field_name << " " << assoc);
+                CONDUIT_ERROR("Topology " << assoc_topo_name << " references coordset "
+                    << assoc_cset_name << " which doesn't exist. This error was found when building output fields.");
                 continue;
             }
+            Node &out_coordset = output_coordsets[assoc_cset_name];
+
+            fields::combine(field_group, out_topo, out_coordset, output_fields[field_name]);
         }
     }
 
+    // Cleanup the output node, add original cells/verticies in needed
+    if(!output_fields.has_child("original_element_ids"))
+    {
+        // Q: What happens in the case of multiple topologies?
+        DataArray<index_t> elem_map = output_topologies[0]["element_map"].value();
+        Node &out_field = output_fields["original_element_ids"];
+        out_field["topology"].set(output_topologies[0].name());
+        // utils::ASSOCIATIONS[1]
+        out_field["association"].set("element");
+        const index_t sz = elem_map.dtype().number_of_elements() / 2;
+        const DataType dt(elem_map.dtype().id(), sz);
+        out_field["values"]["domains"].set(dt);
+        out_field["values"]["ids"].set(dt);
+        DataArray<index_t> out_domains = out_field["values"]["domains"].value();
+        DataArray<index_t> out_ids     = out_field["values"]["ids"].value();
 
-    // Add the combined result to output node.
+        std::vector<index_t> domain_map;
+        for(index_t i = 0; i < (index_t)inputs.size(); i++)
+        {
+            if(inputs[i]->has_path("state/domain_id"))
+            {
+                domain_map.push_back((*inputs[i])["state/domain_id"].to_index_t());
+            }
+            else
+            {
+                domain_map.push_back(i);
+            }
+        }
+
+        index_t idx = 0;
+        index_t out_idx = 0;
+        while(idx < elem_map.number_of_elements())
+        {
+            out_domains[out_idx] = domain_map[elem_map[idx++]];
+            out_ids[out_idx]     = elem_map[idx++];
+            out_idx++;
+        }
+
+    }
+    // Remove the element_maps from the output
+    for(index_t i = 0; i < output_topologies.number_of_children(); i++)
+    {
+        output_topologies[i].remove("element_map");
+    }
+
+    if(!output_fields.has_child("original_vertex_ids"))
+    {
+        // Get the pointmaps
+        const std::string &coordset_name = output_topologies[0]["coordset"].as_string();
+        if(!output_coordsets.has_child(coordset_name))
+        {
+            CONDUIT_ERROR("Output topology 0 references coordset " << coordset_name << " which doesn't exist.");
+            return;
+        }
+        const Node &n_pointmaps = output_coordsets[coordset_name]["pointmaps"];
+        std::vector<DataArray<index_t>> pointmaps;
+        for(index_t i = 0; i < n_pointmaps.number_of_children(); i++)
+        {
+            pointmaps.emplace_back(n_pointmaps[i].value());
+        }
+
+        Node &out_field = output_fields["original_vertex_ids"];
+        out_field["topology"].set(output_topologies[0].name());
+        // utils::ASSOCIATIONS[0]
+        out_field["association"].set("vertex");
+
+        const index_t sz = mesh::coordset::length(output_coordsets[coordset_name]);
+        const DataType dt(pointmaps[0].dtype().id(), sz);
+        out_field["values"]["domains"].set(dt);
+        out_field["values"]["ids"].set(dt);
+        DataArray<index_t> out_domains = out_field["values/domains"].value();
+        DataArray<index_t> out_ids     = out_field["values/ids"].value();
+
+        for(index_t pi = 0; pi < (index_t)pointmaps.size(); pi++)
+        {
+            index_t dom_id = pi;
+            if(inputs[pi]->has_path("state/domain_id"))
+            {
+                pi = (*inputs[pi])["state/domain_id"].to_index_t();
+            }
+            const auto &pmap = pointmaps[pi];
+            for(index_t vi = 0; vi < pmap.number_of_elements(); vi++)
+            {
+                const auto out_idx = pmap[vi];
+                out_domains[out_idx] = dom_id;
+                out_ids[out_idx]     = vi;
+            }
+        }
+
+    }
+    // Remove the pointmaps from the output
+    for(index_t i = 0; i < output_coordsets.number_of_children(); i++)
+    {
+        output_coordsets[i].remove("pointmaps");
+    }
 }
 
 //-------------------------------------------------------------------------
