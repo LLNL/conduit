@@ -1133,14 +1133,21 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
             EXPECT_TRUE(is_valid);
         }
 
-        // Test that the mesh we made is the same mesh we put in
-        // conduit::Node mesh_info;
-        // bool is_diff = braid.diff(combine, mesh_info);
-        // if(is_diff)
-        // {
-        //     mesh_info.print();
-        // }
-        // EXPECT_TRUE(is_diff);
+        // Compare combined mesh to baselines
+        const std::string filename = baseline_file("recombine_braid_" + case_name);
+    #ifdef GENERATE_BASELINES
+        make_baseline(filename, combine);
+    #else
+        conduit::Node ans; load_baseline(filename, ans);
+        conduit::Node info;
+        bool is_different = ans.diff(combine, info, CONDUIT_EPSILON, true);
+        EXPECT_FALSE(is_different);
+        if(is_different || always_print)
+        {
+            info.print();
+        }
+    #endif
+
         std::cout << "-------- End case " << case_name << "   --------" << std::endl;
     };
 
