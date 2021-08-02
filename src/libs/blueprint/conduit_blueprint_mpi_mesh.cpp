@@ -426,9 +426,6 @@ generate_derived_entities(conduit::Node &mesh,
         const conduit::Node &src_adjset_groups = domain["adjsets"][src_adjset_name]["groups"];
         conduit::Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
 
-        const conduit::DataType src_neighbors_dtype = src_adjset_groups.child(0)["neighbors"].dtype();
-        const conduit::DataType src_values_dtype = src_adjset_groups.child(0)["values"].dtype();
-
         // Organize Adjset Points into Interfaces (Pair-Wise Groups) //
 
         // {(neighbor domain id): <(participating points for domain interface)>}
@@ -513,6 +510,12 @@ generate_derived_entities(conduit::Node &mesh,
 
         for(const auto &group_pair : group_entity_map)
         {
+            // NOTE(JRC): It's possible for the 'src_adjset_groups' node to be empty,
+            // so we only want to query child data types if we know there is at least
+            // 1 non-empty group.
+            const conduit::DataType src_neighbors_dtype = src_adjset_groups.child(0)["neighbors"].dtype();
+            const conduit::DataType src_values_dtype = src_adjset_groups.child(0)["values"].dtype();
+
             const std::set<index_t> &group_nidxs = group_pair.first;
             const std::vector<std::tuple<std::set<PointTuple>, index_t>> &group_entities = group_pair.second;
             std::string group_name;
@@ -622,9 +625,6 @@ generate_decomposed_entities(conduit::Node &mesh,
         const Node &src_adjset_groups = domain["adjsets"][src_adjset_name]["groups"];
         Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
 
-        const DataType src_neighbors_dtype = src_adjset_groups.child(0)["neighbors"].dtype();
-        const DataType src_values_dtype = src_adjset_groups.child(0)["values"].dtype();
-
         // Organize Adjset Points into Interfaces (Pair-Wise Groups) //
 
         // {(neighbor domain id): <(participating points for domain interface)>}
@@ -713,6 +713,12 @@ generate_decomposed_entities(conduit::Node &mesh,
 
         for(const auto &group_pair : group_entity_map)
         {
+            // NOTE(JRC): It's possible for the 'src_adjset_groups' node to be empty,
+            // so we only want to query child data types if we know there is at least
+            // 1 non-empty group.
+            const DataType src_neighbors_dtype = src_adjset_groups.child(0)["neighbors"].dtype();
+            const DataType src_values_dtype = src_adjset_groups.child(0)["values"].dtype();
+
             const std::set<index_t> &group_nidxs = group_pair.first;
             const std::vector<std::tuple<std::set<PointTuple>, index_t>> &group_entities = group_pair.second;
             std::string group_name;

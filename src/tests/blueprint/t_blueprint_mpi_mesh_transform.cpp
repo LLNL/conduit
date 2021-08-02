@@ -232,6 +232,8 @@ void test_mesh_paths(const index_t type,
 // by performing a communication step and doing a list comparison.
 // TODO(JRC): Validate 's2d' and 'd2s' maps with another test function, and then
 // put this function alongside 'test_mesh_paths' in all the test cases.
+// TODO(JRC): Add a test case for input meshes that have an adjsets entry
+// with no groups (e.g. 1-rank case).
 
 /// Transform Tests ///
 
