@@ -1267,6 +1267,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     // Iterate over the selections in the options and check them against the
     // domains that were passed in to make a vector of meshes and selections
     // that can be used to partition the meshes.
+    selections.clear();
     if(options.has_child("selections"))
     {
         const conduit::Node &n_selections = options["selections"];
@@ -2536,9 +2537,8 @@ partitioner::execute(conduit::Node &output)
     {
         if(selections[i]->get_whole(*meshes[i]))
         {
-// FIXME: This is not what I want to do because it bypasses the splitting process.
-
-            // We had a "null" selection so we'll take the whole mesh.
+            // We had a selection that spanned the entire mesh so we'll take
+            // the whole mesh rather than extracting.
             chunks.push_back(chunk(meshes[i], false));
         }
         else
