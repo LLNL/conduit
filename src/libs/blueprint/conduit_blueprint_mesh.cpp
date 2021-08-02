@@ -3016,7 +3016,6 @@ namespace detail
     // of the new triangles/volumes of the new tetrahedra
     volume_dependent_helper(const Node &topo_dest,
                             const Node &coordset_dest,
-                            const std::string coordset_name,
                             const int dimensions,
                             const int num_new_shapes, // number of new triangles or tetrahedrons
                             const int num_orig_shapes, // number of original polygons or polyhedra
@@ -3028,8 +3027,8 @@ namespace detail
         float64 *tri_volumes = volumes["tri"].value();
 
         const U *connec = topo_dest["elements/connectivity"].value();
-        const V *coords_x = coordset_dest[coordset_name + "/values/x"].value();
-        const V *coords_y = coordset_dest[coordset_name + "/values/y"].value();
+        const V *coords_x = coordset_dest["values/x"].value();
+        const V *coords_y = coordset_dest["values/y"].value();
 
         if (dimensions == 2)
         {
@@ -3047,7 +3046,7 @@ namespace detail
         }
         else if (dimensions == 3)
         {
-            const V *coords_z = coordset_dest[coordset_name + "/values/z"].value();
+            const V *coords_z = coordset_dest["values/z"].value();
 
             for (int i = 0; i < num_new_shapes; i ++)
             {
@@ -3102,73 +3101,66 @@ namespace detail
     void
     volume_dependent(const Node &topo_dest,
                      const Node &coordset_dest,
-                     const std::string coordset_name,
                      const int dimensions,
                      const int num_new_shapes, // number of new triangles or tetrahedrons
                      const int num_orig_shapes, // number of original polygons or polyhedra
                      const T *tri_to_poly,
                      Node &volumes)
     {
-        if (coordset_dest[coordset_name + "/values/x"].dtype().is_uint64())
+        if (coordset_dest["values/x"].dtype().is_uint64())
         {
             volume_dependent_helper<T, U, uint64>(topo_dest,
                                                   coordset_dest,
-                                                  coordset_name,
                                                   dimensions,
                                                   num_new_shapes,
                                                   num_orig_shapes,
                                                   tri_to_poly,
                                                   volumes);
         }
-        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_uint32())
+        else if (coordset_dest["values/x"].dtype().is_uint32())
         {
             volume_dependent_helper<T, U, uint32>(topo_dest,
                                                   coordset_dest,
-                                                  coordset_name,
                                                   dimensions,
                                                   num_new_shapes,
                                                   num_orig_shapes,
                                                   tri_to_poly,
                                                   volumes);
         }
-        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_int64())
+        else if (coordset_dest["values/x"].dtype().is_int64())
         {
             volume_dependent_helper<T, U, int64>(topo_dest,
                                                  coordset_dest,
-                                                 coordset_name,
                                                  dimensions,
                                                  num_new_shapes,
                                                  num_orig_shapes,
                                                  tri_to_poly,
                                                  volumes);
         }
-        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_int32())
+        else if (coordset_dest["values/x"].dtype().is_int32())
         {
             volume_dependent_helper<T, U, int32>(topo_dest,
                                                  coordset_dest,
-                                                 coordset_name,
                                                  dimensions,
                                                  num_new_shapes,
                                                  num_orig_shapes,
                                                  tri_to_poly,
                                                  volumes);
         }
-        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_float64())
+        else if (coordset_dest["values/x"].dtype().is_float64())
         {
             volume_dependent_helper<T, U, float64>(topo_dest,
                                                    coordset_dest,
-                                                   coordset_name,
                                                    dimensions,
                                                    num_new_shapes,
                                                    num_orig_shapes,
                                                    tri_to_poly,
                                                    volumes);
         }
-        else if (coordset_dest[coordset_name + "/values/x"].dtype().is_float32())
+        else if (coordset_dest["values/x"].dtype().is_float32())
         {
             volume_dependent_helper<T, U, float32>(topo_dest,
                                                    coordset_dest,
-                                                   coordset_name,
                                                    dimensions,
                                                    num_new_shapes,
                                                    num_orig_shapes,
@@ -3177,7 +3169,7 @@ namespace detail
         }
         else
         {
-            CONDUIT_ERROR("Unsupported coordinate type in " << coordset_dest[coordset_name + "/values/x"].dtype().to_yaml());
+            CONDUIT_ERROR("Unsupported coordinate type in " << coordset_dest["values/x"].dtype().to_yaml());
         }
     }
 
@@ -3231,7 +3223,6 @@ namespace detail
     {
         NodeConstIterator fields_itr = fields_src.children(); // to iterate through the fields
         std::string topo_name = topo_src.name(); // the name of the topology we are working with
-        std::string coordset_name = coordset_dest.name();
         bool no_field_names = field_names.empty(); // true if the user has specified no fields to be copied, meaning all should be copied
         bool vol_dep = false; // true if the current field is volume dependent
         bool vert_assoc = false; // true if the current field is vertex associated
@@ -3335,7 +3326,6 @@ namespace detail
                     {
                         volume_dependent<T, uint64>(topo_dest,
                                                     coordset_dest,
-                                                    coordset_name,
                                                     dimensions,
                                                     num_new_shapes,
                                                     num_orig_shapes,
@@ -3346,7 +3336,6 @@ namespace detail
                     {
                         volume_dependent<T, uint32>(topo_dest,
                                                     coordset_dest,
-                                                    coordset_name,
                                                     dimensions,
                                                     num_new_shapes,
                                                     num_orig_shapes,
@@ -3357,7 +3346,6 @@ namespace detail
                     {
                         volume_dependent<T, int64>(topo_dest,
                                                    coordset_dest,
-                                                   coordset_name,
                                                    dimensions,
                                                    num_new_shapes,
                                                    num_orig_shapes,
@@ -3368,7 +3356,6 @@ namespace detail
                     {
                         volume_dependent<T, int32>(topo_dest,
                                                    coordset_dest,
-                                                   coordset_name,
                                                    dimensions,
                                                    num_new_shapes,
                                                    num_orig_shapes,
