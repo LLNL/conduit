@@ -3020,11 +3020,12 @@ namespace detail
                             const int num_new_shapes, // number of new triangles or tetrahedrons
                             const int num_orig_shapes, // number of original polygons or polyhedra
                             const T *tri_to_poly,
-                            Node &volumes) 
+                            Node &volumes,
+                            Node &volumes_field_values) 
     {
         // first we calculate the volume of each triangle
-        volumes["tri"].set(conduit::DataType::float64(num_new_shapes));
-        float64 *tri_volumes = volumes["tri"].value();
+        volumes_field_values.set(conduit::DataType::float64(num_new_shapes));
+        float64 *tri_volumes = volumes_field_values.value();
 
         const U *connec = topo_dest["elements/connectivity"].value();
         const V *coords_x = coordset_dest["values/x"].value();
@@ -3105,7 +3106,8 @@ namespace detail
                      const int num_new_shapes, // number of new triangles or tetrahedrons
                      const int num_orig_shapes, // number of original polygons or polyhedra
                      const T *tri_to_poly,
-                     Node &volumes)
+                     Node &volumes,
+                     Node &volumes_field_values)
     {
         if (coordset_dest["values/x"].dtype().is_uint64())
         {
@@ -3115,7 +3117,8 @@ namespace detail
                                                   num_new_shapes,
                                                   num_orig_shapes,
                                                   tri_to_poly,
-                                                  volumes);
+                                                  volumes,
+                                                  volumes_field_values);
         }
         else if (coordset_dest["values/x"].dtype().is_uint32())
         {
@@ -3125,7 +3128,8 @@ namespace detail
                                                   num_new_shapes,
                                                   num_orig_shapes,
                                                   tri_to_poly,
-                                                  volumes);
+                                                  volumes,
+                                                  volumes_field_values);
         }
         else if (coordset_dest["values/x"].dtype().is_int64())
         {
@@ -3135,7 +3139,8 @@ namespace detail
                                                  num_new_shapes,
                                                  num_orig_shapes,
                                                  tri_to_poly,
-                                                 volumes);
+                                                 volumes,
+                                                 volumes_field_values);
         }
         else if (coordset_dest["values/x"].dtype().is_int32())
         {
@@ -3145,7 +3150,8 @@ namespace detail
                                                  num_new_shapes,
                                                  num_orig_shapes,
                                                  tri_to_poly,
-                                                 volumes);
+                                                 volumes,
+                                                 volumes_field_values);
         }
         else if (coordset_dest["values/x"].dtype().is_float64())
         {
@@ -3155,7 +3161,8 @@ namespace detail
                                                    num_new_shapes,
                                                    num_orig_shapes,
                                                    tri_to_poly,
-                                                   volumes);
+                                                   volumes,
+                                                   volumes_field_values);
         }
         else if (coordset_dest["values/x"].dtype().is_float32())
         {
@@ -3165,7 +3172,8 @@ namespace detail
                                                    num_new_shapes,
                                                    num_orig_shapes,
                                                    tri_to_poly,
-                                                   volumes);
+                                                   volumes,
+                                                   volumes_field_values);
         }
         else
         {
@@ -3332,6 +3340,12 @@ namespace detail
                 // handle volume dependent fields
                 if (vol_dep)
                 {
+                    // make volume into a field
+                    Node &volumes_field = fields_dest["volume"];
+                    volumes_field["topology"] = topo_name;
+                    volumes_field["association"] = "element";
+                    volumes_field["volume_dependent"] = "true";
+
                     // get the volumes and ratio
                     if (topo_dest["elements/connectivity"].dtype().is_uint64())
                     {
@@ -3341,7 +3355,8 @@ namespace detail
                                                     num_new_shapes,
                                                     num_orig_shapes,
                                                     tri_to_poly,
-                                                    volumes);
+                                                    volumes,
+                                                    volumes_field["values"]);
                     }
                     else if (topo_dest["elements/connectivity"].dtype().is_uint32())
                     {
@@ -3351,7 +3366,8 @@ namespace detail
                                                     num_new_shapes,
                                                     num_orig_shapes,
                                                     tri_to_poly,
-                                                    volumes);
+                                                    volumes,
+                                                    volumes_field["values"]);
                     }
                     else if (topo_dest["elements/connectivity"].dtype().is_int64())
                     {
@@ -3361,7 +3377,8 @@ namespace detail
                                                    num_new_shapes,
                                                    num_orig_shapes,
                                                    tri_to_poly,
-                                                   volumes);
+                                                   volumes,
+                                                   volumes_field["values"]);
                     }
                     else if (topo_dest["elements/connectivity"].dtype().is_int32())
                     {
@@ -3371,7 +3388,8 @@ namespace detail
                                                    num_new_shapes,
                                                    num_orig_shapes,
                                                    tri_to_poly,
-                                                   volumes);
+                                                   volumes,
+                                                   volumes_field["values"]);
                     }
                     else
                     {
@@ -3379,13 +3397,6 @@ namespace detail
                     }
 
                     volume_ratio = volumes["ratio"].value();
-
-                    // make volume into a field
-                    Node &volumes_field = fields_dest["volume"];
-                    volumes_field["topology"] = topo_name;
-                    volumes_field["association"] = "element";
-                    volumes_field["volume_dependent"] = "true";
-                    volumes["tri"].to_float64_array(volumes_field["values"]);
                 }
 
                 if (field["values"].dtype().is_uint64())
