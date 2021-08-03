@@ -4574,15 +4574,6 @@ static void iterate_int_data(const conduit::Node &node, Func &&func)
 
 //-----------------------------------------------------------------------------
 static void
-append_remapped_ids(const Node &connectivity, const DataArray<index_t> map, std::vector<index_t> &out)
-{
-    iterate_int_data(connectivity, [&](index_t id) {
-        out.push_back(map[id]);
-    });
-}
-
-//-----------------------------------------------------------------------------
-static void
 build_unstructured_output(const std::vector<const Node*> &topologies,
                           const Node &pointmaps,
                           const std::string &cset_name,
@@ -4613,7 +4604,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
             continue;
         }
         DataArray<index_t> pmap_da = pointmap->value();
-#if 1
+
         iterate_elements(*topo, [&](const entity &e) {
             // See if we already have a bucket for this shape in our output
             const std::string &shape_string = e.shape.type;
@@ -4638,55 +4629,6 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
                 out_conn.push_back(pmap_da[id]);
             }
         });
-#else
-        // Build a vector of all the "elements" buckets
-        std::vector<const Node*> elements_vec;
-
-        // Single shape topology
-        if(elements->has_child("shape"))
-        {
-            elements_vec.push_back(elements);
-        }
-        else if(elements->dtype().is_list()
-                || elements->dtype().is_object())
-        {
-            // It is a collection of single element topologies
-            // Q: Should we preserve the names when they exist?
-            auto itr = elements->children();
-            while(itr.has_next())
-            {
-                elements_vec.push_back(&itr.next());
-            }
-        }
-
-        // Iterate the buckets of elements
-        for(const Node *bucket : elements_vec)
-        {
-            const Node *shape = bucket->fetch_ptr("shape");
-            const Node *connectivity = bucket->fetch_ptr("connectivity");
-            if(!shape || !connectivity)
-            {
-                // ERROR!
-                continue;
-            }
-
-            // See if we already have a bucket for this shape in our output
-            const std::string &shape_string = shape->as_string();
-            // Find the index for this shape's bucket
-            const auto itr = std::find(shape_types.begin(), shape_types.end(), shape_string);
-            index_t idx = (index_t)(itr - shape_types.begin());
-            if(itr == shape_types.end())
-            {
-                idx = shape_types.size();
-                shape_types.push_back(shape_string);
-                out_connectivity.emplace_back();
-            }
-
-            // Translate the point ids using the pointmap.
-            std::vector<index_t> &out_conn = out_connectivity[idx];
-            append_remapped_ids(*connectivity, pmap_da, out_conn);
-        }
-#endif
     }
 
     if(shape_types.size() == 1)
