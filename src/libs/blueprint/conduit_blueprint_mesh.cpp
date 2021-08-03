@@ -3174,8 +3174,10 @@ namespace detail
     }
 
     // T is the type of 'tri_to_poly' values
-    // U is the type of field values
-    template<typename T, typename U> 
+    // U is the type of the new field values
+    // V is the type of the old field values
+    // typically U and V should be the same
+    template<typename T, typename U, typename V> 
     void 
     map_field_to_generated_sides(Node &field_out, 
                                  const Node &field_src, 
@@ -3187,7 +3189,7 @@ namespace detail
         U *values_array = field_out["values"].value();
 
         // a pointer to the original field values
-        const U *poly_field_data = field_src["values"].value();
+        const V *poly_field_data = field_src["values"].value();
 
         for (int i = 0; i < num_new_shapes; i ++)
         {
@@ -3375,57 +3377,129 @@ namespace detail
 
                 if (field["values"].dtype().is_uint64())
                 {
-                    field_out["values"].set(conduit::DataType::uint64(num_new_shapes));
-                    map_field_to_generated_sides<T, uint64>(field_out, 
-                                                            field, 
-                                                            num_new_shapes, 
-                                                            tri_to_poly, 
-                                                            volume_ratio);
+                    if (vol_dep)
+                    {
+                        field_out["values"].set(conduit::DataType::float64(num_new_shapes));
+                        map_field_to_generated_sides<T, float64, uint64>(field_out, 
+                                                                         field, 
+                                                                         num_new_shapes, 
+                                                                         tri_to_poly, 
+                                                                         volume_ratio);
+                    }
+                    else
+                    {
+                        field_out["values"].set(conduit::DataType::uint64(num_new_shapes));
+                        map_field_to_generated_sides<T, uint64, uint64>(field_out, 
+                                                                        field, 
+                                                                        num_new_shapes, 
+                                                                        tri_to_poly, 
+                                                                        volume_ratio);
+                    }
                 }
                 else if (field["values"].dtype().is_uint32())
                 {
-                    field_out["values"].set(conduit::DataType::uint32(num_new_shapes));
-                    map_field_to_generated_sides<T, uint32>(field_out, 
-                                                            field, 
-                                                            num_new_shapes, 
-                                                            tri_to_poly, 
-                                                            volume_ratio);
+                    if (vol_dep)
+                    {
+                        field_out["values"].set(conduit::DataType::float64(num_new_shapes));
+                        map_field_to_generated_sides<T, float64, uint32>(field_out, 
+                                                                         field, 
+                                                                         num_new_shapes, 
+                                                                         tri_to_poly, 
+                                                                         volume_ratio);
+                    }
+                    else
+                    {
+                        field_out["values"].set(conduit::DataType::uint32(num_new_shapes));
+                        map_field_to_generated_sides<T, uint32, uint32>(field_out, 
+                                                                        field, 
+                                                                        num_new_shapes, 
+                                                                        tri_to_poly, 
+                                                                        volume_ratio);
+                    }
                 }
                 else if (field["values"].dtype().is_int64())
                 {
-                    field_out["values"].set(conduit::DataType::int64(num_new_shapes));
-                    map_field_to_generated_sides<T, int64>(field_out, 
-                                                           field, 
-                                                           num_new_shapes, 
-                                                           tri_to_poly, 
-                                                           volume_ratio);
+                    if (vol_dep)
+                    {
+                        field_out["values"].set(conduit::DataType::float64(num_new_shapes));
+                        map_field_to_generated_sides<T, float64, int64>(field_out, 
+                                                                        field, 
+                                                                        num_new_shapes, 
+                                                                        tri_to_poly, 
+                                                                        volume_ratio);
+                    }
+                    else
+                    {
+                        field_out["values"].set(conduit::DataType::int64(num_new_shapes));
+                        map_field_to_generated_sides<T, int64, int64>(field_out, 
+                                                                      field, 
+                                                                      num_new_shapes, 
+                                                                      tri_to_poly, 
+                                                                      volume_ratio);
+                    }
                 }
                 else if (field["values"].dtype().is_int32())
                 {
-                    field_out["values"].set(conduit::DataType::int32(num_new_shapes));
-                    map_field_to_generated_sides<T, int32>(field_out, 
-                                                           field, 
-                                                           num_new_shapes, 
-                                                           tri_to_poly, 
-                                                           volume_ratio);
+                    if (vol_dep)
+                    {
+                        field_out["values"].set(conduit::DataType::float64(num_new_shapes));
+                        map_field_to_generated_sides<T, float64, int32>(field_out, 
+                                                                        field, 
+                                                                        num_new_shapes, 
+                                                                        tri_to_poly, 
+                                                                        volume_ratio);
+                    }
+                    else
+                    {
+                        field_out["values"].set(conduit::DataType::int32(num_new_shapes));
+                        map_field_to_generated_sides<T, int32, int32>(field_out, 
+                                                                      field, 
+                                                                      num_new_shapes, 
+                                                                      tri_to_poly, 
+                                                                      volume_ratio);
+                    }
                 }
                 else if (field["values"].dtype().is_float64())
                 {
-                    field_out["values"].set(conduit::DataType::float64(num_new_shapes));
-                    map_field_to_generated_sides<T, float64>(field_out, 
-                                                             field, 
-                                                             num_new_shapes, 
-                                                             tri_to_poly, 
-                                                             volume_ratio);
+                    if (vol_dep)
+                    {
+                        field_out["values"].set(conduit::DataType::float64(num_new_shapes));
+                        map_field_to_generated_sides<T, float64, float64>(field_out, 
+                                                                          field, 
+                                                                          num_new_shapes, 
+                                                                          tri_to_poly, 
+                                                                          volume_ratio);
+                    }
+                    else
+                    {
+                        field_out["values"].set(conduit::DataType::float64(num_new_shapes));
+                        map_field_to_generated_sides<T, float64, float64>(field_out, 
+                                                                          field, 
+                                                                          num_new_shapes, 
+                                                                          tri_to_poly, 
+                                                                          volume_ratio);
+                    }
                 }
                 else if (field["values"].dtype().is_float32())
                 {
-                    field_out["values"].set(conduit::DataType::float32(num_new_shapes));
-                    map_field_to_generated_sides<T, float32>(field_out, 
-                                                             field, 
-                                                             num_new_shapes, 
-                                                             tri_to_poly, 
-                                                             volume_ratio);
+                    if (vol_dep)
+                    {
+                        field_out["values"].set(conduit::DataType::float64(num_new_shapes));
+                        map_field_to_generated_sides<T, float64, float32>(field_out, 
+                                                                          field, 
+                                                                          num_new_shapes, 
+                                                                          tri_to_poly, 
+                                                                          volume_ratio);
+                    }
+                    else
+                    {
+                        field_out["values"].set(conduit::DataType::float32(num_new_shapes));
+                        map_field_to_generated_sides<T, float32, float32>(field_out, 
+                                                                          field, 
+                                                                          num_new_shapes, 
+                                                                          tri_to_poly, 
+                                                                          volume_ratio);
+                    }
                 }
                 else
                 {
