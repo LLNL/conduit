@@ -3004,7 +3004,7 @@ namespace detail
 
     float64 tetrahedron_volume(vec3 &a, vec3 &b, vec3 &c, vec3 &d)
     {
-        return abs((a - d).dot((b - d).cross(c - d))) / 6.0f;
+        return fabs((a - d).dot((b - d).cross(c - d))) / 6.0f;
     }
 
     // T is the type of 'tri_to_poly' values

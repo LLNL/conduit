@@ -622,6 +622,130 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_3D_vol_dep)
+{
+    index_t length = 1;
+    Node n, side_mesh, info;
+
+    // create a polychain of length 1
+    examples::polychain(length, n);
+    EXPECT_TRUE(verify(n, info));
+
+    // make another field
+    Node temp;
+    temp = n["fields/chain"];
+    n["fields/chain_vol"] = temp;
+    n["fields/chain_vol/volume_dependent"] = "true";
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                            side_topo,
+                                                            side_coords,
+                                                            side_fields,
+                                                            s2dmap,
+                                                            d2smap,
+                                                            options);
+    EXPECT_TRUE(verify(side_mesh, info));
+
+    // check chain field
+    EXPECT_EQ(side_mesh["fields/chain/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/chain/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/chain/volume_dependent"].as_string(), "false");
+
+    index_t num_tets_in_hex = 24;
+    index_t num_tets_in_triprism = 18;
+
+    index_t num_field_values = num_tets_in_hex + 2 * num_tets_in_triprism;
+    EXPECT_EQ(side_mesh["fields/chain/values"].dtype().number_of_elements(), num_field_values);
+
+    int64 *chain_values = side_mesh["fields/chain/values"].value();
+
+    for (int i = 0; i < num_field_values; i ++)
+    {
+        if (i < num_tets_in_hex)
+        {
+            EXPECT_EQ(chain_values[i], 0);
+        }
+        else
+        {
+            EXPECT_EQ(chain_values[i], 1);
+        }
+    }
+
+    // check volume field
+    EXPECT_EQ(side_mesh["fields/volume/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/volume/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/volume/volume_dependent"].as_string(), "true");
+
+    EXPECT_EQ(side_mesh["fields/volume/values"].dtype().number_of_elements(), num_field_values);
+
+    float64 *volume_values = side_mesh["fields/volume/values"].value();
+
+    for (int i = 0; i < num_field_values; i ++)
+    {
+        if (i < num_tets_in_hex)
+        {
+            EXPECT_NEAR(volume_values[i], 0.3333f, 0.0001f);
+        }
+        else
+        {
+            EXPECT_NEAR(volume_values[i], 0.2222f, 0.0001f);
+        }
+    }
+
+    // check chain_vol field
+    EXPECT_EQ(side_mesh["fields/chain_vol/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/chain_vol/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/chain_vol/volume_dependent"].as_string(), "true");
+
+    EXPECT_EQ(side_mesh["fields/chain_vol/values"].dtype().number_of_elements(), num_field_values);
+
+    float64 *chain_vol_values = side_mesh["fields/chain_vol/values"].value();
+
+    for (int i = 0; i < num_field_values; i ++)
+    {
+        if (i < num_tets_in_hex)
+        {
+            EXPECT_NEAR(chain_vol_values[i], 0.0f, 0.0001f);
+        }
+        else
+        {
+            EXPECT_NEAR(chain_vol_values[i], 0.0555f, 0.0001f);
+        }
+    }
+
+    // check original_element_ids field
+    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
+
+    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+
+    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+
+    for (int i = 0; i < num_field_values; i ++)
+    {
+        if (i < num_tets_in_hex)
+        {
+            EXPECT_EQ(id_values[i], 0);
+        }
+        else if (i < num_tets_in_hex + num_tets_in_triprism)
+        {
+            EXPECT_EQ(id_values[i], 1);
+        }
+        else
+        {
+            EXPECT_EQ(id_values[i], 2);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_field_datatype_ex)
 {
     index_t nlevels = 2;
