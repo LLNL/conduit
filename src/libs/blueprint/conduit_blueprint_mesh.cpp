@@ -3305,11 +3305,12 @@ namespace detail
 
                 if (field.has_child("volume_dependent"))
                 {
-                    if (field["volume_dependent"].as_string() != "false")
+                    if (field["volume_dependent"].as_string() == "true")
                     {
                         vol_dep = true;
                         if (vert_assoc)
                         {
+                            // enable the test for this once vertex-associated fields are supported
                             CONDUIT_ERROR("Volume-dependent vertex-associated fields are not supported.");
                         }
 

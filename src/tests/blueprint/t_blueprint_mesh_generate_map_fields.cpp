@@ -1057,3 +1057,46 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_invalid_assoc_ex)
         EXPECT_TRUE(actual.find(msg) != std::string::npos);
     }
 }
+
+// THIS TEST IS TO BE ENABLED ONCE SUPPORT FOR VERTEX ASSOCIATED FIELDS IS ADDED
+// //-----------------------------------------------------------------------------
+// TEST(conduit_blueprint_generate_unstructured, generate_sides_vert_assoc_and_vol_dep_ex)
+// {
+//     index_t nlevels = 2;
+//     index_t nz = 1;
+//     Node n, side_mesh, info;
+
+//     // create polytessalation with two levels
+//     examples::polytess(nlevels, nz, n);
+//     EXPECT_TRUE(verify(n, info));
+
+//     Node s2dmap, d2smap;
+//     Node &side_coords = side_mesh["coordsets/coords"];
+//     Node &side_topo = side_mesh["topologies/topo"];
+//     Node &side_fields = side_mesh["fields"];
+//     Node options;
+
+//     n["fields/level/association"] = "vertex";
+//     n["fields/level/volume_dependent"] = "true";
+
+//     // catch invalid association
+//     try
+//     {
+//         blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+//                                                                 side_topo,
+//                                                                 side_coords,
+//                                                                 side_fields,
+//                                                                 s2dmap,
+//                                                                 d2smap,
+//                                                                 options);
+//         FAIL();
+//     }
+//     catch(const std::exception& err)
+//     {
+//         std::string msg = "Volume-dependent vertex-associated fields are not supported.";
+//         std::string actual = err.what();
+//         std::cout << actual << std::endl;
+
+//         EXPECT_TRUE(actual.find(msg) != std::string::npos);
+//     }
+// }
