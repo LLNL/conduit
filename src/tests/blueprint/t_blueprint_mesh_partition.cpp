@@ -1252,3 +1252,151 @@ TEST(conduit_blueprint_mesh_combine, multidomain)
         combine_multidomain_case(c);
     }
 }
+
+#define DEBUG_TO_POLY
+TEST(conduit_blueprint_mesh_combine, to_poly)
+{
+    const auto to_polys_case = [](const std::string &case_name, const conduit::index_t vdims[3])
+    {
+        std::cout << "-------- Start case " << case_name << " --------" << std::endl;
+        const std::string base_name = "combine_to_poly_" + case_name;
+
+        // Make a polygonal or polyhedral domain
+        conduit::Node poly_braid;
+        if(vdims[2] > 1)
+        {
+            conduit::blueprint::mesh::examples::braid("hexs_poly", 2,
+                2, 2, poly_braid);
+
+            // Move the points to the side
+            std::array<std::array<double, 8>, 3> new_coords = {{
+                {-30.0, -10.0, -30.0, -10.0, -30.0, -10.0, -30.0, -10.0},
+                {-30.0, -30.0, -10.0, -10.0, -30.0, -30.0, -10.0, -10.0},
+                {-30.0, -30.0, -30.0, -30.0, -10.0, -10.0, -10.0, -10.0}
+            }};
+            conduit::Node &n_coords = poly_braid["coordsets/coords/values"];
+            for(conduit::index_t d = 0; d < 3; d++)
+            {
+                conduit::Node &n_dim = n_coords[d];
+                if(n_dim.dtype().is_float32())
+                {
+                    conduit::float32_array vals = n_dim.value();
+                    for(conduit::index_t vi = 0; vi < 8; vi++)
+                    {
+                        vals[vi] = new_coords[d][vi];
+                    }
+                }
+                else if(n_dim.dtype().is_float64())
+                {
+                    conduit::float64_array vals = n_dim.value();
+                    for(conduit::index_t vi = 0; vi < 8; vi++)
+                    {
+                        vals[vi] = new_coords[d][vi];
+                    }
+                }
+                else
+                {
+                    CONDUIT_ERROR("Could not translate coordinates from type "
+                        << n_dim.dtype().name() << ".");
+                }
+            }
+        }
+        else
+        {
+            conduit::blueprint::mesh::examples::braid("quads_poly", 2,
+                2, 1, poly_braid);
+
+            // Move the points to the side
+            std::array<std::array<double, 4>, 2> new_coords = {{
+                {-30.0, -10.0, -30.0, -10.0},
+                {-30.0, -30.0, -10.0, -10.0},
+            }};
+            conduit::Node &n_coords = poly_braid["coordsets/coords/values"];
+            for(conduit::index_t d = 0; d < 2; d++)
+            {
+                conduit::Node &n_dim = n_coords[d];
+                if(n_dim.dtype().is_float32())
+                {
+                    conduit::float32_array vals = n_dim.value();
+                    for(conduit::index_t vi = 0; vi < 4; vi++)
+                    {
+                        vals[vi] = new_coords[d][vi];
+                    }
+                }
+                else if(n_dim.dtype().is_float64())
+                {
+                    conduit::float64_array vals = n_dim.value();
+                    for(conduit::index_t vi = 0; vi < 4; vi++)
+                    {
+                        vals[vi] = new_coords[d][vi];
+                    }
+                }
+                else
+                {
+                    CONDUIT_ERROR("Could not translate coordinates from type "
+                        << n_dim.dtype().name() << ".");
+                }
+            }
+        }
+
+        conduit::Node braid;
+        conduit::blueprint::mesh::examples::braid(case_name, vdims[0], vdims[1], vdims[2], braid);
+
+        conduit::Node input;
+        input["domain_00000"] = poly_braid;
+        input["domain_00000/state/domain_id"] = 0;
+        input["domain_00001"] = braid;
+        input["domain_00001/state/domain_id"] = 1;
+    #ifdef DEBUG_TO_POLY
+        save_visit(base_name + "_input", input);
+    #endif
+
+        const std::string opts_yaml = "target: 1";
+        conduit::Node opts; opts.parse(opts_yaml, "yaml");
+
+        conduit::Node output;
+        conduit::blueprint::mesh::partition(input, opts, output);
+
+    #ifdef DEBUG_TO_POLY
+        save_visit(base_name + "_output", output);
+    #endif
+
+        const std::string filename = baseline_file(base_name);
+    #ifdef GENERATE_BASELINES
+        make_baseline(filename, output);
+    #else
+        conduit::Node ans; load_baseline(filename, ans);
+        conduit::Node info;
+        bool is_different = ans.diff(output, info, CONDUIT_EPSILON, true);
+        EXPECT_FALSE(is_different);
+        if(is_different || always_print)
+        {
+            info.print();
+        }
+    #endif
+        std::cout << "-------- End case " << case_name << "   --------" << std::endl;
+    };
+
+    static const conduit::index_t dims2[] = {11,11,1};
+    static const std::array<std::string, 3> cases2 = {
+        "tris",
+        "quads",
+        "quads_and_tris",
+    //    "quads_and_tris_offsets"
+    };
+    for(const auto &c : cases2)
+    {
+        to_polys_case(c, dims2);
+    }
+
+    static const conduit::index_t dims3[] = {3,3,2};
+    static const std::array<std::string, 3> cases3 = {
+        "tets",
+        "hexs",
+        "hexs_and_tets",
+    };
+    for(const auto &c : cases3)
+    {
+        to_polys_case(c, dims3);
+    }
+}
