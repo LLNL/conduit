@@ -1253,7 +1253,6 @@ TEST(conduit_blueprint_mesh_combine, multidomain)
     }
 }
 
-#define DEBUG_TO_POLY
 TEST(conduit_blueprint_mesh_combine, to_poly)
 {
     const auto to_polys_case = [](const std::string &case_name, const conduit::index_t vdims[3])
