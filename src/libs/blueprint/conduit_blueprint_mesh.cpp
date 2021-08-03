@@ -3291,7 +3291,15 @@ namespace detail
                 {
                     if (field["association"].as_string() != "element")
                     {
-                        vert_assoc = true;
+                        if (field["association"].as_string() == "vertex")
+                        {
+                            vert_assoc = true;
+                            CONDUIT_ERROR("Vertex-associated fields are not yet supported.");
+                        }
+                        else
+                        {
+                            CONDUIT_ERROR("Unsupported association option in " + field["association"].as_string() + ".");
+                        }
                     }
                 }
 
@@ -3363,6 +3371,10 @@ namespace detail
                                                    num_orig_shapes,
                                                    tri_to_poly,
                                                    volumes);
+                    }
+                    else
+                    {
+                        CONDUIT_ERROR("Unsupported connectivity type in " << topo_dest["elements/connectivity"].dtype().to_yaml());
                     }
 
                     volume_ratio = volumes["ratio"].value();

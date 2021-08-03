@@ -979,3 +979,81 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
         EXPECT_TRUE(actual.find(msg) != std::string::npos);
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_vert_assoc_ex)
+{
+    index_t nlevels = 2;
+    index_t nz = 1;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, nz, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+
+    n["fields/level/association"] = "vertex";
+
+    // catch vertex associated fields not yet implemented error
+    try
+    {
+        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "Vertex-associated fields are not yet supported.";
+        std::string actual = err.what();
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_invalid_assoc_ex)
+{
+    index_t nlevels = 2;
+    index_t nz = 1;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, nz, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+
+    n["fields/level/association"] = "whoopsie";
+
+    // catch invalid association
+    try
+    {
+        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "Unsupported association option in whoopsie.";
+        std::string actual = err.what();
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
+}
