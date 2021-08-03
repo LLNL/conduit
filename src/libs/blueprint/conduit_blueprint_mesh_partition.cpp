@@ -4588,7 +4588,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
                           const std::string &cset_name,
                           Node &output)
 {
-    std::cout << "Building unstructured output!" << std::endl;
+    // std::cout << "Building unstructured output!" << std::endl;
     output.reset();
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
@@ -4722,7 +4722,7 @@ build_polygonal_output(const std::vector<const Node*> &topologies,
                        const std::string &cset_name,
                        Node &output)
 {
-    std::cout << "Building polygonal output!" << std::endl;
+    // std::cout << "Building polygonal output!" << std::endl;
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
     output["elements/shape"].set("polygonal");
@@ -4803,7 +4803,7 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
                        const std::string &cset_name,
                        Node &output)
 {
-    std::cout << "Building polyhedra output!" << std::endl;
+    // std::cout << "Building polyhedral output!" << std::endl;
     output.reset();
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
@@ -5379,6 +5379,19 @@ partitioner::combine_as_unstructured(int domain,
             }
             Node &out_topo = output_topologies[assoc_topo_name];
 
+            // Make sure there were as many input topologies as there are fields
+            //  for this topology name
+            auto topo_itr = std::find_if(topo_groups.begin(), topo_groups.end(),
+                    [&assoc_topo_name](const topo_group_t &g) {
+                return g.first == assoc_topo_name;
+            });
+
+            if(topo_itr->second.size() != field_group.size())
+            {
+                CONDUIT_INFO("Field " << field_name << " is not present on all input domains, skipping...");
+                continue;
+            }
+
             // Make sure we have an output coordset for the given name
             const std::string &assoc_cset_name = out_topo["coordset"].as_string();
             if(!output_coordsets.has_child(assoc_cset_name))
@@ -5609,6 +5622,7 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &top
         index_t dim = 0;
         for(const Node *topo : topologies)
         {
+            // TODO: Write a dim function that knows about all the different topologies
             const Node *shape = topo->fetch_ptr("elements/shape");
             if(!shape) { continue; }
             const utils::ShapeType s(shape->as_string());
