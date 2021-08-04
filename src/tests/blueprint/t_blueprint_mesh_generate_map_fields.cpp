@@ -325,13 +325,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_field_pr
         }
     }
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
+    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/volume_dependent"].as_string(), "false");
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    uint32 *id_values = side_mesh["fields/my_prefix_original_element_ids/values"].value();
     
     int i = 0;
     for (int j = 0; j < num_polygons; j ++)
@@ -456,6 +456,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
     Node &side_topo = side_mesh["topologies/topo"];
     Node &side_fields = side_mesh["fields"];
     Node options;
+    options["field_prefix"] = "my_prefix_";
 
     blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
                                                             side_topo,
@@ -468,15 +469,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
     EXPECT_TRUE(verify(side_mesh, info));
 
     // check level field
-    EXPECT_EQ(side_mesh["fields/level/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/level/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/level/volume_dependent"].as_string(), "false");
+    EXPECT_EQ(side_mesh["fields/my_prefix_level/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/my_prefix_level/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/my_prefix_level/volume_dependent"].as_string(), "false");
 
     index_t num_field_values = 56;
     index_t num_polygons = 9;
-    EXPECT_EQ(side_mesh["fields/level/values"].dtype().number_of_elements(), num_field_values);
+    EXPECT_EQ(side_mesh["fields/my_prefix_level/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *level_values = side_mesh["fields/level/values"].value();
+    uint32 *level_values = side_mesh["fields/my_prefix_level/values"].value();
 
     for (int i = 0; i < num_field_values; i ++)
     {
@@ -491,12 +492,12 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
     }
 
     // check level_vol field
-    EXPECT_EQ(side_mesh["fields/level_vol/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/level_vol/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/level_vol/volume_dependent"].as_string(), "true");
-    EXPECT_EQ(side_mesh["fields/level_vol/values"].dtype().number_of_elements(), num_field_values);
+    EXPECT_EQ(side_mesh["fields/my_prefix_level_vol/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/my_prefix_level_vol/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/my_prefix_level_vol/volume_dependent"].as_string(), "true");
+    EXPECT_EQ(side_mesh["fields/my_prefix_level_vol/values"].dtype().number_of_elements(), num_field_values);
 
-    float64 *level_vol_values = side_mesh["fields/level_vol/values"].value();
+    float64 *level_vol_values = side_mesh["fields/my_prefix_level_vol/values"].value();
 
     for (int i = 0; i < num_field_values; i ++)
     {
@@ -539,12 +540,12 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
     }
 
     // check volume field
-    EXPECT_EQ(side_mesh["fields/volume/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/volume/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/volume/volume_dependent"].as_string(), "true");
-    EXPECT_EQ(side_mesh["fields/volume/values"].dtype().number_of_elements(), num_field_values);
+    EXPECT_EQ(side_mesh["fields/my_prefix_volume/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/my_prefix_volume/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/my_prefix_volume/volume_dependent"].as_string(), "true");
+    EXPECT_EQ(side_mesh["fields/my_prefix_volume/values"].dtype().number_of_elements(), num_field_values);
 
-    float64 *volume_values = side_mesh["fields/volume/values"].value();
+    float64 *volume_values = side_mesh["fields/my_prefix_volume/values"].value();
 
     for (int i = 0; i < num_field_values; i ++)
     {
@@ -587,13 +588,13 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
     }
 
     // check original element ids
-    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
+    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/volume_dependent"].as_string(), "false");
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    uint32 *id_values = side_mesh["fields/my_prefix_original_element_ids/values"].value();
     
     int i = 0;
     for (int j = 0; j < num_polygons; j ++)

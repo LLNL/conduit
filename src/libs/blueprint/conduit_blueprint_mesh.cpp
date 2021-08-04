@@ -3191,7 +3191,8 @@ namespace detail
                                  const Node &field_src, 
                                  int num_new_shapes, 
                                  const T *tri_to_poly,
-                                 float64 *volume_ratio)
+                                 float64 *volume_ratio,
+                                 bool vol_dep)
     {
         // a pointer to the destination for field values
         U *values_array = field_out["values"].value();
@@ -3208,7 +3209,7 @@ namespace detail
             // which we then assign to the destination field values.
 
             // if our field is volume dependent
-            if (volume_ratio)
+            if (vol_dep)
             {
                 values_array[i] = poly_field_data[tri_to_poly[i]] * volume_ratio[i];
             }
@@ -3259,7 +3260,7 @@ namespace detail
         
         const T *tri_to_poly = d2smap["values"].value();
 
-        Node &original_elements = fields_dest["original_element_ids"];
+        Node &original_elements = fields_dest[field_prefix + "original_element_ids"];
         original_elements["topology"] = topo_name;
         original_elements["association"] = "element";
         original_elements["volume_dependent"] = "false";
@@ -3338,10 +3339,11 @@ namespace detail
                 }
 
                 // handle volume dependent fields
-                if (vol_dep)
+                // if the field is volume dependent and we have not already calculated the volumes
+                if (vol_dep && !volumes_info.has_child("poly"))
                 {
                     // make volume into a field
-                    Node &volumes_field = fields_dest["volume"];
+                    Node &volumes_field = fields_dest[field_prefix + "volume"];
                     volumes_field["topology"] = topo_name;
                     volumes_field["association"] = "element";
                     volumes_field["volume_dependent"] = "true";
@@ -3408,7 +3410,8 @@ namespace detail
                                                                          field, 
                                                                          num_new_shapes, 
                                                                          tri_to_poly, 
-                                                                         volume_ratio);
+                                                                         volume_ratio,
+                                                                         vol_dep);
                     }
                     else
                     {
@@ -3417,7 +3420,8 @@ namespace detail
                                                                         field, 
                                                                         num_new_shapes, 
                                                                         tri_to_poly, 
-                                                                        volume_ratio);
+                                                                        volume_ratio,
+                                                                        vol_dep);
                     }
                 }
                 else if (field["values"].dtype().is_uint32())
@@ -3429,7 +3433,8 @@ namespace detail
                                                                          field, 
                                                                          num_new_shapes, 
                                                                          tri_to_poly, 
-                                                                         volume_ratio);
+                                                                         volume_ratio,
+                                                                         vol_dep);
                     }
                     else
                     {
@@ -3438,7 +3443,8 @@ namespace detail
                                                                         field, 
                                                                         num_new_shapes, 
                                                                         tri_to_poly, 
-                                                                        volume_ratio);
+                                                                        volume_ratio,
+                                                                        vol_dep);
                     }
                 }
                 else if (field["values"].dtype().is_int64())
@@ -3450,7 +3456,8 @@ namespace detail
                                                                         field, 
                                                                         num_new_shapes, 
                                                                         tri_to_poly, 
-                                                                        volume_ratio);
+                                                                        volume_ratio,
+                                                                        vol_dep);
                     }
                     else
                     {
@@ -3459,7 +3466,8 @@ namespace detail
                                                                       field, 
                                                                       num_new_shapes, 
                                                                       tri_to_poly, 
-                                                                      volume_ratio);
+                                                                      volume_ratio,
+                                                                      vol_dep);
                     }
                 }
                 else if (field["values"].dtype().is_int32())
@@ -3471,7 +3479,8 @@ namespace detail
                                                                         field, 
                                                                         num_new_shapes, 
                                                                         tri_to_poly, 
-                                                                        volume_ratio);
+                                                                        volume_ratio,
+                                                                        vol_dep);
                     }
                     else
                     {
@@ -3480,7 +3489,8 @@ namespace detail
                                                                       field, 
                                                                       num_new_shapes, 
                                                                       tri_to_poly, 
-                                                                      volume_ratio);
+                                                                      volume_ratio,
+                                                                      vol_dep);
                     }
                 }
                 else if (field["values"].dtype().is_float64())
@@ -3492,7 +3502,8 @@ namespace detail
                                                                           field, 
                                                                           num_new_shapes, 
                                                                           tri_to_poly, 
-                                                                          volume_ratio);
+                                                                          volume_ratio,
+                                                                          vol_dep);
                     }
                     else
                     {
@@ -3501,7 +3512,8 @@ namespace detail
                                                                           field, 
                                                                           num_new_shapes, 
                                                                           tri_to_poly, 
-                                                                          volume_ratio);
+                                                                          volume_ratio,
+                                                                          vol_dep);
                     }
                 }
                 else if (field["values"].dtype().is_float32())
@@ -3513,7 +3525,8 @@ namespace detail
                                                                           field, 
                                                                           num_new_shapes, 
                                                                           tri_to_poly, 
-                                                                          volume_ratio);
+                                                                          volume_ratio,
+                                                                          vol_dep);
                     }
                     else
                     {
@@ -3522,7 +3535,8 @@ namespace detail
                                                                           field, 
                                                                           num_new_shapes, 
                                                                           tri_to_poly, 
-                                                                          volume_ratio);
+                                                                          volume_ratio,
+                                                                          vol_dep);
                     }
                 }
                 else
@@ -3532,8 +3546,6 @@ namespace detail
 
                 if (vol_dep)
                 {
-                    volume_ratio = NULL;
-                    volumes_info.reset();
                     vol_dep = false;
                 }
                 if (vert_assoc)
