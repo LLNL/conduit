@@ -2554,8 +2554,8 @@ partitioner::execute(conduit::Node &output)
 
     // Compute the destination rank and destination domain of each input
     // chunk present on this rank.
-    std::vector<int> dest_rank, dest_domain;
-    map_chunks(chunks, dest_rank, dest_domain);
+    std::vector<int> dest_rank, dest_domain, offsets;
+    map_chunks(chunks, dest_rank, dest_domain, offsets);
 #if 0
     cout << "dest_rank = {" << endl;
     for(size_t i = 0; i < dest_rank.size(); i++)
@@ -2570,7 +2570,7 @@ partitioner::execute(conduit::Node &output)
     // Communicate chunks to the right destination ranks
     std::vector<chunk> chunks_to_assemble;
     std::vector<int> chunks_to_assemble_domains;
-    communicate_chunks(chunks, dest_rank, dest_domain,
+    communicate_chunks(chunks, dest_rank, dest_domain, offsets,
         chunks_to_assemble, chunks_to_assemble_domains);
 
     // Now that we have all the parts we need in chunks_to_assemble, combine
@@ -2642,8 +2642,12 @@ partitioner::starting_index(const std::vector<partitioner::chunk> &/*chunks*/)
 void
 partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     std::vector<int> &dest_ranks,
-    std::vector<int> &dest_domain)
+    std::vector<int> &dest_domain, 
+    std::vector<int> &offsets)
 {
+    // All data for this rank begins at offset 0.
+    offsets.push_back(0);
+
     // All data stays on this rank in serial.
     dest_ranks.resize(chunks.size());
     for(size_t i = 0; i < chunks.size(); i++)
@@ -2723,6 +2727,7 @@ void
 partitioner::communicate_chunks(const std::vector<partitioner::chunk> &chunks,
     const std::vector<int> &/*dest_rank*/,
     const std::vector<int> &dest_domain,
+    const std::vector<int> &/*offsets*/,
     std::vector<partitioner::chunk> &chunks_to_assemble,
     std::vector<int> &chunks_to_assemble_domains)
 {

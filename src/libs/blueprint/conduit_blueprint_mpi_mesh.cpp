@@ -211,11 +211,13 @@ public:
 protected:
     virtual void map_chunks(const std::vector<partitioner::chunk> &chunks,
                             std::vector<int> &dest_ranks,
-                            std::vector<int> &dest_domain) override;
+                            std::vector<int> &dest_domain,
+                            std::vector<int> &offsets) override;
 
     virtual void communicate_chunks(const std::vector<partitioner::chunk> &chunks,
                                     const std::vector<int> &dest_rank,
                                     const std::vector<int> &dest_domain,
+                                    const std::vector<int> &offsets,
                                     std::vector<chunk> &chunks_to_assemble,
                                     std::vector<int> &chunks_to_assemble_domains) override;
 
@@ -298,76 +300,62 @@ parallel_partitioner::get_largest_selection(int &sel_rank, int &sel_index) const
 }
 
 //-------------------------------------------------------------------------
+/**
+The purpose of this function is to decide for a set of chunks on a rank, how
+they will be assigned to final domains and where in the set of MPI ranks those
+domains will live.
+
+Some chunks will not care which domain they belong to nor where they
+might end up. Such chunks will indicate a -1 for their domain number so we
+have some freedom in how we assemble chunks into domains, according to the
+target number of domains.
+
+Some chunks may be the result of a field-based selection that
+says explicitly where the cells will end up in a domain/rank. We can only have
+a domain going to a single rank though.
+
+*/
 void
 parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
-    std::vector<int> &dest_ranks,
-    std::vector<int> &dest_domain)
+    std::vector<int> &dest_rank,
+    std::vector<int> &dest_domain,
+    std::vector<int> &_offsets)
 {
-    // Determine local chunk sizes.
-    std::vector<uint64> local_chunk_sizes;
-    for(size_t i =0 ; i < chunks.size(); i++)
-    {
-        const conduit::Node &n_topos = chunks[i].mesh->operator[]("topologies");
-        uint64 len = 0;
-        for(index_t j = 0; j < n_topos.number_of_children(); j++)
-            len += conduit::blueprint::mesh::topology::length(n_topos[j]);
-        local_chunk_sizes.push_back(len);
-    }
-
-    // Gather sizes of all local chunks.
+#if 0
+    // Gather number of chunks on each rank.
     auto nlocal_chunks = static_cast<int>(local_chunk_sizes.size());
     std::vector<int> nglobal_chunks(size, 0);
     MPI_Allgather(&nlocal_chunks, 1, MPI_INT,
                   &nglobal_chunks[0], 1, MPI_INT,
                   comm);
     // Compute total chunks
-    uint64 ntotal_chunks = 0;
+    int ntotal_chunks = 0;
     for(size_t i = 0; i < nglobal_chunks.size(); i++)
-        ntotal_chunks += static_cast<uint64>(nglobal_chunks[i]);
+        ntotal_chunks += nglobal_chunks[i];
 #if 1
 if(rank == 0)
 {
 cout << "ntotal_chunks = " << ntotal_chunks << endl;
 }
 #endif
-    // Compute offsets
+    // Compute offsets. We use int because of MPI_Allgatherv
     std::vector<int> offsets(size, 0);
     for(size_t i = 1; i < nglobal_chunks.size(); i++)
-        offsets = offsets[i-1] + nglobal_chunks[i-1];   
-
-    // Get all chunk sizes across all ranks.
-    std::vector<uint64> global_chunk_sizes(ntotal_chunks, 0);
-    MPI_Allgatherv(&local_chunk_sizes[0],
-                   static_cast<int>(local_chunk_sizes.size()),
-                   MPI_UNSIGNED_LONG_LONG,
-                   &global_chunk_sizes[0],
-                   &nglobal_chunks[0],
-                   &offsets[0],
-                   MPI_UNSIGNED_LONG_LONG,
-                   comm);
+        offsets = offsets[i-1] + nglobal_chunks[i-1];
 
     // What we have at this point is a list of chunk sizes for all chunks
-    // across all ranks. Let's get a global list of chunk destinations
-    // and domains. A chunk may already know where it wants to go. If it
-    // doesn't then we can assign it to move around. A chunk is free to 
-    // move around if its destination rank is -1.
+    // across all ranks. Let's get a global list of chunk domains (where
+    // they want to go). A chunk may already know where it wants to go.
+    // If it doesn't then we can assign it to move around. A chunk is
+    // free to move around if its destination domain is -1.
+    std::vector<int> local_chunk_dest_domain(chunks.size());
     std::vector<int> local_chunk_dest_rank(chunks.size(), rank);
-    std::vector<int> local_chunk_dest_domain(chunks.size(), rank);
-    for(size_t i =0 ; i < chunks.size(); i++)
+    for(size_t i = 0; i < chunks.size(); i++)
     {
-        local_chunk_dest_rank[i] = chunks[i]->destination_rank();
-        local_chunk_dest_domain[i] = chunks[i]->destination_domain();
+        local_chunk_dest_domain[i] = chunks[i].destination_domain();
+        local_chunk_dest_rank[i]   = chunks[i].destination_rank();
     }
-    std::vector<int> global_chunk_dest_rank(ntotal_chunks, 0);
     std::vector<int> global_chunk_dest_domain(ntotal_chunks, 0);
-    MPI_Allgatherv(&local_chunk_dest_rank[0],
-                   static_cast<int>(local_chunk_dest_rank.size()),
-                   MPI_INT,
-                   &global_chunk_dest_rank[0],
-                   &nglobal_chunks[0],
-                   &offsets[0],
-                   MPI_INT,
-                   comm);
     MPI_Allgatherv(&local_chunk_dest_domain[0],
                    static_cast<int>(local_chunk_dest_domain.size()),
                    MPI_INT,
@@ -377,19 +365,19 @@ cout << "ntotal_chunks = " << ntotal_chunks << endl;
                    MPI_INT,
                    comm);
 
-    // Make sure that the global_chunk_dest_rank obeys the target number of
-    // domains we're looking for.
-    std::set<int> allowed_ranks;
+    // Determine how many ranks are free to move to various domains.
+    // Also determine the domain ids in use and how many chunks
+    // comprise each of them.
     std::map<int,int> domain_sizes;
-    uint64 free_to_move = 0;
+    int free_to_move = 0;
     for(size_t i = 0; i < ntotal_chunks; i++)
     {
-        int dest = global_chunk_dest_domain[i];
-        if(dest >= 0)
+        int domid = global_chunk_dest_domain[i];
+        if(domid >= 0)
         {
-            std::map<int,int>::iterator it = domain_sizes.find(dest);
+            std::map<int,int>::iterator it = domain_sizes.find(domid);
             if(it == domain_sizes.end())
-                domain_sizes[dest] = 1;
+                domain_sizes[domid] = 1;
             else
                 it->second++;
         }
@@ -397,121 +385,282 @@ cout << "ntotal_chunks = " << ntotal_chunks << endl;
             free_to_move++;
     }
 
-    if(domain_sizes.size() == target && free_to_move == 0)
+    if(free_to_move == 0)
     {
-        // The number of domains is equal to the number of targets
-        // and we know the ranks where they are supposed to go so
-        // we can pass back what the chunks told us to do.
+        // No chunks are free to move around. This means we the domains
+        // that we want them all to belong to.
+
+        // NOTE: This may mean that we do not get #target domains though.
+        if(domain_sizes.size() != target)
+        {
+            CONDUIT_WARNING("The unique number of domain ids "
+                << domain_sizes.size()
+                << " was not equal to the desired target number of domains: "
+                << target  << ".");
+        }
+
+#if 1
+        // NOTE: It is easier in parallel to do the communications later on
+        //       if we pass out the global information.
+        std::vector<int> global_chunk_dest_rank(ntotal_chunks, 0);
+        MPI_Allgatherv(&local_chunk_dest_rank[0],
+                   static_cast<int>(local_chunk_dest_rank.size()),
+                   MPI_INT,
+                   &global_chunk_dest_rank[0],
+                   &nglobal_chunks[0],
+                   &offsets[0],
+                   MPI_INT,
+                   comm);
+
+        // Pass out the global information.
+        dest_rank.swap(global_chunk_dest_rank);
+        dest_domain.swap(global_chunk_dest_domain);
+        _offsets.swap(offsets);
+#else
+        // Pass out local information
         for(size_t i = 0; i < nlocal_chunks; i++)
         {
-            dest_ranks.push_back(local_chunk_dest_rank[i]);
+            dest_rank.push_back(local_chunk_dest_rank[i]);
             dest_domain.push_back(local_chunk_dest_domain[i]);
         }
-    }    
-    else if(domain_sizes.empty() && free_to_move == ntotal_chunks)
+#endif
+    }
+    else if(free_to_move == ntotal_chunks)
     {
-        // No chunks told us where they go so all chunks are free to move.
+        // No chunks told us where they go so ALL are free to move.
 
-        // We want to make target chunks.
-        std::vector<int> target_cell_counts(target, 0);       
+        // Determine local chunk sizes (number of elements).
+        std::vector<uint64> local_chunk_sizes;
+        for(size_t i =0 ; i < chunks.size(); i++)
+        {
+            const conduit::Node &n_topos = chunks[i].mesh->operator[]("topologies");
+            uint64 len = 0;
+            for(index_t j = 0; j < n_topos.number_of_children(); j++)
+                len += conduit::blueprint::mesh::topology::length(n_topos[j]);
+            local_chunk_sizes.push_back(len);
+        }
+        // Get all chunk sizes across all ranks.
+        std::vector<uint64> global_chunk_sizes(ntotal_chunks, 0);
+        MPI_Allgatherv(&local_chunk_sizes[0],
+                       static_cast<int>(local_chunk_sizes.size()),
+                       MPI_UNSIGNED_LONG_LONG,
+                       &global_chunk_sizes[0],
+                       &nglobal_chunks[0],
+                       &offsets[0],
+                       MPI_UNSIGNED_LONG_LONG,
+                       comm);
+
+        // We must make #target domains from the chunks we have. Since
+        // no chunks told us a domain id they want to be inside, we can
+        // number domains 0..target
+
+        std::vector<uint64> target_cell_counts(target, 0);
+        std::vector<uint64> next_target_cell_counts(target);
         std::vector<int> global_dest_rank(ntotal_domains, 0);
         std::vector<int> global_dest_domain(ntotal_domains, 0);
         for(size_t i = 0; i < ntotal_chunks; i++)
         {
-            // Add the size of this chunk to the sizes of the target domains.
-            std::vector<int> next_target_cell_counts(target);
-            for(size_t r = 0; r < target_cell_counts.size(); r++)
+            // Add the size of this chunk to all targets.
+            for(int r = 0; r < target; r++)
                 next_target_cell_counts[r] = target_cell_counts[r] + global_chunk_sizes[i];
 
             // Find the index of the min value in next_target_cell_counts.
-            size_t idx = 0;
-            for(size_t r = 1; r < target_cell_counts.size(); r++)
+            // This way, we'll let that target domain have the chunk as
+            // we are trying to balance the sizes of the output domains.
+            //
+            // NOTE: We could consider other metrics too such as making the
+            //       smallest bounding box so we keep things close together.
+            //
+            // NOTE: This method has the potential to move chunks far away.
+            int idx = 0;
+            for(int r = 1; r < target; r++)
             {
                 if(next_target_cell_counts[r] < next_target_cell_counts[idx])
                     idx = r;
             }
 
             // Add the current chunk to the specified target domain.
-            rank_cell_counts[idx] += global_chunk_sizes[i];
+            target_cell_counts[idx] += global_chunk_sizes[i];
             global_dest_domain[i] = idx;
         }
 
         // We now have a global map indicating the final domain to which
-        // each chunk will contribute. Now we need to map the target
-        // domains to mpi ranks.
-
-
-    }
-    else if(dest_rank_counts.size() != target)
-    {
-        // The destination ranks that were specified by the chunks.
-        // The set of ranks does not equal the target chunks though
-        for(const auto &it : dest_rank_counts)
+        // each chunk will contribute. Spread target domains across size ranks.
+        std::vector<int> rank_domain_count(size, 0);
+        for(int i = 0; i < target; i++)
+            rank_domain_count[i % size]++;
+        // Figure out which source chunks join which ranks.
+        int target_id = 0;
+        for(int r = 0; r < size; r++)
         {
-            if(allowed_ranks.size() < target)
-                allowed_ranks.push_back(it->first);
-        }
-
-        if(allowed_ranks.size() < target && free_to_move > 0)
-        {
-        }
-
-        // Take the first #target ranks that we found and consider those
-        // the ranks that will receive data. Any ranks beyond those
-        // that were destination ranks will get their chunks reassigned
-        // among those ranks.
-        for(size_t i = 0; i < ntotal_chunks; i++)
-        {
-            for(size_t t = target; t < ranks.size(); t++)
+            if(rank_domain_count[r] == 0)
+                break;
+            // For each domain on this rank r.
+            for(int j = 0; j < rank_domain_count[r]; j++)
             {
-                if(global_chunk_dest_rank[i] == ranks[t])
+                for(size_t i = 0; i < ntotal_domains; i++)
                 {
-                    global_chunk_dest_rank[i] = -1;
-                    break;
+                    if(global_dest_domain[i] == target_id)
+                        global_dest_rank[i] = r;
                 }
+                target_id++;
             }
         }
+
+#if 1
+        // Pass out the global information.
+        dest_rank.swap(global_chunk_dest_rank);
+        dest_domain.swap(global_chunk_dest_domain);
+        _offsets.swap(offsets);
+#else
+        // Now that we know where all chunks go, copy out the information
+        // that this rank will need.
+        for(size_t i = 0; i < chunks.size(); i++)
+        {
+            size_t srcindex = offsets[rank] + i;
+            dest_ranks.push_back(global_dest_rank[srcindex]);
+            dest_domain.push_back(global_dest_domain[srcindex]);
+        }
+#endif
     }
     else
     {
-        //
+        // There must have been a combination of chunks that told us where
+        // they want to go and some that did not. Determine whether we want
+        // to handle this.
+        CONDUIT_ERROR("Invalid mixture of destination rank/domain specifications.");
     }
+#if 1
+    MPI_Barrier(comm);
+    // Wait for previous rank to print.
+    int tmp = 0;
+    MPI_Status s;
+    if(rank > 0)
+        MPI_Recv(&tmp, 1, MPI_INT, rank-1, 9999, comm, &s);
 
-    // Count the element counts that we know of now so we get an idea of
-    // the counts on all the ranks.
-    std::vector<uint64> element_counts(size, 0);
-    for(size_t i = 0; i < ntotal_chunks; i++)
-    {
-        if(global_chunk_dest_rank[i] >= 0)
-            element_counts[global_chunk_dest_rank[i]] += global_chunk_sizes[i];
-    }
+    cout << rank << ": dest_ranks={";
+    for(size_t i = 0; i < dest_ranks.size(); i++)
+        cout << dest_ranks[i] << ", ";
+    cout << "}" << endl;
+    cout << rank << "dest_domain={";
+    for(size_t i = 0; i < dest_domain.size(); i++)
+        cout << dest_domain[i] << ", ";
+    cout << "}" << endl;
+    cout.flush();
 
-    // Now, try to assign the free domains to the ranks that have the
-    // smaller element counts.
-    
-    for(size_t i = 0; i < ntotal_chunks; i++)
-    {
-        if(global_chunk_dest_rank[i] < 0)
-        {
-            // global chunk i is free to move. Find the first, lowest
-            element_counts[global_chunk_dest_rank[i]] += global_chunk_sizes[i];
-    }
+    // Pass baton to next rank
+    if(rank < size-1)
+        MPI_Send(&rank, 1, MPI_INT, rank+1, 9999, comm);
+#endif
+#endif
 }
 
 //-------------------------------------------------------------------------
+/**
+ @note In the parallel version of this function, we pass in global information
+       for dest_rank, dest_domain, offsets. This helps us know not only the
+       domains to which we have to send but also those who are sending to
+       this rank.
+ */
 void
 parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &chunks,
     const std::vector<int> &dest_rank,
     const std::vector<int> &dest_domain,
+    const std::vector<int> &offsets,
     std::vector<partitioner::chunk> &chunks_to_assemble,
     std::vector<int> &chunks_to_assemble_domains)
 {
+#if 0
+    const int PARTITION_TAG_BASE = 12345;
+
+    // If we just have the destination rank/domain then we can send but we do
+    // not know who is sending to us. It would be helpful to have the offsets
+    // too.
+
+    // Serialize the chunks into binary char buffers.
+    std::vector<std::shared_ptr<std::vector<char>>> serialized;
+    std::vector<uint64> serialized_lengths;
+    for(size_t i = 0; i < chunks.size(); i++)
+    {
+        auto sbuf = std::make_shared<std::vector<char>>();
+        serialized.push_back(sbuf);
+
+        // TODO: serialize chunks[i] into sbuf
+
+        serialized_lengths.push_back(static_cast<uint64>(sbuf->size());
+    }
+
+    // How many ranks are sending here.
+    int nsend_here = 0;
+    for(size_t i = 0; i < dest_rank.size(); i++)
+    {
+        if(dest_rank[i] == rank)
+            nsend_here++;
+    }
+
+    // Iterate over this rank's chunks and send lengths of the buffers to
+    // the ranks that need to know, provided we are not sending to ourselves.
+    std::vector<MPI_Request> reqs(chunks.size() + nsend_here);
+    size_t nreq = 0;
+    for(size_t i = 0; i < chunks.size(); i++)
+    {
+        int gchunkid = offsets[rank] + i;
+        int tag = PARTITION_TAG_BASE + gchunkid;
+        MPI_Isend(&serialized_lengths[i], 1, MPI_UNSIGNED_LONG_LONG,
+                  dest_rank[gchunkid], tag, comm, &reqs[nreq]);
+        nreq++;
+    }
+
+    // Use dest_rank and offsets to determine which ranks are sending
+    // each chunk.
+    std::vector<int> sender;
+    sender.reserve(dest_rank.size());
+    for(int r = 0; r < size; r++)
+    {
+        int n = 0;
+        if(r < size-1)
+            n = offsets[r+1] - offsets[r];
+        else
+            n = dest_rank.size() - offsets[r];
+        for(int i = 0; i < n; i++)
+            sender.push_back(r);
+    }
+
+    // Recv on the lengths.
+    std::vector<uint64> recv_serialized_lengths(nsend_here, 0);
+    int nrli = 0;
+    for(size_t i = 0; i < dest_rank.size(); i++)
+    {
+        int gchunkid = i;
+        int tag = PARTITION_TAG_BASE + gchunkid;
+        if(dest_rank[gchunkid] == rank)
+        {
+            MPI_Irecv(&recv_serialized_lengths[nrli], 1, MPI_UNSIGNED_LONG_LONG,
+                      sender[gchunkid], tag, comm, &reqs[nreq]);
+            nreq++;
+            nrli++;
+        }
+    }
+
+    // Wait for all of the sends/recvs to land
+    std::vector<MPI_Status> s(nreq+1);
+    MPI_Waitall(nreq, &reqs[0], &s[0]);
+
+
+    // Post some recvs.
+
+    // Post some sends.
+    for(
+    // MPI_Waitall
+
+
     // TODO: send chunks to dest_rank if dest_rank[i] != rank.
     //       If dest_rank[i] == rank then the chunk stays on the rank.
     //
     //       Do sends/recvs to send the chunks as blobs among ranks.
     //
     //       Populate chunks_to_assemble, chunks_to_assemble_domains
+#endif
 }
 
 //-------------------------------------------------------------------------

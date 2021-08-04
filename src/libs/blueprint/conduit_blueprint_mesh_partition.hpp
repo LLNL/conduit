@@ -484,10 +484,14 @@ protected:
                    and domains.
      @param[out] dest_ranks The destination ranks that get each input chunk.
      @param[out] dest_domain The destination domain to which a chunk is assigned.
+     @param offsets[out]     A vector of MPI_Comm_size that contains the index at
+                             which a rank's data begins in dest_rank, dest_domain.
+                             It contains a single 0 in serial.
      */
     virtual void map_chunks(const std::vector<chunk> &chunks,
                             std::vector<int> &dest_ranks,
-                            std::vector<int> &dest_domain);
+                            std::vector<int> &dest_domain,
+                            std::vector<int> &offsets);
 
     /**
      @brief Communicates the input chunks to their respective destination ranks
@@ -499,6 +503,9 @@ protected:
      @param dest_rank A vector of integers containing the destination ranks of
                       each chunk.
      @param dest_domain The global numbering of each input chunk.
+     @param offsets     A vector of MPI_Comm_size that contains the index at
+                        which a rank's data begins in dest_rank, dest_domain.
+                        It contains a single 0 in serial.
      @param[out] chunks_to_assemble The vector of chunks that this rank will
                                     combine and set into the output.
      @param[out] chunks_to_assemble_domains The global domain numbering of each
@@ -511,6 +518,7 @@ protected:
     virtual void communicate_chunks(const std::vector<chunk> &chunks,
                                     const std::vector<int> &dest_rank,
                                     const std::vector<int> &dest_domain,
+                                    const std::vector<int> &offsets,
                                     std::vector<chunk> &chunks_to_assemble,
                                     std::vector<int> &chunks_to_assemble_domains);
 
