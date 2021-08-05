@@ -3241,6 +3241,7 @@ namespace detail
         int num_new_shapes; // the number of new triangles or tetrahedrons
         int num_orig_shapes = topo_src["elements/sizes"].dtype().number_of_elements(); // the number of original polygons or polyhedra
         Node volumes_info; // a container for the volumes of old shapes and the ratio between new and old volumes for each new shape
+        bool volumes_calculated = false;
         float64 *volume_ratio = NULL; // a pointer to the ratio between new and old volumes for each new shape
 
         if (topo_dest["elements/shape"].as_string() == "tet")
@@ -3340,8 +3341,10 @@ namespace detail
 
                 // handle volume dependent fields
                 // if the field is volume dependent and we have not already calculated the volumes
-                if (vol_dep && !volumes_info.has_child("poly"))
+                if (vol_dep && !volumes_calculated)
                 {
+                    volumes_calculated = true;
+
                     // make volume into a field
                     Node &volumes_field = fields_dest[field_prefix + "volume"];
                     volumes_field["topology"] = topo_name;
