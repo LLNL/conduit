@@ -3716,14 +3716,27 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
         // 2D
         const auto xtype = xnode->dtype();
         const auto ytype = ynode->dtype();
-        // TODO: Handle different types
-        auto xarray = xnode->as_double_array();
-        auto yarray = ynode->as_double_array();
-        const index_t N = xarray.number_of_elements();
-        for(index_t i = 0; i < N; i++)
+        if(xnode->dtype().is_float32())
         {
-            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-            func(p, 2);
+            auto xarray = xnode->as_float32_array();
+            auto yarray = ynode->as_float32_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
+                func(p, 2);
+            }
+        }
+        else
+        {
+            auto xarray = xnode->as_float64_array();
+            auto yarray = ynode->as_float64_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
+                func(p, 2);
+            }
         }
     }
     else if(xnode)
@@ -5052,6 +5065,156 @@ combine(const std::vector<const Node*> &in_fields,
 // -- end conduit::blueprint::mesh::fields --
 //-----------------------------------------------------------------------------
 
+static std::string
+compatible_uniform(const std::vector<const Node *> &inputs)
+{
+    double tolerance = 0;
+    std::cout << "Entering compatible_uniform!" << std::endl;
+    if(inputs.size() == 1)
+    {
+        return "uniform";
+    }
+
+    const std::string &n_coordset_name = inputs[0]->child("topologies")[0]["coordset"].as_string();
+    // Use input 0 as the baseline
+    const Node &n_coordset0 = inputs[0]->child("coordsets")[n_coordset_name];
+    const std::string csys = utils::coordset::coordsys(n_coordset0);
+    std::cout << csys << std::endl;
+    const index_t dims = utils::coordset::dims(n_coordset0);
+    std::array<float64, 3> spacing{1., 1., 1.};
+    if(n_coordset0.has_child("spacing"))
+    {
+        for(index_t d = 0; d < n_coordset0["spacing"].number_of_children(); d++)
+        {
+            spacing[d] = n_coordset0["spacing"][d].to_float64();
+        }
+    }
+    // Ensure all dims, coord systems, and spacing are the same
+    for(size_t i = 1; i < inputs.size(); i++)
+    {
+        const Node &n_coordset = inputs[i]->child("coordsets")[n_coordset_name];
+        if(dims != utils::coordset::dims(n_coordset))
+        {
+            return "unstructured";
+        }
+        // Check if spacing matches
+        std::array<float64, 3> temp_spacing{1., 1., 1.};
+        if(n_coordset.has_child("spacing"))
+        {
+            for(index_t d = 0; d < n_coordset["spacing"].number_of_children(); d++)
+            {
+                temp_spacing[d] = n_coordset["spacing"][d].to_float64();
+            }
+        }
+        for(index_t d = 0; d < dims; d++)
+        {
+            if(spacing[d] != temp_spacing[d])
+            {
+                return "rectilinear";
+            }
+        }
+    }
+    
+    std::cout << "Passed preliminary check!" << std::endl;
+
+    // Make sure extents matchup in the correct way
+    std::vector<std::vector<float64>> all_extents;
+    for(const Node *in : inputs)
+    {
+        all_extents.emplace_back(
+            utils::coordset::extents(in->child("coordsets")[n_coordset_name])
+        );
+    }
+
+    // Recursive algorithm, keep pairing extents into larger and larger
+    //  groups
+    index_t iteration = 0;
+    while(all_extents.size() > 1)
+    {
+        // Print the work in progress
+        std::cout << "iteration " << iteration << "\n";
+        for(size_t ei = 0; ei < all_extents.size(); ei++)
+        {
+            std::cout << "  " << ei << ": ";
+            for(const auto e : all_extents[ei])
+            {
+                std::cout << e << " ";
+            }
+            std::cout << "\n";
+        }
+        std::cout << std::endl;
+        iteration++;
+
+        // Get the first extents
+        bool any_matches = false;
+        for(size_t ei = 0; ei < all_extents.size(); ei++)
+        {
+            auto &exti = all_extents[ei];
+
+            // Find a match
+            const index_t NOT_FOUND = all_extents.size();
+            index_t matched_extents = NOT_FOUND;
+            for(size_t ej = ei+1; ej < all_extents.size(); ej++)
+            {
+                const auto &extj = all_extents[ej];
+
+                for(index_t di = 0; di < dims; di++)
+                {
+                    const index_t min_idx = di*2;
+                    const index_t max_idx = min_idx+1;
+                    // Does ext0 max == exti min or ext0 min == exti max?
+                    const bool check1 = std::abs(exti[max_idx] - extj[min_idx]) <= tolerance;
+                    const bool check2 = std::abs(exti[min_idx] - extj[max_idx]) <= tolerance;
+                    if(!check1 && !check2)
+                    {
+                        continue;
+                    }
+                    bool corners_match = true;
+                    for(index_t dj = 0; dj < dims; dj++)
+                    {
+                        if(dj == di) { continue; }
+                        const index_t dj_min = dj*2;
+                        const index_t dj_max = dj_min+1;
+                        // All other axis extents should be equal
+                        const bool check3 = std::abs(exti[dj_min] - extj[dj_min]) <= tolerance;
+                        const bool check4 = std::abs(exti[dj_max] - extj[dj_max]) <= tolerance;
+                        if(!check3 || !check4)
+                        {
+                            corners_match = false;
+                            break;
+                        }
+                    }
+                    if(corners_match)
+                    {
+                        matched_extents = ej;
+                        break;
+                    }
+                }
+
+                if(matched_extents != NOT_FOUND)
+                {
+                    for(index_t di = 0; di < dims; di++)
+                    {
+                        const index_t min_idx = di*2;
+                        const index_t max_idx = min_idx+1;
+                        exti[min_idx] = std::min(exti[min_idx], extj[min_idx]);
+                        exti[max_idx] = std::max(exti[max_idx], extj[max_idx]);
+                    }
+                    all_extents.erase(all_extents.begin() + ej);
+                    any_matches = true;
+                    break;
+                }
+            }
+        }
+
+        if(any_matches == false)
+        {
+            break;
+        }
+    }
+    std::cout << "REMAINING DOMAINS " << all_extents.size() << std::endl;
+    return (all_extents.size() == 1 ? "uniform" : "unstructured");
+}
 
 
 //-------------------------------------------------------------------------
@@ -5062,9 +5225,89 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
     //       to form an output of one of those types. For example, uniform meshes
     //       can be combined if they abut and combine into larger bricks that
     //       cover space.
-
-    // For now, recommend unstructured.
+#if 0
     return "unstructured";
+#else
+    // Meshes:
+    //   Uniform
+    //   Rectilinear
+    //   Structured
+    //   Unstructured
+
+    // Coordsets:
+    //   Uniform
+    //   Rectilinear
+    //   Explicit
+
+    // Topologies:
+    //   Points
+    //   Uniform
+    //   Rectilinear
+    //   Structured
+    //   Unstructured
+
+    // Redefine these here because the order matters
+    static const std::array<std::string, 3> coordset_types = {
+        "uniform", 
+        "rectilinear", 
+        "explicit"
+    };
+
+    static const std::array<std::string, 5> topology_types = {
+        "points",
+        "uniform",
+        "rectilinear",
+        "structured",
+        "unstructured"
+    };
+
+    index_t worst_coordset = 0;
+    index_t worst_topology = 0;
+    for(const Node *input : inputs)
+    {
+        const Node *n_topologies = input->fetch_ptr("topologies");
+        if(n_topologies)
+        {
+            for(index_t i = 0; i < n_topologies->number_of_children(); i++)
+            {
+                const std::string &type = n_topologies->child(i)["type"].as_string();
+                const index_t idx = std::find(topology_types.begin(), 
+                    topology_types.end(), type) - topology_types.begin();
+                worst_topology = std::max(worst_topology, idx);
+            }
+        }
+        const Node *n_coordsets = input->fetch_ptr("coordsets");
+        if(n_coordsets)
+        {
+            for(index_t i = 0; i < n_coordsets->number_of_children(); i++)
+            {
+                const std::string &type = n_coordsets->child(i)["type"].as_string();
+                const index_t idx = std::find(coordset_types.begin(), 
+                    coordset_types.end(), type) - coordset_types.begin();
+                worst_coordset = std::max(worst_coordset, idx);
+            }
+        }
+    }
+
+    std::string retval;
+    if(worst_topology < 2 && worst_coordset < 1)
+    {
+        retval = compatible_uniform(inputs);
+        if(retval == "rectilinear")
+        {
+            // retval = compatible_rectilinear(inputs)
+        }
+    }
+    else if(worst_topology < 3 && worst_coordset < 2)
+    {
+        retval = "rectilinear";
+    }
+    else
+    {
+        retval = "unstructured";
+    }
+    return retval;
+#endif
 }
 
 //-------------------------------------------------------------------------
@@ -5077,7 +5320,7 @@ partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
-    // std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
+    std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
     output.reset();
     const auto sz = inputs.size();
     if(sz == 0)
@@ -5099,10 +5342,8 @@ partitioner::combine(int domain,
     output["state/domain_id"] = domain;
 
     std::string rt(recommended_topology(inputs));
-    if(rt == "uniform" || rt == "rectilinear")
-        combine_as_structured(domain, inputs, output);
-    else
-        combine_as_unstructured(domain, inputs, output);
+    std::cout << "Recommended topology: " << rt << std::endl;
+    combine_as_unstructured(domain, inputs, output);
 }
 
 //-------------------------------------------------------------------------

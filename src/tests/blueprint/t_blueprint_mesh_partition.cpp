@@ -196,6 +196,7 @@ save_visit(const std::string &filename, const conduit::Node &n)
     conduit::relay::io::save(root, fn_noext + "_yaml.root", "yaml");
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 void
 tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
@@ -1202,6 +1203,7 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
     }
 }
 
+#define DEBUG_COMBINE_MULTIDOMAIN
 TEST(conduit_blueprint_mesh_combine, multidomain)
 {
     const std::string base_name = "combine_multidomain";
@@ -1398,4 +1400,146 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
     {
         to_polys_case(c, dims3);
     }
+}
+#endif
+
+TEST(conduit_blueprint_mesh_combine, uniform)
+{
+    using namespace conduit::blueprint::mesh::examples;
+    const auto uniform_cases = [](bool is3d)
+    {
+        std::vector<conduit::Node> domains;
+        
+        // 0
+        domains.emplace_back();
+        basic("uniform", 11, 6, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+
+        // 1
+        domains.emplace_back();
+        basic("uniform", 6, 6, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 0;
+        domains.back()["coordsets/coords/origin/y"] = 5;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 2
+        domains.emplace_back();
+        basic("uniform", 6, 6, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 5;
+        domains.back()["coordsets/coords/origin/y"] = 5;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 3
+        domains.emplace_back();
+        basic("uniform", 5, 6, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 0;
+        domains.back()["coordsets/coords/origin/y"] = 10;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 4
+        domains.emplace_back();
+        basic("uniform", 3, 3, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 4;
+        domains.back()["coordsets/coords/origin/y"] = 13;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 5
+        domains.emplace_back();
+        basic("uniform", 2, 4, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 4;
+        domains.back()["coordsets/coords/origin/y"] = 10;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 6
+        domains.emplace_back();
+        basic("uniform", 4, 4, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 5;
+        domains.back()["coordsets/coords/origin/y"] = 10;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 7
+        domains.emplace_back();
+        basic("uniform", 3, 6, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 8;
+        domains.back()["coordsets/coords/origin/y"] = 10;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 8
+        domains.emplace_back();
+        basic("uniform", 3, 3, 1, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 6;
+        domains.back()["coordsets/coords/origin/y"] = 13;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        conduit::Node mesh0;
+        for(conduit::index_t i = 0; i < domains.size(); i++)
+        {
+            domains[i]["state/domain_id"] = i;
+            mesh0[(i < 10) 
+                ? ("domain_0000" + std::to_string(i))
+                : ("domain_000" + std::to_string(i))] = domains[i];
+        }
+        save_visit("combine_uniform_mesh0", mesh0);
+
+        conduit::Node opts;
+        opts["target"] = 1;
+        conduit::Node output;
+
+        std::cout << "mesh0" << std::endl;
+        conduit::blueprint::mesh::partition(mesh0, opts, output);
+
+        conduit::Node mesh1;
+        for(conduit::index_t i = 0; i < domains.size(); i++)
+        {
+            if(i == 6) continue;
+            mesh1[(i < 10) 
+                ? ("domain_0000" + std::to_string(i))
+                : ("domain_000" + std::to_string(i))] = domains[i];
+        }
+        save_visit("combine_uniform_mesh1", mesh1);
+
+        std::cout << "mesh1" << std::endl;
+        conduit::blueprint::mesh::partition(mesh1, opts, output);
+
+        conduit::Node mesh2;
+        mesh2["domain_00000"] = domains[1];
+        mesh2["domain_00001"] = domains[2];
+        conduit::blueprint::mesh::partition(mesh2, opts, output);
+
+        // change the spacing for domain00001, should suggest rectilinear
+        mesh2["domain_00001/coordsets/coords/spacing/dx"] = 0.5;
+        mesh2["domain_00001/coordsets/coords/spacing/dy"] = 0.5;
+        if(is3d)
+            mesh2["domain_00001/coordsets/coords/spacing/dz"] = 0.5;
+        conduit::blueprint::mesh::partition(mesh2, opts, output);
+
+
+    };
+
+    uniform_cases(false);
 }
