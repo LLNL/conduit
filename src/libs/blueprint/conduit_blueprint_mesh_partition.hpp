@@ -183,16 +183,20 @@ public:
      @brief This struct is a Conduit/Blueprint mesh plus an ownership bool.
             The mesh pointer is always assumed to be external by default
             so we do not provide a destructor. If we want to delete it,
-            call free(), which will free the mesh if we own it.
+            call free(), which will free the mesh if we own it. The struct
+            does not have a destructor on purpose.
      */
     struct chunk
     {
         chunk();
         chunk(const Node *m, bool own);
+        chunk(const Node *m, bool own, int dr, int dd);
         void free();
 
         const Node *mesh;
         bool        owns;
+        int         destination_rank;
+        int         destination_domain;
     };
 
     /**

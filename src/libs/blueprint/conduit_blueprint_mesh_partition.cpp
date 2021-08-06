@@ -1142,12 +1142,20 @@ selection_ranges::print(std::ostream &os) const
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-partitioner::chunk::chunk() : mesh(nullptr), owns(false)
+partitioner::chunk::chunk() : mesh(nullptr), owns(false), destination_rank(-1),
+    destination_domain(-1)
 {
 }
 
 //---------------------------------------------------------------------------
-partitioner::chunk::chunk(const Node *m, bool own) : mesh(m), owns(own)
+partitioner::chunk::chunk(const Node *m, bool own) : mesh(m), owns(own),
+    destination_rank(-1), destination_domain(-1)
+{
+}
+
+//---------------------------------------------------------------------------
+partitioner::chunk::chunk(const Node *m, bool own, int dr, int dd) : 
+    mesh(nullptr), owns(false), destination_rank(dr), destination_domain(dd)
 {
 }
 
