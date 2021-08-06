@@ -967,7 +967,7 @@ coordset::extents(const Node &n)
                 spacing = n["spacing"]["d" + csys_axes[i]].to_float64();
             }
             min = (float64)origin;
-            max = (float64)origin + (spacing * (float64)dim);
+            max = (float64)origin + (spacing * ((float64)dim - 1.));
             if(spacing < 0.)
             {
                 std::swap(min, max);
