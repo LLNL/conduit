@@ -14,43 +14,96 @@
 ///       Do not directly include this file!
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_write(const Node &node,
-                                  const std::string &path);
-
-void CONDUIT_RELAY_API silo_read(const std::string &path,
-                                 Node &node);
+// Save a blueprint mesh to silo
+//-----------------------------------------------------------------------------
+/// These methods assume `mesh` is a valid blueprint mesh.
+///
+/// Note: These methods use "save" semantics, they will overwrite existing
+///       files.
+///
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+                                 const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_write(const  Node &node,
-                                  const std::string &file_path,
-                                  const std::string &silo_obj_path);
-
-void CONDUIT_RELAY_API silo_read(const std::string &file_path,
-                                 const std::string &silo_obj_path,
-                                 Node &node);
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+// void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+//                                  const std::string &path,
+//                                  const conduit::Node &opts);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_write(const  Node &node,
-                                  DBfile *dbfile,
-                                  const std::string &silo_obj_path);
-
-void CONDUIT_RELAY_API silo_read(DBfile *dbfile,
-                                 const std::string &silo_obj_path,
-                                 Node &node);
-
-
-//-----------------------------------------------------------------------------    
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       const std::string &path);
+// Write a blueprint mesh to silo
+//-----------------------------------------------------------------------------
+/// These methods assume `mesh` is a valid blueprint mesh.
+///
+/// Note: These methods use "write" semantics, they will append to existing
+///       files.
+///
+///
+//-----------------------------------------------------------------------------
+// void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+//                                   const std::string &path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       const std::string &file_path,
-                                       const std::string &silo_obj_path);
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+// void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+//                                   const std::string &path,
+//                                   const conduit::Node &opts);
+
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       DBfile *dbfile,
-                                       const std::string &silo_obj_path);
+// Load a blueprint mesh from root + file set
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
+//                                  conduit::Node &mesh);
+
+
+//-----------------------------------------------------------------------------
+///
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+// void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
+//                                  const conduit::Node &opts,
+//                                  conduit::Node &mesh);
+
+
+//-----------------------------------------------------------------------------
+// The load semantics, the mesh node is reset before reading.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+                                 conduit::Node &mesh);
+
+
+//-----------------------------------------------------------------------------
+///
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+// void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+//                                  const conduit::Node &opts,
+//                                  conduit::Node &mesh);
+
+
+//-----------------------------------------------------------------------------
+}
+
 
 #endif

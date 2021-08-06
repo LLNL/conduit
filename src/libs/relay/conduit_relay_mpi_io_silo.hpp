@@ -47,8 +47,16 @@ namespace mpi
 namespace io
 {
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::mpi::io::silo --
+//-----------------------------------------------------------------------------
+namespace io
+{
+
 // Functions are provided by this include file.
 #include "conduit_relay_io_silo_api.hpp"
+
+}
 
 }
 //-----------------------------------------------------------------------------

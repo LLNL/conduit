@@ -14,56 +14,49 @@
 #include "gtest/gtest.h"
 
 using namespace conduit;
-using namespace conduit::relay;
 
 
-TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
+TEST(conduit_relay_io_silo, load_mesh_geometry)
 {
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
+    Node mesh, info;
+    relay::io::silo::load_mesh("box2d.silo", mesh);
 
-    Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
+    EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+    EXPECT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
 
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
+    const Node &domain = *blueprint::mesh::domains(mesh).front();
+    EXPECT_TRUE(domain.has_child("coordsets"));
+    EXPECT_EQ(domain["coordsets"].number_of_children(), 1);
+    EXPECT_TRUE(domain.has_child("topologies"));
+    EXPECT_EQ(domain["topologies"].number_of_children(), 1);
 
-    io::silo_write(n,"tout_cold_storage_test.silo:myobj");
+    { // Coordset Validation //
+        const Node &cset = domain["coordsets"].child(0);
 
-    Node n_load;
-    io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
-    
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+        EXPECT_EQ(blueprint::mesh::coordset::dims(cset, 2));
+        EXPECT_EQ(blueprint::mesh::coordset::length(cset, 4));
+        EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
+    }
+
+    { // Topology Validation //
+        const Node &topo = domain["topologies"].child(0);
+        EXPECT_EQ(blueprint::mesh::topology::dims(cset, 2));
+        EXPECT_EQ(blueprint::mesh::topology::length(cset, 1));
+        EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(cset, info));
+    }
 }
 
-TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
+
+TEST(conduit_relay_io_silo, save_mesh_geometry)
 {
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
+    Node save_mesh;
+    blueprint::mesh::examples::basic("quads", 2, 2, 0, save_mesh);
+    save_mesh.remove("fields");
+    relay::io::silo::save_mesh(save_mesh, "basic.silo");
 
-    Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
+    Node load_mesh;
+    relay::io::silo::load_mesh("basic.silo", load_mesh);
 
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
-
-    io::save(n, "tout_cold_storage_test_generic_iface.silo:myobj");
-
-    Node n_load;
-    io::load("tout_cold_storage_test_generic_iface.silo:myobj",n_load);
-    
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+    Node info;
+    EXPECT_FALSE(load_mesh.diff(save_mesh, info));
 }
-
