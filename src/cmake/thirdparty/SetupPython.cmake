@@ -80,9 +80,9 @@ if(PYTHONINTERP_FOUND)
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBDIR)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPC'))"
-                            OUTPUT_VARIABLE PYTHON_CONFIG_LIBPC
-                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBPC)
+                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
+                            OUTPUT_VARIABLE PYTHON_CONFIG_LIBPL
+                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBPL)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                                     "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
@@ -95,7 +95,7 @@ if(PYTHONINTERP_FOUND)
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBRARY)
 
             message(STATUS "PYTHON_CONFIG_LIBDIR:     ${PYTHON_CONFIG_LIBDIR}")
-            message(STATUS "PYTHON_CONFIG_LIBPC:      ${PYTHON_CONFIG_LIBPC}")
+            message(STATUS "PYTHON_CONFIG_LIBPL:      ${PYTHON_CONFIG_LIBPL}")
             message(STATUS "PYTHON_CONFIG_LDLIBRARY:  ${PYTHON_CONFIG_LDLIBRARY}")
             message(STATUS "PYTHON_CONFIG_LIBRARY:    ${PYTHON_CONFIG_LIBRARY}")
 
@@ -112,10 +112,10 @@ if(PYTHONINTERP_FOUND)
                 endif()
             endif()
 
-            # shared libpc + ldlibrary
+            # shared libpl + ldlibrary
             if(NOT EXISTS ${PYTHON_LIBRARY})
-                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBPC})
-                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBPC}/${PYTHON_CONFIG_LDLIBRARY}")
+                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBPL})
+                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBPL}/${PYTHON_CONFIG_LDLIBRARY}")
                     message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
                     if(EXISTS ${_PYTHON_LIBRARY_TEST})
                         set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
@@ -134,10 +134,10 @@ if(PYTHONINTERP_FOUND)
                 endif()
             endif()
 
-            # static: libpc + library
+            # static: libpl + library
             if(NOT EXISTS ${PYTHON_LIBRARY})
-                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBPC})
-                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBPC}/${PYTHON_CONFIG_LIBRARY}")
+                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBPL})
+                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBPL}/${PYTHON_CONFIG_LIBRARY}")
                     message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
                     if(EXISTS ${_PYTHON_LIBRARY_TEST})
                         set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
