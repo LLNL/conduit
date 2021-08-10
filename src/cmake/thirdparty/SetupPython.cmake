@@ -148,7 +148,13 @@ if(PYTHONINTERP_FOUND)
             get_filename_component(PYTHON_ROOT_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
             # Note: this assumes that two versions of python are not installed in the same dest dir
             set(PYTHON_GLOB_TEST "${PYTHON_ROOT_DIR}/libs/python*.lib")
+            file(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
+            if(NOT PYTHON_GLOB_RESULT)
+                message(FATAL_ERROR "Failed to find main python library using pattern: ${PYTHON_GLOB_TEST}")
+            endif()
+
             get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
+
         endif()
 
         if(NOT EXISTS ${PYTHON_LIBRARY})
