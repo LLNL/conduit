@@ -531,25 +531,39 @@ namespace coordset
 
 //-----------------------------------------------------------------------------
 /**
- @brief Combines the given vector of coordsets into one explicit coordset.
+ @brief Combines the given vector of coordsets into one coordset.
  @param coordsets A vector of conduit nodes containing blueprint coordsets
  @param[out] output A blueprint coordset representing the combined input coordsets.
        There is an additional field on this node called "pointmaps" which contains
        a list of index_t arrays (one list entry for each input coordset) that represent
        the new point id to use for each point in the original set.
- @param tolerance The tolerance factor used for merging like-points.
+ @param options An optional options node containing "merge_tolerance" and/or "type" of combination 
+       ("implicit" or "explicit")
 */
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coordsets,
                                  conduit::Node &output,
-                                 double tolerance = CONDUIT_EPSILON);
+                                 const conduit::Node *options = nullptr);
 
 }
 
 namespace topology
 {
 
+//-----------------------------------------------------------------------------
+/**
+ @brief Combines the given vector of topologies into one topology
+ @param topologies The input vector of toplogies to combine.
+ @param pointmaps A node that contains a list of pointmaps for each input topology.
+       Each pointmap should map the local vertex ids of the original coordset into the 
+       coordset passed to this function.
+       NOTE: The coordset::combine function generates these pointmaps automatically.
+ @param coordset  The coordset associated with the output topology
+ @param output The output blueprint topology
+ @param options An optional options node containing "type" of combination ("uniform", "rectilinear", "unstructured")
+*/
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
                                    const conduit::Node &pointmaps,
+                                   const conduit::Node &coordset,
                                    conduit::Node &output,
                                    conduit::Node *options = nullptr);
 

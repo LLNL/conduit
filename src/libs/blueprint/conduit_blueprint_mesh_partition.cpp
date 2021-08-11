@@ -5065,158 +5065,6 @@ combine(const std::vector<const Node*> &in_fields,
 // -- end conduit::blueprint::mesh::fields --
 //-----------------------------------------------------------------------------
 
-static std::string
-compatible_uniform(const std::vector<const Node *> &inputs)
-{
-    double tolerance = 0;
-    std::cout << "Entering compatible_uniform!" << std::endl;
-    if(inputs.size() == 1)
-    {
-        return "uniform";
-    }
-
-    const std::string &n_coordset_name = inputs[0]->child("topologies")[0]["coordset"].as_string();
-    // Use input 0 as the baseline
-    const Node &n_coordset0 = inputs[0]->child("coordsets")[n_coordset_name];
-    const std::string csys = utils::coordset::coordsys(n_coordset0);
-    std::cout << csys << std::endl;
-    const index_t dims = utils::coordset::dims(n_coordset0);
-    std::array<float64, 3> spacing{1., 1., 1.};
-    if(n_coordset0.has_child("spacing"))
-    {
-        for(index_t d = 0; d < n_coordset0["spacing"].number_of_children(); d++)
-        {
-            spacing[d] = n_coordset0["spacing"][d].to_float64();
-        }
-    }
-    // Ensure all dims, coord systems, and spacing are the same
-    for(size_t i = 1; i < inputs.size(); i++)
-    {
-        const Node &n_coordset = inputs[i]->child("coordsets")[n_coordset_name];
-        if(dims != utils::coordset::dims(n_coordset))
-        {
-            return "unstructured";
-        }
-        // Check if spacing matches
-        std::array<float64, 3> temp_spacing{1., 1., 1.};
-        if(n_coordset.has_child("spacing"))
-        {
-            for(index_t d = 0; d < n_coordset["spacing"].number_of_children(); d++)
-            {
-                temp_spacing[d] = n_coordset["spacing"][d].to_float64();
-            }
-        }
-        for(index_t d = 0; d < dims; d++)
-        {
-            if(spacing[d] != temp_spacing[d])
-            {
-                return "rectilinear";
-            }
-        }
-    }
-    
-    std::cout << "Passed preliminary check!" << std::endl;
-
-    // Make sure extents matchup in the correct way
-    std::vector<std::vector<float64>> all_extents;
-    for(const Node *in : inputs)
-    {
-        all_extents.emplace_back(
-            utils::coordset::extents(in->child("coordsets")[n_coordset_name])
-        );
-    }
-
-    // Recursive algorithm, keep pairing extents into larger and larger
-    //  groups
-    index_t iteration = 0;
-    while(all_extents.size() > 1)
-    {
-        // Print the work in progress
-        std::cout << "iteration " << iteration << "\n";
-        for(size_t ei = 0; ei < all_extents.size(); ei++)
-        {
-            std::cout << "  " << ei << ": ";
-            for(const auto e : all_extents[ei])
-            {
-                std::cout << e << " ";
-            }
-            std::cout << "\n";
-        }
-        std::cout << std::endl;
-        iteration++;
-
-        // Get the first extents
-        bool any_matches = false;
-        for(size_t ei = 0; ei < all_extents.size(); ei++)
-        {
-            auto &exti = all_extents[ei];
-
-            // Find a match
-            const index_t NOT_FOUND = all_extents.size();
-            index_t matched_extents = NOT_FOUND;
-            for(size_t ej = ei+1; ej < all_extents.size(); ej++)
-            {
-                const auto &extj = all_extents[ej];
-
-                for(index_t di = 0; di < dims; di++)
-                {
-                    const index_t min_idx = di*2;
-                    const index_t max_idx = min_idx+1;
-                    // Does ext0 max == exti min or ext0 min == exti max?
-                    const bool check1 = std::abs(exti[max_idx] - extj[min_idx]) <= tolerance;
-                    const bool check2 = std::abs(exti[min_idx] - extj[max_idx]) <= tolerance;
-                    if(!check1 && !check2)
-                    {
-                        continue;
-                    }
-                    bool corners_match = true;
-                    for(index_t dj = 0; dj < dims; dj++)
-                    {
-                        if(dj == di) { continue; }
-                        const index_t dj_min = dj*2;
-                        const index_t dj_max = dj_min+1;
-                        // All other axis extents should be equal
-                        const bool check3 = std::abs(exti[dj_min] - extj[dj_min]) <= tolerance;
-                        const bool check4 = std::abs(exti[dj_max] - extj[dj_max]) <= tolerance;
-                        if(!check3 || !check4)
-                        {
-                            corners_match = false;
-                            break;
-                        }
-                    }
-                    if(corners_match)
-                    {
-                        matched_extents = ej;
-                        break;
-                    }
-                }
-
-                if(matched_extents != NOT_FOUND)
-                {
-                    for(index_t di = 0; di < dims; di++)
-                    {
-                        const index_t min_idx = di*2;
-                        const index_t max_idx = min_idx+1;
-                        exti[min_idx] = std::min(exti[min_idx], extj[min_idx]);
-                        exti[max_idx] = std::max(exti[max_idx], extj[max_idx]);
-                    }
-                    all_extents.erase(all_extents.begin() + ej);
-                    any_matches = true;
-                    break;
-                }
-            }
-        }
-
-        if(any_matches == false)
-        {
-            break;
-        }
-    }
-    std::cout << "REMAINING DOMAINS " << all_extents.size() << std::endl;
-    return (all_extents.size() == 1 ? "uniform" : "unstructured");
-}
-
-
 //-------------------------------------------------------------------------
 std::string
 partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
@@ -5225,9 +5073,6 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
     //       to form an output of one of those types. For example, uniform meshes
     //       can be combined if they abut and combine into larger bricks that
     //       cover space.
-#if 0
-    return "unstructured";
-#else
     // Meshes:
     //   Uniform
     //   Rectilinear
@@ -5292,11 +5137,7 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
     std::string retval;
     if(worst_topology < 2 && worst_coordset < 1)
     {
-        retval = compatible_uniform(inputs);
-        if(retval == "rectilinear")
-        {
-            // retval = compatible_rectilinear(inputs)
-        }
+        retval = "uniform";
     }
     else if(worst_topology < 3 && worst_coordset < 2)
     {
@@ -5307,7 +5148,6 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
         retval = "unstructured";
     }
     return retval;
-#endif
 }
 
 //-------------------------------------------------------------------------
@@ -5320,6 +5160,7 @@ partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
+    // Handle trivial cases
     std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
     output.reset();
     const auto sz = inputs.size();
@@ -5335,35 +5176,19 @@ partitioner::combine(int domain,
         return;
     }
 
+    // Combine state - take state from inputs[0], overwrite domain_id
+    // Q: Should this be more involved?
     if(inputs[0]->has_child("state"))
     {
         output["state"] = inputs[0]->child("state");
     }
     output["state/domain_id"] = domain;
 
+    // Determine the combine approach
     std::string rt(recommended_topology(inputs));
-    std::cout << "Recommended topology: " << rt << std::endl;
-    combine_as_unstructured(domain, inputs, output);
-}
+    std::cout << "Recommended approach: " << rt << std::endl;
 
-//-------------------------------------------------------------------------
-void
-partitioner::combine_as_structured(int domain,
-    const std::vector<const Node *> &inputs,
-    Node &output)
-{
-    // TODO: Make combined coordset and new structured topology (uniform,
-    //       rectilinear, structured) suitable for the output.
-
-    // Add the combined result to output node.
-}
-
-//-------------------------------------------------------------------------
-void
-partitioner::combine_as_unstructured(int domain,
-    const std::vector<const Node *> &inputs,
-    Node &output)
-{
+    // Combine the coordsets
     // Determine names of all coordsets
     std::vector<std::string> coordset_names;
     Node &output_coordsets = output.add_child("coordsets");
@@ -5415,17 +5240,15 @@ partitioner::combine_as_unstructured(int domain,
         }
         std::cout << std::endl;
 #endif
+        conduit::Node opts;
+        opts["type"] = ((rt == "rectilinear" || rt == "uniform") ? "implicit" : "explicit");
+        opts["tolerance"] = merge_tolerance;
         for(index_t i = 0; i < ngroups; i++)
         {
             const auto &coordset_group = coordset_groups[i];
-            coordset::combine(coordset_group, output_coordsets.add_child(coordset_names[i]));
+            coordset::combine(coordset_group, output_coordsets.add_child(coordset_names[i]), &opts);
         }
     }
-
-    // Combine mapping information stored in chunks to assemble new field
-    // that indicates original domain,pointid values for each point
-
-    // Determine names of all topologies
 
     // Iterate over all topology names and combine like-named topologies
     // as new unstructured topology.
@@ -5497,7 +5320,7 @@ partitioner::combine_as_unstructured(int domain,
             const Node *pointmaps = output_coordsets[*itr].fetch_ptr("pointmaps");
             if(!pointmaps) { continue; }
 
-            topology::combine(topo_group.second, *pointmaps, output_topologies.add_child(topo_group.first));
+            topology::combine(topo_group.second, *pointmaps, output_coordsets[*itr], output_topologies.add_child(topo_group.first));
         }
     }
 
@@ -5687,16 +5510,77 @@ partitioner::combine_as_unstructured(int domain,
 }
 
 //-------------------------------------------------------------------------
+void
+partitioner::combine_as_structured(int domain,
+    const std::vector<const Node *> &inputs,
+    Node &output)
+{
+    // TODO: Make combined coordset and new structured topology (uniform,
+    //       rectilinear, structured) suitable for the output.
+}
+
+//-------------------------------------------------------------------------
+void
+partitioner::combine_as_unstructured(int domain,
+    const std::vector<const Node *> &inputs,
+    Node &output)
+{
+    // Combine mapping information stored in chunks to assemble new field
+    // that indicates original domain,pointid values for each point
+
+    // Determine names of all topologies
+
+
+}
+
+//-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 namespace coordset
 {
-// Q: Why is this exposed?
+// Q: Why is this exposed? A: For tests
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coordsets,
                                  conduit::Node &output,
-                                 double tolerance)
+                                 const conduit::Node *options)
 {
-    point_merge pm;
-    pm.execute(coordsets, tolerance, output);
+    double tolerance = CONDUIT_EPSILON;
+    std::string approach = "explicit";
+    if(options)
+    {
+        const Node *n_tolerance = options->fetch_ptr("tolerance");
+        if(n_tolerance)
+        {
+            tolerance = n_tolerance->to_double();
+        }
+        const Node *n_type = options->fetch_ptr("type");
+        if(n_type)
+        {
+            const std::string type = n_type->as_string();
+            if(type == "explicit" || type == "implicit")
+            {
+                approach = type;
+            }
+            else
+            {
+                CONDUIT_WARN("Invalid \"type\" passed to coordset::combine, expected \"implicit\" or \"explicit\", got " << type
+                    << ". Continuing as explicit.");
+            }
+        }
+    }
+
+    bool do_explicit = true;
+    if(approach == "implicit")
+    {
+        const bool success = utils::combine_implicit(coordsets, tolerance, output);
+        do_explicit = !success;
+    }
+
+    // If implicit combination failed fall back on explicit combination,
+    //  or we were told explicit from the start.
+    if(do_explicit)
+    {
+        point_merge pm;
+        pm.execute(coordsets, tolerance, output);
+    }
 }
 
 }
@@ -5709,6 +5593,7 @@ namespace topology
 // Q: Why is this exposed?
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
                                    const conduit::Node &pointmaps,
+                                   const conduit::Node &coordset,
                                    conduit::Node &output,
                                    conduit::Node *options)
 {
@@ -5717,6 +5602,10 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &top
         return;
     }
 
+    const static std::array<std::string,3> VALID_TYPES = {
+        "unstructured", "uniform", "rectilinear"
+    };
+    std::string type = "unstructured";
     bool force_polyhedral = false;
     bool force_polygonal = false;
     if(options)
@@ -5730,108 +5619,143 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &top
         {
             force_polygonal = true;
         }
-    }
 
-    const std::string &cset_name = topologies[0]->child("coordset").as_string();
-    std::vector<const Node*> working_topologies;
-    std::vector<Node> temporary_nodes;
-    temporary_nodes.reserve(topologies.size());
-
-    // Validate / translate inputs
-    {
-        const index_t ntopos = topologies.size();
-        for(index_t i = 0; i < ntopos; i++)
+        if(options->has_child("type"))
         {
-            const Node *topo = topologies[i];
-            Node temp;
-            if(!topo) { continue; }
+            type = options->child("type").as_string();
+            bool valid = false;
 
-            const Node *type = topo->fetch_ptr("type");
-            if(!type) { continue; }
+            // No support for structured yet.
+            if(type == "structured")
+            {
+                type = "unstructured";
+            }
 
-            const Node *cset = topo->fetch_ptr("coordset");
-            if(!cset) { continue; }
+            // Validate.
+            for(const std::string &t : VALID_TYPES)
+            {
+                if(type == t) { valid = true; break; }
+            }
 
-            const std::string &t = type->as_string();
-            if(t == "points")
+            if(!valid)
             {
-                temporary_nodes.emplace_back();
-                // topology::points::to_explicit(topo, temporary_nodes.back());
-                working_topologies.push_back(&temporary_nodes.back());
+                CONDUIT_ERROR("Invalid type passed to topology::combine - " << type);
+                return;
             }
-            else if(t == "uniform")
-            {
-                temporary_nodes.emplace_back();
-                topology::uniform::to_unstructured(*topo, temporary_nodes.back(), temp);
-                working_topologies.push_back(&temporary_nodes.back());
-            }
-            else if(t == "rectilinear")
-            {
-                temporary_nodes.emplace_back();
-                topology::rectilinear::to_unstructured(*topo, temporary_nodes.back(), temp);
-                working_topologies.push_back(&temporary_nodes.back());
-            }
-            else if(t == "structured")
-            {
-                temporary_nodes.emplace_back();
-                topology::structured::to_unstructured(*topo, temporary_nodes.back(), temp);
-                working_topologies.push_back(&temporary_nodes.back());
-            }
-            else if(t == "unstructured")
-            {
-                working_topologies.push_back(topo);
-            }
-            else
-            {
-                //  ERROR!
-                continue;
-            }
-        }
-
-        // Make sure we have the correct number of point maps
-        if(pointmaps.number_of_children() != (index_t)working_topologies.size())
-        {
-            std::cerr << "ERROR: Number of input pointmaps and number of input topologies do not match!" << std::endl;
-            return;
         }
     }
 
-    // Start building the output
-    output.reset();
-    if(working_topologies.size())
+    if(type == "rectilinear" || type == "uniform")
     {
-        bool do_polyhedral = force_polyhedral;
-        bool do_polygonal  = force_polygonal;
-        index_t dim = 0;
-        for(const Node *topo : topologies)
+        output["type"] = type;
+        output["coordset"] = coordset.name();
+        output["element_map"] = coordset["element_map"];
+    }
+    
+    if(type == "unstructured")
+    {
+        const std::string &cset_name = coordset.name();
+        std::vector<const Node*> working_topologies;
+        std::vector<Node> temporary_nodes;
+        temporary_nodes.reserve(topologies.size());
+
+        // Validate / translate inputs
         {
-            // TODO: Write a dim function that knows about all the different topologies
-            const Node *shape = topo->fetch_ptr("elements/shape");
-            if(!shape) { continue; }
-            const utils::ShapeType s(shape->as_string());
-            if(s.is_polyhedral())
+            const index_t ntopos = topologies.size();
+            for(index_t i = 0; i < ntopos; i++)
             {
-                do_polyhedral = true;
+                const Node *topo = topologies[i];
+                Node temp;
+                if(!topo) { continue; }
+
+                const Node *type = topo->fetch_ptr("type");
+                if(!type) { continue; }
+
+                const Node *cset = topo->fetch_ptr("coordset");
+                if(!cset) { continue; }
+
+                const std::string &t = type->as_string();
+                if(t == "points")
+                {
+                    temporary_nodes.emplace_back();
+                    // topology::points::to_explicit(topo, temporary_nodes.back());
+                    working_topologies.push_back(&temporary_nodes.back());
+                }
+                else if(t == "uniform")
+                {
+                    temporary_nodes.emplace_back();
+                    topology::uniform::to_unstructured(*topo, temporary_nodes.back(), temp);
+                    working_topologies.push_back(&temporary_nodes.back());
+                }
+                else if(t == "rectilinear")
+                {
+                    temporary_nodes.emplace_back();
+                    topology::rectilinear::to_unstructured(*topo, temporary_nodes.back(), temp);
+                    working_topologies.push_back(&temporary_nodes.back());
+                }
+                else if(t == "structured")
+                {
+                    temporary_nodes.emplace_back();
+                    topology::structured::to_unstructured(*topo, temporary_nodes.back(), temp);
+                    working_topologies.push_back(&temporary_nodes.back());
+                }
+                else if(t == "unstructured")
+                {
+                    working_topologies.push_back(topo);
+                }
+                else
+                {
+                    //  ERROR!
+                    continue;
+                }
             }
-            else if(s.is_polygonal())
+
+            // Make sure we have the correct number of point maps
+            if(pointmaps.number_of_children() != (index_t)working_topologies.size())
             {
-                do_polygonal = true;
+                CONDUIT_ERROR("Number of input pointmaps and number of input topologies do not match! " 
+                    << pointmaps.number_of_children() << " != " << working_topologies.size());
+                return;
             }
-            dim = std::max(dim, s.dim);
-            if(do_polyhedral) break;
         }
 
-        if(do_polyhedral || (do_polygonal && dim > 2))
+        // Start building the output
+        output.reset();
+        if(working_topologies.size())
         {
-            build_polyhedral_output(working_topologies, pointmaps, cset_name, output);
-        }
-        else if(do_polygonal)
-        {
-            build_polygonal_output(working_topologies, pointmaps, cset_name, output);
-        }
-        else // Single shape & multi shape topologies
-        {
-            build_unstructured_output(working_topologies, pointmaps, cset_name, output);
+            bool do_polyhedral = force_polyhedral;
+            bool do_polygonal  = force_polygonal;
+            index_t dim = 0;
+            for(const Node *topo : topologies)
+            {
+                // TODO: Write a dim function that knows about all the different topologies
+                const Node *shape = topo->fetch_ptr("elements/shape");
+                if(!shape) { continue; }
+                const utils::ShapeType s(shape->as_string());
+                if(s.is_polyhedral())
+                {
+                    do_polyhedral = true;
+                }
+                else if(s.is_polygonal())
+                {
+                    do_polygonal = true;
+                }
+                dim = std::max(dim, s.dim);
+                if(do_polyhedral) break;
+            }
+
+            if(do_polyhedral || (do_polygonal && dim > 2))
+            {
+                build_polyhedral_output(working_topologies, pointmaps, cset_name, output);
+            }
+            else if(do_polygonal)
+            {
+                build_polygonal_output(working_topologies, pointmaps, cset_name, output);
+            }
+            else // Single shape & multi shape topologies
+            {
+                build_unstructured_output(working_topologies, pointmaps, cset_name, output);
+            }
         }
     }
 }
