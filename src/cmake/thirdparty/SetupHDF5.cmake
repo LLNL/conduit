@@ -192,14 +192,14 @@ list(LENGTH hdf5_tpl_lnk_libs hdf5_tpl_lnk_libs_len)
 # only do final strip if not empty
 if(${hdf5_tpl_lnk_libs})
     # and not already a list
-    if(hdf5_tpl_lnk_libs_len EQ 1)
+    if(hdf5_tpl_lnk_libs_len EQUAL 1)
         string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
     endif()
 endif()
 
 # get a cmake list of these libs if don't already have one by
 # splitting the link libs string
-if(hdf5_tpl_lnk_libs_len EQ 1)
+if(hdf5_tpl_lnk_libs_len EQUAL 1)
     # ** Note **
     # The NATIVE_COMMAND arg to separate_arguments() was added in CMake 3.9
     # instead use strategy that allows older versions of CMake:
