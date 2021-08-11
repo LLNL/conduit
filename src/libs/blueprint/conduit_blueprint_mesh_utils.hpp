@@ -265,13 +265,31 @@ namespace coordset
 
     //-----------------------------------------------------------------------------
     /**
+    @brief Returns the number of verticies in each dimension for the given coordset.
+    @return A vector of index_t in the format {d0_nverts, ... , dNnverts}
+    */
+    std::vector<index_t> dim_lengths(const conduit::Node &n);
+
+    //-----------------------------------------------------------------------------
+    /**
     @brief Reads the coordset's data and determines min/max for each axis.
     NOTE: This simply takes the min/max of each data array for recilinear/explicit,
     are there any special considerations for cylindrical and spherical coordinates?
     For uniform it calculates min/max based off of origin/spacing/dims.
-    @return A vector of float64 if the format {d0min, d0max, ... , dNmin, dNmax}
+    @return A vector of float64 in the format {d0min, d0max, ... , dNmin, dNmax}
     */
     std::vector<float64> extents(const Node &n);
+
+    namespace uniform
+    {
+        /**
+        @brief Reads the given uniform coordset and extracts to spacing
+               to an index_t vector
+        */
+        std::vector<index_t> spacing(const Node &n);
+
+        std::vector<index_t> origin(const Node &n);
+    }
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::coorset --
