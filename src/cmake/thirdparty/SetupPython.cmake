@@ -22,6 +22,12 @@ if(PYTHONINTERP_FOUND)
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+                        "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
+                        OUTPUT_VARIABLE PYTHON_CONFIG_VERSION
+                        ERROR_VARIABLE  ERROR_FINDING_PYTHON_VERSION)
+        MESSAGE(STATUS "PYTHON_CONFIG_VERSION $PYTHON_CONFIG_VERSION}")
+
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                                 "import sys;from distutils.sysconfig import get_python_inc;sys.stdout.write(get_python_inc())"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
@@ -147,14 +153,11 @@ if(PYTHONINTERP_FOUND)
         else() # windows 
             get_filename_component(PYTHON_ROOT_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
             # Note: this assumes that two versions of python are not installed in the same dest dir
-            set(PYTHON_GLOB_TEST "${PYTHON_ROOT_DIR}/libs/python*.lib")
-            file(GLOB PYTHON_GLOB_RESULT ${PYTHON_GLOB_TEST})
-            if(NOT PYTHON_GLOB_RESULT)
-                message(FATAL_ERROR "Failed to find main python library using pattern: ${PYTHON_GLOB_TEST}")
+            set(_PYTHON_LIBRARY_TEST  "${PYTHON_ROOT_DIR}/libs/python${PYTHON_CONFIG_VERSION}.lib")
+            message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
+            if(EXISTS ${_PYTHON_LIBRARY_TEST})
+                set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
             endif()
-
-            get_filename_component(PYTHON_LIBRARY "${PYTHON_GLOB_RESULT}" ABSOLUTE)
-
         endif()
 
         if(NOT EXISTS ${PYTHON_LIBRARY})
