@@ -25,6 +25,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed a bug that was causing the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
 - Added a new function signature for `blueprint::mesh::topology::unstructured::generate_sides`, which performs the same task as the original and also takes fields from the original topology and maps them onto the new topology.
 
+#### Relay
+- Changed HDF5 offset support to use 64-bit unsigned integers for offsets, strides, and sizes.
 
 ## [0.7.2] - Released 2021-05-19
 
