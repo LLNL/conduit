@@ -150,38 +150,38 @@ endif()
 #######
 # parse include flags (key = AM_CPPFLAGS)
 #######
-string(REGEX MATCHALL "AM_CPPFLAGS: .+\n" hdf5_tpl_inc_flags ${_HDF5_CC_CONFIG_VALUE})
+string(REGEX MATCHALL "AM_CPPFLAGS: .+\n" hdf5_tpl_inc_flags "${_HDF5_CC_CONFIG_VALUE}")
 # strip prefix 
-string(REGEX REPLACE  "AM_CPPFLAGS: " "" hdf5_tpl_inc_flags ${hdf5_tpl_inc_flags})
+string(REGEX REPLACE  "AM_CPPFLAGS: " "" hdf5_tpl_inc_flags "${hdf5_tpl_inc_flags}")
 # strip after
 string(FIND  "${hdf5_tpl_inc_flags}" "\n" hdf5_tpl_inc_flags_end_pos)
-string(SUBSTRING "${hdf5_tpl_inc_flags}" 0 ${hdf5_tpl_inc_flags_end_pos} hdf5_tpl_inc_flags)
+string(SUBSTRING "${hdf5_tpl_inc_flags}" 0 "${hdf5_tpl_inc_flags_end_pos}" hdf5_tpl_inc_flags)
 # only do final strip if not empty
-if(${hdf5_tpl_inc_flags})
+if("${hdf5_tpl_inc_flags}")
     string(STRIP "${hdf5_tpl_inc_flags}" hdf5_tpl_inc_flags)
 endif()
 #######
 # parse -L flags (key = AM_LDFLAGS)
 #######
-string(REGEX MATCHALL "AM_LDFLAGS: .+\n" hdf5_tpl_lnk_flags ${_HDF5_CC_CONFIG_VALUE})
+string(REGEX MATCHALL "AM_LDFLAGS: .+\n" hdf5_tpl_lnk_flags "${_HDF5_CC_CONFIG_VALUE}")
 # strip prefix 
-string(REGEX REPLACE  "AM_LDFLAGS: " "" hdf5_tpl_lnk_flags ${hdf5_tpl_lnk_flags})
+string(REGEX REPLACE  "AM_LDFLAGS: " "" hdf5_tpl_lnk_flags "${hdf5_tpl_lnk_flags}")
 # strip after
 string(FIND  "${hdf5_tpl_lnk_flags}" "\n" hdf5_tpl_lnk_flags_end_pos)
-string(SUBSTRING "${hdf5_tpl_lnk_flags}" 0 ${hdf5_tpl_lnk_flags_end_pos} hdf5_tpl_lnk_flags)
+string(SUBSTRING "${hdf5_tpl_lnk_flags}" 0 "${hdf5_tpl_lnk_flags_end_pos}" hdf5_tpl_lnk_flags)
 # only do final strip if not empty
-if(${hdf5_tpl_lnk_flags})
+if("${hdf5_tpl_lnk_flags}")
     string(STRIP "${hdf5_tpl_lnk_flags}" hdf5_tpl_lnk_flags)
 endif()
 #######
 # parse -l flags (key = Extra libraries)
 #######
-string(REGEX MATCHALL "Extra libraries: .+\n" hdf5_tpl_lnk_libs ${_HDF5_CC_CONFIG_VALUE})
+string(REGEX MATCHALL "Extra libraries: .+\n" hdf5_tpl_lnk_libs "${_HDF5_CC_CONFIG_VALUE}")
 # strip prefix 
-string(REGEX REPLACE  "Extra libraries: " "" hdf5_tpl_lnk_libs ${hdf5_tpl_lnk_libs})
+string(REGEX REPLACE  "Extra libraries: " "" hdf5_tpl_lnk_libs "${hdf5_tpl_lnk_libs}")
 # strip after
 string(FIND  "${hdf5_tpl_lnk_libs}" "\n" hdf5_tpl_lnk_libs_end_pos)
-string(SUBSTRING "${hdf5_tpl_lnk_libs}" 0 ${hdf5_tpl_lnk_libs_end_pos} hdf5_tpl_lnk_libs)
+string(SUBSTRING "${hdf5_tpl_lnk_libs}" 0 "${hdf5_tpl_lnk_libs_end_pos}" hdf5_tpl_lnk_libs)
 
 # When hdf5 is built with cmake, the h5settings file may list
 # these libs as a cmake list (separated by semi colons)
@@ -190,7 +190,7 @@ string(SUBSTRING "${hdf5_tpl_lnk_libs}" 0 ${hdf5_tpl_lnk_libs_end_pos} hdf5_tpl_
 list(LENGTH hdf5_tpl_lnk_libs hdf5_tpl_lnk_libs_len)
 
 # only do final strip if not empty
-if(${hdf5_tpl_lnk_libs})
+if("${hdf5_tpl_lnk_libs}")
     # and not already a list
     if(hdf5_tpl_lnk_libs_len EQUAL 1)
         string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
@@ -205,9 +205,9 @@ if(hdf5_tpl_lnk_libs_len EQUAL 1)
     # instead use strategy that allows older versions of CMake:
     #    an if to select WINDOWS_COMMAND or UNIX_COMMAND arg
     if(WIN32)
-        separate_arguments(_temp_link_libs WINDOWS_COMMAND ${hdf5_tpl_lnk_libs})
+        separate_arguments(_temp_link_libs WINDOWS_COMMAND "${hdf5_tpl_lnk_libs}")
     else()
-        separate_arguments(_temp_link_libs UNIX_COMMAND ${hdf5_tpl_lnk_libs})
+        separate_arguments(_temp_link_libs UNIX_COMMAND "${hdf5_tpl_lnk_libs}")
     endif()
 endif()
 
