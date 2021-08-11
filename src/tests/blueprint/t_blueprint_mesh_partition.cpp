@@ -1529,17 +1529,31 @@ TEST(conduit_blueprint_mesh_combine, uniform)
         conduit::Node mesh2;
         mesh2["domain_00000"] = domains[1];
         mesh2["domain_00001"] = domains[2];
+        std::cout << "mesh2" << std::endl;
+        save_visit("combine_uniform_mesh2", mesh2);
         conduit::blueprint::mesh::partition(mesh2, opts, output);
+        output.print();
+        save_visit("combine_uniform_mesh2_output", output);
 
         // change the spacing for domain00001, should suggest rectilinear
         mesh2["domain_00001/coordsets/coords/spacing/dx"] = 0.5;
-        mesh2["domain_00001/coordsets/coords/spacing/dy"] = 0.5;
+        mesh2["domain_00001/coordsets/coords/spacing/dy"] = 1.0;
         if(is3d)
-            mesh2["domain_00001/coordsets/coords/spacing/dz"] = 0.5;
+            mesh2["domain_00001/coordsets/coords/spacing/dx"] = 1.0;
         conduit::blueprint::mesh::partition(mesh2, opts, output);
-
-
+        save_visit("combine_uniform_mesh2_output2", output);
     };
 
     uniform_cases(false);
+}
+
+TEST(blueprint_mesh_combine, recilinear)
+{
+    conduit::Node spiral;
+    conduit::blueprint::mesh::examples::spiral(5, spiral);
+
+    conduit::Node opts; opts["target"] = 1;
+    conduit::Node combined;
+    conduit::blueprint::mesh::partition(spiral, opts, combined);
+    save_visit("combine_rectilinear_output1", combined);
 }
