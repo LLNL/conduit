@@ -11,9 +11,12 @@
 #include "conduit.hpp"
 
 #include <iostream>
+#include <chrono>
+
 #include "gtest/gtest.h"
 #include "rapidjson/document.h"
 using namespace conduit;
+
 
 index_t ARRAY_SIZE = 1000000;
 index_t NUM_ITERS  = 1;
