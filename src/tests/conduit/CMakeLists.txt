@@ -36,6 +36,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_node_iterator
                 t_conduit_node_cpp_iterator
                 t_conduit_node_obj_names_with_slashes
+                t_conduit_node_type_dispatch
                 t_conduit_schema
                 t_conduit_error
                 t_conduit_log
