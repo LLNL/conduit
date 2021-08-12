@@ -138,31 +138,41 @@ TEST(conduit_node, test_dispatch)
     std::cout << "Number of elements: " <<  ARRAY_SIZE << std::endl;
     std::cout << "Iterations: " << NUM_ITERS << std::endl;
 
+    float64 res1,res2,res3;
+
     Timer t1;
     for(index_t i=0;i<NUM_ITERS;i++)
     {
-        on_the_fly_convert(n);
+        res1 = on_the_fly_convert(n);
     }
     t1.elapsed();
 
     Timer t2;
     for(index_t i=0;i<NUM_ITERS;i++)
     {
-        array_convert(n);
+        res2 = array_convert(n);
     }
     t2.elapsed();
 
     Timer t3;
     for(index_t i=0;i<NUM_ITERS;i++)
     {
-        template_dispatch(n);
+        res3 = template_dispatch(n);
     }
     t3.elapsed();
 
+    EXPECT_EQ(res1,float64(ARRAY_SIZE));
+    EXPECT_EQ(res2,float64(ARRAY_SIZE));
+    EXPECT_EQ(res3,float64(ARRAY_SIZE));
+
+    // std::cout << "on_the_fly_convert (last res): " << res1 << std::endl;
+    // std::cout << "array_convert (last res):      " << res2 << std::endl;
+    // std::cout << "template_dispatch (last res):  " << res3 << std::endl;
 
     std::cout << "on_the_fly_convert: " << t1.elapsed() << std::endl;
     std::cout << "array_convert:      " << t2.elapsed() << std::endl;
     std::cout << "template_dispatch:  " << t3.elapsed() << std::endl;
+
 
 }
 
