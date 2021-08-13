@@ -368,6 +368,17 @@ namespace topology
                                                   const conduit::Node &options);
 
         //---------------------------------------------------------------------
+        // this variant of the function same as generate sides and map fields
+        // with empty options
+        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &topo,
+                                                  conduit::Node &topo_dest,
+                                                  conduit::Node &coords_dest,
+                                                  conduit::Node &fields_dest,
+                                                  conduit::Node &s2dmap,
+                                                  conduit::Node &d2smap);
+
+
+        //---------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_corners(const conduit::Node &topo,
                                                     conduit::Node &topo_dest,
                                                     conduit::Node &coords_dest,

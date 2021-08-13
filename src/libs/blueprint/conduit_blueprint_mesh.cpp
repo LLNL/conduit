@@ -3688,6 +3688,27 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
     }
 }
 
+// this variant of the function same as generate sides and map fields
+// with empty options
+//----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::generate_sides(const conduit::Node &topo,
+                                             conduit::Node &topo_dest,
+                                             conduit::Node &coords_dest,
+                                             conduit::Node &fields_dest,
+                                             conduit::Node &s2dmap,
+                                             conduit::Node &d2smap)
+{
+    Node opts;
+    mesh::topology::unstructured::generate_sides(topo,
+                                                 topo_dest,
+                                                 coords_dest,
+                                                 fields_dest,
+                                                 s2dmap,
+                                                 d2smap,
+                                                 opts);
+}
+
 //-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::generate_corners(const Node &topo,
