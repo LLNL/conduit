@@ -3822,8 +3822,9 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
 
             // Do element_map
             {
-                const index_t nx   = final_dim_lengths[0]-1;
-                const index_t nxny = nx * (final_dim_lengths[1] - 1);
+
+                const index_t nx   = elem_dims[0];
+                const index_t nxny = nx*elem_dims[1];
                 const index_t ioff = offsets[0];
                 const index_t joff = offsets[1] * nx;
                 const index_t koff = offsets[2] * nxny;
@@ -3835,14 +3836,14 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
                     const index_t knxny = koff + k * nxny;
                     for(index_t j = 0; j < this_dim_lengths[1]-1; j++)
                     {
-                        const index_t this_jnx = j * this_nx;
+                        const index_t this_jnx = this_knxny + j * this_nx;
                         const index_t jnx = joff + j * nx;
                         for(index_t i = 0; i < this_dim_lengths[0]-1; i++)
                         {
                             const index_t id  = knxny + jnx + ioff + i;
                             const index_t idx = id * 2;
-                            emap_da[idx] = dom_idx;
-                            emap_da[idx] = this_knxny + this_jnx + i;
+                            emap_da[idx]   = dom_idx;
+                            emap_da[idx+1] = this_jnx + i;
                         }
                     }
                 }
@@ -3862,7 +3863,7 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
                     {
                         pmap_da[idx] = jnx + ioff + i;
                     }
-            }
+                }
             }
 
             // Do element_map
@@ -4675,15 +4676,47 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
         const auto xtype = xnode->dtype();
         const auto ytype = ynode->dtype();
         const auto ztype = znode->dtype();
-        // TODO: Handle different types
-        auto xarray = xnode->as_double_array();
-        auto yarray = ynode->as_double_array();
-        auto zarray = znode->as_double_array();
-        const index_t N = xarray.number_of_elements();
-        for(index_t i = 0; i < N; i++)
+        if(xtype.is_float32() && ytype.is_float32() && ztype.is_float32())
         {
-            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
-            func(p, 3);
+            auto xarray = xnode->as_float32_array();
+            auto yarray = ynode->as_float32_array();
+            auto zarray = znode->as_float32_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
+                func(p, 3);
+            }
+        }
+        else if(xtype.is_float64() && ytype.is_float64() && ztype.is_float64())
+        {
+            auto xarray = xnode->as_float64_array();
+            auto yarray = ynode->as_float64_array();
+            auto zarray = znode->as_float64_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
+                func(p, 3);
+            }
+        }
+        else
+        {
+            Node xtemp, ytemp, ztemp;
+            const DataType xdt = DataType(xtype.id(), 1);
+            const DataType ydt = DataType(ytype.id(), 1);
+            const DataType zdt = DataType(ztype.id(), 1);
+            const index_t N = xtype.number_of_elements();
+            for(index_t  i = 0; i < N; i++)
+            {
+                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
+                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
+                ztemp.set_external(zdt, const_cast<void*>(znode->element_ptr(i)));
+                p[0] = xtemp.to_float64();
+                p[1] = ytemp.to_float64();
+                p[2] = ztemp.to_float64();
+                func(p, 3);
+            }
         }
     }
     else if(xnode && ynode)
@@ -4691,7 +4724,7 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
         // 2D
         const auto xtype = xnode->dtype();
         const auto ytype = ynode->dtype();
-        if(xnode->dtype().is_float32())
+        if(xtype.is_float32() && ytype.is_float32())
         {
             auto xarray = xnode->as_float32_array();
             auto yarray = ynode->as_float32_array();
@@ -4699,10 +4732,10 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
             for(index_t i = 0; i < N; i++)
             {
                 p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-                func(p, 2);
+                func(p, 3);
             }
         }
-        else
+        else if(xtype.is_float64() && ytype.is_float64())
         {
             auto xarray = xnode->as_float64_array();
             auto yarray = ynode->as_float64_array();
@@ -4713,18 +4746,60 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
                 func(p, 2);
             }
         }
+        else
+        {
+            Node xtemp, ytemp;
+            const DataType xdt = DataType(xtype.id(), 1);
+            const DataType ydt = DataType(ytype.id(), 1);
+            const index_t N = xtype.number_of_elements();
+            for(index_t  i = 0; i < N; i++)
+            {
+                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
+                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
+                p[0] = xtemp.to_float64();
+                p[1] = ytemp.to_float64();
+                p[2] = 0.;
+                func(p, 2);
+            }
+        }
     }
     else if(xnode)
     {
         // 1D
         const auto xtype = xnode->dtype();
-        // TODO: Handle different types
-        auto xarray = xnode->as_double_array();
-        const index_t N = xarray.number_of_elements();
-        for(index_t i = 0; i < N; i++)
+        if(xtype.is_float32())
         {
-            p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
-            func(p, 1);
+            auto xarray = xnode->as_float32_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
+                func(p, 1);
+            }
+        }
+        else if(xtype.is_float64())
+        {
+            auto xarray = xnode->as_float64_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
+                func(p, 1);
+            }
+        }
+        else
+        {
+            Node xtemp;
+            const DataType xdt = DataType(xtype.id(), 1);
+            const index_t N = xtype.number_of_elements();
+            for(index_t  i = 0; i < N; i++)
+            {
+                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
+                p[0] = xtemp.to_float64();
+                p[1] = 0.;
+                p[2] = 0.;
+                func(p, 1);
+            }
         }
     }
     else
@@ -5884,7 +5959,7 @@ determine_schema(const Node &in,
     }
     else
     {
-        out_ncomps = num_children;
+        out_ncomps = 1;
         out_schema.set(DataType(in.dtype().id(), ntuples));
     }
 }
