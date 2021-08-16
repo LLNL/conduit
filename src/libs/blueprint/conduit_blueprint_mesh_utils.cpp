@@ -987,11 +987,13 @@ coordset::extents(const Node &n)
             index_t origin = 0;
             float64 spacing = 1.0;
             index_t dim = n["dims"][LOGICAL_AXES[i]].to_index_t();
-            if(n.has_child("origin"))
+            if(n.has_child("origin")
+                && n["origin"].has_child(csys_axes[i]))
             {
                 origin = n["origin"][csys_axes[i]].to_index_t();
             }
-            if(n.has_child("spacing"))
+            if(n.has_child("spacing")
+                && n["spacing"].has_child("d"+csys_axes[i]))
             {
                 spacing = n["spacing"]["d" + csys_axes[i]].to_float64();
             }
