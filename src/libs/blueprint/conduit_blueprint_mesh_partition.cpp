@@ -3940,7 +3940,6 @@ static bool
 combine_implicit(const std::vector<const Node *> &n_inputs, 
                  double tolerance, Node &output)
 {
-    std::cout << "Entering combine_implicit!" << std::endl;
     output.reset();
     if(n_inputs.size() == 1)
     {
@@ -4087,7 +4086,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
     while(csets_and_bbs.size() > 1)
     {
         // Print the work in progress
-        std::cout << "iteration " << iteration << "\n";
+        // std::cout << "iteration " << iteration << "\n";
     #if 0
         for(size_t ei = 0; ei < csets_and_bbs.size(); ei++)
         {
@@ -4164,7 +4163,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
                         new_cset["type"] = type;
                         if(type == "uniform")
                         {
-                            std::cout << "Handling uniform combine" << std::endl;
+                            // std::cout << "Handling uniform combine" << std::endl;
                             std::vector<double> spacing = {1, 1, 1};
                             if(output.has_child("spacing"))
                             {
@@ -4203,7 +4202,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
                         }
                         else if(type == "rectilinear")
                         {
-                            std::cout << "Handling rectilinear combine" << std::endl;
+                            // std::cout << "Handling rectilinear combine" << std::endl;
                             // We need to further check that the spacing along the matched edge/plane is okay
                             bool ok = true;
                             index_t dim_sizes[3];
@@ -4300,7 +4299,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
             break;
         }
     }
-    std::cout << "REMAINING DOMAINS " << csets_and_bbs.size() << std::endl;
+    // std::cout << "REMAINING DOMAINS " << csets_and_bbs.size() << std::endl;
     bool retval = false;
     if(csets_and_bbs.size() == 1)
     {
@@ -6223,7 +6222,7 @@ partitioner::combine(int domain,
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
     // Handle trivial cases
-    std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
+    // std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
     // std::cout << "INPUTS:";
     // for(const Node *in : inputs)
     // {
@@ -6253,7 +6252,7 @@ partitioner::combine(int domain,
 
     // Determine the combine approach
     std::string rt(recommended_topology(inputs));
-    std::cout << "Recommended approach: " << rt << std::endl;
+    // std::cout << "Recommended approach: " << rt << std::endl;
 
     // Combine the coordsets
     // Determine names of all coordsets
@@ -6392,6 +6391,8 @@ partitioner::combine(int domain,
 
             Node opts;
             opts["type"] = rt;
+            // std::cout << "Resulting pointmaps: " << std::endl;
+            // pointmaps->print();
             topology::combine(topo_group.second, *pointmaps, output_coordsets[*itr], 
                 output_topologies.add_child(topo_group.first), &opts);
             if(output_coordsets[*itr].has_child("element_map"))
@@ -6732,7 +6733,7 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &top
         }
     }
     
-    std::cout << "combining topology as type " << type << std::endl;
+    // std::cout << "combining topology as type " << type << std::endl;
     if(type == "rectilinear" || type == "uniform")
     {
         if(!(coordset["type"].as_string() == "rectilinear" || 
