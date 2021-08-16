@@ -1050,12 +1050,12 @@ coordset::extents(const Node &n)
 // -- begin conduit::blueprint::mesh::utils::coordset::uniform --
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-std::vector<index_t>
+std::vector<double>
 coordset::uniform::spacing(const Node &n)
 {
     auto info = get_coordset_info(n);
     const auto &cset_axes = info.second;
-    std::vector<index_t> retval(cset_axes.size(), 1);
+    std::vector<double> retval(cset_axes.size(), 1);
     if(n.has_child("spacing"))
     {
         const Node &n_spacing = n["spacing"];
@@ -1064,7 +1064,7 @@ coordset::uniform::spacing(const Node &n)
             const std::string child_name = "d"+cset_axes[i];
             if(n_spacing.has_child(child_name))
             {
-                retval[i] = n_spacing[child_name].to_index_t();
+                retval[i] = n_spacing[child_name].to_double();
             }
         }
     }

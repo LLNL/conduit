@@ -286,7 +286,7 @@ namespace coordset
         @brief Reads the given uniform coordset and extracts to spacing
                to an index_t vector
         */
-        std::vector<index_t> spacing(const Node &n);
+        std::vector<double> spacing(const Node &n);
 
         std::vector<index_t> origin(const Node &n);
     }
