@@ -171,6 +171,7 @@ default_error_handler(const std::string &msg,
                       const std::string &file,
                       int line)
 {
+    std::cout << msg  << " " << file << " " << line << std::endl;
     throw conduit::Error( msg, file, line);
 }
 

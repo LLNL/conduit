@@ -82,7 +82,10 @@ if(MPI_FOUND)
         add_cpp_mpi_test(TEST t_blueprint_mpi_mesh_parmetis
                          NUM_MPI_TASKS 2
                          DEPENDS_ON conduit
-                                    conduit_blueprint_mpi)
+                                    conduit_blueprint_mpi
+                                    conduit_relay
+                                    conduit_relay_mpi
+                                    conduit_relay_mpi_io)
     else()
         message(STATUS "Parmetis disabled: Skipping conduit_blueprint_mpi_mesh_parmetis tests")
     endif()

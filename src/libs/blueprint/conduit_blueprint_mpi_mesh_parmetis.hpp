@@ -45,9 +45,15 @@ namespace mesh
 {
 
 // NOTE: Final Name TBD
+// result is added to the mesh b/c we are multi domain here?
+
 //-------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API generate_partition_field(const conduit::Node &mesh,
-                                                    Node &field_out,
+void CONDUIT_BLUEPRINT_API generate_partition_field(conduit::Node &mesh,
+                                                    MPI_Comm comm);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_partition_field(conduit::Node &mesh,
+                                                    const conduit::Node &options,
                                                     MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
