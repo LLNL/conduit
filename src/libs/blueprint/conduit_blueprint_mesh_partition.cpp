@@ -6577,7 +6577,7 @@ partitioner::combine(int domain,
             index_t dom_id = pi;
             if(inputs[pi]->has_path("state/domain_id"))
             {
-                pi = (*inputs[pi])["state/domain_id"].to_index_t();
+                dom_id = (*inputs[pi])["state/domain_id"].to_index_t();
             }
             const auto &pmap = pointmaps[pi];
             for(index_t vi = 0; vi < pmap.number_of_elements(); vi++)
