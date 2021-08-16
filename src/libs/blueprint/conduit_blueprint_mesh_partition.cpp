@@ -6309,7 +6309,7 @@ partitioner::combine(int domain,
 #endif
         conduit::Node opts;
         opts["type"] = ((rt == "rectilinear" || rt == "uniform") ? "implicit" : "explicit");
-        opts["tolerance"] = merge_tolerance;
+        opts["merge_tolerance"] = merge_tolerance;
         for(index_t i = 0; i < ngroups; i++)
         {
             const auto &coordset_group = coordset_groups[i];
@@ -6633,7 +6633,7 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coo
     std::string approach = "explicit";
     if(options)
     {
-        const Node *n_tolerance = options->fetch_ptr("tolerance");
+        const Node *n_tolerance = options->fetch_ptr("merge_tolerance");
         if(n_tolerance)
         {
             tolerance = n_tolerance->to_double();

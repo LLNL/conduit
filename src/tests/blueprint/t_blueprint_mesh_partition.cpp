@@ -196,7 +196,6 @@ save_visit(const std::string &filename, const conduit::Node &n)
     conduit::relay::io::save(root, fn_noext + "_yaml.root", "yaml");
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 void
 tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
@@ -909,8 +908,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, one)
     std::vector<const conduit::Node*> one;
     one.push_back(&braid_coordset);
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(one, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(one, output, &opts);
 
     conduit::Node info;
     bool different = braid_coordset.diff(output["coordsets/coords"], info);
@@ -933,8 +935,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, same)
     std::vector<const conduit::Node*> same;
     same.push_back(&braid_coordset); same.push_back(&braid_coordset);
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(same, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(same, output, &opts);
 
     conduit::Node info;
     bool different = braid_coordset["type"].diff(output["type"], info);
@@ -963,8 +968,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     std::vector<const conduit::Node*> different;
     different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(different, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(different, output, &opts);
 
     conduit::Node info;
     bool is_different0 = different[0]->diff(output["coordsets/coords"], info);
@@ -1007,8 +1015,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
         multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
     }
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(multidomain, output, &opts);
 
     static const std::string filename = baseline_file("pointmerge_multidomain4");
 #ifdef GENERATE_BASELINES
@@ -1047,8 +1058,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
         multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
     }
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(multidomain, output, &opts);
 
     static const std::string filename = baseline_file("pointmerge_multidomain8");
 #ifdef GENERATE_BASELINES
@@ -1401,7 +1415,6 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
         to_polys_case(c, dims3);
     }
 }
-#endif
 
 TEST(conduit_blueprint_mesh_combine, uniform)
 {
