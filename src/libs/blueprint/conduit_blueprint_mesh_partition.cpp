@@ -3786,6 +3786,7 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
     DataArray<index_t> emap_da = out_element_map.value();
 
     std::cout << n_coordsets.size() << "COORDSETS SIZE" << std::endl;
+    // final_cset.print();
     index_t dom_idx = 0;
     for(const Node *n_cset : n_coordsets)
     {
@@ -3867,7 +3868,7 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
 
             // Do element_map
             {
-                const index_t nx   = final_dim_lengths[0]-1;
+                const index_t nx   = elem_dims[0];
                 const index_t ioff = offsets[0];
                 const index_t joff = offsets[1] * nx;
                 const index_t this_nx = this_dim_lengths[0]-1;
@@ -3879,8 +3880,8 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
                     {
                         const index_t id  = jnx + ioff + i;
                         const index_t idx = id * 2;
-                        emap_da[idx] = dom_idx;
-                        emap_da[idx] = this_jnx + i;
+                        emap_da[idx]   = dom_idx;
+                        emap_da[idx+1] = this_jnx + i;
                     }
                 }
             }
@@ -3911,6 +3912,8 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
 
         dom_idx++;
     }
+
+    emap_da.print();
 }
 
 static const std::vector<std::string> &
@@ -3969,24 +3972,12 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
 
     std::vector<Node> temp_nodes;
     std::vector<const Node*> n_coordsets;
-    index_t mode = 0;
     index_t dimension = dims(*n_inputs[0]);
     if(type == "uniform")
     {
         // Inspect input[0] for baseline spacing/dimension
-        std::array<double, 3> baseline_spacing = {1., 1., 1.};
-        if(n_inputs[0]->has_child("spacing"))
-        {
-            for(index_t d = 0; d < dimension; d++)
-            {
-                const Node *n_spacing = n_inputs[0]->fetch_ptr("spacing/d"+axes[d]);
-                if(n_spacing)
-                {
-                    baseline_spacing[d] = n_spacing->to_double();
-                }
-            }
-        }
-
+        const auto baseline_spacing = mesh::utils::coordset::uniform::spacing(*n_inputs[0]);
+        n_coordsets.push_back(n_inputs[0]);
         for(size_t i = 1; i < n_inputs.size(); i++)
         {
             const Node &n_input = *n_inputs[i];
@@ -3997,18 +3988,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
             }
 
             // Get spacing for this domain
-            std::array<double, 3> spacing{1., 1., 1.};
-            if(n_input.has_child("spacing"))
-            {
-                for(index_t d = 0; d < dimension; d++)
-                {
-                    const Node *n_spacing = n_inputs[i]->fetch_ptr("spacing/d"+axes[d]);
-                    if(n_spacing)
-                    {
-                        spacing[d] = n_spacing->to_double();
-                    }
-                }
-            }
+            const auto spacing = mesh::utils::coordset::uniform::spacing(n_input);
             // Check that spacing matches
             for(index_t d = 0; d < dimension; d++)
             {
@@ -4049,7 +4029,6 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
                     output["spacing/d"+axes[d]].set(baseline_spacing[d]);
                 }
             }
-            mode = 0;
         }
     }
 
@@ -4078,11 +4057,6 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
             {
                 n_coordsets.push_back(n_inputs[i]);
             }
-        }
-
-        if(type == "rectilinear")
-        {
-            mode = 1;
         }
     }
 
@@ -4192,9 +4166,14 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
                         if(type == "uniform")
                         {
                             std::cout << "Handling uniform combine" << std::endl;
+                            std::vector<double> spacing = {1, 1, 1};
                             if(output.has_child("spacing"))
                             {
                                 new_cset["spacing"] = output["spacing"];
+                                for(index_t dj = 0; dj < dimension; dj++)
+                                {
+                                    spacing[dj] = output["spacing"][dj].to_double();
+                                }
                             }
 
                             Schema s_origin;
@@ -4213,9 +4192,10 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
 
                             for(index_t dj = 0; dj < dimension; dj++)
                             {
-                                const std::string dims_path = "dims/"+mesh::utils::LOGICAL_AXES[di];
+                                const std::string dims_path = "dims/"+mesh::utils::LOGICAL_AXES[dj];
                                 new_cset["origin/"+axes[dj]] = exti.min[dj];
-                                new_cset[dims_path] = (*n_cseti)[dims_path].to_index_t() + (*n_csetj)[dims_path].to_index_t();
+                                // Extents are inclusive so we need to add 1 to the difference
+                                new_cset[dims_path] = (index_t)(((exti.max[dj] - exti.min[dj]) / spacing[dj]) + 1.5);
                             }
                             csets_and_bbs[ei].first = &new_cset;
                             csets_and_bbs.erase(csets_and_bbs.begin() + ej);
@@ -6131,6 +6111,11 @@ partitioner::combine(int domain,
     //       topologies.
     // Handle trivial cases
     std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
+    // std::cout << "INPUTS:";
+    // for(const Node *in : inputs)
+    // {
+    //     in->print();
+    // }
     output.reset();
     const auto sz = inputs.size();
     if(sz == 0)
@@ -6216,6 +6201,9 @@ partitioner::combine(int domain,
         {
             const auto &coordset_group = coordset_groups[i];
             coordset::combine(coordset_group, output_coordsets.add_child(coordset_names[i]), &opts);
+            // pointmaps / element_map are correct!
+            // std::cout << "COMBINED CSET" << std::endl;
+            // output_coordsets[coordset_names[i]].print();
         }
     }
 
@@ -6289,7 +6277,14 @@ partitioner::combine(int domain,
             const Node *pointmaps = output_coordsets[*itr].fetch_ptr("pointmaps");
             if(!pointmaps) { continue; }
 
-            topology::combine(topo_group.second, *pointmaps, output_coordsets[*itr], output_topologies.add_child(topo_group.first));
+            Node opts;
+            opts["type"] = rt;
+            topology::combine(topo_group.second, *pointmaps, output_coordsets[*itr], 
+                output_topologies.add_child(topo_group.first), &opts);
+            if(output_coordsets[*itr].has_child("element_map"))
+            {
+                output_coordsets[*itr].remove_child("element_map");
+            }
         }
     }
 
@@ -6376,7 +6371,6 @@ partitioner::combine(int domain,
                 continue;
             }
             Node &out_coordset = output_coordsets[assoc_cset_name];
-
             fields::combine(field_group, out_topo, out_coordset, output_fields[field_name]);
         }
     }
@@ -6385,38 +6379,49 @@ partitioner::combine(int domain,
     if(!output_fields.has_child("original_element_ids"))
     {
         // Q: What happens in the case of multiple topologies?
-        DataArray<index_t> elem_map = output_topologies[0]["element_map"].value();
+        const Node &n_elem_map = output_topologies[0]["element_map"];
         Node &out_field = output_fields["original_element_ids"];
         out_field["topology"].set(output_topologies[0].name());
         // utils::ASSOCIATIONS[1]
         out_field["association"].set("element");
-        const index_t sz = elem_map.dtype().number_of_elements() / 2;
-        const DataType dt(elem_map.dtype().id(), sz);
-        out_field["values"]["domains"].set(dt);
-        out_field["values"]["ids"].set(dt);
-        DataArray<index_t> out_domains = out_field["values"]["domains"].value();
-        DataArray<index_t> out_ids     = out_field["values"]["ids"].value();
+        Schema s;
+        const DataType &dt = n_elem_map.dtype();
+        const index_t sz = dt.number_of_elements() / 2;
+        s["domains"].set(DataType(dt.id(), sz, 0, 
+            2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
+        s["values"].set(DataType(dt.id(), sz, 1*dt.element_bytes(),
+            2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
+        out_field["values"].set(s);
+
+        std::memcpy(
+            out_field["values/domains"].element_ptr(0),
+            n_elem_map.element_ptr(0),
+            dt.element_bytes()*dt.number_of_elements());
 
         std::vector<index_t> domain_map;
+        bool has_domain_ids = false;
         for(index_t i = 0; i < (index_t)inputs.size(); i++)
         {
             if(inputs[i]->has_path("state/domain_id"))
             {
-                domain_map.push_back((*inputs[i])["state/domain_id"].to_index_t());
+                const index_t did = (*inputs[i])["state/domain_id"].to_index_t();
+                if(did != i)
+                {
+                    domain_map.push_back(did);
+                    has_domain_ids = true;
+                    continue;
+                }
             }
-            else
-            {
-                domain_map.push_back(i);
-            }
+            domain_map.push_back(i);
         }
 
-        index_t idx = 0;
-        index_t out_idx = 0;
-        while(idx < elem_map.number_of_elements())
+        if(has_domain_ids)
         {
-            out_domains[out_idx] = domain_map[elem_map[idx++]];
-            out_ids[out_idx]     = elem_map[idx++];
-            out_idx++;
+            DataArray<index_t> out_domains = out_field["values/domains"].value();
+            for(index_t i = 0; i < out_domains.number_of_elements(); i++)
+            {
+                out_domains[i] = domain_map[out_domains[i]];
+            }
         }
 
     }
@@ -6613,12 +6618,21 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &top
             }
         }
     }
-
+    
+    std::cout << "combining topology as type " << type << std::endl;
     if(type == "rectilinear" || type == "uniform")
     {
-        output["type"] = type;
-        output["coordset"] = coordset.name();
-        output["element_map"] = coordset["element_map"];
+        if(!(coordset["type"].as_string() == "rectilinear" || 
+            coordset["type"].as_string() == "uniform"))
+        {
+            type = "unstructured";
+        }
+        else
+        {
+            output["type"] = type;
+            output["coordset"] = coordset.name();
+            output["element_map"] = coordset["element_map"];
+        }
     }
     
     if(type == "unstructured")
