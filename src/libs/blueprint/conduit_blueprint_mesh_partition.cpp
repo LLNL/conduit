@@ -2757,7 +2757,8 @@ private:
     {
         cartesian,
         cylindrical,
-        spherical
+        spherical,
+        logical
     };
 
     int examine_extents(std::vector<std::vector<float64>> &extents) const;
@@ -3785,8 +3786,6 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
     out_element_map.set(DataType::index_t(Nelem*2));
     DataArray<index_t> emap_da = out_element_map.value();
 
-    std::cout << n_coordsets.size() << "COORDSETS SIZE" << std::endl;
-    // final_cset.print();
     index_t dom_idx = 0;
     for(const Node *n_cset : n_coordsets)
     {
@@ -3912,8 +3911,6 @@ build_implicit_maps(const std::vector<const Node *> &n_coordsets,
 
         dom_idx++;
     }
-
-    emap_da.print();
 }
 
 static const std::vector<std::string> &
@@ -4066,7 +4063,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
         return false;
     }
     
-    std::cout << "Passed preliminary check! In mode " << type << std::endl;
+    // std::cout << "Passed preliminary check! In mode " << type << std::endl;
 
     // Make sure extents matchup in the correct way
     std::vector<combine_implicit_data_t> csets_and_bbs;
@@ -4090,7 +4087,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
     {
         // Print the work in progress
         std::cout << "iteration " << iteration << "\n";
-    #if 1
+    #if 0
         for(size_t ei = 0; ei < csets_and_bbs.size(); ei++)
         {
             // const Node *n = csets_and_bbs[ei].first;
@@ -4110,13 +4107,14 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
         std::cout << std::endl;
     #elif 0
         output.print();
-    #else
+    #elif 0
         for(size_t ei = 0; ei < csets_and_bbs.size(); ei++)
         {
             std::cout << "[" << ei << "]" << std::endl;
             csets_and_bbs[ei].first->print();        
         }
         std::cout << std::endl;
+    #else
     #endif
         iteration++;
 
@@ -4231,7 +4229,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
                                 }
                             }
 
-                            std::cout << "ok? " << ok << std::endl;
+                            // std::cout << "ok? " << ok << std::endl;
 
                             if(!ok)
                             {
@@ -4240,7 +4238,7 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
                                 break;
                             }
 
-                            std::cout << "Made it to the heavy lifting!" << std::endl;
+                            // std::cout << "Made it to the heavy lifting!" << std::endl;
 
                             // Update the extents
                             exti.min[di] = std::min(exti.min[di], extj.min[di]);
@@ -4271,7 +4269,6 @@ combine_implicit(const std::vector<const Node *> &n_inputs,
                                     {
                                         const Node &n_in_values = *n_in_di[i];
                                         out_idx = copy_node_data(n_in_values, n_out_values, out_idx);
-                                        std::cout << out_idx << std::endl;
                                     }
                                 }
                                 else
@@ -4343,11 +4340,10 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
     //  - Systems
     //  - Types
     //  - Dimension
-
     std::vector<Node> working_sets;
     std::vector<coord_system> systems;
     std::vector<std::vector<float64>> extents;
-    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0;
+    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0, nlogical = 0;
     index_t dimension = 0;
     for(size_t i = 0u; i < coordsets.size(); i++)
     {
@@ -4380,6 +4376,11 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
         {
             nspherical++;
             systems.push_back(coord_system::spherical);
+        }
+        else if(system == "logical")
+        {
+            nlogical++;
+            systems.push_back(coord_system::logical);
         }
         else // system == cartesian
         {
@@ -4425,6 +4426,7 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
     }
 
     int noverlapping_sets = examine_extents(extents);
+    PM_DEBUG_PRINT("I was given " << coordsets.size() << " I am combining " << working_sets.size() << std::endl);
     PM_DEBUG_PRINT("noverlapping sets: " << noverlapping_sets << std::endl);
     if(noverlapping_sets == 0)
     {
@@ -4510,13 +4512,15 @@ point_merge::append_data(const std::vector<Node> &coordsets,
         };
 
 
-        if(systems[i] == out_system)
+        // Invoke the proper lambda on each coordinate
+        if(systems[i] != out_system
+            && systems[i] != coord_system::logical)
         {
-            iterate_coordinates(coordsets[i], append);
+            iterate_coordinates(coordsets[i], translate_append);
         }
         else
         {
-            iterate_coordinates(coordsets[i], translate_append);
+            iterate_coordinates(coordsets[i], append);
         }
     }
 }
@@ -4586,6 +4590,13 @@ point_merge::create_output(index_t dimension, Node &output) const
 
     // Add the pointmaps
     {
+    #ifdef DEBUG_POINT_MERGE
+        std::cout << "ID MAP SIZES:" << std::endl;
+        for(const auto &idmap : old_to_new_ids)
+        {
+            std::cout << "  " << idmap.size() << std::endl;
+        }
+    #endif
         auto &pointmaps = output["pointmaps"];
         for(const auto &idmap : old_to_new_ids)
         {
@@ -4609,13 +4620,22 @@ void
 point_merge::iterate_coordinates(const Node &coordset, Func &&func)
 {
     if(!coordset.has_child("type"))
+    {
+        CONDUIT_ERROR("Coordset does not have a type");
         return;
+    }
 
     if(coordset["type"].as_string() != "explicit")
+    {
+        CONDUIT_ERROR("Coordset is not explicit");
         return;
+    }
 
     if(!coordset.has_child("values"))
+    {
+        CONDUIT_ERROR("Coordset does not have values");
         return;
+    }
 
     const Node &coords = coordset["values"];
 
@@ -4639,6 +4659,12 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
             // Spherical
             znode = coords.fetch_ptr("phi");
         }
+    }
+    else if(((xnode = coords.fetch_ptr("i"))))
+    {
+        // Logical
+        ynode = coords.fetch_ptr("j");
+        znode = coords.fetch_ptr("k");
     }
 
     // Iterate accordingly
@@ -4703,7 +4729,7 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
     }
     else
     {
-        // ERROR! No valid nodes passed.
+        CONDUIT_ERROR("No valid node values found.");
     }
 }
 
@@ -4724,11 +4750,20 @@ point_merge::reserve_vectors(const std::vector<Node> &coordsets, index_t dimensi
             {
                 xnode = values->fetch_ptr("r");
             }
+            if(!xnode)
+            {
+                xnode = values->fetch_ptr("i");
+            }
 
             if(xnode)
             {
                 npts = xnode->dtype().number_of_elements();
             }
+        #ifdef DEBUG_POINT_MERGE
+            std::cout << "coordset " << i << " ";
+            std::cout << npts << std::endl;
+            coordsets[i].print();
+        #endif
         }
 
         old_to_new_ids.push_back({});
@@ -4790,7 +4825,8 @@ point_merge::simple_merge_data(const std::vector<Node> &coordsets,
         };
 
         // Invoke the proper lambda on each coordinate
-        if(systems[i] != coord_system::cartesian)
+        if(systems[i] != coord_system::cartesian
+            && systems[i] != coord_system::logical)
         {
             iterate_coordinates(coordset, translate_merge);
         }
@@ -4848,7 +4884,8 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
         };
 
         // Invoke the proper lambda on each coordinate
-        if(systems[i] != coord_system::cartesian)
+        if(systems[i] != coord_system::cartesian
+            && systems[i] != coord_system::logical)
         {
             iterate_coordinates(coordset, translate_merge);
         }
@@ -4935,7 +4972,8 @@ point_merge::truncate_merge(const std::vector<Node> &coordsets,
         };
 
         // Invoke the proper lambda on each coordinate
-        if(systems[i] != out_system)
+        if(systems[i] != out_system
+            && systems[i] != coord_system::logical)
         {
             iterate_coordinates(coordset, translate_merge);
         }
