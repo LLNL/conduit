@@ -24,9 +24,15 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-//#define GENERATE_BASELINES
+// #define GENERATE_BASELINES
 
 // #define USE_ERROR_HANDLER
+
+#ifndef ALWAYS_PRINT
+static const bool always_print = false;
+#else
+static const bool always_print = true;
+#endif
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
@@ -888,12 +894,6 @@ TEST(conduit_blueprint_mesh_partition, quads_ranges_2d)
 //-----------------------------------------------------------------------------
 //-- Point merge
 //-----------------------------------------------------------------------------
-#ifndef ALWAYS_PRINT
-static const bool always_print = false;
-#else
-static const bool always_print = true;
-#endif
-
 // The tolerance used by all of the point merge tests
 static const double tolerance = 0.00001;
 
@@ -908,8 +908,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, one)
     std::vector<const conduit::Node*> one;
     one.push_back(&braid_coordset);
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(one, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(one, output, &opts);
 
     conduit::Node info;
     bool different = braid_coordset.diff(output["coordsets/coords"], info);
@@ -932,8 +935,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, same)
     std::vector<const conduit::Node*> same;
     same.push_back(&braid_coordset); same.push_back(&braid_coordset);
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(same, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(same, output, &opts);
 
     conduit::Node info;
     bool different = braid_coordset["type"].diff(output["type"], info);
@@ -962,8 +968,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     std::vector<const conduit::Node*> different;
     different.push_back(&braid_coordset); different.push_back(&polytess_coordset);
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(different, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(different, output, &opts);
 
     conduit::Node info;
     bool is_different0 = different[0]->diff(output["coordsets/coords"], info);
@@ -1006,8 +1015,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain4)
         multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
     }
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(multidomain, output, &opts);
 
     static const std::string filename = baseline_file("pointmerge_multidomain4");
 #ifdef GENERATE_BASELINES
@@ -1046,8 +1058,11 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
         multidomain.push_back(dom.fetch_ptr("coordsets/coords"));
     }
 
+    conduit::Node opts;
+    opts["merge_tolerance"] = tolerance;
+
     conduit::Node output;
-    conduit::blueprint::mesh::coordset::combine(multidomain, output, tolerance);
+    conduit::blueprint::mesh::coordset::combine(multidomain, output, &opts);
 
     static const std::string filename = baseline_file("pointmerge_multidomain8");
 #ifdef GENERATE_BASELINES
@@ -1073,32 +1088,6 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
 //-----------------------------------------------------------------------------
 //-- Combine topology --
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_combine, multidomain4)
-{
-    // Use the spiral example to attach domains that we know are connected
-    conduit::Node spiral;
-    conduit::blueprint::mesh::examples::spiral(4, spiral);
-
-    std::vector<const conduit::Node*> multidomain;
-    const conduit::index_t ndom = spiral.number_of_children();
-    for(conduit::index_t i = 0; i < ndom; i++)
-    {
-        multidomain.push_back(spiral.child_ptr(i));
-    }
-
-    conduit::Node output;
-    conduit::blueprint::mesh::partitioner p;
-    p.combine(0, multidomain, output);
-
-    std::cout << "Input: " << std::endl;
-    spiral.print();
-    std::cout << "Output: " << std::endl;
-    output.print();
-
-    save_visit("before_combine_topology", spiral);
-    save_visit("after_combine_topology", output);
-}
-
 TEST(conduit_blueprint_mesh_combine, recombine_braid)
 {
     const auto recombine_braid_case = [](const std::string &case_name, const conduit::index_t *vdims)
@@ -1202,6 +1191,7 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
     }
 }
 
+#define DEBUG_COMBINE_MULTIDOMAIN
 TEST(conduit_blueprint_mesh_combine, multidomain)
 {
     const std::string base_name = "combine_multidomain";
@@ -1245,7 +1235,7 @@ TEST(conduit_blueprint_mesh_combine, multidomain)
         2,
         4,
         7,
-        13
+        9
     };
     for(const auto c : cases)
     {
@@ -1397,5 +1387,264 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
     for(const auto &c : cases3)
     {
         to_polys_case(c, dims3);
+    }
+}
+
+TEST(conduit_blueprint_mesh_combine, uniform)
+{
+    using namespace conduit::blueprint::mesh::examples;
+    const auto uniform_cases = [](bool is3d)
+    {
+        std::vector<conduit::Node> domains;
+        const conduit::index_t nz = (is3d) ? 3 : 1;
+        const std::string case_name = (is3d) ? "3d" : "2d";
+        const std::string base_file_name = "combine_uniform_" + case_name;
+        std::cout << "-------- Start case " << case_name << " --------" << std::endl;
+        
+        // 0
+        domains.emplace_back();
+        basic("uniform", 11, 6, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+
+        // 1
+        domains.emplace_back();
+        basic("uniform", 6, 6, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 0;
+        domains.back()["coordsets/coords/origin/y"] = 5;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 2
+        domains.emplace_back();
+        basic("uniform", 6, 6, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 5;
+        domains.back()["coordsets/coords/origin/y"] = 5;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 3
+        domains.emplace_back();
+        basic("uniform", 5, 6, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 0;
+        domains.back()["coordsets/coords/origin/y"] = 10;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 4
+        domains.emplace_back();
+        basic("uniform", 3, 3, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 4;
+        domains.back()["coordsets/coords/origin/y"] = 13;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 5
+        domains.emplace_back();
+        basic("uniform", 2, 4, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 4;
+        domains.back()["coordsets/coords/origin/y"] = 10;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 6
+        domains.emplace_back();
+        basic("uniform", 4, 4, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 5;
+        domains.back()["coordsets/coords/origin/y"] = 10;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 7
+        domains.emplace_back();
+        basic("uniform", 3, 6, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 8;
+        domains.back()["coordsets/coords/origin/y"] = 10;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // 8
+        domains.emplace_back();
+        basic("uniform", 3, 3, nz, domains.back());
+        domains.back().remove("coordsets/coords/origin");
+        domains.back().remove("coordsets/coords/spacing");
+        domains.back()["coordsets/coords/origin/x"] = 6;
+        domains.back()["coordsets/coords/origin/y"] = 13;
+        if(is3d)
+            domains.back()["coordsets/coords/origin/z"] = 0;
+
+        // Nodes that are reused through each partition call
+        conduit::Node opts;
+        opts["target"] = 1;
+        conduit::Node output;
+
+        // Mesh 0
+        conduit::Node mesh0;
+        for(conduit::index_t i = 0; i < domains.size(); i++)
+        {
+            domains[i]["state/domain_id"] = i;
+            mesh0[(i < 10) 
+                ? ("domain_0000" + std::to_string(i))
+                : ("domain_000" + std::to_string(i))] = domains[i];
+        }
+        save_visit(base_file_name + "_mesh0", mesh0);
+        std::cout << "mesh0" << std::endl;
+        conduit::blueprint::mesh::partition(mesh0, opts, output);
+        save_visit(base_file_name + "_mesh0_output", output);
+
+        {
+            const std::string filename = baseline_file(base_file_name + "_mesh0");
+        #ifdef GENERATE_BASELINES
+            make_baseline(filename, output);
+        #else
+            conduit::Node ans; load_baseline(filename, ans);
+            conduit::Node info;
+            bool is_different = ans.diff(output, info, CONDUIT_EPSILON, true);
+            EXPECT_FALSE(is_different);
+            if(is_different || always_print)
+            {
+                info.print();
+            }
+        #endif
+        }
+
+        // Mesh1 missing a section
+        conduit::Node mesh1;
+        for(conduit::index_t i = 0; i < domains.size(); i++)
+        {
+            if(i == 6)
+            {
+                if(!is3d)
+                {
+                    continue;
+                }
+                else
+                {
+                    // For 3d make it so the domain exists just not lined up properly
+                    domains[i]["coordsets/coords/origin/z"] = 1;
+                }
+            }
+            mesh1[(i < 10) 
+                ? ("domain_0000" + std::to_string(i))
+                : ("domain_000" + std::to_string(i))] = domains[i];
+        }
+        save_visit(base_file_name + "_mesh1", mesh1);
+
+        std::cout << "mesh1" << std::endl;
+        conduit::blueprint::mesh::partition(mesh1, opts, output);
+        save_visit(base_file_name + "_mesh1_output", output);
+
+        {
+            const std::string filename = baseline_file(base_file_name + "_mesh1");
+        #ifdef GENERATE_BASELINES
+            make_baseline(filename, output);
+        #else
+            conduit::Node ans; load_baseline(filename, ans);
+            conduit::Node info;
+            bool is_different = ans.diff(output, info, CONDUIT_EPSILON, true);
+            EXPECT_FALSE(is_different);
+            if(is_different || always_print)
+            {
+                info.print();
+            }
+        #endif
+        }
+
+        // Mesh 2
+        conduit::Node mesh2;
+        mesh2["domain_00000"] = domains[1];
+        mesh2["domain_00001"] = domains[2];
+        std::cout << "mesh2" << std::endl;
+        save_visit(base_file_name + "_mesh2", mesh2);
+        conduit::blueprint::mesh::partition(mesh2, opts, output);
+        // output.print();
+        save_visit(base_file_name + "_mesh2_output", output);
+
+        {
+            const std::string filename = baseline_file(base_file_name + "_mesh2");
+        #ifdef GENERATE_BASELINES
+            make_baseline(filename, output);
+        #else
+            conduit::Node ans; load_baseline(filename, ans);
+            conduit::Node info;
+            bool is_different = ans.diff(output, info, CONDUIT_EPSILON, true);
+            EXPECT_FALSE(is_different);
+            if(is_different || always_print)
+            {
+                info.print();
+            }
+        #endif
+        }
+
+        std::cout << "mesh3" << std::endl;
+        // change the spacing for domain00001, should suggest rectilinear
+        mesh2["domain_00001/coordsets/coords/spacing/dx"] = 0.5;
+        mesh2["domain_00001/coordsets/coords/spacing/dy"] = 1.0;
+        if(is3d)
+            mesh2["domain_00001/coordsets/coords/spacing/dz"] = 1.0;
+        conduit::blueprint::mesh::partition(mesh2, opts, output);
+        save_visit(base_file_name + "_mesh3_output", output);
+
+        {
+            const std::string filename = baseline_file(base_file_name + "_mesh3");
+        #ifdef GENERATE_BASELINES
+            make_baseline(filename, output);
+        #else
+            conduit::Node ans; load_baseline(filename, ans);
+            conduit::Node info;
+            bool is_different = ans.diff(output, info, CONDUIT_EPSILON, true);
+            EXPECT_FALSE(is_different);
+            if(is_different || always_print)
+            {
+                info.print();
+            }
+        #endif
+        }
+
+        std::cout << "-------- End case " << case_name << "   --------" << std::endl;
+    };
+
+    uniform_cases(false);
+    uniform_cases(true);
+}
+
+TEST(blueprint_mesh_combine, rectilinear)
+{
+    conduit::Node spiral;
+    conduit::blueprint::mesh::examples::spiral(5, spiral);
+
+    conduit::Node opts; opts["target"] = 1;
+    conduit::Node combined;
+    conduit::blueprint::mesh::partition(spiral, opts, combined);
+    save_visit("combine_rectilinear_output1", combined);
+
+    {
+        const std::string filename = baseline_file("combine_rectilinear");
+    #ifdef GENERATE_BASELINES
+        make_baseline(filename, combined);
+    #else
+        conduit::Node ans; load_baseline(filename, ans);
+        conduit::Node info;
+        bool is_different = ans.diff(combined, info, CONDUIT_EPSILON, true);
+        EXPECT_FALSE(is_different);
+        if(is_different || always_print)
+        {
+            info.print();
+        }
+    #endif
     }
 }

@@ -923,6 +923,35 @@ coordset::coordsys(const Node &n)
 }
 
 //-----------------------------------------------------------------------------
+std::vector<index_t>
+coordset::dim_lengths(const conduit::Node &n)
+{
+    auto info = get_coordset_info(n);
+    const std::string cset_type = n["type"].as_string();
+    const std::vector<std::string> &cset_axes = info.second;
+    const index_t dim = (index_t)cset_axes.size();
+
+    std::vector<index_t> retval(dim, 0);
+    for(index_t i = 0; i < dim; i++)
+    {
+        if(cset_type == "uniform")
+        {
+            retval[i] = n["dims"][LOGICAL_AXES[i]].to_index_t();
+        }
+        else if(cset_type == "rectilinear")
+        {
+            retval[i] = n["values"][cset_axes[i]].dtype().number_of_elements();
+        }
+        else // if(cset_type == "explicit")
+        {
+            retval[i] = n["values"][cset_axes[i]].dtype().number_of_elements();
+        }
+    }
+
+    return retval;
+}
+
+//-----------------------------------------------------------------------------
 template<typename data_array>
 static void
 typed_minmax(const data_array &da, float64 &out_min, float64 &out_max)
@@ -958,16 +987,18 @@ coordset::extents(const Node &n)
             index_t origin = 0;
             float64 spacing = 1.0;
             index_t dim = n["dims"][LOGICAL_AXES[i]].to_index_t();
-            if(n.has_child("origin"))
+            if(n.has_child("origin")
+                && n["origin"].has_child(csys_axes[i]))
             {
                 origin = n["origin"][csys_axes[i]].to_index_t();
             }
-            if(n.has_child("spacing"))
+            if(n.has_child("spacing")
+                && n["spacing"].has_child("d"+csys_axes[i]))
             {
                 spacing = n["spacing"]["d" + csys_axes[i]].to_float64();
             }
             min = (float64)origin;
-            max = (float64)origin + (spacing * (float64)dim);
+            max = (float64)origin + (spacing * ((float64)dim - 1.));
             if(spacing < 0.)
             {
                 std::swap(min, max);
@@ -1018,7 +1049,58 @@ coordset::extents(const Node &n)
 }
 
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::utils::coorset --
+// -- begin conduit::blueprint::mesh::utils::coordset::uniform --
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+std::vector<double>
+coordset::uniform::spacing(const Node &n)
+{
+    auto info = get_coordset_info(n);
+    const auto &cset_axes = info.second;
+    std::vector<double> retval(cset_axes.size(), 1);
+    if(n.has_child("spacing"))
+    {
+        const Node &n_spacing = n["spacing"];
+        for(index_t i = 0; i < (index_t)cset_axes.size(); i++)
+        {
+            const std::string child_name = "d"+cset_axes[i];
+            if(n_spacing.has_child(child_name))
+            {
+                retval[i] = n_spacing[child_name].to_double();
+            }
+        }
+    }
+    return retval;
+}
+
+//-----------------------------------------------------------------------------
+std::vector<index_t>
+coordset::uniform::origin(const Node &n)
+{
+    auto info = get_coordset_info(n);
+    const auto &cset_axes = info.second;
+    std::vector<index_t> retval(cset_axes.size(), 0);
+    if(n.has_child("origin"))
+    {
+        const Node &n_spacing = n["origin"];
+        for(index_t i = 0; i < (index_t)cset_axes.size(); i++)
+        {
+            const std::string child_name = cset_axes[i];
+            if(n_spacing.has_child(child_name))
+            {
+                retval[i] = n_spacing[child_name].to_index_t();
+            }
+        }
+    }
+    return retval;
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::coordset::uniform --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::coordset --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
