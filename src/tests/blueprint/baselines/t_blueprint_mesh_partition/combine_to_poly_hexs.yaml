@@ -45,7 +45,7 @@ fields:
     association: "element"
     values: 
       domains: [0, 1, 1, 1, 1]
-      ids: [0, 0, 1, 2, 3]
+      values: [0, 0, 1, 2, 3]
   original_vertex_ids: 
     topology: "mesh"
     association: "vertex"

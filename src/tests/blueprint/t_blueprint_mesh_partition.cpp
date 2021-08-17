@@ -1088,32 +1088,6 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
 //-----------------------------------------------------------------------------
 //-- Combine topology --
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_combine, multidomain4)
-{
-    // Use the spiral example to attach domains that we know are connected
-    conduit::Node spiral;
-    conduit::blueprint::mesh::examples::spiral(4, spiral);
-
-    std::vector<const conduit::Node*> multidomain;
-    const conduit::index_t ndom = spiral.number_of_children();
-    for(conduit::index_t i = 0; i < ndom; i++)
-    {
-        multidomain.push_back(spiral.child_ptr(i));
-    }
-
-    conduit::Node output;
-    conduit::blueprint::mesh::partitioner p;
-    p.combine(0, multidomain, output);
-
-    std::cout << "Input: " << std::endl;
-    spiral.print();
-    std::cout << "Output: " << std::endl;
-    output.print();
-
-    save_visit("before_combine_topology", spiral);
-    save_visit("after_combine_topology", output);
-}
-
 TEST(conduit_blueprint_mesh_combine, recombine_braid)
 {
     const auto recombine_braid_case = [](const std::string &case_name, const conduit::index_t *vdims)
@@ -1261,7 +1235,7 @@ TEST(conduit_blueprint_mesh_combine, multidomain)
         2,
         4,
         7,
-        13
+        9
     };
     for(const auto c : cases)
     {
