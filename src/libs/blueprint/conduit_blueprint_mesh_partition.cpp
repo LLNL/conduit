@@ -6211,6 +6211,104 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
     return retval;
 }
 
+std::vector<std::pair<std::string, std::vector<const Node *>>>
+group_coordsets(const std::vector<const Node *> inputs)
+{
+    // Group all the like-named coordsets
+    using cset_group_t = std::pair<std::string, std::vector<const Node*>>;
+    std::vector<cset_group_t> coordset_groups;
+    const index_t ninputs = (index_t)inputs.size();
+    for(index_t i = 0; i < ninputs; i++)
+    {
+        const Node *input = inputs[i];
+        if(!input) { continue; }
+
+        const Node *csets = input->fetch_ptr("coordsets");
+        if(!csets) { continue; }
+
+        const auto &cset_names = csets->child_names();
+        const index_t ncset_names = (index_t)cset_names.size();
+        for(index_t j = 0; j < ncset_names; j++)
+        {
+            const auto &cset_name = cset_names[j];
+            const Node *cset = csets->fetch_ptr(cset_name);
+            if(!cset) { continue; }
+
+            auto itr = std::find_if(coordset_groups.begin(), coordset_groups.end(), 
+                [&cset_name](const cset_group_t &a)
+            {
+                return a.first == cset_name;
+            });
+            if(itr != coordset_groups.end())
+            {
+                const auto idx = itr - coordset_groups.begin();
+                coordset_groups[idx].second.push_back(cset);
+            }
+            else // (itr == names.end())
+            {
+                coordset_groups.emplace_back();
+                coordset_groups.back().first = cset_name;
+                coordset_groups.back().second.push_back(cset);
+            }
+        }
+    }
+    return coordset_groups;
+}
+
+std::vector<std::pair<std::string, std::vector<const Node *>>>
+group_topologies(const std::vector<const Node *> &inputs)
+{
+    using topo_group_t = std::pair<std::string, std::vector<const Node*>>;
+    std::vector<topo_group_t> topo_groups;
+
+    // Group all the like-named toplogies
+    const index_t ninputs = (index_t)inputs.size();
+    for(index_t i = 0; i < ninputs; i++)
+    {
+        const Node *input = inputs[i];
+        if(!input) { continue; }
+
+        const Node *topos = input->fetch_ptr("topologies");
+        if(!topos) { continue; }
+
+        const auto &topo_names = topos->child_names();
+        const index_t ntopo_names = (index_t)topo_names.size();
+        for(index_t j = 0; j < ntopo_names; j++)
+        {
+            const auto &topo_name = topo_names[j];
+            const Node *topo = topos->fetch_ptr(topo_name);
+            if(!topo) { continue; }
+
+            auto itr = std::find_if(topo_groups.begin(), topo_groups.end(), [&](const topo_group_t &g) {
+                return g.first == topo_name;
+            });
+            if(itr != topo_groups.end())
+            {
+                const auto idx = itr - topo_groups.begin();
+                // Need to check if the topologies in this group have the same coordset
+                const Node *group_cset = topo_groups[idx].second[0]->fetch_ptr("coordset");
+                if(!group_cset) { continue; }
+                const Node *this_cset = topo->fetch_ptr("coordset");
+                if(!this_cset) { continue; }
+                if(group_cset->as_string() != this_cset->as_string())
+                {
+                    // Error! Cannot merge two topologies that reference different named coordsets
+                    continue;
+                }
+                topo_groups[idx].second.push_back(topo);
+            }
+            else // (itr == names.end())
+            {
+                const auto idx = topo_groups.size();
+                topo_groups.emplace_back();
+                topo_groups[idx].first = topo_name;
+                topo_groups[idx].second.push_back(topo);
+            }
+        }
+    }
+    return topo_groups;
+}
+
 //-------------------------------------------------------------------------
 void
 partitioner::combine(int domain,
@@ -6256,44 +6354,10 @@ partitioner::combine(int domain,
 
     // Combine the coordsets
     // Determine names of all coordsets
-    std::vector<std::string> coordset_names;
+    using cset_group_t = std::pair<std::string, std::vector<const Node*>>;
+    const auto coordset_groups = group_coordsets(inputs);
     Node &output_coordsets = output.add_child("coordsets");
     {
-        // Group all the like-named coordsets
-        std::vector<std::vector<const Node*>> coordset_groups;
-        const index_t ninputs = (index_t)inputs.size();
-        for(index_t i = 0; i < ninputs; i++)
-        {
-            const Node *input = inputs[i];
-            if(!input) { continue; }
-
-            const Node *csets = input->fetch_ptr("coordsets");
-            if(!csets) { continue; }
-
-            const auto &cset_names = csets->child_names();
-            const index_t ncset_names = (index_t)cset_names.size();
-            for(index_t j = 0; j < ncset_names; j++)
-            {
-                const auto &cset_name = cset_names[j];
-                const Node *cset = csets->fetch_ptr(cset_name);
-                if(!cset) { continue; }
-
-                auto itr = std::find(coordset_names.begin(), coordset_names.end(), cset_name);
-                if(itr != coordset_names.end())
-                {
-                    const auto idx = itr - coordset_names.begin();
-                    coordset_groups[idx].push_back(cset);
-                }
-                else // (itr == names.end())
-                {
-                    const auto idx = coordset_groups.size();
-                    coordset_names.push_back(cset_name);
-                    coordset_groups.emplace_back();
-                    coordset_groups[idx].push_back(cset);
-                }
-            }
-        }
-
         const index_t ngroups = (index_t)coordset_groups.size();
 #if 0
         // Some debug output to see how coordsets were grouped
@@ -6301,8 +6365,8 @@ partitioner::combine(int domain,
         for(index_t i = 0; i < ngroups; i++)
         {
             std::cout << "  -\n"
-                << "    name: " << coordset_names[i] << "\n"
-                << "    size: " << coordset_groups[i].size() << "\n";
+                << "    name: " << coordset_groups[i].first << "\n"
+                << "    size: " << coordset_groups[i].second.size() << "\n";
         }
         std::cout << std::endl;
 #endif
@@ -6312,10 +6376,7 @@ partitioner::combine(int domain,
         for(index_t i = 0; i < ngroups; i++)
         {
             const auto &coordset_group = coordset_groups[i];
-            coordset::combine(coordset_group, output_coordsets.add_child(coordset_names[i]), &opts);
-            // pointmaps / element_map are correct!
-            // std::cout << "COMBINED CSET" << std::endl;
-            // output_coordsets[coordset_names[i]].print();
+            coordset::combine(coordset_group.second, output_coordsets.add_child(coordset_group.first), &opts);
         }
     }
 
@@ -6323,54 +6384,8 @@ partitioner::combine(int domain,
     // as new unstructured topology.
     Node &output_topologies = output.add_child("topologies");
     using topo_group_t = std::pair<std::string, std::vector<const Node*>>;
-    std::vector<topo_group_t> topo_groups;
+    std::vector<topo_group_t> topo_groups = group_topologies(inputs);
     {
-        // Group all the like-named toplogies
-        const index_t ninputs = (index_t)inputs.size();
-        for(index_t i = 0; i < ninputs; i++)
-        {
-            const Node *input = inputs[i];
-            if(!input) { continue; }
-
-            const Node *topos = input->fetch_ptr("topologies");
-            if(!topos) { continue; }
-
-            const auto &topo_names = topos->child_names();
-            const index_t ntopo_names = (index_t)topo_names.size();
-            for(index_t j = 0; j < ntopo_names; j++)
-            {
-                const auto &topo_name = topo_names[j];
-                const Node *topo = topos->fetch_ptr(topo_name);
-                if(!topo) { continue; }
-
-                auto itr = std::find_if(topo_groups.begin(), topo_groups.end(), [&](const topo_group_t &g) {
-                    return g.first == topo_name;
-                });
-                if(itr != topo_groups.end())
-                {
-                    const auto idx = itr - topo_groups.begin();
-                    // Need to check if the topologies in this group have the same coordset
-                    const Node *group_cset = topo_groups[idx].second[0]->fetch_ptr("coordset");
-                    if(!group_cset) { continue; }
-                    const Node *this_cset = topo->fetch_ptr("coordset");
-                    if(!this_cset) { continue; }
-                    if(group_cset->as_string() != this_cset->as_string())
-                    {
-                        // Error! Cannot merge two topologies that reference different named coordsets
-                        continue;
-                    }
-                    topo_groups[idx].second.push_back(topo);
-                }
-                else // (itr == names.end())
-                {
-                    const auto idx = topo_groups.size();
-                    topo_groups.emplace_back();
-                    topo_groups[idx].first = topo_name;
-                    topo_groups[idx].second.push_back(topo);
-                }
-            }
-        }
-
         const index_t ngroups = topo_groups.size();
         for(index_t i = 0; i < ngroups; i++)
         {
@@ -6379,25 +6394,29 @@ partitioner::combine(int domain,
             const Node *group_cset = topo_group.second[0]->fetch_ptr("coordset");
             if(!group_cset) { continue; }
 
-            auto itr = std::find(coordset_names.begin(), coordset_names.end(), group_cset->as_string());
-            if(itr == coordset_names.end())
+            auto itr = std::find_if(coordset_groups.begin(), coordset_groups.end(), 
+                [&group_cset](const cset_group_t &a)
+            {
+                return a.first == group_cset->as_string();
+            });
+            if(itr == coordset_groups.end())
             {
                 CONDUIT_ERROR("Topology " << topo_group.first << " references unknown coordset " << group_cset->as_string());
                 continue;
             }
 
-            const Node *pointmaps = output_coordsets[*itr].fetch_ptr("pointmaps");
+            const Node *pointmaps = output_coordsets[itr->first].fetch_ptr("pointmaps");
             if(!pointmaps) { continue; }
 
             Node opts;
             opts["type"] = rt;
             // std::cout << "Resulting pointmaps: " << std::endl;
             // pointmaps->print();
-            topology::combine(topo_group.second, *pointmaps, output_coordsets[*itr], 
+            topology::combine(topo_group.second, *pointmaps, output_coordsets[itr->first], 
                 output_topologies.add_child(topo_group.first), &opts);
-            if(output_coordsets[*itr].has_child("element_map"))
+            if(output_coordsets[itr->first].has_child("element_map"))
             {
-                output_coordsets[*itr].remove_child("element_map");
+                output_coordsets[itr->first].remove_child("element_map");
             }
         }
     }
