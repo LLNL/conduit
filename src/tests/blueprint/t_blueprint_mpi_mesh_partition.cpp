@@ -125,14 +125,14 @@ TEST(blueprint_mesh_mpi_partition, all_ranks)
     int ndomains[] = {3,2,1,1};
     distribute_domains(rank, ndomains, spiral, input);
 
-    // Goes from 7 to 10 domains
+    // Go from 7 to 10 domains
     const char *opt0 =
 "target: 10";
     options.reset(); options.parse(opt0, "yaml");
     conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
+    std::string b00 = baseline_file((base + "_00_") + rank_str(rank));
     if(conduit::blueprint::mesh::number_of_domains(output) > 0)
     {
-        std::string b00 = baseline_file((base + "_00_") + rank_str(rank));
         save_visit(b00, output);
 #ifdef GENERATE_BASELINES
         make_baseline(b00, output);
@@ -141,7 +141,57 @@ TEST(blueprint_mesh_mpi_partition, all_ranks)
 #endif
     }
 
-    // To do target 2, we may have to store data from 2 ranks.
+    // Go from 7 to 4 domains
+    const char *opt1 =
+"target: 4";
+    options.reset(); options.parse(opt1, "yaml");
+    conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
+    std::string b01 = baseline_file((base + "_01_") + rank_str(rank));
+    if(conduit::blueprint::mesh::number_of_domains(output) > 0)
+    {
+        save_visit(b01, output);
+#ifdef GENERATE_BASELINES
+        make_baseline(b01, output);
+#else
+        EXPECT_EQ(compare_baseline(b01, output), true);
+#endif
+    }
+
+    // Go from 7 to 2 domains (some ranks donate data but end up with none)
+    const char *opt2 =
+"target: 2";
+    options.reset(); options.parse(opt2, "yaml");
+    conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
+    std::string b02 = baseline_file((base + "_02_") + rank_str(rank));
+    if(conduit::blueprint::mesh::number_of_domains(output) > 0)
+    {
+        save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+        make_baseline(b02, output);
+#else
+        EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
+    }
+
+    // Go from 7 to 1 domains
+    const char *opt3 =
+"target: 1";
+    options.reset(); options.parse(opt3, "yaml");
+    conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
+    std::string b03 = baseline_file((base + "_03_") + rank_str(rank));
+    if(conduit::blueprint::mesh::number_of_domains(output) > 0)
+    {
+        save_visit(b03, output);
+#ifdef GENERATE_BASELINES
+        make_baseline(b03, output);
+#else
+        EXPECT_EQ(compare_baseline(b03, output), true);
+#endif
+    }
+
+    // Go from 7 domains to 1 but first pull out a subset of the meshes.
+    const char *opt4 =
+"target: 1";
 }
 
 #if 0
