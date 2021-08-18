@@ -30,10 +30,14 @@ std::string
 baseline_file(const std::string &basename)
 {
     std::string path(baseline_dir());
-    create_path(path);
-    path += (sep + std::string("t_blueprint_mesh_partition"));
-    create_path(path);
+    int r = get_rank();
+    if(r == 0)
+        create_path(path);
+    path += (sep + test_name());
+    if(r == 0)
+        create_path(path);
     path += (sep + basename + ".yaml");
+    barrier();
     return path;
 }
 

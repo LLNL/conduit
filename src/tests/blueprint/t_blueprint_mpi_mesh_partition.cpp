@@ -48,6 +48,25 @@ baseline_dir()
 }
 
 //-----------------------------------------------------------------------------
+std::string test_name() { return std::string("t_blueprint_mpi_mesh_partition"); }
+
+//-----------------------------------------------------------------------------
+int
+get_rank()
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    return rank;
+}
+
+//-----------------------------------------------------------------------------
+void
+barrier()
+{
+    MPI_Barrier(MPI_COMM_WORLD);
+}
+
+//-----------------------------------------------------------------------------
 // Include some helper function definitions
 #include "t_blueprint_partition_helpers.hpp"
 
@@ -87,9 +106,9 @@ rank_str(int rank)
 }
 
 //-----------------------------------------------------------------------------
-TEST(blueprint_mesh_mpi_partition, all_ranks_have_data)
+TEST(blueprint_mesh_mpi_partition, all_ranks)
 {
-    const std::string base("test_10_");
+    const std::string base("all_ranks");
 
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -105,11 +124,12 @@ TEST(blueprint_mesh_mpi_partition, all_ranks_have_data)
     conduit::Node input, output, options;
     int ndomains[] = {3,2,1,1};
     distribute_domains(rank, ndomains, spiral, input);
-    const char *opt1 =
+
+    // Goes from 7 to 10 domains
+    const char *opt0 =
 "target: 10";
-    options.reset(); options.parse(opt1, "yaml");
+    options.reset(); options.parse(opt0, "yaml");
     conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
-//    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), rank==0 ? 1 : 0);
     if(conduit::blueprint::mesh::number_of_domains(output) > 0)
     {
         std::string b00 = baseline_file((base + "_00_") + rank_str(rank));

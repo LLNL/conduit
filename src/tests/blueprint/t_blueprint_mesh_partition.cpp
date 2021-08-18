@@ -54,6 +54,15 @@ baseline_dir()
 }
 
 //-----------------------------------------------------------------------------
+std::string test_name() { return std::string("t_blueprint_mesh_partition"); }
+
+//-----------------------------------------------------------------------------
+int get_rank() { return 0; }
+
+//-----------------------------------------------------------------------------
+void barrier() { }
+
+//-----------------------------------------------------------------------------
 // Include some helper function definitions
 #include "t_blueprint_partition_helpers.hpp"
 
