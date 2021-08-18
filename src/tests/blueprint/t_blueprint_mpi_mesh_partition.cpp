@@ -89,7 +89,7 @@ rank_str(int rank)
 //-----------------------------------------------------------------------------
 TEST(blueprint_mesh_mpi_partition, all_ranks_have_data)
 {
-    const std::string base("all_ranks_have_data");
+    const std::string base("test_10_");
 
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -106,7 +106,7 @@ TEST(blueprint_mesh_mpi_partition, all_ranks_have_data)
     int ndomains[] = {3,2,1,1};
     distribute_domains(rank, ndomains, spiral, input);
     const char *opt1 =
-"target: 3";
+"target: 10";
     options.reset(); options.parse(opt1, "yaml");
     conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
 //    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), rank==0 ? 1 : 0);
@@ -125,6 +125,12 @@ TEST(blueprint_mesh_mpi_partition, all_ranks_have_data)
 }
 
 #if 0
+//-----------------------------------------------------------------------------
+TEST(blueprint_mesh_mpi_partition, split_single_to_multiple)
+{
+    // Make single domain on rank 0 and then split across 4 ranks into N targets.
+}
+
 //-----------------------------------------------------------------------------
 TEST(blueprint_mesh_mpi_partition, all_ranks_have_data_selections)
 {
