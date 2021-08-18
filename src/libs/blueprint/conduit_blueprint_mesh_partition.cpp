@@ -2770,7 +2770,8 @@ private:
     {
         cartesian,
         cylindrical,
-        spherical
+        spherical,
+        logical
     };
 
     int examine_extents(std::vector<std::vector<float64>> &extents) const;
@@ -3379,6 +3380,951 @@ private:
     std::vector<IndexType> scratch;
 };
 
+using combine_implicit_data_t = std::pair<const Node*, bounding_box<vec3>>;
+
+template<typename InDataArray, typename OutDataArray>
+static index_t
+copy_node_data_impl2(const InDataArray &in, OutDataArray &out, index_t offset)
+{
+    index_t out_idx = offset;
+    for(index_t i = 0; i < in.number_of_elements(); i++, out_idx++)
+    {
+        out[out_idx] = in[i];
+    }
+    return out_idx;
+}
+
+template<typename OutDataArray>
+static index_t
+copy_node_data_impl(const Node &in, OutDataArray &out, index_t offset)
+{
+    const auto id = in.dtype().id();
+    index_t retval = offset;
+    switch(id)
+    {
+    case conduit::DataType::INT8_ID:
+    {
+        DataArray<int8> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::INT16_ID:
+    {
+        DataArray<int16> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::INT32_ID:
+    {
+        DataArray<int32> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::INT64_ID:
+    {
+        DataArray<int64> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::UINT8_ID:
+    {
+        DataArray<uint8> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::UINT16_ID:
+    {
+        DataArray<uint16> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::UINT32_ID:
+    {
+        DataArray<uint32> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::UINT64_ID:
+    {
+        DataArray<uint64> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::FLOAT32_ID:
+    {
+        DataArray<float32> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    case conduit::DataType::FLOAT64_ID:
+    {
+        DataArray<float64> da = in.value();
+        retval = copy_node_data_impl2(da, out, offset);
+        break;
+    }
+    default:
+        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
+        break;
+    }
+    return retval;
+}
+
+static index_t
+copy_node_data(const Node &in, Node &out, index_t offset = 0)
+{
+    const auto id = out.dtype().id();
+    index_t retval = offset;
+    switch(id)
+    {
+    case conduit::DataType::INT8_ID:
+    {
+        DataArray<int8> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::INT16_ID:
+    {
+        DataArray<int16> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::INT32_ID:
+    {
+        DataArray<int32> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::INT64_ID:
+    {
+        DataArray<int64> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::UINT8_ID:
+    {
+        DataArray<uint8> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::UINT16_ID:
+    {
+        DataArray<uint16> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::UINT32_ID:
+    {
+        DataArray<uint32> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::UINT64_ID:
+    {
+        DataArray<uint64> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::FLOAT32_ID:
+    {
+        DataArray<float32> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    case conduit::DataType::FLOAT64_ID:
+    {
+        DataArray<float64> da = out.value();
+        retval = copy_node_data_impl(in, da, offset);
+        break;
+    }
+    default:
+        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
+        break;
+    }
+    return retval;
+}
+
+template<typename LhsDataArray, typename RhsDataArray>
+static bool
+node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, double epsilon)
+{
+    const index_t nele = lhs.number_of_elements();
+    if(nele != rhs.number_of_elements())
+    {
+        return false;
+    }
+
+    bool retval = true;
+    for(index_t i = 0; i < nele; i++)
+    {
+        const double diff = std::abs(lhs[i] - rhs[i]);
+        if(!(diff <= epsilon))
+        {
+            retval = false;
+            break;
+        }
+    }
+    return retval;
+}
+
+template<typename RhsDataArray>
+static bool
+node_value_compare_impl(const Node &lhs, const RhsDataArray &rhs,  double epsilon)
+{
+    const auto id = lhs.dtype().id();
+    bool retval = true;
+    switch(id)
+    {
+    case conduit::DataType::INT8_ID:
+    {
+        DataArray<int8> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::INT16_ID:
+    {
+        DataArray<int16> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::INT32_ID:
+    {
+        DataArray<int32> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::INT64_ID:
+    {
+        DataArray<int64> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::UINT8_ID:
+    {
+        DataArray<uint8> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::UINT16_ID:
+    {
+        DataArray<uint16> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::UINT32_ID:
+    {
+        DataArray<uint32> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::UINT64_ID:
+    {
+        DataArray<uint64> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::FLOAT32_ID:
+    {
+        DataArray<float32> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    case conduit::DataType::FLOAT64_ID:
+    {
+        DataArray<float64> da = lhs.value();
+        retval = copy_node_data_impl2(da, rhs, epsilon);
+        break;
+    }
+    default:
+        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
+        break;
+    }
+    return retval;
+}
+
+static bool
+node_value_compare(const Node &lhs, const Node &rhs, double epsilon = CONDUIT_EPSILON)
+{
+    const auto id = rhs.dtype().id();
+    bool retval = true;
+    switch(id)
+    {
+    case conduit::DataType::INT8_ID:
+    {
+        DataArray<int8> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::INT16_ID:
+    {
+        DataArray<int16> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::INT32_ID:
+    {
+        DataArray<int32> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::INT64_ID:
+    {
+        DataArray<int64> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::UINT8_ID:
+    {
+        DataArray<uint8> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::UINT16_ID:
+    {
+        DataArray<uint16> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::UINT32_ID:
+    {
+        DataArray<uint32> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::UINT64_ID:
+    {
+        DataArray<uint64> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::FLOAT32_ID:
+    {
+        DataArray<float32> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    case conduit::DataType::FLOAT64_ID:
+    {
+        DataArray<float64> da = rhs.value();
+        retval = node_value_compare_impl(lhs, da, epsilon);
+        break;
+    }
+    default:
+        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
+        break;
+    }
+    return retval;
+}
+
+template<typename DataArray_t, typename T>
+static index_t
+find_rectilinear_offset(const DataArray_t &da, T val, double tolerance = CONDUIT_EPSILON)
+{
+    // TODO: Binary search? Rectilinear values should be sorted.
+    index_t retval = -1;
+    for(index_t i = 0; i < da.number_of_elements(); i++)
+    {
+        const auto diff = val - da[i];
+        if(diff <= tolerance)
+        {
+            retval = i;
+            break;
+        }
+    }
+    return retval;
+}
+
+static std::vector<index_t>
+find_implicit_coordset_offsets(const Node &whole_cset, const Node &sub_cset, double tolerance = CONDUIT_EPSILON)
+{
+    std::vector<index_t> offsets;
+    const std::string wtype = whole_cset["type"].as_string();
+    if(wtype == "uniform")
+    {
+        const auto worigin = mesh::utils::coordset::uniform::origin(whole_cset);
+        const auto sorigin = mesh::utils::coordset::uniform::origin(sub_cset);
+        const auto spacing = mesh::utils::coordset::uniform::spacing(whole_cset);
+        for(size_t i = 0; i < worigin.size(); i++)
+        {
+            const auto difference = sorigin[i] - worigin[i];
+            offsets.push_back(difference / spacing[i]);
+        }
+    }
+    else if(wtype == "rectilinear")
+    {
+        const auto exts = mesh::utils::coordset::extents(sub_cset);
+        const Node &n_values = whole_cset["values"];
+        const auto cset_axes = mesh::utils::coordset::axes(whole_cset);
+        for(size_t i = 0; i < cset_axes.size(); i++)
+        {
+            const Node &n_value = n_values[cset_axes[i]];
+            if(n_value.dtype().is_float32())
+            {
+                DataArray<float32> da = n_value.value();
+                offsets.push_back(find_rectilinear_offset(da, exts[i*2], tolerance));
+            }
+            else if(n_value.dtype().is_float64())
+            {
+                DataArray<float64> da = n_value.value();
+                offsets.push_back(find_rectilinear_offset(da, exts[i*2], tolerance));
+            }
+            else
+            {
+                CONDUIT_ERROR("Unknown value type for recilinear coordset. " << n_value.dtype().name());
+            }
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Non implicit coordset passed to find_implicit_coordset_offsets");
+    }
+    return offsets;
+}
+
+static void
+build_implicit_maps(const std::vector<const Node *> &n_coordsets, 
+        const Node &final_cset, 
+        Node &out_pointmaps,
+        Node &out_element_map)
+{
+    const std::vector<index_t> final_dim_lengths = mesh::utils::coordset::dim_lengths(final_cset);
+    auto elem_dims = final_dim_lengths;
+    index_t Nelem = 1;
+    for(auto &elem_dim : elem_dims)
+    {
+        elem_dim = elem_dim - 1;
+        Nelem = Nelem * elem_dim;
+    }
+
+    // Allocate the output_elem_map
+    out_element_map.set(DataType::index_t(Nelem*2));
+    DataArray<index_t> emap_da = out_element_map.value();
+
+    index_t dom_idx = 0;
+    for(const Node *n_cset : n_coordsets)
+    {
+        const auto this_dim_lengths = mesh::utils::coordset::dim_lengths(*n_cset);
+        const index_t N = mesh::utils::coordset::length(*n_cset);
+        const DataType dt(DataType::index_t(N));
+        Node &pointmap = out_pointmaps.append();
+        pointmap.set(dt);
+        DataArray<index_t> pmap_da = pointmap.value();
+        const auto offsets = find_implicit_coordset_offsets(final_cset, *n_cset);
+        if(final_dim_lengths.size() == 3)
+        {
+            // Do pointmap
+            {
+                const index_t nx   = final_dim_lengths[0];
+                const index_t nxny = nx * final_dim_lengths[1];
+                const index_t ioff = offsets[0];
+                const index_t joff = offsets[1] * nx;
+                const index_t koff = offsets[2] * nxny;
+                index_t idx = 0;
+                for(index_t k = 0; k < this_dim_lengths[2]; k++)
+                {
+                    const index_t knxny = koff + k * nxny;
+                    for(index_t j = 0; j < this_dim_lengths[1]; j++)
+                    {
+                        const index_t jnx = joff + j * nx;
+                        for(index_t i = 0; i < this_dim_lengths[0]; i++, idx++)
+                        {
+                            pmap_da[idx] = knxny + jnx + ioff + i;
+                        }
+                    }
+                }
+            }
+
+            // Do element_map
+            {
+
+                const index_t nx   = elem_dims[0];
+                const index_t nxny = nx*elem_dims[1];
+                const index_t ioff = offsets[0];
+                const index_t joff = offsets[1] * nx;
+                const index_t koff = offsets[2] * nxny;
+                const index_t this_nx = this_dim_lengths[0]-1;
+                const index_t this_nxny = this_nx * (this_dim_lengths[1] - 1);
+                for(index_t k = 0; k < this_dim_lengths[2]-1; k++)
+                {
+                    const index_t this_knxny = k * this_nxny;
+                    const index_t knxny = koff + k * nxny;
+                    for(index_t j = 0; j < this_dim_lengths[1]-1; j++)
+                    {
+                        const index_t this_jnx = this_knxny + j * this_nx;
+                        const index_t jnx = joff + j * nx;
+                        for(index_t i = 0; i < this_dim_lengths[0]-1; i++)
+                        {
+                            const index_t id  = knxny + jnx + ioff + i;
+                            const index_t idx = id * 2;
+                            emap_da[idx]   = dom_idx;
+                            emap_da[idx+1] = this_jnx + i;
+                        }
+                    }
+                }
+            }
+        }
+        else if(final_dim_lengths.size() == 2)
+        {
+            // Do pointmap
+            {
+                const index_t ioff = offsets[0];
+                const index_t joff = offsets[1] * final_dim_lengths[0];
+                index_t idx = 0;
+                for(index_t j = 0; j < this_dim_lengths[1]; j++)
+                {
+                    const auto jnx = joff + j * final_dim_lengths[0];
+                    for(index_t i = 0; i < this_dim_lengths[0]; i++, idx++)
+                    {
+                        pmap_da[idx] = jnx + ioff + i;
+                    }
+                }
+            }
+
+            // Do element_map
+            {
+                const index_t nx   = elem_dims[0];
+                const index_t ioff = offsets[0];
+                const index_t joff = offsets[1] * nx;
+                const index_t this_nx = this_dim_lengths[0]-1;
+                for(index_t j = 0; j < this_dim_lengths[1]-1; j++)
+                {
+                    const index_t this_jnx = j * this_nx;
+                    const index_t jnx = joff + j * nx;
+                    for(index_t i = 0; i < this_dim_lengths[0]-1; i++)
+                    {
+                        const index_t id  = jnx + ioff + i;
+                        const index_t idx = id * 2;
+                        emap_da[idx]   = dom_idx;
+                        emap_da[idx+1] = this_jnx + i;
+                    }
+                }
+            }
+        }
+        else // if(dim_lengths.size() == 1)
+        {
+            // Do pointmap
+            {
+                const index_t ioff = offsets[0];
+                for(index_t i = 0; i < this_dim_lengths[0]; i++)
+                {
+                    pmap_da[i] = ioff + i;
+                }
+            }
+
+            // Do element_map
+            {
+                const index_t ioff = offsets[0];
+                for(index_t i = 0; i < this_dim_lengths[0]-1; i++)
+                {
+                    const index_t id  = ioff + i;
+                    const index_t idx = id * 2;
+                    emap_da[idx] = dom_idx;
+                    emap_da[idx] = i;
+                }
+            }
+        }
+
+        dom_idx++;
+    }
+}
+
+static const std::vector<std::string> &
+figure_out_implicit_axes(const std::vector<const Node *> &n_inputs)
+{
+    // n_inputs was already checked to be > 1
+    // It's possible that n_inputs[0] claims to be logical
+    //  but the rest of the inputs exist in a different coordsys.
+    // For example if the first input has no explicit origin or spacing
+    //  it will report as "logical" but the next guy may report an origin in xyz.
+    const std::string &csys0 = mesh::utils::coordset::coordsys(*n_inputs[0]);
+    const std::string &csys1 = mesh::utils::coordset::coordsys(*n_inputs[1]);
+    return (csys0 == "logical"
+        // if csys0 was logical, check csys1 for a non-logical coordsys
+        ? (csys1 == "cartesian" ? mesh::utils::CARTESIAN_AXES
+            : (csys1 == "cylindrical" ? mesh::utils::CYLINDRICAL_AXES
+                : csys1 == "spherical" ? mesh::utils::SPHERICAL_AXES : mesh::utils::LOGICAL_AXES))
+        // if csys0 wasn't logical, lookup the proper axes
+        : (csys0 == "cartesian" ? mesh::utils::CARTESIAN_AXES
+            : (csys0 == "cylindrical" ? mesh::utils::CYLINDRICAL_AXES
+                : csys0 == "spherical" ? mesh::utils::SPHERICAL_AXES : mesh::utils::LOGICAL_AXES))
+    );
+}
+
+static bool
+combine_implicit(const std::vector<const Node *> &n_inputs, 
+                 double tolerance, Node &output)
+{
+    output.reset();
+    if(n_inputs.size() == 1)
+    {
+        output = *n_inputs[0];
+        return true;
+    }
+
+    // Which type of coordset we will be using
+    std::string type = "uniform";
+    for(size_t i = 0; i < n_inputs.size(); i++)
+    {
+        const Node &n_input = *n_inputs[i];
+        std::string cset_type = n_input["type"].as_string();
+        if(cset_type == "explicit")
+        {
+            type = "explicit";
+        }
+        else if(type != "explicit" && cset_type == "rectilinear")
+        {
+            type = "rectilinear";
+        }
+        // We defaulted to "uniform", so do nothing.
+    }
+
+    // Determine which axes labels to use
+    const std::vector<std::string> &axes = figure_out_implicit_axes(n_inputs);
+
+    std::vector<Node> temp_nodes;
+    std::vector<const Node*> n_coordsets;
+    index_t dimension = dims(*n_inputs[0]);
+    if(type == "uniform")
+    {
+        // Inspect input[0] for baseline spacing/dimension
+        const auto baseline_spacing = mesh::utils::coordset::uniform::spacing(*n_inputs[0]);
+        n_coordsets.push_back(n_inputs[0]);
+        for(size_t i = 1; i < n_inputs.size(); i++)
+        {
+            const Node &n_input = *n_inputs[i];
+            if(dimension != dims(n_input))
+            {
+                type = "explicit";
+                break;
+            }
+
+            // Get spacing for this domain
+            const auto spacing = mesh::utils::coordset::uniform::spacing(n_input);
+            // Check that spacing matches
+            for(index_t d = 0; d < dimension; d++)
+            {
+                // If spacing doesn't match try to do rectilinear
+                if(spacing[d] != baseline_spacing[d])
+                {
+                    type = "rectilinear";
+                    break;
+                }
+            }
+
+            if(type != "uniform")
+            {
+                break;
+            }
+
+            n_coordsets.push_back(n_inputs[i]);
+        }
+
+        // If we are able to continue merging these as uniform
+        if(type == "uniform")
+        {
+            bool needs_spacing = false;
+            for(const auto s : baseline_spacing)
+            {
+                if(s != 1.) needs_spacing = true;
+            }
+            if(needs_spacing)
+            {
+                Schema s;
+                for(index_t d = 0; d < dimension; d++)
+                {
+                    s["d"+axes[d]].set(DataType::c_double(1, d*sizeof(double), dimension*sizeof(double)));
+                }
+                output["spacing"].set(s);
+                for(index_t d = 0; d < dimension; d++)
+                {
+                    output["spacing/d"+axes[d]].set(baseline_spacing[d]);
+                }
+            }
+        }
+    }
+
+    // Must convert uniform to rectilinear before continuing
+    if(type == "rectilinear")
+    {
+        n_coordsets.clear();
+        temp_nodes.reserve(n_inputs.size());
+        for(size_t i = 0; i < n_inputs.size(); i++)
+        {
+            const Node &n_input = *n_inputs[i];
+            if(dimension != dims(n_input))
+            {
+                type = "explicit";
+                break;
+            }
+
+            std::string cset_type = n_input["type"].as_string();
+            if(cset_type == "uniform")
+            {
+                temp_nodes.emplace_back();
+                mesh::coordset::uniform::to_rectilinear(n_input, temp_nodes.back());
+                n_coordsets.push_back(&temp_nodes.back());
+            }
+            else
+            {
+                n_coordsets.push_back(n_inputs[i]);
+            }
+        }
+    }
+
+    // No support for structured grids yet
+    if(type == "explicit")
+    {
+        return false;
+    }
+    
+    // std::cout << "Passed preliminary check! In mode " << type << std::endl;
+
+    // Make sure extents matchup in the correct way
+    std::vector<combine_implicit_data_t> csets_and_bbs;
+    for(const Node *n_cset : n_coordsets)
+    {
+        auto extents = mesh::utils::coordset::extents(*n_cset);
+        bounding_box<vec3> bb;
+        for(index_t d = 0; d < dimension; d++)
+        {
+            const index_t ext_idx = d*2;
+            bb.min[d] = extents[ext_idx];
+            bb.max[d] = extents[ext_idx+1];
+        }
+        csets_and_bbs.push_back({{n_cset}, {bb}});
+    }
+
+    // Match and combine edges/planes on coordest boundaries until we have 1 left
+    Node n_temporary_csets;
+    index_t iteration = 0;
+    while(csets_and_bbs.size() > 1)
+    {
+        // Print the work in progress
+        // std::cout << "iteration " << iteration << "\n";
+    #if 0
+        for(size_t ei = 0; ei < csets_and_bbs.size(); ei++)
+        {
+            // const Node *n = csets_and_bbs[ei].first;
+            const auto &bb = csets_and_bbs[ei].second;
+            std::cout << "  " << ei << ": min[";
+            for(index_t d = 0; d < dimension; d++)
+            {
+                std::cout << bb.min[d] << (d == (dimension - 1) ? "] " : ", ");
+            }
+            std::cout << "  " << ei << ": max[";
+            for(index_t d = 0; d < dimension; d++)
+            {
+                std::cout << bb.max[d] << (d == (dimension - 1) ? "] " : ", ");
+            }
+            std::cout << "\n";
+        }
+        std::cout << std::endl;
+    #elif 0
+        output.print();
+    #elif 0
+        for(size_t ei = 0; ei < csets_and_bbs.size(); ei++)
+        {
+            std::cout << "[" << ei << "]" << std::endl;
+            csets_and_bbs[ei].first->print();        
+        }
+        std::cout << std::endl;
+    #else
+    #endif
+        iteration++;
+
+        // Get the first extents
+        bool any_matches = false;
+        for(size_t ei = 0; ei < csets_and_bbs.size(); ei++)
+        {
+            const Node *n_cseti = csets_and_bbs[ei].first;
+            auto &exti = csets_and_bbs[ei].second;
+
+            // Find a match
+            const index_t NOT_FOUND = csets_and_bbs.size();
+            index_t matched_extents = NOT_FOUND;
+            for(size_t ej = ei+1; ej < csets_and_bbs.size(); ej++)
+            {
+                const Node *n_csetj = csets_and_bbs[ej].first;
+                const auto &extj = csets_and_bbs[ej].second;
+
+                for(index_t di = 0; di < dimension; di++)
+                {
+                    // First check if the end of one domain touch the start of another
+                    const bool check1 = std::abs(exti.max[di] - extj.min[di]) <= tolerance;
+                    const bool check2 = std::abs(exti.min[di] - extj.max[di]) <= tolerance;
+                    if(!check1 && !check2)
+                    {
+                        continue;
+                    }
+                    // Now check that the extents of the touching domains match in the other dimensions
+                    bool corners_match = true;
+                    for(index_t dj = 0; dj < dimension; dj++)
+                    {
+                        if(dj == di) { continue; }
+                        // All other axis extents should be equal
+                        const bool check3 = std::abs(exti.min[dj] - extj.min[dj]) <= tolerance;
+                        const bool check4 = std::abs(exti.max[dj] - extj.max[dj]) <= tolerance;
+                        if(!check3 || !check4)
+                        {
+                            corners_match = false;
+                            break;
+                        }
+                    }
+                    // If the corners match combine them
+                    if(corners_match)
+                    {
+                        Node &new_cset = n_temporary_csets.append();
+                        new_cset["type"] = type;
+                        if(type == "uniform")
+                        {
+                            // std::cout << "Handling uniform combine" << std::endl;
+                            std::vector<double> spacing = {1, 1, 1};
+                            if(output.has_child("spacing"))
+                            {
+                                new_cset["spacing"] = output["spacing"];
+                                for(index_t dj = 0; dj < dimension; dj++)
+                                {
+                                    spacing[dj] = output["spacing"][dj].to_double();
+                                }
+                            }
+
+                            Schema s_origin;
+                            Schema s_dims;
+                            for(index_t dj = 0; dj < dimension; dj++)
+                            {
+                                s_origin[axes[dj]].set(DataType::c_double(1, dj*sizeof(double), dimension*sizeof(double)));
+                                s_dims[mesh::utils::LOGICAL_AXES[dj]].set(DataType::index_t(1, dj*sizeof(index_t), dimension*sizeof(index_t)));
+                            }
+                            new_cset["origin"].set(s_origin);
+                            new_cset["dims"].set(s_dims);
+
+                            // Update the extents
+                            exti.min[di] = std::min(exti.min[di], extj.min[di]);
+                            exti.max[di] = std::max(exti.max[di], extj.max[di]);
+
+                            for(index_t dj = 0; dj < dimension; dj++)
+                            {
+                                const std::string dims_path = "dims/"+mesh::utils::LOGICAL_AXES[dj];
+                                new_cset["origin/"+axes[dj]] = exti.min[dj];
+                                // Extents are inclusive so we need to add 1 to the difference
+                                new_cset[dims_path] = (index_t)(((exti.max[dj] - exti.min[dj]) / spacing[dj]) + 1.5);
+                            }
+                            csets_and_bbs[ei].first = &new_cset;
+                            csets_and_bbs.erase(csets_and_bbs.begin() + ej);
+                            matched_extents = ej;
+                            break;
+                        }
+                        else if(type == "rectilinear")
+                        {
+                            // std::cout << "Handling rectilinear combine" << std::endl;
+                            // We need to further check that the spacing along the matched edge/plane is okay
+                            bool ok = true;
+                            index_t dim_sizes[3];
+                            index_t max_bytes = 0;
+                            for(index_t dj = 0; dj < dimension; dj++)
+                            {
+                                const Node &n_vals0 = (*n_cseti)["values/"+axes[dj]];
+                                const Node &n_vals1 = (*n_csetj)["values/"+axes[dj]];
+                                max_bytes = std::max(max_bytes, n_vals0.dtype().element_bytes());
+                                max_bytes = std::max(max_bytes, n_vals1.dtype().element_bytes());
+                                if(di == dj)
+                                {
+                                    dim_sizes[dj] = n_vals0.dtype().number_of_elements() + n_vals1.dtype().number_of_elements() - 1;
+                                }
+                                else
+                                {
+                                    dim_sizes[dj] = n_vals0.dtype().number_of_elements();
+                                    ok = node_value_compare(n_vals0, n_vals1);
+                                    if(!ok)
+                                    {
+                                        std::cout << "Incompatible rectilinear domains" << std::endl;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // std::cout << "ok? " << ok << std::endl;
+
+                            if(!ok)
+                            {
+                                n_temporary_csets.remove(n_temporary_csets.number_of_children() - 1);
+                                matched_extents = NOT_FOUND;
+                                break;
+                            }
+
+                            // std::cout << "Made it to the heavy lifting!" << std::endl;
+
+                            // Update the extents
+                            exti.min[di] = std::min(exti.min[di], extj.min[di]);
+                            exti.max[di] = std::max(exti.max[di], extj.max[di]);
+
+                            // Allocate the output arrays
+                            const DataType out_dtype((max_bytes < 8) ? DataType::c_float() : DataType::c_double());
+                            index_t offset = 0;
+                            Schema s;
+                            for(index_t dj = 0; dj < dimension; dj++)
+                            {
+                                s[axes[dj]].set(DataType(out_dtype.id(), dim_sizes[dj], offset, 
+                                    out_dtype.element_bytes(), out_dtype.element_bytes(), out_dtype.endianness()));
+                                offset += out_dtype.element_bytes() * dim_sizes[dj];
+                            }
+                            new_cset["values"].set(s);
+                            std::array<const Node*, 2> n_in_di{
+                                ((check1) ? n_cseti->fetch_ptr("values/"+axes[di]) : n_csetj->fetch_ptr("values/"+axes[di])),
+                                ((check1) ? n_csetj->fetch_ptr("values/"+axes[di]) : n_cseti->fetch_ptr("values/"+axes[di]))
+                            };
+                            for(index_t dj = 0; dj < dimension; dj++)
+                            {
+                                Node &n_out_values = new_cset["values/"+axes[dj]];
+                                if(di == dj)
+                                {
+                                    index_t out_idx = 0;
+                                    for(size_t i = 0; i < n_in_di.size(); i++, out_idx--)
+                                    {
+                                        const Node &n_in_values = *n_in_di[i];
+                                        out_idx = copy_node_data(n_in_values, n_out_values, out_idx);
+                                    }
+                                }
+                                else
+                                {
+                                    const Node &n_vals0 = (*n_cseti)["values/"+axes[dj]];
+                                    copy_node_data(n_vals0, n_out_values);
+                                }
+                            }
+
+                            csets_and_bbs[ei].first = &new_cset;
+                            csets_and_bbs.erase(csets_and_bbs.begin() + ej);
+                            matched_extents = ej;
+                            break;
+                        }
+                    }
+                }
+
+                if(matched_extents != NOT_FOUND)
+                {
+                    any_matches = true;
+                    break;
+                }
+            }
+        }
+
+        if(any_matches == false)
+        {
+            break;
+        }
+    }
+    // std::cout << "REMAINING DOMAINS " << csets_and_bbs.size() << std::endl;
+    bool retval = false;
+    if(csets_and_bbs.size() == 1)
+    {
+        // TODO: Figure out how to move the data out of the temporary node
+        //  instead of deep copying.
+        output = *csets_and_bbs[0].first;
+        build_implicit_maps(n_coordsets, output, output["pointmaps"], output["element_map"]);
+        retval = true;
+    }
+    return retval;
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::coordset::utils --
@@ -3407,11 +4353,10 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
     //  - Systems
     //  - Types
     //  - Dimension
-
     std::vector<Node> working_sets;
     std::vector<coord_system> systems;
     std::vector<std::vector<float64>> extents;
-    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0;
+    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0, nlogical = 0;
     index_t dimension = 0;
     for(size_t i = 0u; i < coordsets.size(); i++)
     {
@@ -3444,6 +4389,11 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
         {
             nspherical++;
             systems.push_back(coord_system::spherical);
+        }
+        else if(system == "logical")
+        {
+            nlogical++;
+            systems.push_back(coord_system::logical);
         }
         else // system == cartesian
         {
@@ -3489,6 +4439,7 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
     }
 
     int noverlapping_sets = examine_extents(extents);
+    PM_DEBUG_PRINT("I was given " << coordsets.size() << " I am combining " << working_sets.size() << std::endl);
     PM_DEBUG_PRINT("noverlapping sets: " << noverlapping_sets << std::endl);
     if(noverlapping_sets == 0)
     {
@@ -3574,13 +4525,15 @@ point_merge::append_data(const std::vector<Node> &coordsets,
         };
 
 
-        if(systems[i] == out_system)
+        // Invoke the proper lambda on each coordinate
+        if(systems[i] != out_system
+            && systems[i] != coord_system::logical)
         {
-            iterate_coordinates(coordsets[i], append);
+            iterate_coordinates(coordsets[i], translate_append);
         }
         else
         {
-            iterate_coordinates(coordsets[i], translate_append);
+            iterate_coordinates(coordsets[i], append);
         }
     }
 }
@@ -3650,6 +4603,13 @@ point_merge::create_output(index_t dimension, Node &output) const
 
     // Add the pointmaps
     {
+    #ifdef DEBUG_POINT_MERGE
+        std::cout << "ID MAP SIZES:" << std::endl;
+        for(const auto &idmap : old_to_new_ids)
+        {
+            std::cout << "  " << idmap.size() << std::endl;
+        }
+    #endif
         auto &pointmaps = output["pointmaps"];
         for(const auto &idmap : old_to_new_ids)
         {
@@ -3673,13 +4633,22 @@ void
 point_merge::iterate_coordinates(const Node &coordset, Func &&func)
 {
     if(!coordset.has_child("type"))
+    {
+        CONDUIT_ERROR("Coordset does not have a type");
         return;
+    }
 
     if(coordset["type"].as_string() != "explicit")
+    {
+        CONDUIT_ERROR("Coordset is not explicit");
         return;
+    }
 
     if(!coordset.has_child("values"))
+    {
+        CONDUIT_ERROR("Coordset does not have values");
         return;
+    }
 
     const Node &coords = coordset["values"];
 
@@ -3704,6 +4673,12 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
             znode = coords.fetch_ptr("phi");
         }
     }
+    else if(((xnode = coords.fetch_ptr("i"))))
+    {
+        // Logical
+        ynode = coords.fetch_ptr("j");
+        znode = coords.fetch_ptr("k");
+    }
 
     // Iterate accordingly
     float64 p[3] {0., 0., 0.};
@@ -3713,15 +4688,47 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
         const auto xtype = xnode->dtype();
         const auto ytype = ynode->dtype();
         const auto ztype = znode->dtype();
-        // TODO: Handle different types
-        auto xarray = xnode->as_double_array();
-        auto yarray = ynode->as_double_array();
-        auto zarray = znode->as_double_array();
-        const index_t N = xarray.number_of_elements();
-        for(index_t i = 0; i < N; i++)
+        if(xtype.is_float32() && ytype.is_float32() && ztype.is_float32())
         {
-            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
-            func(p, 3);
+            auto xarray = xnode->as_float32_array();
+            auto yarray = ynode->as_float32_array();
+            auto zarray = znode->as_float32_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
+                func(p, 3);
+            }
+        }
+        else if(xtype.is_float64() && ytype.is_float64() && ztype.is_float64())
+        {
+            auto xarray = xnode->as_float64_array();
+            auto yarray = ynode->as_float64_array();
+            auto zarray = znode->as_float64_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
+                func(p, 3);
+            }
+        }
+        else
+        {
+            Node xtemp, ytemp, ztemp;
+            const DataType xdt = DataType(xtype.id(), 1);
+            const DataType ydt = DataType(ytype.id(), 1);
+            const DataType zdt = DataType(ztype.id(), 1);
+            const index_t N = xtype.number_of_elements();
+            for(index_t  i = 0; i < N; i++)
+            {
+                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
+                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
+                ztemp.set_external(zdt, const_cast<void*>(znode->element_ptr(i)));
+                p[0] = xtemp.to_float64();
+                p[1] = ytemp.to_float64();
+                p[2] = ztemp.to_float64();
+                func(p, 3);
+            }
         }
     }
     else if(xnode && ynode)
@@ -3729,32 +4736,87 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
         // 2D
         const auto xtype = xnode->dtype();
         const auto ytype = ynode->dtype();
-        // TODO: Handle different types
-        auto xarray = xnode->as_double_array();
-        auto yarray = ynode->as_double_array();
-        const index_t N = xarray.number_of_elements();
-        for(index_t i = 0; i < N; i++)
+        if(xtype.is_float32() && ytype.is_float32())
         {
-            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-            func(p, 2);
+            auto xarray = xnode->as_float32_array();
+            auto yarray = ynode->as_float32_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
+                func(p, 3);
+            }
+        }
+        else if(xtype.is_float64() && ytype.is_float64())
+        {
+            auto xarray = xnode->as_float64_array();
+            auto yarray = ynode->as_float64_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
+                func(p, 2);
+            }
+        }
+        else
+        {
+            Node xtemp, ytemp;
+            const DataType xdt = DataType(xtype.id(), 1);
+            const DataType ydt = DataType(ytype.id(), 1);
+            const index_t N = xtype.number_of_elements();
+            for(index_t  i = 0; i < N; i++)
+            {
+                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
+                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
+                p[0] = xtemp.to_float64();
+                p[1] = ytemp.to_float64();
+                p[2] = 0.;
+                func(p, 2);
+            }
         }
     }
     else if(xnode)
     {
         // 1D
         const auto xtype = xnode->dtype();
-        // TODO: Handle different types
-        auto xarray = xnode->as_double_array();
-        const index_t N = xarray.number_of_elements();
-        for(index_t i = 0; i < N; i++)
+        if(xtype.is_float32())
         {
-            p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
-            func(p, 1);
+            auto xarray = xnode->as_float32_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
+                func(p, 1);
+            }
+        }
+        else if(xtype.is_float64())
+        {
+            auto xarray = xnode->as_float64_array();
+            const index_t N = xarray.number_of_elements();
+            for(index_t i = 0; i < N; i++)
+            {
+                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
+                func(p, 1);
+            }
+        }
+        else
+        {
+            Node xtemp;
+            const DataType xdt = DataType(xtype.id(), 1);
+            const index_t N = xtype.number_of_elements();
+            for(index_t  i = 0; i < N; i++)
+            {
+                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
+                p[0] = xtemp.to_float64();
+                p[1] = 0.;
+                p[2] = 0.;
+                func(p, 1);
+            }
         }
     }
     else
     {
-        // ERROR! No valid nodes passed.
+        CONDUIT_ERROR("No valid node values found.");
     }
 }
 
@@ -3775,11 +4837,20 @@ point_merge::reserve_vectors(const std::vector<Node> &coordsets, index_t dimensi
             {
                 xnode = values->fetch_ptr("r");
             }
+            if(!xnode)
+            {
+                xnode = values->fetch_ptr("i");
+            }
 
             if(xnode)
             {
                 npts = xnode->dtype().number_of_elements();
             }
+        #ifdef DEBUG_POINT_MERGE
+            std::cout << "coordset " << i << " ";
+            std::cout << npts << std::endl;
+            coordsets[i].print();
+        #endif
         }
 
         old_to_new_ids.push_back({});
@@ -3841,7 +4912,8 @@ point_merge::simple_merge_data(const std::vector<Node> &coordsets,
         };
 
         // Invoke the proper lambda on each coordinate
-        if(systems[i] != coord_system::cartesian)
+        if(systems[i] != coord_system::cartesian
+            && systems[i] != coord_system::logical)
         {
             iterate_coordinates(coordset, translate_merge);
         }
@@ -3899,7 +4971,8 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
         };
 
         // Invoke the proper lambda on each coordinate
-        if(systems[i] != coord_system::cartesian)
+        if(systems[i] != coord_system::cartesian
+            && systems[i] != coord_system::logical)
         {
             iterate_coordinates(coordset, translate_merge);
         }
@@ -3986,7 +5059,8 @@ point_merge::truncate_merge(const std::vector<Node> &coordsets,
         };
 
         // Invoke the proper lambda on each coordinate
-        if(systems[i] != out_system)
+        if(systems[i] != out_system
+            && systems[i] != coord_system::logical)
         {
             iterate_coordinates(coordset, translate_merge);
         }
@@ -4587,21 +5661,12 @@ static void iterate_int_data(const conduit::Node &node, Func &&func)
 
 //-----------------------------------------------------------------------------
 static void
-append_remapped_ids(const Node &connectivity, const DataArray<index_t> map, std::vector<index_t> &out)
-{
-    iterate_int_data(connectivity, [&](index_t id) {
-        out.push_back(map[id]);
-    });
-}
-
-//-----------------------------------------------------------------------------
-static void
 build_unstructured_output(const std::vector<const Node*> &topologies,
                           const Node &pointmaps,
                           const std::string &cset_name,
                           Node &output)
 {
-    std::cout << "Building unstructured output!" << std::endl;
+    // std::cout << "Building unstructured output!" << std::endl;
     output.reset();
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
@@ -4626,7 +5691,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
             continue;
         }
         DataArray<index_t> pmap_da = pointmap->value();
-#if 1
+
         iterate_elements(*topo, [&](const entity &e) {
             // See if we already have a bucket for this shape in our output
             const std::string &shape_string = e.shape.type;
@@ -4651,55 +5716,6 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
                 out_conn.push_back(pmap_da[id]);
             }
         });
-#else
-        // Build a vector of all the "elements" buckets
-        std::vector<const Node*> elements_vec;
-
-        // Single shape topology
-        if(elements->has_child("shape"))
-        {
-            elements_vec.push_back(elements);
-        }
-        else if(elements->dtype().is_list()
-                || elements->dtype().is_object())
-        {
-            // It is a collection of single element topologies
-            // Q: Should we preserve the names when they exist?
-            auto itr = elements->children();
-            while(itr.has_next())
-            {
-                elements_vec.push_back(&itr.next());
-            }
-        }
-
-        // Iterate the buckets of elements
-        for(const Node *bucket : elements_vec)
-        {
-            const Node *shape = bucket->fetch_ptr("shape");
-            const Node *connectivity = bucket->fetch_ptr("connectivity");
-            if(!shape || !connectivity)
-            {
-                // ERROR!
-                continue;
-            }
-
-            // See if we already have a bucket for this shape in our output
-            const std::string &shape_string = shape->as_string();
-            // Find the index for this shape's bucket
-            const auto itr = std::find(shape_types.begin(), shape_types.end(), shape_string);
-            index_t idx = (index_t)(itr - shape_types.begin());
-            if(itr == shape_types.end())
-            {
-                idx = shape_types.size();
-                shape_types.push_back(shape_string);
-                out_connectivity.emplace_back();
-            }
-
-            // Translate the point ids using the pointmap.
-            std::vector<index_t> &out_conn = out_connectivity[idx];
-            append_remapped_ids(*connectivity, pmap_da, out_conn);
-        }
-#endif
     }
 
     if(shape_types.size() == 1)
@@ -4735,7 +5751,7 @@ build_polygonal_output(const std::vector<const Node*> &topologies,
                        const std::string &cset_name,
                        Node &output)
 {
-    std::cout << "Building polygonal output!" << std::endl;
+    // std::cout << "Building polygonal output!" << std::endl;
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
     output["elements/shape"].set("polygonal");
@@ -4816,7 +5832,7 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
                        const std::string &cset_name,
                        Node &output)
 {
-    std::cout << "Building polyhedra output!" << std::endl;
+    // std::cout << "Building polyhedral output!" << std::endl;
     output.reset();
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
@@ -4926,7 +5942,202 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
 // -- end conduit::blueprint::mesh::topology --
 //-----------------------------------------------------------------------------
 
+namespace fields
+{
 
+static void
+determine_schema(const Node &in,
+        const index_t ntuples, index_t &out_ncomps,
+        Schema &out_schema)
+{
+    out_ncomps = 0;
+    out_schema.reset();
+
+    const index_t num_children = in.number_of_children();
+    if(num_children)
+    {
+        out_ncomps = num_children;
+        index_t offset = 0;
+        // TODO: Keep track of whether the original field was interleaved
+        //  and preserve the interleaved-ness
+        for(index_t i = 0; i < num_children; i++)
+        {
+            const DataType dt(in[i].dtype().id(), ntuples, offset,
+                in[i].dtype().element_bytes(), in[i].dtype().element_bytes(),
+                in[i].dtype().endianness());
+            out_schema[in[i].name()].set(dt);
+            offset += dt.number_of_elements() * dt.element_bytes();
+        }
+    }
+    else
+    {
+        out_ncomps = 1;
+        out_schema.set(DataType(in.dtype().id(), ntuples));
+    }
+}
+
+//-------------------------------------------------------------------------
+static void
+map_vertex_field(const std::vector<const Node*> &in_nodes,
+        const std::vector<DataArray<index_t>> &pointmaps,
+        const index_t num_verticies,
+        Node &out_node)
+{
+    out_node.reset();
+    if(in_nodes.empty() || pointmaps.empty())
+    {
+        return;
+    }
+
+    if(in_nodes.size() != pointmaps.size())
+    {
+        CONDUIT_WARN("Number of input fields and number of pointmaps should be equal!");
+    }
+
+    // Figure out num components and out dtype
+    index_t ncomps = 0;
+    Schema out_schema;
+    determine_schema((*in_nodes[0])["values"], num_verticies, ncomps, out_schema);
+    out_node.set(out_schema);
+
+    // out_schema.print();
+    // out_node.print();
+
+    const index_t npmaps = (index_t)pointmaps.size();
+    if(ncomps > 1)
+    {
+        for(index_t fi = 0; fi < npmaps; fi++)
+        {
+            const auto &pmap = pointmaps[fi];
+            const Node &in_values = in_nodes[fi]->child("values");
+            for(index_t idx = 0; idx < pmap.number_of_elements(); idx++)
+            {
+                const index_t out_idx = pmap[idx];
+                for(index_t ci = 0; ci < ncomps; ci++)
+                {
+                    const auto bytes = out_node[ci].dtype().element_bytes();
+                    void *out_data = out_node[ci].element_ptr(out_idx);
+                    const void *in_data = in_values[ci].element_ptr(idx);
+                    memcpy(out_data, in_data, bytes);
+                }
+            }
+        }
+    }
+    else
+    {
+        const auto bytes = out_node.dtype().element_bytes();
+        for(index_t fi = 0; fi < npmaps; fi++)
+        {
+            const auto &pmap = pointmaps[fi];
+            const Node &in_values = in_nodes[fi]->child("values");
+            for(index_t idx = 0; idx < pmap.number_of_elements(); idx++)
+            {
+                const index_t out_idx = pmap[idx];
+                void *out_data = out_node.element_ptr(out_idx);
+                const void *in_data = in_values.element_ptr(idx);
+                memcpy(out_data, in_data, bytes);
+            }
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+static void
+map_element_field(const std::vector<const Node*> &in_nodes,
+        const DataArray<index_t> &elemmap,
+        Node &out_node)
+{
+    out_node.reset();
+    if(in_nodes.empty())
+    {
+        return;
+    }
+
+    const index_t nelements = elemmap.number_of_elements() / 2;
+
+    index_t ncomps = 0;
+    Schema out_schema;
+    determine_schema(in_nodes[0]->child("values"), nelements, ncomps, out_schema);
+    out_node.set(out_schema);
+    if(ncomps > 1)
+    {
+        for(index_t out_idx = 0; out_idx < nelements; out_idx++)
+        {
+            const index_t idx      = out_idx * 2;
+            const index_t dom_idx  = elemmap[idx];
+            const index_t elem_idx = elemmap[idx+1];
+            const Node &data = in_nodes[dom_idx]->child("values");
+            for(index_t ci = 0; ci < ncomps; ci++)
+            {
+                const auto bytes = out_node[ci].dtype().element_bytes();
+                void *out_data = out_node[ci].element_ptr(out_idx);
+                const void *in_data = data[ci].element_ptr(elem_idx);
+                memcpy(out_data, in_data, bytes);
+            }
+        }
+    }
+    else
+    {
+        const auto bytes = out_node.dtype().element_bytes();
+        for(index_t out_idx = 0; out_idx < nelements; out_idx++)
+        {
+            const index_t idx      = out_idx * 2;
+            const index_t dom_idx  = elemmap[idx];
+            const index_t elem_idx = elemmap[idx+1];
+            const Node &data = in_nodes[dom_idx]->child("values");
+            void *out_data = out_node.element_ptr(out_idx);
+            const void *in_data = data.element_ptr(elem_idx);
+            memcpy(out_data, in_data, bytes);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void
+combine(const std::vector<const Node*> &in_fields,
+        const Node &assoc_topology, const Node &assoc_coordset, Node &output)
+{
+    const std::string &assoc = in_fields[0]->child("association").as_string();
+    const std::string &assoc_topo = in_fields[0]->child("topology").as_string();
+    output["topology"] = assoc_topo;
+    output["association"] = assoc;
+    // Determine if we are vertex or element associated
+    if(assoc == utils::ASSOCIATIONS[0])
+    {
+        // Vertex association
+        // Need to use pointmaps to map this field
+        // Get the point map
+        std::vector<DataArray<index_t>> pmaps;
+        {
+            const Node *pointmaps = assoc_coordset.fetch_ptr("pointmaps");
+            if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); return; }
+            for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
+            {
+                pmaps.emplace_back(pointmaps->child(pi).value());
+            }
+        }
+
+        const index_t nt = coordset::length(assoc_coordset);
+        fields::map_vertex_field(in_fields, pmaps, nt, output["values"]);
+    }
+    else if(assoc == utils::ASSOCIATIONS[1])
+    {
+        // Element association
+        // Need to use element maps to map this field
+        const Node &out_topo_map = assoc_topology["element_map"];
+        const DataArray<index_t> tmap = out_topo_map.value();
+        fields::map_element_field(in_fields, tmap, output["values"]);
+    }
+    else
+    {
+        CONDUIT_WARN("Unsupported association for field " << assoc);
+    }
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::fields --
+//-----------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
 std::string
@@ -4936,9 +6147,81 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
     //       to form an output of one of those types. For example, uniform meshes
     //       can be combined if they abut and combine into larger bricks that
     //       cover space.
+    // Meshes:
+    //   Uniform
+    //   Rectilinear
+    //   Structured
+    //   Unstructured
 
-    // For now, recommend unstructured.
-    return "unstructured";
+    // Coordsets:
+    //   Uniform
+    //   Rectilinear
+    //   Explicit
+
+    // Topologies:
+    //   Points
+    //   Uniform
+    //   Rectilinear
+    //   Structured
+    //   Unstructured
+
+    // Redefine these here because the order matters
+    static const std::array<std::string, 3> coordset_types = {
+        "uniform", 
+        "rectilinear", 
+        "explicit"
+    };
+
+    static const std::array<std::string, 5> topology_types = {
+        "points",
+        "uniform",
+        "rectilinear",
+        "structured",
+        "unstructured"
+    };
+
+    index_t worst_coordset = 0;
+    index_t worst_topology = 0;
+    for(const Node *input : inputs)
+    {
+        const Node *n_topologies = input->fetch_ptr("topologies");
+        if(n_topologies)
+        {
+            for(index_t i = 0; i < n_topologies->number_of_children(); i++)
+            {
+                const std::string &type = n_topologies->child(i)["type"].as_string();
+                const index_t idx = std::find(topology_types.begin(), 
+                    topology_types.end(), type) - topology_types.begin();
+                worst_topology = std::max(worst_topology, idx);
+            }
+        }
+        const Node *n_coordsets = input->fetch_ptr("coordsets");
+        if(n_coordsets)
+        {
+            for(index_t i = 0; i < n_coordsets->number_of_children(); i++)
+            {
+                const std::string &type = n_coordsets->child(i)["type"].as_string();
+                const index_t idx = std::find(coordset_types.begin(), 
+                    coordset_types.end(), type) - coordset_types.begin();
+                worst_coordset = std::max(worst_coordset, idx);
+            }
+        }
+    }
+
+    std::string retval;
+    if(worst_topology < 2 && worst_coordset < 1)
+    {
+        retval = "uniform";
+    }
+    else if(worst_topology < 3 && worst_coordset < 2)
+    {
+        retval = "rectilinear";
+    }
+    else
+    {
+        retval = "unstructured";
+    }
+    return retval;
 }
 
 //-------------------------------------------------------------------------
@@ -4951,7 +6234,13 @@ partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
-    // std::cout << "domain " << domain << std::endl;
+    // Handle trivial cases
+    // std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
+    // std::cout << "INPUTS:";
+    // for(const Node *in : inputs)
+    // {
+    //     in->print();
+    // }
     output.reset();
     const auto sz = inputs.size();
     if(sz == 0)
@@ -4966,37 +6255,19 @@ partitioner::combine(int domain,
         return;
     }
 
+    // Combine state - take state from inputs[0], overwrite domain_id
+    // Q: Should this be more involved?
     if(inputs[0]->has_child("state"))
     {
         output["state"] = inputs[0]->child("state");
     }
     output["state/domain_id"] = domain;
 
+    // Determine the combine approach
     std::string rt(recommended_topology(inputs));
-    if(rt == "uniform" || rt == "rectilinear")
-        combine_as_structured(domain, inputs, output);
-    else
-        combine_as_unstructured(domain, inputs, output);
-}
+    // std::cout << "Recommended approach: " << rt << std::endl;
 
-//-------------------------------------------------------------------------
-void
-partitioner::combine_as_structured(int domain,
-    const std::vector<const Node *> &inputs,
-    Node &output)
-{
-    // TODO: Make combined coordset and new structured topology (uniform,
-    //       rectilinear, structured) suitable for the output.
-
-    // Add the combined result to output node.
-}
-
-//-------------------------------------------------------------------------
-void
-partitioner::combine_as_unstructured(int domain,
-    const std::vector<const Node *> &inputs,
-    Node &output)
-{
+    // Combine the coordsets
     // Determine names of all coordsets
     std::vector<std::string> coordset_names;
     Node &output_coordsets = output.add_child("coordsets");
@@ -5048,17 +6319,18 @@ partitioner::combine_as_unstructured(int domain,
         }
         std::cout << std::endl;
 #endif
+        conduit::Node opts;
+        opts["type"] = ((rt == "rectilinear" || rt == "uniform") ? "implicit" : "explicit");
+        opts["merge_tolerance"] = merge_tolerance;
         for(index_t i = 0; i < ngroups; i++)
         {
             const auto &coordset_group = coordset_groups[i];
-            coordset::combine(coordset_group, output_coordsets.add_child(coordset_names[i]));
+            coordset::combine(coordset_group, output_coordsets.add_child(coordset_names[i]), &opts);
+            // pointmaps / element_map are correct!
+            // std::cout << "COMBINED CSET" << std::endl;
+            // output_coordsets[coordset_names[i]].print();
         }
     }
-
-    // Combine mapping information stored in chunks to assemble new field
-    // that indicates original domain,pointid values for each point
-
-    // Determine names of all topologies
 
     // Iterate over all topology names and combine like-named topologies
     // as new unstructured topology.
@@ -5130,7 +6402,16 @@ partitioner::combine_as_unstructured(int domain,
             const Node *pointmaps = output_coordsets[*itr].fetch_ptr("pointmaps");
             if(!pointmaps) { continue; }
 
-            topology::combine(topo_group.second, *pointmaps, output_topologies.add_child(topo_group.first));
+            Node opts;
+            opts["type"] = rt;
+            // std::cout << "Resulting pointmaps: " << std::endl;
+            // pointmaps->print();
+            topology::combine(topo_group.second, *pointmaps, output_coordsets[*itr], 
+                output_topologies.add_child(topo_group.first), &opts);
+            if(output_coordsets[*itr].has_child("element_map"))
+            {
+                output_coordsets[*itr].remove_child("element_map");
+            }
         }
     }
 
@@ -5145,10 +6426,9 @@ partitioner::combine_as_unstructured(int domain,
         }
     }
 
+    Node &output_fields = output["fields"];
     if(have_fields)
     {
-        Node &output_fields = output["fields"];
-
         // Note: It should already be verified that they have a "fields" child
         using field_group_t = std::pair<std::string, std::vector<const Node*>>;
         std::vector<field_group_t> field_groups;
@@ -5175,15 +6455,6 @@ partitioner::combine_as_unstructured(int domain,
             }
         }
 
-#if 0
-        std::cout << "Number of fields: " << field_groups.size() << std::endl;
-        for(const auto &pair : field_groups)
-        {
-            std::cout << "  " << pair.first << std::endl;
-        }
-#endif
-
-        // Use node 0 as a reference
         for(size_t fgi = 0; fgi < field_groups.size(); fgi++)
         {
             const auto &field_name = field_groups[fgi].first;
@@ -5194,201 +6465,223 @@ partitioner::combine_as_unstructured(int domain,
                 CONDUIT_WARN("Field " << field_name << " is not topology based, TODO: Implement material based field combinations.");
                 continue;
             }
-            const std::string &ref_topo_name = field_group[0]->child("topology").as_string();
+            const std::string &assoc_topo_name = field_group[0]->child("topology").as_string();
 
-            // Make sure we have a toplogy group for the given name
-            auto itr = std::find_if(topo_groups.begin(), topo_groups.end(), [&](topo_group_t &g){
-                return g.first == ref_topo_name;
+            // Make sure we have an output toplogy for the given name
+            if(!output_topologies.has_child(assoc_topo_name))
+            {
+                CONDUIT_ERROR("Field " << field_name << " references " << assoc_topo_name
+                    << " which doesn't exist.");
+                continue;
+            }
+            Node &out_topo = output_topologies[assoc_topo_name];
+
+            // Make sure there were as many input topologies as there are fields
+            //  for this topology name
+            auto topo_itr = std::find_if(topo_groups.begin(), topo_groups.end(),
+                    [&assoc_topo_name](const topo_group_t &g) {
+                return g.first == assoc_topo_name;
             });
-            if(itr == topo_groups.end())
+
+            if(topo_itr->second.size() != field_group.size())
             {
-                CONDUIT_ERROR("Field " << field_name << " references " << ref_topo_name << " which doesn't exist.");
+                CONDUIT_INFO("Field " << field_name << " is not present on all input domains, skipping...");
                 continue;
             }
-            const auto &topo_group = itr->second;
 
-            // Figure out num components and out dtype
-            index_t ncomps = 0;
-            Schema out_schema;
+            // Make sure we have an output coordset for the given name
+            const std::string &assoc_cset_name = out_topo["coordset"].as_string();
+            if(!output_coordsets.has_child(assoc_cset_name))
             {
-                const Node &values = field_group[0]->child("values");
-                if(values.number_of_children())
-                {
-                    // MCArray
-                    auto vitr = values.children();
-                    while(vitr.has_next())
-                    {
-                        const Node &n = vitr.next();
-                        out_schema[n.name()].set(n.dtype().id());
-                        ncomps++;
-                    }
-                }
-                else
-                {
-                    // Just data
-                    ncomps = 1;
-                    out_schema.set(values.dtype().id());
-                }
-            }
-
-            const std::string &assoc = field_group[0]->child("association").as_string();
-            Node &fout = output_fields[field_name];
-            fout["topology"] = ref_topo_name;
-            fout["association"] = assoc;
-            // Determine if we are vertex or element associated
-            if(assoc == utils::ASSOCIATIONS[0])
-            {
-                // Vertex association
-                // Need to use pointmaps to map this field
-                // Get the point map
-                const Node *group_cset = topo_group[0]->fetch_ptr("coordset");
-                auto itr = std::find(coordset_names.begin(), coordset_names.end(), group_cset->as_string());
-                if(itr == coordset_names.end())
-                {
-                    CONDUIT_ERROR("Could not find coordset " << group_cset->as_string() << " when building fields.");
-                    continue;
-                }
-                const Node &out_coordset = output_coordsets[*itr];
-                std::vector<DataArray<index_t>> pmaps;
-                {
-
-                    const Node *pointmaps = out_coordset.fetch_ptr("pointmaps");
-                    if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); continue; }
-                    for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
-                    {
-                        pmaps.emplace_back(pointmaps->child(pi).value());
-                    }
-                }
-
-                const index_t nt = coordset::length(out_coordset);
-                Node &out_values = fout["values"];
-                std::vector<Node *> out_values_comps;
-                if(ncomps > 1)
-                {
-                    for(index_t si = 0; si < out_schema.number_of_children(); si++)
-                    {
-                        const DataType dt(out_schema[si].dtype().id(), nt);
-                        out_schema[si].set(dt);
-                    }
-                    out_values.set(out_schema);
-                    for(index_t ci = 0; ci < out_values.number_of_children(); ci++)
-                    {
-                        out_values_comps.push_back(&out_values[ci]);
-                    }
-                }
-                else
-                {
-                    const DataType dt(out_schema.dtype().id(), nt);
-                    out_schema.set(dt);
-                    out_values.set(out_schema);
-                    out_values_comps.push_back(&out_values);
-                }
-
-                const index_t npmaps = (index_t)pmaps.size();
-                for(index_t fi = 0; fi < npmaps; fi++)
-                {
-                    const auto &pmap = pmaps[fi];
-                    const Node &data = field_group[fi]->child("values");
-                    for(index_t idx = 0; idx < pmap.number_of_elements(); idx++)
-                    {
-                        const index_t out_idx = pmap[idx];
-                        for(index_t ci = 0; ci < ncomps; ci++)
-                        {
-                            const auto bytes = out_values_comps[ci]->dtype().element_bytes();
-                            void *out_data = out_values_comps[ci]->element_ptr(out_idx);
-                            const void *in_data;
-                            if(data.number_of_children())
-                            {
-                                in_data = data[ci].element_ptr(idx);
-                            }
-                            else
-                            {
-                                in_data = data.element_ptr(idx);
-                            }
-                            memcpy(out_data, in_data, bytes);
-                        }
-                    }
-                }
-            }
-            else if(assoc == utils::ASSOCIATIONS[1])
-            {
-                // Element association
-                // Need to use element maps to map this field
-                const Node &out_topo_map = output["topologies"][ref_topo_name]["element_map"];
-                const DataArray<index_t> tmap = out_topo_map.value();
-                const index_t sz = tmap.number_of_elements();
-                const index_t nt = sz / 2;
-                Node &out_values = fout["values"];
-                std::vector<Node *> out_values_comps;
-                if(ncomps > 1)
-                {
-                    for(index_t si = 0; si < out_schema.number_of_children(); si++)
-                    {
-                        const DataType dt(out_schema[si].dtype().id(), nt);
-                        out_schema[si].set(dt);
-                    }
-                    out_values.set(out_schema);
-                    for(index_t ci = 0; ci < out_values.number_of_children(); ci++)
-                    {
-                        out_values_comps.push_back(&out_values[ci]);
-                    }
-                }
-                else
-                {
-                    const DataType dt(out_schema.dtype().id(), nt);
-                    out_schema.set(dt);
-                    out_values.set(out_schema);
-                    out_values_comps.push_back(&out_values);
-                }
-
-                index_t map_idx = 0;
-
-                while(map_idx < sz)
-                {
-                    const index_t idx = map_idx / 2;
-                    const index_t dom_idx = tmap[map_idx++];
-                    const index_t elem_idx = tmap[map_idx++];
-                    const Node &data = field_group[dom_idx]->child("values");
-                    if(data.number_of_children())
-                    {
-                        for(index_t ci = 0; ci < data.number_of_children(); ci++)
-                        {
-                            void *out_data = out_values_comps[ci]->element_ptr(idx);
-                            const void *in_data = data[ci].element_ptr(elem_idx);
-                            memcpy(out_data, in_data, data[ci].dtype().element_bytes());
-                        }
-                    }
-                    else
-                    {
-                        void *out_data = out_values_comps[0]->element_ptr(idx);
-                        const void *in_data = data.element_ptr(elem_idx);
-                        memcpy(out_data, in_data, data.dtype().element_bytes());
-                    }
-                }
-            }
-            else
-            {
-                CONDUIT_WARN("Unsupported association for field " << field_name << " " << assoc);
+                CONDUIT_ERROR("Topology " << assoc_topo_name << " references coordset "
+                    << assoc_cset_name << " which doesn't exist. This error was found when building output fields.");
                 continue;
             }
+            Node &out_coordset = output_coordsets[assoc_cset_name];
+            fields::combine(field_group, out_topo, out_coordset, output_fields[field_name]);
         }
     }
 
+    // Cleanup the output node, add original cells/verticies in needed
+    if(!output_fields.has_child("original_element_ids"))
+    {
+        // Q: What happens in the case of multiple topologies?
+        const Node &n_elem_map = output_topologies[0]["element_map"];
+        Node &out_field = output_fields["original_element_ids"];
+        out_field["topology"].set(output_topologies[0].name());
+        // utils::ASSOCIATIONS[1]
+        out_field["association"].set("element");
+        Schema s;
+        const DataType &dt = n_elem_map.dtype();
+        const index_t sz = dt.number_of_elements() / 2;
+        s["domains"].set(DataType(dt.id(), sz, 0, 
+            2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
+        s["values"].set(DataType(dt.id(), sz, 1*dt.element_bytes(),
+            2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
+        out_field["values"].set(s);
 
-    // Add the combined result to output node.
+        std::memcpy(
+            out_field["values/domains"].element_ptr(0),
+            n_elem_map.element_ptr(0),
+            dt.element_bytes()*dt.number_of_elements());
+
+        std::vector<index_t> domain_map;
+        bool has_domain_ids = false;
+        for(index_t i = 0; i < (index_t)inputs.size(); i++)
+        {
+            if(inputs[i]->has_path("state/domain_id"))
+            {
+                const index_t did = (*inputs[i])["state/domain_id"].to_index_t();
+                if(did != i)
+                {
+                    domain_map.push_back(did);
+                    has_domain_ids = true;
+                    continue;
+                }
+            }
+            domain_map.push_back(i);
+        }
+
+        if(has_domain_ids)
+        {
+            DataArray<index_t> out_domains = out_field["values/domains"].value();
+            for(index_t i = 0; i < out_domains.number_of_elements(); i++)
+            {
+                out_domains[i] = domain_map[out_domains[i]];
+            }
+        }
+
+    }
+    // Remove the element_maps from the output
+    for(index_t i = 0; i < output_topologies.number_of_children(); i++)
+    {
+        output_topologies[i].remove("element_map");
+    }
+
+    if(!output_fields.has_child("original_vertex_ids"))
+    {
+        // Get the pointmaps
+        const std::string &coordset_name = output_topologies[0]["coordset"].as_string();
+        if(!output_coordsets.has_child(coordset_name))
+        {
+            CONDUIT_ERROR("Output topology 0 references coordset " << coordset_name << " which doesn't exist.");
+            return;
+        }
+        const Node &n_pointmaps = output_coordsets[coordset_name]["pointmaps"];
+        std::vector<DataArray<index_t>> pointmaps;
+        for(index_t i = 0; i < n_pointmaps.number_of_children(); i++)
+        {
+            pointmaps.emplace_back(n_pointmaps[i].value());
+        }
+
+        Node &out_field = output_fields["original_vertex_ids"];
+        out_field["topology"].set(output_topologies[0].name());
+        // utils::ASSOCIATIONS[0]
+        out_field["association"].set("vertex");
+
+        const index_t sz = mesh::coordset::length(output_coordsets[coordset_name]);
+        const DataType dt(pointmaps[0].dtype().id(), sz);
+        out_field["values"]["domains"].set(dt);
+        out_field["values"]["ids"].set(dt);
+        DataArray<index_t> out_domains = out_field["values/domains"].value();
+        DataArray<index_t> out_ids     = out_field["values/ids"].value();
+
+        for(index_t pi = 0; pi < (index_t)pointmaps.size(); pi++)
+        {
+            index_t dom_id = pi;
+            if(inputs[pi]->has_path("state/domain_id"))
+            {
+                dom_id = (*inputs[pi])["state/domain_id"].to_index_t();
+            }
+            const auto &pmap = pointmaps[pi];
+            for(index_t vi = 0; vi < pmap.number_of_elements(); vi++)
+            {
+                const auto out_idx = pmap[vi];
+                out_domains[out_idx] = dom_id;
+                out_ids[out_idx]     = vi;
+            }
+        }
+
+    }
+    // Remove the pointmaps from the output
+    for(index_t i = 0; i < output_coordsets.number_of_children(); i++)
+    {
+        output_coordsets[i].remove("pointmaps");
+    }
+}
+
+//-------------------------------------------------------------------------
+void
+partitioner::combine_as_structured(int domain,
+    const std::vector<const Node *> &inputs,
+    Node &output)
+{
+    // TODO: Make combined coordset and new structured topology (uniform,
+    //       rectilinear, structured) suitable for the output.
+}
+
+//-------------------------------------------------------------------------
+void
+partitioner::combine_as_unstructured(int domain,
+    const std::vector<const Node *> &inputs,
+    Node &output)
+{
+    // Combine mapping information stored in chunks to assemble new field
+    // that indicates original domain,pointid values for each point
+
+    // Determine names of all topologies
+
+
 }
 
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 namespace coordset
 {
-// Q: Why is this exposed?
+// Q: Why is this exposed? A: For tests
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coordsets,
                                  conduit::Node &output,
-                                 double tolerance)
+                                 const conduit::Node *options)
 {
-    point_merge pm;
-    pm.execute(coordsets, tolerance, output);
+    double tolerance = CONDUIT_EPSILON;
+    std::string approach = "explicit";
+    if(options)
+    {
+        const Node *n_tolerance = options->fetch_ptr("merge_tolerance");
+        if(n_tolerance)
+        {
+            tolerance = n_tolerance->to_double();
+        }
+        const Node *n_type = options->fetch_ptr("type");
+        if(n_type)
+        {
+            const std::string type = n_type->as_string();
+            if(type == "explicit" || type == "implicit")
+            {
+                approach = type;
+            }
+            else
+            {
+                CONDUIT_WARN("Invalid \"type\" passed to coordset::combine, expected \"implicit\" or \"explicit\", got " << type
+                    << ". Continuing as explicit.");
+            }
+        }
+    }
+
+    bool do_explicit = true;
+    if(approach == "implicit")
+    {
+        const bool success = utils::combine_implicit(coordsets, tolerance, output);
+        do_explicit = !success;
+    }
+
+    // If implicit combination failed fall back on explicit combination,
+    //  or we were told explicit from the start.
+    if(do_explicit)
+    {
+        point_merge pm;
+        pm.execute(coordsets, tolerance, output);
+    }
 }
 
 }
@@ -5401,6 +6694,7 @@ namespace topology
 // Q: Why is this exposed?
 void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
                                    const conduit::Node &pointmaps,
+                                   const conduit::Node &coordset,
                                    conduit::Node &output,
                                    conduit::Node *options)
 {
@@ -5409,6 +6703,10 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &top
         return;
     }
 
+    const static std::array<std::string,3> VALID_TYPES = {
+        "unstructured", "uniform", "rectilinear"
+    };
+    std::string type = "unstructured";
     bool force_polyhedral = false;
     bool force_polygonal = false;
     if(options)
@@ -5422,107 +6720,152 @@ void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &top
         {
             force_polygonal = true;
         }
-    }
 
-    const std::string &cset_name = topologies[0]->child("coordset").as_string();
-    std::vector<const Node*> working_topologies;
-    std::vector<Node> temporary_nodes;
-    temporary_nodes.reserve(topologies.size());
-
-    // Validate / translate inputs
-    {
-        const index_t ntopos = topologies.size();
-        for(index_t i = 0; i < ntopos; i++)
+        if(options->has_child("type"))
         {
-            const Node *topo = topologies[i];
-            Node temp;
-            if(!topo) { continue; }
+            type = options->child("type").as_string();
+            bool valid = false;
 
-            const Node *type = topo->fetch_ptr("type");
-            if(!type) { continue; }
+            // No support for structured yet.
+            if(type == "structured")
+            {
+                type = "unstructured";
+            }
 
-            const Node *cset = topo->fetch_ptr("coordset");
-            if(!cset) { continue; }
+            // Validate.
+            for(const std::string &t : VALID_TYPES)
+            {
+                if(type == t) { valid = true; break; }
+            }
 
-            const std::string &t = type->as_string();
-            if(t == "points")
+            if(!valid)
             {
-                temporary_nodes.emplace_back();
-                // topology::points::to_explicit(topo, temporary_nodes.back());
-                working_topologies.push_back(&temporary_nodes.back());
+                CONDUIT_ERROR("Invalid type passed to topology::combine - " << type);
+                return;
             }
-            else if(t == "uniform")
-            {
-                temporary_nodes.emplace_back();
-                topology::uniform::to_unstructured(*topo, temporary_nodes.back(), temp);
-                working_topologies.push_back(&temporary_nodes.back());
-            }
-            else if(t == "rectilinear")
-            {
-                temporary_nodes.emplace_back();
-                topology::rectilinear::to_unstructured(*topo, temporary_nodes.back(), temp);
-                working_topologies.push_back(&temporary_nodes.back());
-            }
-            else if(t == "structured")
-            {
-                temporary_nodes.emplace_back();
-                topology::structured::to_unstructured(*topo, temporary_nodes.back(), temp);
-                working_topologies.push_back(&temporary_nodes.back());
-            }
-            else if(t == "unstructured")
-            {
-                working_topologies.push_back(topo);
-            }
-            else
-            {
-                //  ERROR!
-                continue;
-            }
-        }
-
-        // Make sure we have the correct number of point maps
-        if(pointmaps.number_of_children() != (index_t)working_topologies.size())
-        {
-            std::cerr << "ERROR: Number of input pointmaps and number of input topologies do not match!" << std::endl;
-            return;
         }
     }
-
-    // Start building the output
-    output.reset();
-    if(working_topologies.size())
+    
+    // std::cout << "combining topology as type " << type << std::endl;
+    if(type == "rectilinear" || type == "uniform")
     {
-        bool do_polyhedral = force_polyhedral;
-        bool do_polygonal  = force_polygonal;
-        index_t dim = 0;
-        for(const Node *topo : topologies)
+        if(!(coordset["type"].as_string() == "rectilinear" || 
+            coordset["type"].as_string() == "uniform"))
         {
-            const Node *shape = topo->fetch_ptr("elements/shape");
-            if(!shape) { continue; }
-            const utils::ShapeType s(shape->as_string());
-            if(s.is_polyhedral())
+            type = "unstructured";
+        }
+        else
+        {
+            output["type"] = type;
+            output["coordset"] = coordset.name();
+            output["element_map"] = coordset["element_map"];
+        }
+    }
+    
+    if(type == "unstructured")
+    {
+        const std::string &cset_name = coordset.name();
+        std::vector<const Node*> working_topologies;
+        std::vector<Node> temporary_nodes;
+        temporary_nodes.reserve(topologies.size());
+
+        // Validate / translate inputs
+        {
+            const index_t ntopos = topologies.size();
+            for(index_t i = 0; i < ntopos; i++)
             {
-                do_polyhedral = true;
+                const Node *topo = topologies[i];
+                Node temp;
+                if(!topo) { continue; }
+
+                const Node *type = topo->fetch_ptr("type");
+                if(!type) { continue; }
+
+                const Node *cset = topo->fetch_ptr("coordset");
+                if(!cset) { continue; }
+
+                const std::string &t = type->as_string();
+                if(t == "points")
+                {
+                    temporary_nodes.emplace_back();
+                    // topology::points::to_explicit(topo, temporary_nodes.back());
+                    working_topologies.push_back(&temporary_nodes.back());
+                }
+                else if(t == "uniform")
+                {
+                    temporary_nodes.emplace_back();
+                    topology::uniform::to_unstructured(*topo, temporary_nodes.back(), temp);
+                    working_topologies.push_back(&temporary_nodes.back());
+                }
+                else if(t == "rectilinear")
+                {
+                    temporary_nodes.emplace_back();
+                    topology::rectilinear::to_unstructured(*topo, temporary_nodes.back(), temp);
+                    working_topologies.push_back(&temporary_nodes.back());
+                }
+                else if(t == "structured")
+                {
+                    temporary_nodes.emplace_back();
+                    topology::structured::to_unstructured(*topo, temporary_nodes.back(), temp);
+                    working_topologies.push_back(&temporary_nodes.back());
+                }
+                else if(t == "unstructured")
+                {
+                    working_topologies.push_back(topo);
+                }
+                else
+                {
+                    //  ERROR!
+                    continue;
+                }
             }
-            else if(s.is_polygonal())
+
+            // Make sure we have the correct number of point maps
+            if(pointmaps.number_of_children() != (index_t)working_topologies.size())
             {
-                do_polygonal = true;
+                CONDUIT_ERROR("Number of input pointmaps and number of input topologies do not match! " 
+                    << pointmaps.number_of_children() << " != " << working_topologies.size());
+                return;
             }
-            dim = std::max(dim, s.dim);
-            if(do_polyhedral) break;
         }
 
-        if(do_polyhedral || (do_polygonal && dim > 2))
+        // Start building the output
+        output.reset();
+        if(working_topologies.size())
         {
-            build_polyhedral_output(working_topologies, pointmaps, cset_name, output);
-        }
-        else if(do_polygonal)
-        {
-            build_polygonal_output(working_topologies, pointmaps, cset_name, output);
-        }
-        else // Single shape & multi shape topologies
-        {
-            build_unstructured_output(working_topologies, pointmaps, cset_name, output);
+            bool do_polyhedral = force_polyhedral;
+            bool do_polygonal  = force_polygonal;
+            index_t dim = 0;
+            for(const Node *topo : topologies)
+            {
+                // TODO: Write a dim function that knows about all the different topologies
+                const Node *shape = topo->fetch_ptr("elements/shape");
+                if(!shape) { continue; }
+                const utils::ShapeType s(shape->as_string());
+                if(s.is_polyhedral())
+                {
+                    do_polyhedral = true;
+                }
+                else if(s.is_polygonal())
+                {
+                    do_polygonal = true;
+                }
+                dim = std::max(dim, s.dim);
+                if(do_polyhedral) break;
+            }
+
+            if(do_polyhedral || (do_polygonal && dim > 2))
+            {
+                build_polyhedral_output(working_topologies, pointmaps, cset_name, output);
+            }
+            else if(do_polygonal)
+            {
+                build_polygonal_output(working_topologies, pointmaps, cset_name, output);
+            }
+            else // Single shape & multi shape topologies
+            {
+                build_unstructured_output(working_topologies, pointmaps, cset_name, output);
+            }
         }
     }
 }
