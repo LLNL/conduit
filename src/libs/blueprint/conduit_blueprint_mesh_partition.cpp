@@ -1462,36 +1462,48 @@ partitioner::split_selections()
 {
     // Splitting.
     int iteration = 1;
-    while(target > get_total_selections())
+    bool splitting = true;
+    while(splitting)
     {
-        // Get the rank with the largest selection and get that local
-        // selection index.
-        int sel_rank = -1, sel_index = -1;
-        get_largest_selection(sel_rank, sel_index);
+        // Get the total number of selections. This may involve communication
+        // in subclasses.
+        auto nsel = get_total_selections();
+        if(nsel == 0)
+            splitting = false;
+        else
+            splitting = target > nsel;
 
-        if(rank == sel_rank)
+        if(splitting)
         {
-            auto ps = selections[sel_index]->partition(*meshes[sel_index]);
+            // Get the rank with the largest selection and get that local
+            // selection index.
+            int sel_rank = -1, sel_index = -1;
+            get_largest_selection(sel_rank, sel_index);
 
-            if(!ps.empty())
+            if(rank == sel_rank)
             {
-                const conduit::Node *m = meshes[sel_index];
-                meshes.insert(meshes.begin()+sel_index, ps.size()-1, m);
-                selections.insert(selections.begin()+sel_index, ps.size()-1, nullptr);
-                for(size_t i = 0; i < ps.size(); i++)
-                    selections[sel_index + i] = ps[i];
+                auto ps = selections[sel_index]->partition(*meshes[sel_index]);
+
+                if(!ps.empty())
+                {
+                    const conduit::Node *m = meshes[sel_index];
+                    meshes.insert(meshes.begin()+sel_index, ps.size()-1, m);
+                    selections.insert(selections.begin()+sel_index, ps.size()-1, nullptr);
+                    for(size_t i = 0; i < ps.size(); i++)
+                        selections[sel_index + i] = ps[i];
 
 #if 1
-                cout << "partitioner::split_selections (after split "
-                     << iteration << ")" << endl;
-                for(size_t i = 0; i < selections.size(); i++)
-                {
-                    cout << "\t";
-                    selections[i]->print(cout);
-                    cout << endl;
-                }
-                iteration++;
+                    cout << "partitioner::split_selections (after split "
+                         << iteration << ")" << endl;
+                    for(size_t i = 0; i < selections.size(); i++)
+                    {
+                        cout << "\t";
+                        selections[i]->print(cout);
+                        cout << endl;
+                    }
+                    iteration++;
 #endif
+                }
             }
         }
     }

@@ -487,7 +487,7 @@ MPI_Barrier(comm);
         // that we want them all to belong to.
 
         // NOTE: This may mean that we do not get #target domains though.
-        if(domain_sizes.size() != target)
+        if(!domain_sizes.empty() && domain_sizes.size() != target)
         {
             CONDUIT_WARN("The unique number of domain ids "
                 << domain_sizes.size()

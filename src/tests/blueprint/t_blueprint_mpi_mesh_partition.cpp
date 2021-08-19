@@ -414,12 +414,39 @@ const char *opt01 =
     }
 }
 
-#if 0
 //-----------------------------------------------------------------------------
-TEST(blueprint_mesh_mpi_partition, all_ranks_have_data_selections)
+TEST(blueprint_mesh_mpi_partition, no_selections_apply)
 {
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Make 20x20x1 cell mesh on rank 0
+    conduit::Node input, output, output2, options, msg;
+    conduit::index_t vdims[] = {21,21,1};
+    if(rank == 0)
+    {
+        conduit::blueprint::mesh::examples::braid("uniform", vdims[0], vdims[1], vdims[2], input);
+        // Override with int64 because YAML loses int/uint information.
+        conduit::int64 i100 = 100;
+        input["state/cycle"].set(i100);
+        input["state/domain_id"] = 0;
+    }
+
+    // Make a selection that does not apply
+    const char *opt0 =
+"selections:\n"
+"   -\n"
+"     type: logical\n"
+"     domain_id: 99\n"
+"     start: [0,0,0]\n"
+"     end:   [0,0,0]\n";
+    options.reset(); options.parse(opt0, "yaml");
+    conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 0);
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST(blueprint_mesh_mpi_partition, some_ranks_have_data)
 {
