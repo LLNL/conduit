@@ -74,6 +74,33 @@ namespace mesh
 {
 
 //-------------------------------------------------------------------------
+static index_t
+get_index_t(const conduit::Node &n, bool &ok)
+{
+    ok = true;
+    index_t retval = 0;
+    if(n.dtype().is_int8())
+        retval = static_cast<index_t>(n.as_int8());
+    else if(n.dtype().is_int16())
+        retval = static_cast<index_t>(n.as_int16());
+    else if(n.dtype().is_int32())
+        retval = static_cast<index_t>(n.as_int32());
+    else if(n.dtype().is_int64())
+        retval = static_cast<index_t>(n.as_int64());
+    else if(n.dtype().is_uint8())
+        retval = static_cast<index_t>(n.as_uint8());
+    else if(n.dtype().is_uint16())
+        retval = static_cast<index_t>(n.as_uint16());
+    else if(n.dtype().is_uint32())
+        retval = static_cast<index_t>(n.as_uint32());
+    else if(n.dtype().is_uint64())
+        retval = static_cast<index_t>(n.as_uint64());
+    else
+        ok = false;
+    return retval;
+}
+
+//-------------------------------------------------------------------------
 /**
   options["comm"] = MPI_COMM_WORLD;
 
@@ -184,7 +211,7 @@ options:
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-const std::string selection::DOMAIN_KEY("domain");
+const std::string selection::DOMAIN_KEY("domain_id");
 const std::string selection::TOPOLOGY_KEY("topology");
 
 //---------------------------------------------------------------------------
@@ -260,13 +287,20 @@ selection::init(const conduit::Node &n_options)
     try
     {
         if(n_options.has_child(DOMAIN_KEY))
-            domain = n_options[DOMAIN_KEY].to_index_t();
+        {
+            const conduit::Node &n_dk = n_options[DOMAIN_KEY];
+            bool ok = false;
+            index_t tmp = get_index_t(n_dk, ok);
+            if(ok)
+                domain = tmp;
+        }
 
         if(n_options.has_child(TOPOLOGY_KEY))
             topology = n_options[TOPOLOGY_KEY].as_string();
     }
-    catch(...)
+    catch(const conduit::Error &/*e*/)
     {
+        //e.print();
         retval = false;
     }
 
@@ -1276,6 +1310,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     // domains that were passed in to make a vector of meshes and selections
     // that can be used to partition the meshes.
     selections.clear();
+    index_t num_explicit_selections = 0;
     if(options.has_child("selections"))
     {
         const conduit::Node &n_selections = options["selections"];
@@ -1292,6 +1327,8 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                 auto sel = create_selection(type);
                 if(sel != nullptr && sel->init(n_sel))
                 {
+                    ++num_explicit_selections;
+
                     // The selection is good. See if it applies to the domains.
                     auto n = static_cast<index_t>(doms.size());
                     for(index_t di = 0; di < n; di++)
@@ -1300,7 +1337,12 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                         // Otherwise, we use the position in the list.
                         index_t domid = di;
                         if(doms[di]->has_path("state/domain_id"))
-                            domid = doms[di]->operator[]("state/domain_id").as_int64();
+                        {
+                            bool ok = false;
+                            index_t tmp = get_index_t(doms[di]->operator[]("state/domain_id"), ok);
+                            if(ok)
+                                domid = tmp;
+                        }
 
                         if(domid == sel->get_domain() && sel->applicable(*doms[di]))
                         {
@@ -1310,16 +1352,23 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                         }
                     }
                 }
+                else
+                {
+                    cout << "Could not initialize selection " << i << endl;
+                    return false;
+                }
             }
-            catch(const conduit::Error &)
+            catch(const conduit::Error &e)
             {
+                cout << "Exception thrown handling selection " << i
+                     << ": " << e.message() << endl;
                 return false;
             }
         }
     }
     else
     {
-        // Add null selections to indicate that we take the whole domain.
+        // Add selections to indicate that we take the whole domain.
         for(size_t domid = 0; domid < doms.size(); domid++)
         {
             auto sel = create_selection_all_elements(*doms[domid]);
@@ -1334,8 +1383,18 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
         target = options["target"].to_unsigned_int();
     else
     {
-        // target was not provided. Use the number of selections as the target.
-        target = selections.size();
+        // Target was not provided.
+        if(num_explicit_selections > 0)
+        {
+            // We had explicit selections. That's how many target domains to make.
+            target = num_explicit_selections;
+        }
+        else
+        {
+            // We are likely using all domains on this rank and on all ranks,
+            // so we need to sum the number of domains to arrive at the target.
+            target = get_total_selections();
+        }
     }
 
     // Get any fields that we're using to limit the selection.
@@ -1357,7 +1416,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
 
 
 #if 1
-    cout << "partitioner::initialize" << endl;
+    cout << rank << ": partitioner::initialize" << endl;
     cout << "\ttarget=" << target << endl;
     for(size_t i = 0; i < selections.size(); i++)
     {
@@ -1367,7 +1426,9 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     }
 #endif
 
-    return !selections.empty();
+    // If we made it to the end then we will have created any applicable
+    // selections. Some ranks may have created no selections. That is ok.
+    return true; //!selections.empty();
 }
 
 //---------------------------------------------------------------------------
@@ -1375,6 +1436,7 @@ void
 partitioner::get_largest_selection(int &sel_rank, int &sel_index) const
 {
     sel_rank = 0;
+    sel_index = -1;
     long largest_selection_size = 0;
     for(size_t i = 0; i < selections.size(); i++)
     {

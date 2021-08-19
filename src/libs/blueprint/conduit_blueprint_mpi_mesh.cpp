@@ -564,7 +564,7 @@ MPI_Barrier(comm);
         // each chunk will contribute. Spread target domains across size ranks.
         std::vector<int> rank_domain_count(size, 0);
         int divsize = std::min(size, static_cast<int>(target));
-        for(int i = 0; i < target; i++)
+        for(unsigned int i = 0; i < target; i++)
             rank_domain_count[i % divsize]++;
 
         // Figure out which source chunks join which ranks.
@@ -828,7 +828,14 @@ partition(const conduit::Node &n_mesh, const conduit::Node &options,
     conduit::Node &output, MPI_Comm comm)
 {
     parallel_partitioner P(comm);
-    if(P.initialize(n_mesh, options))
+
+    // Partitioners on different ranks ought to return the same value but
+    // perhaps some did not when they examined their own domains against
+    // selection.
+    int iinit, ginit;
+    iinit = P.initialize(n_mesh, options) ? 1 : 0;
+    MPI_Allreduce(&iinit, &ginit, 1, MPI_INT, MPI_MAX, comm);
+    if(ginit > 0)
     {
         P.split_selections();
         output.reset();
