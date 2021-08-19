@@ -23,6 +23,10 @@ using partitioner = conduit::blueprint::mesh::partitioner;
 using std::cout;
 using std::endl;
 
+// Uncomment these macros to enable debugging output.
+//#define CONDUIT_DEBUG_MAP_CHUNKS
+//#define CONDUIT_DEBUG_COMMUNICATE_CHUNKS
+
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -208,11 +212,20 @@ public:
     parallel_partitioner(MPI_Comm c);
     virtual ~parallel_partitioner();
 
+protected:
     virtual long get_total_selections() const override;
+
+    /**
+     @note This method is overridden so we can check options across all ranks
+           for a target value and provide a consistent result, even if the
+           ranks were passed different options. We return the max of any
+           provided target.
+     */
+    virtual bool options_get_target(const conduit::Node &options,
+                                    unsigned int &value) const override;
 
     virtual void get_largest_selection(int &sel_rank, int &sel_index) const override;
 
-protected:
     struct long_int
     {
         long value;
@@ -266,6 +279,22 @@ parallel_partitioner::parallel_partitioner(MPI_Comm c) : partitioner()
 parallel_partitioner::~parallel_partitioner()
 {
     free_chunk_info_dt();
+}
+
+//---------------------------------------------------------------------------
+bool
+parallel_partitioner::options_get_target(const conduit::Node &options,
+    unsigned int &value) const
+{
+    // Get the target value using the base class method.
+    unsigned int val = 0;
+    partitioner::options_get_target(options, val);
+
+    // Take the max target across ranks. Ranks that did not provide it use 0.
+    MPI_Allreduce(&val, &value, 1, MPI_UNSIGNED, MPI_MAX, comm);
+
+    // A target was set by at least one rank if we have a value greater than 0.
+    return value > 0;
 }
 
 //---------------------------------------------------------------------------
@@ -394,15 +423,17 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     int ntotal_chunks = 0;
     for(size_t i = 0; i < nglobal_chunks.size(); i++)
         ntotal_chunks += nglobal_chunks[i];
-#if 1
-MPI_Barrier(comm);
-if(rank == 0)
-{
-cout << "------------------------ map_chunks ------------------------" << endl;
-cout << "ntotal_chunks = " << ntotal_chunks << endl;
-}
-MPI_Barrier(comm);
+
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
+    MPI_Barrier(comm);
+    if(rank == 0)
+    {
+        cout << "------------------------ map_chunks ------------------------" << endl;
+        cout << "ntotal_chunks = " << ntotal_chunks << endl;
+    } 
+    MPI_Barrier(comm);
 #endif
+
     // Compute offsets. We use int because of MPI_Allgatherv
     std::vector<int> offsets(size, 0);
     for(size_t i = 1; i < nglobal_chunks.size(); i++)
@@ -433,7 +464,7 @@ MPI_Barrier(comm);
                    &offsets[0],
                    chunk_info_dt,
                    comm);
-#if 1
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
     if(rank == 0)
     {
         for(int i = 0; i < ntotal_chunks; i++)
@@ -467,7 +498,7 @@ MPI_Barrier(comm);
             free_to_move++;
     }
 
-#if 1
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
     if(rank == 0)
     {
         cout << "domain_sizes = {";
@@ -508,7 +539,7 @@ MPI_Barrier(comm);
     else if(free_to_move == ntotal_chunks)
     {
         // No chunks told us where they go so ALL are free to move.
-#if 1
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
         if(rank == 0)
         {
             cout << "** We decide where chunks go." << endl;
@@ -552,10 +583,11 @@ MPI_Barrier(comm);
             // Add the current chunk to the specified target domain.
             target_element_counts[idx] += global_chunk_info[i].num_elements;
             global_dest_domain[i] = idx;
-#if 1
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
             if(rank == 0)
             {
-                cout << "Add chunk " << i << " to domain " << idx << " (nelem=" << target_element_counts[idx] << ")" << endl;
+                cout << "Add chunk " << i << " to domain " << idx
+                     << " (nelem=" << target_element_counts[idx] << ")" << endl;
             }
 #endif
         }
@@ -571,7 +603,13 @@ MPI_Barrier(comm);
         int target_id = 0;
         for(int r = 0; r < size; r++)
         {
-if(rank == 0) cout << "r=" << r << ", rank_domain_count[r]=" << rank_domain_count[r] << endl;
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
+            if(rank == 0)
+            {
+                cout << "r=" << r << ", rank_domain_count[r]="
+                     << rank_domain_count[r] << endl;
+            }
+#endif
             if(rank_domain_count[r] == 0)
                 break;
             // For each domain on this rank r.
@@ -581,15 +619,20 @@ if(rank == 0) cout << "r=" << r << ", rank_domain_count[r]=" << rank_domain_coun
                 {
                     if(global_dest_domain[i] == target_id)
                     {
-if(rank == 0)
-cout << "global domain " << target_id << " goes to " << r << endl;
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
+                        if(rank == 0)
+                        {
+                            cout << "global domain " << target_id
+                                 << " goes to " << r << endl;
+                        }
+#endif
                         global_dest_rank[i] = r;
                     }
                 }
                 target_id++;
             }
         }
-#if 1
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
         if(rank == 0)
         {
             cout << "target=" << target << endl;
@@ -623,9 +666,8 @@ cout << "global domain " << target_id << " goes to " << r << endl;
         // to handle this.
         CONDUIT_ERROR("Invalid mixture of destination rank/domain specifications.");
     }
-#if 1
+#ifdef CONDUIT_DEBUG_MAP_CHUNKS
     // We're passing out global info now so all ranks should be the same.
-
     if(rank == 0)
     {
         std::cout << rank << ": dest_ranks={";
@@ -668,7 +710,7 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
             src_rank[idx++] = r-1;
     }
 
-#if 1
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
     MPI_Barrier(comm);
     if(rank == 0)
     {
@@ -693,7 +735,10 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
         // If we're not sending to self, send the chunk.
         if(dest != rank)
         {
-cout << rank << ": send_using_schema(dest=" << dest << ", tag=" << tag << ")" << endl;
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
+            cout << rank << ": send_using_schema(dest=" << dest
+                 << ", tag=" << tag << ")" << endl;
+#endif
             conduit::relay::mpi::send_using_schema(*chunks[i].mesh, dest, tag, comm);
         }
     }
@@ -717,8 +762,10 @@ cout << rank << ": send_using_schema(dest=" << dest << ", tag=" << tag << ")" <<
             }
             else
             {
-cout << rank << ": recv_using_schema(src=" << src_rank[i] << ", tag=" << tag << ")" << endl;
-
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
+                cout << rank << ": recv_using_schema(src=" << src_rank[i]
+                     << ", tag=" << tag << ")" << endl;
+#endif
                 conduit::Node *n_recv = new conduit::Node;              
                 conduit::relay::mpi::recv_using_schema(*n_recv, src_rank[i], tag, comm);
                 // Save the received chunk and indicate we own it for later.
@@ -727,99 +774,6 @@ cout << rank << ": recv_using_schema(src=" << src_rank[i] << ", tag=" << tag << 
             }
         }
     }
-
-
-#if 0
-    const int PARTITION_TAG_BASE = 12345;
-
-    // If we just have the destination rank/domain then we can send but we do
-    // not know who is sending to us. It would be helpful to have the offsets
-    // too.
-
-    // Serialize the chunks into binary char buffers.
-    std::vector<std::shared_ptr<std::vector<char>>> serialized;
-    std::vector<uint64> serialized_lengths;
-    for(size_t i = 0; i < chunks.size(); i++)
-    {
-        auto sbuf = std::make_shared<std::vector<char>>();
-        serialized.push_back(sbuf);
-
-        // TODO: serialize chunks[i] into sbuf
-
-        serialized_lengths.push_back(static_cast<uint64>(sbuf->size());
-    }
-
-    // How many ranks are sending here.
-    int nsend_here = 0;
-    for(size_t i = 0; i < dest_rank.size(); i++)
-    {
-        if(dest_rank[i] == rank)
-            nsend_here++;
-    }
-
-    // Iterate over this rank's chunks and send lengths of the buffers to
-    // the ranks that need to know, provided we are not sending to ourselves.
-    std::vector<MPI_Request> reqs(chunks.size() + nsend_here);
-    size_t nreq = 0;
-    for(size_t i = 0; i < chunks.size(); i++)
-    {
-        int gchunkid = offsets[rank] + i;
-        int tag = PARTITION_TAG_BASE + gchunkid;
-        MPI_Isend(&serialized_lengths[i], 1, MPI_UNSIGNED_LONG_LONG,
-                  dest_rank[gchunkid], tag, comm, &reqs[nreq]);
-        nreq++;
-    }
-
-    // Use dest_rank and offsets to determine which ranks are sending
-    // each chunk.
-    std::vector<int> sender;
-    sender.reserve(dest_rank.size());
-    for(int r = 0; r < size; r++)
-    {
-        int n = 0;
-        if(r < size-1)
-            n = offsets[r+1] - offsets[r];
-        else
-            n = dest_rank.size() - offsets[r];
-        for(int i = 0; i < n; i++)
-            sender.push_back(r);
-    }
-
-    // Recv on the lengths.
-    std::vector<uint64> recv_serialized_lengths(nsend_here, 0);
-    int nrli = 0;
-    for(size_t i = 0; i < dest_rank.size(); i++)
-    {
-        int gchunkid = i;
-        int tag = PARTITION_TAG_BASE + gchunkid;
-        if(dest_rank[gchunkid] == rank)
-        {
-            MPI_Irecv(&recv_serialized_lengths[nrli], 1, MPI_UNSIGNED_LONG_LONG,
-                      sender[gchunkid], tag, comm, &reqs[nreq]);
-            nreq++;
-            nrli++;
-        }
-    }
-
-    // Wait for all of the sends/recvs to land
-    std::vector<MPI_Status> s(nreq+1);
-    MPI_Waitall(nreq, &reqs[0], &s[0]);
-
-
-    // Post some recvs.
-
-    // Post some sends.
-    for(
-    // MPI_Waitall
-
-
-    // TODO: send chunks to dest_rank if dest_rank[i] != rank.
-    //       If dest_rank[i] == rank then the chunk stays on the rank.
-    //
-    //       Do sends/recvs to send the chunks as blobs among ranks.
-    //
-    //       Populate chunks_to_assemble, chunks_to_assemble_domains
-#endif
 }
 
 //-------------------------------------------------------------------------
@@ -828,6 +782,7 @@ partition(const conduit::Node &n_mesh, const conduit::Node &options,
     conduit::Node &output, MPI_Comm comm)
 {
     parallel_partitioner P(comm);
+    output.reset();
 
     // Partitioners on different ranks ought to return the same value but
     // perhaps some did not when they examined their own domains against
@@ -838,7 +793,6 @@ partition(const conduit::Node &n_mesh, const conduit::Node &options,
     if(ginit > 0)
     {
         P.split_selections();
-        output.reset();
         P.execute(output);
     }
 }

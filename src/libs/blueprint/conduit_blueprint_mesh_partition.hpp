@@ -277,6 +277,18 @@ protected:
     virtual long get_total_selections() const;
 
     /**
+     @brief Obtain the target value from the options if it is present.
+     @param options The options node.
+     @param[out] value The target value.
+
+     @return True if the target value was present and a good value. False if
+             target value was absent or contained a bad value.
+
+     @note Reimplement in parallel
+     */
+    virtual bool options_get_target(const conduit::Node &options, unsigned int &value) const;
+
+    /**
      @brief Get the rank and index of the largest selection. In parallel, we
             will be looking across all ranks to find the largest domains so
             those are split first.

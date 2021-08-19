@@ -37,9 +37,8 @@
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
 
-//#ifdef CONDUIT_PARALLEL_PARTITION
-//#include <mpi.h>
-//#endif
+// Uncomment to enable some debugging output from partitioner.
+// #define CONDUIT_DEBUG_PARTITIONER
 
 // #define DEBUG_POINT_MERGE
 #ifndef DEBUG_POINT_MERGE
@@ -1189,7 +1188,7 @@ partitioner::chunk::chunk(const Node *m, bool own) : mesh(m), owns(own),
 
 //---------------------------------------------------------------------------
 partitioner::chunk::chunk(const Node *m, bool own, int dr, int dd) : 
-    mesh(nullptr), owns(false), destination_rank(dr), destination_domain(dd)
+    mesh(m), owns(own), destination_rank(dr), destination_domain(dd)
 {
 }
 
@@ -1302,6 +1301,52 @@ partitioner::create_selection_all_elements(const conduit::Node &n_mesh) const
 
 //---------------------------------------------------------------------------
 bool
+partitioner::options_get_target(const conduit::Node &options, unsigned int &value) const
+{
+    bool retval = false;
+    value = 0;
+    if(options.has_child("target"))
+    {
+        const conduit::Node &n_target = options["target"];
+        if(n_target.dtype().is_number())
+        {
+            // For signed int types, make the min allowable value be 0.
+            if(n_target.dtype().is_int8())
+            {
+                auto v = n_target.as_int8();
+                value = static_cast<unsigned int>((v < 0) ? 0 : v);
+            }
+            else if(n_target.dtype().is_int16())
+            {
+                auto v = n_target.as_int16();
+                value = static_cast<unsigned int>((v < 0) ? 0 : v);
+            }
+            else if(n_target.dtype().is_int32())
+            {
+                auto v = n_target.as_int32();
+                value = static_cast<unsigned int>((v < 0) ? 0 : v);
+            }
+            else if(n_target.dtype().is_int64())
+            {
+                auto v = n_target.as_int64();
+                value = static_cast<unsigned int>((v < 0) ? 0 : v);
+            }
+            else
+            {
+                value = n_target.to_unsigned_int();
+            }
+            retval = true;
+        }
+        else
+        {
+            CONDUIT_INFO("Nonnumber passed as selection target.");
+        }
+    }
+    return retval;
+}
+
+//---------------------------------------------------------------------------
+bool
 partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &options)
 {
     auto doms = conduit::blueprint::mesh::domains(n_mesh);
@@ -1354,14 +1399,14 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                 }
                 else
                 {
-                    cout << "Could not initialize selection " << i << endl;
+                    CONDUIT_INFO("Could not initialize selection " << i);
                     return false;
                 }
             }
             catch(const conduit::Error &e)
             {
-                cout << "Exception thrown handling selection " << i
-                     << ": " << e.message() << endl;
+                CONDUIT_INFO("Exception thrown handling selection " << i
+                     << ": " << e.message());
                 return false;
             }
         }
@@ -1378,23 +1423,22 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
         }
     }
 
-    // Get the number of target partitions that we're making.
-    if(options.has_child("target"))
-        target = options["target"].to_unsigned_int();
+    // Get the number of target partitions that we're making. We determine
+    // whether the options contain a target in a method so we can override
+    // it in parallel.
+    unsigned int targetval = 1;
+    if(options_get_target(options, targetval))
+    {
+        target = targetval;
+    }
     else
     {
-        // Target was not provided.
-        if(num_explicit_selections > 0)
-        {
-            // We had explicit selections. That's how many target domains to make.
-            target = num_explicit_selections;
-        }
-        else
-        {
-            // We are likely using all domains on this rank and on all ranks,
-            // so we need to sum the number of domains to arrive at the target.
-            target = get_total_selections();
-        }
+        // We are likely using all domains on this rank and on all ranks,
+        // so we need to sum the number of domains to arrive at the target.
+        // Or, we did not pass target and had valid selections. Or, we 
+        // had an invalid target. In any case, we sum the number of valid
+        // selections.
+        target = get_total_selections();
     }
 
     // Get any fields that we're using to limit the selection.
@@ -1414,8 +1458,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     if(options.has_child("merge_tolerance"))
         merge_tolerance = options["merge_tolerance"].to_double();
 
-
-#if 1
+#ifdef CONDUIT_DEBUG_PARTITIONER
     cout << rank << ": partitioner::initialize" << endl;
     cout << "\ttarget=" << target << endl;
     for(size_t i = 0; i < selections.size(); i++)
@@ -1461,7 +1504,9 @@ void
 partitioner::split_selections()
 {
     // Splitting.
+#ifdef CONDUIT_DEBUG_PARTITIONER
     int iteration = 1;
+#endif
     bool splitting = true;
     while(splitting)
     {
@@ -1492,7 +1537,7 @@ partitioner::split_selections()
                     for(size_t i = 0; i < ps.size(); i++)
                         selections[sel_index + i] = ps[i];
 
-#if 1
+#ifdef CONDUIT_DEBUG_PARTITIONER
                     cout << "partitioner::split_selections (after split "
                          << iteration << ")" << endl;
                     for(size_t i = 0; i < selections.size(); i++)
@@ -2734,7 +2779,7 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     dest_ranks.resize(chunks.size());
     for(size_t i = 0; i < chunks.size(); i++)
         dest_ranks[i] = rank;
-#if 0
+#ifdef CONDUIT_DEBUG_PARTITIONER
     cout << "map_chunks:" << endl;
     for(size_t i = 0; i < chunks.size(); i++)
         chunks[i].mesh->print();
@@ -2753,7 +2798,7 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         chunk_sizes.push_back(len);
     }
     index_t len_per_target = total_len / target;
-#if 0
+#ifdef CONDUIT_DEBUG_PARTITIONER
     cout << "map_chunks: total_len = " << total_len
          << ", target=" << target
          << ", len_per_target=" << len_per_target << endl;
@@ -2771,7 +2816,7 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         //       while trying to target a certain number of cells per domain.
         //       We may also want to consider the bounding boxes so we
         //       group chunks that are close spatially.
-        int domid = 0;
+        unsigned int domid = 0;
         index_t running_len = 0;
         for(size_t i = 0; i < chunks.size(); i++)
         {
@@ -2792,7 +2837,7 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         CONDUIT_ERROR("The number of chunks (" << chunks.size()
                       << ") is smaller than requested (" << target << ").");
     }
-#if 0
+#ifdef CONDUIT_DEBUG_PARTITIONER
     cout << "dest_ranks={";
     for(size_t i = 0; i < dest_ranks.size(); i++)
         cout << dest_ranks[i] << ", ";
