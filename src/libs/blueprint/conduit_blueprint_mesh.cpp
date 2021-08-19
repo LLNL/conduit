@@ -3894,7 +3894,7 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
     else if (d2smap["values"].dtype().is_int64())
     {
         detail::map_fields_to_generated_sides<int64>(topo_src,
-                                                    coordset_src,
+                                                     coordset_src,
                                                      fields_src, 
                                                      d2smap, 
                                                      topo_dest,
