@@ -6128,17 +6128,17 @@ combine(const std::vector<const Node*> &in_fields,
 
 //-------------------------------------------------------------------------
 std::string
-partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
+partitioner::recommended_topology(const std::vector<const Node *> &inputs,
+        const std::string &topo_name) const
 {
-    // TODO: See if the inputs are uniform, rectilinear, etc and could be combined
-    //       to form an output of one of those types. For example, uniform meshes
-    //       can be combined if they abut and combine into larger bricks that
-    //       cover space.
     // Meshes:
     //   Uniform
     //   Rectilinear
     //   Structured
     //   Unstructured
+    //     - Single Shape
+    //     - Multiple Shape
+    //     - Poly
 
     // Coordsets:
     //   Uniform
@@ -6171,27 +6171,34 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
     index_t worst_topology = 0;
     for(const Node *input : inputs)
     {
-        const Node *n_topologies = input->fetch_ptr("topologies");
-        if(n_topologies)
+        const Node *n_topo = input->fetch_ptr("topologies/"+topo_name);
+        if(!n_topo)
         {
-            for(index_t i = 0; i < n_topologies->number_of_children(); i++)
-            {
-                const std::string &type = n_topologies->child(i)["type"].as_string();
-                const index_t idx = std::find(topology_types.begin(), 
-                    topology_types.end(), type) - topology_types.begin();
-                worst_topology = std::max(worst_topology, idx);
-            }
+            CONDUIT_ERROR("Unable to combine inputs, topology \"" << topo_name 
+                << "\" is not present in all inputs");
         }
-        const Node *n_coordsets = input->fetch_ptr("coordsets");
-        if(n_coordsets)
+
+        const std::string cset_name = n_topo->child("coordset").as_string();
+        const Node *n_cset = input->fetch_ptr("coordsets/"+cset_name);
+        if(!n_cset)
         {
-            for(index_t i = 0; i < n_coordsets->number_of_children(); i++)
-            {
-                const std::string &type = n_coordsets->child(i)["type"].as_string();
-                const index_t idx = std::find(coordset_types.begin(), 
-                    coordset_types.end(), type) - coordset_types.begin();
-                worst_coordset = std::max(worst_coordset, idx);
-            }
+            CONDUIT_ERROR("Unable to combine inputs, coordset \"" << cset_name << 
+                " is not present in all inputs.");
+        }
+        
+        // Get coordset type index
+        {
+            const std::string cset_type = n_cset->child("type").as_string();
+            const index_t idx = std::find(coordset_types.begin(), 
+                coordset_types.end(), cset_type) - coordset_types.begin();
+            worst_coordset = std::max(worst_coordset, idx);
+        }
+        // Get topology type index
+        {
+            const std::string topo_type = n_topo->child("type").as_string();
+            const index_t idx = std::find(topology_types.begin(), 
+                topology_types.end(), topo_type) - topology_types.begin();
+            worst_topology = std::max(worst_topology, idx);
         }
     }
 
@@ -6203,6 +6210,10 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs) const
     else if(worst_topology < 3 && worst_coordset < 2)
     {
         retval = "rectilinear";
+    }
+    else if(worst_topology < 4)
+    {
+        retval = "structured";
     }
     else
     {
