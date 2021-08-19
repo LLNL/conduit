@@ -10,7 +10,7 @@ coordsets:
       z: [0.0, 1.0, 2.0]
 topologies: 
   mesh: 
-    type: "uniform"
+    type: "rectilinear"
     coordset: "coords"
 fields: 
   field: 

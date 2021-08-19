@@ -427,7 +427,8 @@ protected:
      @return The recommended topology type that can represent the input
              meshes as a single mesh once they are combined.
      */
-    std::string recommended_topology(const std::vector<const Node *> &inputs) const;
+    std::string recommended_topology(const std::vector<const Node *> &inputs, 
+        const std::string &topo_name) const;
 
     /**
      @brief Given a set of inputs that are predetermined to fit together
@@ -435,28 +436,30 @@ protected:
             recombination to yield a single mesh (uniform, rectilinear, ...)
             in the output.
 
-     @param domain The input domain number (in case we want to record it)
      @param inputs A vector of Blueprint mesh nodes to combine.
      @param output The Conduit node into which the combined mesh output
                    will be added.
+     @return True on success, false on failure. False indicates that we should fall back
+            on combining as unstructured.
      */
-    void combine_as_structured(int domain,
-                               const std::vector<const Node *> &inputs,
-                               Node &output);
+    bool combine_as_structured(const std::string &topo_name,
+        const std::string &rt,
+        const std::vector<const Node *> &inputs,
+        Node &output);
 
     /**
      @brief Given a set of inputs that are of various types, assemble them
             into a single output mesh with unstructured topology. This
             method combines like-named coordsets and topologies.
 
-     @param domain The input domain number (in case we want to record it)
      @param inputs A vector of Blueprint mesh nodes to combine.
      @param output The Conduit node into which the combined mesh output
                    will be added.
      */
-    void combine_as_unstructured(int domain,
-                                 const std::vector<const Node *> &inputs,
-                                 Node &output);
+    void combine_as_unstructured(const std::string &topo_name,
+        const std::vector<std::pair<std::string, std::vector<const Node*>>> &topo_groups,
+        const std::vector<std::pair<std::string, std::vector<const Node*>>> &coordset_groups,
+        Node &output);
 
     /**
      @brief Given a local set of chunks, figure out starting domain index
@@ -522,55 +525,6 @@ protected:
     bool                                     mapping;
     double                                   merge_tolerance;
 };
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh::coordset --
-//-----------------------------------------------------------------------------
-namespace coordset
-{
-
-//-----------------------------------------------------------------------------
-/**
- @brief Combines the given vector of coordsets into one coordset.
- @param coordsets A vector of conduit nodes containing blueprint coordsets
- @param[out] output A blueprint coordset representing the combined input coordsets.
-       There is an additional field on this node called "pointmaps" which contains
-       a list of index_t arrays (one list entry for each input coordset) that represent
-       the new point id to use for each point in the original set.
- @param options An optional options node containing "merge_tolerance" and/or "type" of combination 
-       ("implicit" or "explicit")
-*/
-void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &coordsets,
-                                 conduit::Node &output,
-                                 const conduit::Node *options = nullptr);
-
-}
-
-namespace topology
-{
-
-//-----------------------------------------------------------------------------
-/**
- @brief Combines the given vector of topologies into one topology
- @param topologies The input vector of toplogies to combine.
- @param pointmaps A node that contains a list of pointmaps for each input topology.
-       Each pointmap should map the local vertex ids of the original coordset into the 
-       coordset passed to this function.
-       NOTE: The coordset::combine function generates these pointmaps automatically.
- @param coordset  The coordset associated with the output topology
- @param output The output blueprint topology
- @param options An optional options node containing "type" of combination ("uniform", "rectilinear", "unstructured")
-*/
-void CONDUIT_BLUEPRINT_API combine(const std::vector<const conduit::Node *> &topologies,
-                                   const conduit::Node &pointmaps,
-                                   const conduit::Node &coordset,
-                                   conduit::Node &output,
-                                   conduit::Node *options = nullptr);
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::coordset --
-//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------

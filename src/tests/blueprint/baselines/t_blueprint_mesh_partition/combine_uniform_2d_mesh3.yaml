@@ -9,7 +9,7 @@ coordsets:
       y: [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
 topologies: 
   mesh: 
-    type: "uniform"
+    type: "rectilinear"
     coordset: "coords"
 fields: 
   field: 

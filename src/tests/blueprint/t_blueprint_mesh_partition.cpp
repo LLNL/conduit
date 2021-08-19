@@ -897,6 +897,7 @@ TEST(conduit_blueprint_mesh_partition, quads_ranges_2d)
 // The tolerance used by all of the point merge tests
 static const double tolerance = 0.00001;
 
+#if DO_POINT_MERGE_TESTS
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition_point_merge, one)
 {
@@ -1084,6 +1085,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
     }
 #endif
 }
+#endif
 
 //-----------------------------------------------------------------------------
 //-- Combine topology --
@@ -1191,7 +1193,7 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
     }
 }
 
-#define DEBUG_COMBINE_MULTIDOMAIN
+// #define DEBUG_COMBINE_MULTIDOMAIN
 TEST(conduit_blueprint_mesh_combine, multidomain)
 {
     const std::string base_name = "combine_multidomain";
