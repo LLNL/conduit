@@ -756,9 +756,32 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
             if(this_rank_already_owns_it)
             {
                 int local_i = i - offsets[rank];
+
+#if 1
+                // The chunk we have here needs its state/domain_id updated but
+                // we really should not modify it directly. Do we have to make
+                // a new node and set_external everything in it? Then make it
+                // have its own state/domain_id?
+                conduit::Node *n_recv = new conduit::Node;
+                for(index_t ci = 0; ci < chunks[local_i].mesh->number_of_children(); ci++)
+                {
+                    const conduit::Node &n = chunks[local_i].mesh->operator[](ci);
+                    if(n.name() != "state")
+                        (*n_recv)[n.name()].set_external_node(n);
+                }
+                if(chunks[local_i].mesh->has_path("state/cycle"))
+                    (*n_recv)["state/cycle"] = (*chunks[local_i].mesh)["state/cycle"];
+                if(chunks[local_i].mesh->has_path("state/time"))
+                    (*n_recv)["state/time"] = (*chunks[local_i].mesh)["state/time"];
+                (*n_recv)["state/domain_id"] = i;
+                // Save the chunk "wrapper" that has its own state.
+                chunks_to_assemble.push_back(chunk(n_recv, true));
+                chunks_to_assemble_domains.push_back(dest_domain[i]);
+#else
                 // Pass the chunk through since we already own it on this rank.
                 chunks_to_assemble.push_back(chunk(chunks[local_i].mesh, false));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+#endif
             }
             else
             {
@@ -768,6 +791,11 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
 #endif
                 conduit::Node *n_recv = new conduit::Node;              
                 conduit::relay::mpi::recv_using_schema(*n_recv, src_rank[i], tag, comm);
+
+                // Since we had to receive the chunk, we can patch up its state/domain_id
+                // to the updated numbering scheme.
+                (*n_recv)["state/domain_id"] = i;
+
                 // Save the received chunk and indicate we own it for later.
                 chunks_to_assemble.push_back(chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);

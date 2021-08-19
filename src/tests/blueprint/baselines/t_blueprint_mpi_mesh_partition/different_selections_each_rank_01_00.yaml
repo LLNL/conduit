@@ -1,7 +1,4 @@
 
-state: 
-  cycle: 0
-  domain_id: 0
 coordsets: 
   coords: 
     type: "rectilinear"
@@ -17,3 +14,6 @@ fields:
     association: "vertex"
     topology: "topo"
     values: [0.414213562373095, 0.0, 0.0, -1.0]
+state: 
+  cycle: 0
+  domain_id: 0

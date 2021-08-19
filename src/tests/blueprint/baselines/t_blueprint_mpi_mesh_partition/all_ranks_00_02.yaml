@@ -43,7 +43,7 @@
       coordset: "coords"
   state: 
     cycle: 0
-    domain_id: 6
+    domain_id: 7
   fields: 
     dist: 
       association: "vertex"

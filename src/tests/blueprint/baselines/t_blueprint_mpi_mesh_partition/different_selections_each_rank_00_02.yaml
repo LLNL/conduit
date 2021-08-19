@@ -41,9 +41,6 @@
     topo: 
       type: "rectilinear"
       coordset: "coords"
-  state: 
-    cycle: 0
-    domain_id: 5
   fields: 
     dist: 
       association: "vertex"
@@ -61,3 +58,6 @@
       values: 
         domains: [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
         ids: [8, 9, 10, 11, 16, 17, 18, 19, 24, 25, 26, 27, 32, 33, 34, 35, 40, 41, 42, 43, 48, 49, 50, 51, 56, 57, 58, 59]
+  state: 
+    cycle: 0
+    domain_id: 5

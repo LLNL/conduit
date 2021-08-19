@@ -298,10 +298,9 @@ TEST(blueprint_mesh_mpi_partition, all_ranks)
 #endif
     }
 /*
-ERROR:
-
 Some domains passed through whole so they do not have original cells/domains. Then
 when we combine, those fields get skipped because they are not present on all domains.
+This message gets printed. The code does add original values after.
 
 [/media/bjw/Development/LLNL-Conduit/conduit/src/libs/blueprint/conduit_blueprint_mesh_partition.cpp : 6550]
  Field original_vertex_ids is not present on all input domains, skipping...
