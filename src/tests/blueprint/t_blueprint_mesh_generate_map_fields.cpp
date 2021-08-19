@@ -78,7 +78,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
 
     EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
     
     int i = 0;
     for (int j = 0; j < num_polygons; j ++)
@@ -164,7 +164,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_skip_bad_field)
 
     EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
     
     int i = 0;
     for (int j = 0; j < num_polygons; j ++)
@@ -247,7 +247,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_no_field
 
     EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
     
     int i = 0;
     for (int j = 0; j < num_polygons; j ++)
@@ -331,7 +331,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_field_pr
 
     EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/my_prefix_original_element_ids/values"].value();
+    int32 *id_values = side_mesh["fields/my_prefix_original_element_ids/values"].value();
     
     int i = 0;
     for (int j = 0; j < num_polygons; j ++)
@@ -415,7 +415,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D)
 
     EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
 
     for (int i = 0; i < num_field_values; i ++)
     {
@@ -594,7 +594,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
 
     EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/my_prefix_original_element_ids/values"].value();
+    int32 *id_values = side_mesh["fields/my_prefix_original_element_ids/values"].value();
     
     int i = 0;
     for (int j = 0; j < num_polygons; j ++)
@@ -727,7 +727,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D_vol_dep)
 
     EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    uint32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
 
     for (int i = 0; i < num_field_values; i ++)
     {
@@ -982,45 +982,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_sides_vert_assoc_ex)
-{
-    index_t nlevels = 2;
-    index_t nz = 1;
-    Node n, side_mesh, info;
-
-    // create polytessalation with two levels
-    examples::polytess(nlevels, nz, n);
-    EXPECT_TRUE(verify(n, info));
-
-    Node s2dmap, d2smap;
-    Node &side_coords = side_mesh["coordsets/coords"];
-    Node &side_topo = side_mesh["topologies/topo"];
-    Node &side_fields = side_mesh["fields"];
-    Node options;
-
-    n["fields/level/association"] = "vertex";
-
-    // catch vertex associated fields not yet implemented error
-    try
-    {
-        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-                                                                side_topo,
-                                                                side_coords,
-                                                                side_fields,
-                                                                s2dmap,
-                                                                d2smap,
-                                                                options);
-        FAIL();
-    }
-    catch(const std::exception& err)
-    {
-        std::string msg = "Vertex-associated fields are not yet supported.";
-        std::string actual = err.what();
-        EXPECT_TRUE(actual.find(msg) != std::string::npos);
-    }
-}
-
-//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_invalid_assoc_ex)
 {
     index_t nlevels = 2;
@@ -1059,45 +1020,88 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_invalid_assoc_ex)
     }
 }
 
-// THIS TEST IS TO BE ENABLED ONCE SUPPORT FOR VERTEX ASSOCIATED FIELDS IS ADDED
-// //-----------------------------------------------------------------------------
-// TEST(conduit_blueprint_generate_unstructured, generate_sides_vert_assoc_and_vol_dep_ex)
-// {
-//     index_t nlevels = 2;
-//     index_t nz = 1;
-//     Node n, side_mesh, info;
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_vert_assoc_and_vol_dep_ex)
+{
+    index_t nlevels = 2;
+    index_t nz = 1;
+    Node n, side_mesh, info;
 
-//     // create polytessalation with two levels
-//     examples::polytess(nlevels, nz, n);
-//     EXPECT_TRUE(verify(n, info));
+    // create polytessalation with two levels
+    examples::polytess(nlevels, nz, n);
+    EXPECT_TRUE(verify(n, info));
 
-//     Node s2dmap, d2smap;
-//     Node &side_coords = side_mesh["coordsets/coords"];
-//     Node &side_topo = side_mesh["topologies/topo"];
-//     Node &side_fields = side_mesh["fields"];
-//     Node options;
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
 
-//     n["fields/level/association"] = "vertex";
-//     n["fields/level/volume_dependent"] = "true";
+    n["fields/level/association"] = "vertex";
+    n["fields/level/volume_dependent"] = "true";
 
-//     // catch invalid association
-//     try
-//     {
-//         blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-//                                                                 side_topo,
-//                                                                 side_coords,
-//                                                                 side_fields,
-//                                                                 s2dmap,
-//                                                                 d2smap,
-//                                                                 options);
-//         FAIL();
-//     }
-//     catch(const std::exception& err)
-//     {
-//         std::string msg = "Volume-dependent vertex-associated fields are not supported.";
-//         std::string actual = err.what();
-//         std::cout << actual << std::endl;
+    // catch invalid association
+    try
+    {
+        blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                options);
+        FAIL();
+    }
+    catch(const std::exception& err)
+    {
+        std::string msg = "Volume-dependent vertex-associated fields are not supported.";
+        std::string actual = err.what();
+        std::cout << actual << std::endl;
 
-//         EXPECT_TRUE(actual.find(msg) != std::string::npos);
-//     }
-// }
+        EXPECT_TRUE(actual.find(msg) != std::string::npos);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, testtesttest)
+{
+    index_t nlevels = 1;
+    index_t nz = 1;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, nz, n);
+
+    // n["fields/level/association"] = "vertex";
+    // n["fields/level/values"].set(conduit::DataType::float32(16));
+    // float32 *values = n["fields/level/values"].value();
+
+    // for (int i = 0; i < 16; i ++)
+    // {
+    //     values[i] = 15.0f - i;
+    // }
+
+    n.print();
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                            side_topo,
+                                                            side_coords,
+                                                            side_fields,
+                                                            s2dmap,
+                                                            d2smap,
+                                                            options);
+
+    side_mesh.print();
+
+    if(conduit::utils::is_file("vertex.root"))
+    {
+        conduit::utils::remove_file("vertex.root");
+    }
+    conduit::relay::io::blueprint::save_mesh(side_mesh, "vertex", "hdf5");
+}
