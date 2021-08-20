@@ -34,7 +34,7 @@ For now, Blueprint is focused on conventions for two important types of data:
     blueprint_mesh
     blueprint_o2mrelation
     blueprint_mcarray
-
+    blueprint_mesh_partition
 
 Top Level Blueprint Interface
 -------------------------------
