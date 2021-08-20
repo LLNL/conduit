@@ -2788,7 +2788,7 @@ private:
         point[2] will be 0 and dim will be 2.
     */
     template<typename Func>
-    void iterate_coordinates(const Node &coordset, Func &&func);
+    static void iterate_coordinates(const Node &coordset, Func &&func);
 
     /**
     @brief Determines how many points there are and reserves space in member vectors
@@ -5569,13 +5569,15 @@ private:
             const Node &sub_mesh) const
     {
         std::vector<index_t> offsets;
-        const Node &whole_cset = whole_mesh[cset_path];
-        const Node &sub_cset   = sub_mesh[cset_path];
+        const Node &n_whole_cset = whole_mesh[cset_path];
+        const Node &n_whole_topo = whole_mesh[topo_path];
+        const Node &n_sub_cset   = sub_mesh[cset_path];
+        const Node &n_sub_topo   = sub_mesh[topo_path];
         if(mode == CombineImplicitMode::Uniform)
         {
-            const auto worigin = mesh::utils::coordset::uniform::origin(whole_cset);
-            const auto sorigin = mesh::utils::coordset::uniform::origin(sub_cset);
-            const auto spacing = mesh::utils::coordset::uniform::spacing(whole_cset);
+            const auto worigin = mesh::utils::coordset::uniform::origin(n_whole_cset);
+            const auto sorigin = mesh::utils::coordset::uniform::origin(n_sub_cset);
+            const auto spacing = mesh::utils::coordset::uniform::spacing(n_whole_cset);
             for(size_t i = 0; i < worigin.size(); i++)
             {
                 const auto difference = sorigin[i] - worigin[i];
@@ -5584,9 +5586,9 @@ private:
         }
         else if(mode == CombineImplicitMode::Rectilinear)
         {
-            const auto exts = mesh::utils::coordset::extents(sub_cset);
-            const Node &n_values = whole_cset["values"];
-            const auto cset_axes = mesh::utils::coordset::axes(whole_cset);
+            const auto exts = mesh::utils::coordset::extents(n_sub_cset);
+            const Node &n_values = n_whole_cset["values"];
+            const auto cset_axes = mesh::utils::coordset::axes(n_whole_cset);
             for(size_t i = 0; i < cset_axes.size(); i++)
             {
                 const Node &n_value = n_values[cset_axes[i]];
@@ -5608,11 +5610,108 @@ private:
                 }
             }
         }
-        else
+        else // if(mode == CombineImplicitMode::Structured)
         {
-            CONDUIT_ERROR("Non implicit coordset passed to find_implicit_coordset_offsets");
+            std::array<index_t, MAXDIM> whole_dims;
+            std::array<index_t, MAXDIM> sub_dims;
+            mesh::utils::topology::logical_dims(n_whole_topo, whole_dims.data(), MAXDIM);
+            mesh::utils::topology::logical_dims(n_sub_topo, sub_dims.data(), MAXDIM);
+
+            // TODO: Handle potential "grain" issue
+            std::array<double, MAXDIM> start_values;
+            Node temp;
+            for(index_t i = 0; i < dimension; i++)
+            {
+                const Node &n_dim_vals = n_sub_cset["values/"+axes[i]];
+                temp.set_external(DataType(n_dim_vals.dtype().id(), 1),
+                    const_cast<void*>(n_dim_vals.element_ptr(0)));
+                start_values[i] = temp.to_double();
+            }
+
+            // Find this value in the whole mesh
+            const Node &n_values = n_whole_cset["values"];
+            for(index_t di = 0; di < dimension; di++)
+            {
+                std::array<index_t, MAXDIM> ijk{0, 0, 0};
+                const Node &n_value = n_values[axes[di]];
+                const index_t N = n_value.dtype().number_of_elements();
+                index_t local_id = 0;
+                bool found = false;
+                if(n_value.dtype().is_float32())
+                {
+                    DataArray<float32> da = n_value.value();
+                    for(index_t vi = 0; vi < N; vi++)
+                    {
+                        ijk[di] = vi;
+                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
+                        if(std::abs(da[vi] - start_values[di]) <= tolerance)
+                        {
+                            offsets.push_back(vi);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                else if(n_value.dtype().is_float64())
+                {
+                    DataArray<float64> da = n_value.value();
+                    for(index_t vi = 0; vi < N; vi++)
+                    {
+                        ijk[di] = vi;
+                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
+                        if(std::abs(da[vi] - start_values[di]) <= tolerance)
+                        {
+                            offsets.push_back(vi);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    Node temp;
+                    for(index_t vi = 0; vi < N; vi++)
+                    {
+                        ijk[di] = vi;
+                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
+                        temp.set_external(DataType(n_value.dtype().id(), 1),
+                            const_cast<void*>(n_value.element_ptr(local_id)));
+                        double val = temp.to_double();
+                        if(std::abs(val - start_values[di]) <= tolerance)
+                        {
+                            offsets.push_back(vi);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if(!found)
+                {
+                    CONDUIT_ERROR("Unable to find offset for structured topology.");
+                }
+            }
         }
         return offsets;
+    }
+
+    DataType
+    find_best_coord_vals_dtype(const Node &n_vals1, const Node &n_vals2) const
+    {
+        bool floating_point = false;
+        index_t max_bytes = 4;
+        for(index_t i = 0; i < dimension; i++)
+        {
+            const auto &dt1 = n_vals1[axes[i]].dtype();
+            const auto &dt2 = n_vals2[axes[i]].dtype();
+            floating_point = (!floating_point ? dt1.is_floating_point() : floating_point);
+            floating_point = (!floating_point ? dt2.is_floating_point() : floating_point);
+            max_bytes = std::max(max_bytes, dt1.element_bytes());
+            max_bytes = std::max(max_bytes, dt2.element_bytes());
+        }
+        return (floating_point
+            ? (max_bytes == 4 ? DataType::float32() : DataType::float64())
+            : (max_bytes == 4 ? DataType::int32()   : DataType::int64()));
     }
 
     bool combine_implicit_impl(const std::vector<const Node *> &n_meshes,
@@ -5693,7 +5792,7 @@ private:
 
                     for(index_t di = 0; di < dimension; di++)
                     {
-                        // First check if the end of one domain touch the start of another
+                        // First check if the end of one domain touches the start of another
                         const bool check1 = std::abs(exti.max[di] - extj.min[di]) <= tolerance;
                         const bool check2 = std::abs(exti.min[di] - extj.max[di]) <= tolerance;
                         if(!check1 && !check2)
@@ -5727,7 +5826,8 @@ private:
                             new_topo["coordset"] = new_cset.name();
 
                             const Node &n_lhs = (check1 ? *n_meshi : *n_meshj);
-                            // const Node &n_rhs = (check1 ? *n_meshj : *n_meshi);
+                            const Node &n_rhs = (check1 ? *n_meshj : *n_meshi);
+                            const double matched_val = (check1 ? exti.max[di] : exti.min[di]);
                             // If there is an origin in the lhs domain, copy it to the new mesh
                             {
                                 const Node *origin = n_lhs.fetch_ptr(topo_path+"/elements/origin");
@@ -5740,16 +5840,13 @@ private:
                             if(mode == CombineImplicitMode::Uniform)
                             {
                                 std::cout << "Handling uniform combine" << std::endl;
-                                // NOTE: Output is already populated with spacing, either don't need
-                                //   todo it here or shouldn't bother preloading it.
-                                std::vector<double> spacing = {1, 1, 1};
-                                if(output.has_child("spacing"))
+
+                                std::vector<double> spacing{1.,1.,1.};
+                                if(output.has_path(cset_path + "/spacing"))
                                 {
-                                    new_cset["spacing"] = output["spacing"];
-                                    for(index_t dj = 0; dj < dimension; dj++)
-                                    {
-                                        spacing[dj] = output["spacing"][dj].to_double();
-                                    }
+                                    const Node &out_spacing = output.fetch_existing(cset_path + "/spacing");
+                                    new_cset["spacing"] = out_spacing;
+                                    spacing = utils::coordset::uniform::spacing(new_cset);
                                 }
 
                                 Schema s_origin;
@@ -5782,8 +5879,8 @@ private:
                             {
                                 std::cout << "Handling rectilinear combine" << std::endl;
                                 // We need to further check that the spacing along the matched edge/plane is okay
-                                const Node &n_cseti = *n_meshi->fetch_ptr(cset_path);
-                                const Node &n_csetj = *n_meshj->fetch_ptr(cset_path);
+                                const Node &n_cseti = n_meshi->fetch_existing(cset_path);
+                                const Node &n_csetj = n_meshj->fetch_existing(cset_path);
                                 bool ok = true;
                                 index_t dim_sizes[3];
                                 index_t max_bytes = 0;
@@ -5863,6 +5960,259 @@ private:
                                 matched_extents = ej;
                                 break;
                             }
+                            else // if(mode == CombineImplicitMode::Structured)
+                            {
+                                std::cout << "Handling structured combine" << std::endl;
+                                const Node &n_cset_lhs = n_lhs.fetch_existing(cset_path);
+                                const Node &n_topo_lhs = n_lhs.fetch_existing(topo_path);
+                                const Node &n_cset_rhs = n_rhs.fetch_existing(cset_path);
+                                const Node &n_topo_rhs = n_rhs.fetch_existing(topo_path);
+
+                                std::array<index_t, MAXDIM> dims_lhs{0,0,0};
+                                std::array<index_t, MAXDIM> dims_rhs{0,0,0};
+                                topology::logical_dims(n_topo_lhs, dims_lhs.data(), dimension);
+                                topology::logical_dims(n_topo_rhs, dims_rhs.data(), dimension);
+                                for(auto &val : dims_lhs) val += 1;
+                                for(auto &val : dims_rhs) val += 1;
+
+                                DataType best_dtype = find_best_coord_vals_dtype(n_cset_lhs["values"], n_cset_rhs["values"]);
+
+                                index_t di_idx = 0;
+                                {
+                                    const Node &di_vals = n_cset_lhs["values/"+axes[di]];
+                                    Node temp;
+                                    temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(0)));
+                                    double val = temp.to_double();
+                                    if(std::abs(val - matched_val) > tolerance)
+                                    {
+                                        std::array<index_t, MAXDIM> ijk{0, 0, 0};
+                                        ijk[di] = dims_lhs[di] - 1;
+                                        grid_ijk_to_id(ijk.data(), dims_lhs.data(), di_idx);
+                                        temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(di_idx)));
+                                        val = temp.to_double();
+                                        if(std::abs(val - matched_val) > tolerance)
+                                        {
+                                            CONDUIT_ERROR("Could not match domain extent");
+                                            return false;
+                                        }
+                                    }
+                                }
+
+                                std::array<index_t, MAXDIM> ijk{0,0,0};
+                                ijk[di] = di_idx;
+                                if(dimension == 3)
+                                {
+                                    std::array<index_t, 2> other_dims;
+                                    index_t other_dims_idx = 0;
+                                    for(index_t dj = 0; dj < dimension; dj++)
+                                    {
+                                        if(di == dj) continue;
+                                        other_dims[other_dims_idx++] = dj;
+                                    }
+
+                                    // TODO: Make this use a vec2, we don't need the third dimension here, just comparing a face to a face.
+                                    mesh::coordset::utils::kdtree<mesh::coordset::utils::vec3, index_t> verts;
+                                    {
+                                        const Node &lhs_vals = n_cset_lhs["values"];
+                                        const Node &x = lhs_vals[axes[0]];
+                                        const Node &y = lhs_vals[axes[1]];
+                                        const Node &z = lhs_vals[axes[2]];
+
+                                        Node xtemp, ytemp, ztemp;
+                                        const DataType xdt = DataType(x.dtype().id(), 1);
+                                        const DataType ydt = DataType(y.dtype().id(), 1);
+                                        const DataType zdt = DataType(z.dtype().id(), 1);
+
+                                        mesh::coordset::utils::vec3 temp;
+                                        index_t idx;
+                                        for(index_t j = 0; j < dims_lhs[other_dims[1]]; j++)
+                                        {
+                                            ijk[other_dims[1]] = j;
+                                            for(index_t i = 0; i < dims_lhs[other_dims[0]]; i++)
+                                            {
+                                                ijk[other_dims[0]] = i;
+                                                grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
+                                                xtemp.set_external(xdt, const_cast<void*>(x.element_ptr(idx)));
+                                                ytemp.set_external(ydt, const_cast<void*>(y.element_ptr(idx)));
+                                                ztemp.set_external(zdt, const_cast<void*>(z.element_ptr(idx)));
+                                                temp.x = xtemp.to_double();
+                                                temp.y = ytemp.to_double();
+                                                temp.z = ztemp.to_double();
+                                                verts.insert(temp, idx);
+                                            }
+                                        }
+                                    }
+                                    const index_t nverts = verts.size();
+
+                                    di_idx = 0;
+                                    {
+                                        const Node &di_vals = n_cset_rhs["values/"+axes[di]];
+                                        Node temp;
+                                        temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(0)));
+                                        double val = temp.to_double();
+                                        if(std::abs(val - matched_val) > tolerance)
+                                        {
+                                            std::array<index_t, MAXDIM> ijk{0, 0, 0};
+                                            ijk[di] = dims_rhs[di] - 1;
+                                            grid_ijk_to_id(ijk.data(), dims_rhs.data(), di_idx);
+                                            temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(di_idx)));
+                                            val = temp.to_double();
+                                            if(std::abs(val - matched_val) > tolerance)
+                                            {
+                                                CONDUIT_ERROR("Could not match domain extent");
+                                                return false;
+                                            }
+                                        }
+                                    }
+                                    ijk[0] = 0; ijk[1] = 0; ijk[2] = 0;
+                                    ijk[di] = di_idx;
+                                    {
+                                        const Node &rhs_vals = n_cset_rhs["values"];
+                                        const Node &x = rhs_vals["/"+axes[0]];
+                                        const Node &y = rhs_vals["/"+axes[1]];
+                                        const Node &z = rhs_vals["/"+axes[2]];
+
+                                        Node xtemp, ytemp, ztemp;
+                                        const DataType xdt = DataType(x.dtype().id(), 1);
+                                        const DataType ydt = DataType(y.dtype().id(), 1);
+                                        const DataType zdt = DataType(z.dtype().id(), 1);
+
+                                        mesh::coordset::utils::vec3 temp;
+                                        index_t idx;
+                                        index_t *existing_idx = nullptr;
+                                        for(index_t j = 0; j < dims_rhs[other_dims[1]]; j++)
+                                        {
+                                            ijk[other_dims[1]] = j;
+                                            for(index_t i = 0; i < dims_rhs[other_dims[0]]; i++)
+                                            {
+                                                ijk[other_dims[0]] = i;
+                                                grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
+                                                xtemp.set_external(xdt, const_cast<void*>(x.element_ptr(idx)));
+                                                ytemp.set_external(ydt, const_cast<void*>(y.element_ptr(idx)));
+                                                ztemp.set_external(zdt, const_cast<void*>(z.element_ptr(idx)));
+                                                temp.x = xtemp.to_double();
+                                                temp.y = ytemp.to_double();
+                                                temp.z = ztemp.to_double();
+                                                existing_idx = verts.find_point(temp, tolerance);
+                                                if(!existing_idx)
+                                                {
+                                                    // If we couldn't match this face then we can't combine as structured.
+                                                    return false;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    // NOTE: We would have returned from the function if the check failed
+
+                                    // Combine them
+                                    {
+                                        new_topo["elements/dims"] = n_topo_lhs["elements/dims"];
+                                        new_topo["elements/dims/"+LOGICAL_AXES[di]] = (dims_lhs[di]-1) + (dims_rhs[di]-1);
+
+                                        index_t N = 1;
+                                        std::array<index_t, 3> newdims;
+                                        for(index_t dj = 0; dj < 3; dj++)
+                                        {
+                                            newdims[dj] = (di == dj)
+                                                ? (dims_lhs[dj] + dims_rhs[dj]) - 1
+                                                : dims_lhs[dj];
+                                            N *= newdims[dj];
+                                        }
+
+                                        Schema out_schema;
+                                        {
+                                            std::array<index_t, 3> offsets{0,0,0};
+                                            index_t stride = 0;
+                                            for(index_t i = 0; i < 3; i++)
+                                            {
+                                                const auto &in_dtype = n_cset_lhs["values"][i].dtype();
+                                                offsets[i] = stride;
+                                                stride += in_dtype.element_bytes();
+                                            }
+                                            for(index_t i = 0; i < 3; i++)
+                                            {
+                                                const Node &in_node = n_cset_lhs["values"][i];
+                                                const auto &in_dtype = in_node.dtype();
+                                                out_schema[in_node.name()].set(DataType(in_dtype.id(),
+                                                    N, offsets[i], stride, in_dtype.element_bytes(),
+                                                    in_dtype.endianness()));
+                                            }
+                                        }
+                                        new_cset["values"].set(out_schema);
+                                        Node &out_vals = new_cset["values"];
+                                        {
+                                            const Node &in_vals = n_cset_lhs["values"];
+                                            for(index_t k = 0; k < dims_lhs[2]; k++)
+                                            {
+                                                for(index_t j = 0; j < dims_lhs[1]; j++)
+                                                {
+                                                    for(index_t i = 0; i < dims_lhs[0]; i++)
+                                                    {
+                                                        index_t ijk[3] = {i, j, k};
+                                                        index_t local_id, global_id;
+                                                        grid_ijk_to_id(ijk, dims_lhs.data(), local_id);
+                                                        grid_ijk_to_id(ijk, newdims.data(), global_id);
+                                                        for(index_t ci = 0; ci < 3; ci++)
+                                                        {
+                                                            const auto bytes = out_vals[ci].dtype().element_bytes();
+                                                            void *out_data = out_vals[ci].element_ptr(global_id);
+                                                            const void *in_data = in_vals[ci].element_ptr(local_id);
+                                                            memcpy(out_data, in_data, bytes);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // RHS has offsets
+                                        {
+                                            const Node &in_vals = n_cset_rhs["values"];
+                                            const std::array<index_t, 3> offsets{
+                                                (di == 0) ? dims_lhs[0]-1 : 0,
+                                                (di == 1) ? dims_lhs[1]-1 : 0,
+                                                (di == 2) ? dims_lhs[2]-1 : 0
+                                            };
+                                            // const std::array<index_t, 3> starts{
+                                            //     (di == 0) ? 1 : 0,
+                                            //     (di == 1) ? 1 : 0,
+                                            //     (di == 2) ? 1 : 0,
+                                            // };
+                                            for(index_t k = 0; k < dims_rhs[2]; k++)
+                                            {
+                                                index_t koff = k + offsets[2];
+                                                for(index_t j = 0; j < dims_rhs[1]; j++)
+                                                {
+                                                    index_t joff = j + offsets[1];
+                                                    for(index_t i = 0; i < dims_rhs[0]; i++)
+                                                    {
+                                                        index_t global_ijk[3] = {i+offsets[0], joff, koff};
+                                                        index_t ijk[3] = {i, j, k};
+                                                        index_t local_id, global_id;
+                                                        grid_ijk_to_id(ijk, dims_rhs.data(), local_id);
+                                                        grid_ijk_to_id(global_ijk, newdims.data(), global_id);
+                                                        for(index_t ci = 0; ci < 3; ci++)
+                                                        {
+                                                            const auto bytes = out_vals[ci].dtype().element_bytes();
+                                                            void *out_data = out_vals[ci].element_ptr(global_id);
+                                                            const void *in_data = in_vals[ci].element_ptr(local_id);
+                                                            memcpy(out_data, in_data, bytes);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else if(dimension == 2)
+                                {
+                                    index_t other_dim = (di == 0) ? 1 : 0;
+                                }
+
+                                meshes_and_bbs[ei].first = &new_mesh;
+                                meshes_and_bbs.erase(meshes_and_bbs.begin() + ej);
+                                matched_extents = ej;
+                                break;
+                            }
                         }
                     }
 
@@ -5879,7 +6229,7 @@ private:
                 break;
             }
         }
-        // std::cout << "REMAINING DOMAINS " << csets_and_bbs.size() << std::endl;
+        std::cout << "REMAINING DOMAINS " << meshes_and_bbs.size() << std::endl;
         bool retval = false;
         if(meshes_and_bbs.size() == 1)
         {
@@ -5887,6 +6237,7 @@ private:
             //  instead of deep copying.
             output[cset_path] = (*meshes_and_bbs[0].first)[cset_path];
             output[topo_path] = (*meshes_and_bbs[0].first)[topo_path];
+            output.print();
             build_implicit_maps(n_meshes, output, output[cset_path+"/pointmaps"], output[topo_path+"/element_map"]);
             retval = true;
         }
@@ -6528,6 +6879,11 @@ partitioner::combine(int domain,
         {
             combined = combine_as_structured(main_topo_name,
                 rt, inputs, output);
+
+            if(!combined)
+            {
+                CONDUIT_INFO("Unable to combine domains as " << rt << ", using unstructured.");
+            }
         }
 
         if(!combined)
@@ -6547,8 +6903,8 @@ partitioner::combine(int domain,
             combined = true;
         }
     }
-    std::cout << "Current output mesh:" << std::endl;
-    output.print();
+    // std::cout << "Current output mesh:" << std::endl;
+    // output.print();
 
     Node &output_topologies = output["topologies"];
     Node &output_coordsets  = output["coordsets"];
