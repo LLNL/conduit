@@ -97,6 +97,21 @@ distribute_domains(int rank, const int ndomains[4],
 }
 
 //-----------------------------------------------------------------------------
+void make_spiral(int ndoms, conduit::Node &n)
+{
+    conduit::blueprint::mesh::examples::spiral(ndoms, n);
+
+    // Renumber the domains so we can check things more easily.
+    for(int i = 0; i < ndoms; i++)
+    {
+        if(n[i].has_path("state/domain_id"))
+        {
+            n[i]["state/domain_id"].set(static_cast<conduit::int64>(i * 10));
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 std::string
 rank_str(int rank)
 {
@@ -116,7 +131,7 @@ TEST(blueprint_mesh_mpi_partition, all_ranks)
 
     // Make some domains that we'll distribute in different ways.
     conduit::Node spiral;
-    conduit::blueprint::mesh::examples::spiral(7, spiral);
+    make_spiral(7, spiral);
 #if 0
     if(rank == 0)
         save_visit("spiral", spiral);
@@ -199,32 +214,32 @@ TEST(blueprint_mesh_mpi_partition, all_ranks)
 "     end:   [0,0,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 1\n"
+"     domain_id: 10\n"
 "     start: [0,0,0]\n"
 "     end:   [0,0,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 2\n"
+"     domain_id: 20\n"
 "     start: [0,0,0]\n"
 "     end:   [1,1,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 3\n"
+"     domain_id: 30\n"
 "     start: [1,0,0]\n"
 "     end:   [2,2,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 4\n"
+"     domain_id: 40\n"
 "     start: [1,1,0]\n"
 "     end:   [5,5,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 5\n"
+"     domain_id: 50\n"
 "     start: [0,1,0]\n"
 "     end:   [3,7,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 6\n"
+"     domain_id: 60\n"
 "     start: [1,0,0]\n"
 "     end:   [8,8,0]\n";
     options.reset(); options.parse(opt4, "yaml");
@@ -251,22 +266,22 @@ TEST(blueprint_mesh_mpi_partition, all_ranks)
 "     end:   [0,0,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 1\n"
+"     domain_id: 10\n"
 "     start: [0,0,0]\n"
 "     end:   [0,0,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 2\n"
+"     domain_id: 20\n"
 "     start: [0,0,0]\n"
 "     end:   [1,1,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 3\n"
+"     domain_id: 30\n"
 "     start: [1,0,0]\n"
 "     end:   [2,2,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 4\n"
+"     domain_id: 40\n"
 "     start: [1,1,0]\n"
 "     end:   [5,5,0]\n";
     options.reset(); options.parse(opt5, "yaml");
@@ -297,21 +312,6 @@ TEST(blueprint_mesh_mpi_partition, all_ranks)
         EXPECT_EQ(compare_baseline(b06, output), true);
 #endif
     }
-/*
-Some domains passed through whole so they do not have original cells/domains. Then
-when we combine, those fields get skipped because they are not present on all domains.
-This message gets printed. The code does add original values after.
-
-[/media/bjw/Development/LLNL-Conduit/conduit/src/libs/blueprint/conduit_blueprint_mesh_partition.cpp : 6550]
- Field original_vertex_ids is not present on all input domains, skipping...
-[/media/bjw/Development/LLNL-Conduit/conduit/src/libs/blueprint/conduit_blueprint_mesh_partition.cpp : 6550]
- Field original_element_ids is not present on all input domains, skipping...
-[/media/bjw/Development/LLNL-Conduit/conduit/src/libs/blueprint/conduit_blueprint_mesh_partition.cpp : 6550]
- Field original_vertex_ids is not present on all input domains, skipping...
-[/media/bjw/Development/LLNL-Conduit/conduit/src/libs/blueprint/conduit_blueprint_mesh_partition.cpp : 6550]
- Field original_element_ids is not present on all input domains, skipping...
-*/
-
 }
 
 //-----------------------------------------------------------------------------
@@ -456,7 +456,7 @@ TEST(blueprint_mesh_mpi_partition, permutations)
 
     // Make some domains that we'll distribute in different ways.
     conduit::Node spiral;
-    conduit::blueprint::mesh::examples::spiral(7, spiral);
+    make_spiral(7, spiral);
     int nelem = 0;
     for(conduit::index_t i = 0; i < spiral.number_of_children(); i++)
     {
@@ -511,7 +511,7 @@ TEST(blueprint_mesh_mpi_partition, different_selections_each_rank)
 
     // Make some domains that we'll distribute in different ways.
     conduit::Node spiral;
-    conduit::blueprint::mesh::examples::spiral(7, spiral);
+    make_spiral(7, spiral);
     conduit::Node input, output, options;
     int ndomains[] = {3,2,1,1};
     distribute_domains(rank, ndomains, spiral, input);
@@ -528,12 +528,12 @@ TEST(blueprint_mesh_mpi_partition, different_selections_each_rank)
 "     end:   [0,0,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 1\n"
+"     domain_id: 10\n"
 "     start: [0,0,0]\n"
 "     end:   [0,0,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 2\n"
+"     domain_id: 20\n"
 "     start: [0,0,0]\n"
 "     end:   [1,1,0]\n"
 ,
@@ -541,12 +541,12 @@ TEST(blueprint_mesh_mpi_partition, different_selections_each_rank)
 "selections:\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 3\n"
+"     domain_id: 30\n"
 "     start: [1,0,0]\n"
 "     end:   [2,2,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 4\n"
+"     domain_id: 40\n"
 "     start: [1,1,0]\n"
 "     end:   [5,5,0]\n"
 ,
@@ -554,7 +554,7 @@ TEST(blueprint_mesh_mpi_partition, different_selections_each_rank)
 "selections:\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 5\n"
+"     domain_id: 50\n"
 "     start: [0,1,0]\n"
 "     end:   [3,7,0]\n"
 ,
@@ -562,7 +562,7 @@ TEST(blueprint_mesh_mpi_partition, different_selections_each_rank)
 "selections:\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 6\n"
+"     domain_id: 60\n"
 "     start: [1,0,0]\n"
 "     end:   [8,8,0]\n"
 };
@@ -595,12 +595,12 @@ TEST(blueprint_mesh_mpi_partition, different_selections_each_rank)
 "     end:   [0,0,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 1\n"
+"     domain_id: 10\n"
 "     start: [0,0,0]\n"
 "     end:   [0,0,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 2\n"
+"     domain_id: 20\n"
 "     start: [0,0,0]\n"
 "     end:   [1,1,0]\n"
 ,
@@ -608,7 +608,7 @@ TEST(blueprint_mesh_mpi_partition, different_selections_each_rank)
 "selections:\n"
 "   -\n"
 "     type: logical\n"
-"     domain_id: 3\n"
+"     domain_id: 30\n"
 "     start: [1,0,0]\n"
 "     end:   [2,2,0]\n"
 ,
@@ -641,7 +641,7 @@ TEST(blueprint_mesh_mpi_partition, invalid_selections)
 
     // Make some domains that we'll distribute in different ways.
     conduit::Node spiral;
-    conduit::blueprint::mesh::examples::spiral(7, spiral);
+    make_spiral(7, spiral);
     conduit::Node input, output, options;
     int ndomains[] = {3,2,1,1};
     distribute_domains(rank, ndomains, spiral, input);
@@ -666,7 +666,7 @@ TEST(blueprint_mesh_mpi_partition, different_targets)
 
     // Make some domains that we'll distribute in different ways.
     conduit::Node spiral;
-    conduit::blueprint::mesh::examples::spiral(7, spiral);
+    make_spiral(7, spiral);
     conduit::Node input, output, options;
     int ndomains[] = {3,2,1,1};
     distribute_domains(rank, ndomains, spiral, input);

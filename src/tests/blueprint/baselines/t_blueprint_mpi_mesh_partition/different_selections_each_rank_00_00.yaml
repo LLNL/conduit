@@ -15,6 +15,18 @@
       association: "vertex"
       topology: "topo"
       values: [0.414213562373095, 0.0, 0.0, -1.0]
+    original_vertex_ids: 
+      association: "vertex"
+      topology: "topo"
+      values: 
+        domains: [0, 0, 0, 0]
+        ids: [0, 1, 2, 3]
+    original_element_ids: 
+      association: "element"
+      topology: "topo"
+      values: 
+        domains: 0
+        ids: 0
   state: 
     cycle: 0
     domain_id: 0
@@ -34,6 +46,18 @@
       association: "vertex"
       topology: "topo"
       values: [0.0, 0.414213562373095, -1.0, 0.0]
+    original_vertex_ids: 
+      association: "vertex"
+      topology: "topo"
+      values: 
+        domains: [10, 10, 10, 10]
+        ids: [0, 1, 2, 3]
+    original_element_ids: 
+      association: "element"
+      topology: "topo"
+      values: 
+        domains: 10
+        ids: 0
   state: 
     cycle: 0
     domain_id: 1

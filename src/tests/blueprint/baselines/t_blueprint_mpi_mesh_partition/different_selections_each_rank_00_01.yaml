@@ -18,6 +18,18 @@
       association: "vertex"
       topology: "topo"
       values: [-2.0, -1.0, 0.0, -1.0, -0.585786437626905, 0.23606797749979, 0.0, 0.23606797749979, 0.82842712474619]
+    original_vertex_ids: 
+      association: "vertex"
+      topology: "topo"
+      values: 
+        domains: [20, 20, 20, 20, 20, 20, 20, 20, 20]
+        ids: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    original_element_ids: 
+      association: "element"
+      topology: "topo"
+      values: 
+        domains: [20, 20, 20, 20]
+        ids: [0, 1, 2, 3]
 - 
   coordsets: 
     coords: 
@@ -38,13 +50,13 @@
       association: "vertex"
       topology: "topo"
       values: 
-        domains: [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+        domains: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
         ids: [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15]
     original_element_ids: 
       association: "element"
       topology: "topo"
       values: 
-        domains: [3, 3, 3, 3, 3, 3]
+        domains: [30, 30, 30, 30, 30, 30]
         ids: [1, 2, 4, 5, 7, 8]
   state: 
     cycle: 0

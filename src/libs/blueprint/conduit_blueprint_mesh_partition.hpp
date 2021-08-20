@@ -431,6 +431,16 @@ protected:
              conduit::Node &n_new_topo) const;
 
     /**
+     @brief Make a shallow copy of the input mesh node but make it have
+            its own fields so we can add original vertex and element maps.
+            All other fields are shallow copied.
+     @param idx The index of the selection whose data we're wrapping.
+     @param n_mesh The input mesh we're wrapping.
+     @return A new node containing the wrapped data.
+     */
+    conduit::Node *wrap(size_t idx, const conduit::Node &n_mesh) const;
+
+    /**
      @brief Given a set of input meshes which may have various topologies,
             recommend a topology that can be used to capture the combined
             meshes in a single output.

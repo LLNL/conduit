@@ -1414,12 +1414,21 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     else
     {
         // Add selections to indicate that we take the whole domain.
-        for(size_t domid = 0; domid < doms.size(); domid++)
+        for(size_t i = 0; i < doms.size(); i++)
         {
-            auto sel = create_selection_all_elements(*doms[domid]);
+            auto sel = create_selection_all_elements(*doms[i]);
+            // If the mesh has a domain_id then use that as the domain number.
+            index_t domid = i;
+            if(doms[i]->has_path("state/domain_id"))
+            {
+                bool ok = false;
+                index_t tmp = get_index_t(doms[i]->operator[]("state/domain_id"), ok);
+                if(ok)
+                    domid = tmp;
+            }
             sel->set_domain(domid);
             selections.push_back(sel);
-            meshes.push_back(doms[domid]);
+            meshes.push_back(doms[i]);
         }
     }
 
@@ -2652,6 +2661,80 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
 }
 
 //---------------------------------------------------------------------------
+/**
+ @brief This method wraps the input node and adds original elements/vertices
+        to it since downstream it is best that these fields exist.
+ */
+conduit::Node *
+partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
+{
+    conduit::Node *n_wrap = new conduit::Node;
+
+    // Add the members from n_mesh into n_wrap but treat fields specially.
+    for(index_t i = 0; i < n_mesh.number_of_children(); i++)
+    {
+        const conduit::Node &f = n_mesh[i];
+        if(f.name() != "fields")
+            (*n_wrap)[f.name()].set_external_node(f);
+    }
+    conduit::Node &n_new_fields = (*n_wrap)["fields"];
+    // Make references to any fields from the input into the n_wrap/fields node.
+    if(n_mesh.has_path("fields"))
+    {
+        const conduit::Node &n_fields = n_mesh["fields"];
+        for(index_t i = 0; i < n_fields.number_of_children(); i++)
+        {
+            const conduit::Node &f = n_fields[i];
+            n_new_fields[f.name()].set_external_node(f);
+        }
+    }
+
+    const conduit::Node &n_topo = selections[idx]->selected_topology(n_mesh);
+    std::string toponame(n_topo.name());
+    index_t nelements = conduit::blueprint::mesh::topology::length(n_topo);
+    index_t domain = selections[idx]->get_domain();
+    std::string csname(n_topo["coordset"].as_string());
+    index_t nvertices = 0;
+    if(n_mesh.has_child("coordsets"))
+    {
+        const conduit::Node &n_cs = n_mesh["coordsets"];
+        nvertices = mesh::utils::coordset::length(n_cs[csname]);
+    }
+
+    // Save the vertex_ids as a new MC field.
+    if(nvertices > 0)
+    {
+        conduit::Node &n_field = n_new_fields["original_vertex_ids"];
+        n_field["association"] = "vertex";
+        if(!toponame.empty())
+            n_field["topology"] = toponame;
+        std::vector<index_t> vertex_ids(nvertices);
+        for(index_t i = 0; i < nvertices; i++)
+            vertex_ids[i] = i;
+        std::vector<index_t> domain_ids(nvertices, domain);
+        n_field["values/domains"].set(domain_ids);
+        n_field["values/ids"].set(vertex_ids);
+    }
+
+    // Save the element_ids as a new MC field.
+    if(nelements > 0)
+    {
+        conduit::Node &n_field = n_new_fields["original_element_ids"];
+        n_field["association"] = "element";
+        if(!toponame.empty())
+            n_field["topology"] = toponame;
+        std::vector<index_t> elem_ids(nelements);
+        for(index_t i = 0; i < nelements; i++)
+            elem_ids[i] = i;
+        std::vector<index_t> domain_ids(nelements, domain);
+        n_field["values/domains"].set(domain_ids);
+        n_field["values/ids"].set(elem_ids);
+    }
+
+    return n_wrap;
+}
+
+//---------------------------------------------------------------------------
 void
 partitioner::execute(conduit::Node &output)
 {
@@ -2664,8 +2747,16 @@ partitioner::execute(conduit::Node &output)
         if(selections[i]->get_whole(*meshes[i]))
         {
             // We had a selection that spanned the entire mesh so we'll take
-            // the whole mesh rather than extracting.
-            chunks.push_back(chunk(meshes[i], false));
+            // the whole mesh rather than extracting. If we are using "mapping"
+            // then we will be wrapping the mesh so we can add vertex and element
+            // maps to it without changing the input mesh.
+            if(mapping)
+            {
+                conduit::Node *c = wrap(i, *meshes[i]);
+                chunks.push_back(chunk(c, true));
+            }
+            else
+                chunks.push_back(chunk(meshes[i], false));
         }
         else
         {

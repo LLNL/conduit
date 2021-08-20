@@ -27,6 +27,9 @@ using std::endl;
 //#define CONDUIT_DEBUG_MAP_CHUNKS
 //#define CONDUIT_DEBUG_COMMUNICATE_CHUNKS
 
+// Renumber domains in parallel
+#define RENUMBER_DOMAINS
+
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -757,7 +760,7 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
             {
                 int local_i = i - offsets[rank];
 
-#if 1
+#ifdef RENUMBER_DOMAINS
                 // The chunk we have here needs its state/domain_id updated but
                 // we really should not modify it directly. Do we have to make
                 // a new node and set_external everything in it? Then make it
@@ -774,6 +777,7 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
                 if(chunks[local_i].mesh->has_path("state/time"))
                     (*n_recv)["state/time"] = (*chunks[local_i].mesh)["state/time"];
                 (*n_recv)["state/domain_id"] = i;
+
                 // Save the chunk "wrapper" that has its own state.
                 chunks_to_assemble.push_back(chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
@@ -792,10 +796,11 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
                 conduit::Node *n_recv = new conduit::Node;              
                 conduit::relay::mpi::recv_using_schema(*n_recv, src_rank[i], tag, comm);
 
+#ifdef RENUMBER_DOMAINS
                 // Since we had to receive the chunk, we can patch up its state/domain_id
                 // to the updated numbering scheme.
                 (*n_recv)["state/domain_id"] = i;
-
+#endif
                 // Save the received chunk and indicate we own it for later.
                 chunks_to_assemble.push_back(chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
