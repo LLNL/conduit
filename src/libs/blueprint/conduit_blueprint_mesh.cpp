@@ -25,6 +25,7 @@
 #include <limits>
 #include <memory>
 #include <set>
+#include <iterator>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -3231,10 +3232,7 @@ namespace detail
                         {
                             // then add or modify an entry in the map to reflect
                             // the new information
-                            if (!info.insert(std::make_pair(j, ((std::set<int>) {k}))).second)
-                            {
-                                info[j].insert(k);
-                            }
+                            info[new_connec[j]].insert(new_connec[k]);
                         }
                     }
                 }
@@ -3248,8 +3246,8 @@ namespace detail
             // to another point)
             if (info.find(i) != info.end())
             {
-                float sum = 0.f;
-                float num_neighbors = 0.f;
+                float64 sum = 0.0;
+                float64 num_neighbors = 0.0;
                 std::set<int>::iterator it;
                 // we iterate through the set and sum the field values
                 // of the points we are connected to that are also
@@ -3259,7 +3257,7 @@ namespace detail
                     if (*it < orig_num_points)
                     {
                         sum += values_array[*it];
-                        num_neighbors += 1.f;
+                        num_neighbors += 1.0;
                     }
                 }
                 // then we divide by the number of incident points,
@@ -3269,10 +3267,10 @@ namespace detail
                 // coordset
                 values_array[i] = sum / num_neighbors;
             }
-            // if the points go unused in the topology, we assign them nan
+            // if the points go unused in the topology, we assign them 0
             else
             {
-                values_array[i] = INT_MAX;
+                values_array[i] = 0.0;
             }
         }
     }
@@ -3572,11 +3570,12 @@ namespace detail
                     volume_ratio = volumes_info["ratio"].value();
                 }
 
+                int field_out_size = vert_assoc ? new_num_points : new_num_shapes;
                 if (field["values"].dtype().is_uint64())
                 {
-                    if (vol_dep)
+                    if (vol_dep || vert_assoc)
                     {
-                        field_out["values"].set(conduit::DataType::float64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::float64(field_out_size));
                         map_field_to_generated_sides<T, float64, uint64>(field_out, 
                                                                          field, 
                                                                          new_num_shapes, 
@@ -3591,7 +3590,7 @@ namespace detail
                     }
                     else
                     {
-                        field_out["values"].set(conduit::DataType::uint64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::uint64(field_out_size));
                         map_field_to_generated_sides<T, uint64, uint64>(field_out, 
                                                                         field, 
                                                                         new_num_shapes, 
@@ -3607,9 +3606,9 @@ namespace detail
                 }
                 else if (field["values"].dtype().is_uint32())
                 {
-                    if (vol_dep)
+                    if (vol_dep || vert_assoc)
                     {
-                        field_out["values"].set(conduit::DataType::float64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::float64(field_out_size));
                         map_field_to_generated_sides<T, float64, uint32>(field_out, 
                                                                          field, 
                                                                          new_num_shapes, 
@@ -3624,7 +3623,7 @@ namespace detail
                     }
                     else
                     {
-                        field_out["values"].set(conduit::DataType::uint32(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::uint32(field_out_size));
                         map_field_to_generated_sides<T, uint32, uint32>(field_out, 
                                                                         field, 
                                                                         new_num_shapes, 
@@ -3640,9 +3639,9 @@ namespace detail
                 }
                 else if (field["values"].dtype().is_int64())
                 {
-                    if (vol_dep)
+                    if (vol_dep || vert_assoc)
                     {
-                        field_out["values"].set(conduit::DataType::float64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::float64(field_out_size));
                         map_field_to_generated_sides<T, float64, int64>(field_out, 
                                                                         field, 
                                                                         new_num_shapes, 
@@ -3657,7 +3656,7 @@ namespace detail
                     }
                     else
                     {
-                        field_out["values"].set(conduit::DataType::int64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::int64(field_out_size));
                         map_field_to_generated_sides<T, int64, int64>(field_out, 
                                                                       field, 
                                                                       new_num_shapes, 
@@ -3673,9 +3672,9 @@ namespace detail
                 }
                 else if (field["values"].dtype().is_int32())
                 {
-                    if (vol_dep)
+                    if (vol_dep || vert_assoc)
                     {
-                        field_out["values"].set(conduit::DataType::float64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::float64(field_out_size));
                         map_field_to_generated_sides<T, float64, int32>(field_out, 
                                                                         field, 
                                                                         new_num_shapes, 
@@ -3690,7 +3689,7 @@ namespace detail
                     }
                     else
                     {
-                        field_out["values"].set(conduit::DataType::int32(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::int32(field_out_size));
                         map_field_to_generated_sides<T, int32, int32>(field_out, 
                                                                       field, 
                                                                       new_num_shapes, 
@@ -3706,9 +3705,9 @@ namespace detail
                 }
                 else if (field["values"].dtype().is_float64())
                 {
-                    if (vol_dep)
+                    if (vol_dep || vert_assoc)
                     {
-                        field_out["values"].set(conduit::DataType::float64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::float64(field_out_size));
                         map_field_to_generated_sides<T, float64, float64>(field_out, 
                                                                           field, 
                                                                           new_num_shapes, 
@@ -3723,7 +3722,7 @@ namespace detail
                     }
                     else
                     {
-                        field_out["values"].set(conduit::DataType::float64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::float64(field_out_size));
                         map_field_to_generated_sides<T, float64, float64>(field_out, 
                                                                           field, 
                                                                           new_num_shapes, 
@@ -3739,9 +3738,9 @@ namespace detail
                 }
                 else if (field["values"].dtype().is_float32())
                 {
-                    if (vol_dep)
+                    if (vol_dep || vert_assoc)
                     {
-                        field_out["values"].set(conduit::DataType::float64(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::float64(field_out_size));
                         map_field_to_generated_sides<T, float64, float32>(field_out, 
                                                                           field, 
                                                                           new_num_shapes, 
@@ -3756,7 +3755,7 @@ namespace detail
                     }
                     else
                     {
-                        field_out["values"].set(conduit::DataType::float32(new_num_shapes));
+                        field_out["values"].set(conduit::DataType::float32(field_out_size));
                         map_field_to_generated_sides<T, float32, float32>(field_out, 
                                                                           field, 
                                                                           new_num_shapes, 

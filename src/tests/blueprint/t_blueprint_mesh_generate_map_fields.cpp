@@ -22,63 +22,20 @@
 using namespace conduit;
 using namespace conduit::blueprint::mesh;
 
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
+void check_orig_elem_ids_polytess_nlevels2_nz1(
+    const index_t num_field_values,
+    const index_t num_polygons,
+    const std::string prefix,
+    const std::string topo_name,
+    const Node &side_mesh)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
-    Node n, side_mesh, info;
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_element_ids/topology"].as_string(), topo_name);
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_element_ids/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_element_ids/volume_dependent"].as_string(), "false");
 
-    // create polytessalation with two levels
-    examples::polytess(nlevels, nz, n);
-    EXPECT_TRUE(verify(n, info));
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_element_ids/values"].dtype().number_of_elements(), num_field_values);
 
-    Node s2dmap, d2smap;
-    Node &side_coords = side_mesh["coordsets/coords"];
-    Node &side_topo = side_mesh["topologies/topo"];
-    Node &side_fields = side_mesh["fields"];
-    Node options;
-    options["field_names"] = "level";
-
-    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-                                                            side_topo,
-                                                            side_coords,
-                                                            side_fields,
-                                                            s2dmap,
-                                                            d2smap,
-                                                            options);
-
-    EXPECT_TRUE(verify(side_mesh, info));
-
-    EXPECT_EQ(side_mesh["fields/level/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/level/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/level/volume_dependent"].as_string(), "false");
-
-    index_t num_field_values = 56;
-    index_t num_polygons = 9;
-    EXPECT_EQ(side_mesh["fields/level/values"].dtype().number_of_elements(), num_field_values);
-
-    uint32 *level_values = side_mesh["fields/level/values"].value();
-
-    for (int i = 0; i < num_field_values; i ++)
-    {
-        if (i < 8)
-        {
-            EXPECT_EQ(level_values[i], 1);
-        }
-        else
-        {
-            EXPECT_EQ(level_values[i], 2);
-        }
-    }
-
-    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
-
-    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
-
-    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    const int32 *id_values = side_mesh["fields/" + prefix + "original_element_ids/values"].value();
     
     int i = 0;
     for (int j = 0; j < num_polygons; j ++)
@@ -106,11 +63,132 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
     }
 }
 
+void check_orig_elem_ids_polychain_length1(
+    const index_t num_field_values,
+    const index_t num_tets_in_hex,
+    const index_t num_tets_in_triprism,
+    const std::string prefix,
+    const std::string topo_name,
+    const Node &side_mesh)
+{
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_element_ids/topology"].as_string(), topo_name);
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_element_ids/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_element_ids/volume_dependent"].as_string(), "false");
+
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+
+    const int32 *id_values = side_mesh["fields/" + prefix + "original_element_ids/values"].value();
+
+    for (int i = 0; i < num_field_values; i ++)
+    {
+        if (i < num_tets_in_hex)
+        {
+            EXPECT_EQ(id_values[i], 0);
+        }
+        else if (i < num_tets_in_hex + num_tets_in_triprism)
+        {
+            EXPECT_EQ(id_values[i], 1);
+        }
+        else
+        {
+            EXPECT_EQ(id_values[i], 2);
+        }
+    }
+}
+
+void check_original_vertex_ids(
+    const index_t num_points, 
+    const index_t num_orig_points,
+    const std::string prefix,
+    const std::string topo_name,
+    const Node &side_mesh)
+{
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_vertex_ids/topology"].as_string(), topo_name);
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_vertex_ids/association"].as_string(), "vertex");
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_vertex_ids/volume_dependent"].as_string(), "false");
+    EXPECT_EQ(side_mesh["fields/" + prefix + "original_vertex_ids/values"].dtype().number_of_elements(), num_points);
+
+    const int32 *vert_id_values = side_mesh["fields/" + prefix + "original_vertex_ids/values"].value();
+
+    for (int i = 0; i < num_points; i ++)
+    {
+        if (i < num_orig_points)
+        {
+            EXPECT_EQ(vert_id_values[i], i);
+        }
+        else
+        {
+            EXPECT_EQ(vert_id_values[i], -1);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
+{
+    const index_t nlevels = 2;
+    const index_t nz = 1;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, nz, n);
+    EXPECT_TRUE(verify(n, info));
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+    options["field_names"] = "level";
+
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                            side_topo,
+                                                            side_coords,
+                                                            side_fields,
+                                                            s2dmap,
+                                                            d2smap,
+                                                            options);
+
+    EXPECT_TRUE(verify(side_mesh, info));
+
+    EXPECT_EQ(side_mesh["fields/level/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/level/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/level/volume_dependent"].as_string(), "false");
+
+    const index_t num_field_values = 56;
+    const index_t num_polygons = 9;
+    EXPECT_EQ(side_mesh["fields/level/values"].dtype().number_of_elements(), num_field_values);
+
+    uint32 *level_values = side_mesh["fields/level/values"].value();
+
+    for (int i = 0; i < num_field_values; i ++)
+    {
+        if (i < 8)
+        {
+            EXPECT_EQ(level_values[i], 1);
+        }
+        else
+        {
+            EXPECT_EQ(level_values[i], 2);
+        }
+    }
+
+    const std::string prefix = "";
+    const std::string topo_name = "topo";
+
+    check_orig_elem_ids_polytess_nlevels2_nz1(num_field_values, num_polygons, prefix, topo_name, side_mesh);
+
+    const index_t num_points = 41;
+    const index_t num_orig_points = 32;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_skip_bad_field)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -140,8 +218,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_skip_bad_field)
     EXPECT_EQ(side_mesh["fields/level/association"].as_string(), "element");
     EXPECT_EQ(side_mesh["fields/level/volume_dependent"].as_string(), "false");
 
-    index_t num_field_values = 56;
-    index_t num_polygons = 9;
+    const index_t num_field_values = 56;
+    const index_t num_polygons = 9;
     EXPECT_EQ(side_mesh["fields/level/values"].dtype().number_of_elements(), num_field_values);
 
     uint32 *level_values = side_mesh["fields/level/values"].value();
@@ -158,45 +236,22 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_skip_bad_field)
         }
     }
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
+    const std::string prefix = "";
+    const std::string topo_name = "topo";
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+    check_orig_elem_ids_polytess_nlevels2_nz1(num_field_values, num_polygons, prefix, topo_name, side_mesh);
 
-    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
-    
-    int i = 0;
-    for (int j = 0; j < num_polygons; j ++)
-    {
-        if (j % 2)
-        {
-            EXPECT_EQ(id_values[i], j);
-            EXPECT_EQ(id_values[i + 1], j);
-            EXPECT_EQ(id_values[i + 2], j);
-            EXPECT_EQ(id_values[i + 3], j);
-            i += 4;
-        }
-        else
-        {
-            EXPECT_EQ(id_values[i], j);
-            EXPECT_EQ(id_values[i + 1], j);
-            EXPECT_EQ(id_values[i + 2], j);
-            EXPECT_EQ(id_values[i + 3], j);
-            EXPECT_EQ(id_values[i + 4], j);
-            EXPECT_EQ(id_values[i + 5], j);
-            EXPECT_EQ(id_values[i + 6], j);
-            EXPECT_EQ(id_values[i + 7], j);
-            i += 8;
-        }
-    }
+    const index_t num_points = 41;
+    const index_t num_orig_points = 32;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_no_field_names)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -223,8 +278,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_no_field
     EXPECT_EQ(side_mesh["fields/level/association"].as_string(), "element");
     EXPECT_EQ(side_mesh["fields/level/volume_dependent"].as_string(), "false");
 
-    index_t num_field_values = 56;
-    index_t num_polygons = 9;
+    const index_t num_field_values = 56;
+    const index_t num_polygons = 9;
     EXPECT_EQ(side_mesh["fields/level/values"].dtype().number_of_elements(), num_field_values);
 
     uint32 *level_values = side_mesh["fields/level/values"].value();
@@ -241,45 +296,22 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_no_field
         }
     }
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
+    const std::string prefix = "";
+    const std::string topo_name = "topo";
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+    check_orig_elem_ids_polytess_nlevels2_nz1(num_field_values, num_polygons, prefix, topo_name, side_mesh);
 
-    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
-    
-    int i = 0;
-    for (int j = 0; j < num_polygons; j ++)
-    {
-        if (j % 2)
-        {
-            EXPECT_EQ(id_values[i], j);
-            EXPECT_EQ(id_values[i + 1], j);
-            EXPECT_EQ(id_values[i + 2], j);
-            EXPECT_EQ(id_values[i + 3], j);
-            i += 4;
-        }
-        else
-        {
-            EXPECT_EQ(id_values[i], j);
-            EXPECT_EQ(id_values[i + 1], j);
-            EXPECT_EQ(id_values[i + 2], j);
-            EXPECT_EQ(id_values[i + 3], j);
-            EXPECT_EQ(id_values[i + 4], j);
-            EXPECT_EQ(id_values[i + 5], j);
-            EXPECT_EQ(id_values[i + 6], j);
-            EXPECT_EQ(id_values[i + 7], j);
-            i += 8;
-        }
-    }
+    const index_t num_points = 41;
+    const index_t num_orig_points = 32;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_field_prefix)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -307,8 +339,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_field_pr
     EXPECT_EQ(side_mesh["fields/my_prefix_level/association"].as_string(), "element");
     EXPECT_EQ(side_mesh["fields/my_prefix_level/volume_dependent"].as_string(), "false");
 
-    index_t num_field_values = 56;
-    index_t num_polygons = 9;
+    const index_t num_field_values = 56;
+    const index_t num_polygons = 9;
     EXPECT_EQ(side_mesh["fields/my_prefix_level/values"].dtype().number_of_elements(), num_field_values);
 
     uint32 *level_values = side_mesh["fields/my_prefix_level/values"].value();
@@ -325,44 +357,21 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_options_field_pr
         }
     }
 
-    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/volume_dependent"].as_string(), "false");
+    const std::string prefix = "my_prefix_";
+    const std::string topo_name = "topo";
 
-    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+    check_orig_elem_ids_polytess_nlevels2_nz1(num_field_values, num_polygons, prefix, topo_name, side_mesh);
 
-    int32 *id_values = side_mesh["fields/my_prefix_original_element_ids/values"].value();
-    
-    int i = 0;
-    for (int j = 0; j < num_polygons; j ++)
-    {
-        if (j % 2)
-        {
-            EXPECT_EQ(id_values[i], j);
-            EXPECT_EQ(id_values[i + 1], j);
-            EXPECT_EQ(id_values[i + 2], j);
-            EXPECT_EQ(id_values[i + 3], j);
-            i += 4;
-        }
-        else
-        {
-            EXPECT_EQ(id_values[i], j);
-            EXPECT_EQ(id_values[i + 1], j);
-            EXPECT_EQ(id_values[i + 2], j);
-            EXPECT_EQ(id_values[i + 3], j);
-            EXPECT_EQ(id_values[i + 4], j);
-            EXPECT_EQ(id_values[i + 5], j);
-            EXPECT_EQ(id_values[i + 6], j);
-            EXPECT_EQ(id_values[i + 7], j);
-            i += 8;
-        }
-    }
+    const index_t num_points = 41;
+    const index_t num_orig_points = 32;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_3D)
 {
-    index_t length = 1;
+    const index_t length = 1;
     Node n, side_mesh, info;
 
     // create a polychain of length 1
@@ -389,10 +398,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D)
     EXPECT_EQ(side_mesh["fields/chain/association"].as_string(), "element");
     EXPECT_EQ(side_mesh["fields/chain/volume_dependent"].as_string(), "false");
 
-    index_t num_tets_in_hex = 24;
-    index_t num_tets_in_triprism = 18;
+    const index_t num_tets_in_hex = 24;
+    const index_t num_tets_in_triprism = 18;
 
-    index_t num_field_values = num_tets_in_hex + 2 * num_tets_in_triprism;
+    const index_t num_field_values = num_tets_in_hex + 2 * num_tets_in_triprism;
     EXPECT_EQ(side_mesh["fields/chain/values"].dtype().number_of_elements(), num_field_values);
 
     int64 *chain_values = side_mesh["fields/chain/values"].value();
@@ -432,13 +441,29 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D)
             EXPECT_EQ(id_values[i], 2);
         }
     }
+
+    const std::string prefix = "";
+    const std::string topo_name = "topo";
+
+    check_orig_elem_ids_polychain_length1(
+        num_field_values,
+        num_tets_in_hex,
+        num_tets_in_triprism,
+        prefix,
+        topo_name,
+        side_mesh);
+
+    const index_t num_points = 39;
+    const index_t num_orig_points = 20;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -473,8 +498,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
     EXPECT_EQ(side_mesh["fields/my_prefix_level/association"].as_string(), "element");
     EXPECT_EQ(side_mesh["fields/my_prefix_level/volume_dependent"].as_string(), "false");
 
-    index_t num_field_values = 56;
-    index_t num_polygons = 9;
+    const index_t num_field_values = 56;
+    const index_t num_polygons = 9;
     EXPECT_EQ(side_mesh["fields/my_prefix_level/values"].dtype().number_of_elements(), num_field_values);
 
     uint32 *level_values = side_mesh["fields/my_prefix_level/values"].value();
@@ -587,45 +612,104 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
         }
     }
 
-    // check original element ids
-    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/volume_dependent"].as_string(), "false");
+    const std::string prefix = "my_prefix_";
+    const std::string topo_name = "topo";
 
-    EXPECT_EQ(side_mesh["fields/my_prefix_original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+    check_orig_elem_ids_polytess_nlevels2_nz1(num_field_values, num_polygons, prefix, topo_name, side_mesh);
 
-    int32 *id_values = side_mesh["fields/my_prefix_original_element_ids/values"].value();
-    
-    int i = 0;
-    for (int j = 0; j < num_polygons; j ++)
+    const index_t num_points = 41;
+    const index_t num_orig_points = 32;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc)
+{
+    const index_t nlevels = 1;
+    const index_t nz = 1;
+    Node n, side_mesh, info;
+
+    // create polytessalation with one level
+    examples::polytess(nlevels, nz, n);
+    EXPECT_TRUE(verify(n, info));
+
+    n["fields/level/association"] = "vertex";
+    n["fields/level/values"].set(conduit::DataType::float32(8));
+    float32 *values = n["fields/level/values"].value();
+
+    for (int i = 0; i < 8; i ++)
     {
-        if (j % 2)
+        values[i] = 7.0f - i;
+    }
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                            side_topo,
+                                                            side_coords,
+                                                            side_fields,
+                                                            s2dmap,
+                                                            d2smap,
+                                                            options);
+
+
+    EXPECT_TRUE(verify(side_mesh, info));
+
+    EXPECT_EQ(side_mesh["fields/level/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/level/association"].as_string(), "vertex");
+    EXPECT_EQ(side_mesh["fields/level/volume_dependent"].as_string(), "false");
+
+    const index_t num_field_values = 9;
+    const index_t num_triangles_per_octagon = 8;
+    const index_t num_polygons = 1;
+    EXPECT_EQ(side_mesh["fields/level/values"].dtype().number_of_elements(), num_field_values);
+
+    float64 *level_values = side_mesh["fields/level/values"].value();
+
+    for (int i = 0; i < num_field_values; i ++)
+    {
+        if (i < 8)
         {
-            EXPECT_EQ(id_values[i], j);
-            EXPECT_EQ(id_values[i + 1], j);
-            EXPECT_EQ(id_values[i + 2], j);
-            EXPECT_EQ(id_values[i + 3], j);
-            i += 4;
+            EXPECT_NEAR(level_values[i], 7.0 - i, 0.0001f);
         }
         else
         {
-            EXPECT_EQ(id_values[i], j);
-            EXPECT_EQ(id_values[i + 1], j);
-            EXPECT_EQ(id_values[i + 2], j);
-            EXPECT_EQ(id_values[i + 3], j);
-            EXPECT_EQ(id_values[i + 4], j);
-            EXPECT_EQ(id_values[i + 5], j);
-            EXPECT_EQ(id_values[i + 6], j);
-            EXPECT_EQ(id_values[i + 7], j);
-            i += 8;
+            EXPECT_NEAR(level_values[i], 3.5, 0.0001f);
         }
     }
+
+    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
+    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
+
+    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_triangles_per_octagon);
+
+    const int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    
+    const index_t num_points_in_octagon = 8;
+
+    for (int i = 0; i < num_points_in_octagon; i ++)
+    {
+        EXPECT_EQ(id_values[i], 0);
+    }
+
+    const std::string prefix = "";
+    const std::string topo_name = "topo";
+    const index_t num_points = 9;
+    const index_t num_orig_points = 8;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_3D_vol_dep)
 {
-    index_t length = 1;
+    const index_t length = 1;
     Node n, side_mesh, info;
 
     // create a polychain of length 1
@@ -658,10 +742,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D_vol_dep)
     EXPECT_EQ(side_mesh["fields/chain/association"].as_string(), "element");
     EXPECT_EQ(side_mesh["fields/chain/volume_dependent"].as_string(), "false");
 
-    index_t num_tets_in_hex = 24;
-    index_t num_tets_in_triprism = 18;
+    const index_t num_tets_in_hex = 24;
+    const index_t num_tets_in_triprism = 18;
 
-    index_t num_field_values = num_tets_in_hex + 2 * num_tets_in_triprism;
+    const index_t num_field_values = num_tets_in_hex + 2 * num_tets_in_triprism;
     EXPECT_EQ(side_mesh["fields/chain/values"].dtype().number_of_elements(), num_field_values);
 
     int64 *chain_values = side_mesh["fields/chain/values"].value();
@@ -720,37 +804,28 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D_vol_dep)
         }
     }
 
-    // check original_element_ids field
-    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
+    const std::string prefix = "";
+    const std::string topo_name = "topo";
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
+    check_orig_elem_ids_polychain_length1(
+        num_field_values,
+        num_tets_in_hex,
+        num_tets_in_triprism,
+        prefix,
+        topo_name,
+        side_mesh);
 
-    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
+    const index_t num_points = 39;
+    const index_t num_orig_points = 20;
 
-    for (int i = 0; i < num_field_values; i ++)
-    {
-        if (i < num_tets_in_hex)
-        {
-            EXPECT_EQ(id_values[i], 0);
-        }
-        else if (i < num_tets_in_hex + num_tets_in_triprism)
-        {
-            EXPECT_EQ(id_values[i], 1);
-        }
-        else
-        {
-            EXPECT_EQ(id_values[i], 2);
-        }
-    }
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_field_datatype_ex)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -788,8 +863,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_field_datatype_ex)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_prefix_ex)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -827,8 +902,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_prefi
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex1)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -865,8 +940,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex2)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -905,8 +980,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex3)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -944,8 +1019,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_ex4)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -984,8 +1059,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_options_field_name_
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_invalid_assoc_ex)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -1023,8 +1098,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_invalid_assoc_ex)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_vert_assoc_and_vol_dep_ex)
 {
-    index_t nlevels = 2;
-    index_t nz = 1;
+    const index_t nlevels = 2;
+    const index_t nz = 1;
     Node n, side_mesh, info;
 
     // create polytessalation with two levels
@@ -1056,52 +1131,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_vert_assoc_and_vol_
     {
         std::string msg = "Volume-dependent vertex-associated fields are not supported.";
         std::string actual = err.what();
-        std::cout << actual << std::endl;
-
         EXPECT_TRUE(actual.find(msg) != std::string::npos);
     }
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, testtesttest)
-{
-    index_t nlevels = 1;
-    index_t nz = 1;
-    Node n, side_mesh, info;
-
-    // create polytessalation with two levels
-    examples::polytess(nlevels, nz, n);
-
-    // n["fields/level/association"] = "vertex";
-    // n["fields/level/values"].set(conduit::DataType::float32(16));
-    // float32 *values = n["fields/level/values"].value();
-
-    // for (int i = 0; i < 16; i ++)
-    // {
-    //     values[i] = 15.0f - i;
-    // }
-
-    n.print();
-
-    Node s2dmap, d2smap;
-    Node &side_coords = side_mesh["coordsets/coords"];
-    Node &side_topo = side_mesh["topologies/topo"];
-    Node &side_fields = side_mesh["fields"];
-    Node options;
-
-    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
-                                                            side_topo,
-                                                            side_coords,
-                                                            side_fields,
-                                                            s2dmap,
-                                                            d2smap,
-                                                            options);
-
-    side_mesh.print();
-
-    if(conduit::utils::is_file("vertex.root"))
-    {
-        conduit::utils::remove_file("vertex.root");
-    }
-    conduit::relay::io::blueprint::save_mesh(side_mesh, "vertex", "hdf5");
 }
