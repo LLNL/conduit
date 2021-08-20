@@ -349,7 +349,6 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -385,7 +384,6 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 {
     test_logical_selection_3d("structured", "structured_logical_3d");
 }
-#endif
 
 //-----------------------------------------------------------------------------
 void
@@ -545,7 +543,7 @@ int hexs_and_tets_spc(conduit::index_t i, conduit::index_t j)
         n = 6;
     return n;
 }
-#if 1
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
@@ -592,7 +590,6 @@ TEST(conduit_blueprint_mesh_partition, hexs_and_tets_explicit_3d)
     test_explicit_selection("hexs_and_tets", vdims, "hexs_and_tets_explicit_3d",
         hexs_and_tets_spc);
 }
-#endif
 
 //-----------------------------------------------------------------------------
 void
@@ -737,7 +734,6 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
 #endif
 }
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_ranges_2d)
 {
@@ -761,7 +757,6 @@ TEST(conduit_blueprint_mesh_partition, quads_ranges_2d)
 {
     test_ranges_selection_2d("quads", "quads_ranges_2d");
 }
-#endif
 
 //-----------------------------------------------------------------------------
 //-- Point merge
@@ -1063,6 +1058,7 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
     }
 }
 
+//-----------------------------------------------------------------------------
 #define DEBUG_COMBINE_MULTIDOMAIN
 TEST(conduit_blueprint_mesh_combine, multidomain)
 {
@@ -1115,6 +1111,7 @@ TEST(conduit_blueprint_mesh_combine, multidomain)
     }
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_combine, to_poly)
 {
     const auto to_polys_case = [](const std::string &case_name, const conduit::index_t vdims[3])
@@ -1262,6 +1259,7 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
     }
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_combine, uniform)
 {
     using namespace conduit::blueprint::mesh::examples;
@@ -1494,6 +1492,7 @@ TEST(conduit_blueprint_mesh_combine, uniform)
     uniform_cases(true);
 }
 
+//-----------------------------------------------------------------------------
 TEST(blueprint_mesh_combine, rectilinear)
 {
     conduit::Node spiral;
