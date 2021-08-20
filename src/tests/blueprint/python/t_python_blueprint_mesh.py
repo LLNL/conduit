@@ -166,7 +166,28 @@ class Test_Blueprint_Mesh(unittest.TestCase):
         self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
         self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
 
-
+    def test_partition(self):
+        def same(a, b):
+            for i in range(len(a)):
+                if a[i] != b[i]:
+                    return False
+            return True
+        n = Node()
+        blueprint.mesh.examples.spiral(4, n)
+        output = Node()
+        options = Node()
+        options["target"] = 2
+        options["mapping"] = 0
+        conduit.blueprint.mesh.partition(n, options, output)
+        self.assertTrue(options.number_of_children() == 2)
+        expected_x0 = (0., 1., 2.)
+        expected_y0 = (0., 1., 2., 3.)
+        expected_x1 = (-3.0, -2.0, -1.0, 0.0)
+        expected_y1 = (0.0, 1.0, 2.0, 3.0)       
+        self.assertTrue(same(expected_x0, output[0]["coordsets/coords/values/x"]))
+        self.assertTrue(same(expected_y0, output[0]["coordsets/coords/values/y"]))
+        self.assertTrue(same(expected_x1, output[1]["coordsets/coords/values/x"]))
+        self.assertTrue(same(expected_y1, output[1]["coordsets/coords/values/y"]))
 
 if __name__ == '__main__':
     unittest.main()

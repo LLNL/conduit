@@ -144,7 +144,6 @@ if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
-
 ################################################################
 # If we have mpi, add the conduit blueprint mpi library
 ################################################################
