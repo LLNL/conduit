@@ -99,115 +99,6 @@ get_index_t(const conduit::Node &n, bool &ok)
     return retval;
 }
 
-//-------------------------------------------------------------------------
-/**
-  options["comm"] = MPI_COMM_WORLD;
-
-  "Information on how to re-decompose the grids will be provided or be easily calculatable."
-
-  To go from 1-N, we need a way to pull the mesh apart. We would be able to
-  provide the ways that this is done to select the bits we want so each selection
-  makes a piece in the output mesh.
-
-# Selections provide criteria used to split input meshes
-options:
-  selections:
-    -
-     type: "logical"
-     domain: 0
-     start: [0,0,0]
-     end:   [10,10,10]
-    -
-     type: "logical"
-     domain: 1
-# We might have to specify a topo name too if there are multiple topos in the mesh.
-# topology: "topo2"
-     start: [50,50,50]
-     end:   [60,60,60]
-    -
-     type: "explicit"
-     domain: 0
-     indices: [0,1,2,3,4,5,6,7,8,9]
-    -
-     type: "ranges"
-     domain: 0
-     ranges: [0,100, 1000,2000]
-    -
-     type: "explicit"
-     domain: 1
-     global_indices: [100,101,102,110,116,119,220]
-    -
-     type: "spatial"
-     domain: 2
-     box: [0., 0., 0., 11., 12., 22.]
-    -
-     type: "spatial"
-     domain: 2
-     box: [0., 0., 22., 11., 12., 44.]
-  target: 7
-  mapping: true
-  replicate: false
-  merging:
-    enabled: true
-    radius: 0.001
-  fill_value: 0.0  # fill value to use for when not all chunks entirely cover space.
-  root: 0
-  mpi_comm: 11223
-  fields: ["name1", "name2", "name3"]
-      
-
-  If selections re not present in the options then we assume that we're selecting
-  all cells in all domains that we passed. This is fine for N-1. For 1-N if we 
-  do not pass selections then in serial, we're passing back the input mesh. In parallel,
-  we could be doing that, or gathering to root rank.
-
-
-  // For structured grids, select logically...
-  options["selections/logical/0/domain"] = 0;
-  options["selections/logical/0/start"] = {0,0,0};
-  options["selections/logical/0/end"] = {10,10,10};
-  options["selections/logical/1/domain"] = 1;
-  options["selections/logical/1/start"] = {50,50,50};
-  options["selections/logical/1/end"] = {60,60,60};
-
-  // For any grid type, we could select explicit
-
-  options["selections/cells/0/domain"] = 0;
-  options["selections/cells/0/indices"] = {0,1,2,3,4,5,6,7,8,9};
-
-  options["selections/cells/0/ranges"] = {0,100, 1000,2000};
-
-  options["selections/cells/1/global_indices"] = {100,101,102,110,116,119,220};
-
-  // Pull the mesh apart using spatial boxes
-
-  options["selections/spatial/0/domain"] = 0;
-  options["selections/spatial/0/box"] = {0., 0., 0., 11., 12., 22.};
-
-  options["target"] = 1;        // The target number of domains across all ranks
-                                // participating in the partition. If we have 1
-                                // rank, 4 selections, and target=2, make 2 domains
-                                // out of the 4 selected chunks.
-
-  options["mapping"] = true;    // If on, preserve original cells, conduit::Node ids 
-                                // so it is known how the output mesh was created.
-
-  options["merging/enabled"] = false;
-  options["merging/radius"] = 0.0001; // Point merging radius
-
-
-  options["replicate"] = false; // If we're moving N-1 then indicate whether we
-                                // want the data to be replicated on all ranks
-
-  options["root"] = 0;  // Indicate which is the root rank if we're gathering data N-1.
-  options["mpi_comm"] = integer representing MPI comm.
-
-
-  Suppose we're in parallel on 100 ranks and each rank has 1 domain. Then say that we are
-  making 10 target domains. Which ranks get them? The first 10 ranks in the comm? Does this
-  need to be an option? dest_ranks=[10,20,30,40,...]?
-*/
-
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 const std::string selection::DOMAIN_KEY("domain_id");
@@ -2774,16 +2665,6 @@ partitioner::execute(conduit::Node &output)
     // chunk present on this rank.
     std::vector<int> dest_rank, dest_domain, offsets;
     map_chunks(chunks, dest_rank, dest_domain, offsets);
-#if 0
-    cout << "dest_rank = {" << endl;
-    for(size_t i = 0; i < dest_rank.size(); i++)
-        cout << dest_rank[i] << ", ";
-    cout << "}" << endl;
-    cout << "dest_domain = {" << endl;
-    for(size_t i = 0; i < dest_domain.size(); i++)
-        cout << dest_domain[i] << ", ";
-    cout << "}" << endl;
-#endif
 
     // Communicate chunks to the right destination ranks
     std::vector<chunk> chunks_to_assemble;
