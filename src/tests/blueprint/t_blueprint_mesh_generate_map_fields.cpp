@@ -624,7 +624,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vol_dep)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc)
+TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_small)
 {
     const index_t nlevels = 1;
     const index_t nz = 1;
@@ -634,13 +634,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc)
     examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
+    const index_t orig_num_points = 8;
+
     n["fields/level/association"] = "vertex";
-    n["fields/level/values"].set(conduit::DataType::float32(8));
+    n["fields/level/values"].set(conduit::DataType::float32(orig_num_points));
     float32 *values = n["fields/level/values"].value();
 
-    for (int i = 0; i < 8; i ++)
+    for (int i = 0; i < orig_num_points; i ++)
     {
-        values[i] = 7.0f - i;
+        values[i] = orig_num_points - 1 - i;
     }
 
     Node s2dmap, d2smap;
@@ -675,7 +677,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc)
     {
         if (i < 8)
         {
-            EXPECT_NEAR(level_values[i], 7.0 - i, 0.0001f);
+            EXPECT_NEAR(level_values[i], orig_num_points - 1 - i, 0.0001f);
         }
         else
         {
@@ -702,6 +704,82 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc)
     const std::string topo_name = "topo";
     const index_t num_points = 9;
     const index_t num_orig_points = 8;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_medium)
+{
+    const index_t nlevels = 2;
+    const index_t nz = 1;
+    Node n, side_mesh, info;
+
+    // create polytessalation with one level
+    examples::polytess(nlevels, nz, n);
+    EXPECT_TRUE(verify(n, info));
+
+    const index_t orig_num_points = 32;
+
+    n["fields/level/association"] = "vertex";
+    n["fields/level/values"].set(conduit::DataType::float32(orig_num_points));
+    float32 *values = n["fields/level/values"].value();
+
+    for (int i = 0; i < orig_num_points; i ++)
+    {
+        values[i] = orig_num_points - 1 - i;
+    }
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                            side_topo,
+                                                            side_coords,
+                                                            side_fields,
+                                                            s2dmap,
+                                                            d2smap,
+                                                            options);
+
+
+    EXPECT_TRUE(verify(side_mesh, info));
+
+    EXPECT_EQ(side_mesh["fields/level/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/level/association"].as_string(), "vertex");
+    EXPECT_EQ(side_mesh["fields/level/volume_dependent"].as_string(), "false");
+
+    const index_t num_field_values = 41;
+    const index_t num_shapes = 56;
+    const index_t num_polygons = 9;
+    EXPECT_EQ(side_mesh["fields/level/values"].dtype().number_of_elements(), num_field_values);
+
+    float64 *level_values = side_mesh["fields/level/values"].value();
+
+    for (int i = 0; i < orig_num_points; i ++)
+    {
+        EXPECT_NEAR(level_values[i], orig_num_points - 1 - i, 0.0001f);
+    }
+
+    EXPECT_NEAR(level_values[orig_num_points], 27.5, 0.0001f);
+    EXPECT_NEAR(level_values[orig_num_points + 1], 25.0, 0.0001f);
+    EXPECT_NEAR(level_values[orig_num_points + 2], 22.375, 0.0001f);
+    EXPECT_NEAR(level_values[orig_num_points + 3], 23.25, 0.0001f);
+    EXPECT_NEAR(level_values[orig_num_points + 4], 17.25, 0.0001f);
+    EXPECT_NEAR(level_values[orig_num_points + 5], 19.0, 0.0001f);
+    EXPECT_NEAR(level_values[orig_num_points + 6], 12.25, 0.0001f);
+    EXPECT_NEAR(level_values[orig_num_points + 7], 15.0, 0.0001f);
+    EXPECT_NEAR(level_values[orig_num_points + 8], 10.125, 0.0001f);
+
+    const std::string prefix = "";
+    const std::string topo_name = "topo";
+
+    check_orig_elem_ids_polytess_nlevels2_nz1(num_shapes, num_polygons, prefix, topo_name, side_mesh);
+
+    const index_t num_points = 41;
+    const index_t num_orig_points = 32;
 
     check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
