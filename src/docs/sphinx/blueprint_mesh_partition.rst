@@ -9,9 +9,9 @@ Partitioning
 ===================
 Partitioning meshes is commonly needed in order to evenly distribute work 
 among many simulation ranks. Blueprint provides two ``partition()`` functions
-that can be used to split or recombined Blueprint meshes in serial or parallel.
-The ``partition()`` functions are in the serial and parallel Blueprint libraries,
-respectively.
+that can be used to split or recombine Blueprint meshes in serial or parallel.
+Full M:N repartioning is supported. The ``partition()`` functions are in the
+serial and parallel Blueprint libraries, respectively.
 
 .. code:: cpp
 
@@ -26,6 +26,32 @@ respectively.
                                                   Node &output,
                                                   MPI_Comm comm);
 
+
+Partitioning meshes using Blueprint will use any options present to determine
+how the partitioning process will behave. Typically, a caller would pass options
+containing selections if pieces of domains are desired. The partitioner processes
+any selections and then examines the desired target number of domains and will then
+decide whether domains must be moved among ranks (only in parallel version) and 
+then locally combined to achieve the target number of domains. The combining
+process will attempt to preserve the input topology type for the output topology.
+However, in cases where lower topologies cannot be used, the algorithm will promote
+the extracted domain parts towards more general topologies and use the one most
+appropriate to contain the inputs.
+
+In parallel, the ``partition()`` function will make an effort to redistribute data across MPI
+ranks to attempt to balance how data are assigned. Domains produced from selections
+are assigned round-robin across ranks from rank 0 through rank N-1 until all 
+domains have been assigned. This assignment is carried out after extracting 
+selections locally so they can be restributed among ranks
+before being combined into the target number of domains.
+
+.. figure:: partition.png
+    :width: 800px
+    :align: center
+
+    Partition used to re-partition a 7 domain mesh (left) to different target numbers of domains and to isolate logical subsets.
+
+
 Selections
 ~~~~~~~~~~~~
 Selections can be specified in the options for the ``partition()`` function to
@@ -38,6 +64,8 @@ to the input mesh domains then no geometry is produced in the output for that
 selection.
 
 The ``partition()`` function's options support 3 types of selections:
+
+.. tabularcolumns:: |p{1.5cm}|p{2cm}|L|
 
 =============== =============================== =============================================
 Selection Type  Topologies                      Description
@@ -64,32 +92,37 @@ operate on the specified topology only.
 | **Option**       | **Description**                         | **Example**                              |
 +------------------+-----------------------------------------+------------------------------------------+
 | type             | The selection type                      | .. code:: yaml                           |
-|                  |                                         | selections:                              |
-|                  |                                         |   -                                      |
-|                  |                                         |     type: logical                        |
+|                  |                                         |                                          |
+|                  |                                         |    selections:                           |
+|                  |                                         |      -                                   |
+|                  |                                         |       type: logical                      |
 +------------------+-----------------------------------------+------------------------------------------+
 | domain_id        | The domain_id to which the selection    | .. code:: yaml                           |
-|                  | will apply.                             | selections:                              |
-|                  |                                         |   -                                      |
-|                  |                                         |     type: logical                        |
-|                  |                                         |     domain_id: 10                        |
+|                  | will apply.                             |                                          |
+|                  |                                         |    selections:                           |
+|                  |                                         |      -                                   |
+|                  |                                         |       type: logical                      |
+|                  |                                         |       domain_id: 10                      |
 +------------------+-----------------------------------------+------------------------------------------+
 | topology         | The topology to which the selection     | .. code:: yaml                           |
-|                  | will apply.                             | selections:                              |
-|                  |                                         |   -                                      |
-|                  |                                         |     type: logical                        |
-|                  |                                         |     domain_id: 10                        |
-|                  |                                         |     topology: mesh                       |
+|                  | will apply.                             |                                          |
+|                  |                                         |    selections:                           |
+|                  |                                         |      -                                   |
+|                  |                                         |       type: logical                      |
+|                  |                                         |       domain_id: 10                      |
+|                  |                                         |       topology: mesh                     |
 +------------------+-----------------------------------------+------------------------------------------+
 
 Logical Selection
 *****************
 The logical selection allows the partitioner to extract a logical IJK subset from uniform, rectilinear,
-or structured topologies. The selection is given as IJK start and end values. The partitioner may
-automatically subdivide logical selections into smaller logical selections if needed,
+or structured topologies. The selection is given as IJK start and end values. If the end values extend
+beyond the actual mesh's logical extents, they will be clipped. The partitioner may
+automatically subdivide logical selections into smaller logical selections, if needed,
 preserving the logical structure of the input topology into the output.
 
 .. code:: yaml
+
   selections:
     -
      type: logical
@@ -98,11 +131,12 @@ preserving the logical structure of the input topology into the output.
 
 Explicit Selection
 ******************
-The explicit selection allows the partitioner to extract a list of elements that
-have been explicitly specified. This is used when the set of cells that the user
-wants to extract is known. The output will result in an explicit topology.
+The explicit selection allows the partitioner to extract a list of elements.
+This is used when the user wants to target a specific set of elements.
+The output will result in an explicit topology.
 
 .. code:: yaml
+
   selections:
     -
      type: explicit
@@ -116,6 +150,7 @@ ranges of elements using pairs of numbers. The list of ranges must be a multiple
 2 in length. The output will result in an explicit topology.
 
 .. code:: yaml
+
   selections:
     -
      type: range
@@ -139,20 +174,23 @@ smaller than the number of selections then the selections will be combined to
 yield the target number of domains. The combining is done such that smaller element
 count domains are combined first.
 
+.. tabularcolumns:: |p{1.5cm}|p{4cm}|L|
+
 +------------------+-----------------------------------------+------------------------------------------+
 | **Option**       | **Description**                         | **Example**                              |
 +------------------+-----------------------------------------+------------------------------------------+
 | selections       | A list of selection objects that        | .. code:: yaml                           |
-|                  | identify regions of interest from the   | selections:                              |
-|                  | input domains. Selections can be        |   -                                      |
-|                  | different on each MPI rank.             |     type: logical                        |
-|                  |                                         |     start: [0,0,0]                       |
-|                  |                                         |     end: [9,9,9]                         |
-|                  |                                         |     domain_id: 10                        |                     
+|                  | identify regions of interest from the   |                                          |
+|                  | input domains. Selections can be        |    selections:                           |
+|                  | different on each MPI rank.             |      -                                   |
+|                  |                                         |       type: logical                      |
+|                  |                                         |       start: [0,0,0]                     |
+|                  |                                         |       end: [9,9,9]                       |
+|                  |                                         |       domain_id: 10                      |                     
 +------------------+-----------------------------------------+------------------------------------------+
 | target           | An optional integer that determines the | .. code:: yaml                           |
-|                  | fields containing original domains and  | target: 4                                |
-|                  | number of domains in the output. If     |                                          |
+|                  | fields containing original domains and  |                                          |
+|                  | number of domains in the output. If     |    target: 4                             |
 |                  | given, the value must be greater than 0.|                                          |
 |                  | Values larger than the number of        |                                          |
 |                  | selections cause domains to be split.   |                                          |
@@ -166,13 +204,13 @@ count domains are combined first.
 |                  | will be used for all ranks.             |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
 | fields           | An list of strings that indicate the    | .. code:: yaml                           |
-|                  | names of the fields to extract in the   | fields: ["dist", "pressure"]             |
-|                  | output. If this option is not provided, |                                          |
+|                  | names of the fields to extract in the   |                                          |
+|                  | output. If this option is not provided, |    fields: ["dist", "pressure"]          |
 |                  | all fields will be extracted.           |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
 | mapping          | An integer that determines whether      | .. code:: yaml                           |
-|                  | fields containing original domains and  | mapping: 0                               |
-|                  | ids will be added in the output. These  |                                          |
+|                  | fields containing original domains and  |                                          |
+|                  | ids will be added in the output. These  |    mapping: 0                            |
 |                  | fields enable one to know where each    |                                          |
 |                  | vertex and element came from originally.|                                          |
 |                  | Mapping is on by default. A non-zero    |                                          |
@@ -180,28 +218,11 @@ count domains are combined first.
 |                  | it off.                                 |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
 | merge_tolerance  | A double value that indicates the max   | .. code:: yaml                           |
-|                  | allowable distance between 2 points     | merge_tolerance: 0.000001                |
-|                  | before they are considered to be        |                                          |
+|                  | allowable distance between 2 points     |                                          |
+|                  | before they are considered to be        |    merge_tolerance: 0.000001             |
 |                  | separate. 2 points spaced smaller than  |                                          |
 |                  | this distance will be merged when       |                                          |
 |                  | explicit coordsets are combined.        |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
 
-Partitioning
-~~~~~~~~~~~~~
-Partitioning meshes using Blueprint will use any options present to determine
-how the partitioning process will behave. Typically, a caller would pass options
-containing selections if pieces of domains are desired. The partitioner processes
-any selections and then examines the desired target number of domains and will then
-decide whether domains must be moved among ranks (only in parallel version) and 
-then locally combined to achieve the target number of domains. The combining
-process will attempt to preserve the input topology type for the output topology.
-However, in cases where lower topologies cannot be used, the algorithm will promote
-the extracted domain parts towards more general topologies and use the one most
-appropriate to contain the inputs.
 
-In parallel, the partition function will make an effort to redistribute data across MPI
-ranks to attempt to keep them equal. The domains are assigned round robin across ranks
-from rank 0 through rank N-1 until all domains have been assigned. This assignment is
-carried out after extracting selections locally so they can be restributed among ranks
-before being combined into the target number of domains.
