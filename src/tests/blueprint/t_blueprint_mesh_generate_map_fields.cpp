@@ -418,30 +418,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D)
         }
     }
 
-    EXPECT_EQ(side_mesh["fields/original_element_ids/topology"].as_string(), "topo");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/association"].as_string(), "element");
-    EXPECT_EQ(side_mesh["fields/original_element_ids/volume_dependent"].as_string(), "false");
-
-    EXPECT_EQ(side_mesh["fields/original_element_ids/values"].dtype().number_of_elements(), num_field_values);
-
-    int32 *id_values = side_mesh["fields/original_element_ids/values"].value();
-
-    for (int i = 0; i < num_field_values; i ++)
-    {
-        if (i < num_tets_in_hex)
-        {
-            EXPECT_EQ(id_values[i], 0);
-        }
-        else if (i < num_tets_in_hex + num_tets_in_triprism)
-        {
-            EXPECT_EQ(id_values[i], 1);
-        }
-        else
-        {
-            EXPECT_EQ(id_values[i], 2);
-        }
-    }
-
     const std::string prefix = "";
     const std::string topo_name = "topo";
 
@@ -634,15 +610,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_sma
     examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
-    const index_t orig_num_points = 8;
+    const index_t num_orig_points = 8;
 
     n["fields/level/association"] = "vertex";
-    n["fields/level/values"].set(conduit::DataType::float32(orig_num_points));
+    n["fields/level/values"].set(conduit::DataType::float32(num_orig_points));
     float32 *values = n["fields/level/values"].value();
 
-    for (int i = 0; i < orig_num_points; i ++)
+    for (int i = 0; i < num_orig_points; i ++)
     {
-        values[i] = orig_num_points - 1 - i;
+        values[i] = num_orig_points - 1 - i;
     }
 
     Node s2dmap, d2smap;
@@ -677,7 +653,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_sma
     {
         if (i < 8)
         {
-            EXPECT_NEAR(level_values[i], orig_num_points - 1 - i, 0.0001f);
+            EXPECT_NEAR(level_values[i], num_orig_points - 1 - i, 0.0001f);
         }
         else
         {
@@ -703,7 +679,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_sma
     const std::string prefix = "";
     const std::string topo_name = "topo";
     const index_t num_points = 9;
-    const index_t num_orig_points = 8;
 
     check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
@@ -719,15 +694,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_med
     examples::polytess(nlevels, nz, n);
     EXPECT_TRUE(verify(n, info));
 
-    const index_t orig_num_points = 32;
+    const index_t num_orig_points = 32;
 
     n["fields/level/association"] = "vertex";
-    n["fields/level/values"].set(conduit::DataType::float32(orig_num_points));
+    n["fields/level/values"].set(conduit::DataType::float32(num_orig_points));
     float32 *values = n["fields/level/values"].value();
 
-    for (int i = 0; i < orig_num_points; i ++)
+    for (int i = 0; i < num_orig_points; i ++)
     {
-        values[i] = orig_num_points - 1 - i;
+        values[i] = num_orig_points - 1 - i;
     }
 
     Node s2dmap, d2smap;
@@ -758,20 +733,20 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_med
 
     float64 *level_values = side_mesh["fields/level/values"].value();
 
-    for (int i = 0; i < orig_num_points; i ++)
+    for (int i = 0; i < num_orig_points; i ++)
     {
-        EXPECT_NEAR(level_values[i], orig_num_points - 1 - i, 0.0001f);
+        EXPECT_NEAR(level_values[i], num_orig_points - 1 - i, 0.0001f);
     }
 
-    EXPECT_NEAR(level_values[orig_num_points], 27.5, 0.0001f);
-    EXPECT_NEAR(level_values[orig_num_points + 1], 25.0, 0.0001f);
-    EXPECT_NEAR(level_values[orig_num_points + 2], 22.375, 0.0001f);
-    EXPECT_NEAR(level_values[orig_num_points + 3], 23.25, 0.0001f);
-    EXPECT_NEAR(level_values[orig_num_points + 4], 17.25, 0.0001f);
-    EXPECT_NEAR(level_values[orig_num_points + 5], 19.0, 0.0001f);
-    EXPECT_NEAR(level_values[orig_num_points + 6], 12.25, 0.0001f);
-    EXPECT_NEAR(level_values[orig_num_points + 7], 15.0, 0.0001f);
-    EXPECT_NEAR(level_values[orig_num_points + 8], 10.125, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points], 27.5, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points + 1], 25.0, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points + 2], 22.375, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points + 3], 23.25, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points + 4], 17.25, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points + 5], 19.0, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points + 6], 12.25, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points + 7], 15.0, 0.0001f);
+    EXPECT_NEAR(level_values[num_orig_points + 8], 10.125, 0.0001f);
 
     const std::string prefix = "";
     const std::string topo_name = "topo";
@@ -779,7 +754,94 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_med
     check_orig_elem_ids_polytess_nlevels2_nz1(num_shapes, num_polygons, prefix, topo_name, side_mesh);
 
     const index_t num_points = 41;
-    const index_t num_orig_points = 32;
+
+    check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_3D_vertex_assoc)
+{
+    const index_t length = 1;
+    Node n, side_mesh, info;
+
+    // create a polychain of length 1
+    examples::polychain(length, n);
+    EXPECT_TRUE(verify(n, info));
+
+    const index_t num_orig_points = 20;
+    const index_t num_points = 39;
+    n["fields/chain/association"] = "vertex";
+    n["fields/chain/values"].set(conduit::DataType::float32(num_orig_points));
+    float32 *values = n["fields/chain/values"].value();
+
+    for (int i = 0; i < num_orig_points; i ++)
+    {
+        values[i] = num_orig_points - 1 - i;
+    }
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node &side_fields = side_mesh["fields"];
+    Node options;
+    options["field_names"] = "chain";
+
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                            side_topo,
+                                                            side_coords,
+                                                            side_fields,
+                                                            s2dmap,
+                                                            d2smap,
+                                                            options);
+    EXPECT_TRUE(verify(side_mesh, info));
+
+    EXPECT_EQ(side_mesh["fields/chain/topology"].as_string(), "topo");
+    EXPECT_EQ(side_mesh["fields/chain/association"].as_string(), "vertex");
+    EXPECT_EQ(side_mesh["fields/chain/volume_dependent"].as_string(), "false");
+
+    const index_t num_tets_in_hex = 24;
+    const index_t num_tets_in_triprism = 18;
+
+    const index_t num_field_values = num_tets_in_hex + 2 * num_tets_in_triprism;
+    EXPECT_EQ(side_mesh["fields/chain/values"].dtype().number_of_elements(), num_points);
+
+    float64 *chain_values = side_mesh["fields/chain/values"].value();
+
+    for (int i = 0; i < num_orig_points; i ++)
+    {
+        EXPECT_NEAR(chain_values[i], num_orig_points - 1 - i, 0.0001);
+    }
+
+    EXPECT_NEAR(chain_values[num_orig_points], 17.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 1], 13.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 2], 16.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 3], 14.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 4], 15.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 5], 15.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 6], 8.0, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 7], 9.0, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 8], 8.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 9], 10.0, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 10], 7.0, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 11], 2.0, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 12], 3.0, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 13], 2.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 14], 4.0, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 15], 1.0, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 16], 15.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 17], 8.5, 0.0001);
+    EXPECT_NEAR(chain_values[num_orig_points + 18], 2.5, 0.0001);
+
+    const std::string prefix = "";
+    const std::string topo_name = "topo";
+
+    check_orig_elem_ids_polychain_length1(
+        num_field_values,
+        num_tets_in_hex,
+        num_tets_in_triprism,
+        prefix,
+        topo_name,
+        side_mesh);
 
     check_original_vertex_ids(num_points, num_orig_points, prefix, topo_name, side_mesh);
 }
