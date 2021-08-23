@@ -5695,6 +5695,54 @@ private:
         return offsets;
     }
 
+    bool
+    determine_ijk_orientation(const Node &n_values, const index_t *dims, index_t *reorder) const
+    {
+        const std::array<const Node *, MAXDIM> n_xyz{
+            n_values.fetch_ptr(axes[0]),
+            n_values.fetch_ptr(axes[1]),
+            n_values.fetch_ptr(axes[2])
+        };
+
+        const std::array<DataType, MAXDIM> dts{
+            (n_xyz[0] ? DataType(n_xyz[0]->dtype().id(), 1) : DataType()),
+            (n_xyz[1] ? DataType(n_xyz[1]->dtype().id(), 1) : DataType()),
+            (n_xyz[2] ? DataType(n_xyz[2]->dtype().id(), 1) : DataType())
+        };
+
+        Node temp;
+        for(index_t di = 0; di < dimension; di++)
+        {
+            reorder[di] = -1;
+            for(index_t dj = 0; dj < dimension; dj++)
+            {
+                std::array<index_t, MAXDIM> ijk{0,0,0};
+                index_t id;
+
+                // ijk[dj] = 0;
+                grid_ijk_to_id(ijk.data(), dims, id);
+                temp.set_external(dts[dj], const_cast<void*>(n_xyz[dj]->element_ptr(id)));
+                double val0 = temp.to_double();
+
+                ijk[dj] = 1;
+                grid_ijk_to_id(ijk.data(), dims, id);
+                temp.set_external(dts[dj], const_cast<void*>(n_xyz[dj]->element_ptr(id)));
+                if(std::abs(temp.to_double() - val0) > tolerance)
+                {
+                    reorder[di] = dj;
+                    break;
+                }
+            }
+
+            if(reorder[di] == -1)
+            {
+                CONDUIT_INFO("Unable to find orientation for structured mesh.");
+                return false;
+            }
+        }
+        return true;
+    }
+
     DataType
     find_best_coord_vals_dtype(const Node &n_vals1, const Node &n_vals2) const
     {
@@ -5974,6 +6022,23 @@ private:
                                 topology::logical_dims(n_topo_rhs, dims_rhs.data(), dimension);
                                 for(auto &val : dims_lhs) val += 1;
                                 for(auto &val : dims_rhs) val += 1;
+                                std::array<index_t, MAXDIM> reorder_lhs{0,0,0};
+                                std::array<index_t, MAXDIM> reorder_rhs{0,0,0};
+
+                                if(!determine_ijk_orientation(n_cset_lhs["values"], dims_lhs.data(), reorder_lhs.data())) 
+                                    return false;
+                                if(!determine_ijk_orientation(n_cset_rhs["values"], dims_rhs.data(), reorder_rhs.data())) 
+                                    return false;
+
+                                // For now on everything is "reordered"
+                                {
+                                    std::array<index_t, MAXDIM> temp = dims_lhs;
+                                    for(index_t i = 0; i < dimension; i++)
+                                    {
+                                        dims_lhs[i] = temp[reorder_lhs[i]];
+                                    }
+                                    for(auto idx : reorder_lhs) dims_lhs[idx] = temp[idx];
+                                }
 
                                 DataType best_dtype = find_best_coord_vals_dtype(n_cset_lhs["values"], n_cset_rhs["values"]);
 
@@ -5986,7 +6051,7 @@ private:
                                     if(std::abs(val - matched_val) > tolerance)
                                     {
                                         std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                                        ijk[di] = dims_lhs[di] - 1;
+                                        ijk[reorder_lhs[di]] = dims_lhs[reorder_lhs[di]] - 1;
                                         grid_ijk_to_id(ijk.data(), dims_lhs.data(), di_idx);
                                         temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(di_idx)));
                                         val = temp.to_double();
@@ -5999,7 +6064,7 @@ private:
                                 }
 
                                 std::array<index_t, MAXDIM> ijk{0,0,0};
-                                ijk[di] = di_idx;
+                                ijk[reorder_lhs[di]] = di_idx;
                                 if(dimension == 3)
                                 {
                                     std::array<index_t, 2> other_dims;
@@ -6024,12 +6089,12 @@ private:
 
                                         mesh::coordset::utils::vec3 temp;
                                         index_t idx;
-                                        for(index_t j = 0; j < dims_lhs[other_dims[1]]; j++)
+                                        for(index_t j = 0; j < dims_lhs[reorder_lhs[other_dims[1]]]; j++)
                                         {
-                                            ijk[other_dims[1]] = j;
-                                            for(index_t i = 0; i < dims_lhs[other_dims[0]]; i++)
+                                            ijk[reorder_lhs[other_dims[1]]] = j;
+                                            for(index_t i = 0; i < dims_lhs[reorder_lhs[other_dims[0]]]; i++)
                                             {
-                                                ijk[other_dims[0]] = i;
+                                                ijk[reorder_lhs[other_dims[0]]] = i;
                                                 grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
                                                 xtemp.set_external(xdt, const_cast<void*>(x.element_ptr(idx)));
                                                 ytemp.set_external(ydt, const_cast<void*>(y.element_ptr(idx)));
@@ -6041,7 +6106,6 @@ private:
                                             }
                                         }
                                     }
-                                    const index_t nverts = verts.size();
 
                                     di_idx = 0;
                                     {
@@ -6052,7 +6116,7 @@ private:
                                         if(std::abs(val - matched_val) > tolerance)
                                         {
                                             std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                                            ijk[di] = dims_rhs[di] - 1;
+                                            ijk[reorder_rhs[di]] = dims_rhs[reorder_rhs[di]] - 1;
                                             grid_ijk_to_id(ijk.data(), dims_rhs.data(), di_idx);
                                             temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(di_idx)));
                                             val = temp.to_double();
@@ -6064,12 +6128,12 @@ private:
                                         }
                                     }
                                     ijk[0] = 0; ijk[1] = 0; ijk[2] = 0;
-                                    ijk[di] = di_idx;
+                                    ijk[reorder_rhs[di]] = di_idx;
                                     {
                                         const Node &rhs_vals = n_cset_rhs["values"];
-                                        const Node &x = rhs_vals["/"+axes[0]];
-                                        const Node &y = rhs_vals["/"+axes[1]];
-                                        const Node &z = rhs_vals["/"+axes[2]];
+                                        const Node &x = rhs_vals[axes[0]];
+                                        const Node &y = rhs_vals[axes[1]];
+                                        const Node &z = rhs_vals[axes[2]];
 
                                         Node xtemp, ytemp, ztemp;
                                         const DataType xdt = DataType(x.dtype().id(), 1);
@@ -6079,12 +6143,12 @@ private:
                                         mesh::coordset::utils::vec3 temp;
                                         index_t idx;
                                         index_t *existing_idx = nullptr;
-                                        for(index_t j = 0; j < dims_rhs[other_dims[1]]; j++)
+                                        for(index_t j = 0; j < dims_rhs[reorder_rhs[other_dims[1]]]; j++)
                                         {
-                                            ijk[other_dims[1]] = j;
-                                            for(index_t i = 0; i < dims_rhs[other_dims[0]]; i++)
+                                            ijk[reorder_rhs[other_dims[1]]] = j;
+                                            for(index_t i = 0; i < dims_rhs[reorder_rhs[other_dims[0]]]; i++)
                                             {
-                                                ijk[other_dims[0]] = i;
+                                                ijk[reorder_rhs[other_dims[0]]] = i;
                                                 grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
                                                 xtemp.set_external(xdt, const_cast<void*>(x.element_ptr(idx)));
                                                 ytemp.set_external(ydt, const_cast<void*>(y.element_ptr(idx)));

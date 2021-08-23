@@ -477,7 +477,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // TODO: try opt5 but target 2 to see if we combine down to 2 domains.
 }
 
-#if 1
+#if DO_PARTITION_TESTS
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_logical_2d)
 {
@@ -513,7 +513,6 @@ TEST(conduit_blueprint_mesh_partition, structured_logical_3d)
 {
     test_logical_selection_3d("structured", "structured_logical_3d");
 }
-#endif
 
 //-----------------------------------------------------------------------------
 void
@@ -673,7 +672,7 @@ int hexs_and_tets_spc(conduit::index_t i, conduit::index_t j)
         n = 6;
     return n;
 }
-#if 1
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 {
@@ -720,7 +719,6 @@ TEST(conduit_blueprint_mesh_partition, hexs_and_tets_explicit_3d)
     test_explicit_selection("hexs_and_tets", vdims, "hexs_and_tets_explicit_3d",
         hexs_and_tets_spc);
 }
-#endif
 
 //-----------------------------------------------------------------------------
 void
@@ -865,7 +863,6 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
 #endif
 }
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, uniform_ranges_2d)
 {
@@ -1649,4 +1646,96 @@ TEST(blueprint_mesh_combine, rectilinear)
         }
     #endif
     }
+}
+
+TEST(blueprint_mesh_combine, structured)
+{
+    const auto braid_cases = [](bool is3d) {
+        const std::string base_name = "combine_structured";
+        const std::string case_name = (is3d) ? "3d" : "2d";
+        const std::string file_name = base_name + "_" + case_name;
+        conduit::Node braid;
+        conduit::blueprint::mesh::examples::braid("structured", 11, 11, 
+            (is3d) ? 11 : 1, braid);
+        save_visit("Braid" + case_name + "Structured", braid);
+
+        conduit::Node opts;
+        opts["target"] = 2;
+
+        conduit::Node split;
+        conduit::blueprint::mesh::partition(braid, opts, split);
+        save_visit(file_name + "_input", split);
+
+        opts["target"] = 1;
+        conduit::Node combined;
+        conduit::blueprint::mesh::partition(split, opts, combined);
+        save_visit(file_name + "_output", combined);
+    };
+    braid_cases(false);
+    braid_cases(true);
+
+
+    // Test 2
+    const auto grain_test = [](int domid, const int *orientation, const float *translation, conduit::Node &output) {
+        int size = 11;
+        float x[] = {-10.f, -8.f, -6.f, -4.f, -2.f, 0.f, 2.f, 4.f, 6.f, 8.f, 10.f};
+        float y[] = {-10.f, -8.f, -6.f, -4.f, -2.f, 0.f, 2.f, 4.f, 6.f, 8.f, 10.f};
+        float z[] = {0., 1.};
+        const int N = 11*11*2;
+        float coords[N*3];
+        float field[N];
+
+        int id  = 0;
+        int idx = 0;
+        int k, j, i;
+        int *reorder[3] = {
+            (orientation[0] == 0 ? &i : &j),
+            (orientation[1] == 0 ? &i : &j),
+            &k
+        };
+        for(k = 0; k < 2; k++)
+        {
+            for(j = 0; j < size; j++)
+            {
+                for(i = 0; i < size; i++, id++)
+                {
+                    field[id]     = id;
+                    coords[idx++] = x[*reorder[0]] + translation[0];
+                    coords[idx++] = y[*reorder[1]] + translation[1];
+                    coords[idx++] = z[*reorder[2]] + translation[2];
+                }
+            }
+        }
+
+        using namespace conduit;
+        output["state/domain_id"] = domid;
+        output["topologies/mesh/type"] = "structured";
+        output["topologies/mesh/coordset"] = "coords";
+        output["topologies/mesh/elements/dims/i"] = 10;
+        output["topologies/mesh/elements/dims/j"] = 10;
+        output["topologies/mesh/elements/dims/k"] = 1;
+        output["coordsets/coords/type"] = "explicit";
+        Schema s;
+        s["x"].set(DataType::c_float(N,               0, sizeof(float)*3));
+        s["y"].set(DataType::c_float(N,   sizeof(float), sizeof(float)*3));
+        s["z"].set(DataType::c_float(N, 2*sizeof(float), sizeof(float)*3));
+        output["coordsets/coords/values"].set(s, coords);
+        output["fields/field/topology"] = "mesh";
+        output["fields/field/association"] = "vertex";
+        output["fields/field/values"].set(DataType::c_float(N), field);
+    };
+
+    int orientation[2] = {0, 1};
+    float translation[3] = {0, 0, 0};
+    conduit::Node domains;
+    grain_test(0, orientation, translation, domains["domain_00000"]);
+    orientation[0] = 1; orientation[1] = 0;
+    translation[0] = 20.f;
+    grain_test(1, orientation, translation, domains["domain_00001"]);
+    save_visit("combine_structured_grain_input", domains);
+
+    conduit::Node opts; opts["target"] = 1;
+    conduit::Node combined;
+    conduit::blueprint::mesh::partition(domains, opts, combined);
+    save_visit("combine_structured_grain_output", combined);
 }
