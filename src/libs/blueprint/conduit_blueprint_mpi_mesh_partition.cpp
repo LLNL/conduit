@@ -113,7 +113,7 @@ parallel_partitioner::get_largest_selection(int &sel_rank, int &sel_index) const
     std::vector<uint64> local_sizes(selections.size());
     for(size_t i = 0; i < selections.size(); i++)
     {
-        local_sizes[i] = static_cast<uint64>(selections[i]->length());
+        local_sizes[i] = static_cast<uint64>(selections[i]->length(*meshes[i]));
         if(local_sizes[i] > static_cast<uint64>(largest_selection.value))
         {
             largest_selection.value = static_cast<long>(local_sizes[i]);

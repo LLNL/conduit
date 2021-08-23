@@ -75,7 +75,7 @@ public:
      @brief Return the number of cells in the selection.
      @return The number of cells in the selection.
      */
-    virtual index_t length() const;
+    virtual index_t length(const conduit::Node &n_mesh) const;
 
     /**
      @brief Returns whether the selection covers the whole mesh. Selections that
@@ -91,6 +91,11 @@ public:
      @param value A value indicating whether the selection covers the mesh.
      */
     void set_whole(bool value);
+
+    /**
+     @brief Returns whether the selection must be partitioned when we create it.
+     */
+    virtual bool requires_initial_partition() const;
 
     /**
      @brief Partitions the selection into smaller selections.
@@ -122,6 +127,21 @@ public:
      @param value The new topology name.
      */
     void set_topology(const std::string &value);  
+
+    /**
+     @brief Returns the destination rank for this selection. The default
+            version returns -1, indicating that we don't care where the
+            domain is placed.
+     @return The destination rank for this selection.
+     */
+    virtual int get_destination_rank() const;
+
+    /**
+     @brief Returns the destination rank for this selection. The default
+            version returns -1, indicating that we'll number the domain.
+     @return The destination domain for this selection.
+     */
+    virtual int get_destination_domain() const;
 
     /**
      @brief Returns the cell ids in this selection that are contained in the
@@ -362,8 +382,8 @@ protected:
      @param idx The selection to extract. This must be a valid selection index.
      @param n_mesh A Conduit node representing the mesh to which we're
                    applying the selection.
-     @return A new Conduit node (to be freed by caller) that contains the
-             extracted chunk.
+     @return A node containing the extracted chunk. The chunks will need to
+             be freed by the caller.
      */
     conduit::Node *extract(size_t idx, const conduit::Node &n_mesh) const;
 

@@ -24,7 +24,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-// #define GENERATE_BASELINES
+#define GENERATE_BASELINES
 
 // #define USE_ERROR_HANDLER
 
@@ -74,7 +74,7 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 
     while(1);
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 void
 test_logical_selection_2d(const std::string &topo, const std::string &base)
@@ -1519,3 +1519,43 @@ TEST(blueprint_mesh_combine, rectilinear)
     #endif
     }
 }
+#endif
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, field_selection)
+{
+    std::string base("field_selection");
+    conduit::Node input, output, options;
+    make_field_selection_example(input, -1);
+    save_visit("fs", input);
+
+    const char *opt0 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 0\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 1\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 2\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 3\n"
+"     field: selection_field\n";
+    options.reset(); options.parse(opt0, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
+    std::string b00 = baseline_file(base + "_00");
+    save_visit(b00, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b00, output);
+#else
+    EXPECT_EQ(compare_baseline(b00, output), true);
+#endif
+}
+
