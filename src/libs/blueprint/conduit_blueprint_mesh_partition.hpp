@@ -51,6 +51,8 @@ namespace mesh
 class selection
 {
 public:
+    static const int FREE_DOMAIN_ID;
+
     selection();
     virtual ~selection();
 
@@ -289,6 +291,15 @@ public:
 
 protected:
     /**
+     @brief Examines the selections and counts them to determine a number of
+            targets that would be produced. Most selections result in a domain
+            but some selections may combine into a single domain if their
+            destination domain is set to the same value.
+     @return The number of targets we expect to create.
+     */
+    virtual unsigned int count_targets() const;
+
+    /**
      @brief Compute the total number of selections across all ranks.
      @return The total number of selections across all ranks.
 
@@ -304,7 +315,7 @@ protected:
      @return True if the target value was present and a good value. False if
              target value was absent or contained a bad value.
 
-     @note Reimplement in parallel
+     @note Reimplemented in parallel
      */
     virtual bool options_get_target(const conduit::Node &options, unsigned int &value) const;
 
@@ -321,7 +332,7 @@ protected:
      @param[out] sel_rank The rank that contains the largest selection.
      @param[out] sel_index The index of the largest selection on sel_rank.
 
-     @note Reimplement in parallel
+     @note Reimplemented in parallel
      */
     virtual void get_largest_selection(int &sel_rank, int &sel_index) const;
 
@@ -533,6 +544,7 @@ protected:
      @param offsets[out]     A vector of MPI_Comm_size that contains the index at
                              which a rank's data begins in dest_rank, dest_domain.
                              It contains a single 0 in serial.
+     @note Reimplemented in parallel
      */
     virtual void map_chunks(const std::vector<chunk> &chunks,
                             std::vector<int> &dest_ranks,
@@ -558,8 +570,7 @@ protected:
                                             chunk in chunks_to_assemble. Like-
                                             numbered chunks will be combined
                                             into a single output domain.
-
-     @note This will be overridden for parallel.
+     @note Reimplemented in parallel
      */
     virtual void communicate_chunks(const std::vector<chunk> &chunks,
                                     const std::vector<int> &dest_rank,

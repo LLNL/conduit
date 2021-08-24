@@ -18,6 +18,7 @@
 #include "conduit_relay_mpi.hpp"
 #include <mpi.h>
 using partitioner = conduit::blueprint::mesh::partitioner;
+using selection = conduit::blueprint::mesh::selection;
 
 using std::cout;
 using std::endl;
@@ -82,6 +83,58 @@ parallel_partitioner::options_get_target(const conduit::Node &options,
 
     // A target was set by at least one rank if we have a value greater than 0.
     return value > 0;
+}
+
+//---------------------------------------------------------------------------
+unsigned int
+parallel_partitioner::count_targets() const
+{
+    // Get the number of selections from all ranks. Count them.
+    auto nlocal_sel = static_cast<int>(selections.size());
+    std::vector<int> nglobal_sel(size);
+    MPI_Allgather(&nlocal_sel, 1, MPI_INT,
+                  &nglobal_sel[0], 1, MPI_INT, comm);
+
+    // Count the total number of selections.
+    int ntotal_sel = 0;
+    for(size_t i = 0; i < nglobal_sel.size(); i++)
+        ntotal_sel += nglobal_sel[i];
+
+    // Compute offsets. We use int because of MPI_Gatherv
+    std::vector<int> offsets(size, 0);
+    for(size_t i = 1; i < nglobal_sel.size(); i++)
+        offsets[i] = offsets[i-1] + nglobal_sel[i-1];
+
+    // Populate the destination domains that we'll send.
+    std::vector<int> local_dd(selections.size());
+    for(size_t i = 0; i < selections.size(); i++)
+        local_dd[i] = selections[i]->get_destination_domain();
+
+    // Allgather the destination domains so each rank knows all the 
+    // destination domains.
+    std::vector<int> global_dd(ntotal_sel);
+    MPI_Allgatherv(&local_dd[0],
+                   static_cast<int>(local_dd.size()),
+                   MPI_UNSIGNED,
+                   &global_dd[0],
+                   &nglobal_sel[0],
+                   &offsets[0],
+                   MPI_UNSIGNED,
+                   comm);
+
+    // Now we know where each domain wants to go, determine the target count.
+    unsigned int free_domains = 0;
+    std::set<int> named_domains;
+    for(size_t i = 0; i < global_dd.size(); i++)
+    {
+        if(global_dd[i] == selection::FREE_DOMAIN_ID)
+            free_domains++;
+        else
+            named_domains.insert(global_dd[i]);
+    }
+
+    unsigned int n = free_domains + static_cast<unsigned int>(named_domains.size());
+    return n;
 }
 
 //---------------------------------------------------------------------------

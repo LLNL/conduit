@@ -70,6 +70,15 @@ protected:
     virtual bool options_get_target(const conduit::Node &options,
                                     unsigned int &value) const override;
 
+    /**
+     @brief Examines the selections and counts them to determine a number of
+            targets that would be produced. Most selections result in a domain
+            but some selections may combine into a single domain if their
+            destination domain is set to the same value.
+     @return The number of targets we expect to create.
+     */
+    virtual unsigned int count_targets() const override;
+
     virtual void get_largest_selection(int &sel_rank, int &sel_index) const override;
 
     struct long_int

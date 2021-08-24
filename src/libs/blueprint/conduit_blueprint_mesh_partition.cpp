@@ -129,9 +129,11 @@ as_index_t_array(const conduit::Node &n)
 //---------------------------------------------------------------------------
 const std::string selection::DOMAIN_KEY("domain_id");
 const std::string selection::TOPOLOGY_KEY("topology");
+const int selection::FREE_DOMAIN_ID = -1;
 
 //---------------------------------------------------------------------------
-selection::selection() : whole(selection::WHOLE_UNDETERMINED), domain(0), topology()
+selection::selection() : whole(selection::WHOLE_UNDETERMINED), domain(0),
+    topology()
 {
 }
 
@@ -212,7 +214,7 @@ selection::get_destination_rank() const
 int
 selection::get_destination_domain() const
 {
-    return -1;
+    return FREE_DOMAIN_ID;
 }
 
 //---------------------------------------------------------------------------
@@ -634,6 +636,11 @@ public:
     {
         ids_storage.reset();
         as_index_t(value, ids_storage);
+    }
+
+    void set_indices(const std::vector<index_t> &value)
+    {
+        ids_storage.set(value);
     }
 
     index_t num_indices() const { return ids_storage.dtype().number_of_elements(); }
@@ -1324,16 +1331,52 @@ selection_field::partition(const conduit::Node &n_mesh) const
             unique.insert(iarr[i]);
         }
 
-        // Now, make new selection_field objects that reference only one value.
-        for(auto it = unique.begin(); it != unique.end(); it++)
+        if(unique.size() > 1)
         {
-            auto p0 = std::make_shared<selection_field>();
+            // Now, make new selection_field objects that reference only one value.
+            for(auto it = unique.begin(); it != unique.end(); it++)
+            {
+                auto p0 = std::make_shared<selection_field>();
+                p0->set_whole(false);
+                p0->set_domain(domain);
+                p0->set_topology(topology);
+                p0->set_field(field);
+                p0->set_selected_value(*it);
+                parts.push_back(p0);
+            }
+        }
+        else
+        {
+            // Normally a field selection would be telling us exactly which
+            // domain we want to use for the selected cells. We may have set
+            // a large target though that means we might still be splitting
+            // larger field selections. In that case, make them into explicit
+            // selections.
+            std::vector<index_t> eids, ids0, ids1;
+            get_element_ids(n_mesh, eids);
+            size_t n2 = eids.size() / 2;
+            for(size_t i = 0; i < eids.size(); i++)
+            {
+                if(i < n2)
+                    ids0.push_back(eids[i]);
+                else
+                    ids1.push_back(eids[i]);
+            }
+
+            // Make partitioned selections.
+            auto p0 = std::make_shared<selection_explicit>();
+            auto p1 = std::make_shared<selection_explicit>();
+            p0->set_indices(ids0);
+            p1->set_indices(ids1);
             p0->set_whole(false);
+            p1->set_whole(false);
             p0->set_domain(domain);
+            p1->set_domain(domain);
             p0->set_topology(topology);
-            p0->set_field(field);
-            p0->set_selected_value(*it);
+            p1->set_topology(topology);
+
             parts.push_back(p0);
+            parts.push_back(p1);
         }
     }
 
@@ -1344,7 +1387,7 @@ selection_field::partition(const conduit::Node &n_mesh) const
 int
 selection_field::get_destination_domain() const
 {
-    return selected_value_set ? static_cast<int>(selected_value) : -1;
+    return selected_value_set ? static_cast<int>(selected_value) : FREE_DOMAIN_ID;
 }
 
 //---------------------------------------------------------------------------
@@ -1368,13 +1411,6 @@ selection_field::get_element_ids(const conduit::Node &n_mesh,
                 element_ids.push_back(i);
         }
     }
-
-#if 1
-    cout << "selection_field: field=" << field << " elements={";
-    for(size_t i = 0; i < element_ids.size(); i++)
-        cout << element_ids[i] << ", ";
-    cout << "}" << endl;
-#endif
 }
 
 //---------------------------------------------------------------------------
@@ -1681,7 +1717,7 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
         // Or, we did not pass target and had valid selections. Or, we 
         // had an invalid target. In any case, we sum the number of valid
         // selections.
-        target = get_total_selections();
+        target = count_targets();
     }
 
     // Get any fields that we're using to limit the selection.
@@ -1715,6 +1751,30 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
     // If we made it to the end then we will have created any applicable
     // selections. Some ranks may have created no selections. That is ok.
     return true; //!selections.empty();
+}
+
+//---------------------------------------------------------------------------
+unsigned int
+partitioner::count_targets() const
+{
+    // We make a pass over the selections on this rank and determine the
+    // number of selections that produce free domains. These are domains that
+    // have a -1 for their destination domain. We also figure out the number
+    // of named domains with unique domain ids. These are not double-counted.
+    // The number of actual targets is the sum.
+    unsigned int free_domains = 0;
+    std::set<int> named_domains;
+    for(size_t i = 0; i < selections.size(); i++)
+    {
+        int dd = selections[i]->get_destination_domain();
+        if(dd == selection::FREE_DOMAIN_ID)
+            free_domains++;
+        else
+            named_domains.insert(dd);
+    }
+
+    unsigned int n = free_domains + static_cast<unsigned int>(named_domains.size());
+    return n;
 }
 
 //---------------------------------------------------------------------------
@@ -2294,6 +2354,10 @@ partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
         {
             const conduit::Node &n_state = n_mesh["state"];
             n_output["state"].set(n_state);
+            // Override the dd if we have set it.
+            int dd = selections[idx]->get_destination_domain();
+            if(dd != selection::FREE_DOMAIN_ID)
+                n_output["state/domain_id"] = dd;
         }
 
         // Get the indices of the selected elements.
@@ -2974,7 +3038,7 @@ partitioner::execute(conduit::Node &output)
         else
         {
             conduit::Node *c = extract(i, *meshes[i]);
-            chunks.push_back(chunk(c, true, dd, dr));
+            chunks.push_back(chunk(c, true, dr, dd));
         }
     }
 
@@ -3073,7 +3137,7 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     dest_ranks.resize(chunks.size());
     for(size_t i = 0; i < chunks.size(); i++)
         dest_ranks[i] = rank;
-#ifdef CONDUIT_DEBUG_PARTITIONER
+#if 0//def CONDUIT_DEBUG_PARTITIONER
     cout << "map_chunks:" << endl;
     for(size_t i = 0; i < chunks.size(); i++)
         chunks[i].mesh->print();
@@ -3097,32 +3161,76 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
          << ", target=" << target
          << ", len_per_target=" << len_per_target << endl;
 #endif
+    // Come up with a list of domain ids to avoid in our numbering.
+    std::set<int> reserved_dd;
+    for(size_t i = 0; i < chunks.size(); i++)
+    {
+        if(chunks[i].destination_domain != selection::FREE_DOMAIN_ID)
+            reserved_dd.insert(chunks[i].destination_domain);
+    }
+
     int start_index = starting_index(chunks);
+    // Get a domain id for the first free domain.
+    int domid = start_index;
+    while(reserved_dd.find(domid) != reserved_dd.end())
+        domid++;
+    reserved_dd.insert(domid);
+
     if(chunks.size() == static_cast<size_t>(target))
     {
         // The number of chunks is the same as the target.
         for(size_t i =0 ; i < chunks.size(); i++)
-            dest_domain.push_back(start_index + static_cast<int>(i));
+        {
+            int dd = chunks[i].destination_domain;
+            if(dd == selection::FREE_DOMAIN_ID)
+            {
+                dest_domain.push_back(domid);
+
+                // Get the next domain id.
+                while(reserved_dd.find(domid) != reserved_dd.end())
+                    domid++;
+                reserved_dd.insert(domid);
+            }
+            else
+            {
+                // We know it goes in this domain.
+                dest_domain.push_back(dd);
+            }
+        }
     }
     else if(chunks.size() > static_cast<size_t>(target))
     {
-        // NOTE: We are just grouping adjacent chunks in the overall list
+cout << "************************** NON EQUAL TARGETS" << endl;
+        // NOTE: For domains that do not already have a destination domain,
+        //       we are just grouping adjacent chunks in the overall list
         //       while trying to target a certain number of cells per domain.
         //       We may also want to consider the bounding boxes so we
         //       group chunks that are close spatially.
-        unsigned int domid = 0;
+
         index_t running_len = 0;
         for(size_t i = 0; i < chunks.size(); i++)
         {
-            running_len += chunk_sizes[i];
-            if(running_len > len_per_target && domid < target)
+            int dd = chunks[i].destination_domain;
+cout << "chunk[" << i << "].dd = " << dd << endl;
+            if(dd == selection::FREE_DOMAIN_ID)
             {
-                // Advance to the next domain index.
-                running_len = 0;
-                domid++;
-            }
+                running_len += chunk_sizes[i];
+                if(running_len > len_per_target/* && domid < target*/)
+                {
+                    running_len = 0;
+                    // Get the next domain id.
+                    while(reserved_dd.find(domid) != reserved_dd.end())
+                        domid++;
+                    reserved_dd.insert(domid);
+                }
 
-            dest_domain.push_back(start_index + domid);
+                dest_domain.push_back(domid);
+            }
+            else
+            {
+                // We know it goes in this domain.
+                dest_domain.push_back(dd);
+            }
         }
     }
     else

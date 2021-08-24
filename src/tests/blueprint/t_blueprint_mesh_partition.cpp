@@ -1549,7 +1549,7 @@ TEST(conduit_blueprint_mesh_partition, field_selection)
 "     field: selection_field\n";
     options.reset(); options.parse(opt0, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
-    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 4);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 6);
     std::string b00 = baseline_file(base + "_00");
     save_visit(b00, output);
 #ifdef GENERATE_BASELINES

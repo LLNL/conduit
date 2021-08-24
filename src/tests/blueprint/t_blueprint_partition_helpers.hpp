@@ -209,7 +209,7 @@ make_field_selection_example(conduit::Node &output, int mask)
         dom0["coordsets/coords/origin/x"] = 0.;
         dom0["coordsets/coords/origin/y"] = 0.;
         dom0["coordsets/coords/origin/z"] = 0.;
-        add_field_selection_field(nx-1, ny-1, nz-1, 1,1, 0, 1, dom0);
+        add_field_selection_field(nx-1, ny-1, nz-1, 1,1, 0, 11, dom0);
     }
 
     if(mask & 2)
@@ -222,7 +222,7 @@ make_field_selection_example(conduit::Node &output, int mask)
         dom1["coordsets/coords/origin/x"] = dx * static_cast<double>(nx-1);
         dom1["coordsets/coords/origin/y"] = 0.;
         dom1["coordsets/coords/origin/z"] = 0.;
-        add_field_selection_field(nx-1, ny-1, nz-1, 0,1, 2, 1, dom1);
+        add_field_selection_field(nx-1, ny-1, nz-1, 0,1, 22, 11, dom1);
     }
 
     if(mask & 4)
@@ -235,7 +235,7 @@ make_field_selection_example(conduit::Node &output, int mask)
         dom2["coordsets/coords/origin/x"] = 0.;
         dom2["coordsets/coords/origin/y"] = dy * static_cast<double>(ny-1);
         dom2["coordsets/coords/origin/z"] = 0.;
-        add_field_selection_field(nx-1, ny-1, nz-1, 1,0, 3, 4, dom2);
+        add_field_selection_field(nx-1, ny-1, nz-1, 1,0, 33, 44, dom2);
     }
 
     if(mask & 8)
@@ -249,7 +249,7 @@ make_field_selection_example(conduit::Node &output, int mask)
         dom3["coordsets/coords/origin/x"] = dx * static_cast<double>(nx-1);
         dom3["coordsets/coords/origin/y"] = dy * static_cast<double>(ny-1);
         dom3["coordsets/coords/origin/z"] = 0.;
-        add_field_selection_field(nx-1, ny-1, nz-1, 0,0, 5, 4, dom3);
+        add_field_selection_field(nx-1, ny-1, nz-1, 0,0, 55, 44, dom3);
     }
 }
 
