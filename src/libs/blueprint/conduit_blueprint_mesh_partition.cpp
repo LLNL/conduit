@@ -38,7 +38,7 @@
 #include "conduit_log.hpp"
 
 // Uncomment to enable some debugging output from partitioner.
-#define CONDUIT_DEBUG_PARTITIONER
+//#define CONDUIT_DEBUG_PARTITIONER
 
 // #define DEBUG_POINT_MERGE
 #ifndef DEBUG_POINT_MERGE
@@ -133,7 +133,13 @@ const int selection::FREE_DOMAIN_ID = -1;
 
 //---------------------------------------------------------------------------
 selection::selection() : whole(selection::WHOLE_UNDETERMINED), domain(0),
-    topology()
+    topology(), domain_any(false)
+{
+}
+
+//---------------------------------------------------------------------------
+selection::selection(const selection &obj) : whole(obj.whole), domain(obj.domain),
+    topology(obj.topology), domain_any(obj.domain_any)
 {
 }
 
@@ -228,10 +234,26 @@ selection::init(const conduit::Node &n_options)
         if(n_options.has_child(DOMAIN_KEY))
         {
             const conduit::Node &n_dk = n_options[DOMAIN_KEY];
-            bool ok = false;
-            index_t tmp = get_index_t(n_dk, ok);
-            if(ok)
-                domain = tmp;
+            if(n_dk.dtype().is_string())
+            {
+                if(n_dk.as_string() == "any" && supports_domain_any())
+                {
+                    domain_any = true;
+                    domain = 0;
+                }
+                else
+                {
+                    // domain is not allowed to be "any".
+                    retval = false;
+                }
+            }
+            else
+            {
+                bool ok = false;
+                index_t tmp = get_index_t(n_dk, ok);
+                if(ok)
+                    domain = tmp;
+            }
         }
 
         if(n_options.has_child(TOPOLOGY_KEY))
@@ -266,6 +288,20 @@ selection::selected_topology(const conduit::Node &n_mesh) const
 }
 
 //---------------------------------------------------------------------------
+bool
+selection::get_domain_any() const
+{
+    return domain_any;
+}
+
+//---------------------------------------------------------------------------
+bool
+selection::supports_domain_any() const
+{
+    return false;
+}
+
+//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 /**
  @brief This class represents a logical IJK selection with start and end
@@ -280,9 +316,12 @@ class selection_logical : public selection
 {
 public:
     selection_logical();
+    selection_logical(const selection_logical &);
     virtual ~selection_logical();
 
     static std::string name() { return "logical"; }
+
+    virtual std::shared_ptr<selection> copy() const override;
 
     // Initializes the selection from a conduit::Node.
     virtual bool init(const conduit::Node &n_options) override;
@@ -362,8 +401,25 @@ selection_logical::selection_logical() : selection()
 }
 
 //---------------------------------------------------------------------------
+selection_logical::selection_logical(const selection_logical &obj) : selection(obj)
+{
+    for(int i = 0; i < 3; i++)
+    {
+        start[i] = obj.start[i];
+        end[i] = obj.end[i];
+    }
+}
+
+//---------------------------------------------------------------------------
 selection_logical::~selection_logical()
 {
+}
+
+//---------------------------------------------------------------------------
+std::shared_ptr<selection>
+selection_logical::copy() const
+{
+    return std::make_shared<selection_logical>(*this);
 }
 
 //---------------------------------------------------------------------------
@@ -609,10 +665,12 @@ class selection_explicit : public selection
 {
 public:
     selection_explicit();
-
+    selection_explicit(const selection_explicit &obj);
     virtual ~selection_explicit();
 
     static std::string name() { return "explicit"; }
+
+    virtual std::shared_ptr<selection> copy() const override;
 
     virtual bool init(const conduit::Node &n_options) override;
 
@@ -665,8 +723,21 @@ selection_explicit::selection_explicit() : selection(), ids_storage()
 }
 
 //---------------------------------------------------------------------------
+selection_explicit::selection_explicit(const selection_explicit &obj) :
+    selection(obj), ids_storage(obj.ids_storage)
+{
+}
+
+//---------------------------------------------------------------------------
 selection_explicit::~selection_explicit()
 {
+}
+
+//---------------------------------------------------------------------------
+std::shared_ptr<selection>
+selection_explicit::copy() const
+{
+    return std::make_shared<selection_explicit>(*this);
 }
 
 //---------------------------------------------------------------------------
@@ -834,9 +905,12 @@ class selection_ranges : public selection
 {
 public:
     selection_ranges();
+    selection_ranges(const selection_ranges &obj);
     virtual ~selection_ranges();
 
     static std::string name() { return "ranges"; }
+
+    virtual std::shared_ptr<selection> copy() const override;
 
     virtual bool init(const conduit::Node &n_options) override;
 
@@ -885,8 +959,21 @@ selection_ranges::selection_ranges() : selection(), ranges_storage()
 }
 
 //---------------------------------------------------------------------------
+selection_ranges::selection_ranges(const selection_ranges &obj) : selection(obj),
+    ranges_storage(obj.ranges_storage)
+{
+}
+
+//---------------------------------------------------------------------------
 selection_ranges::~selection_ranges()
 {
+}
+
+//---------------------------------------------------------------------------
+std::shared_ptr<selection>
+selection_ranges::copy() const
+{
+    return std::make_shared<selection_ranges>(*this);
 }
 
 //---------------------------------------------------------------------------
@@ -1124,9 +1211,12 @@ class selection_field : public selection
 {
 public:
     selection_field();
+    selection_field(const selection_field &obj);
     virtual ~selection_field();
 
     static std::string name() { return "field"; }
+
+    virtual std::shared_ptr<selection> copy() const override;
 
     // Initializes the selection from a conduit::Node.
     virtual bool init(const conduit::Node &n_options) override;
@@ -1175,6 +1265,8 @@ public:
     virtual void print(std::ostream &os) const override;
 
 protected:
+    virtual bool supports_domain_any() const override { return true; }
+
     virtual bool determine_is_whole(const conduit::Node &n_mesh) const override;
     bool const_applicable(const conduit::Node &n_mesh) const;
 
@@ -1194,8 +1286,22 @@ selection_field::selection_field() : selection(), field(), selected_value(0),
 }
 
 //---------------------------------------------------------------------------
+selection_field::selection_field(const selection_field &obj) : selection(obj),
+    field(obj.field), selected_value(obj.selected_value),
+    selected_value_set(obj.selected_value_set)
+{
+}
+
+//---------------------------------------------------------------------------
 selection_field::~selection_field()
 {
+}
+
+//---------------------------------------------------------------------------
+std::shared_ptr<selection>
+selection_field::copy() const
+{
+    return std::make_shared<selection_field>(*this);
 }
 
 //---------------------------------------------------------------------------
@@ -1317,22 +1423,22 @@ selection_field::partition(const conduit::Node &n_mesh) const
 
     if(const_applicable(n_mesh))
     {
-        const conduit::Node &n_fields = n_mesh["fields"];
-        const conduit::Node &n_field = n_fields[field];
-
-        // Iterate through the field to find the unique values.
-        conduit::Node n_values;
-        as_index_t(n_field["values"], n_values);
-        auto iarr = as_index_t_array(n_values);
-        index_t N = iarr.number_of_elements();
-        std::set<index_t> unique;
-        for(index_t i = 0; i < N; i++)
+        if(!selected_value_set)
         {
-            unique.insert(iarr[i]);
-        }
+            const conduit::Node &n_fields = n_mesh["fields"];
+            const conduit::Node &n_field = n_fields[field];
 
-        if(unique.size() > 1)
-        {
+            // Iterate through the field to find the unique values.
+            conduit::Node n_values;
+            as_index_t(n_field["values"], n_values);
+            auto iarr = as_index_t_array(n_values);
+            index_t N = iarr.number_of_elements();
+            std::set<index_t> unique;
+            for(index_t i = 0; i < N; i++)
+            {
+                unique.insert(iarr[i]);
+            }
+
             // Now, make new selection_field objects that reference only one value.
             for(auto it = unique.begin(); it != unique.end(); it++)
             {
@@ -1645,12 +1751,16 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                         // NOTE: A selection is tied to a single domain at present.
                         //       The field selection could apply to multiple domains
                         //       if we wanted it to.
-                        if(domid == sel->get_domain() && sel->applicable(*doms[di]))
+                        bool domain_compatible = (domid == sel->get_domain()) ||
+                                                 sel->get_domain_any();
+                        if(domain_compatible && sel->applicable(*doms[di]))
                         {
                             // We may split some selections upfront here so we
                             // can figure these values into the target.
                             if(sel->requires_initial_partition())
                             {
+                                if(sel->get_domain_any())
+                                    sel->set_domain(domid);
                                 auto ps = sel->partition(*doms[di]);
                                 for(size_t j = 0; j < ps.size(); j++)
                                 {
@@ -1661,9 +1771,20 @@ partitioner::initialize(const conduit::Node &n_mesh, const conduit::Node &option
                             else
                             {
                                 meshes.push_back(doms[di]);
-                                selections.push_back(sel);
+                                if(sel->get_domain_any())
+                                {
+                                    auto newsel = sel->copy();
+                                    newsel->set_domain(domid);
+                                    selections.push_back(newsel);
+                                }
+                                else
+                                    selections.push_back(sel);
                             }
-                            break;
+
+                            // If domain_any is true then we want the selection to
+                            // apply to the next domain too so do not break.
+                            if(!sel->get_domain_any())
+                                break;
                         }
                     }
                 }
@@ -1813,13 +1934,12 @@ partitioner::split_selections()
     bool splitting = true;
     while(splitting)
     {
-        // Get the total number of selections. This may involve communication
-        // in subclasses.
-        auto nsel = get_total_selections();
-        if(nsel == 0)
+        // Get the total number of targets produced by the current selections.
+        auto nt = count_targets();
+        if(nt == 0)
             splitting = false;
         else
-            splitting = target > nsel;
+            splitting = target > nt;
 
         if(splitting)
         {
@@ -1841,13 +1961,17 @@ partitioner::split_selections()
                         selections[sel_index + i] = ps[i];
 
 #ifdef CONDUIT_DEBUG_PARTITIONER
-                    cout << "partitioner::split_selections (after split "
-                         << iteration << ")" << endl;
-                    for(size_t i = 0; i < selections.size(); i++)
+                    if(rank == 0)
                     {
-                        cout << "\t";
-                        selections[i]->print(cout);
-                        cout << endl;
+                        cout << "partitioner::split_selections target=" << target
+                             << ", nt=" << nt << " (after split "
+                             << iteration << ")" << endl;
+                        for(size_t i = 0; i < selections.size(); i++)
+                        {
+                            cout << "\t";
+                            selections[i]->print(cout);
+                            cout << endl;
+                        }
                     }
                     iteration++;
 #endif
@@ -3042,11 +3166,6 @@ partitioner::execute(conduit::Node &output)
         }
     }
 
-    // We need to figure out ownership and make sure each rank has the parts
-    // that it needs to achieve "target" overall domains over all ranks. We
-    // probably want to send/recv the data as binary blobs. Then deserialize
-    // and assemble into combined grids.
-
     // Compute the destination rank and destination domain of each input
     // chunk present on this rank.
     std::vector<int> dest_rank, dest_domain, offsets;
@@ -3137,7 +3256,7 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     dest_ranks.resize(chunks.size());
     for(size_t i = 0; i < chunks.size(); i++)
         dest_ranks[i] = rank;
-#if 0//def CONDUIT_DEBUG_PARTITIONER
+#ifdef CONDUIT_DEBUG_PARTITIONER
     cout << "map_chunks:" << endl;
     for(size_t i = 0; i < chunks.size(); i++)
         chunks[i].mesh->print();
@@ -3157,7 +3276,8 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     }
     index_t len_per_target = total_len / std::max(1u,target);
 #ifdef CONDUIT_DEBUG_PARTITIONER
-    cout << "map_chunks: total_len = " << total_len
+    cout << "map_chunks: chunks.size=" << chunks.size()
+         << ", total_len = " << total_len
          << ", target=" << target
          << ", len_per_target=" << len_per_target << endl;
 #endif
@@ -3168,17 +3288,30 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         if(chunks[i].destination_domain != selection::FREE_DOMAIN_ID)
             reserved_dd.insert(chunks[i].destination_domain);
     }
-
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    cout << "map_chunks: reserved_dd={";
+    for(auto dd : reserved_dd)
+        cout << dd << ", ";
+    cout << "}" << endl;
+#endif
     int start_index = starting_index(chunks);
     // Get a domain id for the first free domain.
     int domid = start_index;
     while(reserved_dd.find(domid) != reserved_dd.end())
         domid++;
     reserved_dd.insert(domid);
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    cout << "map_chunks: domid=" << domid << endl;
+#endif
 
-    if(chunks.size() == static_cast<size_t>(target))
+    // We have a certain number of chunks but determine how many targets
+    // that makes. It ought to be equal to target.
+    auto targets_from_chunks = static_cast<unsigned int>(count_targets());
+
+    if(targets_from_chunks == target)
     {
-        // The number of chunks is the same as the target.
+        // The number of targets we'd make from the chunks is the same
+        // as the target.
         for(size_t i =0 ; i < chunks.size(); i++)
         {
             int dd = chunks[i].destination_domain;
@@ -3198,24 +3331,25 @@ partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
             }
         }
     }
-    else if(chunks.size() > static_cast<size_t>(target))
+    else if(targets_from_chunks > target)
     {
-cout << "************************** NON EQUAL TARGETS" << endl;
+        // This may happen when we need to combine domains to a smaller
+        // target count.
+
         // NOTE: For domains that do not already have a destination domain,
         //       we are just grouping adjacent chunks in the overall list
         //       while trying to target a certain number of cells per domain.
-        //       We may also want to consider the bounding boxes so we
-        //       group chunks that are close spatially.
+        //       We may someday also want to consider the bounding boxes so
+        //       we group chunks that are close spatially.
 
         index_t running_len = 0;
         for(size_t i = 0; i < chunks.size(); i++)
         {
             int dd = chunks[i].destination_domain;
-cout << "chunk[" << i << "].dd = " << dd << endl;
             if(dd == selection::FREE_DOMAIN_ID)
             {
                 running_len += chunk_sizes[i];
-                if(running_len > len_per_target/* && domid < target*/)
+                if(running_len > len_per_target)
                 {
                     running_len = 0;
                     // Get the next domain id.

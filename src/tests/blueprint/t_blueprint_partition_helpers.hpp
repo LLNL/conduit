@@ -96,6 +96,7 @@ save_node(const std::string &filename, const conduit::Node &mesh)
 void
 save_visit(const std::string &filename, const conduit::Node &n)
 {
+#ifdef GENERATE_BASELINES
     // NOTE: My VisIt only wants to read HDF5 root files for some reason.
     bool hdf5_enabled = check_if_hdf5_enabled();
 
@@ -155,6 +156,7 @@ save_visit(const std::string &filename, const conduit::Node &n)
     root["file_pattern"] = (fn_noext + ".%05d.yaml");
     // VisIt won't read it:
     conduit::relay::io::save(root, fn_noext + "_yaml.root", "yaml");
+#endif
 }
 
 //-----------------------------------------------------------------------------

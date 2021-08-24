@@ -54,7 +54,13 @@ public:
     static const int FREE_DOMAIN_ID;
 
     selection();
+    selection(const selection &obj);
     virtual ~selection();
+
+    /**
+     Create a copy of the selection.
+     */
+    virtual std::shared_ptr<selection> copy() const = 0;
 
     /**
      @brief Initializes the selection from the provided Conduit node.
@@ -168,7 +174,18 @@ public:
      */
     virtual void print(std::ostream &os) const = 0;
 
+    /**
+     @brief Returns whether the selection is applied to any domain.
+     @return True if the selection is applied to any domain.
+     */
+    bool get_domain_any() const;
+
 protected:
+    /**
+     @brief Returns whether the selection type is allowed to apply to any domain.
+     */
+    virtual bool supports_domain_any() const;
+
     /**
      @brief Determines whether the selection covers the whole mesh.
      @param n_mesh A Conduit conduit::Node containing the mesh.
@@ -188,6 +205,7 @@ protected:
     int         whole;
     index_t     domain;
     std::string topology;
+    bool        domain_any;
 };
 
 //---------------------------------------------------------------------------

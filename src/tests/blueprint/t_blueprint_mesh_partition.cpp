@@ -24,7 +24,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-#define GENERATE_BASELINES
+// #define GENERATE_BASELINES
 
 // #define USE_ERROR_HANDLER
 
@@ -74,7 +74,7 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 
     while(1);
 }
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 void
 test_logical_selection_2d(const std::string &topo, const std::string &base)
@@ -1557,5 +1557,45 @@ TEST(conduit_blueprint_mesh_partition, field_selection)
 #else
     EXPECT_EQ(compare_baseline(b00, output), true);
 #endif
+
+    // Test domain_id: any
+    const char *opt1 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: any\n"
+"     field: selection_field\n";
+    options.reset(); options.parse(opt1, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 6);
+    std::string b01 = baseline_file(base + "_01");
+    save_visit(b01, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b01, output);
+#else
+    EXPECT_EQ(compare_baseline(b01, output), true);
+#endif
+
+    // Test "target: 10". We can split field selections further as
+    // explicit selections.
+    const char *opt2 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: any\n"
+"     field: selection_field\n"
+"target: 10\n";
+    options.reset(); options.parse(opt2, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 10);
+    std::string b02 = baseline_file(base + "_02");
+    save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b02, output);
+#else
+    EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
+
+
 }
 

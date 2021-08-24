@@ -52,110 +52,6 @@ before being combined into the target number of domains.
     Partition used to re-partition a 7 domain mesh (left) to different target numbers of domains and to isolate logical subsets.
 
 
-Selections
-~~~~~~~~~~~~
-Selections can be specified in the options for the ``partition()`` function to
-select regions of interest that will participate in mesh partitioning. If
-selections are not used then all elements from the input meshes will be 
-selected to partitipate in the partitioning process. Selections can be further
-subdivided if needed to arrive at the target number of domains. Selections can
-target specific domains and topologies as well. If a selection does not apply
-to the input mesh domains then no geometry is produced in the output for that
-selection.
-
-The ``partition()`` function's options support 3 types of selections:
-
-.. tabularcolumns:: |p{1.5cm}|p{2cm}|L|
-
-=============== =============================== =============================================
-Selection Type  Topologies                      Description
-=============== =============================== =============================================
-logical          uniform,rectilinear,structured Identifies start and end logical IJK ranges to select sub-bricks of uniform, rectilinear, or structured topologies. This selection is not compatible with other topologies.
-explicit         all                            Identifies an explicit list of element ids and it works with all topologies.
-range            all                            Identifies ranges of element ids, provided as pairs so the user can select multiple contiguous blocks of elements. This selection works with all topologies
-=============== =============================== =============================================
-
-By default, a selection does not apply to any specific domain_id. A list of
-selections applied to a single input mesh will extract multiple new domains from
-that original input mesh. Since meshes are composed of many domains in practice,
-selections can also be associated with certain domain_id values. Selections that
-provide a domain_id value will only match domains that either have a matching
-state/domain_id value or match its index in the input node's list of children
-(if state/domain_id is not present).
-
-Selections can apply to certain topology names as well. By default, the first
-topology is used but if the ``topology`` name is provided then the selection will
-operate on the specified topology only.
-
-
-+------------------+-----------------------------------------+------------------------------------------+
-| **Option**       | **Description**                         | **Example**                              |
-+------------------+-----------------------------------------+------------------------------------------+
-| type             | The selection type                      | .. code:: yaml                           |
-|                  |                                         |                                          |
-|                  |                                         |    selections:                           |
-|                  |                                         |      -                                   |
-|                  |                                         |       type: logical                      |
-+------------------+-----------------------------------------+------------------------------------------+
-| domain_id        | The domain_id to which the selection    | .. code:: yaml                           |
-|                  | will apply.                             |                                          |
-|                  |                                         |    selections:                           |
-|                  |                                         |      -                                   |
-|                  |                                         |       type: logical                      |
-|                  |                                         |       domain_id: 10                      |
-+------------------+-----------------------------------------+------------------------------------------+
-| topology         | The topology to which the selection     | .. code:: yaml                           |
-|                  | will apply.                             |                                          |
-|                  |                                         |    selections:                           |
-|                  |                                         |      -                                   |
-|                  |                                         |       type: logical                      |
-|                  |                                         |       domain_id: 10                      |
-|                  |                                         |       topology: mesh                     |
-+------------------+-----------------------------------------+------------------------------------------+
-
-Logical Selection
-*****************
-The logical selection allows the partitioner to extract a logical IJK subset from uniform, rectilinear,
-or structured topologies. The selection is given as IJK start and end values. If the end values extend
-beyond the actual mesh's logical extents, they will be clipped. The partitioner may
-automatically subdivide logical selections into smaller logical selections, if needed,
-preserving the logical structure of the input topology into the output.
-
-.. code:: yaml
-
-  selections:
-    -
-     type: logical
-     start: [0,0,0]
-     end: [9,9,9]
-
-Explicit Selection
-******************
-The explicit selection allows the partitioner to extract a list of elements.
-This is used when the user wants to target a specific set of elements.
-The output will result in an explicit topology.
-
-.. code:: yaml
-
-  selections:
-    -
-     type: explicit
-     elements: [0,1,2,3,100,101,102]
-
-
-Range Selection
-***************
-The range selection is similar to the explicit selection except that it identifies
-ranges of elements using pairs of numbers. The list of ranges must be a multiple of
-2 in length. The output will result in an explicit topology.
-
-.. code:: yaml
-
-  selections:
-    -
-     type: range
-     range: [0,3,100,102]
-
 Options
 ~~~~~~~
 The ``partition()`` functions accept a node containing options. The options node
@@ -226,3 +122,136 @@ count domains are combined first.
 +------------------+-----------------------------------------+------------------------------------------+
 
 
+Selections
+~~~~~~~~~~~~
+Selections can be specified in the options for the ``partition()`` function to
+select regions of interest that will participate in mesh partitioning. If
+selections are not used then all elements from the input meshes will be 
+selected to partitipate in the partitioning process. Selections can be further
+subdivided if needed to arrive at the target number of domains. Selections can
+target specific domains and topologies as well. If a selection does not apply
+to the input mesh domains then no geometry is produced in the output for that
+selection.
+
+The ``partition()`` function's options support 4 types of selections:
+
+.. tabularcolumns:: |p{1.5cm}|p{2cm}|L|
+
+=============== =============================== =============================================
+Selection Type  Topologies                      Description
+=============== =============================== =============================================
+logical          uniform,rectilinear,structured Identifies start and end logical IJK ranges to select sub-bricks of uniform, rectilinear, or structured topologies. This selection is not compatible with other topologies.
+explicit         all                            Identifies an explicit list of element ids and it works with all topologies.
+range            all                            Identifies ranges of element ids, provided as pairs so the user can select multiple contiguous blocks of elements. This selection works with all topologies
+field            all                            Uses a specified field to indicate destination domain for each element.
+=============== =============================== =============================================
+
+By default, a selection does not apply to any specific domain_id. A list of
+selections applied to a single input mesh will extract multiple new domains from
+that original input mesh. Since meshes are composed of many domains in practice,
+selections can also be associated with certain domain_id values. Selections that
+provide a domain_id value will only match domains that either have a matching
+state/domain_id value or match its index in the input node's list of children
+(if state/domain_id is not present).
+
+Selections can apply to certain topology names as well. By default, the first
+topology is used but if the ``topology`` name is provided then the selection will
+operate on the specified topology only.
+
+
++------------------+-----------------------------------------+------------------------------------------+
+| **Option**       | **Description**                         | **Example**                              |
++------------------+-----------------------------------------+------------------------------------------+
+| type             | The selection type                      | .. code:: yaml                           |
+|                  |                                         |                                          |
+|                  |                                         |    selections:                           |
+|                  |                                         |      -                                   |
+|                  |                                         |       type: logical                      |
++------------------+-----------------------------------------+------------------------------------------+
+| domain_id        | The domain_id to which the selection    | .. code:: yaml                           |
+|                  | will apply. This is almost always an    |                                          |
+|                  | unsigned integer value.                 |    selections:                           |
+|                  |                                         |      -                                   |
+|                  |                                         |       type: logical                      |
+|                  |                                         |       domain_id: 10                      |
+|                  |                                         |                                          |
+|                  |                                         | .. code:: yaml                           |
+|                  |                                         |                                          |
+|                  | For field selections, domain_id is      |    selections:                           |
+|                  | allowed to be a string "any" so a single|      -                                   |
+|                  | selection can apply to many domains.    |       type: logical                      |
+|                  |                                         |       domain_id: any                     |
+|                  |                                         |                                          |
++------------------+-----------------------------------------+------------------------------------------+
+| topology         | The topology to which the selection     | .. code:: yaml                           |
+|                  | will apply.                             |                                          |
+|                  |                                         |    selections:                           |
+|                  |                                         |      -                                   |
+|                  |                                         |       type: logical                      |
+|                  |                                         |       domain_id: 10                      |
+|                  |                                         |       topology: mesh                     |
++------------------+-----------------------------------------+------------------------------------------+
+
+Logical Selection
+*****************
+The logical selection allows the partitioner to extract a logical IJK subset from uniform, rectilinear,
+or structured topologies. The selection is given as IJK start and end values. If the end values extend
+beyond the actual mesh's logical extents, they will be clipped. The partitioner may
+automatically subdivide logical selections into smaller logical selections, if needed,
+preserving the logical structure of the input topology into the output.
+
+.. code:: yaml
+
+  selections:
+    -
+     type: logical
+     start: [0,0,0]
+     end: [9,9,9]
+
+Explicit Selection
+******************
+The explicit selection allows the partitioner to extract a list of elements.
+This is used when the user wants to target a specific set of elements.
+The output will result in an explicit topology.
+
+.. code:: yaml
+
+  selections:
+    -
+     type: explicit
+     elements: [0,1,2,3,100,101,102]
+
+
+Range Selection
+***************
+The range selection is similar to the explicit selection except that it identifies
+ranges of elements using pairs of numbers. The list of ranges must be a multiple of
+2 in length. The output will result in an explicit topology.
+
+.. code:: yaml
+
+  selections:
+    -
+     type: range
+     range: [0,3,100,102]
+
+Field Selection
+***************
+The field selection enables the partitioner to use partitions done by other tools
+using a field on the mesh as the source of the final domain number for each element.
+The field must be associated with the mesh elements. When using a field selection,
+the partitioner will make a best attempt to use the domain numbers to extract
+mesh pieces and reassemble them into domains with those numberings. If a larger
+target value is specified, then field selections can sometimes be partitioned further
+as explicit partitions. The field selection is unique in that its ``domain_id`` value
+can be set to "any" if it is desired that the field selection will be applied to
+all domains in the input mesh. The domain_id value can still be set to specific
+integer values to limit the set of domains over which the selection will be applied.
+
+.. code:: yaml
+
+  selections:
+    -
+     type: field
+     domain_id: any
+     field: fieldname
