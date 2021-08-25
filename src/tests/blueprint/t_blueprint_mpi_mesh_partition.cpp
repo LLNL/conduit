@@ -26,7 +26,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-//#define GENERATE_BASELINES
+#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
@@ -119,7 +119,7 @@ rank_str(int rank)
     sprintf(tmp, "%02d", rank);
     return std::string(tmp);
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(blueprint_mesh_mpi_partition, all_ranks)
 {
@@ -706,6 +706,99 @@ const char *opt2[4] = {
     conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
     int ndom2[] = {2,2,2,1};
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), ndom2[rank]);
+
+}
+#endif
+//-----------------------------------------------------------------------------
+TEST(blueprint_mesh_mpi_partition, field_selection)
+{
+    std::string base("field_selection");
+
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    conduit::Node input, output, options;
+    int masks[] = {1, 2, 4, 8};
+    make_field_selection_example(input, masks[rank]);
+
+    const char *opt0 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 0\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 1\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 2\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 3\n"
+"     field: selection_field\n";
+
+    options.reset(); options.parse(opt0, "yaml");
+    conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
+    int ndoms = conduit::blueprint::mesh::number_of_domains(output);
+    int gndoms = 0;
+    MPI_Allreduce(&ndoms, &gndoms, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(gndoms, 6);
+    std::string b00 = baseline_file((base + "_00_") + rank_str(rank));
+    save_visit(b00, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b00, output);
+#else
+    EXPECT_EQ(compare_baseline(b00, output), true);
+#endif
+#if 0
+    // Test domain_id: any
+    const char *opt1 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: any\n"
+"     field: selection_field\n";
+    options.reset(); options.parse(opt1, "yaml");
+    conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
+    ndoms = conduit::blueprint::mesh::number_of_domains(output);
+    gndoms = 0;
+    MPI_Allreduce(&ndoms, &gndoms, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(gndoms, 6);
+    std::string b01 = baseline_file((base + "_01") + rank_str(rank));
+    save_visit(b01, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b01, output);
+#else
+    EXPECT_EQ(compare_baseline(b01, output), true);
+#endif
+
+    // Test "target: 10". We can split field selections further as
+    // explicit selections.
+    const char *opt2 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: any\n"
+"     field: selection_field\n"
+"target: 10\n";
+    options.reset(); options.parse(opt2, "yaml");
+    conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
+    ndoms = conduit::blueprint::mesh::number_of_domains(output);
+    gndoms = 0;
+    MPI_Allreduce(&ndoms, &gndoms, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    EXPECT_EQ(gndoms, 10);
+    std::string b02 = baseline_file((base + "_02") + rank_str(rank));
+    save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b02, output);
+#else
+    EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
+#endif
 
 }
 

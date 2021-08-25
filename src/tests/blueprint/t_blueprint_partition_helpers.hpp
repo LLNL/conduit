@@ -202,9 +202,17 @@ void
 make_field_selection_example(conduit::Node &output, int mask)
 {
     int nx = 11, ny = 11, nz = 3;
+    int m = 1, dc = 0;
+    for(int i = 0; i < 4; i++)
+    {
+        if(m & mask)
+            dc++;
+        m <<= 1;
+    }
+
     if(mask & 1)
     {
-        conduit::Node &dom0 = output.append();
+        conduit::Node &dom0 = (dc > 1) ? output.append() : output;
         conduit::blueprint::mesh::examples::braid("uniform", nx, ny, nz, dom0);
         dom0["state/cycle"] = 1;
         dom0["state/domain_id"] = 0;
@@ -216,7 +224,7 @@ make_field_selection_example(conduit::Node &output, int mask)
 
     if(mask & 2)
     {
-        conduit::Node &dom1 = output.append();
+        conduit::Node &dom1 = (dc > 1) ? output.append() : output;
         conduit::blueprint::mesh::examples::braid("uniform", nx, ny, nz, dom1);
         auto dx = dom1["coordsets/coords/spacing/dx"].to_float();
         dom1["state/cycle"] = 1;
@@ -229,7 +237,7 @@ make_field_selection_example(conduit::Node &output, int mask)
 
     if(mask & 4)
     {
-        conduit::Node &dom2 = output.append();
+        conduit::Node &dom2 = (dc > 1) ? output.append() : output;
         conduit::blueprint::mesh::examples::braid("uniform", nx, ny, nz, dom2);
         auto dy = dom2["coordsets/coords/spacing/dy"].to_float();
         dom2["state/cycle"] = 1;
@@ -242,7 +250,7 @@ make_field_selection_example(conduit::Node &output, int mask)
 
     if(mask & 8)
     {
-        conduit::Node &dom3 = output.append();
+        conduit::Node &dom3 = (dc > 1) ? output.append() : output;
         conduit::blueprint::mesh::examples::braid("uniform", nx, ny, nz, dom3);
         auto dx = dom3["coordsets/coords/spacing/dx"].to_float();
         auto dy = dom3["coordsets/coords/spacing/dy"].to_float();
