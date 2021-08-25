@@ -616,160 +616,13 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
     MPI_Barrier(comm);
 #endif
 
-#if 1
-//------------------------------------------------------------------------------------------------------
-    // Get the indices of the sends, recvs that we'll do.
-    std::vector<int> sends, recvs;
-    for(size_t i = 0; i < chunks.size(); i++)
-    {
-        int gidx = offsets[rank] + i;
-        int tag = PARTITION_TAG_BASE + gidx;
-        int dest = dest_rank[gidx];
-        if(dest != rank)
-        {
-            sends.push_back(i);
-        }
-    }
-    for(size_t i = 0; i < dest_rank.size(); i++)
-    {
-        if(dest_rank[i] == rank)
-        {
-            int gidx = i;
-            int tag = PARTITION_TAG_BASE + gidx;
-            int start = offsets[rank];
-            int end = start + chunks.size();
-            bool this_rank_already_owns_it = (gidx >= start && gidx < end);
-            if(!this_rank_already_owns_it)
-            {
-                recvs.push_back(i);
-            }
-        }
-    }
+    // Create the object that will help us send/recv nodes. This object uses
+    // non-blocking MPI communication so we do not have to worry about
+    // send/recv order across ranks since communication may encompass a
+    // complicated graph.
+    conduit::relay::mpi::communicate_using_schema C(comm);
+    //C.set_logging(true);
 
-    // Do a certain number of the sends/recvs as a send_recv to help avoid deadlock.
-    int si = 0;
-    int ri = 0;
-    if(sends.size() > 0 && recvs.size() > 0)
-    {
-        size_t max_pairs = std::max(sends.size(), recvs.size());
-        for(size_t i = 0; i < max_pairs; i++)
-        {
-            // Compute send info.
-            int send_gidx = offsets[rank] + sends[si];
-            int sendtag = PARTITION_TAG_BASE + send_gidx;
-            int dest = dest_rank[send_gidx];
-
-            // Compute recv info.
-            int recv_gidx = recvs[ri];
-            int recvtag = PARTITION_TAG_BASE + recv_gidx;
-            int src = src_rank[recvs[ri]];
-
-#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
-            cout << rank << ": send_recv_using_schema(dest=" << dest << ", sendtag=" << sendtag
-                         << ", src=" << src << ", recvtag=" << recvtag << ")" << endl;
-#endif
-            conduit::Node *n_recv = new conduit::Node;
-//            conduit::relay::mpi::send_recv_using_schema(*chunks[sends[si]].mesh, dest, sendtag,
-//                                                        *n_recv, src, recvtag,
-//                                                        comm);
-
-#ifdef RENUMBER_DOMAINS
-            // Since we had to receive the chunk, we can patch up its state/domain_id
-            // to the updated numbering scheme.
-            (*n_recv)["state/domain_id"] = recvs[ri];
-#endif
-            // Save the received chunk and indicate we own it for later.
-            chunks_to_assemble.push_back(chunk(n_recv, true));
-            chunks_to_assemble_domains.push_back(dest_domain[recvs[ri]]);
-
-            si++; ri++;
-        }
-    }
-
-    // Do remaining sends.
-    for(; si < sends.size(); si++)
-    {
-        int gidx = offsets[rank] + sends[si];
-        int tag = PARTITION_TAG_BASE + gidx;
-        int dest = dest_rank[gidx];
-        
-#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
-        cout << rank << ": send_using_schema(dest=" << dest
-             << ", tag=" << tag << ")" << endl;
-#endif
-//        conduit::relay::mpi::send_using_schema(*chunks[sends[si]].mesh, dest, tag, comm);
-    }
-
-    // Do remaining recvs.
-    for(; ri < recvs.size(); ri++)
-    {
-        int i = recvs[ri];
-        int gidx = i;
-        int tag = PARTITION_TAG_BASE + gidx;
-#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
-        cout << rank << ": recv_using_schema(src=" << src_rank[i]
-             << ", tag=" << tag << ")" << endl;
-#endif
-        conduit::Node *n_recv = new conduit::Node;
-//        conduit::relay::mpi::recv_using_schema(*n_recv, src_rank[i], tag, comm);
-
-#ifdef RENUMBER_DOMAINS
-        // Since we had to receive the chunk, we can patch up its state/domain_id
-        // to the updated numbering scheme.
-        (*n_recv)["state/domain_id"] = i;
-#endif
-        // Save the received chunk and indicate we own it for later.
-        chunks_to_assemble.push_back(chunk(n_recv, true));
-        chunks_to_assemble_domains.push_back(dest_domain[i]);
-    }
-
-    // Do all the local recvs where we already owned the data and did not
-    // have to move it.
-    for(size_t i = 0; i < dest_rank.size(); i++)
-    {
-        if(dest_rank[i] == rank)
-        {
-            int gidx = i;
-            int tag = PARTITION_TAG_BASE + gidx;
-            int start = offsets[rank];
-            int end = start + chunks.size();
-            bool this_rank_already_owns_it = (gidx >= start && gidx < end);
-            if(this_rank_already_owns_it)
-            {
-                int local_i = i - offsets[rank];
-
-#ifdef RENUMBER_DOMAINS
-                // The chunk we have here needs its state/domain_id updated but
-                // we really should not modify it directly. Do we have to make
-                // a new node and set_external everything in it? Then make it
-                // have its own state/domain_id?
-                conduit::Node *n_recv = new conduit::Node;
-                for(index_t ci = 0; ci < chunks[local_i].mesh->number_of_children(); ci++)
-                {
-                    const conduit::Node &n = chunks[local_i].mesh->operator[](ci);
-                    if(n.name() != "state")
-                        (*n_recv)[n.name()].set_external_node(n);
-                }
-                if(chunks[local_i].mesh->has_path("state/cycle"))
-                    (*n_recv)["state/cycle"] = (*chunks[local_i].mesh)["state/cycle"];
-                if(chunks[local_i].mesh->has_path("state/time"))
-                    (*n_recv)["state/time"] = (*chunks[local_i].mesh)["state/time"];
-                (*n_recv)["state/domain_id"] = i;
-
-                // Save the chunk "wrapper" that has its own state.
-                chunks_to_assemble.push_back(chunk(n_recv, true));
-                chunks_to_assemble_domains.push_back(dest_domain[i]);
-#else
-                // Pass the chunk through since we already own it on this rank.
-                chunks_to_assemble.push_back(chunk(chunks[local_i].mesh, false));
-                chunks_to_assemble_domains.push_back(dest_domain[i]);
-#endif
-            }
-        }
-    }
-
-#else
-//------------------------------------------------------------------------------------------------------
     // Do sends for the chunks we own on this processor that must migrate.
     for(size_t i = 0; i < chunks.size(); i++)
     {
@@ -780,14 +633,17 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
         if(dest != rank)
         {
 #ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
-            cout << rank << ": send_using_schema(dest=" << dest
-                 << ", tag=" << tag << ")" << endl;
+            cout << rank << ": add_isend(dest="
+                 << dest << ", tag=" << tag << ")" << endl;
 #endif
-//            conduit::relay::mpi::send_using_schema(*chunks[i].mesh, dest, tag, comm);
+            C.add_isend(*chunks[i].mesh, dest, tag);
         }
     }
 
     // Do recvs.
+#ifdef RENUMBER_DOMAINS
+    std::map<conduit::Node*,int> node_domains;
+#endif
     for(size_t i = 0; i < dest_rank.size(); i++)
     {
         if(dest_rank[i] == rank)
@@ -831,22 +687,32 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
             else
             {
 #ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
-                cout << rank << ": recv_using_schema(src=" << src_rank[i]
+                cout << rank << ": add_irecv(src=" << src_rank[i]
                      << ", tag=" << tag << ")" << endl;
 #endif
-                conduit::Node *n_recv = new conduit::Node;              
-//                conduit::relay::mpi::recv_using_schema(*n_recv, src_rank[i], tag, comm);
+                // Make a new node that we'll recv into.
+                conduit::Node *n_recv = new conduit::Node;
+                C.add_irecv(*n_recv, src_rank[i], tag);
 
 #ifdef RENUMBER_DOMAINS
-                // Since we had to receive the chunk, we can patch up its state/domain_id
-                // to the updated numbering scheme.
-                (*n_recv)["state/domain_id"] = i;
+                node_domains[n_recv] = i;
 #endif
                 // Save the received chunk and indicate we own it for later.
                 chunks_to_assemble.push_back(chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
             }
         }
+    }
+
+    // Execute all of the isends/irecvs
+    C.execute();
+
+#ifdef RENUMBER_DOMAINS
+    // Make another pass through the received domains and renumber them.
+    for(auto it : node_domains)
+    {
+        conduit::Node &n = *it.first;
+        n["state/domain_id"] = it.second;
     }
 #endif
 }

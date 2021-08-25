@@ -754,7 +754,7 @@ TEST(blueprint_mesh_mpi_partition, field_selection)
 #else
     EXPECT_EQ(compare_baseline(b00, output), true);
 #endif
-#if 0
+
     // Test domain_id: any
     const char *opt1 =
 "selections:\n"
@@ -768,7 +768,7 @@ TEST(blueprint_mesh_mpi_partition, field_selection)
     gndoms = 0;
     MPI_Allreduce(&ndoms, &gndoms, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     EXPECT_EQ(gndoms, 6);
-    std::string b01 = baseline_file((base + "_01") + rank_str(rank));
+    std::string b01 = baseline_file((base + "_01_") + rank_str(rank));
     save_visit(b01, output);
 #ifdef GENERATE_BASELINES
     make_baseline(b01, output);
@@ -791,15 +791,13 @@ TEST(blueprint_mesh_mpi_partition, field_selection)
     gndoms = 0;
     MPI_Allreduce(&ndoms, &gndoms, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     EXPECT_EQ(gndoms, 10);
-    std::string b02 = baseline_file((base + "_02") + rank_str(rank));
+    std::string b02 = baseline_file((base + "_02_") + rank_str(rank));
     save_visit(b02, output);
 #ifdef GENERATE_BASELINES
     make_baseline(b02, output);
 #else
     EXPECT_EQ(compare_baseline(b02, output), true);
 #endif
-#endif
-
 }
 
 // Right now, data for selections are redistributed over available ranks.

@@ -268,18 +268,47 @@ namespace mpi
  @brief This class sends or receives nodes using non-blocking MPI communication
         and it handles the schema serialization for multiple requests, etc.
         This helps us issue all the calls at once and then wait for them to
-        complete.
- @note Maybe this class should be internal to the library.
+        complete. This helps avoid extra bookkeeping in the caller and
+        potential for deadlock.
  */
-class CONDUIT_RELAY_API node_communication_using_schema
+class CONDUIT_RELAY_API communicate_using_schema
 {
 public:
-    node_communication_using_schema(MPI_Comm c);
-    ~node_communication_using_schema();
+    communicate_using_schema(MPI_Comm c);
+    ~communicate_using_schema();
 
+    /**
+     @brief Set whether log files of the MPI calls are created.
+     @param val If true, the execute() method will create log files of the MPI
+                calls for each rank.
+     */
     void set_logging(bool val);
+
+    /**
+     @brief Schedule the node for movement to another rank.
+     @param node The node to move to another rank.
+     @param dest The rank to which the node will be moved.
+     @param tag The message tag to use for the node. This must match a tag
+                used in a corresponding add_irecv on another rank.
+     @note The node needs to remain valid until after execute() is called.
+     */
     void add_isend(const Node &node, int dest, int tag);
+
+    /**
+     @brief Receive a node from another rank into the provided node.
+     @param node The node to receive the data.
+     @param src The rank that sends data to this rank.
+     @param tag The message tag to use for the node. This must match a tag
+                used in a corresponding add_isend on another rank.
+     @note The node needs to remain valid until after execute() is called.
+     */
     void add_irecv(Node &node, int src, int tag);
+
+    /**
+     @brief Execute all the outstanding isend/irecv calls and reconstruct any
+            nodes after doing the data movement.
+     @return The return value from MPI_Waitall.
+     */
     int  execute();
 private:
     void clear();

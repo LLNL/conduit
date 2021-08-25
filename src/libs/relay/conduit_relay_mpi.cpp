@@ -1556,24 +1556,24 @@ broadcast_using_schema(Node &node,
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-const int node_communication_using_schema::OP_SEND = 1;
-const int node_communication_using_schema::OP_RECV = 2;
+const int communicate_using_schema::OP_SEND = 1;
+const int communicate_using_schema::OP_RECV = 2;
 
 //-----------------------------------------------------------------------------
-node_communication_using_schema::node_communication_using_schema(MPI_Comm c) :
+communicate_using_schema::communicate_using_schema(MPI_Comm c) :
     comm(c), operations(), logging(false)
 {
 }
 
 //-----------------------------------------------------------------------------
-node_communication_using_schema::~node_communication_using_schema()
+communicate_using_schema::~communicate_using_schema()
 {
     clear();
 }
 
 //-----------------------------------------------------------------------------
 void
-node_communication_using_schema::clear()
+communicate_using_schema::clear()
 {
     for(size_t i = 0; i < operations.size(); i++)
     {
@@ -1587,14 +1587,14 @@ node_communication_using_schema::clear()
 
 //-----------------------------------------------------------------------------
 void
-node_communication_using_schema::set_logging(bool val)
+communicate_using_schema::set_logging(bool val)
 {
     logging = val;
 }
 
 //-----------------------------------------------------------------------------
 void
-node_communication_using_schema::add_isend(const Node &node, int dest, int tag)
+communicate_using_schema::add_isend(const Node &node, int dest, int tag)
 {
     // Append the work to the operations.
     operation work;
@@ -1610,7 +1610,7 @@ node_communication_using_schema::add_isend(const Node &node, int dest, int tag)
 
 //-----------------------------------------------------------------------------
 void
-node_communication_using_schema::add_irecv(Node &node, int src, int tag)
+communicate_using_schema::add_irecv(Node &node, int src, int tag)
 {
     // Append the work to the operations.
     operation work;
@@ -1626,7 +1626,7 @@ node_communication_using_schema::add_irecv(Node &node, int src, int tag)
 
 //-----------------------------------------------------------------------------
 int
-node_communication_using_schema::execute()
+communicate_using_schema::execute()
 {
     int mpi_error = 0;
     std::vector<MPI_Request> requests(operations.size());
@@ -1640,9 +1640,9 @@ node_communication_using_schema::execute()
     if(logging)
     {
         char fn[128];
-        sprintf(fn, "node_communication.%04d.log", rank);
+        sprintf(fn, "communicate_using_schema.%04d.log", rank);
         log.open(fn, std::ofstream::out);
-        log << "Log started on rank " << rank << " at " << t0 << std::endl;
+        log << "* Log started on rank " << rank << " at " << t0 << std::endl;
     }
 
     // Issue all the sends (so they are in flight by the time we probe them)
@@ -1685,13 +1685,15 @@ node_communication_using_schema::execute()
             index_t msg_data_size = operations[i].node[1]->total_bytes_compact();
             if(logging)
             {
-                log << "MPI_Isend(buf, " << msg_data_size
-                    << ", MPI_BYTE, "
+                log << "    MPI_Isend("
+                    << const_cast<void*>(operations[i].node[1]->data_ptr()) << ", "
+                    << msg_data_size << ", "
+                    << "MPI_BYTE, "
                     << operations[i].rank << ", "
                     << operations[i].tag << ", "
-                    << ", comm, &requests[" << i << "]);" << std::endl;
+                    << "comm, &requests[" << i << "]);" << std::endl;
             }
-            mpi_error = MPI_Isend(const_cast<void*>(operations[i].node[0]->data_ptr()),
+            mpi_error = MPI_Isend(const_cast<void*>(operations[i].node[1]->data_ptr()),
                                   static_cast<int>(msg_data_size),
                                   MPI_BYTE,
                                   operations[i].rank,
@@ -1704,7 +1706,7 @@ node_communication_using_schema::execute()
     double t1 = MPI_Wtime();
     if(logging)
     {
-        log << "Time issuing MPI_Isend calls: " << (t1-t0) << std::endl;
+        log << "* Time issuing MPI_Isend calls: " << (t1-t0) << std::endl;
     }
 
     // Issue all the recvs.
@@ -1715,10 +1717,10 @@ node_communication_using_schema::execute()
             // Probe the message for its buffer size.
             if(logging)
             {
-                log << "MPI_Probe("
+                log << "    MPI_Probe("
                     << operations[i].rank << ", "
                     << operations[i].tag << ", "
-                    << ", comm, &statuses[" << i << "]);" << std::endl;
+                    << "comm, &statuses[" << i << "]);" << std::endl;
             }
             mpi_error = MPI_Probe(operations[i].rank, operations[i].tag, comm, &statuses[i]);    
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -1727,7 +1729,7 @@ node_communication_using_schema::execute()
             MPI_Get_count(&statuses[i], MPI_BYTE, &buffer_size);
             if(logging)
             {
-                log << "MPI_Get_count(&statuses[" << i << "], MPI_BYTE, &buffer_size); -> "
+                log << "    MPI_Get_count(&statuses[" << i << "], MPI_BYTE, &buffer_size); -> "
                     << buffer_size << std::endl;
             }
 
@@ -1737,11 +1739,13 @@ node_communication_using_schema::execute()
 
             if(logging)
             {
-                log << "MPI_Irecv(buf, " << buffer_size
-                    << ", MPI_BYTE, "
+                log << "    MPI_Irecv("
+                    << operations[i].node[1]->data_ptr() << ", "
+                    << buffer_size << ", "
+                    << "MPI_BYTE, "
                     << operations[i].rank << ", "
                     << operations[i].tag << ", "
-                    << ", comm, &requests[" << i << "]);" << std::endl;
+                    << "comm, &requests[" << i << "]);" << std::endl;
             }
 
             // Post the actual receive.
@@ -1758,21 +1762,21 @@ node_communication_using_schema::execute()
     double t2 = MPI_Wtime();
     if(logging)
     {
-        log << "Time issuing MPI_Irecv calls: " << (t2-t1) << std::endl;
+        log << "* Time issuing MPI_Irecv calls: " << (t2-t1) << std::endl;
     }
 
     // Wait for the requests to complete.
     int n = static_cast<int>(operations.size());
     if(logging)
     {
-        log << "MPI_Waitall(" << n << ", &requests[0], &statuses[0]);" << std::endl;
+        log << "    MPI_Waitall(" << n << ", &requests[0], &statuses[0]);" << std::endl;
     }
     mpi_error = MPI_Waitall(n, &requests[0], &statuses[0]);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
     double t3 = MPI_Wtime();
     if(logging)
     {
-        log << "Time in MPI_Waitall: " << (t3-t2) << std::endl;
+        log << "* Time in MPI_Waitall: " << (t3-t2) << std::endl;
     }
 
     // Finish building the nodes for which we received data.
@@ -1806,14 +1810,14 @@ node_communication_using_schema::execute()
 
             if(logging)
             {
-                log << "* built output node " << i << std::endl;
+                log << "* Built output node " << i << std::endl;
             }
         }
     }
     double t4 = MPI_Wtime();
     if(logging)
     {
-        log << "Time building output nodes " << (t4-t3) << std::endl;
+        log << "* Time building output nodes " << (t4-t3) << std::endl;
         log.close();
     }
 
