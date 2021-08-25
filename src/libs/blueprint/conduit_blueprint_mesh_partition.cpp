@@ -5547,6 +5547,8 @@ private:
     };
     static const std::array<std::string, 3> CI_CSET_TYPES;
     static const std::array<std::string, 3> CI_TOPO_TYPES;
+    static const index_t dim_for_face[6];
+    static const index_t dim_for_edge[4];
 
     static const std::vector<std::string> &
     figure_out_implicit_axes(const std::vector<const Node *> &n_inputs)
@@ -5718,6 +5720,46 @@ private:
         return (floating_point
             ? (max_bytes == 4 ? DataType::float32() : DataType::float64())
             : (max_bytes == 4 ? DataType::int32()   : DataType::int64()));
+    }
+
+    index_t
+    determine_matched_dim(const index_t face_id, index_t *other_dims = nullptr) const
+    {
+        const index_t matched_dim = (dimension == 3) ? dim_for_face[face_id] : dim_for_edge[face_id];
+        if(other_dims)
+        {
+            index_t other_dims_idx = 0;
+            for(index_t di = 0; di < dimension; di++)
+            {
+                if(di == matched_dim) continue;
+                other_dims[other_dims_idx++] = di;
+            }
+        }
+        return matched_dim;
+    }
+
+    void
+    idx_for_matched_dim(const index_t face_id, const index_t *dims, index_t *ijk) const
+    {
+        index_t idx = 0;
+        ijk[0] = 0; ijk[1] = 0; ijk[2] = 0;
+        if(dimension == 3)
+        {
+            if(face_id == 1) idx = dims[2] - 1;
+            else if(face_id == 3) idx = dims[1] - 1;
+            else if(face_id == 5) idx = dims[0];
+            ijk[dim_for_face[face_id]] = idx;
+        }
+        else if(dimension == 2)
+        {
+            if(face_id == 1) idx = dims[1] - 1;
+            else if(face_id == 3) idx = dims[0] - 1;
+            ijk[dim_for_edge[face_id]] = idx;
+        }
+        else
+        {
+            ijk[0] = (face_id == 0) ? 0 : dims[0]-1;
+        }
     }
 
     bool combine_implicit_impl(const std::vector<const Node *> &n_meshes,
@@ -6101,12 +6143,13 @@ private:
 
         static const index_t faces3d[6][4] = {
             {0, 2, 3, 1}, {5, 7, 6, 4},  // Front / Back
-            {4, 0, 1, 5}, {2, 6, 7, 3},  // Top   / Bottom
+            {0, 1, 5, 4}, {2, 6, 7, 3},  // Bottom/ Top
             {4, 6, 2, 0}, {1, 3, 7, 5}   // Left  / Right
         };
 
         static const index_t edges2d[4][2] = {
-            {0, 2}, {2, 3}, {3, 1}, {1, 0}
+            {0, 1}, {2, 3}, // Bottom/ Top
+            {0, 2}, {1, 3}  // Left  / Right
         };
 
         const auto match_faces = [this](
@@ -6138,8 +6181,8 @@ private:
                         }
 
                         static const index_t perms[8][4] = {
-                            {0,1,2,3}, {3,0,1,2}, {2,3,0,1}, {1,2,3,0},
-                            {0,3,2,1}, {1,0,3,2}, {2,1,0,3}, {3,2,1,0}
+                            {3,2,1,0}, {0,1,2,3}, {3,0,1,2}, {2,3,0,1}, 
+                            {1,2,3,0}, {0,3,2,1}, {1,0,3,2}, {2,1,0,3}
                         };
 
                         for(index_t pi = 0; pi < 8; pi++)
@@ -6148,6 +6191,54 @@ private:
                             for(index_t pj = 0; pj < 4; pj++)
                             {
                                 const double d2 = lhs_face[pj].distance2(rhs_face[perms[pi][pj]]);
+                                if(d2 > t2)
+                                {
+                                    match_found = false;
+                                    break;
+                                }
+                            }
+
+                            if(match_found)
+                            {
+                                lhs_face_id = i;
+                                rhs_face_id = j;
+                                perm = pi;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            else if(dimension == 2)
+            {
+                for(std::size_t i = 0; i < 4; i++)
+                {
+                    // Grab a face definition in lhs
+                    std::array<vec, 2> lhs_edge;
+                    for(std::size_t fi = 0; fi < 2; fi++)
+                    {
+                        lhs_edge[fi] = lhs_bb[edges2d[i][fi]];
+                    }
+
+                    bool match_found = false;
+                    for(std::size_t j = 0; j < 4; j++)
+                    {
+                        std::array<vec, 2> rhs_edge;
+                        for(std::size_t fi = 0; fi < 2; fi++)
+                        {
+                            rhs_edge[fi] = rhs_bb[edges2d[j][fi]];
+                        }
+
+                        static const index_t perms[2][2] = {
+                            {0,1}, {1,0}
+                        };
+
+                        for(index_t pi = 0; pi < 2; pi++)
+                        {
+                            match_found = true;
+                            for(index_t pj = 0; pj < 2; pj++)
+                            {
+                                const double d2 = lhs_edge[pj].distance2(rhs_edge[perms[pi][pj]]);
                                 if(d2 > t2)
                                 {
                                     match_found = false;
@@ -6212,7 +6303,6 @@ private:
             for(size_t ei = 0; ei < meshes_and_bbs.size(); ei++)
             {
                 const Node *n_meshi = meshes_and_bbs[ei].first;
-                auto &exti = meshes_and_bbs[ei].second;
 
                 // Find a match
                 const index_t NOT_FOUND = meshes_and_bbs.size();
@@ -6220,17 +6310,17 @@ private:
                 for(size_t ej = ei+1; ej < meshes_and_bbs.size(); ej++)
                 {
                     const Node *n_meshj = meshes_and_bbs[ej].first;
-                    const auto &extj = meshes_and_bbs[ej].second;
 
-                    index_t lhs_face = 0;
-                    index_t rhs_face = 0;
-                    index_t rhs_permutation = 0;
+                    index_t ei_face = 0;
+                    index_t ej_face = 0;
+                    index_t ej_permutation = 0;
                     bool match_found = match_faces(
                         meshes_and_bbs[ei], meshes_and_bbs[ej], 
-                        lhs_face, rhs_face, rhs_permutation);
+                        ei_face, ej_face, ej_permutation);
 
                     if(match_found)
                     {
+                        std::cout << "Handling structured combine" << std::endl;
                         matched_extents = ej;
 
                         // TODO: Create a function to allocate a new temp mesh
@@ -6250,9 +6340,209 @@ private:
                             }
                         }
 
-                        std::cout << "Handling structured combine" << std::endl;
-                        std::cout << "Matched faces " << lhs_face << " " << rhs_face << " " 
-                            << rhs_permutation << std::endl;
+                        std::cout << "Matched faces " << ei_face << " " << ej_face << " "
+                            << ej_permutation << std::endl;
+
+                        // Determine who is the lhs and who is the rhs
+                        const Node *n_lhs = nullptr;
+                        const Node *n_rhs = nullptr;
+                        index_t lhs_face = 0;
+                        index_t rhs_face = 0;
+                        bool simple_case  = false;
+                        if((ei_face == 1 && ej_face == 0)
+                            || (ei_face == 3 && ej_face == 2)
+                            || (ei_face == 5 && ej_face == 4))
+                        {
+                            n_lhs = n_meshi;
+                            n_rhs = n_meshj;
+                            lhs_face = ei_face;
+                            rhs_face = ej_face;
+                            simple_case = true;
+                        }
+                        else if((ei_face == 0 && ej_face == 1)
+                            || (ei_face == 2 && ej_face == 3)
+                            || (ei_face == 4 && ej_face == 5))
+                        {
+                            n_lhs = n_meshj;
+                            n_rhs = n_meshi;
+                            lhs_face = ej_face;
+                            rhs_face = ei_face;
+                            simple_case = true;
+                        }
+                        else // Every other odd case, larger mesh is lhs
+                        {
+                            const index_t Ni = mesh::utils::coordset::length(n_meshi->fetch_existing(cset_path));
+                            const index_t Nj = mesh::utils::coordset::length(n_meshj->fetch_existing(cset_path));
+                            simple_case = false;
+                            if(Nj < Ni)
+                            {
+                                n_lhs = n_meshi;
+                                n_rhs = n_meshj;
+                                lhs_face = ei_face;
+                                rhs_face = ej_face;
+                            }
+                            else
+                            {
+                                n_lhs = n_meshj;
+                                n_rhs = n_meshi;
+                                lhs_face = ej_face;
+                                rhs_face = ei_face;
+                            }
+                        }
+
+                        // Convenience
+                        using mesh::coordset::utils::kdtree;
+                        using mesh::coordset::utils::vec3;
+                        using mesh::coordset::utils::vec2;
+                        const Node &n_cset_lhs = n_lhs->fetch_existing(cset_path);
+                        const Node &n_topo_lhs = n_lhs->fetch_existing(topo_path);
+                        const Node &n_cset_rhs = n_rhs->fetch_existing(cset_path);
+                        const Node &n_topo_rhs = n_rhs->fetch_existing(topo_path);
+                        std::array<const Node *, MAXDIM> vals_lhs{
+                            n_cset_lhs.fetch_ptr("values/"+axes[0]),
+                            n_cset_lhs.fetch_ptr("values/"+axes[1]),
+                            (axes.size() > 2) ? n_cset_lhs.fetch_ptr("values/"+axes[2]) : nullptr
+                        };
+                        std::array<DataType, MAXDIM> dts_lhs{
+                            (vals_lhs[0]) ? DataType(vals_lhs[0]->dtype().id(), 1) : DataType(),
+                            (vals_lhs[1]) ? DataType(vals_lhs[1]->dtype().id(), 1) : DataType(),
+                            (vals_lhs[2]) ? DataType(vals_lhs[2]->dtype().id(), 1) : DataType(),
+                        };
+                        std::array<const Node *, MAXDIM> vals_rhs{
+                            n_cset_rhs.fetch_ptr("values/"+axes[0]),
+                            n_cset_rhs.fetch_ptr("values/"+axes[1]),
+                            (axes.size() > 2) ? n_cset_rhs.fetch_ptr("values/"+axes[2]) : nullptr
+                        };
+                        std::array<DataType, MAXDIM> dts_rhs{
+                            (vals_rhs[0]) ? DataType(vals_rhs[0]->dtype().id(), 1) : DataType(),
+                            (vals_rhs[1]) ? DataType(vals_rhs[1]->dtype().id(), 1) : DataType(),
+                            (vals_rhs[2]) ? DataType(vals_rhs[2]->dtype().id(), 1) : DataType(),
+                        };
+
+                        // Collect required info
+                        std::array<index_t, MAXDIM> dims_lhs{0,0,0};
+                        std::array<index_t, MAXDIM> dims_rhs{0,0,0};
+                        topology::logical_dims(n_topo_lhs, dims_lhs.data(), dimension);
+                        topology::logical_dims(n_topo_rhs, dims_rhs.data(), dimension);
+                        for(auto &val : dims_lhs) val += 1;
+                        for(auto &val : dims_rhs) val += 1;
+
+                        // Now we must validate that this plane/edge matches
+                        std::array<index_t, MAXDIM> ijk{0,0,0};
+                        std::array<index_t, MAXDIM-1> other_dims{0,0};
+                        Node n_temp;
+                        if(dimension == 3)
+                        {
+                            // Build the tree with all the points from the lhs face
+                            kdtree<mesh::coordset::utils::vec3, index_t> verts;
+                            vec3 temp;
+                            index_t idx;
+
+                            determine_matched_dim(lhs_face, other_dims.data());
+                            idx_for_matched_dim(lhs_face, dims_lhs.data(), ijk.data());
+                            for(index_t j = 0; j < dims_lhs[other_dims[1]]; j++)
+                            {
+                                ijk[other_dims[1]] = j;
+                                for(index_t i = 0; i < dims_lhs[other_dims[0]]; i++)
+                                {
+                                    ijk[other_dims[0]] = i;
+                                    grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
+                                    for(index_t di = 0; di < dimension; di++)
+                                    {
+                                        n_temp.set_external(dts_lhs[di], const_cast<void*>(vals_lhs[di]->element_ptr(idx)));
+                                        temp[di] = n_temp.to_double();
+                                    }
+                                    verts.insert(temp, idx);
+                                }
+                            }
+
+                            // Check all the points in the tree against the points from the rhs face
+                            determine_matched_dim(rhs_face, other_dims.data());
+                            idx_for_matched_dim(rhs_face, dims_rhs.data(), ijk.data());
+                            index_t *existing_idx = nullptr;
+                            for(index_t j = 0; j < dims_rhs[other_dims[1]]; j++)
+                            {
+                                ijk[other_dims[1]] = j;
+                                for(index_t i = 0; i < dims_rhs[other_dims[0]]; i++)
+                                {
+                                    ijk[other_dims[0]] = i;
+                                    grid_ijk_to_id(ijk.data(), dims_rhs.data(), idx);
+                                    for(index_t di = 0; di < dimension; di++)
+                                    {
+                                        n_temp.set_external(dts_rhs[di], const_cast<void*>(vals_rhs[di]->element_ptr(idx)));
+                                        temp[di] = n_temp.to_double();
+                                    }
+                                    existing_idx = verts.find_point(temp, tolerance);
+                                    if(!existing_idx)
+                                    {
+                                        // If we couldn't match this face then we can't combine as structured.
+                                        CONDUIT_INFO("Face definition does not match.");
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                        else if(dimension == 2)
+                        {
+                            // Build the tree with all the points from the lhs face
+                            kdtree<mesh::coordset::utils::vec2, index_t> verts;
+                            vec2 temp;
+                            index_t idx;
+
+                            // This is the lhs so our plane is on the end of matched dim
+                            determine_matched_dim(lhs_face, other_dims.data());
+                            idx_for_matched_dim(lhs_face, dims_lhs.data(), ijk.data());
+                            for(index_t i = 0; i < dims_lhs[other_dims[0]]; i++)
+                            {
+                                ijk[other_dims[0]] = i;
+                                grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
+                                for(index_t di = 0; di < dimension; di++)
+                                {
+                                    n_temp.set_external(dts_lhs[di], const_cast<void*>(vals_lhs[di]->element_ptr(idx)));
+                                    temp[di] = n_temp.to_double();
+                                }
+                                verts.insert(temp, idx);
+                            }
+
+                            // Check all the points in the tree against the points from the rhs face
+                            determine_matched_dim(rhs_face, other_dims.data());
+                            idx_for_matched_dim(rhs_face, dims_rhs.data(), ijk.data());
+                            index_t *existing_idx = nullptr;
+                            for(index_t i = 0; i < dims_rhs[other_dims[0]]; i++)
+                            {
+                                ijk[other_dims[0]] = i;
+                                grid_ijk_to_id(ijk.data(), dims_rhs.data(), idx);
+                                for(index_t di = 0; di < dimension; di++)
+                                {
+                                    n_temp.set_external(dts_rhs[di], const_cast<void*>(vals_rhs[di]->element_ptr(idx)));
+                                    temp[di] = n_temp.to_double();
+                                }
+                                existing_idx = verts.find_point(temp, tolerance);
+                                if(!existing_idx)
+                                {
+                                    // If we couldn't match this face then we can't combine as structured.
+                                    CONDUIT_INFO("Face definition does not match.");
+                                    return false;
+                                }
+                            }
+                        }
+                        // Nothing needs to be checked for dimension 1
+                        // NOTE: We would have returned from the function if the check failed
+
+                        // Determine final mesh size
+                        std::array<index_t, MAXDIM> new_dims{0,0,0};
+                        index_t N = 1;
+                        for(index_t di = 0; di < dimension; di++)
+                        {
+                            new_dims[di] = dims_lhs[di] + dims_rhs[di] - 1;
+                            N *= new_dims[di];
+                        }
+
+                        
+
+                        // Allocate output memory
+
+                        std::cout << "Successfully matched structured face." << std::endl;
                         return false;
                     }
 
@@ -6886,6 +7176,9 @@ const std::array<std::string, 3> combine_implicit_topologies::CI_TOPO_TYPES{
     "rectilinear",
     "structured"
 };
+
+const index_t combine_implicit_topologies::dim_for_face[6] = {2, 2, 1, 1, 0, 0};
+const index_t combine_implicit_topologies::dim_for_edge[4] = {1, 1, 0, 0};
 
 
 }
