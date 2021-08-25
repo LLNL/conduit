@@ -74,7 +74,7 @@ tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
 
     while(1);
 }
-#if 1
+
 //-----------------------------------------------------------------------------
 void
 test_logical_selection_2d(const std::string &topo, const std::string &base)
@@ -1519,7 +1519,6 @@ TEST(blueprint_mesh_combine, rectilinear)
     #endif
     }
 }
-#endif
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, field_selection)
@@ -1595,7 +1594,5 @@ TEST(conduit_blueprint_mesh_partition, field_selection)
 #else
     EXPECT_EQ(compare_baseline(b02, output), true);
 #endif
-
-
 }
 
