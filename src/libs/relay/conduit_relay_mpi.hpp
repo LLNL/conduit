@@ -97,6 +97,13 @@ namespace mpi
                                             int tag,
                                             MPI_Comm comm);
 
+    int CONDUIT_RELAY_API send_recv_using_schema(const Node &sendnode,
+                                                 int dest,
+                                                 int sendtag,
+                                                 Node &recvnode,
+                                                 int src,
+                                                 int recvtag,
+                                                 MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
 /// MPI Reduce
@@ -253,6 +260,45 @@ namespace mpi
     int CONDUIT_RELAY_API broadcast_using_schema(Node &node,
                                                  int root,
                                                  MPI_Comm comm );
+
+//-----------------------------------------------------------------------------
+/// Communicate multiple nodes at once using schema
+//-----------------------------------------------------------------------------
+/**
+ @brief This class sends or receives nodes using non-blocking MPI communication
+        and it handles the schema serialization for multiple requests, etc.
+        This helps us issue all the calls at once and then wait for them to
+        complete.
+ @note Maybe this class should be internal to the library.
+ */
+class CONDUIT_RELAY_API node_communication_using_schema
+{
+public:
+    node_communication_using_schema(MPI_Comm c);
+    ~node_communication_using_schema();
+
+    void set_logging(bool val);
+    void add_isend(const Node &node, int dest, int tag);
+    void add_irecv(Node &node, int src, int tag);
+    int  execute();
+private:
+    void clear();
+
+    static const int OP_SEND;
+    static const int OP_RECV;
+    struct operation
+    {
+        int   op;
+        int   rank;
+        int   tag;
+        Node *node[2];
+        bool  free[2];
+    };
+
+    MPI_Comm comm;
+    std::vector<operation> operations;
+    bool logging;
+};
 
 //-----------------------------------------------------------------------------
 /// The about methods construct human readable info about how conduit_mpi was
