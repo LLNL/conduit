@@ -18,13 +18,15 @@ endif()
 #
 
 # next check for ZLIB_DIR
-if(NOT ZLIB_DIR)
-    MESSAGE(FATAL_ERROR "HDF5 support needs explicit ZLIB_DIR")
+# TODO: Decide if we want to be strict about this
+# if(NOT ZLIB_DIR)
+#     MESSAGE(FATAL_ERROR "HDF5 support needs explicit ZLIB_DIR")
+# endif()
+
+if(ZLIB_DIR)
+    set(ZLIB_ROOT ${ZLIB_DIR})
+    find_package(ZLIB REQUIRED)
 endif()
-
-set(ZLIB_ROOT ${ZLIB_DIR})
-find_package(ZLIB REQUIRED)
-
 
 # find the absolute path w/ symlinks resolved of the passed HDF5_DIR, 
 # since sanity checks later need to compare against the real path
@@ -252,6 +254,10 @@ set(hdf5_tpl_lnk_libs "${_fixed_link_libs}")
 set(hdf5_tpl_lnk_flags "${hdf5_tpl_lnk_flags} ${hdf5_tpl_lnk_libs}")
 
 #
+# TODO: Add zlib libs to hdf5_tpl_lnk_flags
+#
+
+#
 # these will be used in Conduit's config.mk
 #
 set(CONDUIT_HDF5_TPL_INC_FLAGS ${hdf5_tpl_inc_flags})
@@ -261,7 +267,9 @@ set(CONDUIT_HDF5_TPL_LIB_FLAGS ${hdf5_tpl_lnk_flags})
 # Add extra libs
 ###################
 # ZLIB
-list(APPEND HDF5_LIBRARIES ${ZLIB_LIBRARIES})
+if(ZLIB_FOUND)
+    list(APPEND HDF5_LIBRARIES ${ZLIB_LIBRARIES})
+endif()
 
 #####################
 # any others reported
