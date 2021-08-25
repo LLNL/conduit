@@ -1674,7 +1674,7 @@ TEST(blueprint_mesh_combine, structured)
     braid_cases(false);
     braid_cases(true);
 
-
+    #if 0
     // Test 2
     const auto grain_test = [](int domid, const int *orientation, const float *translation, conduit::Node &output) {
         int size = 11;
@@ -1738,4 +1738,134 @@ TEST(blueprint_mesh_combine, structured)
     conduit::Node combined;
     conduit::blueprint::mesh::partition(domains, opts, combined);
     save_visit("combine_structured_grain_output", combined);
+    #endif
+
+    const auto grain_test = [](const int *dims, conduit::Node &output) {
+        using namespace conduit;
+        const double PI_VALUE = 3.14159265359;
+        const int N = dims[0]*dims[1]*dims[2];
+        const int Nelem = (dims[0]-1)*(dims[1]-1)*(dims[2]-1);
+
+        // Domain 0
+        Node &n_d0 = output["domain_00000"];
+        {
+            const double dt = PI_VALUE / (dims[0]-1);
+            int id  = 0;
+            int idx = 0;
+            int k, j, i;
+
+            n_d0["state/domain_id"] = (index_t)0;
+            n_d0["topologies/mesh/type"] = "structured";
+            n_d0["topologies/mesh/coordset"] = "coords";
+            n_d0["topologies/mesh/elements/dims/i"] = dims[0]-1;
+            n_d0["topologies/mesh/elements/dims/j"] = dims[1]-1;
+            if(dims[2] > 1)
+                n_d0["topologies/mesh/elements/dims/k"] = dims[2]-1;
+            n_d0["coordsets/coords/type"] = "explicit";
+            Schema s;
+            s["x"].set(DataType::c_float(N,               0, sizeof(float)*3));
+            s["y"].set(DataType::c_float(N,   sizeof(float), sizeof(float)*3));
+            s["z"].set(DataType::c_float(N, 2*sizeof(float), sizeof(float)*3));
+            n_d0["coordsets/coords/values"].set(s);
+            n_d0["fields/vert_field/topology"] = "mesh";
+            n_d0["fields/vert_field/association"] = "vertex";
+            n_d0["fields/vert_field/values"].set(DataType::c_float(N));
+            n_d0["fields/elem_field/topology"] = "mesh";
+            n_d0["fields/elem_field/association"] = "element";
+            n_d0["fields/elem_field/values"].set(
+                DataType::c_float(Nelem));
+
+            float *coords = (float*)n_d0["coordsets/coords/values"].element_ptr(0);
+            float *vfield = (float*)n_d0["fields/vert_field/values"].element_ptr(0);
+            float *efield = (float*)n_d0["fields/elem_field/values"].element_ptr(0);
+
+            for(k = 0; k < dims[2]; k++)
+            {
+                for(j = 0; j < dims[1]; j++)
+                {
+                    const int j1 = j+1;
+                    double t = 0.;
+                    for(i = 0; i < dims[0]; i++, id++, t+=dt)
+                    {
+                        vfield[id]     = id;
+                        coords[idx++] = std::cos(t) * j1;
+                        coords[idx++] = std::sin(t) * j1;
+                        coords[idx++] = k;
+                    }
+                }
+            }
+
+            for(int i = 0; i < Nelem; i++)
+            {
+                efield[i] = i;
+            }
+        }
+
+        Node &n_d1 = output["domain_00001"];
+        {
+            const double PI_VALUE = 3.14159265359;
+            const double dt = PI_VALUE / (dims[0]-1);
+            int id  = 0;
+            int idx = 0;
+            int k, j, i;
+
+            n_d1["state/domain_id"] = (index_t)1;
+            n_d1["topologies/mesh/type"] = "structured";
+            n_d1["topologies/mesh/coordset"] = "coords";
+            n_d1["topologies/mesh/elements/dims/i"] = dims[0]-1;
+            n_d1["topologies/mesh/elements/dims/j"] = dims[1]-1;
+            if(dims[2] > 1)
+                n_d1["topologies/mesh/elements/dims/k"] = dims[2]-1;
+            n_d1["coordsets/coords/type"] = "explicit";
+            Schema s;
+            s["x"].set(DataType::c_float(N,               0, sizeof(float)*3));
+            s["y"].set(DataType::c_float(N,   sizeof(float), sizeof(float)*3));
+            s["z"].set(DataType::c_float(N, 2*sizeof(float), sizeof(float)*3));
+            n_d1["coordsets/coords/values"].set(s);
+            n_d1["fields/vert_field/topology"] = "mesh";
+            n_d1["fields/vert_field/association"] = "vertex";
+            n_d1["fields/vert_field/values"].set(DataType::c_float(N));
+            n_d1["fields/elem_field/topology"] = "mesh";
+            n_d1["fields/elem_field/association"] = "element";
+            n_d1["fields/elem_field/values"].set(
+                DataType::c_float((dims[0]-1)*(dims[1]-1)*(dims[2]-1)));
+
+            float *coords = (float*)n_d1["coordsets/coords/values"].element_ptr(0);
+            float *vfield = (float*)n_d1["fields/vert_field/values"].element_ptr(0);
+            float *efield = (float*)n_d1["fields/elem_field/values"].element_ptr(0);
+
+            for(k = 0; k < dims[2]; k++)
+            {
+                for(j = 0; j < dims[1]; j++)
+                {
+                    const int j1 = j+1;
+                    double t = 0.;
+                    for(i = 0; i < dims[0]; i++, id++, t+=dt)
+                    {
+                        vfield[id]     = id;
+                        coords[idx++] = j1;
+                        coords[idx++] = -i;
+                        coords[idx++] = k;
+                    }
+                }
+            }
+
+            for(int i = 0; i < Nelem; i++)
+            {
+                efield[i] = i;
+            }
+        }
+    };
+
+    conduit::Node grain;
+    int dims[3] = {11, 5, 2};
+    grain_test(dims, grain);
+
+    std::cout << "Saving test case..." << std::endl;
+    save_visit("combine_structured_grain_3d_input", grain);
+    
+    conduit::Node opts; opts["target"] = 1;
+    conduit::Node output;
+    conduit::blueprint::mesh::partition(grain, opts, output);
+    save_visit("combine_structured_grain_3d_output", output);
 }
