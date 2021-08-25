@@ -214,7 +214,7 @@ if("${hdf5_tpl_lnk_libs}")
     # and not already a list
     if(hdf5_tpl_lnk_libs_len EQUAL 1)
         string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
-    else()
+    endif()
 endif()
 
 # if built with cmake, we can direclty add the entries
@@ -272,7 +272,7 @@ list(APPEND HDF5_LIBRARIES ${ZLIB_LIBRARIES})
 #####################
 foreach(lib ${hdf5_tpl_lnk_libs_list})
     list(APPEND HDF5_LIBRARIES ${lib})
-endif()
+endforeach()
 
 #
 # Display main hdf5 cmake vars
