@@ -209,6 +209,8 @@ if(hdf5_tpl_lnk_libs_len EQUAL 1)
     else()
         separate_arguments(_temp_link_libs UNIX_COMMAND "${hdf5_tpl_lnk_libs}")
     endif()
+else()
+    set(_temp_link_libs "${hdf5_tpl_lnk_libs}")
 endif()
 
 # add -l to any libraries that are just their names (like "m" instead of "-lm")
