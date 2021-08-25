@@ -14,7 +14,7 @@ endif()
 #
 # HDF5 1.8.x and 1.10.x when built static 
 # with cmake are not reporting zlib as a dep in libhdf5.settings,
-# so we need find it and add t
+# so we need find it and add it
 #
 
 # next check for ZLIB_DIR
@@ -203,7 +203,7 @@ string(SUBSTRING "${hdf5_tpl_lnk_libs}" 0 "${hdf5_tpl_lnk_libs_end_pos}" hdf5_tp
 # these libs as a cmake list (separated by semi colons)
 #
 # when hdf5 is not build with cmake, these entries will be separated 
-# by spacesand we want to remove leading whitespace,
+# by spaces and we want to remove leading whitespace,
 # then split into a cmake list
 #
 # if hdf5_tpl_lnk_libs_len greater than 1 -- we have a semi colon case
@@ -216,10 +216,6 @@ if("${hdf5_tpl_lnk_libs}")
         string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
     endif()
 endif()
-
-# if built with cmake, we can direclty add the entries
-# to 
-
 
 set(hdf5_tpl_lnk_libs_list)
 # get a cmake list of these libs if don't already have one by
