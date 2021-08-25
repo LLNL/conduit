@@ -5,10 +5,26 @@
 # Setup HDF5
 #
 
+
 # first Check for HDF5_DIR
 if(NOT HDF5_DIR)
     MESSAGE(FATAL_ERROR "HDF5 support needs explicit HDF5_DIR")
 endif()
+
+#
+# HDF5 1.8.x and 1.10.x when built static 
+# with cmake are not reporting zlib as a dep in libhdf5.settings,
+# so we need find it and add t
+#
+
+# next check for ZLIB_DIR
+if(NOT ZLIB_DIR)
+    MESSAGE(FATAL_ERROR "HDF5 support needs explicit ZLIB_DIR")
+endif()
+
+set(ZLIB_ROOT ${ZLIB_DIR})
+find_package(ZLIB REQUIRED)
+
 
 # find the absolute path w/ symlinks resolved of the passed HDF5_DIR, 
 # since sanity checks later need to compare against the real path
@@ -186,6 +202,10 @@ string(SUBSTRING "${hdf5_tpl_lnk_libs}" 0 "${hdf5_tpl_lnk_libs_end_pos}" hdf5_tp
 # When hdf5 is built with cmake, the h5settings file may list
 # these libs as a cmake list (separated by semi colons)
 #
+# when hdf5 is not build with cmake, these entries will be separated 
+# by spacesand we want to remove leading whitespace,
+# then split into a cmake list
+#
 # if hdf5_tpl_lnk_libs_len greater than 1 -- we have a semi colon case
 list(LENGTH hdf5_tpl_lnk_libs hdf5_tpl_lnk_libs_len)
 
@@ -194,9 +214,14 @@ if("${hdf5_tpl_lnk_libs}")
     # and not already a list
     if(hdf5_tpl_lnk_libs_len EQUAL 1)
         string(STRIP "${hdf5_tpl_lnk_libs}" hdf5_tpl_lnk_libs)
-    endif()
+    else()
 endif()
 
+# if built with cmake, we can direclty add the entries
+# to 
+
+
+set(hdf5_tpl_lnk_libs_list)
 # get a cmake list of these libs if don't already have one by
 # splitting the link libs string
 if(hdf5_tpl_lnk_libs_len EQUAL 1)
@@ -205,17 +230,18 @@ if(hdf5_tpl_lnk_libs_len EQUAL 1)
     # instead use strategy that allows older versions of CMake:
     #    an if to select WINDOWS_COMMAND or UNIX_COMMAND arg
     if(WIN32)
-        separate_arguments(_temp_link_libs WINDOWS_COMMAND "${hdf5_tpl_lnk_libs}")
+        separate_arguments(hdf5_tpl_lnk_libs_list WINDOWS_COMMAND "${hdf5_tpl_lnk_libs}")
     else()
-        separate_arguments(_temp_link_libs UNIX_COMMAND "${hdf5_tpl_lnk_libs}")
+        separate_arguments(hdf5_tpl_lnk_libs_list UNIX_COMMAND "${hdf5_tpl_lnk_libs}")
     endif()
 else()
-    set(_temp_link_libs "${hdf5_tpl_lnk_libs}")
+    set(hdf5_tpl_lnk_libs_list "${hdf5_tpl_lnk_libs}")
 endif()
 
 # add -l to any libraries that are just their names (like "m" instead of "-lm")
+# this will get them into proper shape for the config.mk entry
 set(_fixed_link_libs)
-foreach(lib ${_temp_link_libs})
+foreach(lib ${hdf5_tpl_lnk_libs_list})
     if(NOT "${lib}" MATCHES ^[-/])
         # lib doesn't start with '-' (-l) or '/' ()
         set(_fixed_link_libs "${_fixed_link_libs} -l${lib}")
@@ -235,6 +261,18 @@ set(hdf5_tpl_lnk_flags "${hdf5_tpl_lnk_flags} ${hdf5_tpl_lnk_libs}")
 set(CONDUIT_HDF5_TPL_INC_FLAGS ${hdf5_tpl_inc_flags})
 set(CONDUIT_HDF5_TPL_LIB_FLAGS ${hdf5_tpl_lnk_flags})
 
+###################
+# Add extra libs
+###################
+# ZLIB
+list(APPEND HDF5_LIBRARIES ${ZLIB_LIBRARIES})
+
+#####################
+# any others reported
+#####################
+foreach(lib ${hdf5_tpl_lnk_libs_list})
+    list(APPEND HDF5_LIBRARIES ${lib})
+endif()
 
 #
 # Display main hdf5 cmake vars
