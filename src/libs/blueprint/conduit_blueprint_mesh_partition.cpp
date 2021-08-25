@@ -130,6 +130,7 @@ as_index_t_array(const conduit::Node &n)
 const std::string selection::DOMAIN_KEY("domain_id");
 const std::string selection::TOPOLOGY_KEY("topology");
 const int selection::FREE_DOMAIN_ID = -1;
+const int selection::FREE_RANK_ID = -1;
 
 //---------------------------------------------------------------------------
 selection::selection() : whole(selection::WHOLE_UNDETERMINED), domain(0),
@@ -213,7 +214,7 @@ selection::set_topology(const std::string &value)
 int
 selection::get_destination_rank() const
 {
-    return -1;
+    return FREE_RANK_ID;
 }
 
 //---------------------------------------------------------------------------
@@ -1535,14 +1536,16 @@ selection_field::print(std::ostream &os) const
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-partitioner::chunk::chunk() : mesh(nullptr), owns(false), destination_rank(-1),
-    destination_domain(-1)
+partitioner::chunk::chunk() : mesh(nullptr), owns(false), 
+    destination_rank(selection::FREE_RANK_ID),
+    destination_domain(selection::FREE_DOMAIN_ID)
 {
 }
 
 //---------------------------------------------------------------------------
 partitioner::chunk::chunk(const Node *m, bool own) : mesh(m), owns(own),
-    destination_rank(-1), destination_domain(-1)
+    destination_rank(selection::FREE_RANK_ID),
+    destination_domain(selection::FREE_DOMAIN_ID)
 {
 }
 
@@ -1880,9 +1883,9 @@ partitioner::count_targets() const
 {
     // We make a pass over the selections on this rank and determine the
     // number of selections that produce free domains. These are domains that
-    // have a -1 for their destination domain. We also figure out the number
-    // of named domains with unique domain ids. These are not double-counted.
-    // The number of actual targets is the sum.
+    // have FREE_DOMAIN_ID for their destination domain. We also figure out
+    // the number of named domains with unique domain ids. These are not
+    // double-counted. The number of actual targets is the sum.
     unsigned int free_domains = 0;
     std::set<int> named_domains;
     for(size_t i = 0; i < selections.size(); i++)
