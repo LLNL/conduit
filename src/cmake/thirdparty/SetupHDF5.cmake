@@ -236,6 +236,14 @@ else()
     set(hdf5_tpl_lnk_libs_list "${hdf5_tpl_lnk_libs}")
 endif()
 
+#
+# Add ZLIB to the hdf5_tpl_lnk_libs_list, so it will appear in config.mk
+#
+if(ZLIB_FOUND)
+    list(APPEND hdf5_tpl_lnk_libs_list ${ZLIB_LIBRARIES})
+endif()
+
+
 # add -l to any libraries that are just their names (like "m" instead of "-lm")
 # this will get them into proper shape for the config.mk entry
 set(_fixed_link_libs)
@@ -254,26 +262,15 @@ set(hdf5_tpl_lnk_libs "${_fixed_link_libs}")
 set(hdf5_tpl_lnk_flags "${hdf5_tpl_lnk_flags} ${hdf5_tpl_lnk_libs}")
 
 #
-# TODO: Add zlib libs to hdf5_tpl_lnk_flags
-#
-
-#
 # these will be used in Conduit's config.mk
 #
 set(CONDUIT_HDF5_TPL_INC_FLAGS ${hdf5_tpl_inc_flags})
 set(CONDUIT_HDF5_TPL_LIB_FLAGS ${hdf5_tpl_lnk_flags})
 
-###################
-# Add extra libs
-###################
-# ZLIB
-if(ZLIB_FOUND)
-    list(APPEND HDF5_LIBRARIES ${ZLIB_LIBRARIES})
-endif()
-
-#####################
-# any others reported
-#####################
+######################################################
+# Add any libs reported via hdf5_tpl_lnk_libs_list
+# as deps we need to link to
+######################################################
 foreach(lib ${hdf5_tpl_lnk_libs_list})
     list(APPEND HDF5_LIBRARIES ${lib})
 endforeach()
