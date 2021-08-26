@@ -5728,11 +5728,27 @@ private:
         const index_t matched_dim = (dimension == 3) ? dim_for_face[face_id] : dim_for_edge[face_id];
         if(other_dims)
         {
-            index_t other_dims_idx = 0;
-            for(index_t di = 0; di < dimension; di++)
+            if(dimension == 3)
             {
-                if(di == matched_dim) continue;
-                other_dims[other_dims_idx++] = di;
+                if(face_id < 2)     // face_id == 0 or 1
+                {
+                    other_dims[0] = 0;
+                    other_dims[1] = 1;
+                }
+                else if(face_id < 4) // face_id == 2 or 3
+                {
+                    other_dims[0] = 2;
+                    other_dims[1] = 0;
+                }
+                else                // face_id == 4 or 5
+                {
+                    other_dims[0] = 1;
+                    other_dims[1] = 2;
+                }
+            }
+            else if(dimension == 2)
+            {
+                other_dims[0] = (matched_dim == 0) ? 1 : 0;
             }
         }
         return matched_dim;
@@ -5797,6 +5813,49 @@ private:
                 in_dtype.endianness()));
         }
         return N;
+    }
+
+    void
+    lookup_case(const index_t lhs_face, const index_t rhs_face) const
+    {
+        if(dimension == 3)
+        {
+            std::array<index_t, 2> uv_rhs;
+            const index_t dim_lhs = determine_matched_dim(lhs_face);
+            const index_t dim_rhs = determine_matched_dim(rhs_face, uv_rhs.data());
+            static const int permutation_lookup[8][2] = {
+                {0, 1}, {1, 0}, {0, 1}, {1, 0}, // (u,v), (-v,u), (-u,-v), (v,-u)
+                {1, 0}, {0, 1}, {1, 0}, {0, 1}  // (v,u), (u,-v), (-v,-u), (-u,v)
+            };
+            static const bool permutation_lookup_reverse[8][2] = {
+                {false,false}, {true,false}, {true,true}, {false,true},
+                {false,false}, {false,true}, {true,true}, {true,false}
+            };
+            
+            
+
+        }
+    }
+
+    void
+    lookup_permutation_case(const index_t permutation, index_t *other_dims, index_t *reverse) const
+    {
+        if(dimension == 3)
+        {
+            static const index_t lookup0_axis[8] = {0, 1, 0, 1, 0, 1, 0, 1};
+            static const index_t lookup0_reverse[8] = {false, true, true, false, false, true, true, false};
+            static const index_t lookup1_axis[8] = {1, 0, 1, 0, 1, 0, 1, 0};
+            static const index_t lookup1_reverse[8] = {false, false, true, true, true, true, false, false};
+            std::array<index_t, 2> temp;
+            temp[0] = other_dims[lookup0_axis[permutation]];
+            temp[1] = other_dims[lookup1_axis[permutation]];
+            other_dims[0] = temp[0];
+            other_dims[1] = temp[1];
+        }
+        else if(dimension == 2)
+        {
+            reverse[0] = (permutation == 0) ? false : true;
+        }
     }
 
     bool combine_implicit_impl(const std::vector<const Node *> &n_meshes,
@@ -6180,8 +6239,8 @@ private:
 
         static const index_t faces3d[6][4] = {
             {0, 2, 3, 1}, {4, 6, 7, 5},  // Back  / Front (k0, kmax)
-            {4, 0, 1, 5}, {6, 2, 3, 7},  // Bottom/ Top   (j0, jmax)
-            {4, 6, 2, 0}, {5, 7, 3, 1}   // Left  / Right (i0, imax)
+            {0, 1, 5, 4}, {2, 3, 7, 6},  // Bottom/ Top   (j0, jmax)
+            {0, 4, 6, 2}, {1, 5, 7, 3}   // Left  / Right (i0, imax)
         };
 
         static const index_t edges2d[4][2] = {
@@ -6217,9 +6276,9 @@ private:
                             rhs_face[fi] = rhs_bb[faces3d[j][fi]];
                         }
 
-                        static const index_t perms[8][4] = {
-                            {0,1,2,3}, {3,2,1,0}, {3,0,1,2}, {2,3,0,1}, 
-                            {1,2,3,0}, {0,3,2,1}, {1,0,3,2}, {2,1,0,3}
+                        static const index_t perms[8][4] = {            // Inside our matched plane
+                            {0,1,2,3}, {3,0,1,2}, {2,3,0,1}, {1,2,3,0}, // (u,v), (-v,u), (-u,-v), (v,-u)
+                            {0,3,2,1}, {1,0,3,2}, {2,1,0,3}, {3,2,1,0}  // (v,u), (u,-v), (-v,-u), (-u,v)
                         };
 
                         for(index_t pi = 0; pi < 8; pi++)
@@ -6650,6 +6709,32 @@ private:
                         }
                         else
                         {
+                            // Determine final mesh size
+                            const index_t matched_dim = determine_matched_dim(lhs_face);
+                            std::array<index_t, MAXDIM> offsets_lhs{0,0,0};
+                            std::array<index_t, MAXDIM> offsets_rhs{0,0,0};
+
+                            lookup
+
+                            std::array<index_t, MAXDIM> new_dims{1, 1, 1};
+                            for(index_t i = 0; i < dimension; i++)
+                            {
+                                new_dims[i] = (i == matched_dim)
+                                    ? dims_lhs[i] + dims_rhs[i] - 1
+                                    : dims_lhs[i];
+                            }
+
+                            // Set the dims in our output topology
+                            new_topo["elements/dims/i"] = new_dims[0]-1;
+                            if(dimension > 1) new_topo["elements/dims/j"] = new_dims[1]-1;
+                            if(dimension > 2) new_topo["elements/dims/k"] = new_dims[2]-1;
+
+                            // Allocate output cset
+                            Schema out_schema;
+                            build_output_schema(n_cset_lhs["values"], new_dims.data(), out_schema);
+                            Node &out_vals = new_cset["values"];
+                            out_vals.set(out_schema);
+
                             CONDUIT_INFO("TODO: Handle complicated cases")
                             return false;
                         }
