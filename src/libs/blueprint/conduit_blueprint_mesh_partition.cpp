@@ -6179,14 +6179,14 @@ private:
         }
 
         static const index_t faces3d[6][4] = {
-            {0, 2, 3, 1}, {5, 7, 6, 4},  // Front / Back
-            {0, 1, 5, 4}, {2, 6, 7, 3},  // Bottom/ Top
-            {4, 6, 2, 0}, {1, 3, 7, 5}   // Left  / Right
+            {0, 2, 3, 1}, {4, 6, 7, 5},  // Back  / Front (k0, kmax)
+            {4, 0, 1, 5}, {6, 2, 3, 7},  // Bottom/ Top   (j0, jmax)
+            {4, 6, 2, 0}, {5, 7, 3, 1}   // Left  / Right (i0, imax)
         };
 
         static const index_t edges2d[4][2] = {
-            {0, 1}, {2, 3}, // Bottom/ Top
-            {0, 2}, {1, 3}  // Left  / Right
+            {0, 1}, {2, 3}, // Bottom/ Top   (j0, jmax)
+            {0, 2}, {1, 3}  // Left  / Right (i0, imax)
         };
 
         const auto match_faces = [this](
@@ -6218,7 +6218,7 @@ private:
                         }
 
                         static const index_t perms[8][4] = {
-                            {3,2,1,0}, {0,1,2,3}, {3,0,1,2}, {2,3,0,1}, 
+                            {0,1,2,3}, {3,2,1,0}, {3,0,1,2}, {2,3,0,1}, 
                             {1,2,3,0}, {0,3,2,1}, {1,0,3,2}, {2,1,0,3}
                         };
 
@@ -6386,9 +6386,10 @@ private:
                         index_t lhs_face = 0;
                         index_t rhs_face = 0;
                         bool simple_case  = false;
-                        if((ei_face == 1 && ej_face == 0)
+                        if((ej_permutation == 0) &&
+                            ((ei_face == 1 && ej_face == 0)
                             || (ei_face == 3 && ej_face == 2)
-                            || (ei_face == 5 && ej_face == 4))
+                            || (ei_face == 5 && ej_face == 4)))
                         {
                             n_lhs = n_meshi;
                             n_rhs = n_meshj;
@@ -6396,9 +6397,10 @@ private:
                             rhs_face = ej_face;
                             simple_case = true;
                         }
-                        else if((ei_face == 0 && ej_face == 1)
+                        else if((ej_permutation == 0) &&
+                            ((ei_face == 0 && ej_face == 1)
                             || (ei_face == 2 && ej_face == 3)
-                            || (ei_face == 4 && ej_face == 5))
+                            || (ei_face == 4 && ej_face == 5)))
                         {
                             n_lhs = n_meshj;
                             n_rhs = n_meshi;
