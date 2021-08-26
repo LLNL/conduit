@@ -5805,6 +5805,11 @@ point_merge::translate_system(coord_system in_system, coord_system out_system,
             break;
         }
         break;
+    default:
+        out_p0 = p0;
+        out_p1 = p1;
+        out_p2 = p2;
+        break;
     }
 }
 
@@ -5822,6 +5827,8 @@ point_merge::get_axes_for_system(coord_system cs)
         retval = &mesh::utils::SPHERICAL_AXES;
         break;
     case coord_system::cartesian: // Do nothing
+        break;
+    default:
         break;
     }
     return *retval;
@@ -7266,30 +7273,6 @@ partitioner::combine(int domain,
     {
         output_coordsets[i].remove("pointmaps");
     }
-}
-
-//-------------------------------------------------------------------------
-void
-partitioner::combine_as_structured(int domain,
-    const std::vector<const Node *> &inputs,
-    Node &output)
-{
-    // TODO: Make combined coordset and new structured topology (uniform,
-    //       rectilinear, structured) suitable for the output.
-}
-
-//-------------------------------------------------------------------------
-void
-partitioner::combine_as_unstructured(int domain,
-    const std::vector<const Node *> &inputs,
-    Node &output)
-{
-    // Combine mapping information stored in chunks to assemble new field
-    // that indicates original domain,pointid values for each point
-
-    // Determine names of all topologies
-
-
 }
 
 //-------------------------------------------------------------------------

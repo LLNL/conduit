@@ -24,8 +24,8 @@ using std::cout;
 using std::endl;
 
 // Uncomment these macros to enable debugging output.
-#define CONDUIT_DEBUG_MAP_CHUNKS
-#define CONDUIT_DEBUG_COMMUNICATE_CHUNKS
+//#define CONDUIT_DEBUG_MAP_CHUNKS
+//#define CONDUIT_DEBUG_COMMUNICATE_CHUNKS
 
 // Renumber domains in parallel
 #define RENUMBER_DOMAINS
@@ -319,9 +319,8 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
 #endif
 
     // Determine how many ranks are free to move to various domains.
-    // Also determine the domain ids in use and how many chunks
-    // comprise each of them.
-    std::map<int,int> domain_sizes;
+    // Also determine the domain ids that are reserved.
+    std::set<int> reserved_dd;
     int free_to_move = 0;
     for(int i = 0; i < ntotal_chunks; i++)
     {
@@ -329,233 +328,158 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         if(domid == selection::FREE_DOMAIN_ID)
             free_to_move++;
         else
-        {
-            std::map<int,int>::iterator it = domain_sizes.find(domid);
-            if(it == domain_sizes.end())
-                domain_sizes[domid] = 1;
-            else
-                it->second++;
-        }
+            reserved_dd.insert(domid);
     }
 
 #ifdef CONDUIT_DEBUG_MAP_CHUNKS
     if(rank == 0)
     {
-        cout << "domain_sizes = {";
-        for(std::map<int,int>::const_iterator it = domain_sizes.begin();
-            it != domain_sizes.end(); it++)
+        cout << "reserved_dd = {";
+        for(int dd : reserved_dd)
         {
-            cout << it->first << ":" << it->second << ", ";
+            cout << dd << ", ";
         }
         cout << "}" << endl;
         cout << "free_to_move = " << free_to_move << endl;
+        cout << "target = " << target << endl;
     }
 #endif
 
-    if(free_to_move == 0)
+    // Pass out global information
+    dest_rank.reserve(ntotal_chunks);
+    dest_domain.reserve(ntotal_chunks);
+    for(int i = 0; i < ntotal_chunks; i++)
     {
-        // No chunks are free to move around into domains. We may still need
-        // to assign domains to ranks though.
+        dest_rank.push_back(global_chunk_info[i].destination_rank);
+        dest_domain.push_back(global_chunk_info[i].destination_domain);
+    }
+    _offsets.swap(offsets);
 
-        // NOTE: This may mean that we do not get #target domains though.
-        if(!domain_sizes.empty() && domain_sizes.size() != target)
+    //-------------------------------------------------------------------
+    // Assign domain numbers for any chunks that are not numbered.
+    //-------------------------------------------------------------------
+    // Figure out the size of the named domains. We'll add unassigned
+    // domains to them.
+    std::map<int,int> domain_elem_counts;
+    for(int i = 0; i < ntotal_chunks; i++)
+    {
+        if(dest_domain[i] != selection::FREE_DOMAIN_ID)
         {
-            CONDUIT_WARN("The unique number of domain ids "
-                << domain_sizes.size()
-                << " was not equal to the desired target number of domains: "
-                << target  << ".");
-        }
-
-        // Pass out global information
-        dest_rank.reserve(ntotal_chunks);
-        dest_domain.reserve(ntotal_chunks);
-        for(int i = 0; i < ntotal_chunks; i++)
-        {
-            dest_rank.push_back(global_chunk_info[i].destination_rank);
-            dest_domain.push_back(global_chunk_info[i].destination_domain);
-        }
-        _offsets.swap(offsets);
-
-        // Take a look at the dest_rank values to see if there are domains
-        // for which we need to assign to ranks.
-        std::set<int> domains_to_assign;
-        std::map<int,int> domain_elem_counts, rank_elem_counts;
-        for(int i = 0; i < size; i++)
-            rank_elem_counts[i] = 0;
-        for(int i = 0; i < ntotal_chunks; i++)
-        {
-            if(dest_rank[i] == selection::FREE_RANK_ID)
-            {
-                // This domain is not assigned to a rank.                
-                domains_to_assign.insert(dest_domain[i]);
-            }
-            else
-            {
-                // Add the cells to the known rank.
-                rank_elem_counts[dest_rank[i]] += global_chunk_info[i].num_elements;
-            }
-            
-            // Help determine the overall element count for the domain.
             std::map<int,int>::iterator it = domain_elem_counts.find(dest_domain[i]);
             if(it == domain_elem_counts.end())
                 domain_elem_counts[dest_domain[i]] = global_chunk_info[i].num_elements;
             else
                 it->second += global_chunk_info[i].num_elements;
         }
-        // Assign domains that do not have a dest_rank.
-        if(!domains_to_assign.empty())
-        {
-            for(auto domid : domains_to_assign)
-            {
-                // Find the rank that has the least cells.
-                std::map<int,int>::iterator it, rit;
-                rit = rank_elem_counts.begin();
-                for(it = rank_elem_counts.begin(); it != rank_elem_counts.end(); it++)
-                {
-                    if(it->second < rit->second)
-                        rit = it;
-                }
-                // Now we know which rank will get the domain. Record it
-                // into dest_rank.
-                rit->second += domain_elem_counts[domid];
-                for(int i = 0; i < ntotal_chunks; i++)
-                {
-                    if(dest_domain[i] == domid)
-                        dest_rank[i] = rit->first;
-                }
-            }
-        }
     }
-    else if(free_to_move == ntotal_chunks)
+    if(reserved_dd.size() > target)
     {
-        // No chunks told us where they go so ALL are free to move.
-#ifdef CONDUIT_DEBUG_MAP_CHUNKS
-        if(rank == 0)
-        {
-            cout << "** We decide where chunks go." << endl;
-        }
-#endif
-        // We must make #target domains from the chunks we have. Since
-        // no chunks told us a domain id they want to be inside, we can
-        // number domains 0..target. This scheme ignores the chunk's
-        // destination_rank.
-
-        std::vector<uint64> target_element_counts(target, 0);
-        std::vector<uint64> next_target_element_counts(target);
-        std::vector<int> global_dest_rank(ntotal_chunks, selection::FREE_RANK_ID);
-        std::vector<int> global_dest_domain(ntotal_chunks, 0);
-        for(int i = 0; i < ntotal_chunks; i++)
-        {
-            // Add the size of this chunk to all targets.
-            for(unsigned int r = 0; r < target; r++)
-            {
-                next_target_element_counts[r] = target_element_counts[r] +
-                                                global_chunk_info[i].num_elements;
-            }
-
-            // Find the index of the min value in next_target_element_counts.
-            // This way, we'll let that target domain have the chunk as
-            // we are trying to balance the sizes of the output domains.
-            //
-            // NOTE: We could consider other metrics too such as making the
-            //       smallest bounding box so we keep things close together.
-            //
-            // NOTE: This method has the potential to move chunks far away.
-            //       It is sprinkling chunks into targets 0,1,2,... and 
-            //       and then repeating when the number of elements is ascending.
-            int idx = 0;
-            for(unsigned int r = 1; r < target; r++)
-            {
-                if(next_target_element_counts[r] < next_target_element_counts[idx])
-                    idx = r;
-            }
-
-            // Add the current chunk to the specified target domain.
-            target_element_counts[idx] += global_chunk_info[i].num_elements;
-            global_dest_domain[i] = idx;
-#ifdef CONDUIT_DEBUG_MAP_CHUNKS
-            if(rank == 0)
-            {
-                cout << "Add chunk " << i << " to domain " << idx
-                     << " (nelem=" << target_element_counts[idx] << ")" << endl;
-            }
-#endif
-        }
-
-        // We now have a global map indicating the final domain to which
-        // each chunk will contribute. Spread target domains across size ranks.
-        std::vector<int> rank_domain_count(size, 0);
-        int divsize = std::min(size, static_cast<int>(target));
-        for(unsigned int i = 0; i < target; i++)
-            rank_domain_count[i % divsize]++;
-
-        // Figure out which source chunks join which ranks.
-        int target_id = 0;
-        for(int r = 0; r < size; r++)
-        {
-#ifdef CONDUIT_DEBUG_MAP_CHUNKS
-            if(rank == 0)
-            {
-                cout << "r=" << r << ", rank_domain_count[r]="
-                     << rank_domain_count[r] << endl;
-            }
-#endif
-            if(rank_domain_count[r] == 0)
-                break;
-            // For each domain on this rank r.
-            for(int j = 0; j < rank_domain_count[r]; j++)
-            {
-                for(int i = 0; i < ntotal_chunks; i++)
-                {
-                    if(global_dest_domain[i] == target_id)
-                    {
-#ifdef CONDUIT_DEBUG_MAP_CHUNKS
-                        if(rank == 0)
-                        {
-                            cout << "global domain " << target_id
-                                 << " goes to " << r << endl;
-                        }
-#endif
-                        global_dest_rank[i] = r;
-                    }
-                }
-                target_id++;
-            }
-        }
-#ifdef CONDUIT_DEBUG_MAP_CHUNKS
-        if(rank == 0)
-        {
-            cout << "target=" << target << endl;
-            cout << "target_element_counts = {";
-            for(size_t i = 0; i < target_element_counts.size(); i++)
-                cout << target_element_counts[i] << ", ";
-            cout << "}" << endl;
-            cout << "global_dest_rank = {";
-            for(size_t i = 0; i < global_dest_rank.size(); i++)
-                cout << global_dest_rank[i] << ", ";
-            cout << "}" << endl;
-            cout << "global_dest_domain = {";
-            for(size_t i = 0; i < global_dest_domain.size(); i++)
-                cout << global_dest_domain[i] << ", ";
-            cout << "}" << endl;
-            cout << "rank_domain_count = {";
-            for(size_t i = 0; i < rank_domain_count.size(); i++)
-                cout << rank_domain_count[i] << ", ";
-            cout << "}" << endl;
-        }
-#endif
-        // Pass out the global information.
-        dest_rank.swap(global_dest_rank);
-        dest_domain.swap(global_dest_domain);
-        _offsets.swap(offsets);
+        // We're not going to produce the target number of domains because
+        // some chunks have told us which domains they want to be part of.
+        // We will add any unassigned domains into these existing domains.
+        CONDUIT_WARN("The unique number of domain ids "
+            << reserved_dd.size()
+            << " is greater than the desired target number of domains: "
+            << target  << ".");
     }
     else
     {
-        // There must have been a combination of chunks that told us where
-        // they want to go and some that did not. Determine whether we want
-        // to handle this.
-        CONDUIT_ERROR("Invalid mixture of destination rank/domain specifications.");
+        // We have some named domains and some unassigned domains that we
+        // need to group together.
+        int domains_to_create = static_cast<int>(target) -
+                                static_cast<int>(reserved_dd.size());
+
+        // Generate some additional domain numbers.
+        int domid = 0;
+        for(int i = 0; i < domains_to_create; i++)
+        {
+            while(reserved_dd.find(domid) != reserved_dd.end())
+                domid++;
+            reserved_dd.insert(domid);
+            domain_elem_counts[domid] = 0;
+        }
     }
+    // Assign any unassigned domains to the domains in domain_elem_counts
+    for(int i = 0; i < ntotal_chunks; i++)
+    {
+        if(dest_domain[i] == selection::FREE_DOMAIN_ID)
+        {
+            // Find the domain that has the least cells.
+            std::map<int,int>::iterator it, dit;
+            dit = domain_elem_counts.begin();
+            for(it = domain_elem_counts.begin(); it != domain_elem_counts.end(); it++)
+            {
+                if(it->second < dit->second)
+                    dit = it;
+            }
+
+            dest_domain[i] = dit->first;
+            dit->second += global_chunk_info[i].num_elements;
+        }
+    }
+    // All domains should be assigned in dest_domain at this point.
+
+    //-------------------------------------------------------------------
+    // Assign domains to a rank if they are not already assigned.
+    //-------------------------------------------------------------------
+    // Take a look at the dest_rank values to see if there are domains
+    // for which we need to assign to ranks.
+    std::set<int> domains_to_assign;
+    std::map<int,int> rank_elem_counts;
+    for(int i = 0; i < size; i++)
+        rank_elem_counts[i] = 0;
+    for(int i = 0; i < ntotal_chunks; i++)
+    {
+        if(dest_rank[i] == selection::FREE_RANK_ID)
+        {
+            // This domain is not assigned to a rank.                
+            domains_to_assign.insert(dest_domain[i]);
+        }
+        else
+        {
+            // Add the cells to the known rank.
+            rank_elem_counts[dest_rank[i]] += global_chunk_info[i].num_elements;
+        }
+    }
+#if 1
+    // NOTE: This could be better. We could try to minimize communication
+    //       by keeping domains where they are if possible while also
+    //       trying to keep things balanced.
+
+    // Add domains to ranks largest to smallest. This should
+    // make smaller domains group together on a rank to some extent.
+    std::multimap<int,int> size_to_domain;
+    for(auto domid : domains_to_assign)
+        size_to_domain.emplace(std::make_pair(domain_elem_counts[domid], domid));
+
+    // Assign domains that do not have a dest_rank.
+    for(std::multimap<int,int>::reverse_iterator sit = size_to_domain.rbegin();
+        sit != size_to_domain.rend(); sit++)
+    {
+        int domid = sit->second;
+#else
+    // Assign domains that do not have a dest_rank.
+    for(auto domid : domains_to_assign)
+    {
+#endif
+        // Find the rank that has the least elements.
+        std::map<int,int>::iterator it, rit;
+        rit = rank_elem_counts.begin();
+        for(it = rank_elem_counts.begin(); it != rank_elem_counts.end(); it++)
+        {
+            if(it->second < rit->second)
+                rit = it;
+        }
+        // Now we know which rank will get the domain. Record it
+        // into dest_rank.
+        rit->second += domain_elem_counts[domid];
+        for(int i = 0; i < ntotal_chunks; i++)
+        {
+            if(dest_domain[i] == domid)
+                dest_rank[i] = rit->first;
+        }
+    }
+
 #ifdef CONDUIT_DEBUG_MAP_CHUNKS
     // We're passing out global info now so all ranks should be the same.
     if(rank == 0)
@@ -673,7 +597,7 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
                     (*n_recv)["state/cycle"] = (*chunks[local_i].mesh)["state/cycle"];
                 if(chunks[local_i].mesh->has_path("state/time"))
                     (*n_recv)["state/time"] = (*chunks[local_i].mesh)["state/time"];
-                (*n_recv)["state/domain_id"] = i;
+                (*n_recv)["state/domain_id"] = dest_domain[i];
 
                 // Save the chunk "wrapper" that has its own state.
                 chunks_to_assemble.push_back(chunk(n_recv, true));
@@ -695,7 +619,7 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
                 C.add_irecv(*n_recv, src_rank[i], tag);
 
 #ifdef RENUMBER_DOMAINS
-                node_domains[n_recv] = i;
+                node_domains[n_recv] = dest_domain[i];
 #endif
                 // Save the received chunk and indicate we own it for later.
                 chunks_to_assemble.push_back(chunk(n_recv, true));

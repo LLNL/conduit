@@ -506,35 +506,6 @@ protected:
     std::string recommended_topology(const std::vector<const Node *> &inputs) const;
 
     /**
-     @brief Given a set of inputs that are predetermined to fit together
-            into a logically structured output, perform the actual
-            recombination to yield a single mesh (uniform, rectilinear, ...)
-            in the output.
-
-     @param domain The input domain number (in case we want to record it)
-     @param inputs A vector of Blueprint mesh nodes to combine.
-     @param output The Conduit node into which the combined mesh output
-                   will be added.
-     */
-    void combine_as_structured(int domain,
-                               const std::vector<const Node *> &inputs,
-                               Node &output);
-
-    /**
-     @brief Given a set of inputs that are of various types, assemble them
-            into a single output mesh with unstructured topology. This
-            method combines like-named coordsets and topologies.
-
-     @param domain The input domain number (in case we want to record it)
-     @param inputs A vector of Blueprint mesh nodes to combine.
-     @param output The Conduit node into which the combined mesh output
-                   will be added.
-     */
-    void combine_as_unstructured(int domain,
-                                 const std::vector<const Node *> &inputs,
-                                 Node &output);
-
-    /**
      @brief Given a local set of chunks, figure out starting domain index
             that will be used when numbering domains on a rank. We figure
             out which ranks get domains and this is the scan of the domain

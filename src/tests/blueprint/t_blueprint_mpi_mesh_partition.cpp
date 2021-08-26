@@ -26,7 +26,7 @@ using std::cout;
 using std::endl;
 
 // Enable this macro to generate baselines.
-#define GENERATE_BASELINES
+//#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
@@ -119,7 +119,7 @@ rank_str(int rank)
     sprintf(tmp, "%02d", rank);
     return std::string(tmp);
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(blueprint_mesh_mpi_partition, all_ranks)
 {
@@ -680,7 +680,7 @@ const char *opt0[4] = {
 };
     options.reset(); options.parse(opt0[rank], "yaml");
     conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
-    int ndom0[] = {2,2,2,1};
+    int ndom0[] = {1,1,1,4};
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), ndom0[rank]);
 
     // Each rank wants a different target. Partition will take the max. target=4.
@@ -704,11 +704,10 @@ const char *opt2[4] = {
 };
     options.reset(); options.parse(opt2[rank], "yaml");
     conduit::blueprint::mpi::mesh::partition(input, options, output, MPI_COMM_WORLD);
-    int ndom2[] = {2,2,2,1};
+    int ndom2[] = {1,1,1,4};
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), ndom2[rank]);
-
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(blueprint_mesh_mpi_partition, field_selection)
 {
@@ -799,10 +798,6 @@ TEST(blueprint_mesh_mpi_partition, field_selection)
     EXPECT_EQ(compare_baseline(b02, output), true);
 #endif
 }
-
-// Right now, data for selections are redistributed over available ranks.
-// Should this be an option? If we left them in place then partition() could
-// be used purely for selection.
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

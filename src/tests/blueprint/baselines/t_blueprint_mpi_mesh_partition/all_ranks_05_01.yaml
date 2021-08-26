@@ -1,13 +1,10 @@
 
-state: 
-  cycle: 0
-  domain_id: 2
 coordsets: 
   coords: 
-    type: "rectilinear"
     values: 
-      x: [0.0, 1.0, 2.0]
-      y: [1.0, 2.0, 3.0]
+      x: [-2.0, -1.0, 0.0]
+      y: [0.0, 1.0, 2.0, 3.0]
+    type: "rectilinear"
 topologies: 
   topo: 
     type: "rectilinear"
@@ -16,16 +13,19 @@ fields:
   dist: 
     association: "vertex"
     topology: "topo"
-    values: [-2.0, -1.0, 0.0, -1.0, -0.585786437626905, 0.23606797749979, 0.0, 0.23606797749979, 0.82842712474619]
+    values: [-1.0, -2.0, -3.0, -0.76393202250021, -1.5857864376269, -2.0, -0.17157287525381, -0.76393202250021, -1.0, 0.605551275463989, 0.16227766016838, 0.0]
   original_vertex_ids: 
     association: "vertex"
     topology: "topo"
     values: 
-      domains: [20, 20, 20, 20, 20, 20, 20, 20, 20]
-      ids: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      domains: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+      ids: [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15]
   original_element_ids: 
     association: "element"
     topology: "topo"
     values: 
-      domains: [20, 20, 20, 20]
-      ids: [0, 1, 2, 3]
+      domains: [30, 30, 30, 30, 30, 30]
+      ids: [1, 2, 4, 5, 7, 8]
+state: 
+  cycle: 0
+  domain_id: 3
