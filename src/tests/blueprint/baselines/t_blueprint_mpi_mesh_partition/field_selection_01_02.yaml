@@ -16,7 +16,7 @@ topologies:
 state: 
   time: 3.1415
   cycle: 1
-  domain_id: 3
+  domain_id: 22
 fields: 
   braid: 
     association: "vertex"
