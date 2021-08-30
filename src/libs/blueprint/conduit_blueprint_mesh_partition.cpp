@@ -5816,45 +5816,82 @@ private:
     }
 
     void
-    lookup_case(const index_t lhs_face, const index_t rhs_face) const
+    lookup_case(const index_t lhs_face, const index_t rhs_face, 
+        const index_t rhs_permutation, 
+        index_t *lhs_order, int *lhs_reverse,
+        index_t *rhs_order, int *rhs_reverse) const
     {
         if(dimension == 3)
         {
+            std::array<index_t, 2> uv_lhs;
             std::array<index_t, 2> uv_rhs;
-            const index_t dim_lhs = determine_matched_dim(lhs_face);
+            const index_t dim_lhs = determine_matched_dim(lhs_face, uv_lhs.data());
             const index_t dim_rhs = determine_matched_dim(rhs_face, uv_rhs.data());
             static const int permutation_lookup[8][2] = {
                 {0, 1}, {1, 0}, {0, 1}, {1, 0}, // (u,v), (-v,u), (-u,-v), (v,-u)
                 {1, 0}, {0, 1}, {1, 0}, {0, 1}  // (v,u), (u,-v), (-v,-u), (-u,v)
             };
-            static const bool permutation_lookup_reverse[8][2] = {
+            static const int permutation_lookup_reverse[8][2] = {
                 {false,false}, {true,false}, {true,true}, {false,true},
                 {false,false}, {false,true}, {true,true}, {true,false}
             };
-            
-            
-
-        }
-    }
-
-    void
-    lookup_permutation_case(const index_t permutation, index_t *other_dims, index_t *reverse) const
-    {
-        if(dimension == 3)
-        {
-            static const index_t lookup0_axis[8] = {0, 1, 0, 1, 0, 1, 0, 1};
-            static const index_t lookup0_reverse[8] = {false, true, true, false, false, true, true, false};
-            static const index_t lookup1_axis[8] = {1, 0, 1, 0, 1, 0, 1, 0};
-            static const index_t lookup1_reverse[8] = {false, false, true, true, true, true, false, false};
+            const int *perm = permutation_lookup[rhs_permutation];
+            const int *rev  = permutation_lookup_reverse[rhs_permutation];
             std::array<index_t, 2> temp;
-            temp[0] = other_dims[lookup0_axis[permutation]];
-            temp[1] = other_dims[lookup1_axis[permutation]];
-            other_dims[0] = temp[0];
-            other_dims[1] = temp[1];
+            std::cout << "PERMUTATION " << rhs_permutation << std::endl;
+            std::cout << "RHS UV:\n  ";
+            for(int  i = 0; i < 2; i++)
+            {
+                temp[i] = uv_rhs[perm[i]];
+                std::cout << temp[i] << " ";
+            }
+            std::cout << std::endl;
+            std::cout << "RHS REV:\n  ";
+            for(int  i = 0; i < 2; i++)
+            {
+                std::cout <<  rev[perm[i]] << " ";
+            }
+            std::cout << std::endl;
+
+            rhs_order[dim_lhs]   = dim_rhs;
+            rhs_order[uv_lhs[0]] = temp[0];
+            rhs_order[uv_lhs[1]] = temp[1];
+            rhs_reverse[0] = 0; rhs_reverse[1] = 0; rhs_reverse[2] = 0;
+            rhs_reverse[uv_lhs[0]] = rev[perm[0]];
+            rhs_reverse[uv_lhs[1]] = rev[perm[1]];
+            lhs_order[0] = 0;
+            lhs_order[1] = 1;
+            lhs_order[2] = 2;
+            lhs_reverse[0] = false;
+            lhs_reverse[1] = false;
+            lhs_reverse[2] = false;
+            if(lhs_face == 0 || lhs_face == 2 || lhs_face == 4)
+            {
+                lhs_reverse[dim_lhs] = true;
+            }
         }
         else if(dimension == 2)
         {
-            reverse[0] = (permutation == 0) ? false : true;
+            const index_t dim_lhs = determine_matched_dim(lhs_face);
+            const index_t dim_rhs = determine_matched_dim(rhs_face);
+            const index_t other_dim_lhs = (dim_lhs == 0) ? 1 : 0;
+            const index_t other_dim_rhs = (dim_rhs == 0) ? 1 : 0;
+
+            rhs_order[dim_lhs] = dim_rhs;
+            rhs_order[other_dim_lhs] = other_dim_rhs;
+            rhs_reverse[dim_lhs] = false;
+            if(rhs_permutation != 0)
+            {
+                rhs_reverse[other_dim_lhs] = true;
+            }
+            lhs_order[0] = 0;
+            lhs_order[1] = 1;
+            lhs_reverse[0] = false;
+            lhs_reverse[1] = false;
+            if(lhs_face == 0 || lhs_face == 2)
+            {
+                lhs_reverse[dim_lhs] = true;
+            }
         }
     }
 
@@ -6361,37 +6398,6 @@ private:
         index_t iteration = 0;
         while(meshes_and_bbs.size() > 1)
         {
-            // Print the work in progress
-            // std::cout << "iteration " << iteration << "\n";
-        #if 0
-            for(size_t ei = 0; ei < csets_and_bbs.size(); ei++)
-            {
-                // const Node *n = csets_and_bbs[ei].first;
-                const auto &bb = csets_and_bbs[ei].second;
-                std::cout << "  " << ei << ": min[";
-                for(index_t d = 0; d < dimension; d++)
-                {
-                    std::cout << bb.min[d] << (d == (dimension - 1) ? "] " : ", ");
-                }
-                std::cout << "  " << ei << ": max[";
-                for(index_t d = 0; d < dimension; d++)
-                {
-                    std::cout << bb.max[d] << (d == (dimension - 1) ? "] " : ", ");
-                }
-                std::cout << "\n";
-            }
-            std::cout << std::endl;
-        #elif 0
-            output.print();
-        #elif 0
-            for(size_t ei = 0; ei < csets_and_bbs.size(); ei++)
-            {
-                std::cout << "[" << ei << "]" << std::endl;
-                csets_and_bbs[ei].first->print();
-            }
-            std::cout << std::endl;
-        #else
-        #endif
             iteration++;
 
             // Get the first extents
@@ -6711,16 +6717,18 @@ private:
                         {
                             // Determine final mesh size
                             const index_t matched_dim = determine_matched_dim(lhs_face);
-                            std::array<index_t, MAXDIM> offsets_lhs{0,0,0};
-                            std::array<index_t, MAXDIM> offsets_rhs{0,0,0};
-
-                            lookup
-
+                            std::array<index_t, MAXDIM> order_lhs{0,1,2};
+                            std::array<index_t, MAXDIM> order_rhs{0,1,2};
+                            std::array<int, MAXDIM>     reverse_lhs{0,0,0};
+                            std::array<int, MAXDIM>     reverse_rhs{0,0,0};
+                            lookup_case(lhs_face, rhs_face, ej_permutation, 
+                                order_lhs.data(), reverse_lhs.data(), 
+                                order_rhs.data(), reverse_rhs.data());
                             std::array<index_t, MAXDIM> new_dims{1, 1, 1};
                             for(index_t i = 0; i < dimension; i++)
                             {
                                 new_dims[i] = (i == matched_dim)
-                                    ? dims_lhs[i] + dims_rhs[i] - 1
+                                    ? dims_lhs[i] + dims_rhs[order_rhs[i]] - 1
                                     : dims_lhs[i];
                             }
 
@@ -6731,12 +6739,114 @@ private:
 
                             // Allocate output cset
                             Schema out_schema;
-                            build_output_schema(n_cset_lhs["values"], new_dims.data(), out_schema);
+                            const index_t N = build_output_schema(n_cset_lhs["values"], new_dims.data(), out_schema);
                             Node &out_vals = new_cset["values"];
                             out_vals.set(out_schema);
 
-                            CONDUIT_INFO("TODO: Handle complicated cases")
-                            return false;
+                            Schema pointmap;
+                            pointmap["domains"].set(DataType::index_t(N, 0, 2*sizeof(index_t)));
+                            pointmap["ids"].set(DataType::index_t(N, sizeof(index_t), 2*sizeof(index_t)));
+                            new_mesh["fields/orig_vert_ids/topology"].set(new_topo.name());
+                            new_mesh["fields/orig_vert_ids/association"].set("vertex");
+                            new_mesh["fields/orig_vert_ids/values"].set(pointmap);
+                            Node &n_pointmap = new_mesh["fields/orig_vert_ids/values"];
+                            DataArray<index_t> orig_domains = n_pointmap["domains"].value();
+                            DataArray<index_t> orig_ids     = n_pointmap["ids"].value();
+                            
+                            {
+                                // LHS shouldn't have offsets but it may need to reverse a dim
+                                const index_t d2m1 = dims_lhs[2] - 1;
+                                const index_t d1m1 = dims_lhs[1] - 1;
+                                const index_t d0m1 = dims_lhs[0] - 1;
+                                const Node &in_vals = n_cset_lhs["values"];
+                                for(auto r : reverse_lhs)
+                                    std::cout << r << " ";
+                                std::cout << std::endl;
+                                for(index_t k = 0; k < dims_lhs[2]; k++)
+                                {
+                                    const index_t kactual = reverse_lhs[2] ? (d2m1-k) : k;
+                                    for(index_t j = 0; j < dims_lhs[1]; j++)
+                                    {
+                                        const index_t jactual = reverse_lhs[1] ? (d1m1-j) : j;
+                                        for(index_t i = 0; i < dims_lhs[0]; i++)
+                                        {
+                                            const std::array<index_t, 3> ijk_local = {
+                                                reverse_lhs[0] ? (d0m1-i) : i, 
+                                                jactual, 
+                                                kactual
+                                            };
+                                            const std::array<index_t, 3> ijk_global = {i,j,k};
+                                            index_t local_id, global_id;
+                                            grid_ijk_to_id(ijk_local.data(), dims_lhs.data(), local_id);
+                                            grid_ijk_to_id(ijk_global.data(), new_dims.data(), global_id);
+                                            for(index_t ci = 0; ci < dimension; ci++)
+                                            {
+                                                const auto bytes = out_vals[ci].dtype().element_bytes();
+                                                void *out_data = out_vals[ci].element_ptr(global_id);
+                                                const void *in_data = in_vals[ci].element_ptr(local_id);
+                                                memcpy(out_data, in_data, bytes);
+                                            }
+                                            orig_domains[global_id] = 0;
+                                            orig_ids[global_id]     = local_id;
+                                        }
+                                    }
+                                }
+                            }
+                            // RHS
+                            {
+                                std::array<index_t, MAXDIM> offsets{0,0,0};
+                                offsets[matched_dim] = dims_lhs[matched_dim] - 1;
+                                const index_t d2   = dims_rhs[order_rhs[2]];
+                                const index_t d1   = dims_rhs[order_rhs[1]];
+                                const index_t d0   = dims_rhs[order_rhs[0]];
+                                const index_t d2m1 = d2 - 1;
+                                const index_t d1m1 = d1 - 1;
+                                const index_t d0m1 = d0 - 1;
+                                const Node &in_vals = n_cset_rhs["values"];
+                                for(auto r : reverse_rhs)
+                                {
+                                    std::cout << r << " ";
+                                }
+                                std::cout << std::endl;
+                                for(index_t k = 0; k < d2; k++)
+                                {
+                                    const index_t kactual = reverse_rhs[2] ? (d2m1-k) : k;
+                                    for(index_t j = 0; j < d1; j++)
+                                    {
+                                        const index_t jactual = reverse_rhs[1] ? (d1m1-j) : j;
+                                        for(index_t i = 0; i < d0; i++)
+                                        {
+                                            const std::array<index_t, 3> ijk_global = {
+                                                i+offsets[0],
+                                                j+offsets[1],
+                                                k+offsets[2]
+                                            };
+                                            std::array<index_t, 3> ijk_local;
+                                            ijk_local[order_rhs[0]] = reverse_rhs[0] ? d0m1-i : i;
+                                            ijk_local[order_rhs[1]] = jactual;
+                                            ijk_local[order_rhs[2]] = kactual;
+                                            index_t local_id, global_id;
+                                            grid_ijk_to_id(ijk_local.data(), dims_rhs.data(), local_id);
+                                            grid_ijk_to_id(ijk_global.data(), new_dims.data(), global_id);
+                                            for(index_t ci = 0; ci < dimension; ci++)
+                                            {
+                                                const auto bytes = out_vals[order_rhs[ci]].dtype().element_bytes();
+                                                void *out_data = out_vals[order_rhs[ci]].element_ptr(global_id);
+                                                const void *in_data = in_vals[order_rhs[ci]].element_ptr(local_id);
+                                                memcpy(out_data, in_data, bytes);
+                                            }
+                                            orig_domains[global_id] = 1;
+                                            orig_ids[global_id]     = local_id;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        {
+                            std::ofstream out("intermediate_mesh.yaml");
+                            new_mesh.to_string_stream(out);
+                            out << std::endl;
                         }
 
                         meshes_and_bbs[ei].first = &new_mesh;

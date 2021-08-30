@@ -1650,6 +1650,7 @@ TEST(blueprint_mesh_combine, rectilinear)
 
 TEST(blueprint_mesh_combine, structured)
 {
+#if 0
     const auto braid_cases = [](bool is3d) {
         const std::string base_name = "combine_structured";
         const std::string case_name = (is3d) ? "3d" : "2d";
@@ -1673,6 +1674,7 @@ TEST(blueprint_mesh_combine, structured)
     };
     braid_cases(false);
     braid_cases(true);
+#endif
 
     #if 0
     // Test 2
@@ -1788,8 +1790,13 @@ TEST(blueprint_mesh_combine, structured)
                     for(i = 0; i < dims[0]; i++, id++, t+=dt)
                     {
                         vfield[id]     = id;
+#if 1
                         coords[idx++] = std::cos(t) * j1;
                         coords[idx++] = std::sin(t) * j1;
+#else
+                        coords[idx++] = j1;
+                        coords[idx++] = i;
+#endif
                         coords[idx++] = k;
                     }
                 }
