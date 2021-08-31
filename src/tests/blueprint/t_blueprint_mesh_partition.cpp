@@ -1087,6 +1087,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
 //-----------------------------------------------------------------------------
 //-- Combine topology --
 //-----------------------------------------------------------------------------
+#if 0
 TEST(conduit_blueprint_mesh_combine, recombine_braid)
 {
     const auto recombine_braid_case = [](const std::string &case_name, const conduit::index_t *vdims)
@@ -1647,6 +1648,179 @@ TEST(blueprint_mesh_combine, rectilinear)
     #endif
     }
 }
+#endif
+
+void create_structured_domain(conduit::Node &out, const int domain_id,
+    const int dimension, const int *dims, const int *reorder,
+    const float *origin, const float *scale, const float *g_origin)
+{
+    using namespace conduit;
+
+    // Reorder the dims
+    int real_dims[3];
+    for(int i = 0; i < dimension; i++)
+    {
+        real_dims[i] = dims[reorder[i]];
+    }
+
+    // Number of verticies/elements
+    int nverts = 1, nelems = 1;
+    for(int i = 0; i < dimension; i++)
+    {
+        nverts *= real_dims[i];
+        nelems *= (real_dims[i] - 1);
+    }
+
+    // Define the mesh in conduit blueprint form
+    out["state/domain_id"] = (index_t)domain_id;
+    out["topologies/mesh/type"] = "structured";
+    out["topologies/mesh/coordset"] = "coords";
+    out["topologies/mesh/elements/dims/i"] = real_dims[0]-1;
+    out["topologies/mesh/elements/dims/j"] = real_dims[1]-1;
+    if(dimension > 2)
+        out["topologies/mesh/elements/dims/k"] = real_dims[2]-1;
+    out["coordsets/coords/type"] = "explicit";
+    Schema s;
+    s["x"].set(DataType::c_float(nverts,               0, sizeof(float)*dimension));
+    s["y"].set(DataType::c_float(nverts,   sizeof(float), sizeof(float)*dimension));
+    if(dimension > 2)
+        s["z"].set(DataType::c_float(nverts, 2*sizeof(float), sizeof(float)*dimension));
+    out["coordsets/coords/values"].set(s);
+    out["fields/vert_field/topology"] = "mesh";
+    out["fields/vert_field/association"] = "vertex";
+    out["fields/vert_field/values"].set(DataType::c_float(nverts));
+    out["fields/dist/topology"] = "mesh";
+    out["fields/dist/association"] = "vertex";
+    out["fields/dist/values"].set(DataType::c_float(nverts));
+    out["fields/elem_field/topology"] = "mesh";
+    out["fields/elem_field/association"] = "element";
+    out["fields/elem_field/values"].set(DataType::c_float(nelems));
+
+    // Extract the pointers to the allocated memory
+    float *coords = (float*)out["coordsets/coords/values"].element_ptr(0);
+    float *vfield = (float*)out["fields/vert_field/values"].element_ptr(0);
+    float *dist   = (float*)out["fields/dist/values"].element_ptr(0);
+    float *efield = (float*)out["fields/elem_field/values"].element_ptr(0);
+
+    int idx = 0;
+    int id  = 0;
+    if(dimension == 3)
+    {
+        for(int k = 0; k < real_dims[2]; k++)
+        {
+            for(int j = 0; j < real_dims[1]; j++)
+            {
+                for(int i = 0; i < real_dims[0]; i++, id++, idx+=3)
+                {
+                    const float temp[3] = {
+                        (float)i * scale[reorder[0]],
+                        (float)j * scale[reorder[1]],
+                        (float)k * scale[reorder[2]]
+                    };
+                    coords[idx]   = origin[0] + temp[reorder[0]];
+                    coords[idx+1] = origin[1] + temp[reorder[1]];
+                    coords[idx+2] = origin[2] + temp[reorder[2]];
+                    vfield[id] = id;
+                    
+                    const float dx = coords[idx]   - g_origin[0];
+                    const float dy = coords[idx+1] - g_origin[1];
+                    const float dz = coords[idx+2] - g_origin[2];
+                    dist[id] = std::sqrt(dx*dx + dy*dy + dz*dz);
+                }
+            }
+        }
+
+        id = 0;
+        for(int k = 0; k < real_dims[2]-1; k++)
+        {
+            for(int j = 0; j < real_dims[1]-1; j++)
+            {
+                for(int i = 0; i < real_dims[0]-1; i++, id++)
+                {
+                    efield[id] = id;
+                }
+            }
+        }
+    }
+    else if(dimension == 2)
+    {
+        for(int j = 0; j < real_dims[1]; j++)
+        {
+            for(int i = 0; i < real_dims[0]; i++, id++, idx+=2)
+            {
+                const float temp[2] = {(float)i * scale[0], (float)j * scale[1]};
+                coords[idx]   = origin[0] + temp[reorder[0]];
+                coords[idx+1] = origin[1] + temp[reorder[1]];
+                vfield[id] = id;
+                
+                const float dx = coords[idx]   - g_origin[0];
+                const float dy = coords[idx+1] - g_origin[1];
+                dist[id] = std::sqrt(dx*dx + dy*dy);
+            }
+        }
+
+        id = 0;
+        for(int j = 0; j < real_dims[1]-1; j++)
+        {
+            for(int i = 0; i < real_dims[0]-1; i++, id++)
+            {
+                efield[id] = id;
+            }
+        }
+    }
+
+}
+
+void create_grain_case(conduit::Node &out)
+{
+    out.reset();
+
+    // For all domains
+    const int dims[3] = {3, 4, 2};
+    const float g_origin[3] = {0.f, 0.f, 0.f};
+    
+    // Cases
+    const int origin_x[8] = {0,    1,   0,    1,   0,   1,     0,   1};
+    const int origin_y[8] = {0,    0,   1,    1,   0,   0,     1,   1};
+    const float scale_x[8]= {1., -1.,   1.,  -1.,  1., -1.,   1.,  -1.};
+    const float scale_y[8]= {1.,  1.,  -1.,  -1.,  1.,  1.,  -1.,  -1.};
+    const int reorder_x[8]= {0,    0,    0,    0,   1,   1,     1,   1};
+    const int reorder_y[8]= {1,    1,    1,    1,   0,   0,     0,   0};
+    int id = 0;
+    for(int j = 0; j < 8; j++)
+    {
+        // {ymin, ymax}
+        int y[2];
+        y[0] = (int)g_origin[1] + (j * (dims[1]-1));
+        y[1] = (int)g_origin[1] + ((j+1) * (dims[1]-1));
+
+        const int start_case = j;
+        for(int i = 0; i < 8; i++, id++)
+        {
+            // {xmin, xmax}
+            int x[2];
+            x[0] = (int)g_origin[0] + (i * (dims[0]-1));
+            x[1] = (int)g_origin[0] + (i+1) * (dims[0]-1);
+
+            const int c = (start_case + i) % 8;
+            float o[3];
+            float s[3];
+            int   r[3];
+            o[0] = (float)x[origin_x[c]];
+            o[1] = (float)y[origin_y[c]];
+            o[2] = 0;
+            s[0] = scale_x[c];
+            s[1] = scale_y[c];
+            s[2] = 1.f;
+            r[0] = reorder_x[c];
+            r[1] = reorder_y[c];
+            r[2] = 2;
+
+            std::string domain_name = (id > 10 ? "domain_000" + std::to_string(id) : "domain_0000" + std::to_string(id));
+            create_structured_domain(out[domain_name], id, 3, dims, r, o, s, g_origin);
+        }
+    }
+}
 
 TEST(blueprint_mesh_combine, structured)
 {
@@ -1742,6 +1916,7 @@ TEST(blueprint_mesh_combine, structured)
     save_visit("combine_structured_grain_output", combined);
     #endif
 
+/*
     const auto grain_test = [](const int *dims, conduit::Node &output) {
         using namespace conduit;
         const double PI_VALUE = 3.14159265359;
@@ -1810,8 +1985,6 @@ TEST(blueprint_mesh_combine, structured)
 
         Node &n_d1 = output["domain_00001"];
         {
-            const double PI_VALUE = 3.14159265359;
-            const double dt = PI_VALUE / (dims[0]-1);
             int id  = 0;
             int idx = 0;
             int k, j, i;
@@ -1847,7 +2020,7 @@ TEST(blueprint_mesh_combine, structured)
                 {
                     const int j1 = j+1;
                     double t = 0.;
-                    for(i = 0; i < dims[0]; i++, id++, t+=dt)
+                    for(i = 0; i < dims[0]; i++, id++)
                     {
                         vfield[id]     = id;
                         coords[idx++] = j1;
@@ -1862,17 +2035,21 @@ TEST(blueprint_mesh_combine, structured)
                 efield[i] = i;
             }
         }
+
+        Node &n_d2 = output["domain_00002"];
+
     };
+    */
 
     conduit::Node grain;
-    int dims[3] = {11, 5, 2};
-    grain_test(dims, grain);
+    create_grain_case(grain);
+    grain.print();
 
     std::cout << "Saving test case..." << std::endl;
-    save_visit("combine_structured_grain_3d_input", grain);
+    save_visit("combine_structured_grain_2d_input", grain);
     
     conduit::Node opts; opts["target"] = 1;
     conduit::Node output;
     conduit::blueprint::mesh::partition(grain, opts, output);
-    save_visit("combine_structured_grain_3d_output", output);
+    save_visit("combine_structured_grain_2d_output", output);
 }

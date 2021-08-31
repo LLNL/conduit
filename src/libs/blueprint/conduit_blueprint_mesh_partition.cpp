@@ -5428,6 +5428,7 @@ public:
 
         // We must convert all inputs to the recommended topology
         //  (if they aren't already)
+        index_t id = 0;
         std::vector<Node> temp_meshes;
         temp_meshes.reserve(n_inputs.size());
         for(const Node *n_in : n_inputs)
@@ -5438,6 +5439,8 @@ public:
             const std::string cset_type = n_cset["type"].as_string();
             temp_meshes.emplace_back();
             Node &n_mesh = temp_meshes.back();
+            n_mesh["id"] = id;
+            id++;
 
             if(type == "structured")
             {
@@ -5538,6 +5541,8 @@ public:
 
 private:
     // Constants
+    using vec = blueprint::mesh::coordset::utils::vec3;
+    using combine_structured_data_t = std::pair<const Node *, std::vector<vec>>;
     static constexpr index_t MAXDIM = 3;
     enum class CombineImplicitMode : index_t
     {
@@ -5549,6 +5554,14 @@ private:
     static const std::array<std::string, 3> CI_TOPO_TYPES;
     static const index_t dim_for_face[6];
     static const index_t dim_for_edge[4];
+
+    static double as_double(const Node &n_vals, index_t idx)
+    {
+        Node temp;
+        temp.set_external(DataType(n_vals.dtype().id(), 1), 
+            const_cast<void*>(n_vals.element_ptr(idx)));
+        return temp.to_double();
+    };
 
     static const std::vector<std::string> &
     figure_out_implicit_axes(const std::vector<const Node *> &n_inputs)
@@ -5865,9 +5878,22 @@ private:
             lhs_reverse[0] = false;
             lhs_reverse[1] = false;
             lhs_reverse[2] = false;
-            if(lhs_face == 0 || lhs_face == 2 || lhs_face == 4)
+
+            // 0 means matched_dim[0] 1 means matched_dim[max]
+            static const int matched_face_value[6] = {0,1,0,1,0,1};
+            const int lhs_matched_dim_value = matched_face_value[lhs_face];
+            const int rhs_matched_dim_value = matched_face_value[rhs_face];
+
+            // LHS can't start on the plane dividing the left from the right
+            if(lhs_matched_dim_value == 0)
             {
                 lhs_reverse[dim_lhs] = true;
+            }
+            
+            // Opposite applies for RHS
+            if(rhs_matched_dim_value == 1)
+            {
+                rhs_reverse[dim_rhs] = true;
             }
         }
         else if(dimension == 2)
@@ -5893,6 +5919,212 @@ private:
                 lhs_reverse[dim_lhs] = true;
             }
         }
+    }
+
+    void create_structured_bounding_box(const Node &n_mesh,
+        std::vector<vec> &out_bb) const
+    {
+        std::array<index_t, MAXDIM> dims;
+        mesh::utils::topology::logical_dims(n_mesh.fetch_existing(topo_path), 
+            dims.data(), MAXDIM);
+        
+        // Want to work in vertex dims here
+        for(index_t &d : dims) d += 1;
+
+        const Node &n_cset_values = n_mesh.fetch_existing(cset_path+"/values");
+        std::array<const Node*, MAXDIM> xyz{
+            n_cset_values.fetch_ptr(axes[0]),
+            n_cset_values.fetch_ptr(axes[1]),
+            (axes.size() > 2 ? n_cset_values.fetch_ptr(axes[2]) : nullptr)
+        };
+
+        // TODO: Factor out the dimension cases and use a loop somehow?
+        out_bb.clear();
+        if(dimension == 3)
+        {
+            out_bb.reserve(8);
+            std::array<index_t, MAXDIM> ijk{0, 0, 0};
+            for(ijk[2] = 0; ijk[2] < dims[2]; ijk[2] += dims[2]-1)
+            {
+                for(ijk[1] = 0; ijk[1] < dims[1]; ijk[1] += dims[1]-1)
+                {
+                    for(ijk[0] = 0; ijk[0] < dims[0]; ijk[0] += dims[0]-1)
+                    {
+                        vec temp;
+                        index_t id;
+                        grid_ijk_to_id(ijk.data(), dims.data(), id);
+                        for(index_t i = 0; i < dimension; i++)
+                        {
+                            temp[i] = as_double(*xyz[i], id);
+                        }
+                        out_bb.push_back(temp);
+                    }
+                }
+            }
+        }
+        else if(dimension == 2)
+        {
+            out_bb.reserve(4);
+            std::array<index_t, MAXDIM> ijk{0, 0, 0};
+            for(ijk[1] = 0; ijk[1] < dims[1]; ijk[1] += dims[1]-1)
+            {
+                for(ijk[0] = 0; ijk[0] < dims[0]; ijk[0] += dims[0]-1)
+                {
+                    vec temp;
+                    index_t id;
+                    grid_ijk_to_id(ijk.data(), dims.data(), id);
+                    for(index_t i = 0; i < dimension; i++)
+                    {
+                        temp[i] = as_double(*xyz[i], id);
+                    }
+                    temp[2] = 0;
+                    out_bb.push_back(temp);
+                }
+            }
+        }
+        else // if(dimension == 1)
+        {
+            out_bb.reserve(2);
+            std::array<index_t, MAXDIM> ijk{0, 0, 0};
+            for(ijk[0] = 0; ijk[0] < dims[0]; ijk[0] += dims[0]-1)
+            {
+                vec temp;
+                index_t id;
+                grid_ijk_to_id(ijk.data(), dims.data(), id);
+                for(index_t i = 0; i < dimension; i++)
+                {
+                    temp[i] = as_double(*xyz[i], id);
+                }
+                temp[1] = 0;
+                temp[2] = 0;
+                out_bb.push_back(temp);
+            }
+        }
+    }
+
+    bool match_structured_faces(
+                const combine_structured_data_t &lhs, 
+                const combine_structured_data_t &rhs, 
+                index_t &lhs_face_id, index_t &rhs_face_id, index_t &perm) const
+    {
+        const double t2    = tolerance*tolerance;
+        const auto &lhs_bb = lhs.second;
+        const auto &rhs_bb = rhs.second;
+
+        // TODO: Static class variable?
+        static const index_t faces3d[6][4] = {
+            {0, 2, 3, 1}, {4, 6, 7, 5},  // Back  / Front (k0, kmax)
+            {0, 1, 5, 4}, {2, 3, 7, 6},  // Bottom/ Top   (j0, jmax)
+            {0, 4, 6, 2}, {1, 5, 7, 3}   // Left  / Right (i0, imax)
+        };
+
+        static const index_t edges2d[4][2] = {
+            {0, 1}, {2, 3}, // Bottom/ Top   (j0, jmax)
+            {0, 2}, {1, 3}  // Left  / Right (i0, imax)
+        };
+
+        if(dimension == 3)
+        {
+            for(std::size_t i = 0; i < 6; i++)
+            {
+                // Grab a face definition in lhs
+                std::array<vec, 4> lhs_face;
+                for(std::size_t fi = 0; fi < 4; fi++)
+                {
+                    lhs_face[fi] = lhs_bb[faces3d[i][fi]];
+                }
+
+                bool match_found = false;
+                for(std::size_t j = 0; j < 6; j++)
+                {
+                    std::array<vec, 4> rhs_face;
+                    for(std::size_t fi = 0; fi < 4; fi++)
+                    {
+                        rhs_face[fi] = rhs_bb[faces3d[j][fi]];
+                    }
+
+                    static const index_t perms[8][4] = {            // Inside our matched plane
+                        {0,1,2,3}, {3,0,1,2}, {2,3,0,1}, {1,2,3,0}, // (u,v), (-v,u), (-u,-v), (v,-u)
+                        {0,3,2,1}, {1,0,3,2}, {2,1,0,3}, {3,2,1,0}  // (v,u), (u,-v), (-v,-u), (-u,v)
+                    };
+
+                    for(index_t pi = 0; pi < 8; pi++)
+                    {
+                        match_found = true;
+                        for(index_t pj = 0; pj < 4; pj++)
+                        {
+                            const double d2 = lhs_face[pj].distance2(rhs_face[perms[pi][pj]]);
+                            if(d2 > t2)
+                            {
+                                match_found = false;
+                                break;
+                            }
+                        }
+
+                        if(match_found)
+                        {
+                            lhs_face_id = i;
+                            rhs_face_id = j;
+                            perm = pi;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        else if(dimension == 2)
+        {
+            for(std::size_t i = 0; i < 4; i++)
+            {
+                // Grab a face definition in lhs
+                std::array<vec, 2> lhs_edge;
+                for(std::size_t fi = 0; fi < 2; fi++)
+                {
+                    lhs_edge[fi] = lhs_bb[edges2d[i][fi]];
+                }
+                lhs_edge[0][2] = 0;
+                lhs_edge[1][2] = 0;
+
+                bool match_found = false;
+                for(std::size_t j = 0; j < 4; j++)
+                {
+                    std::array<vec, 2> rhs_edge;
+                    for(std::size_t fi = 0; fi < 2; fi++)
+                    {
+                        rhs_edge[fi] = rhs_bb[edges2d[j][fi]];
+                    }
+                    rhs_edge[0][2] = 0;
+                    rhs_edge[1][2] = 0;
+
+                    static const index_t perms[2][2] = {
+                        {0,1}, {1,0}
+                    };
+
+                    for(index_t pi = 0; pi < 2; pi++)
+                    {
+                        match_found = true;
+                        for(index_t pj = 0; pj < 2; pj++)
+                        {
+                            const double d2 = lhs_edge[pj].distance2(rhs_edge[perms[pi][pj]]);
+                            if(d2 > t2)
+                            {
+                                match_found = false;
+                                break;
+                            }
+                        }
+
+                        if(match_found)
+                        {
+                            lhs_face_id = i;
+                            rhs_face_id = j;
+                            perm = pi;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     bool combine_implicit_impl(const std::vector<const Node *> &n_meshes,
@@ -6143,7 +6375,7 @@ private:
                             }
                             else // if(mode == CombineImplicitMode::Structured)
                             {
-                                CONDUIT_ERROR("Stuctured meshes shouldn't make it here...");
+                                CONDUIT_ERROR("Internal error when combining implicit topology, structured combinations should follow a different path.");
                                 return false;
                             }
                         }
@@ -6182,216 +6414,13 @@ private:
             const std::vector<const Node *> &n_meshes,
             Node &output) const
     {
-        using vec = blueprint::mesh::coordset::utils::vec3;
-        using combine_implicit_data_t = std::pair<const Node *, std::vector<vec>>;
-
-        const auto as_double = [](const Node &n_vals, index_t idx) -> double {
-            Node temp;
-            temp.set_external(DataType(n_vals.dtype().id(), 1), 
-                const_cast<void*>(n_vals.element_ptr(idx)));
-            return temp.to_double();
-        };
-
         // Cannot use axis-aligned bounding boxes for structured grids
-        std::vector<combine_implicit_data_t> meshes_and_bbs;
+        std::vector<combine_structured_data_t> meshes_and_bbs;
         for(const Node *n_mesh : n_meshes)
         {
-            std::array<index_t, MAXDIM> dims;
-            mesh::utils::topology::logical_dims(n_mesh->fetch_existing(topo_path), 
-                dims.data(), MAXDIM);
-            
-            // Want to work in vertex dims here
-            for(index_t &d : dims) d += 1;
-
-            const Node &n_cset_values = n_mesh->fetch_existing(cset_path+"/values");
-            std::array<const Node*, MAXDIM> xyz{
-                n_cset_values.fetch_ptr(axes[0]),
-                n_cset_values.fetch_ptr(axes[1]),
-                (axes.size() > 2 ? n_cset_values.fetch_ptr(axes[2]) : nullptr)
-            };
-
             meshes_and_bbs.push_back({{n_mesh}, {}});
-            // TODO: Factor out the dimension cases and use a loop somehow?
-            if(dimension == 3)
-            {
-                auto &bb = meshes_and_bbs.back().second;
-                bb.reserve(8);
-                std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                for(ijk[2] = 0; ijk[2] < dims[2]; ijk[2] += dims[2]-1)
-                {
-                    for(ijk[1] = 0; ijk[1] < dims[1]; ijk[1] += dims[1]-1)
-                    {
-                        for(ijk[0] = 0; ijk[0] < dims[0]; ijk[0] += dims[0]-1)
-                        {
-                            vec temp;
-                            index_t id;
-                            grid_ijk_to_id(ijk.data(), dims.data(), id);
-                            for(index_t i = 0; i < dimension; i++)
-                            {
-                                temp[i] = as_double(*xyz[i], id);
-                            }
-                            bb.push_back(temp);
-                        }
-                    }
-                }
-            }
-            else if(dimension == 2)
-            {
-                auto &bb = meshes_and_bbs.back().second;
-                bb.reserve(4);
-                std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                for(ijk[1] = 0; ijk[1] < dims[1]; ijk[1] += dims[1]-1)
-                {
-                    for(ijk[0] = 0; ijk[0] < dims[0]; ijk[0] += dims[0]-1)
-                    {
-                        vec temp;
-                        index_t id;
-                        grid_ijk_to_id(ijk.data(), dims.data(), id);
-                        for(index_t i = 0; i < dimension; i++)
-                        {
-                            temp[i] = as_double(*xyz[i], id);
-                        }
-                        bb.push_back(temp);
-                    }
-                }
-            }
-            else // if(dimension == 1)
-            {
-                auto &bb = meshes_and_bbs.back().second;
-                bb.reserve(2);
-                std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                for(ijk[0] = 0; ijk[0] < dims[0]; ijk[0] += dims[0]-1)
-                {
-                    vec temp;
-                    index_t id;
-                    grid_ijk_to_id(ijk.data(), dims.data(), id);
-                    for(index_t i = 0; i < dimension; i++)
-                    {
-                        temp[i] = as_double(*xyz[i], id);
-                    }
-                    bb.push_back(temp);
-                }
-            }
+            create_structured_bounding_box(*n_mesh, meshes_and_bbs.back().second);
         }
-
-        static const index_t faces3d[6][4] = {
-            {0, 2, 3, 1}, {4, 6, 7, 5},  // Back  / Front (k0, kmax)
-            {0, 1, 5, 4}, {2, 3, 7, 6},  // Bottom/ Top   (j0, jmax)
-            {0, 4, 6, 2}, {1, 5, 7, 3}   // Left  / Right (i0, imax)
-        };
-
-        static const index_t edges2d[4][2] = {
-            {0, 1}, {2, 3}, // Bottom/ Top   (j0, jmax)
-            {0, 2}, {1, 3}  // Left  / Right (i0, imax)
-        };
-
-        const auto match_faces = [this](
-                const combine_implicit_data_t &lhs, 
-                const combine_implicit_data_t &rhs, 
-                index_t &lhs_face_id, index_t &rhs_face_id, index_t &perm) -> bool {
-            const double t2    = tolerance*tolerance;
-            const auto &lhs_bb = lhs.second;
-            const auto &rhs_bb = rhs.second;
-
-            if(dimension == 3)
-            {
-                for(std::size_t i = 0; i < 6; i++)
-                {
-                    // Grab a face definition in lhs
-                    std::array<vec, 4> lhs_face;
-                    for(std::size_t fi = 0; fi < 4; fi++)
-                    {
-                        lhs_face[fi] = lhs_bb[faces3d[i][fi]];
-                    }
-
-                    bool match_found = false;
-                    for(std::size_t j = 0; j < 6; j++)
-                    {
-                        std::array<vec, 4> rhs_face;
-                        for(std::size_t fi = 0; fi < 4; fi++)
-                        {
-                            rhs_face[fi] = rhs_bb[faces3d[j][fi]];
-                        }
-
-                        static const index_t perms[8][4] = {            // Inside our matched plane
-                            {0,1,2,3}, {3,0,1,2}, {2,3,0,1}, {1,2,3,0}, // (u,v), (-v,u), (-u,-v), (v,-u)
-                            {0,3,2,1}, {1,0,3,2}, {2,1,0,3}, {3,2,1,0}  // (v,u), (u,-v), (-v,-u), (-u,v)
-                        };
-
-                        for(index_t pi = 0; pi < 8; pi++)
-                        {
-                            match_found = true;
-                            for(index_t pj = 0; pj < 4; pj++)
-                            {
-                                const double d2 = lhs_face[pj].distance2(rhs_face[perms[pi][pj]]);
-                                if(d2 > t2)
-                                {
-                                    match_found = false;
-                                    break;
-                                }
-                            }
-
-                            if(match_found)
-                            {
-                                lhs_face_id = i;
-                                rhs_face_id = j;
-                                perm = pi;
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            else if(dimension == 2)
-            {
-                for(std::size_t i = 0; i < 4; i++)
-                {
-                    // Grab a face definition in lhs
-                    std::array<vec, 2> lhs_edge;
-                    for(std::size_t fi = 0; fi < 2; fi++)
-                    {
-                        lhs_edge[fi] = lhs_bb[edges2d[i][fi]];
-                    }
-
-                    bool match_found = false;
-                    for(std::size_t j = 0; j < 4; j++)
-                    {
-                        std::array<vec, 2> rhs_edge;
-                        for(std::size_t fi = 0; fi < 2; fi++)
-                        {
-                            rhs_edge[fi] = rhs_bb[edges2d[j][fi]];
-                        }
-
-                        static const index_t perms[2][2] = {
-                            {0,1}, {1,0}
-                        };
-
-                        for(index_t pi = 0; pi < 2; pi++)
-                        {
-                            match_found = true;
-                            for(index_t pj = 0; pj < 2; pj++)
-                            {
-                                const double d2 = lhs_edge[pj].distance2(rhs_edge[perms[pi][pj]]);
-                                if(d2 > t2)
-                                {
-                                    match_found = false;
-                                    break;
-                                }
-                            }
-
-                            if(match_found)
-                            {
-                                lhs_face_id = i;
-                                rhs_face_id = j;
-                                perm = pi;
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        };
 
         // Match and combine edges/planes on coordest boundaries until we have 1 left
         Node n_temporary_meshes;
@@ -6400,6 +6429,21 @@ private:
         {
             iteration++;
 
+            std::cout << "Iteration " << iteration << std::endl;
+            if(iteration > 1)
+            {
+                Node temp;
+                for(size_t i = 0; i < meshes_and_bbs.size(); i++)
+                {
+                    temp[(i < 10) ? "domain_0000" + std::to_string(i) : "domain_000" + std::to_string(i)] = *meshes_and_bbs[i].first;
+                }
+                std::ofstream f_out("combine_structured_iteration." + 
+                    ((iteration < 10) ? ("0000" + std::to_string(iteration)) : ("000" + std::to_string(iteration)))
+                    + ".yaml");
+                temp.to_string_stream(f_out);
+            }
+
+
             // Get the first extents
             bool any_matches = false;
             for(size_t ei = 0; ei < meshes_and_bbs.size(); ei++)
@@ -6407,8 +6451,7 @@ private:
                 const Node *n_meshi = meshes_and_bbs[ei].first;
 
                 // Find a match
-                const index_t NOT_FOUND = meshes_and_bbs.size();
-                index_t matched_extents = NOT_FOUND;
+                bool ei_matched = false;
                 for(size_t ej = ei+1; ej < meshes_and_bbs.size(); ej++)
                 {
                     const Node *n_meshj = meshes_and_bbs[ej].first;
@@ -6416,14 +6459,13 @@ private:
                     index_t ei_face = 0;
                     index_t ej_face = 0;
                     index_t ej_permutation = 0;
-                    bool match_found = match_faces(
+                    bool match_found = match_structured_faces(
                         meshes_and_bbs[ei], meshes_and_bbs[ej], 
                         ei_face, ej_face, ej_permutation);
 
                     if(match_found)
                     {
                         std::cout << "Handling structured combine" << std::endl;
-                        matched_extents = ej;
 
                         // TODO: Create a function to allocate a new temp mesh
                         Node &new_mesh = n_temporary_meshes.append();
@@ -6442,7 +6484,8 @@ private:
                             }
                         }
 
-                        std::cout << "Matched faces " << ei_face << " " << ej_face << " "
+                        std::cout << "Matched faces " << n_meshi->fetch_existing("id").to_index_t() << ":" << ei_face 
+                            << " to " << n_meshj->fetch_existing("id").to_index_t() << ":" << ej_face << ":"
                             << ej_permutation << std::endl;
 
                         // Determine who is the lhs and who is the rhs
@@ -6473,25 +6516,13 @@ private:
                             rhs_face = ei_face;
                             simple_case = true;
                         }
-                        else // Every other odd case, larger mesh is lhs
+                        else // Every other odd case, ei is lhs. This is the only way the permutation case is accurate.
                         {
-                            const index_t Ni = mesh::utils::coordset::length(n_meshi->fetch_existing(cset_path));
-                            const index_t Nj = mesh::utils::coordset::length(n_meshj->fetch_existing(cset_path));
                             simple_case = false;
-                            if(Nj < Ni)
-                            {
-                                n_lhs = n_meshi;
-                                n_rhs = n_meshj;
-                                lhs_face = ei_face;
-                                rhs_face = ej_face;
-                            }
-                            else
-                            {
-                                n_lhs = n_meshj;
-                                n_rhs = n_meshi;
-                                lhs_face = ej_face;
-                                rhs_face = ei_face;
-                            }
+                            n_lhs = n_meshi;
+                            n_rhs = n_meshj;
+                            lhs_face = ei_face;
+                            rhs_face = ej_face;
                         }
 
                         // Convenience
@@ -6528,6 +6559,7 @@ private:
                         std::array<index_t, MAXDIM> dims_rhs{0,0,0};
                         topology::logical_dims(n_topo_lhs, dims_lhs.data(), dimension);
                         topology::logical_dims(n_topo_rhs, dims_rhs.data(), dimension);
+                        // Make this the dimensions for the verts (instead of elements)
                         for(auto &val : dims_lhs) val += 1;
                         for(auto &val : dims_rhs) val += 1;
 
@@ -6633,215 +6665,10 @@ private:
                         // Nothing needs to be checked for dimension 1
                         // NOTE: We would have returned from the function if the check failed
 
-                        if(simple_case)
-                        {
-                            // Determine final mesh size
-                            const index_t matched_dim = determine_matched_dim(lhs_face);
-                            std::array<index_t, MAXDIM> new_dims{1, 1, 1};
-                            for(index_t i = 0; i < dimension; i++)
-                            {
-                                new_dims[i] = (i == matched_dim)
-                                    ? dims_lhs[i] + dims_rhs[i] - 1
-                                    : dims_lhs[i];
-                            }
-
-                            // Set the dims in our output topology
-                            new_topo["elements/dims/i"] = new_dims[0]-1;
-                            if(dimension > 1) new_topo["elements/dims/j"] = new_dims[1]-1;
-                            if(dimension > 2) new_topo["elements/dims/k"] = new_dims[2]-1;
-
-                            // Allocate output cset
-                            Schema out_schema;
-                            build_output_schema(n_cset_lhs["values"], new_dims.data(), out_schema);
-                            Node &out_vals = new_cset["values"];
-                            out_vals.set(out_schema);
-
-                            // Fill it with the lhs values
-                            {
-                                const Node &in_vals = n_cset_lhs["values"];
-                                for(index_t k = 0; k < dims_lhs[2]; k++)
-                                {
-                                    for(index_t j = 0; j < dims_lhs[1]; j++)
-                                    {
-                                        for(index_t i = 0; i < dims_lhs[0]; i++)
-                                        {
-                                            index_t ijk[3] = {i, j, k};
-                                            index_t local_id, global_id;
-                                            grid_ijk_to_id(ijk, dims_lhs.data(), local_id);
-                                            grid_ijk_to_id(ijk, new_dims.data(), global_id);
-                                            for(index_t ci = 0; ci < dimension; ci++)
-                                            {
-                                                const auto bytes = out_vals[ci].dtype().element_bytes();
-                                                void *out_data = out_vals[ci].element_ptr(global_id);
-                                                const void *in_data = in_vals[ci].element_ptr(local_id);
-                                                memcpy(out_data, in_data, bytes);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            // Now add rhs values
-                            {
-                                const Node &in_vals = n_cset_rhs["values"];
-                                const std::array<index_t, 3> offsets{
-                                    (matched_dim == 0) ? dims_lhs[0]-1 : 0,
-                                    (matched_dim == 1) ? dims_lhs[1]-1 : 0,
-                                    (matched_dim == 2) ? dims_lhs[2]-1 : 0
-                                };
-                                for(index_t k = 0; k < dims_rhs[2]; k++)
-                                {
-                                    index_t koff = k + offsets[2];
-                                    for(index_t j = 0; j < dims_rhs[1]; j++)
-                                    {
-                                        index_t joff = j + offsets[1];
-                                        for(index_t i = 0; i < dims_rhs[0]; i++)
-                                        {
-                                            index_t global_ijk[3] = {i+offsets[0], joff, koff};
-                                            index_t ijk[3] = {i, j, k};
-                                            index_t local_id, global_id;
-                                            grid_ijk_to_id(ijk, dims_rhs.data(), local_id);
-                                            grid_ijk_to_id(global_ijk, new_dims.data(), global_id);
-                                            for(index_t ci = 0; ci < dimension; ci++)
-                                            {
-                                                const auto bytes = out_vals[ci].dtype().element_bytes();
-                                                void *out_data = out_vals[ci].element_ptr(global_id);
-                                                const void *in_data = in_vals[ci].element_ptr(local_id);
-                                                memcpy(out_data, in_data, bytes);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Determine final mesh size
-                            const index_t matched_dim = determine_matched_dim(lhs_face);
-                            std::array<index_t, MAXDIM> order_lhs{0,1,2};
-                            std::array<index_t, MAXDIM> order_rhs{0,1,2};
-                            std::array<int, MAXDIM>     reverse_lhs{0,0,0};
-                            std::array<int, MAXDIM>     reverse_rhs{0,0,0};
-                            lookup_case(lhs_face, rhs_face, ej_permutation, 
-                                order_lhs.data(), reverse_lhs.data(), 
-                                order_rhs.data(), reverse_rhs.data());
-                            std::array<index_t, MAXDIM> new_dims{1, 1, 1};
-                            for(index_t i = 0; i < dimension; i++)
-                            {
-                                new_dims[i] = (i == matched_dim)
-                                    ? dims_lhs[i] + dims_rhs[order_rhs[i]] - 1
-                                    : dims_lhs[i];
-                            }
-
-                            // Set the dims in our output topology
-                            new_topo["elements/dims/i"] = new_dims[0]-1;
-                            if(dimension > 1) new_topo["elements/dims/j"] = new_dims[1]-1;
-                            if(dimension > 2) new_topo["elements/dims/k"] = new_dims[2]-1;
-
-                            // Allocate output cset
-                            Schema out_schema;
-                            const index_t N = build_output_schema(n_cset_lhs["values"], new_dims.data(), out_schema);
-                            Node &out_vals = new_cset["values"];
-                            out_vals.set(out_schema);
-
-                            Schema pointmap;
-                            pointmap["domains"].set(DataType::index_t(N, 0, 2*sizeof(index_t)));
-                            pointmap["ids"].set(DataType::index_t(N, sizeof(index_t), 2*sizeof(index_t)));
-                            new_mesh["fields/orig_vert_ids/topology"].set(new_topo.name());
-                            new_mesh["fields/orig_vert_ids/association"].set("vertex");
-                            new_mesh["fields/orig_vert_ids/values"].set(pointmap);
-                            Node &n_pointmap = new_mesh["fields/orig_vert_ids/values"];
-                            DataArray<index_t> orig_domains = n_pointmap["domains"].value();
-                            DataArray<index_t> orig_ids     = n_pointmap["ids"].value();
-                            
-                            {
-                                // LHS shouldn't have offsets but it may need to reverse a dim
-                                const index_t d2m1 = dims_lhs[2] - 1;
-                                const index_t d1m1 = dims_lhs[1] - 1;
-                                const index_t d0m1 = dims_lhs[0] - 1;
-                                const Node &in_vals = n_cset_lhs["values"];
-                                for(auto r : reverse_lhs)
-                                    std::cout << r << " ";
-                                std::cout << std::endl;
-                                for(index_t k = 0; k < dims_lhs[2]; k++)
-                                {
-                                    const index_t kactual = reverse_lhs[2] ? (d2m1-k) : k;
-                                    for(index_t j = 0; j < dims_lhs[1]; j++)
-                                    {
-                                        const index_t jactual = reverse_lhs[1] ? (d1m1-j) : j;
-                                        for(index_t i = 0; i < dims_lhs[0]; i++)
-                                        {
-                                            const std::array<index_t, 3> ijk_local = {
-                                                reverse_lhs[0] ? (d0m1-i) : i, 
-                                                jactual, 
-                                                kactual
-                                            };
-                                            const std::array<index_t, 3> ijk_global = {i,j,k};
-                                            index_t local_id, global_id;
-                                            grid_ijk_to_id(ijk_local.data(), dims_lhs.data(), local_id);
-                                            grid_ijk_to_id(ijk_global.data(), new_dims.data(), global_id);
-                                            for(index_t ci = 0; ci < dimension; ci++)
-                                            {
-                                                const auto bytes = out_vals[ci].dtype().element_bytes();
-                                                void *out_data = out_vals[ci].element_ptr(global_id);
-                                                const void *in_data = in_vals[ci].element_ptr(local_id);
-                                                memcpy(out_data, in_data, bytes);
-                                            }
-                                            orig_domains[global_id] = 0;
-                                            orig_ids[global_id]     = local_id;
-                                        }
-                                    }
-                                }
-                            }
-                            // RHS
-                            {
-                                std::array<index_t, MAXDIM> offsets{0,0,0};
-                                offsets[matched_dim] = dims_lhs[matched_dim] - 1;
-                                const index_t d2   = dims_rhs[order_rhs[2]];
-                                const index_t d1   = dims_rhs[order_rhs[1]];
-                                const index_t d0   = dims_rhs[order_rhs[0]];
-                                const index_t d2m1 = d2 - 1;
-                                const index_t d1m1 = d1 - 1;
-                                const index_t d0m1 = d0 - 1;
-                                const Node &in_vals = n_cset_rhs["values"];
-                                for(auto r : reverse_rhs)
-                                {
-                                    std::cout << r << " ";
-                                }
-                                std::cout << std::endl;
-                                for(index_t k = 0; k < d2; k++)
-                                {
-                                    const index_t kactual = reverse_rhs[2] ? (d2m1-k) : k;
-                                    for(index_t j = 0; j < d1; j++)
-                                    {
-                                        const index_t jactual = reverse_rhs[1] ? (d1m1-j) : j;
-                                        for(index_t i = 0; i < d0; i++)
-                                        {
-                                            const std::array<index_t, 3> ijk_global = {
-                                                i+offsets[0],
-                                                j+offsets[1],
-                                                k+offsets[2]
-                                            };
-                                            std::array<index_t, 3> ijk_local;
-                                            ijk_local[order_rhs[0]] = reverse_rhs[0] ? d0m1-i : i;
-                                            ijk_local[order_rhs[1]] = jactual;
-                                            ijk_local[order_rhs[2]] = kactual;
-                                            index_t local_id, global_id;
-                                            grid_ijk_to_id(ijk_local.data(), dims_rhs.data(), local_id);
-                                            grid_ijk_to_id(ijk_global.data(), new_dims.data(), global_id);
-                                            for(index_t ci = 0; ci < dimension; ci++)
-                                            {
-                                                const auto bytes = out_vals[order_rhs[ci]].dtype().element_bytes();
-                                                void *out_data = out_vals[order_rhs[ci]].element_ptr(global_id);
-                                                const void *in_data = in_vals[order_rhs[ci]].element_ptr(local_id);
-                                                memcpy(out_data, in_data, bytes);
-                                            }
-                                            orig_domains[global_id] = 1;
-                                            orig_ids[global_id]     = local_id;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        combine_structured_submeshes(
+                            *n_lhs, *n_rhs, dims_lhs.data(), 
+                            dims_rhs.data(), lhs_face, rhs_face, ej_permutation,
+                            new_mesh);
 
                         {
                             std::ofstream out("intermediate_mesh.yaml");
@@ -6850,444 +6677,16 @@ private:
                         }
 
                         meshes_and_bbs[ei].first = &new_mesh;
+                        create_structured_bounding_box(new_mesh, meshes_and_bbs[ei].second);
                         meshes_and_bbs.erase(meshes_and_bbs.begin() + ej);
-                        matched_extents = ej;
+                        ei_matched = true;
                         break;
                     }
-
-#if 0
-                    for(index_t di = 0; di < dimension; di++)
-                    {
-
-
-                        // If the corners match combine them
-                        if(corners_match)
-                        {
-                            const Node &n_lhs = (check1 ? *n_meshi : *n_meshj);
-                            const Node &n_rhs = (check1 ? *n_meshj : *n_meshi);
-                            const double matched_val = (check1 ? exti.max[di] : exti.min[di]);
-
-                            {
-                                
-                                const Node &n_cset_lhs = n_lhs.fetch_existing(cset_path);
-                                const Node &n_topo_lhs = n_lhs.fetch_existing(topo_path);
-                                const Node &n_cset_rhs = n_rhs.fetch_existing(cset_path);
-                                const Node &n_topo_rhs = n_rhs.fetch_existing(topo_path);
-
-                                std::array<index_t, MAXDIM> dims_lhs{0,0,0};
-                                std::array<index_t, MAXDIM> dims_rhs{0,0,0};
-                                topology::logical_dims(n_topo_lhs, dims_lhs.data(), dimension);
-                                topology::logical_dims(n_topo_rhs, dims_rhs.data(), dimension);
-                                for(auto &val : dims_lhs) val += 1;
-                                for(auto &val : dims_rhs) val += 1;
-
-                                DataType best_dtype = find_best_coord_vals_dtype(n_cset_lhs["values"], n_cset_rhs["values"]);
-
-                                index_t di_idx = 0;
-                                {
-                                    const Node &di_vals = n_cset_lhs["values/"+axes[di]];
-                                    Node temp;
-                                    temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(0)));
-                                    double val = temp.to_double();
-                                    if(std::abs(val - matched_val) > tolerance)
-                                    {
-                                        std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                                        ijk[di] = dims_lhs[di] - 1;
-                                        grid_ijk_to_id(ijk.data(), dims_lhs.data(), di_idx);
-                                        temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(di_idx)));
-                                        val = temp.to_double();
-                                        if(std::abs(val - matched_val) > tolerance)
-                                        {
-                                            CONDUIT_ERROR("Could not match domain extent");
-                                            return false;
-                                        }
-                                    }
-                                }
-
-                                std::array<index_t, MAXDIM> ijk{0,0,0};
-                                ijk[di] = di_idx;
-                                if(dimension == 3)
-                                {
-                                    std::array<index_t, 2> other_dims;
-                                    index_t other_dims_idx = 0;
-                                    for(index_t dj = 0; dj < dimension; dj++)
-                                    {
-                                        if(di == dj) continue;
-                                        other_dims[other_dims_idx++] = dj;
-                                    }
-
-                                    mesh::coordset::utils::kdtree<mesh::coordset::utils::vec3, index_t> verts;
-                                    {
-                                        const Node &lhs_vals = n_cset_lhs["values"];
-                                        const Node &x = lhs_vals[axes[0]];
-                                        const Node &y = lhs_vals[axes[1]];
-                                        const Node &z = lhs_vals[axes[2]];
-
-                                        Node xtemp, ytemp, ztemp;
-                                        const DataType xdt = DataType(x.dtype().id(), 1);
-                                        const DataType ydt = DataType(y.dtype().id(), 1);
-                                        const DataType zdt = DataType(z.dtype().id(), 1);
-
-                                        mesh::coordset::utils::vec3 temp;
-                                        index_t idx;
-                                        for(index_t j = 0; j < dims_lhs[other_dims[1]]; j++)
-                                        {
-                                            ijk[other_dims[1]] = j;
-                                            for(index_t i = 0; i < dims_lhs[other_dims[0]]; i++)
-                                            {
-                                                ijk[other_dims[0]] = i;
-                                                grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
-                                                xtemp.set_external(xdt, const_cast<void*>(x.element_ptr(idx)));
-                                                ytemp.set_external(ydt, const_cast<void*>(y.element_ptr(idx)));
-                                                ztemp.set_external(zdt, const_cast<void*>(z.element_ptr(idx)));
-                                                temp.x = xtemp.to_double();
-                                                temp.y = ytemp.to_double();
-                                                temp.z = ztemp.to_double();
-                                                verts.insert(temp, idx);
-                                            }
-                                        }
-                                    }
-                                    const index_t nverts = verts.size();
-
-                                    di_idx = 0;
-                                    {
-                                        const Node &di_vals = n_cset_rhs["values/"+axes[di]];
-                                        Node temp;
-                                        temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(0)));
-                                        double val = temp.to_double();
-                                        if(std::abs(val - matched_val) > tolerance)
-                                        {
-                                            std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                                            ijk[di] = dims_rhs[di] - 1;
-                                            grid_ijk_to_id(ijk.data(), dims_rhs.data(), di_idx);
-                                            temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(di_idx)));
-                                            val = temp.to_double();
-                                            if(std::abs(val - matched_val) > tolerance)
-                                            {
-                                                CONDUIT_ERROR("Could not match domain extent");
-                                                return false;
-                                            }
-                                        }
-                                    }
-                                    ijk[0] = 0; ijk[1] = 0; ijk[2] = 0;
-                                    ijk[di] = di_idx;
-                                    {
-                                        const Node &rhs_vals = n_cset_rhs["values"];
-                                        const Node &x = rhs_vals["/"+axes[0]];
-                                        const Node &y = rhs_vals["/"+axes[1]];
-                                        const Node &z = rhs_vals["/"+axes[2]];
-
-                                        Node xtemp, ytemp, ztemp;
-                                        const DataType xdt = DataType(x.dtype().id(), 1);
-                                        const DataType ydt = DataType(y.dtype().id(), 1);
-                                        const DataType zdt = DataType(z.dtype().id(), 1);
-
-                                        mesh::coordset::utils::vec3 temp;
-                                        index_t idx;
-                                        index_t *existing_idx = nullptr;
-                                        for(index_t j = 0; j < dims_rhs[other_dims[1]]; j++)
-                                        {
-                                            ijk[other_dims[1]] = j;
-                                            for(index_t i = 0; i < dims_rhs[other_dims[0]]; i++)
-                                            {
-                                                ijk[other_dims[0]] = i;
-                                                grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
-                                                xtemp.set_external(xdt, const_cast<void*>(x.element_ptr(idx)));
-                                                ytemp.set_external(ydt, const_cast<void*>(y.element_ptr(idx)));
-                                                ztemp.set_external(zdt, const_cast<void*>(z.element_ptr(idx)));
-                                                temp.x = xtemp.to_double();
-                                                temp.y = ytemp.to_double();
-                                                temp.z = ztemp.to_double();
-                                                existing_idx = verts.find_point(temp, tolerance);
-                                                if(!existing_idx)
-                                                {
-                                                    // If we couldn't match this face then we can't combine as structured.
-                                                    return false;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    // NOTE: We would have returned from the function if the check failed
-
-                                    // Combine them
-                                    {
-                                        new_topo["elements/dims"] = n_topo_lhs["elements/dims"];
-                                        new_topo["elements/dims/"+LOGICAL_AXES[di]] = (dims_lhs[di]-1) + (dims_rhs[di]-1);
-
-                                        index_t N = 1;
-                                        std::array<index_t, 3> newdims;
-                                        for(index_t dj = 0; dj < 3; dj++)
-                                        {
-                                            newdims[dj] = (di == dj)
-                                                ? (dims_lhs[dj] + dims_rhs[dj]) - 1
-                                                : dims_lhs[dj];
-                                            N *= newdims[dj];
-                                        }
-
-                                        Schema out_schema;
-                                        {
-                                            std::array<index_t, 3> offsets{0,0,0};
-                                            index_t stride = 0;
-                                            for(index_t i = 0; i < 3; i++)
-                                            {
-                                                const auto &in_dtype = n_cset_lhs["values"][i].dtype();
-                                                offsets[i] = stride;
-                                                stride += in_dtype.element_bytes();
-                                            }
-                                            for(index_t i = 0; i < 3; i++)
-                                            {
-                                                const Node &in_node = n_cset_lhs["values"][i];
-                                                const auto &in_dtype = in_node.dtype();
-                                                out_schema[in_node.name()].set(DataType(in_dtype.id(),
-                                                    N, offsets[i], stride, in_dtype.element_bytes(),
-                                                    in_dtype.endianness()));
-                                            }
-                                        }
-                                        new_cset["values"].set(out_schema);
-                                        Node &out_vals = new_cset["values"];
-                                        {
-                                            const Node &in_vals = n_cset_lhs["values"];
-                                            for(index_t k = 0; k < dims_lhs[2]; k++)
-                                            {
-                                                for(index_t j = 0; j < dims_lhs[1]; j++)
-                                                {
-                                                    for(index_t i = 0; i < dims_lhs[0]; i++)
-                                                    {
-                                                        index_t ijk[3] = {i, j, k};
-                                                        index_t local_id, global_id;
-                                                        grid_ijk_to_id(ijk, dims_lhs.data(), local_id);
-                                                        grid_ijk_to_id(ijk, newdims.data(), global_id);
-                                                        for(index_t ci = 0; ci < 3; ci++)
-                                                        {
-                                                            const auto bytes = out_vals[ci].dtype().element_bytes();
-                                                            void *out_data = out_vals[ci].element_ptr(global_id);
-                                                            const void *in_data = in_vals[ci].element_ptr(local_id);
-                                                            memcpy(out_data, in_data, bytes);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        // RHS has offsets
-                                        {
-                                            const Node &in_vals = n_cset_rhs["values"];
-                                            const std::array<index_t, 3> offsets{
-                                                (di == 0) ? dims_lhs[0]-1 : 0,
-                                                (di == 1) ? dims_lhs[1]-1 : 0,
-                                                (di == 2) ? dims_lhs[2]-1 : 0
-                                            };
-                                            // const std::array<index_t, 3> starts{
-                                            //     (di == 0) ? 1 : 0,
-                                            //     (di == 1) ? 1 : 0,
-                                            //     (di == 2) ? 1 : 0,
-                                            // };
-                                            for(index_t k = 0; k < dims_rhs[2]; k++)
-                                            {
-                                                index_t koff = k + offsets[2];
-                                                for(index_t j = 0; j < dims_rhs[1]; j++)
-                                                {
-                                                    index_t joff = j + offsets[1];
-                                                    for(index_t i = 0; i < dims_rhs[0]; i++)
-                                                    {
-                                                        index_t global_ijk[3] = {i+offsets[0], joff, koff};
-                                                        index_t ijk[3] = {i, j, k};
-                                                        index_t local_id, global_id;
-                                                        grid_ijk_to_id(ijk, dims_rhs.data(), local_id);
-                                                        grid_ijk_to_id(global_ijk, newdims.data(), global_id);
-                                                        for(index_t ci = 0; ci < 3; ci++)
-                                                        {
-                                                            const auto bytes = out_vals[ci].dtype().element_bytes();
-                                                            void *out_data = out_vals[ci].element_ptr(global_id);
-                                                            const void *in_data = in_vals[ci].element_ptr(local_id);
-                                                            memcpy(out_data, in_data, bytes);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                else if(dimension == 2)
-                                {
-                                    index_t other_dim = (di == 0) ? 1 : 0;
-                                    mesh::coordset::utils::kdtree<mesh::coordset::utils::vec2, index_t> verts;
-                                    {
-                                        const Node &lhs_vals = n_cset_lhs["values"];
-                                        const Node &x = lhs_vals[axes[0]];
-                                        const Node &y = lhs_vals[axes[1]];
-
-                                        Node xtemp, ytemp;
-                                        const DataType xdt = DataType(x.dtype().id(), 1);
-                                        const DataType ydt = DataType(y.dtype().id(), 1);
-
-                                        mesh::coordset::utils::vec2 temp;
-                                        index_t idx;
-                                        for(index_t oi = 0; oi < dims_lhs[other_dim]; oi++)
-                                        {
-                                            ijk[other_dim] = oi;
-                                            grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
-                                            xtemp.set_external(xdt, const_cast<void*>(x.element_ptr(idx)));
-                                            ytemp.set_external(ydt, const_cast<void*>(y.element_ptr(idx)));
-                                            temp.x = xtemp.to_double();
-                                            temp.y = ytemp.to_double();
-                                            verts.insert(temp, idx);
-                                        }
-                                    }
-                                    const index_t nverts = verts.size();
-
-                                    di_idx = 0;
-                                    {
-                                        const Node &di_vals = n_cset_rhs["values/"+axes[di]];
-                                        Node temp;
-                                        temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(0)));
-                                        double val = temp.to_double();
-                                        if(std::abs(val - matched_val) > tolerance)
-                                        {
-                                            std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                                            ijk[di] = dims_rhs[di] - 1;
-                                            grid_ijk_to_id(ijk.data(), dims_rhs.data(), di_idx);
-                                            temp.set_external(DataType(di_vals.dtype().id()), const_cast<void*>(di_vals.element_ptr(di_idx)));
-                                            val = temp.to_double();
-                                            if(std::abs(val - matched_val) > tolerance)
-                                            {
-                                                CONDUIT_ERROR("Could not match domain extent");
-                                                return false;
-                                            }
-                                        }
-                                    }
-                                    ijk[0] = 0; ijk[1] = 0; ijk[2] = 0;
-                                    ijk[di] = di_idx;
-                                    {
-                                        const Node &rhs_vals = n_cset_rhs["values"];
-                                        const Node &x = rhs_vals[axes[0]];
-                                        const Node &y = rhs_vals[axes[1]];
-
-                                        Node xtemp, ytemp;
-                                        const DataType xdt = DataType(x.dtype().id(), 1);
-                                        const DataType ydt = DataType(y.dtype().id(), 1);
-
-                                        mesh::coordset::utils::vec2 temp;
-                                        index_t idx;
-                                        index_t *existing_idx = nullptr;
-                                        for(index_t oi = 0; oi < dims_rhs[other_dim]; oi++)
-                                        {
-                                            ijk[other_dim] = oi;
-                                            grid_ijk_to_id(ijk.data(), dims_lhs.data(), idx);
-                                            xtemp.set_external(xdt, const_cast<void*>(x.element_ptr(idx)));
-                                            ytemp.set_external(ydt, const_cast<void*>(y.element_ptr(idx)));
-                                            temp.x = xtemp.to_double();
-                                            temp.y = ytemp.to_double();
-                                            existing_idx = verts.find_point(temp, tolerance);
-                                            if(!existing_idx)
-                                            {
-                                                // If we couldn't match this face then we can't combine as structured.
-                                                return false;
-                                            }
-                                        }
-                                    }
-                                    // NOTE: We would have returned from the function if the check failed
-
-                                    // Combine them
-                                    {
-                                        new_topo["elements/dims"] = n_topo_lhs["elements/dims"];
-                                        new_topo["elements/dims/"+LOGICAL_AXES[di]] = (dims_lhs[di]-1) + (dims_rhs[di]-1);
-
-                                        index_t N = 1;
-                                        std::array<index_t, MAXDIM> newdims;
-                                        for(index_t dj = 0; dj < dimension; dj++)
-                                        {
-                                            newdims[dj] = (di == dj)
-                                                ? (dims_lhs[dj] + dims_rhs[dj]) - 1
-                                                : dims_lhs[dj];
-                                            N *= newdims[dj];
-                                        }
-
-                                        Schema out_schema;
-                                        {
-                                            std::array<index_t, MAXDIM> offsets{0,0,0};
-                                            index_t stride = 0;
-                                            for(index_t i = 0; i < dimension; i++)
-                                            {
-                                                const auto &in_dtype = n_cset_lhs["values"][i].dtype();
-                                                offsets[i] = stride;
-                                                stride += in_dtype.element_bytes();
-                                            }
-                                            for(index_t i = 0; i < dimension; i++)
-                                            {
-                                                const Node &in_node = n_cset_lhs["values"][i];
-                                                const auto &in_dtype = in_node.dtype();
-                                                out_schema[in_node.name()].set(DataType(in_dtype.id(),
-                                                    N, offsets[i], stride, in_dtype.element_bytes(),
-                                                    in_dtype.endianness()));
-                                            }
-                                        }
-                                        new_cset["values"].set(out_schema);
-                                        Node &out_vals = new_cset["values"];
-                                        {
-                                            const Node &in_vals = n_cset_lhs["values"];
-                                            for(index_t j = 0; j < dims_lhs[1]; j++)
-                                            {
-                                                for(index_t i = 0; i < dims_lhs[0]; i++)
-                                                {
-                                                    index_t ijk[3] = {i, j, 0};
-                                                    index_t local_id, global_id;
-                                                    grid_ijk_to_id(ijk, dims_lhs.data(), local_id);
-                                                    grid_ijk_to_id(ijk, newdims.data(), global_id);
-                                                    for(index_t ci = 0; ci < dimension; ci++)
-                                                    {
-                                                        const auto bytes = out_vals[ci].dtype().element_bytes();
-                                                        void *out_data = out_vals[ci].element_ptr(global_id);
-                                                        const void *in_data = in_vals[ci].element_ptr(local_id);
-                                                        memcpy(out_data, in_data, bytes);
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        // RHS has offsets
-                                        {
-                                            const Node &in_vals = n_cset_rhs["values"];
-                                            const std::array<index_t, 2> offsets{
-                                                (di == 0) ? dims_lhs[0]-1 : 0,
-                                                (di == 1) ? dims_lhs[1]-1 : 0
-                                            };
-                                            for(index_t j = 0; j < dims_rhs[1]; j++)
-                                            {
-                                                index_t joff = j + offsets[1];
-                                                for(index_t i = 0; i < dims_rhs[0]; i++)
-                                                {
-                                                    index_t global_ijk[3] = {i+offsets[0], joff, 0};
-                                                    index_t ijk[3] = {i, j, 0};
-                                                    index_t local_id, global_id;
-                                                    grid_ijk_to_id(ijk, dims_rhs.data(), local_id);
-                                                    grid_ijk_to_id(global_ijk, newdims.data(), global_id);
-                                                    for(index_t ci = 0; ci < dimension; ci++)
-                                                    {
-                                                        const auto bytes = out_vals[ci].dtype().element_bytes();
-                                                        void *out_data = out_vals[ci].element_ptr(global_id);
-                                                        const void *in_data = in_vals[ci].element_ptr(local_id);
-                                                        memcpy(out_data, in_data, bytes);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                meshes_and_bbs[ei].first = &new_mesh;
-                                meshes_and_bbs.erase(meshes_and_bbs.begin() + ej);
-                                matched_extents = ej;
-                                break;
-                            }
-                        }
-                    }
-#endif
-                    if(matched_extents != NOT_FOUND)
-                    {
-                        any_matches = true;
-                        break;
-                    }
+                }
+                if(ei_matched)
+                {
+                    any_matches = true;
+                    continue;
                 }
             }
 
@@ -7304,11 +6703,367 @@ private:
             //  instead of deep copying.
             output[cset_path] = (*meshes_and_bbs[0].first)[cset_path];
             output[topo_path] = (*meshes_and_bbs[0].first)[topo_path];
-            output.print();
-            build_implicit_maps(n_meshes, output, output[cset_path+"/pointmaps"], output[topo_path+"/element_map"]);
+
+            // For now we have to reformat the pointmap data
+            Node &out_cset = output[cset_path];
+            out_cset.rename_child("pointmaps", "temp_pointmap");
+            const Node &n_temp_pointmap = out_cset["temp_pointmap"];
+            const DataArray<index_t> orig_domains = n_temp_pointmap["domains"].value();
+            const DataArray<index_t> orig_ids = n_temp_pointmap["ids"].value();           
+            std::vector<std::vector<index_t>> pmaps(n_meshes.size());
+            for(index_t i = 0; i < orig_domains.number_of_elements(); i++)
+            {
+                pmaps[orig_domains[i]].push_back(i);
+            }
+
+            Node &out_pointmaps = out_cset["pointmaps"];
+            for(size_t i = 0; i < pmaps.size(); i++)
+            {
+                Node &n = out_pointmaps.append();
+                n.set(pmaps[i]);
+            }
+            out_cset.remove_child("temp_pointmap");
+
+            // output.print();
             retval = true;
         }
         return retval;
+    }
+
+    void combine_structured_submeshes(
+        const Node &n_lhs, const Node &n_rhs,
+        const index_t *dims_lhs, const index_t *dims_rhs,
+        const index_t face_lhs, const index_t face_rhs, const index_t perm_rhs,
+        Node &n_new_mesh) const
+    {
+        const std::string orig_verts_path = cset_path + "/pointmaps";
+        const std::string orig_elements_path = topo_path + "/element_map";
+        const Node &n_cset_lhs = n_lhs[cset_path];
+        Node &n_new_topo = n_new_mesh[topo_path];
+        Node &n_new_cset = n_new_mesh[cset_path];
+
+        if(face_lhs == 4 && face_rhs == 2)
+        {
+            std::cout << "This is the one" << std::endl;
+        }
+
+        // Determine final mesh size
+        const index_t matched_dim = determine_matched_dim(face_lhs);
+        std::array<index_t, MAXDIM> order_lhs{0,1,2};
+        std::array<index_t, MAXDIM> order_rhs{0,1,2};
+        std::array<int, MAXDIM>     reverse_lhs{0,0,0};
+        std::array<int, MAXDIM>     reverse_rhs{0,0,0};
+        lookup_case(face_lhs, face_rhs, perm_rhs, 
+            order_lhs.data(), reverse_lhs.data(), 
+            order_rhs.data(), reverse_rhs.data());
+        std::array<index_t, MAXDIM> new_dims{1, 1, 1};
+        for(index_t i = 0; i < dimension; i++)
+        {
+            new_dims[i] = (i == matched_dim)
+                ? dims_lhs[i] + dims_rhs[order_rhs[i]] - 1
+                : dims_lhs[i];
+        }
+
+        // Set the dims in our output topology
+        n_new_topo["elements/dims/i"] = new_dims[0]-1;
+        if(dimension > 1) n_new_topo["elements/dims/j"] = new_dims[1]-1;
+        if(dimension > 2) n_new_topo["elements/dims/k"] = new_dims[2]-1;
+
+        // Allocate output cset
+        Schema out_schema;
+        const index_t N = build_output_schema(n_cset_lhs["values"], new_dims.data(), out_schema);
+        Node &out_vals = n_new_cset["values"];
+        out_vals.set(out_schema);
+
+        Schema s_pointmap;
+        s_pointmap["domains"].set(DataType::index_t(N, 0, 2*sizeof(index_t)));
+        s_pointmap["ids"].set(DataType::index_t(N, sizeof(index_t), 2*sizeof(index_t)));
+        Node &n_pointmap = n_new_mesh[orig_verts_path];
+        n_pointmap.set(s_pointmap);
+        DataArray<index_t> orig_vert_domains = n_pointmap["domains"].value();
+        DataArray<index_t> orig_vert_ids     = n_pointmap["ids"].value();
+
+        index_t Nele = 1;
+        for(index_t d = 0; d < dimension; d++) Nele *= (new_dims[d]-1);
+        // The fields functions later in combine expect this to be 1 array, not a schema
+        Node &n_elem_map = n_new_mesh[orig_elements_path];
+        n_elem_map.set(DataType::index_t(Nele*2));
+        DataArray<index_t> elem_map = n_elem_map.value();
+
+        const std::array<index_t, 2> domain_lookup{
+            n_lhs["id"].to_index_t(),
+            n_rhs["id"].to_index_t()
+        };
+        n_new_mesh["id"] = n_lhs["id"];
+
+        const auto map_verts_elements = [this, 
+                &orig_vert_domains, &orig_vert_ids, &elem_map](
+            const index_t domain_id,
+            const index_t *g_dims, const index_t *l_dims, const index_t *l_reorder,
+            const int *l_reverse, const index_t *g_offsets) {
+
+            const std::array<index_t, MAXDIM> reordered_dims{
+                l_dims[l_reorder[0]],
+                (dimension > 1) ? l_dims[l_reorder[1]] : 0,
+                (dimension > 2) ? l_dims[l_reorder[2]] : 0
+            };
+            if(dimension == 3)
+            {
+                const index_t d2m1 = reordered_dims[2] - 1;
+                const index_t d1m1 = reordered_dims[1] - 1;
+                const index_t d0m1 = reordered_dims[0] - 1;
+                // Map verticies
+                std::array<index_t, 3> ijk;
+                for(index_t k = 0; k < reordered_dims[2]; k++)
+                {
+                    ijk[2] = l_reverse[2] ? (d2m1-k) : k;
+                    const index_t koffset = g_offsets[2] + k;
+                    for(index_t j = 0; j < reordered_dims[1]; j++)
+                    {
+                        ijk[1] = l_reverse[1] ? (d1m1-j) : j;
+                        const index_t joffset = g_offsets[1] + j;
+                        for(index_t i = 0; i < reordered_dims[0]; i++)
+                        {
+                            ijk[0] = l_reverse[0] ? (d0m1-i) : i;
+                            const std::array<index_t, 3> ijk_local = {
+                                ijk[l_reorder[0]],
+                                ijk[l_reorder[1]],
+                                ijk[l_reorder[2]]
+                            };
+                            const std::array<index_t, 3> ijk_global = {
+                                g_offsets[0] + i,
+                                joffset,
+                                koffset};
+                            index_t local_id, global_id;
+                            grid_ijk_to_id(ijk_local.data(), l_dims, local_id);
+                            grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
+                            orig_vert_domains[global_id] = domain_id;
+                            orig_vert_ids[global_id]     = local_id;
+                        }
+                    }
+                }
+                // Map elements to new global ijk
+                const index_t d2m2 = d2m1 - 1;
+                const index_t d1m2 = d1m1 - 1;
+                const index_t d0m2 = d0m1 - 1;
+                const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, g_dims[2]-1};
+                const std::array<index_t, 3> l_elem_dims{d0m1, d1m1, d2m1};
+                for(index_t k = 0; k < d2m1; k++)
+                {
+                    ijk[2] = l_reverse[2] ? (d2m2-k) : k;
+                    const index_t koffset = g_offsets[2] + k;
+                    for(index_t j = 0; j < d1m1; j++)
+                    {
+                        ijk[1] = l_reverse[1] ? (d1m2-j) : j;
+                        const index_t joffset = g_offsets[1] + j;
+                        for(index_t i = 0; i < d0m1; i++)
+                        {
+                            ijk[0] = l_reverse[0] ? (d0m2-i) : i;
+                            const std::array<index_t, 3> ijk_local = {
+                                ijk[l_reorder[0]],
+                                ijk[l_reorder[1]],
+                                ijk[l_reorder[2]]
+                            };
+                            const std::array<index_t, 3> ijk_global = {
+                                g_offsets[0] + i,
+                                joffset,
+                                koffset};
+                            index_t local_id, global_id;
+                            grid_ijk_to_id(ijk_local.data(), l_elem_dims.data(), local_id);
+                            grid_ijk_to_id(ijk_global.data(), g_elem_dims.data(), global_id);
+                            const index_t idx = global_id * 2;
+                            elem_map[idx]   = domain_id;
+                            elem_map[idx+1] = local_id;
+                        }
+                    }
+                }
+            }
+            else if(dimension == 2)
+            {
+                const index_t d1m1 = reordered_dims[1] - 1;
+                const index_t d0m1 = reordered_dims[0] - 1;
+                // Map verticies
+                for(index_t j = 0; j < reordered_dims[1]; j++)
+                {
+                    const index_t jactual = l_reverse[1] ? (d1m1-j) : j;
+                    const index_t joffset = g_offsets[1] + j;
+                    for(index_t i = 0; i < reordered_dims[0]; i++)
+                    {
+                        const std::array<index_t, 3> ijk_local = {
+                            l_reverse[0] ? (d0m1-i) : i,
+                            jactual,
+                            0
+                        };
+                        const std::array<index_t, 3> ijk_global = {
+                            g_offsets[0] + i,
+                            joffset,
+                            0};
+                        index_t local_id, global_id;
+                        grid_ijk_to_id(ijk_local.data(), reordered_dims.data(), local_id);
+                        grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
+                        orig_vert_domains[global_id] = domain_id;
+                        orig_vert_ids[global_id]     = local_id;
+                    }
+                }
+                // Map elements to new global ijk
+                const index_t d1m2 = d1m1 - 1;
+                const index_t d0m2 = d0m1 - 1;
+                const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, 1};
+                const std::array<index_t, 3> l_elem_dims{d0m1, d1m1, 1};
+                for(index_t j = 0; j < d1m1; j++)
+                {
+                    const index_t jactual = l_reverse[1] ? (d1m2-j) : j;
+                    const index_t joffset = g_offsets[1] + j;
+                    for(index_t i = 0; i < d0m1; i++)
+                    {
+                        const std::array<index_t, 3> ijk_local = {
+                            l_reverse[0] ? (d0m2-i) : i,
+                            jactual,
+                            0
+                        };
+                        const std::array<index_t, 3> ijk_global = {
+                            g_offsets[0] + i,
+                            joffset,
+                            0};
+                        index_t local_id, global_id;
+                        grid_ijk_to_id(ijk_local.data(), l_elem_dims.data(), local_id);
+                        grid_ijk_to_id(ijk_global.data(), g_elem_dims.data(), global_id);
+                        const index_t idx = global_id * 2;
+                        elem_map[idx]   = domain_id;
+                        elem_map[idx+1] = local_id;
+                    }
+                }
+            }
+            else // if(dimension == 1)
+            {
+                CONDUIT_ERROR("TODO: SUPPORT 1D");
+            }
+        };
+
+        {
+            // LHS shouldn't have offsets but it may need to reverse a dim
+            const std::array<index_t, 3> no_offsets{0, 0, 0};
+            const std::array<index_t, 3> no_reorder{0, 1, 2};
+            map_verts_elements(domain_lookup[0], new_dims.data(),
+                dims_lhs, no_reorder.data(), reverse_lhs.data(), no_offsets.data());
+        }
+
+        {
+            // RHS will be tranformed to exist in LHS' ijk space
+            std::array<index_t, MAXDIM> offsets{0,0,0};
+            offsets[matched_dim] = dims_lhs[matched_dim] - 1;
+            map_verts_elements(domain_lookup[1], new_dims.data(), 
+                dims_rhs, order_rhs.data(), reverse_rhs.data(), offsets.data());
+        }
+
+        // Move the coordinates
+        const Node &n_vals_lhs = n_cset_lhs["values"];
+        const Node &n_vals_rhs = n_rhs[cset_path + "/values"];
+        Node temp1, temp2;
+        orig_vert_domains.print();
+        orig_vert_ids.print();
+        for(index_t i = 0; i < orig_vert_domains.number_of_elements(); i++)
+        {
+            const index_t domain = orig_vert_domains[i];
+            const index_t id     = orig_vert_ids[i];
+            if(domain == domain_lookup[0])
+            {
+                if(!(id < n_vals_lhs[0].dtype().number_of_elements()))
+                {
+                    CONDUIT_ERROR("INDEX OUT OF BOUNDS, INVALID VALUE IN POINTMAP");
+                }
+
+                for(index_t d = 0; d < dimension; d++)
+                {
+                    temp1.set_external(
+                        DataType(n_vals_lhs[order_lhs[d]].dtype().id(),1),
+                        const_cast<void*>(n_vals_lhs[order_lhs[d]].element_ptr(id)));
+                    temp1.to_data_type(out_vals[order_lhs[d]].dtype().id(), temp2);
+                    std::memcpy(out_vals[order_lhs[d]].element_ptr(i), 
+                        temp2.element_ptr(0),
+                        temp2.dtype().element_bytes());
+                }
+            }
+            else if(domain == domain_lookup[1])
+            {
+                if(!(id < n_vals_rhs[0].dtype().number_of_elements()))
+                {
+                    CONDUIT_ERROR("INDEX OUT OF BOUNDS, INVALID VALUE IN POINTMAP");
+                }
+
+                for(index_t d = 0; d < dimension; d++)
+                {
+                    temp1.set_external(
+                        DataType(n_vals_rhs[order_rhs[d]].dtype().id(),1),
+                        const_cast<void*>(n_vals_rhs[order_rhs[d]].element_ptr(id)));
+                    temp1.to_data_type(out_vals[order_rhs[d]].dtype().id(), temp2);
+                    std::memcpy(out_vals[order_rhs[d]].element_ptr(i), 
+                        temp2.element_ptr(0),
+                        temp2.dtype().element_bytes());
+                }
+            }
+        }
+
+        // If the domains already had pointmaps/element maps get the original values
+        bool lhs_has_maps = n_lhs.has_path(orig_verts_path);
+        bool rhs_has_maps = n_rhs.has_path(orig_verts_path);
+        if(lhs_has_maps || rhs_has_maps)
+        {
+            const DataType dt = DataType::index_t(1);
+            const std::array<const Node*, 2> vert_maps{
+                n_lhs.fetch_ptr(orig_verts_path),
+                n_rhs.fetch_ptr(orig_verts_path)
+            };
+            const std::array<const Node*, 2> elem_maps{
+                n_lhs.fetch_ptr(orig_elements_path),
+                n_rhs.fetch_ptr(orig_elements_path)
+            };
+            Node temp_domain;
+            Node temp_id;
+            // Do verticies
+            for(index_t i = 0; i < orig_vert_domains.number_of_elements(); i++)
+            {
+                if(orig_vert_domains[i] == domain_lookup[0] && vert_maps[0])
+                {
+                    const index_t id = orig_vert_ids[i];
+                    temp_domain.set_external(dt, const_cast<void*>(vert_maps[0]->fetch("domains").element_ptr(id)));
+                    temp_id.set_external(dt, const_cast<void*>(vert_maps[0]->fetch("ids").element_ptr(id)));
+                    orig_vert_domains[i] = temp_domain.to_index_t();
+                    orig_vert_ids[i] = temp_id.to_index_t();
+                }
+                else if(orig_vert_domains[i] == domain_lookup[1] && vert_maps[1])
+                {
+                    const index_t id = orig_vert_ids[i];
+                    temp_domain.set_external(dt, const_cast<void*>(vert_maps[1]->fetch("domains").element_ptr(id)));
+                    temp_id.set_external(dt, const_cast<void*>(vert_maps[1]->fetch("ids").element_ptr(id)));
+                    orig_vert_domains[i] = temp_domain.to_index_t();
+                    orig_vert_ids[i] = temp_id.to_index_t();
+                }
+            }
+            // Do elements
+            for(index_t i = 0; i < Nele; i++)
+            {
+                const index_t idx = i*2;
+                if(elem_map[idx] == domain_lookup[0] && elem_maps[0])
+                {
+                    const index_t id = elem_map[idx+1];
+                    const index_t l_idx = id*2;
+                    temp_domain.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx)));
+                    temp_id.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx+1)));
+                    elem_map[idx]   = temp_domain.to_index_t();
+                    elem_map[idx+1] = temp_id.to_index_t();
+                }
+                else if(elem_map[idx] == domain_lookup[1] && elem_maps[1])
+                {
+                    const index_t id = elem_map[idx+1];
+                    const index_t l_idx = id*2;
+                    temp_domain.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx)));
+                    temp_id.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx+1)));
+                    elem_map[idx]   = temp_domain.to_index_t();
+                    elem_map[idx+1] = temp_id.to_index_t();
+                }
+            }
+        }
     }
 
     void build_implicit_maps(const std::vector<const Node *> n_meshes,
@@ -7373,7 +7128,6 @@ private:
 
                 // Do element_map
                 {
-
                     const index_t nx   = elem_dims[0];
                     const index_t nxny = nx*elem_dims[1];
                     const index_t ioff = offsets[0];
