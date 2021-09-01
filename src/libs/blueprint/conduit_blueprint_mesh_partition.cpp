@@ -4495,19 +4495,17 @@ point_merge::translate_system(coord_system in_system, coord_system out_system,
         float64 p0, float64 p1, float64 p2,
         float64 &out_p0, float64 &out_p1, float64 &out_p2)
 {
-    // TODO: Handle rz
     switch(out_system)
     {
+    case coord_system::logical: // fallthrough, out_system is never logical.
     case coord_system::cartesian:
         switch(in_system)
         {
-        case coord_system::cylindrical:
-            // TODO
-            break;
         case coord_system::spherical:
             rtp_to_xyz(p0,p1,p2, out_p0,out_p1,out_p2);
             break;
-        default:    // case coord_system:: cartesian Can't happen
+        // cartesian == cylindrical in this context
+        default:
             out_p0 = p0;
             out_p1 = p1;
             out_p2 = p2;
@@ -4517,11 +4515,8 @@ point_merge::translate_system(coord_system in_system, coord_system out_system,
     case coord_system::cylindrical:
         switch(in_system)
         {
-        case coord_system::cartesian:
-            // TODO
-            break;
         case coord_system::spherical:
-            // TODO
+            rtp_to_xyz(p0,p1,p2, out_p0,out_p1,out_p2);
             break;
         default:
             out_p0 = p0;
@@ -4533,11 +4528,9 @@ point_merge::translate_system(coord_system in_system, coord_system out_system,
     case coord_system::spherical:
         switch(in_system)
         {
+        case coord_system::cylindrical: // Fallthrough, same as cartesian in this context
         case coord_system::cartesian:
             xyz_to_rtp(p0,p1,p2, out_p0,out_p1,out_p2);
-            break;
-        case coord_system::cylindrical:
-            // TODO
             break;
         default:
             out_p0 = p0;
@@ -4561,6 +4554,9 @@ point_merge::get_axes_for_system(coord_system cs)
         break;
     case coord_system::spherical:
         retval = &mesh::utils::SPHERICAL_AXES;
+        break;
+    case coord_system::logical:
+        retval = &mesh::utils::LOGICAL_AXES;
         break;
     case coord_system::cartesian: // Do nothing
         break;
@@ -4589,7 +4585,7 @@ struct entity
 };
 
 // static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
-// Q: Why doesn't this exist in conduit_blueprint_mesh_utils.hpp ?
+// Q: Should this exist in conduit_blueprint_mesh_utils.hpp ?
 enum class ShapeId : index_t
 {
     Vertex     = 0,
@@ -4602,6 +4598,7 @@ enum class ShapeId : index_t
     Polyhedral = 7
 };
 
+//-------------------------------------------------------------------------
 template<typename Func>
 static void iterate_elements(const Node &topo, Func &&func)
 {
@@ -5353,6 +5350,7 @@ public:
     combine_implicit_topologies() = default;
     ~combine_implicit_topologies() = default;
 
+    //-------------------------------------------------------------------------
     bool execute(const std::string &topo_name,
         const std::string &rt,
         const std::vector<const Node *> &n_inputs,
@@ -5566,6 +5564,7 @@ private:
     static const index_t dim_for_face[6];
     static const index_t dim_for_edge[4];
 
+    //-------------------------------------------------------------------------
     /**
     @brief Helper function to case a node value at a given index to double.
     */
@@ -5577,6 +5576,7 @@ private:
         return temp.to_double();
     };
 
+    //-------------------------------------------------------------------------
     /**
     @brief Returns a reference to the correct vector defined in conduit_blueprint_mesh_utils.hpp.
         Inspects n_inputs[0] and [1] to determine the proper axes.
@@ -5603,6 +5603,7 @@ private:
         );
     }
 
+    //-------------------------------------------------------------------------
     std::vector<index_t>
     find_implicit_offsets(const Node &whole_mesh,
             const Node &sub_mesh) const
@@ -5741,6 +5742,7 @@ private:
     }
 
 #if 0
+    //-------------------------------------------------------------------------
     // Not used, maybe useful.
     DataType
     find_best_coord_vals_dtype(const Node &n_vals1, const Node &n_vals2) const
@@ -5762,6 +5764,7 @@ private:
     }
 #endif
 
+    //-------------------------------------------------------------------------
     /**
     @brief Given a face id returns the dimension that corresponds to it.
         For instance face_id 4 represents the i=0 plane (when dimension == 3),
@@ -5804,6 +5807,7 @@ private:
         return matched_dim;
     }
 
+    //-------------------------------------------------------------------------
     /**
     @brief Face ids correspond with different extents of the structured grid.
         For example face_id = 5 is the face that has i = dims[0] - 1.
@@ -5833,6 +5837,7 @@ private:
         }
     }
 
+    //-------------------------------------------------------------------------
     /**
     @brief Read the type information in n_values to create an output schema for the
             given dimensions.
@@ -5865,6 +5870,7 @@ private:
         return N;
     }
 
+    //-------------------------------------------------------------------------
     /**
     @brief Inspects the given face ids and permutation id to determine
       how the two meshes will need to be oriented in the resulting combination.
@@ -5985,6 +5991,7 @@ private:
         }
     }
 
+    //-------------------------------------------------------------------------
     /**
     @brief Inspects n_mesh to create a bounding box for the mesh extents.
       For 2D out_bb.size() == 4, for 3D out_bb.size() == 6.
@@ -6069,6 +6076,7 @@ private:
         }
     }
 
+    //-------------------------------------------------------------------------
     /**
     @brief Using the bounding box, try to match a face in lhs to a face in rhs;
         permuting the faces of rhs if necessary.
@@ -6205,6 +6213,7 @@ private:
         return false;
     }
 
+    //-------------------------------------------------------------------------
     /**
     @brief Iterates over the given domain using l_dims, l_reorder, l_reverse
       to translate it from its local ijk to the new global ijk. Results are
@@ -6374,6 +6383,7 @@ private:
         }
     }
 
+    //-------------------------------------------------------------------------
     bool combine_implicit_impl(const std::vector<const Node *> &n_meshes,
             Node &output) const
     {
@@ -6641,7 +6651,7 @@ private:
                 break;
             }
         }
-        std::cout << "REMAINING DOMAINS " << meshes_and_bbs.size() << std::endl;
+        // std::cout << "REMAINING DOMAINS " << meshes_and_bbs.size() << std::endl;
         bool retval = false;
         if(meshes_and_bbs.size() == 1)
         {
@@ -6655,6 +6665,7 @@ private:
         return retval;
     }
 
+    //-------------------------------------------------------------------------
     bool
     combine_structured_impl(
             const std::vector<const Node *> &n_meshes,
@@ -6954,7 +6965,7 @@ private:
                 break;
             }
         }
-        std::cout << "REMAINING DOMAINS " << meshes_and_bbs.size() << std::endl;
+        // std::cout << "REMAINING DOMAINS " << meshes_and_bbs.size() << std::endl;
         bool retval = false;
         if(meshes_and_bbs.size() == 1)
         {
@@ -6977,6 +6988,7 @@ private:
         return retval;
     }
 
+    //-------------------------------------------------------------------------
     /**
     @brief Creates a new domain in n_new_mesh that is the combination
       of n_lhs and n_rhs. This new domain will start in n_lhs and append
@@ -7234,6 +7246,7 @@ private:
         }
     }
 
+    //-------------------------------------------------------------------------
     /**
     @brief Creates pointmaps and element_maps for rectilinear and uniform combinations
         to be used by to map fields later in the combine process.
@@ -7428,6 +7441,7 @@ const index_t combine_implicit_topologies::dim_for_edge[4] = {1, 1, 0, 0};
 namespace fields
 {
 
+//-------------------------------------------------------------------------
 static void
 determine_schema(const Node &in,
         const index_t ntuples, index_t &out_ncomps,
@@ -7525,7 +7539,9 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
 }
 
 //-------------------------------------------------------------------------
-
+/**
+ @brief Overload for the second flavor of pointmap
+*/
 static void
 map_vertex_field(const std::vector<const Node*> &in_nodes,
         const DataArray<index_t> &orig_domains,
@@ -7781,7 +7797,8 @@ partitioner::recommended_topology(const std::vector<const Node *> &inputs,
     return retval;
 }
 
-std::vector<std::pair<std::string, std::vector<const Node *>>>
+//-------------------------------------------------------------------------
+static std::vector<std::pair<std::string, std::vector<const Node *>>>
 group_coordsets(const std::vector<const Node *> inputs)
 {
     // Group all the like-named coordsets
@@ -7825,7 +7842,8 @@ group_coordsets(const std::vector<const Node *> inputs)
     return coordset_groups;
 }
 
-std::vector<std::pair<std::string, std::vector<const Node *>>>
+//-------------------------------------------------------------------------
+static std::vector<std::pair<std::string, std::vector<const Node *>>>
 group_topologies(const std::vector<const Node *> &inputs)
 {
     using topo_group_t = std::pair<std::string, std::vector<const Node*>>;
