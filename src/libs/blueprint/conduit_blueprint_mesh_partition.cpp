@@ -41,12 +41,16 @@
 //#include <mpi.h>
 //#endif
 
+// Toggles debug prints for point merge
 // #define DEBUG_POINT_MERGE
 #ifndef DEBUG_POINT_MERGE
 #define PM_DEBUG_PRINT(stream)
 #else
 #define PM_DEBUG_PRINT(stream) do { std::cerr << stream; } while(0)
 #endif
+
+// Toggles debug prints for structured combine
+// #define DEBUG_STRUCTURED_COMBINE
 
 using index_t=conduit::index_t;
 using std::cout;
@@ -5557,6 +5561,9 @@ private:
     static const index_t dim_for_face[6];
     static const index_t dim_for_edge[4];
 
+    /**
+    @brief Helper function to case a node value at a given index to double.
+    */
     static double as_double(const Node &n_vals, index_t idx)
     {
         Node temp;
@@ -5565,6 +5572,10 @@ private:
         return temp.to_double();
     };
 
+    /**
+    @brief Returns a reference to the correct vector defined in conduit_blueprint_mesh_utils.hpp.
+        Inspects n_inputs[0] and [1] to determine the proper axes.
+    */
     static const std::vector<std::string> &
     figure_out_implicit_axes(const std::vector<const Node *> &n_inputs)
     {
@@ -5593,9 +5604,7 @@ private:
     {
         std::vector<index_t> offsets;
         const Node &n_whole_cset = whole_mesh[cset_path];
-        const Node &n_whole_topo = whole_mesh[topo_path];
         const Node &n_sub_cset   = sub_mesh[cset_path];
-        const Node &n_sub_topo   = sub_mesh[topo_path];
         if(mode == CombineImplicitMode::Uniform)
         {
             const auto worigin = mesh::utils::coordset::uniform::origin(n_whole_cset);
@@ -5635,6 +5644,13 @@ private:
         }
         else // if(mode == CombineImplicitMode::Structured)
         {
+        #ifndef OLD_STRUCTURED_COMBINE
+            // NOTE: Structured combine does all the offset calculations itself because it also
+            //  has to rotate and reflect input domains.
+            CONDUIT_ERROR("Internal error, structured meshes should not be combined in this way.")
+        #else
+            const Node &n_whole_topo = whole_mesh[topo_path];
+            const Node &n_sub_topo   = sub_mesh[topo_path];
             std::array<index_t, MAXDIM> whole_dims;
             std::array<index_t, MAXDIM> sub_dims;
             mesh::utils::topology::logical_dims(n_whole_topo, whole_dims.data(), MAXDIM);
@@ -5714,10 +5730,13 @@ private:
                     CONDUIT_ERROR("Unable to find offset for structured topology.");
                 }
             }
+        #endif
         }
         return offsets;
     }
 
+#if 0
+    // Not used, maybe useful.
     DataType
     find_best_coord_vals_dtype(const Node &n_vals1, const Node &n_vals2) const
     {
@@ -5736,7 +5755,18 @@ private:
             ? (max_bytes == 4 ? DataType::float32() : DataType::float64())
             : (max_bytes == 4 ? DataType::int32()   : DataType::int64()));
     }
+#endif
 
+    /**
+    @brief Given a face id returns the dimension that corresponds to it.
+        For instance face_id 4 represents the i=0 plane (when dimension == 3),
+        so 0 would be the return value.
+    @param face_id The id of the face
+    @param[out] other_dims Optional argument which the function will use to report out
+        the face's uv dimensions. For example when face_id is 4 the face's uv dimenions
+        correspond to jk, so [1,2] would be returned.
+    @return The corresponding dimension.
+    */
     index_t
     determine_matched_dim(const index_t face_id, index_t *other_dims = nullptr) const
     {
@@ -5830,6 +5860,16 @@ private:
         return N;
     }
 
+    /**
+    @brief Inspects the given face ids and permutation id to determine
+      how the two meshes will need to be oriented in the resulting combination.
+    
+      The *order variables will hold a mapping from local_dims to global dims
+      IE: (i,j,k) -> (k,j,i) would be represented as [2,1,0]
+
+      The *reverse variables will hold a 1 if the dimension needs to be reversed and 0 otherwise.
+      IE: (i,j,k) -> (-k,j,-i) would be represented as [1,0,1].
+    */
     void
     lookup_case(const index_t lhs_face, const index_t rhs_face, 
         const index_t rhs_permutation, 
@@ -5853,11 +5893,16 @@ private:
             const int *perm = permutation_lookup[rhs_permutation];
             const int *rev  = permutation_lookup_reverse[rhs_permutation];
             std::array<index_t, 2> temp;
+            for(int  i = 0; i < 2; i++)
+            {
+                temp[i] = uv_rhs[perm[i]];
+            }
+
+#ifdef DEBUG_STRUCTURED_COMBINE
             std::cout << "PERMUTATION " << rhs_permutation << std::endl;
             std::cout << "RHS UV:\n  ";
             for(int  i = 0; i < 2; i++)
             {
-                temp[i] = uv_rhs[perm[i]];
                 std::cout << temp[i] << " ";
             }
             std::cout << std::endl;
@@ -5867,6 +5912,7 @@ private:
                 std::cout <<  rev[perm[i]] << " ";
             }
             std::cout << std::endl;
+#endif
 
             rhs_order[dim_lhs]   = dim_rhs;
             rhs_order[uv_lhs[0]] = temp[0];
@@ -5916,13 +5962,28 @@ private:
             lhs_order[1] = 1;
             lhs_reverse[0] = false;
             lhs_reverse[1] = false;
-            if(lhs_face == 0 || lhs_face == 2)
+
+            static const int matched_face_value[4] = {0,1,0,1};
+            const int lhs_matched_dim_value = matched_face_value[lhs_face];
+            const int rhs_matched_dim_value = matched_face_value[rhs_face];
+            // LHS can't start on the edge dividing the left from the right
+            if(lhs_matched_dim_value == 0)
             {
                 lhs_reverse[dim_lhs] = true;
+            }
+            
+            // Opposite applies for RHS
+            if(rhs_matched_dim_value == 1)
+            {
+                rhs_reverse[dim_rhs] = true;
             }
         }
     }
 
+    /**
+    @brief Inspects n_mesh to create a bounding box for the mesh extents.
+      For 2D out_bb.size() == 4, for 3D out_bb.size() == 6.
+    */
     void create_structured_bounding_box(const Node &n_mesh,
         std::vector<vec> &out_bb) const
     {
@@ -5940,7 +6001,6 @@ private:
             (axes.size() > 2 ? n_cset_values.fetch_ptr(axes[2]) : nullptr)
         };
 
-        // TODO: Factor out the dimension cases and use a loop somehow?
         out_bb.clear();
         if(dimension == 3)
         {
@@ -6004,6 +6064,10 @@ private:
         }
     }
 
+    /**
+    @brief Using the bounding box, try to match a face in lhs to a face in rhs;
+        permuting the faces of rhs if necessary.
+    */
     bool match_structured_faces(
                 const combine_structured_data_t &lhs, 
                 const combine_structured_data_t &rhs, 
@@ -6014,12 +6078,17 @@ private:
         const auto &rhs_bb = rhs.second;
 
         // TODO: Static class variable?
+        // The order of these face definitions matter because they
+        //  all create planes with the same uv orientation.
         static const index_t faces3d[6][4] = {
             {0, 2, 3, 1}, {4, 6, 7, 5},  // Back  / Front (k0, kmax)
             {0, 1, 5, 4}, {2, 3, 7, 6},  // Bottom/ Top   (j0, jmax)
             {0, 4, 6, 2}, {1, 5, 7, 3}   // Left  / Right (i0, imax)
         };
 
+        // TODO: Static class variable?
+        // The order of these edge definitions matter because they
+        //  all create edges with the same uv orientation.
         static const index_t edges2d[4][2] = {
             {0, 1}, {2, 3}, // Bottom/ Top   (j0, jmax)
             {0, 2}, {1, 3}  // Left  / Right (i0, imax)
@@ -6045,6 +6114,7 @@ private:
                         rhs_face[fi] = rhs_bb[faces3d[j][fi]];
                     }
 
+                    // TODO: Static class variable?
                     static const index_t perms[8][4] = {            // Inside our matched plane
                         {0,1,2,3}, {3,0,1,2}, {2,3,0,1}, {1,2,3,0}, // (u,v), (-v,u), (-u,-v), (v,-u)
                         {0,3,2,1}, {1,0,3,2}, {2,1,0,3}, {3,2,1,0}  // (v,u), (u,-v), (-v,-u), (-u,v)
@@ -6098,6 +6168,7 @@ private:
                     rhs_edge[0][2] = 0;
                     rhs_edge[1][2] = 0;
 
+                    // TODO: Static class variable?
                     static const index_t perms[2][2] = {
                         {0,1}, {1,0}
                     };
@@ -6129,6 +6200,25 @@ private:
         return false;
     }
 
+    /**
+    @brief Iterates over the given domain using l_dims, l_reorder, l_reverse
+      to translate it from its local ijk to the new global ijk. Results are
+      stored in orig_vert_domains, orig_vert_ids, elem_map.
+    @param domain_id This domain's id, will be used to fill orig_vert_domains.
+    @param g_dims The vertex dim lengths of the new domain. "Global dims"
+    @param l_dims The vertex dim lengths of this domain.
+        NOTE: This should be the domain's native dims, NOT reordered in any way.
+        This function will internally handle any changes in orientation using the given
+        information.
+    @param l_reorder A mapping of local dimensions to global dimensions.
+        For example {i,j,k} -> {j,i,k} would be [1,0,2].
+    @param l_reverse Indicates whether a given dimension needs to be reversed.
+        For example {i,j,k} -> {-j,i,k} would be [1,0,0]
+    @param g_offsets The offsets into the new domain's ijk space that this domain will start.
+    @param orig_vert_domains Output data array for source vertex domain ids.
+    @param orig_vert_ids Output data array for source vertex ids.
+    @param elem_map Output data array for source element domain ids and vertex ids.
+    */
     void map_structured_verts_elems(
             const index_t domain_id,
             const index_t *g_dims, const index_t *l_dims, const index_t *l_reorder,
@@ -6136,13 +6226,6 @@ private:
             DataArray<index_t> &orig_vert_domains, DataArray<index_t> &orig_vert_ids,
             DataArray<index_t> &elem_map) const
     {
-        int N = 1;
-        int Nglobal = 1;
-        for(int i = 0; i < 3; i++)
-        {
-            N *= l_dims[i];
-            Nglobal *= g_dims[i];
-        }
         const std::array<index_t, MAXDIM> reordered_dims{
             l_dims[l_reorder[0]],
             (dimension > 1) ? l_dims[l_reorder[1]] : 0,
@@ -6153,7 +6236,7 @@ private:
             const index_t d2m1 = reordered_dims[2] - 1;
             const index_t d1m1 = reordered_dims[1] - 1;
             const index_t d0m1 = reordered_dims[0] - 1;
-            // Map verticies
+            // Map verticies to new global ijk
             std::array<index_t, 3> ijk;
             for(index_t k = 0; k < reordered_dims[2]; k++)
             {
@@ -6178,14 +6261,6 @@ private:
                         index_t local_id, global_id;
                         grid_ijk_to_id(ijk_local.data(), l_dims, local_id);
                         grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
-                        if(local_id >= N)
-                        {
-                            CONDUIT_ERROR("INVALID LOCAL ID " << local_id);
-                        }
-                        if(global_id >= Nglobal)
-                        {
-                            CONDUIT_ERROR("INVALID GLOBAL ID " << global_id);
-                        }
                         orig_vert_domains[global_id] = domain_id;
                         orig_vert_ids[global_id]     = local_id;
                     }
@@ -6197,13 +6272,6 @@ private:
             const index_t d0m2 = d0m1 - 1;
             const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, g_dims[2]-1};
             const std::array<index_t, 3> l_elem_dims{l_dims[0]-1, l_dims[1]-1, l_dims[2]-1};
-            N = 1;
-            Nglobal = 1;
-            for(int i = 0; i < 3; i++)
-            {
-                N *= l_elem_dims[i];
-                Nglobal *= g_elem_dims[i];
-            }
             for(index_t k = 0; k < d2m1; k++)
             {
                 ijk[2] = l_reverse[2] ? (d2m2-k) : k;
@@ -6228,18 +6296,6 @@ private:
                         grid_ijk_to_id(ijk_local.data(), l_elem_dims.data(), local_id);
                         grid_ijk_to_id(ijk_global.data(), g_elem_dims.data(), global_id);
                         const index_t idx = global_id * 2;
-                        if(local_id >= N)
-                        {
-                            CONDUIT_ERROR("INVALID LOCAL ID " << local_id);
-                        }
-                        if(global_id >= Nglobal)
-                        {
-                            CONDUIT_ERROR("INVALID GLOBAL ID " << global_id);
-                        }
-                        if(idx >= elem_map.number_of_elements())
-                        {
-                            CONDUIT_ERROR("INVALID INDEX INTO ELEM_MAP " << idx);
-                        }
                         elem_map[idx]   = domain_id;
                         elem_map[idx+1] = local_id;
                     }
@@ -6250,16 +6306,19 @@ private:
         {
             const index_t d1m1 = reordered_dims[1] - 1;
             const index_t d0m1 = reordered_dims[0] - 1;
-            // Map verticies
+            // Map verticies to new global ijk
+            std::array<index_t, 3> ijk;
+            ijk[2] = 0;
             for(index_t j = 0; j < reordered_dims[1]; j++)
             {
-                const index_t jactual = l_reverse[1] ? (d1m1-j) : j;
+                ijk[1] = l_reverse[1] ? (d1m1-j) : j;
                 const index_t joffset = g_offsets[1] + j;
                 for(index_t i = 0; i < reordered_dims[0]; i++)
                 {
+                    ijk[0] = l_reverse[0] ? (d0m1-i) : i;
                     const std::array<index_t, 3> ijk_local = {
-                        l_reverse[0] ? (d0m1-i) : i,
-                        jactual,
+                        ijk[l_reorder[0]],
+                        ijk[l_reorder[1]],
                         0
                     };
                     const std::array<index_t, 3> ijk_global = {
@@ -6267,7 +6326,7 @@ private:
                         joffset,
                         0};
                     index_t local_id, global_id;
-                    grid_ijk_to_id(ijk_local.data(), reordered_dims.data(), local_id);
+                    grid_ijk_to_id(ijk_local.data(), l_dims, local_id);
                     grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
                     orig_vert_domains[global_id] = domain_id;
                     orig_vert_ids[global_id]     = local_id;
@@ -6276,17 +6335,19 @@ private:
             // Map elements to new global ijk
             const index_t d1m2 = d1m1 - 1;
             const index_t d0m2 = d0m1 - 1;
-            const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, 1};
-            const std::array<index_t, 3> l_elem_dims{d0m1, d1m1, 1};
+            const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, 0};
+            const std::array<index_t, 3> l_elem_dims{l_dims[0]-1, l_dims[1]-1, 0};
+            ijk[2] = 0;
             for(index_t j = 0; j < d1m1; j++)
             {
-                const index_t jactual = l_reverse[1] ? (d1m2-j) : j;
+                ijk[1] = l_reverse[1] ? (d1m2-j) : j;
                 const index_t joffset = g_offsets[1] + j;
                 for(index_t i = 0; i < d0m1; i++)
                 {
+                    ijk[0] = l_reverse[0] ? (d0m2-i) : i;
                     const std::array<index_t, 3> ijk_local = {
-                        l_reverse[0] ? (d0m2-i) : i,
-                        jactual,
+                        ijk[l_reorder[0]],
+                        ijk[l_reorder[1]],
                         0
                     };
                     const std::array<index_t, 3> ijk_global = {
@@ -6583,7 +6644,6 @@ private:
             //  instead of deep copying.
             output[cset_path] = (*meshes_and_bbs[0].first)[cset_path];
             output[topo_path] = (*meshes_and_bbs[0].first)[topo_path];
-            output.print();
             build_implicit_maps(n_meshes, output, output[cset_path+"/pointmaps"], output[topo_path+"/element_map"]);
             retval = true;
         }
@@ -6608,10 +6668,9 @@ private:
         index_t iteration = 0;
         while(meshes_and_bbs.size() > 1)
         {
-            iteration++;
-
+        #ifdef DEBUG_STRUCTURED_COMBINE
             std::cout << "Iteration " << iteration << std::endl;
-            if(iteration > 1)
+            if(iteration > 0)
             {
                 Node temp;
                 for(size_t i = 0; i < meshes_and_bbs.size(); i++)
@@ -6638,7 +6697,8 @@ private:
                     + ".yaml");
                 temp.to_string_stream(f_out);
             }
-
+            iteration++;
+        #endif
 
             // Get the first extents
             bool any_matches = false;
@@ -6661,9 +6721,8 @@ private:
 
                     if(match_found)
                     {
-                        std::cout << "Handling structured combine" << std::endl;
-
                         // TODO: Create a function to allocate a new temp mesh
+                        //  this can be the same for structured and implicit combines
                         Node &new_mesh = n_temporary_meshes.append();
                         Node &new_cset = new_mesh[cset_path];
                         Node &new_topo = new_mesh[topo_path];
@@ -6680,9 +6739,11 @@ private:
                             }
                         }
 
+                    #ifdef DEBUG_STRUCTURED_COMBINE
                         std::cout << "Matched faces " << n_meshi->fetch_existing("id").to_index_t() << ":" << ei_face 
                             << " to " << n_meshj->fetch_existing("id").to_index_t() << ":" << ej_face << ":"
                             << ej_permutation << std::endl;
+                    #endif
 
                         // Determine who is the lhs and who is the rhs
                         const Node *n_lhs = nullptr;
@@ -6770,6 +6831,7 @@ private:
                             vec3 temp;
                             index_t idx;
 
+                            // TODO: Sort "other_dims" in ascending order for better memory traversal
                             determine_matched_dim(lhs_face, other_dims.data());
                             idx_for_matched_dim(lhs_face, dims_lhs.data(), ijk.data());
                             for(index_t j = 0; j < dims_lhs[other_dims[1]]; j++)
@@ -6789,6 +6851,7 @@ private:
                             }
 
                             // Check all the points in the tree against the points from the rhs face
+                            // TODO: Sort "other_dims" in ascending order for better memory traversal
                             determine_matched_dim(rhs_face, other_dims.data());
                             idx_for_matched_dim(rhs_face, dims_rhs.data(), ijk.data());
                             index_t *existing_idx = nullptr;
@@ -6861,19 +6924,15 @@ private:
                         // Nothing needs to be checked for dimension 1
                         // NOTE: We would have returned from the function if the check failed
 
+                        // Creates the "new_mesh" and handling orientation cases
                         combine_structured_submeshes(
                             *n_lhs, *n_rhs, dims_lhs.data(), 
                             dims_rhs.data(), lhs_face, rhs_face, ej_permutation,
                             new_mesh);
 
-                        {
-                            std::ofstream out("intermediate_mesh.yaml");
-                            new_mesh.to_string_stream(out);
-                            out << std::endl;
-                        }
-
                         meshes_and_bbs[ei].first = &new_mesh;
                         create_structured_bounding_box(new_mesh, meshes_and_bbs[ei].second);
+                        // TODO: Destroy n_lhs and n_rhs if they are temp nodes
                         meshes_and_bbs.erase(meshes_and_bbs.begin() + ej);
                         ei_matched = true;
                         break;
@@ -6900,36 +6959,26 @@ private:
             output[cset_path] = (*meshes_and_bbs[0].first)[cset_path];
             output[topo_path] = (*meshes_and_bbs[0].first)[topo_path];
 
-            // for(size_t i = 0; i < meshes_and_bbs.size(); i++)
-            // {
-            //     const Node &mesh = output;
-            //     Node &out_mesh = temp[(i < 10) ? "domain_0000" + std::to_string(i) : "domain_000" + std::to_string(i)];
-            //     out_mesh.set_external(mesh);
-
-            //     out_mesh["fields/original_element_ids/association"] = "element";
-            //     out_mesh["fields/original_element_ids/topology"] = "mesh";
-            //     Schema s;
-            //     const auto N = mesh["topologies/mesh/element_map"].dtype().number_of_elements() / 2;
-            //     const void *ptr = mesh["topologies/mesh/element_map"].element_ptr(0);
-            //     s["domains"].set(DataType::index_t(N, 0, 2*sizeof(index_t)));
-            //     s["ids"].set(DataType::index_t(N, sizeof(index_t), 2*sizeof(index_t)));
-            //     out_mesh["fields/original_element_ids/values"].set_external(s, const_cast<void*>(ptr));
-
-            //     out_mesh["fields/original_vertex_ids/association"] = "vertex";
-            //     out_mesh["fields/original_vertex_ids/topology"] = "mesh";
-            //     out_mesh["fields/original_vertex_ids/values"].set_external(mesh["coordsets/coords/pointmaps"]);
-            // }
+        #ifdef DEBUG_STRUCTURED_COMBINE
             std::ofstream f_out("combine_structured_final.yaml");
-            output["fields"].set_external((*meshes_and_bbs[0].first)["fields"]);
+            if((*meshes_and_bbs[0].first).has_child("fields"))
+            {
+                output["fields"].set_external((*meshes_and_bbs[0].first)["fields"]);
+            }
             output.to_string_stream(f_out);
-            output.remove_child("fields");
-
-            // output.print();
+            if(output.has_child("fields")) output.remove_child("fields");
+        #endif
             retval = true;
         }
         return retval;
     }
 
+    /**
+    @brief Creates a new domain in n_new_mesh that is the combination
+      of n_lhs and n_rhs. This new domain will start in n_lhs and append
+      n_rhs in the appropriate direction. This handles any remapping that
+      needs to happen as a result of transforming the input domains.
+    */
     void combine_structured_submeshes(
         const Node &n_lhs, const Node &n_rhs,
         const index_t *dims_lhs, const index_t *dims_rhs,
@@ -6941,11 +6990,6 @@ private:
         const Node &n_cset_lhs = n_lhs[cset_path];
         Node &n_new_topo = n_new_mesh[topo_path];
         Node &n_new_cset = n_new_mesh[cset_path];
-
-        if(face_lhs == 4 && face_rhs == 2)
-        {
-            std::cout << "This is the one" << std::endl;
-        }
 
         // Determine final mesh size
         const index_t matched_dim = determine_matched_dim(face_lhs);
@@ -6983,6 +7027,7 @@ private:
         DataArray<index_t> orig_vert_domains = n_pointmap["domains"].value();
         DataArray<index_t> orig_vert_ids     = n_pointmap["ids"].value();
 
+    #ifdef DEBUG_STRUCTURED_COMBINE
         std::cout << "Dims LHS:";
         for(int i = 0; i < 3; i++)
         {
@@ -7001,7 +7046,7 @@ private:
             std::cout << " " << new_dims[i];
         }
         std::cout << std::endl;
-
+    #endif
 
         index_t Nele = 1;
         for(index_t d = 0; d < dimension; d++) Nele *= (new_dims[d]-1);
@@ -7038,18 +7083,18 @@ private:
         const Node &n_vals_lhs = n_cset_lhs["values"];
         const Node &n_vals_rhs = n_rhs[cset_path + "/values"];
         Node temp1, temp2;
-        orig_vert_domains.print();
-        orig_vert_ids.print();
         for(index_t i = 0; i < orig_vert_domains.number_of_elements(); i++)
         {
             const index_t domain = orig_vert_domains[i];
             const index_t id     = orig_vert_ids[i];
             if(domain == domain_lookup[0])
             {
+            #ifdef DEBUG_STRUCTURED_COMBINE
                 if(!(id < n_vals_lhs[0].dtype().number_of_elements()))
                 {
                     CONDUIT_ERROR("INDEX OUT OF BOUNDS, INVALID VALUE IN POINTMAP");
                 }
+            #endif
 
                 for(index_t d = 0; d < dimension; d++)
                 {
@@ -7064,10 +7109,12 @@ private:
             }
             else if(domain == domain_lookup[1])
             {
+            #ifdef DEBUG_STRUCTURED_COMBINE
                 if(!(id < n_vals_rhs[0].dtype().number_of_elements()))
                 {
                     CONDUIT_ERROR("INDEX OUT OF BOUNDS, INVALID VALUE IN POINTMAP");
                 }
+            #endif
 
                 for(index_t d = 0; d < dimension; d++)
                 {
@@ -7082,25 +7129,32 @@ private:
             }
         }
 
-        n_new_mesh["fields/dist/association"] = "vertex";
-        n_new_mesh["fields/dist/topology"] = "mesh";
-        n_new_mesh["fields/dist/values"].set(DataType::c_float(N));
-        float *out_dist = (float*)n_new_mesh["fields/dist/values"].element_ptr(0);
-        const float *dist_lhs = (const float*)n_lhs["fields/dist/values"].element_ptr(0);
-        const float *dist_rhs = (const float*)n_rhs["fields/dist/values"].element_ptr(0);
-        for(index_t i = 0; i < orig_vert_domains.number_of_elements(); i++)
+    #if DEBUG_STRUCTURED_COMBINE
+        // The mesh used in the unit test has a "dist" field which is useful to plot
+        //  in visit to see if the vertex mappings got scrambled.
+        if(n_lhs.has_path("fields/dist/values") && n_rhs.has_path("fields/dist/values"))
         {
-            const index_t domain = orig_vert_domains[i];
-            const index_t id     = orig_vert_ids[i];
-            if(domain == domain_lookup[0])
+            n_new_mesh["fields/dist/association"] = "vertex";
+            n_new_mesh["fields/dist/topology"] = "mesh";
+            n_new_mesh["fields/dist/values"].set(DataType::c_float(N));
+            float *out_dist = (float*)n_new_mesh["fields/dist/values"].element_ptr(0);
+            const float *dist_lhs = (const float*)n_lhs["fields/dist/values"].element_ptr(0);
+            const float *dist_rhs = (const float*)n_rhs["fields/dist/values"].element_ptr(0);
+            for(index_t i = 0; i < orig_vert_domains.number_of_elements(); i++)
             {
-                out_dist[i] = dist_lhs[id];
-            }
-            else if(domain == domain_lookup[1])
-            {
-                out_dist[i] = dist_rhs[id];
+                const index_t domain = orig_vert_domains[i];
+                const index_t id     = orig_vert_ids[i];
+                if(domain == domain_lookup[0])
+                {
+                    out_dist[i] = dist_lhs[id];
+                }
+                else if(domain == domain_lookup[1])
+                {
+                    out_dist[i] = dist_rhs[id];
+                }
             }
         }
+    #endif
 
         // If the domains already had pointmaps/element maps get the original values
         bool lhs_has_maps = n_lhs.has_path(orig_verts_path);
@@ -7124,10 +7178,6 @@ private:
                 if(orig_vert_domains[i] == domain_lookup[0] && vert_maps[0])
                 {
                     const index_t id = orig_vert_ids[i];
-                    if(id >= n_vals_lhs[0].dtype().number_of_elements())
-                    {
-                        CONDUIT_ERROR("INDEX OUT OF BOUNDS " << id);
-                    }
                     temp_domain.set_external(dt, const_cast<void*>(vert_maps[0]->fetch("domains").element_ptr(id)));
                     temp_id.set_external(dt, const_cast<void*>(vert_maps[0]->fetch("ids").element_ptr(id)));
                     orig_vert_domains[i] = temp_domain.to_index_t();
@@ -7136,10 +7186,6 @@ private:
                 else if(orig_vert_domains[i] == domain_lookup[1] && vert_maps[1])
                 {
                     const index_t id = orig_vert_ids[i];
-                    if(id >= n_vals_rhs[0].dtype().number_of_elements())
-                    {
-                        CONDUIT_ERROR("INDEX OUT OF BOUNDS " << id);
-                    }
                     temp_domain.set_external(dt, const_cast<void*>(vert_maps[1]->fetch("domains").element_ptr(id)));
                     temp_id.set_external(dt, const_cast<void*>(vert_maps[1]->fetch("ids").element_ptr(id)));
                     orig_vert_domains[i] = temp_domain.to_index_t();
@@ -7154,10 +7200,12 @@ private:
                 {
                     const index_t id = elem_map[idx+1];
                     const index_t l_idx = id*2;
+                #ifdef DEBUG_STRUCTURED_COMBINE
                     if(l_idx >= elem_maps[0]->dtype().number_of_elements())
                     {
                         CONDUIT_ERROR("INDEX OUT OF BOUNDS " << l_idx);
                     }
+                #endif
                     temp_domain.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx)));
                     temp_id.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx+1)));
                     elem_map[idx]   = temp_domain.to_index_t();
@@ -7167,10 +7215,12 @@ private:
                 {
                     const index_t id = elem_map[idx+1];
                     const index_t l_idx = id*2;
+                #ifdef DEBUG_STRUCTURED_COMBINE
                     if(l_idx >= elem_maps[1]->dtype().number_of_elements())
                     {
                         CONDUIT_ERROR("INDEX OUT OF BOUNDS " << l_idx);
                     }
+                #endif
                     temp_domain.set_external(dt, const_cast<void*>(elem_maps[1]->element_ptr(l_idx)));
                     temp_id.set_external(dt, const_cast<void*>(elem_maps[1]->element_ptr(l_idx+1)));
                     elem_map[idx]   = temp_domain.to_index_t();
@@ -7180,6 +7230,11 @@ private:
         }
     }
 
+    /**
+    @brief Creates pointmaps and element_maps for rectilinear and uniform combinations
+        to be used by to map fields later in the combine process.
+        CANNOT BE USED FOR STRUCTURED.
+    */
     void build_implicit_maps(const std::vector<const Node *> n_meshes,
             const Node &final_mesh,
             Node &out_pointmaps,
