@@ -5488,7 +5488,12 @@ public:
                     n_mesh[topo_path].set_external((*n_in)[topo_path]);
                 }
 
-                n_mesh["fields/dist"].set_external((*n_in)["fields/dist"]);
+            #ifdef DEBUG_STRUCTURED_COMBINE
+                if(n_in->has_path("fields/dist"))
+                {
+                    n_mesh["fields/dist"].set_external((*n_in)["fields/dist"]);
+                }
+            #endif
             }
             else if(type == "rectilinear")
             {
@@ -6697,8 +6702,11 @@ private:
                     + ".yaml");
                 temp.to_string_stream(f_out);
             }
-            iteration++;
+        #else
+            // Silence iteration warning
+            (void)iteration;
         #endif
+            iteration++;
 
             // Get the first extents
             bool any_matches = false;
@@ -6750,7 +6758,6 @@ private:
                         const Node *n_rhs = nullptr;
                         index_t lhs_face = 0;
                         index_t rhs_face = 0;
-                        bool simple_case  = false;
                         if((ej_permutation == 0) &&
                             ((ei_face == 1 && ej_face == 0)
                             || (ei_face == 3 && ej_face == 2)
@@ -6760,7 +6767,6 @@ private:
                             n_rhs = n_meshj;
                             lhs_face = ei_face;
                             rhs_face = ej_face;
-                            simple_case = true;
                         }
                         else if((ej_permutation == 0) &&
                             ((ei_face == 0 && ej_face == 1)
@@ -6771,11 +6777,9 @@ private:
                             n_rhs = n_meshi;
                             lhs_face = ej_face;
                             rhs_face = ei_face;
-                            simple_case = true;
                         }
                         else // Every other odd case, ei is lhs. This is the only way the permutation case is accurate.
                         {
-                            simple_case = false;
                             n_lhs = n_meshi;
                             n_rhs = n_meshj;
                             lhs_face = ei_face;
