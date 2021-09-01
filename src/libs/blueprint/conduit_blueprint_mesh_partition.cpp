@@ -5483,6 +5483,8 @@ public:
                 {
                     n_mesh[topo_path].set_external((*n_in)[topo_path]);
                 }
+
+                n_mesh["fields/dist"].set_external((*n_in)["fields/dist"]);
             }
             else if(type == "rectilinear")
             {
@@ -6127,6 +6129,185 @@ private:
         return false;
     }
 
+    void map_structured_verts_elems(
+            const index_t domain_id,
+            const index_t *g_dims, const index_t *l_dims, const index_t *l_reorder,
+            const int *l_reverse, const index_t *g_offsets,
+            DataArray<index_t> &orig_vert_domains, DataArray<index_t> &orig_vert_ids,
+            DataArray<index_t> &elem_map) const
+    {
+        int N = 1;
+        int Nglobal = 1;
+        for(int i = 0; i < 3; i++)
+        {
+            N *= l_dims[i];
+            Nglobal *= g_dims[i];
+        }
+        const std::array<index_t, MAXDIM> reordered_dims{
+            l_dims[l_reorder[0]],
+            (dimension > 1) ? l_dims[l_reorder[1]] : 0,
+            (dimension > 2) ? l_dims[l_reorder[2]] : 0
+        };
+        if(dimension == 3)
+        {
+            const index_t d2m1 = reordered_dims[2] - 1;
+            const index_t d1m1 = reordered_dims[1] - 1;
+            const index_t d0m1 = reordered_dims[0] - 1;
+            // Map verticies
+            std::array<index_t, 3> ijk;
+            for(index_t k = 0; k < reordered_dims[2]; k++)
+            {
+                ijk[2] = l_reverse[2] ? (d2m1-k) : k;
+                const index_t koffset = g_offsets[2] + k;
+                for(index_t j = 0; j < reordered_dims[1]; j++)
+                {
+                    ijk[1] = l_reverse[1] ? (d1m1-j) : j;
+                    const index_t joffset = g_offsets[1] + j;
+                    for(index_t i = 0; i < reordered_dims[0]; i++)
+                    {
+                        ijk[0] = l_reverse[0] ? (d0m1-i) : i;
+                        const std::array<index_t, 3> ijk_local = {
+                            ijk[l_reorder[0]],
+                            ijk[l_reorder[1]],
+                            ijk[l_reorder[2]]
+                        };
+                        const std::array<index_t, 3> ijk_global = {
+                            g_offsets[0] + i,
+                            joffset,
+                            koffset};
+                        index_t local_id, global_id;
+                        grid_ijk_to_id(ijk_local.data(), l_dims, local_id);
+                        grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
+                        if(local_id >= N)
+                        {
+                            CONDUIT_ERROR("INVALID LOCAL ID " << local_id);
+                        }
+                        if(global_id >= Nglobal)
+                        {
+                            CONDUIT_ERROR("INVALID GLOBAL ID " << global_id);
+                        }
+                        orig_vert_domains[global_id] = domain_id;
+                        orig_vert_ids[global_id]     = local_id;
+                    }
+                }
+            }
+            // Map elements to new global ijk
+            const index_t d2m2 = d2m1 - 1;
+            const index_t d1m2 = d1m1 - 1;
+            const index_t d0m2 = d0m1 - 1;
+            const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, g_dims[2]-1};
+            const std::array<index_t, 3> l_elem_dims{l_dims[0]-1, l_dims[1]-1, l_dims[2]-1};
+            N = 1;
+            Nglobal = 1;
+            for(int i = 0; i < 3; i++)
+            {
+                N *= l_elem_dims[i];
+                Nglobal *= g_elem_dims[i];
+            }
+            for(index_t k = 0; k < d2m1; k++)
+            {
+                ijk[2] = l_reverse[2] ? (d2m2-k) : k;
+                const index_t koffset = g_offsets[2] + k;
+                for(index_t j = 0; j < d1m1; j++)
+                {
+                    ijk[1] = l_reverse[1] ? (d1m2-j) : j;
+                    const index_t joffset = g_offsets[1] + j;
+                    for(index_t i = 0; i < d0m1; i++)
+                    {
+                        ijk[0] = l_reverse[0] ? (d0m2-i) : i;
+                        const std::array<index_t, 3> ijk_local = {
+                            ijk[l_reorder[0]],
+                            ijk[l_reorder[1]],
+                            ijk[l_reorder[2]]
+                        };
+                        const std::array<index_t, 3> ijk_global = {
+                            g_offsets[0] + i,
+                            joffset,
+                            koffset};
+                        index_t local_id, global_id;
+                        grid_ijk_to_id(ijk_local.data(), l_elem_dims.data(), local_id);
+                        grid_ijk_to_id(ijk_global.data(), g_elem_dims.data(), global_id);
+                        const index_t idx = global_id * 2;
+                        if(local_id >= N)
+                        {
+                            CONDUIT_ERROR("INVALID LOCAL ID " << local_id);
+                        }
+                        if(global_id >= Nglobal)
+                        {
+                            CONDUIT_ERROR("INVALID GLOBAL ID " << global_id);
+                        }
+                        if(idx >= elem_map.number_of_elements())
+                        {
+                            CONDUIT_ERROR("INVALID INDEX INTO ELEM_MAP " << idx);
+                        }
+                        elem_map[idx]   = domain_id;
+                        elem_map[idx+1] = local_id;
+                    }
+                }
+            }
+        }
+        else if(dimension == 2)
+        {
+            const index_t d1m1 = reordered_dims[1] - 1;
+            const index_t d0m1 = reordered_dims[0] - 1;
+            // Map verticies
+            for(index_t j = 0; j < reordered_dims[1]; j++)
+            {
+                const index_t jactual = l_reverse[1] ? (d1m1-j) : j;
+                const index_t joffset = g_offsets[1] + j;
+                for(index_t i = 0; i < reordered_dims[0]; i++)
+                {
+                    const std::array<index_t, 3> ijk_local = {
+                        l_reverse[0] ? (d0m1-i) : i,
+                        jactual,
+                        0
+                    };
+                    const std::array<index_t, 3> ijk_global = {
+                        g_offsets[0] + i,
+                        joffset,
+                        0};
+                    index_t local_id, global_id;
+                    grid_ijk_to_id(ijk_local.data(), reordered_dims.data(), local_id);
+                    grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
+                    orig_vert_domains[global_id] = domain_id;
+                    orig_vert_ids[global_id]     = local_id;
+                }
+            }
+            // Map elements to new global ijk
+            const index_t d1m2 = d1m1 - 1;
+            const index_t d0m2 = d0m1 - 1;
+            const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, 1};
+            const std::array<index_t, 3> l_elem_dims{d0m1, d1m1, 1};
+            for(index_t j = 0; j < d1m1; j++)
+            {
+                const index_t jactual = l_reverse[1] ? (d1m2-j) : j;
+                const index_t joffset = g_offsets[1] + j;
+                for(index_t i = 0; i < d0m1; i++)
+                {
+                    const std::array<index_t, 3> ijk_local = {
+                        l_reverse[0] ? (d0m2-i) : i,
+                        jactual,
+                        0
+                    };
+                    const std::array<index_t, 3> ijk_global = {
+                        g_offsets[0] + i,
+                        joffset,
+                        0};
+                    index_t local_id, global_id;
+                    grid_ijk_to_id(ijk_local.data(), l_elem_dims.data(), local_id);
+                    grid_ijk_to_id(ijk_global.data(), g_elem_dims.data(), global_id);
+                    const index_t idx = global_id * 2;
+                    elem_map[idx]   = domain_id;
+                    elem_map[idx+1] = local_id;
+                }
+            }
+        }
+        else // if(dimension == 1)
+        {
+            CONDUIT_ERROR("TODO: SUPPORT 1D");
+        }
+    }
+
     bool combine_implicit_impl(const std::vector<const Node *> &n_meshes,
             Node &output) const
     {
@@ -6719,25 +6900,29 @@ private:
             output[cset_path] = (*meshes_and_bbs[0].first)[cset_path];
             output[topo_path] = (*meshes_and_bbs[0].first)[topo_path];
 
-            // For now we have to reformat the pointmap data
-            Node &out_cset = output[cset_path];
-            out_cset.rename_child("pointmaps", "temp_pointmap");
-            const Node &n_temp_pointmap = out_cset["temp_pointmap"];
-            const DataArray<index_t> orig_domains = n_temp_pointmap["domains"].value();
-            const DataArray<index_t> orig_ids = n_temp_pointmap["ids"].value();           
-            std::vector<std::vector<index_t>> pmaps(n_meshes.size());
-            for(index_t i = 0; i < orig_domains.number_of_elements(); i++)
-            {
-                pmaps[orig_domains[i]].push_back(i);
-            }
+            // for(size_t i = 0; i < meshes_and_bbs.size(); i++)
+            // {
+            //     const Node &mesh = output;
+            //     Node &out_mesh = temp[(i < 10) ? "domain_0000" + std::to_string(i) : "domain_000" + std::to_string(i)];
+            //     out_mesh.set_external(mesh);
 
-            Node &out_pointmaps = out_cset["pointmaps"];
-            for(size_t i = 0; i < pmaps.size(); i++)
-            {
-                Node &n = out_pointmaps.append();
-                n.set(pmaps[i]);
-            }
-            out_cset.remove_child("temp_pointmap");
+            //     out_mesh["fields/original_element_ids/association"] = "element";
+            //     out_mesh["fields/original_element_ids/topology"] = "mesh";
+            //     Schema s;
+            //     const auto N = mesh["topologies/mesh/element_map"].dtype().number_of_elements() / 2;
+            //     const void *ptr = mesh["topologies/mesh/element_map"].element_ptr(0);
+            //     s["domains"].set(DataType::index_t(N, 0, 2*sizeof(index_t)));
+            //     s["ids"].set(DataType::index_t(N, sizeof(index_t), 2*sizeof(index_t)));
+            //     out_mesh["fields/original_element_ids/values"].set_external(s, const_cast<void*>(ptr));
+
+            //     out_mesh["fields/original_vertex_ids/association"] = "vertex";
+            //     out_mesh["fields/original_vertex_ids/topology"] = "mesh";
+            //     out_mesh["fields/original_vertex_ids/values"].set_external(mesh["coordsets/coords/pointmaps"]);
+            // }
+            std::ofstream f_out("combine_structured_final.yaml");
+            output["fields"].set_external((*meshes_and_bbs[0].first)["fields"]);
+            output.to_string_stream(f_out);
+            output.remove_child("fields");
 
             // output.print();
             retval = true;
@@ -6831,198 +7016,22 @@ private:
         };
         n_new_mesh["id"] = n_lhs["id"];
 
-        const auto map_verts_elements = [this, 
-                &orig_vert_domains, &orig_vert_ids, &elem_map](
-            const index_t domain_id,
-            const index_t *g_dims, const index_t *l_dims, const index_t *l_reorder,
-            const int *l_reverse, const index_t *g_offsets) {
-
-            int N = 1;
-            int Nglobal = 1;
-            for(int i = 0; i < 3; i++)
-            {
-                N *= l_dims[i];
-                Nglobal *= g_dims[i];
-            }
-            const std::array<index_t, MAXDIM> reordered_dims{
-                l_dims[l_reorder[0]],
-                (dimension > 1) ? l_dims[l_reorder[1]] : 0,
-                (dimension > 2) ? l_dims[l_reorder[2]] : 0
-            };
-            if(dimension == 3)
-            {
-                const index_t d2m1 = reordered_dims[2] - 1;
-                const index_t d1m1 = reordered_dims[1] - 1;
-                const index_t d0m1 = reordered_dims[0] - 1;
-                // Map verticies
-                std::array<index_t, 3> ijk;
-                for(index_t k = 0; k < reordered_dims[2]; k++)
-                {
-                    ijk[2] = l_reverse[2] ? (d2m1-k) : k;
-                    const index_t koffset = g_offsets[2] + k;
-                    for(index_t j = 0; j < reordered_dims[1]; j++)
-                    {
-                        ijk[1] = l_reverse[1] ? (d1m1-j) : j;
-                        const index_t joffset = g_offsets[1] + j;
-                        for(index_t i = 0; i < reordered_dims[0]; i++)
-                        {
-                            ijk[0] = l_reverse[0] ? (d0m1-i) : i;
-                            const std::array<index_t, 3> ijk_local = {
-                                ijk[l_reorder[0]],
-                                ijk[l_reorder[1]],
-                                ijk[l_reorder[2]]
-                            };
-                            const std::array<index_t, 3> ijk_global = {
-                                g_offsets[0] + i,
-                                joffset,
-                                koffset};
-                            index_t local_id, global_id;
-                            grid_ijk_to_id(ijk_local.data(), l_dims, local_id);
-                            grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
-                            if(local_id >= N)
-                            {
-                                CONDUIT_ERROR("INVALID LOCAL ID " << local_id);
-                            }
-                            if(global_id >= Nglobal)
-                            {
-                                CONDUIT_ERROR("INVALID GLOBAL ID " << global_id);
-                            }
-                            orig_vert_domains[global_id] = domain_id;
-                            orig_vert_ids[global_id]     = local_id;
-                        }
-                    }
-                }
-                // Map elements to new global ijk
-                const index_t d2m2 = d2m1 - 1;
-                const index_t d1m2 = d1m1 - 1;
-                const index_t d0m2 = d0m1 - 1;
-                const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, g_dims[2]-1};
-                const std::array<index_t, 3> l_elem_dims{l_dims[0]-1, l_dims[1]-1, l_dims[2]-1};
-                N = 1;
-                Nglobal = 1;
-                for(int i = 0; i < 3; i++)
-                {
-                    N *= l_elem_dims[i];
-                    Nglobal *= g_elem_dims[i];
-                }
-                for(index_t k = 0; k < d2m1; k++)
-                {
-                    ijk[2] = l_reverse[2] ? (d2m2-k) : k;
-                    const index_t koffset = g_offsets[2] + k;
-                    for(index_t j = 0; j < d1m1; j++)
-                    {
-                        ijk[1] = l_reverse[1] ? (d1m2-j) : j;
-                        const index_t joffset = g_offsets[1] + j;
-                        for(index_t i = 0; i < d0m1; i++)
-                        {
-                            ijk[0] = l_reverse[0] ? (d0m2-i) : i;
-                            const std::array<index_t, 3> ijk_local = {
-                                ijk[l_reorder[0]],
-                                ijk[l_reorder[1]],
-                                ijk[l_reorder[2]]
-                            };
-                            const std::array<index_t, 3> ijk_global = {
-                                g_offsets[0] + i,
-                                joffset,
-                                koffset};
-                            index_t local_id, global_id;
-                            grid_ijk_to_id(ijk_local.data(), l_elem_dims.data(), local_id);
-                            grid_ijk_to_id(ijk_global.data(), g_elem_dims.data(), global_id);
-                            const index_t idx = global_id * 2;
-                            if(local_id >= N)
-                            {
-                                CONDUIT_ERROR("INVALID LOCAL ID " << local_id);
-                            }
-                            if(global_id >= Nglobal)
-                            {
-                                CONDUIT_ERROR("INVALID GLOBAL ID " << global_id);
-                            }
-                            if(idx >= elem_map.number_of_elements())
-                            {
-                                CONDUIT_ERROR("INVALID INDEX INTO ELEM_MAP " << idx);
-                            }
-                            elem_map[idx]   = domain_id;
-                            elem_map[idx+1] = local_id;
-                        }
-                    }
-                }
-            }
-            else if(dimension == 2)
-            {
-                const index_t d1m1 = reordered_dims[1] - 1;
-                const index_t d0m1 = reordered_dims[0] - 1;
-                // Map verticies
-                for(index_t j = 0; j < reordered_dims[1]; j++)
-                {
-                    const index_t jactual = l_reverse[1] ? (d1m1-j) : j;
-                    const index_t joffset = g_offsets[1] + j;
-                    for(index_t i = 0; i < reordered_dims[0]; i++)
-                    {
-                        const std::array<index_t, 3> ijk_local = {
-                            l_reverse[0] ? (d0m1-i) : i,
-                            jactual,
-                            0
-                        };
-                        const std::array<index_t, 3> ijk_global = {
-                            g_offsets[0] + i,
-                            joffset,
-                            0};
-                        index_t local_id, global_id;
-                        grid_ijk_to_id(ijk_local.data(), reordered_dims.data(), local_id);
-                        grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
-                        orig_vert_domains[global_id] = domain_id;
-                        orig_vert_ids[global_id]     = local_id;
-                    }
-                }
-                // Map elements to new global ijk
-                const index_t d1m2 = d1m1 - 1;
-                const index_t d0m2 = d0m1 - 1;
-                const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, 1};
-                const std::array<index_t, 3> l_elem_dims{d0m1, d1m1, 1};
-                for(index_t j = 0; j < d1m1; j++)
-                {
-                    const index_t jactual = l_reverse[1] ? (d1m2-j) : j;
-                    const index_t joffset = g_offsets[1] + j;
-                    for(index_t i = 0; i < d0m1; i++)
-                    {
-                        const std::array<index_t, 3> ijk_local = {
-                            l_reverse[0] ? (d0m2-i) : i,
-                            jactual,
-                            0
-                        };
-                        const std::array<index_t, 3> ijk_global = {
-                            g_offsets[0] + i,
-                            joffset,
-                            0};
-                        index_t local_id, global_id;
-                        grid_ijk_to_id(ijk_local.data(), l_elem_dims.data(), local_id);
-                        grid_ijk_to_id(ijk_global.data(), g_elem_dims.data(), global_id);
-                        const index_t idx = global_id * 2;
-                        elem_map[idx]   = domain_id;
-                        elem_map[idx+1] = local_id;
-                    }
-                }
-            }
-            else // if(dimension == 1)
-            {
-                CONDUIT_ERROR("TODO: SUPPORT 1D");
-            }
-        };
-
         {
             // LHS shouldn't have offsets but it may need to reverse a dim
             const std::array<index_t, 3> no_offsets{0, 0, 0};
             const std::array<index_t, 3> no_reorder{0, 1, 2};
-            map_verts_elements(domain_lookup[0], new_dims.data(),
-                dims_lhs, no_reorder.data(), reverse_lhs.data(), no_offsets.data());
+            map_structured_verts_elems(domain_lookup[0], new_dims.data(),
+                dims_lhs, no_reorder.data(), reverse_lhs.data(), no_offsets.data(),
+                orig_vert_domains, orig_vert_ids, elem_map);
         }
 
         {
             // RHS will be tranformed to exist in LHS' ijk space
             std::array<index_t, MAXDIM> offsets{0,0,0};
             offsets[matched_dim] = dims_lhs[matched_dim] - 1;
-            map_verts_elements(domain_lookup[1], new_dims.data(), 
-                dims_rhs, order_rhs.data(), reverse_rhs.data(), offsets.data());
+            map_structured_verts_elems(domain_lookup[1], new_dims.data(), 
+                dims_rhs, order_rhs.data(), reverse_rhs.data(), offsets.data(),
+                orig_vert_domains, orig_vert_ids, elem_map);
         }
 
         // Move the coordinates
@@ -7045,10 +7054,10 @@ private:
                 for(index_t d = 0; d < dimension; d++)
                 {
                     temp1.set_external(
-                        DataType(n_vals_lhs[order_lhs[d]].dtype().id(),1),
-                        const_cast<void*>(n_vals_lhs[order_lhs[d]].element_ptr(id)));
-                    temp1.to_data_type(out_vals[order_lhs[d]].dtype().id(), temp2);
-                    std::memcpy(out_vals[order_lhs[d]].element_ptr(i), 
+                        DataType(n_vals_lhs[d].dtype().id(),1),
+                        const_cast<void*>(n_vals_lhs[d].element_ptr(id)));
+                    temp1.to_data_type(out_vals[d].dtype().id(), temp2);
+                    std::memcpy(out_vals[d].element_ptr(i), 
                         temp2.element_ptr(0),
                         temp2.dtype().element_bytes());
                 }
@@ -7063,13 +7072,33 @@ private:
                 for(index_t d = 0; d < dimension; d++)
                 {
                     temp1.set_external(
-                        DataType(n_vals_rhs[order_rhs[d]].dtype().id(),1),
-                        const_cast<void*>(n_vals_rhs[order_rhs[d]].element_ptr(id)));
-                    temp1.to_data_type(out_vals[order_rhs[d]].dtype().id(), temp2);
-                    std::memcpy(out_vals[order_rhs[d]].element_ptr(i), 
+                        DataType(n_vals_rhs[d].dtype().id(),1),
+                        const_cast<void*>(n_vals_rhs[d].element_ptr(id)));
+                    temp1.to_data_type(out_vals[d].dtype().id(), temp2);
+                    std::memcpy(out_vals[d].element_ptr(i), 
                         temp2.element_ptr(0),
                         temp2.dtype().element_bytes());
                 }
+            }
+        }
+
+        n_new_mesh["fields/dist/association"] = "vertex";
+        n_new_mesh["fields/dist/topology"] = "mesh";
+        n_new_mesh["fields/dist/values"].set(DataType::c_float(N));
+        float *out_dist = (float*)n_new_mesh["fields/dist/values"].element_ptr(0);
+        const float *dist_lhs = (const float*)n_lhs["fields/dist/values"].element_ptr(0);
+        const float *dist_rhs = (const float*)n_rhs["fields/dist/values"].element_ptr(0);
+        for(index_t i = 0; i < orig_vert_domains.number_of_elements(); i++)
+        {
+            const index_t domain = orig_vert_domains[i];
+            const index_t id     = orig_vert_ids[i];
+            if(domain == domain_lookup[0])
+            {
+                out_dist[i] = dist_lhs[id];
+            }
+            else if(domain == domain_lookup[1])
+            {
+                out_dist[i] = dist_rhs[id];
             }
         }
 
@@ -7437,6 +7466,60 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
 }
 
 //-------------------------------------------------------------------------
+
+static void
+map_vertex_field(const std::vector<const Node*> &in_nodes,
+        const DataArray<index_t> &orig_domains,
+        const DataArray<index_t> &orig_ids,
+        Node &out_node)
+{
+    out_node.reset();
+    if(in_nodes.empty())
+    {
+        return;
+    }
+
+    // Figure out num components and out dtype
+    const index_t num_verticies = orig_domains.number_of_elements();
+    index_t ncomps = 0;
+    Schema out_schema;
+    determine_schema((*in_nodes[0])["values"], num_verticies, ncomps, out_schema);
+    out_node.set(out_schema);
+
+    // out_schema.print();
+    // out_node.print();
+
+    if(ncomps > 1)
+    {
+        for(index_t i = 0; i < num_verticies; i++)
+        {
+            const index_t orig_dom = orig_domains[i];
+            const index_t orig_id  = orig_ids[i];
+            const Node &in_values  = in_nodes[orig_dom]->child("values");
+            for(index_t ci = 0; ci < ncomps; ci++)
+            {
+                const auto bytes = out_node[ci].dtype().element_bytes();
+                void *out_data = out_node[ci].element_ptr(i);
+                const void *in_data = in_values[ci].element_ptr(orig_id);
+                memcpy(out_data, in_data, bytes);
+            }
+        }
+    }
+    else
+    {
+        const auto bytes = out_node.dtype().element_bytes();
+        for(index_t i = 0; i < num_verticies; i++)
+        {
+            const index_t orig_dom = orig_domains[i];
+            const index_t orig_id  = orig_ids[i];
+            void *out_data = out_node.element_ptr(i);
+            const void *in_data = in_nodes[orig_dom]->child("values").element_ptr(orig_id);
+            memcpy(out_data, in_data, bytes);
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
 static void
 map_element_field(const std::vector<const Node*> &in_nodes,
         const DataArray<index_t> &elemmap,
@@ -7502,18 +7585,27 @@ combine(const std::vector<const Node*> &in_fields,
         // Vertex association
         // Need to use pointmaps to map this field
         // Get the point map
-        std::vector<DataArray<index_t>> pmaps;
+        const Node *pointmaps = assoc_coordset.fetch_ptr("pointmaps");
+        if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); return; }
+
+        if(!pointmaps->dtype().is_object())
         {
-            const Node *pointmaps = assoc_coordset.fetch_ptr("pointmaps");
+            std::vector<DataArray<index_t>> pmaps;
             if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); return; }
             for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
             {
                 pmaps.emplace_back(pointmaps->child(pi).value());
             }
+            const index_t nt = coordset::length(assoc_coordset);
+            fields::map_vertex_field(in_fields, pmaps, nt, output["values"]);
         }
-
-        const index_t nt = coordset::length(assoc_coordset);
-        fields::map_vertex_field(in_fields, pmaps, nt, output["values"]);
+        else
+        {
+            // Structured combine produces a pointmap with 2 components
+            DataArray<index_t> orig_domains = pointmaps->child("domains").value();
+            DataArray<index_t> orig_ids     = pointmaps->child("ids").value();
+            fields::map_vertex_field(in_fields, orig_domains, orig_ids, output["values"]);
+        }
     }
     else if(assoc == utils::ASSOCIATIONS[1])
     {
@@ -7921,6 +8013,7 @@ partitioner::combine(int domain,
         const index_t sz = dt.number_of_elements() / 2;
         s["domains"].set(DataType(dt.id(), sz, 0, 
             2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
+        // TODO: Change this to "ids" and rebaseline tests
         s["values"].set(DataType(dt.id(), sz, 1*dt.element_bytes(),
             2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
         out_field["values"].set(s);
@@ -7984,29 +8077,46 @@ partitioner::combine(int domain,
         // utils::ASSOCIATIONS[0]
         out_field["association"].set("vertex");
 
-        const index_t sz = mesh::coordset::length(output_coordsets[coordset_name]);
-        const DataType dt(pointmaps[0].dtype().id(), sz);
-        out_field["values"]["domains"].set(dt);
-        out_field["values"]["ids"].set(dt);
-        DataArray<index_t> out_domains = out_field["values/domains"].value();
-        DataArray<index_t> out_ids     = out_field["values/ids"].value();
-
-        for(index_t pi = 0; pi < (index_t)pointmaps.size(); pi++)
+        if(!n_pointmaps.dtype().is_object())
         {
-            index_t dom_id = pi;
-            if(inputs[pi]->has_path("state/domain_id"))
+            const index_t sz = mesh::coordset::length(output_coordsets[coordset_name]);
+            const DataType dt(pointmaps[0].dtype().id(), sz);
+            out_field["values"]["domains"].set(dt);
+            out_field["values"]["ids"].set(dt);
+            DataArray<index_t> out_domains = out_field["values/domains"].value();
+            DataArray<index_t> out_ids     = out_field["values/ids"].value();
+
+            for(index_t pi = 0; pi < (index_t)pointmaps.size(); pi++)
             {
-                dom_id = (*inputs[pi])["state/domain_id"].to_index_t();
-            }
-            const auto &pmap = pointmaps[pi];
-            for(index_t vi = 0; vi < pmap.number_of_elements(); vi++)
-            {
-                const auto out_idx = pmap[vi];
-                out_domains[out_idx] = dom_id;
-                out_ids[out_idx]     = vi;
+                index_t dom_id = pi;
+                if(inputs[pi]->has_path("state/domain_id"))
+                {
+                    dom_id = (*inputs[pi])["state/domain_id"].to_index_t();
+                }
+                const auto &pmap = pointmaps[pi];
+                for(index_t vi = 0; vi < pmap.number_of_elements(); vi++)
+                {
+                    const auto out_idx = pmap[vi];
+                    out_domains[out_idx] = dom_id;
+                    out_ids[out_idx]     = vi;
+                }
             }
         }
-
+        else
+        {
+            // Structured combine creates the pointmaps in a compatible format to be directly
+            //  copied into the output field.
+            if(!n_pointmaps.has_child("domains") || !n_pointmaps.has_child("ids"))
+            {
+                // So this should never happen
+                CONDUIT_INFO("Unable to generate pointmap, the \"pointmaps\" child exists " <<
+                    "on the output coordset but is not in the proper format to be export as a field.");
+            }
+            else
+            {
+                out_field["values"] = n_pointmaps;
+            }
+        }
     }
     // Remove the pointmaps from the output
     for(index_t i = 0; i < output_coordsets.number_of_children(); i++)
