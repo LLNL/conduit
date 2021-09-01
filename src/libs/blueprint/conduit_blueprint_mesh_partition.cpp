@@ -8072,8 +8072,7 @@ partitioner::combine(int domain,
         const index_t sz = dt.number_of_elements() / 2;
         s["domains"].set(DataType(dt.id(), sz, 0, 
             2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
-        // TODO: Change this to "ids" and rebaseline tests
-        s["values"].set(DataType(dt.id(), sz, 1*dt.element_bytes(),
+        s["ids"].set(DataType(dt.id(), sz, 1*dt.element_bytes(),
             2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
         out_field["values"].set(s);
 

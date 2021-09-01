@@ -22,7 +22,7 @@ fields:
     association: "element"
     values: 
       domains: [0, 1]
-      values: [0, 0]
+      ids: [0, 0]
   original_vertex_ids: 
     topology: "topo"
     association: "vertex"
