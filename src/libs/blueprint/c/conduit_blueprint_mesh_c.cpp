@@ -68,6 +68,20 @@ conduit_blueprint_mesh_generate_index(const conduit_node *cmesh,
 }
 
 //-----------------------------------------------------------------------------
+/// Partition a mesh
+//-----------------------------------------------------------------------------
+void
+conduit_blueprint_mesh_partition(const conduit_node *cmesh,
+                                 const conduit_node *coptions,
+                                 conduit_node *coutput)
+{
+    const Node &mesh = cpp_node_ref(cmesh);
+    const Node &options = cpp_node_ref(coptions);
+    Node &output  = cpp_node_ref(coutput);
+    blueprint::mesh::partition(mesh, options, output);
+}
+
+//-----------------------------------------------------------------------------
 /// Interface to generate example data
 //-----------------------------------------------------------------------------
 void

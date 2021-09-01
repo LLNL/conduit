@@ -17,15 +17,15 @@ fields:
     topology: "topo"
     association: "vertex"
     values: [0.414213562373095, 0.0, 0.414213562373095, 0.0, -1.0, 0.0]
-  original_element_ids: 
-    topology: "topo"
-    association: "element"
-    values: 
-      domains: [0, 1]
-      ids: [0, 0]
   original_vertex_ids: 
     topology: "topo"
     association: "vertex"
     values: 
       domains: [0, 1, 1, 0, 1, 1]
       ids: [0, 0, 1, 2, 2, 3]
+  original_element_ids: 
+    topology: "topo"
+    association: "element"
+    values: 
+      domains: [0, 1]
+      ids: [0, 0]

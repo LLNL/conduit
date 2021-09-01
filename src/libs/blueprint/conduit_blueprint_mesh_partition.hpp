@@ -51,8 +51,17 @@ namespace mesh
 class selection
 {
 public:
+    static const int FREE_DOMAIN_ID; // The domain number needs to be assigned.
+    static const int FREE_RANK_ID;   // The rank needs to be assigned.
+
     selection();
+    selection(const selection &obj);
     virtual ~selection();
+
+    /**
+     Create a copy of the selection.
+     */
+    virtual std::shared_ptr<selection> copy() const = 0;
 
     /**
      @brief Initializes the selection from the provided Conduit node.
@@ -75,7 +84,7 @@ public:
      @brief Return the number of cells in the selection.
      @return The number of cells in the selection.
      */
-    virtual index_t length() const;
+    virtual index_t length(const conduit::Node &n_mesh) const;
 
     /**
      @brief Returns whether the selection covers the whole mesh. Selections that
@@ -91,6 +100,11 @@ public:
      @param value A value indicating whether the selection covers the mesh.
      */
     void set_whole(bool value);
+
+    /**
+     @brief Returns whether the selection must be partitioned when we create it.
+     */
+    virtual bool requires_initial_partition() const;
 
     /**
      @brief Partitions the selection into smaller selections.
@@ -124,6 +138,21 @@ public:
     void set_topology(const std::string &value);  
 
     /**
+     @brief Returns the destination rank for this selection. The default
+            version returns -1, indicating that we don't care where the
+            domain is placed.
+     @return The destination rank for this selection.
+     */
+    virtual int get_destination_rank() const;
+
+    /**
+     @brief Returns the destination rank for this selection. The default
+            version returns -1, indicating that we'll number the domain.
+     @return The destination domain for this selection.
+     */
+    virtual int get_destination_domain() const;
+
+    /**
      @brief Returns the cell ids in this selection that are contained in the
             selected topology.
      @param n_mesh A Conduit node that contains the mesh.
@@ -146,7 +175,18 @@ public:
      */
     virtual void print(std::ostream &os) const = 0;
 
+    /**
+     @brief Returns whether the selection is applied to any domain.
+     @return True if the selection is applied to any domain.
+     */
+    bool get_domain_any() const;
+
 protected:
+    /**
+     @brief Returns whether the selection type is allowed to apply to any domain.
+     */
+    virtual bool supports_domain_any() const;
+
     /**
      @brief Determines whether the selection covers the whole mesh.
      @param n_mesh A Conduit conduit::Node containing the mesh.
@@ -166,6 +206,7 @@ protected:
     int         whole;
     index_t     domain;
     std::string topology;
+    bool        domain_any;
 };
 
 //---------------------------------------------------------------------------
@@ -183,16 +224,20 @@ public:
      @brief This struct is a Conduit/Blueprint mesh plus an ownership bool.
             The mesh pointer is always assumed to be external by default
             so we do not provide a destructor. If we want to delete it,
-            call free(), which will free the mesh if we own it.
+            call free(), which will free the mesh if we own it. The struct
+            does not have a destructor on purpose.
      */
     struct chunk
     {
         chunk();
         chunk(const Node *m, bool own);
+        chunk(const Node *m, bool own, int dr, int dd);
         void free();
 
         const Node *mesh;
         bool        owns;
+        int         destination_rank;
+        int         destination_domain;
     };
 
     /**
@@ -265,12 +310,33 @@ public:
 
 protected:
     /**
+     @brief Examines the selections and counts them to determine a number of
+            targets that would be produced. Most selections result in a domain
+            but some selections may combine into a single domain if their
+            destination domain is set to the same value.
+     @return The number of targets we expect to create.
+     */
+    virtual unsigned int count_targets() const;
+
+    /**
      @brief Compute the total number of selections across all ranks.
      @return The total number of selections across all ranks.
 
      @note Reimplement in parallel
      */
     virtual long get_total_selections() const;
+
+    /**
+     @brief Obtain the target value from the options if it is present.
+     @param options The options node.
+     @param[out] value The target value.
+
+     @return True if the target value was present and a good value. False if
+             target value was absent or contained a bad value.
+
+     @note Reimplemented in parallel
+     */
+    virtual bool options_get_target(const conduit::Node &options, unsigned int &value) const;
 
     /**
      @brief Get the rank and index of the largest selection. In parallel, we
@@ -285,7 +351,7 @@ protected:
      @param[out] sel_rank The rank that contains the largest selection.
      @param[out] sel_index The index of the largest selection on sel_rank.
 
-     @note Reimplement in parallel
+     @note Reimplemented in parallel
      */
     virtual void get_largest_selection(int &sel_rank, int &sel_index) const;
 
@@ -346,8 +412,8 @@ protected:
      @param idx The selection to extract. This must be a valid selection index.
      @param n_mesh A Conduit node representing the mesh to which we're
                    applying the selection.
-     @return A new Conduit node (to be freed by caller) that contains the
-             extracted chunk.
+     @return A node containing the extracted chunk. The chunks will need to
+             be freed by the caller.
      */
     conduit::Node *extract(size_t idx, const conduit::Node &n_mesh) const;
 
@@ -413,6 +479,16 @@ protected:
              const std::vector<index_t> &element_ids,
              const std::vector<index_t> &vertex_ids,
              conduit::Node &n_new_topo) const;
+
+    /**
+     @brief Make a shallow copy of the input mesh node but make it have
+            its own fields so we can add original vertex and element maps.
+            All other fields are shallow copied.
+     @param idx The index of the selection whose data we're wrapping.
+     @param n_mesh The input mesh we're wrapping.
+     @return A new node containing the wrapped data.
+     */
+    conduit::Node *wrap(size_t idx, const conduit::Node &n_mesh) const;
 
     /**
      @brief Given a set of input meshes which may have various topologies,
@@ -487,10 +563,15 @@ protected:
                    and domains.
      @param[out] dest_ranks The destination ranks that get each input chunk.
      @param[out] dest_domain The destination domain to which a chunk is assigned.
+     @param offsets[out]     A vector of MPI_Comm_size that contains the index at
+                             which a rank's data begins in dest_rank, dest_domain.
+                             It contains a single 0 in serial.
+     @note Reimplemented in parallel
      */
     virtual void map_chunks(const std::vector<chunk> &chunks,
                             std::vector<int> &dest_ranks,
-                            std::vector<int> &dest_domain);
+                            std::vector<int> &dest_domain,
+                            std::vector<int> &offsets);
 
     /**
      @brief Communicates the input chunks to their respective destination ranks
@@ -502,18 +583,21 @@ protected:
      @param dest_rank A vector of integers containing the destination ranks of
                       each chunk.
      @param dest_domain The global numbering of each input chunk.
+     @param offsets     A vector of MPI_Comm_size that contains the index at
+                        which a rank's data begins in dest_rank, dest_domain.
+                        It contains a single 0 in serial.
      @param[out] chunks_to_assemble The vector of chunks that this rank will
                                     combine and set into the output.
      @param[out] chunks_to_assemble_domains The global domain numbering of each
                                             chunk in chunks_to_assemble. Like-
                                             numbered chunks will be combined
                                             into a single output domain.
-
-     @note This will be overridden for parallel.
+     @note Reimplemented in parallel
      */
     virtual void communicate_chunks(const std::vector<chunk> &chunks,
                                     const std::vector<int> &dest_rank,
                                     const std::vector<int> &dest_domain,
+                                    const std::vector<int> &offsets,
                                     std::vector<chunk> &chunks_to_assemble,
                                     std::vector<int> &chunks_to_assemble_domains);
 

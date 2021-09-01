@@ -52,6 +52,13 @@ CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_generate_index(const conduit_n
                                                                  conduit_node *cindex_out);
 
 //-----------------------------------------------------------------------------
+/// Partition a mesh
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_partition(const conduit_node *cmesh,
+                                                            const conduit_node *coptions,
+                                                            conduit_node *coutput);
+
+//-----------------------------------------------------------------------------
 /// Interface to generate example mesh blueprint data.
 //-----------------------------------------------------------------------------
 CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_basic(const char *mesh_type,

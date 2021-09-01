@@ -35,20 +35,6 @@ static const bool always_print = true;
 #endif
 
 //-----------------------------------------------------------------------------
-#ifdef GENERATE_BASELINES
-  #ifdef _WIN32
-    #include <direct.h>
-    void create_path(const std::string &path) { _mkdir(path.c_str()); }
-  #else
-    #include <sys/stat.h>
-    #include <sys/types.h>
-    void create_path(const std::string &path) { mkdir(path.c_str(), S_IRWXU); }
-  #endif
-#else
-  void create_path(const std::string &) {}
-#endif
-
-//-----------------------------------------------------------------------------
 #ifdef _WIN32
 const std::string sep("\\");
 #else
@@ -68,139 +54,17 @@ baseline_dir()
 }
 
 //-----------------------------------------------------------------------------
-std::string
-baseline_file(const std::string &basename)
-{
-    std::string path(baseline_dir());
-    create_path(path);
-    path += (sep + std::string("t_blueprint_mesh_partition"));
-    create_path(path);
-    path += (sep + basename + ".yaml");
-    return path;
-}
+std::string test_name() { return std::string("t_blueprint_mesh_partition"); }
 
 //-----------------------------------------------------------------------------
-void
-make_baseline(const std::string &filename, const conduit::Node &n)
-{
-    conduit::relay::io::save(n, filename, "yaml");
-}
+int get_rank() { return 0; }
 
 //-----------------------------------------------------------------------------
-void
-load_baseline(const std::string &filename, conduit::Node &n)
-{
-    conduit::relay::io::load(filename, "yaml", n);
-}
+void barrier() { }
 
 //-----------------------------------------------------------------------------
-bool
-compare_baseline(const std::string &filename, const conduit::Node &n)
-{
-    const double tolerance = 1.e-6;
-    conduit::Node baseline, info;
-    conduit::relay::io::load(filename, "yaml", baseline);
-    const char *line = "*************************************************************";
-#if 0
-    cout << line << endl;
-    baseline.print();
-    cout << line << endl;
-    n.print();
-    cout << line << endl;
-#endif
-
-    // Node::diff returns true if the nodes are different. We want not different.
-    bool equal = !baseline.diff(n, info, tolerance, true);
-
-    if(!equal)
-    {
-       cout << "Difference!" << endl;
-       cout << line << endl;
-       info.print();
-    }
-    return equal;
-}
-
-//-----------------------------------------------------------------------------
-bool
-check_if_hdf5_enabled()
-{
-    conduit::Node io_protos;
-    conduit::relay::io::about(io_protos["io"]);
-    return io_protos["io/protocols/hdf5"].as_string() == "enabled";
-}
-
-//-----------------------------------------------------------------------------
-void
-save_node(const std::string &filename, const conduit::Node &mesh)
-{
-    conduit::relay::io::blueprint::save_mesh(mesh, filename + ".yaml", "yaml");
-}
-
-//-----------------------------------------------------------------------------
-void
-save_visit(const std::string &filename, const conduit::Node &n)
-{
-    // NOTE: My VisIt only wants to read HDF5 root files for some reason.
-    bool hdf5_enabled = check_if_hdf5_enabled();
-
-    auto pos = filename.rfind("/");
-    std::string fn(filename.substr(pos+1,filename.size()-pos-1));
-    pos = fn.rfind(".");
-    std::string fn_noext(fn.substr(0, pos));
-
-
-    // Save all the domains to individual files.
-    auto ndoms = conduit::blueprint::mesh::number_of_domains(n);
-    if(ndoms < 1)
-        return;
-    char dnum[20];
-    if(ndoms == 1)
-    {
-        sprintf(dnum, "%05d", 0);
-        std::stringstream ss;
-        ss << fn_noext << "." << dnum;
-
-        if(hdf5_enabled)
-            conduit::relay::io::save(n, ss.str() + ".hdf5", "hdf5");
-        // VisIt won't read it:
-        conduit::relay::io::save(n, ss.str() + ".yaml", "yaml");
-    }
-    else
-    {
-        for(size_t i = 0; i < ndoms; i++)
-        {
-            sprintf(dnum, "%05d", static_cast<int>(i));
-            std::stringstream ss;
-            ss << fn_noext << "." << dnum;
-
-            if(hdf5_enabled)
-                conduit::relay::io::save(n[i], ss.str() + ".hdf5", "hdf5");
-            // VisIt won't read it:
-            conduit::relay::io::save(n[i], ss.str() + ".yaml", "yaml");
-        }
-    }
-
-    // Add index stuff to it so we can plot it in VisIt.
-    conduit::Node root;
-    if(ndoms == 1)
-        conduit::blueprint::mesh::generate_index(n, "", ndoms, root["blueprint_index/mesh"]);
-    else
-        conduit::blueprint::mesh::generate_index(n[0], "", ndoms, root["blueprint_index/mesh"]);
-    root["protocol/name"] = "hdf5";
-    root["protocol/version"] = CONDUIT_VERSION;
-    root["number_of_files"] = ndoms;
-    root["number_of_trees"] = ndoms;
-    root["file_pattern"] = (fn_noext + ".%05d.hdf5");
-    root["tree_pattern"] = "/";
-
-    if(hdf5_enabled)
-        conduit::relay::io::save(root, fn_noext + "_hdf5.root", "hdf5");
-
-    root["file_pattern"] = (fn_noext + ".%05d.yaml");
-    // VisIt won't read it:
-    conduit::relay::io::save(root, fn_noext + "_yaml.root", "yaml");
-}
+// Include some helper function definitions
+#include "t_blueprint_partition_helpers.hpp"
 
 //-----------------------------------------------------------------------------
 void
@@ -227,7 +91,11 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
 
-    // With no options, test that output==input
+    // With no options (turn mapping off though because otherwise we add 
+    // the original vertex and element fields), test that output==input
+    const char *opt0 =
+"mapping: 0";
+    options.reset(); options.parse(opt0, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(input.diff(output, msg, 0.0), false);
     std::string b00 = baseline_file(base + "_00");
@@ -267,7 +135,7 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
 "selections:\n"
 "   -\n"
 "     type: \"logical\"\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [0,0,0]\n"
 "     end:   [100,100,100]";
     options.reset(); options.parse(opt3, "yaml");
@@ -287,17 +155,17 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
 "selections:\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [0,0,0]\n"
 "     end:   [4,9,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [5,0,0]\n"
 "     end:   [9,4,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [5,5,0]\n"
 "     end:   [9,9,0]";
     options.reset(); options.parse(opt4, "yaml");
@@ -316,17 +184,17 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
 "selections:\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [0,0,0]\n"
 "     end:   [4,9,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [5,0,0]\n"
 "     end:   [9,4,0]\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [5,5,0]\n"
 "     end:   [9,9,0]\n"
 "target: 4";
@@ -360,7 +228,11 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
 
-    // With no options, test that output==input
+    // With no options (turn mapping off though because otherwise we add 
+    // the original vertex and element fields), test that output==input
+    const char *opt0 =
+"mapping: 0";
+    options.reset(); options.parse(opt0, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
     EXPECT_EQ(input.diff(output, msg, 0.0), false);
     std::string b00 = baseline_file(base + "_00");
@@ -400,7 +272,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
 "selections:\n"
 "   -\n"
 "     type: \"logical\"\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [0,0,0]\n"
 "     end:   [100,100,100]";
     options.reset(); options.parse(opt3, "yaml");
@@ -420,17 +292,17 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
 "selections:\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [0,0,0]\n"
 "     end:   [4,9,2]\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [5,0,0]\n"
 "     end:   [9,4,2]\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [5,5,0]\n"
 "     end:   [9,9,2]";
     options.reset(); options.parse(opt4, "yaml");
@@ -449,17 +321,17 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
 "selections:\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [0,0,0]\n"
 "     end:   [4,9,2]\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [5,0,0]\n"
 "     end:   [9,4,2]\n"
 "   -\n"
 "     type: logical\n"
-"     domain: 0\n"
+"     domain_id: 0\n"
 "     start: [5,5,0]\n"
 "     end:   [9,9,2]\n"
 "target: 4";
@@ -960,7 +832,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     conduit::blueprint::mesh::examples::braid("tets", 2, 2, 2, braid);
     auto &braid_coordset = braid["coordsets/coords"];
     conduit::Node polytess;
-    conduit::blueprint::mesh::examples::polytess(1, polytess);
+    conduit::blueprint::mesh::examples::polytess(1, 1, polytess);
     auto &polytess_coordset = polytess["coordsets/coords"];
 
     std::vector<const conduit::Node*> different;
@@ -1776,6 +1648,7 @@ void create_structured_domain(conduit::Node &out, const int domain_id,
     }
 }
 
+//-----------------------------------------------------------------------------
 void create_grain_case(conduit::Node &out)
 {
     out.reset();
@@ -1830,6 +1703,7 @@ void create_grain_case(conduit::Node &out)
     }
 }
 
+//-----------------------------------------------------------------------------
 TEST(blueprint_mesh_combine, structured)
 {
     const auto braid_cases = [](bool is3d) {
@@ -2048,4 +1922,80 @@ TEST(blueprint_mesh_combine, structured)
         #endif
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, field_selection)
+{
+    std::string base("field_selection");
+    conduit::Node input, output, options;
+    make_field_selection_example(input, -1);
+    save_visit("fs", input);
+
+    const char *opt0 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 0\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 1\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 2\n"
+"     field: selection_field\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: 3\n"
+"     field: selection_field\n";
+    options.reset(); options.parse(opt0, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 6);
+    std::string b00 = baseline_file(base + "_00");
+    save_visit(b00, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b00, output);
+#else
+    EXPECT_EQ(compare_baseline(b00, output), true);
+#endif
+
+    // Test domain_id: any
+    const char *opt1 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: any\n"
+"     field: selection_field\n";
+    options.reset(); options.parse(opt1, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 6);
+    std::string b01 = baseline_file(base + "_01");
+    save_visit(b01, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b01, output);
+#else
+    EXPECT_EQ(compare_baseline(b01, output), true);
+#endif
+
+    // Test "target: 10". We can split field selections further as
+    // explicit selections.
+    const char *opt2 =
+"selections:\n"
+"   -\n"
+"     type: field\n"
+"     domain_id: any\n"
+"     field: selection_field\n"
+"target: 10\n";
+    options.reset(); options.parse(opt2, "yaml");
+    conduit::blueprint::mesh::partition(input, options, output);
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(output), 10);
+    std::string b02 = baseline_file(base + "_02");
+    save_visit(b02, output);
+#ifdef GENERATE_BASELINES
+    make_baseline(b02, output);
+#else
+    EXPECT_EQ(compare_baseline(b02, output), true);
+#endif
 }
