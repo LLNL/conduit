@@ -68,7 +68,6 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: OFF
           ENABLE_PYTHON: OFF
-          ENABLE_PYTHON2: OFF
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
 
@@ -77,31 +76,13 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: ON
           ENABLE_MPI: ON
-          ENABLE_DOCS: ON
+          ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
           ENABLE_PARMETIS: ON
           PYTHON_VERSION: 2.7.18
-          ENABLE_PYTHON2: ON
-          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-pygments@2.4.2 "
-          CMAKE_VERSION: 3.14.2
-          BLT_CXX_STD: c++11
-
-        shared_py36:
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_COVERAGE: OFF
-          ENABLE_MPI: ON
-          ENABLE_RELAY_WEBSERVER: ON
-          ENABLE_DOCS: ON
-          ENABLE_SILO: ON
-          ENABLE_ADIOS: OFF
-          ENABLE_PARMETIS: ON
-          ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.6.3
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
 
@@ -116,7 +97,6 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
           PYTHON_VERSION: 3.7.6
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
@@ -126,15 +106,13 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: ON
-          ENABLE_DOCS: ON
+          ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: ON
           PYTHON_VERSION: 2.7.18
-          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-pygments@2.4.2 "
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
 
@@ -149,7 +127,6 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
           PYTHON_VERSION: 3.8.8
           CMAKE_VERSION: 3.20.0
           BLT_CXX_STD: c++11
@@ -224,8 +201,6 @@ stages:
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-           # fix constraint issue for python 2
-           if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # turn off hdf5 mpi support
            export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"
