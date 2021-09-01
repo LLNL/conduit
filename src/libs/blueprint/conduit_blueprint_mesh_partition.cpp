@@ -6435,7 +6435,22 @@ private:
                 Node temp;
                 for(size_t i = 0; i < meshes_and_bbs.size(); i++)
                 {
-                    temp[(i < 10) ? "domain_0000" + std::to_string(i) : "domain_000" + std::to_string(i)] = *meshes_and_bbs[i].first;
+                    const Node &mesh = *meshes_and_bbs[i].first;
+                    Node &out_mesh = temp[(i < 10) ? "domain_0000" + std::to_string(i) : "domain_000" + std::to_string(i)];
+                    out_mesh.set_external(mesh);
+
+                    out_mesh["fields/original_element_ids/association"] = "element";
+                    out_mesh["fields/original_element_ids/topology"] = "mesh";
+                    Schema s;
+                    const auto N = mesh["topologies/mesh/element_map"].dtype().number_of_elements() / 2;
+                    const void *ptr = mesh["topologies/mesh/element_map"].element_ptr(0);
+                    s["domains"].set(DataType::index_t(N, 0, 2*sizeof(index_t)));
+                    s["ids"].set(DataType::index_t(N, sizeof(index_t), 2*sizeof(index_t)));
+                    out_mesh["fields/original_element_ids/values"].set_external(s, const_cast<void*>(ptr));
+
+                    out_mesh["fields/original_vertex_ids/association"] = "vertex";
+                    out_mesh["fields/original_vertex_ids/topology"] = "mesh";
+                    out_mesh["fields/original_vertex_ids/values"].set_external(mesh["coordsets/coords/pointmaps"]);
                 }
                 std::ofstream f_out("combine_structured_iteration." + 
                     ((iteration < 10) ? ("0000" + std::to_string(iteration)) : ("000" + std::to_string(iteration)))
@@ -6783,6 +6798,26 @@ private:
         DataArray<index_t> orig_vert_domains = n_pointmap["domains"].value();
         DataArray<index_t> orig_vert_ids     = n_pointmap["ids"].value();
 
+        std::cout << "Dims LHS:";
+        for(int i = 0; i < 3; i++)
+        {
+            std::cout << " " << dims_lhs[i];
+        }
+        std::cout << std::endl;
+        std::cout << "Dims RHS:";
+        for(int i = 0; i < 3; i++)
+        {
+            std::cout << " " << dims_rhs[i];
+        }
+        std::cout << std::endl;
+        std::cout << "New dims:";
+        for(int i = 0; i < 3; i++)
+        {
+            std::cout << " " << new_dims[i];
+        }
+        std::cout << std::endl;
+
+
         index_t Nele = 1;
         for(index_t d = 0; d < dimension; d++) Nele *= (new_dims[d]-1);
         // The fields functions later in combine expect this to be 1 array, not a schema
@@ -6802,6 +6837,13 @@ private:
             const index_t *g_dims, const index_t *l_dims, const index_t *l_reorder,
             const int *l_reverse, const index_t *g_offsets) {
 
+            int N = 1;
+            int Nglobal = 1;
+            for(int i = 0; i < 3; i++)
+            {
+                N *= l_dims[i];
+                Nglobal *= g_dims[i];
+            }
             const std::array<index_t, MAXDIM> reordered_dims{
                 l_dims[l_reorder[0]],
                 (dimension > 1) ? l_dims[l_reorder[1]] : 0,
@@ -6837,6 +6879,14 @@ private:
                             index_t local_id, global_id;
                             grid_ijk_to_id(ijk_local.data(), l_dims, local_id);
                             grid_ijk_to_id(ijk_global.data(), g_dims, global_id);
+                            if(local_id >= N)
+                            {
+                                CONDUIT_ERROR("INVALID LOCAL ID " << local_id);
+                            }
+                            if(global_id >= Nglobal)
+                            {
+                                CONDUIT_ERROR("INVALID GLOBAL ID " << global_id);
+                            }
                             orig_vert_domains[global_id] = domain_id;
                             orig_vert_ids[global_id]     = local_id;
                         }
@@ -6847,7 +6897,14 @@ private:
                 const index_t d1m2 = d1m1 - 1;
                 const index_t d0m2 = d0m1 - 1;
                 const std::array<index_t, 3> g_elem_dims{g_dims[0]-1, g_dims[1]-1, g_dims[2]-1};
-                const std::array<index_t, 3> l_elem_dims{d0m1, d1m1, d2m1};
+                const std::array<index_t, 3> l_elem_dims{l_dims[0]-1, l_dims[1]-1, l_dims[2]-1};
+                N = 1;
+                Nglobal = 1;
+                for(int i = 0; i < 3; i++)
+                {
+                    N *= l_elem_dims[i];
+                    Nglobal *= g_elem_dims[i];
+                }
                 for(index_t k = 0; k < d2m1; k++)
                 {
                     ijk[2] = l_reverse[2] ? (d2m2-k) : k;
@@ -6872,6 +6929,18 @@ private:
                             grid_ijk_to_id(ijk_local.data(), l_elem_dims.data(), local_id);
                             grid_ijk_to_id(ijk_global.data(), g_elem_dims.data(), global_id);
                             const index_t idx = global_id * 2;
+                            if(local_id >= N)
+                            {
+                                CONDUIT_ERROR("INVALID LOCAL ID " << local_id);
+                            }
+                            if(global_id >= Nglobal)
+                            {
+                                CONDUIT_ERROR("INVALID GLOBAL ID " << global_id);
+                            }
+                            if(idx >= elem_map.number_of_elements())
+                            {
+                                CONDUIT_ERROR("INVALID INDEX INTO ELEM_MAP " << idx);
+                            }
                             elem_map[idx]   = domain_id;
                             elem_map[idx+1] = local_id;
                         }
@@ -7026,6 +7095,10 @@ private:
                 if(orig_vert_domains[i] == domain_lookup[0] && vert_maps[0])
                 {
                     const index_t id = orig_vert_ids[i];
+                    if(id >= n_vals_lhs[0].dtype().number_of_elements())
+                    {
+                        CONDUIT_ERROR("INDEX OUT OF BOUNDS " << id);
+                    }
                     temp_domain.set_external(dt, const_cast<void*>(vert_maps[0]->fetch("domains").element_ptr(id)));
                     temp_id.set_external(dt, const_cast<void*>(vert_maps[0]->fetch("ids").element_ptr(id)));
                     orig_vert_domains[i] = temp_domain.to_index_t();
@@ -7034,6 +7107,10 @@ private:
                 else if(orig_vert_domains[i] == domain_lookup[1] && vert_maps[1])
                 {
                     const index_t id = orig_vert_ids[i];
+                    if(id >= n_vals_rhs[0].dtype().number_of_elements())
+                    {
+                        CONDUIT_ERROR("INDEX OUT OF BOUNDS " << id);
+                    }
                     temp_domain.set_external(dt, const_cast<void*>(vert_maps[1]->fetch("domains").element_ptr(id)));
                     temp_id.set_external(dt, const_cast<void*>(vert_maps[1]->fetch("ids").element_ptr(id)));
                     orig_vert_domains[i] = temp_domain.to_index_t();
@@ -7048,6 +7125,10 @@ private:
                 {
                     const index_t id = elem_map[idx+1];
                     const index_t l_idx = id*2;
+                    if(l_idx >= elem_maps[0]->dtype().number_of_elements())
+                    {
+                        CONDUIT_ERROR("INDEX OUT OF BOUNDS " << l_idx);
+                    }
                     temp_domain.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx)));
                     temp_id.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx+1)));
                     elem_map[idx]   = temp_domain.to_index_t();
@@ -7057,8 +7138,12 @@ private:
                 {
                     const index_t id = elem_map[idx+1];
                     const index_t l_idx = id*2;
-                    temp_domain.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx)));
-                    temp_id.set_external(dt, const_cast<void*>(elem_maps[0]->element_ptr(l_idx+1)));
+                    if(l_idx >= elem_maps[1]->dtype().number_of_elements())
+                    {
+                        CONDUIT_ERROR("INDEX OUT OF BOUNDS " << l_idx);
+                    }
+                    temp_domain.set_external(dt, const_cast<void*>(elem_maps[1]->element_ptr(l_idx)));
+                    temp_id.set_external(dt, const_cast<void*>(elem_maps[1]->element_ptr(l_idx+1)));
                     elem_map[idx]   = temp_domain.to_index_t();
                     elem_map[idx+1] = temp_id.to_index_t();
                 }
