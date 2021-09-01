@@ -829,7 +829,7 @@ TEST(conduit_blueprint_mesh_partition_point_merge, different)
     conduit::blueprint::mesh::examples::braid("tets", 2, 2, 2, braid);
     auto &braid_coordset = braid["coordsets/coords"];
     conduit::Node polytess;
-    conduit::blueprint::mesh::examples::polytess(1, polytess);
+    conduit::blueprint::mesh::examples::polytess(1, 1, polytess);
     auto &polytess_coordset = polytess["coordsets/coords"];
 
     std::vector<const conduit::Node*> different;
