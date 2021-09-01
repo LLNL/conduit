@@ -68,6 +68,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: OFF
           ENABLE_PYTHON: OFF
+          ENABLE_PYTHON2: OFF
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
 
@@ -82,6 +83,8 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
           ENABLE_PARMETIS: ON
+          ENABLE_PYTHON2: ON
+          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
           PYTHON_VERSION: 2.7.18
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
@@ -97,6 +100,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
           PYTHON_VERSION: 3.7.6
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
@@ -112,6 +116,8 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: ON
+          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
           PYTHON_VERSION: 2.7.18
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
@@ -127,6 +133,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
           PYTHON_VERSION: 3.8.8
           CMAKE_VERSION: 3.20.0
           BLT_CXX_STD: c++11
@@ -201,6 +208,7 @@ stages:
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
+           if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # turn off hdf5 mpi support
            export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"
