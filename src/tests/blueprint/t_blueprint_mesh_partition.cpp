@@ -12,6 +12,7 @@
 #include "conduit_relay.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_mesh_partition.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
