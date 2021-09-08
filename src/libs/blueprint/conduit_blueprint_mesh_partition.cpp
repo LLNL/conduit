@@ -134,8 +134,6 @@ as_index_t_array(const conduit::Node &n)
 //---------------------------------------------------------------------------
 const std::string selection::DOMAIN_KEY("domain_id");
 const std::string selection::TOPOLOGY_KEY("topology");
-const int selection::FREE_DOMAIN_ID = -1;
-const int selection::FREE_RANK_ID = -1;
 
 //---------------------------------------------------------------------------
 selection::selection() : whole(selection::WHOLE_UNDETERMINED), domain(0),

@@ -51,8 +51,8 @@ namespace mesh
 class CONDUIT_BLUEPRINT_API selection
 {
 public:
-    static const int FREE_DOMAIN_ID; // The domain number needs to be assigned.
-    static const int FREE_RANK_ID;   // The rank needs to be assigned.
+    static constexpr int FREE_DOMAIN_ID = -1; // The domain number needs to be assigned.
+    static constexpr int FREE_RANK_ID = -1;   // The rank needs to be assigned.
 
     selection();
     selection(const selection &obj);
