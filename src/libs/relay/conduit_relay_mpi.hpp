@@ -97,14 +97,6 @@ namespace mpi
                                             int tag,
                                             MPI_Comm comm);
 
-    int CONDUIT_RELAY_API send_recv_using_schema(const Node &sendnode,
-                                                 int dest,
-                                                 int sendtag,
-                                                 Node &recvnode,
-                                                 int src,
-                                                 int recvtag,
-                                                 MPI_Comm comm);
-
 //-----------------------------------------------------------------------------
 /// MPI Reduce
 //-----------------------------------------------------------------------------

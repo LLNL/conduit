@@ -3657,6 +3657,7 @@ public:
     }
 };
 
+//-----------------------------------------------------------------------------
 /**
  @brief A simple bounding box struct to be used by the kdtree
 */
@@ -3689,6 +3690,7 @@ struct bounding_box
     }
 };
 
+//-----------------------------------------------------------------------------
 using vec2f = vector<float,2>;
 using vec3f = vector<float,3>;
 using vec2  = vector<double,2>;
@@ -4043,6 +4045,7 @@ private:
     std::vector<IndexType> scratch;
 };
 
+//-----------------------------------------------------------------------------
 using combine_implicit_data_t = std::pair<const Node*, bounding_box<vec3>>;
 
 template<typename InDataArray, typename OutDataArray>
@@ -4052,11 +4055,12 @@ copy_node_data_impl2(const InDataArray &in, OutDataArray &out, index_t offset)
     index_t out_idx = offset;
     for(index_t i = 0; i < in.number_of_elements(); i++, out_idx++)
     {
-        out[out_idx] = in[i];
+        out[out_idx] = static_cast<typename OutDataArray::ElementType>(in[i]);
     }
     return out_idx;
 }
 
+//-----------------------------------------------------------------------------
 template<typename OutDataArray>
 static index_t
 copy_node_data_impl(const Node &in, OutDataArray &out, index_t offset)
@@ -4132,6 +4136,7 @@ copy_node_data_impl(const Node &in, OutDataArray &out, index_t offset)
     return retval;
 }
 
+//-----------------------------------------------------------------------------
 static index_t
 copy_node_data(const Node &in, Node &out, index_t offset = 0)
 {
@@ -4206,6 +4211,7 @@ copy_node_data(const Node &in, Node &out, index_t offset = 0)
     return retval;
 }
 
+//-----------------------------------------------------------------------------
 template<typename LhsDataArray, typename RhsDataArray>
 static bool
 node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, double epsilon)
@@ -4229,6 +4235,7 @@ node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, doubl
     return retval;
 }
 
+//-----------------------------------------------------------------------------
 template<typename RhsDataArray>
 static bool
 node_value_compare_impl(const Node &lhs, const RhsDataArray &rhs,  double epsilon)
@@ -4304,6 +4311,7 @@ node_value_compare_impl(const Node &lhs, const RhsDataArray &rhs,  double epsilo
     return retval;
 }
 
+//-----------------------------------------------------------------------------
 static bool
 node_value_compare(const Node &lhs, const Node &rhs, double epsilon = CONDUIT_EPSILON)
 {
@@ -4378,6 +4386,7 @@ node_value_compare(const Node &lhs, const Node &rhs, double epsilon = CONDUIT_EP
     return retval;
 }
 
+//-----------------------------------------------------------------------------
 template<typename DataArray_t, typename T>
 static index_t
 find_rectilinear_offset(const DataArray_t &da, T val, double tolerance = CONDUIT_EPSILON)

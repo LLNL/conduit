@@ -68,6 +68,8 @@ public:
 //-----------------------------------------------------------------------------
 // Data and Info Access
 //-----------------------------------------------------------------------------
+    typedef T ElementType;
+
     T              &operator[](index_t idx)
                     {return element(idx);}
     T              &operator[](index_t idx) const

@@ -227,7 +227,7 @@ public:
             call free(), which will free the mesh if we own it. The struct
             does not have a destructor on purpose.
      */
-    struct chunk
+    struct CONDUIT_BLUEPRINT_API chunk
     {
         chunk();
         chunk(const Node *m, bool own);
