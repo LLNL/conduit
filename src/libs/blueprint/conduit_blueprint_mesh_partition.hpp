@@ -48,7 +48,7 @@ namespace mesh
  @brief Base class for selections that identify regions of interest that will
         be extracted from a mesh.
  */
-class selection
+class CONDUIT_BLUEPRINT_API selection
 {
 public:
     static const int FREE_DOMAIN_ID; // The domain number needs to be assigned.
@@ -217,7 +217,7 @@ protected:
         Conduit node that refashions the selections into a target number of
         mesh domains. This is the serial implementation.
  */
-class partitioner
+class CONDUIT_BLUEPRINT_API partitioner
 {
 public:
     /**

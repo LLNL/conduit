@@ -15,6 +15,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mesh_partition.hpp"
+#include "conduit_blueprint_exports.h"
 
 #include <mpi.h>
 
@@ -52,7 +53,7 @@ namespace mesh
        so this class is in here so we do not have to make it public via a
        hpp file.
  */
-class parallel_partitioner : public conduit::blueprint::mesh::partitioner
+class CONDUIT_BLUEPRINT_API parallel_partitioner : public conduit::blueprint::mesh::partitioner
 {
 public:
     parallel_partitioner(MPI_Comm c);

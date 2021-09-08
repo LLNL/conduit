@@ -11,7 +11,6 @@
 #include "conduit.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_blueprint.hpp"
-#include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mesh_partition.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
@@ -402,7 +401,7 @@ test_explicit_selection(const std::string &topo, const conduit::index_t vdims[3]
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
 
-    conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
+    conduit::index_t nelem = conduit::blueprint::mesh::topology::length(input["topologies"][0]);
 
     // Select the whole thing. Check output==input
     options.reset();
@@ -608,7 +607,7 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
 
-    conduit::index_t nelem = conduit::blueprint::mesh::utils::topology::length(input["topologies"][0]);
+    conduit::index_t nelem = conduit::blueprint::mesh::topology::length(input["topologies"][0]);
     auto n2 = nelem / 2;
 
     // Select the whole thing. Check output==input
