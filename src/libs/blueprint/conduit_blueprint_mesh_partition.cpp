@@ -111,7 +111,7 @@ as_index_t(const conduit::Node &n, conduit::Node &out)
 #ifdef CONDUIT_INDEX_32
     n.to_unsigned_int_array(out);
 #else
-    n.to_unsigned_long_array(out);
+    n.to_uint64_array(out);
 #endif
 }
 
@@ -123,10 +123,10 @@ as_index_t_array(const conduit::Node &n)
     return n.as_unsigned_int_array();
 }
 #else
-inline conduit::unsigned_long_array
+inline conduit::uint64_array
 as_index_t_array(const conduit::Node &n)
 {
-    return n.as_unsigned_long_array();
+    return n.as_uint64_array();
 }
 #endif
 
@@ -781,7 +781,7 @@ selection_explicit::applicable(const conduit::Node &/*n_mesh*/)
 bool
 selection_explicit::determine_is_whole(const conduit::Node &n_mesh) const
 {
-    bool whole = false;
+    bool is_whole = false;
     try
     {
         // Get the selected topology and coordset.
@@ -794,15 +794,15 @@ selection_explicit::determine_is_whole(const conduit::Node &n_mesh) const
             std::set<index_t> unique;
             for(index_t i = 0; i < n; i++)
                 unique.insert(indices[i]);
-            whole = static_cast<index_t>(unique.size()) == num_elem_in_mesh;
+            is_whole = static_cast<index_t>(unique.size()) == num_elem_in_mesh;
         }
     }
     catch(conduit::Error &)
     {
-        whole = false;
+        is_whole = false;
     }
 
-    return whole;
+    return is_whole;
 }
 
 //---------------------------------------------------------------------------
@@ -1037,7 +1037,7 @@ selection_ranges::num_ranges() const
 bool
 selection_ranges::determine_is_whole(const conduit::Node &n_mesh) const
 {
-    bool whole = false;
+    bool is_whole = false;
     index_t num_elem_in_topo = 0;
     try
     {
@@ -1054,7 +1054,7 @@ selection_ranges::determine_is_whole(const conduit::Node &n_mesh) const
     if(n == 1)
     {
         auto upper_bound = std::min(get_ranges()[1], num_elem_in_topo-1);
-        whole = get_ranges()[0] == 0 &&
+        is_whole = get_ranges()[0] == 0 &&
                 upper_bound == num_elem_in_topo-1;
     }
     else
@@ -1068,10 +1068,10 @@ selection_ranges::determine_is_whole(const conduit::Node &n_mesh) const
             for(index_t eid = start; eid <= end; eid++)
                 unique.insert(eid);
         }
-        whole = static_cast<index_t>(unique.size()) == num_elem_in_topo;
+        is_whole = static_cast<index_t>(unique.size()) == num_elem_in_topo;
     }
 
-    return whole;
+    return is_whole;
 }
 
 //---------------------------------------------------------------------------
@@ -2115,7 +2115,6 @@ partitioner::copy_field(const conduit::Node &n_field,
         if(n.number_of_children() > 0)
         {
             // mcarray.
-            conduit::Node &new_values = n_new_field["values"];
             for(index_t i = 0; i < n.number_of_children(); i++)
             {
                 const conduit::Node &n_vals = n[i];
@@ -2285,10 +2284,10 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
         };
         int np = (ndims == 2) ? 4 : 8;
         auto n = element_ids.size();
-        for(size_t i = 0; i < n; i++)
+        for(size_t j = 0; j < n; j++)
         {
             // Get the IJK coordinate of the element.
-            grid_id_to_ijk(element_ids[i], edims, cell_ijk);
+            grid_id_to_ijk(element_ids[j], edims, cell_ijk);
 //cout << element_ids[i] << "-> " << cell_ijk[0] << "," << cell_ijk[1] << "," << cell_ijk[2] << endl;
             // Turn the IJK into vertex ids.
             for(int i = 0; i < np; i++)
@@ -2388,10 +2387,10 @@ partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
             {
                 const conduit::Node &n = n_element_types[i];
                 auto stream_id = n["stream_id"].to_int();
-                std::string shape(n["shape"].as_string());
+                std::string shape_str(n["shape"].as_string());
                 for(size_t j = 0; j < utils::TOPO_SHAPES.size(); j++)
                 {
-                    if(shape == utils::TOPO_SHAPES[j])
+                    if(shape_str == utils::TOPO_SHAPES[j])
                     {
                         stream_id_npts[stream_id] = utils::TOPO_SHAPE_INDEX_COUNTS[j];
                         break;
@@ -2905,15 +2904,15 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
         {
             const conduit::Node &n = n_element_types[i];
             auto stream_id = n["stream_id"].to_int();
-            std::string shape(n["shape"].as_string());
+            std::string shape_str(n["shape"].as_string());
             for(size_t j = 0; j < utils::TOPO_SHAPES.size(); j++)
             {
-                if(shape == utils::TOPO_SHAPES[j])
+                if(shape_str == utils::TOPO_SHAPES[j])
                 {
                     stream_id_npts[stream_id] = utils::TOPO_SHAPE_INDEX_COUNTS[j];
                     unique_shape_types.insert(utils::TOPO_SHAPE_INDEX_COUNTS[j]);
-                    shape_stream_id[shape] = stream_id;
-                    stream_id_shape[stream_id] = shape;
+                    shape_stream_id[shape_str] = stream_id;
+                    stream_id_shape[stream_id] = shape_str;
                     break;
                 }
             }
@@ -2997,10 +2996,10 @@ partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
             // All elements are actually a single type.
             int nverts_in_shape = -1;
             const conduit::Node &n_et = n_topo["elements/element_types"][0];
-            std::string shape(n_et["shape"].as_string());
+            std::string shape_str(n_et["shape"].as_string());
             for(size_t j = 0; j < utils::TOPO_SHAPES.size(); j++)
             {
-                if(shape == utils::TOPO_SHAPES[j])
+                if(shape_str == utils::TOPO_SHAPES[j])
                 {
                     nverts_in_shape = utils::TOPO_SHAPE_INDEX_COUNTS[j];
                     break;
@@ -3801,12 +3800,10 @@ private:
         node *newnode = new node;
         newnode->points.reserve(point_vec_size);
         newnode->data.reserve(point_vec_size);
-        newnode->bb.min[0] = std::numeric_limits<Float>::max();
-        newnode->bb.min[1] = std::numeric_limits<Float>::max();
-        newnode->bb.min[2] = std::numeric_limits<Float>::max();
-        newnode->bb.max[0] = std::numeric_limits<Float>::lowest();
-        newnode->bb.max[1] = std::numeric_limits<Float>::lowest();
-        newnode->bb.max[2] = std::numeric_limits<Float>::lowest();
+        for(size_t i = 0; i < newnode->bb.min.size(); i++)
+            newnode->bb.min[i] = std::numeric_limits<Float>::max();
+        for(size_t i = 0; i < newnode->bb.max.size(); i++)
+            newnode->bb.max[i] = std::numeric_limits<Float>::lowest();
         newnode->left = nullptr;
         newnode->right = nullptr;
         newnode->split = 0;
@@ -4223,7 +4220,9 @@ node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, doubl
     bool retval = true;
     for(index_t i = 0; i < nele; i++)
     {
-        const double diff = std::abs(lhs[i] - rhs[i]);
+        double lhs_double = static_cast<double>(lhs[i]);
+        double rhs_double = static_cast<double>(rhs[i]);
+        const double diff = std::abs(lhs_double - rhs_double);
         if(!(diff <= epsilon))
         {
             retval = false;
@@ -4245,61 +4244,61 @@ node_value_compare_impl(const Node &lhs, const RhsDataArray &rhs,  double epsilo
     case conduit::DataType::INT8_ID:
     {
         DataArray<int8> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::INT16_ID:
     {
         DataArray<int16> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::INT32_ID:
     {
         DataArray<int32> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::INT64_ID:
     {
         DataArray<int64> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::UINT8_ID:
     {
         DataArray<uint8> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::UINT16_ID:
     {
         DataArray<uint16> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::UINT32_ID:
     {
         DataArray<uint32> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::UINT64_ID:
     {
         DataArray<uint64> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::FLOAT32_ID:
     {
         DataArray<float32> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     case conduit::DataType::FLOAT64_ID:
     {
         DataArray<float64> da = lhs.value();
-        retval = copy_node_data_impl2(da, rhs, epsilon);
+        retval = node_value_compare_impl2(da, rhs, epsilon);
         break;
     }
     default:
