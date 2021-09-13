@@ -18,6 +18,9 @@
 // standard lib includes
 //-----------------------------------------------------------------------------
 #include <iostream>
+#include <string.h>
+#include <memory>
+#include <map>
 
 //-----------------------------------------------------------------------------
 // external lib includes
@@ -1399,34 +1402,238 @@ void silo_mesh_write(const Node &node,
 namespace silo
 {
 
+//-----------------------------------------------------------------------------
+// Fetch the DBfile * associated with 'filename' from 'filemap'.
+// If the map does not contain an entry for 'filename', open
+// the file and add it to the map before returning the pointer.
+//-----------------------------------------------------------------------------
+DBfile *
+get_or_open(std::map<std::string,
+                     std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+            const std::string &filename){
 
+    DBfile *fileptr;
+    auto search = filemap.find(filename);
+    if (search != filemap.end()) {
+        return search->second.get();
+    } else {
+        if (!(fileptr = DBOpen(filename.c_str(), DB_UNKNOWN, DB_READ)))
+            CONDUIT_ERROR("Error opening silo file " << filename);
+        filemap.emplace(std::piecewise_construct, std::make_tuple(filename), std::make_tuple(fileptr, &DBClose));
+        return fileptr;
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Split a silo path into file path and silo name components.
+// If there is no file path component (because the path points to an entry in
+// the same file) the file path component will be empty.
+//-----------------------------------------------------------------------------
 void
-fetch_ucd_mesh(const std::string &silo_file_path, const std::string &silo_mesh_name, const std::string &silo_mat_name, conduit::Node &mesh){
-    DBfile *silo_file;
-    DBucdmesh *ucdmesh;
-    DBmaterial *material;
-    (void) mesh;
+split_silo_path(const std::string &path,
+                const std::string &relative_dir,
+                std::string &file_path,
+                std::string &silo_name){
 
-    if (!(silo_file = DBOpen(silo_file_path.c_str(), DB_UNKNOWN, DB_READ)))
-        CONDUIT_ERROR ("Cannot open silo file " << silo_file_path);
-    if (!(ucdmesh = DBGetUcdmesh(silo_file, silo_mesh_name.c_str())))
-        CONDUIT_ERROR("Entry " << silo_mesh_name << " missing in " << silo_file_path);
-    if (!(material = DBGetMaterial(silo_file, silo_mat_name.c_str())))
-        CONDUIT_ERROR("Entry " << silo_mat_name << " missing in " << silo_file_path);
-    DBFreeUcdmesh(ucdmesh);
-    DBFreeMaterial(material);
-    CONDUIT_ASSERT(DBClose(silo_file) == 0, "Failed closing silo file " << silo_file_path);
+    conduit::utils::rsplit_file_path(path, ":", silo_name, file_path);
+    if (!file_path.empty())
+        file_path = conduit::utils::join_file_path(relative_dir, file_path);
+}
 
+std::string shapetype_to_string (int shapetype){
+    if (shapetype == DB_ZONETYPE_BEAM)
+        return "line";
+    if (shapetype == DB_ZONETYPE_TRIANGLE)
+        return "tri";
+    if (shapetype == DB_ZONETYPE_QUAD)
+        return "quad";
+    if (shapetype == DB_ZONETYPE_TET)
+        return "tet";
+    if (shapetype == DB_ZONETYPE_HEX)
+        return "hex";
+    if (shapetype == DB_ZONETYPE_POLYHEDRON)
+        return "polyhedral";
+    CONDUIT_ERROR("Unsupported zone type");
+    return "";
 }
 
 void
-fetch_quad_mesh(const std::string &silo_file_path, const std::string &silo_mesh_name, const std::string &silo_mat_name, conduit::Node &mesh){
-    (void) silo_file_path;
-    (void) silo_mesh_name;
-    (void) silo_mat_name;
-    (void) mesh;
+read_ucdmesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry){
+    DBucdmesh *ucdmesh_ptr;
+    if (!(ucdmesh_ptr = DBGetUcdmesh(file, mesh_name.c_str())))
+        CONDUIT_ERROR("Error fetching mesh " << mesh_name);
+    std::unique_ptr<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh {ucdmesh_ptr, &DBFreeUcdmesh};
+    CONDUIT_ASSERT(ucdmesh_ptr->zones->nshapes == 1, "Expected a single shape type, got " << ucdmesh_ptr->zones->nshapes);
+    mesh_entry["topologies"][ucdmesh_ptr->name]["type"] = "unstructured";
+    mesh_entry["topologies"][ucdmesh_ptr->name]["elements"]["shape"] = shapetype_to_string(ucdmesh_ptr->zones->shapetype[0]);
 }
 
+void
+read_quadmesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry){
+    DBquadmesh *quadmesh_ptr;
+    if (!(quadmesh_ptr = DBGetQuadmesh(file, mesh_name.c_str())))
+        CONDUIT_ERROR("Error fetching mesh " << mesh_name);
+    std::unique_ptr<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh {quadmesh_ptr, &DBFreeQuadmesh};
+    mesh_entry["topologies"][quadmesh_ptr->name]["type"] = "quad";
+}
+
+void
+read_csgmesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry){
+    DBcsgmesh *csgmesh_ptr;
+    if (!(csgmesh_ptr = DBGetCsgmesh(file, mesh_name.c_str())))
+        CONDUIT_ERROR("Error fetching mesh " << mesh_name);
+    std::unique_ptr<DBcsgmesh, decltype(&DBFreeCsgmesh)> csgmesh {csgmesh_ptr, &DBFreeCsgmesh};
+    (void) mesh_entry;
+}
+
+template <typename T>
+void
+copy_point_mesh_coords(const DBpointmesh *pm, conduit::Node &node)
+{
+    T* dim;
+    for (int i = 0; i < pm->ndims; i++)
+    {
+        if (pm->coords[i] != NULL)
+        {
+            dim = (T*) malloc(pm->nels * sizeof (T));
+            for (int j = 0; j < pm->nels; j++)
+            {
+                dim[j] = ((T**)pm->coords)[i][j];
+            }
+            node[pm->labels[i]].set(dim, pm->ndims);
+        } else {
+            return;
+        }
+    }
+}
+
+void
+read_pointmesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry){
+    DBpointmesh *pointmesh_ptr;
+    if (!(pointmesh_ptr = DBGetPointmesh(file, mesh_name.c_str())))
+        CONDUIT_ERROR("Error fetching mesh " << mesh_name);
+    std::string name {pointmesh_ptr->name};
+    std::unique_ptr<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh {pointmesh_ptr, &DBFreePointmesh};
+    mesh_entry["topologies"][name]["type"] = "points";
+    mesh_entry["topologies"][name]["coordset"] = name;
+    mesh_entry["coordsets"][name]["type"] = "explicit";
+    if (pointmesh_ptr->datatype == DB_DOUBLE){
+        copy_point_mesh_coords<double>(pointmesh_ptr, mesh_entry["coordsets"][name]["values"]);
+    } else if (pointmesh_ptr->datatype == DB_FLOAT){
+        copy_point_mesh_coords<float>(pointmesh_ptr, mesh_entry["coordsets"][name]["values"]);
+    } else {
+        CONDUIT_ERROR ("Unsupported mesh data type " << pointmesh_ptr->datatype);
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Read a multimesh domain, switching on the type.
+// 'file' must be a pointer into the file containing the mesh, and 'mesh_name'
+// must be the mesh's name
+//-----------------------------------------------------------------------------
+void
+read_mesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry, int meshtype){
+    if (meshtype == DB_UCDMESH)
+        return read_ucdmesh_domain(file, mesh_name, mesh_entry);
+    if (meshtype == DB_CSGMESH)
+        return read_csgmesh_domain(file, mesh_name, mesh_entry);
+    if (meshtype == DB_QUADMESH)
+        return read_quadmesh_domain(file, mesh_name, mesh_entry);
+    if (meshtype == DB_POINTMESH)
+        return read_pointmesh_domain(file, mesh_name, mesh_entry);
+    CONDUIT_ERROR("Unsupported mesh type " << meshtype);
+}
+
+//-----------------------------------------------------------------------------
+// Read a multimesh from a Silo file.
+//-----------------------------------------------------------------------------
+void
+read_multimesh(DBfile *root_file,
+               std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+               DBmultimesh *multimesh,
+               conduit::Node &mesh){
+
+    std::string file_path, silo_name;
+    for (index_t i = 0; i < multimesh->nblocks; ++i)
+    {
+        Node &entry = mesh.append();
+        split_silo_path(multimesh->meshnames[i], "", file_path, silo_name);
+        if (!file_path.empty()){
+            read_mesh_domain(get_or_open(filemap, file_path), silo_name, entry, multimesh->meshtypes[i]);
+        } else {
+            read_mesh_domain(root_file, silo_name, entry, multimesh->meshtypes[i]);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Read a multimesh from a Silo file.
+//-----------------------------------------------------------------------------
+void
+read_ucdvariable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry){
+    (void) file;
+    (void) var_name;
+    (void) mesh_entry;
+}
+
+//-----------------------------------------------------------------------------
+// Read a multimesh from a Silo file.
+//-----------------------------------------------------------------------------
+void
+read_quadvariable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry){
+    (void) file;
+    (void) var_name;
+    (void) mesh_entry;
+}
+
+//-----------------------------------------------------------------------------
+// Read a multimesh from a Silo file.
+//-----------------------------------------------------------------------------
+void
+read_csgvariable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry){
+    (void) file;
+    (void) var_name;
+    (void) mesh_entry;
+}
+
+//-----------------------------------------------------------------------------
+// Read a multivar domain, switching on the type.
+// 'file' must be a pointer into the file containing the variable domain
+// 'var_name' must be the name of the variable within the file.
+//-----------------------------------------------------------------------------
+void
+read_variable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry, int vartype){
+    if (vartype == DB_UCDVAR)
+        return read_ucdvariable_domain(file, var_name, mesh_entry);
+    if (vartype == DB_QUADVAR)
+        return read_quadvariable_domain(file, var_name, mesh_entry);
+    if (vartype == DB_CSGVAR)
+        return read_csgvariable_domain(file, var_name, mesh_entry);
+    CONDUIT_ERROR("Unsupported variable type " << vartype);
+}
+
+//-----------------------------------------------------------------------------
+// Read a multivar from a Silo file.
+//-----------------------------------------------------------------------------
+void
+read_multivar(DBfile *root_file,
+              std::map<std::string,
+                       std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+              DBmultivar *multivar,
+              conduit::Node &mesh){
+
+    std::string file_path, silo_name;
+    for (index_t i = 0; i < multivar->nvars; ++i)
+    {
+        Node &entry = mesh[i];
+        split_silo_path(multivar->varnames[i], "", file_path, silo_name);
+        if (!file_path.empty()){
+            read_variable_domain(get_or_open(filemap, file_path), silo_name, entry, multivar->vartypes[i]);
+        } else {
+            read_variable_domain(root_file, silo_name, entry, multivar->vartypes[i]);
+        }
+    }
+}
 
 //---------------------------------------------------------------------------//
 void
@@ -1447,61 +1654,67 @@ void
 CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,
                                  conduit::Node &mesh){
-    DBfile *silo_file;
-    DBmultimesh *multimesh;
-    DBmultimat *multimaterial;
-    std::string relative_path;
-    std::string silo_mesh_path, silo_material_path, mesh_path;
+
+    int i, j;
+    std::string mmesh_name;
     std::string dirname;
-    int meshtype, i;
-
-    // get the directory of the mesh
-    conduit::utils::rsplit_file_path(root_file_path, silo_mesh_path, dirname);
-
-    CONDUIT_ASSERT((opts.number_of_children() == 0), "Opts should be empty");
-    if (!(silo_file = DBOpen(root_file_path.c_str(), DB_UNKNOWN, DB_READ)))
+    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
+    // get the directory of the root silo file`
+    conduit::utils::rsplit_file_path(root_file_path, mmesh_name, dirname);
+    DBfile *silofile;
+    if (!(silofile = DBOpen(root_file_path.c_str(), DB_UNKNOWN, DB_READ))){
         CONDUIT_ERROR ("Cannot open silo file " << root_file_path);
-    if (!(multimesh = DBGetMultimesh(silo_file, "MMESH")))
-        CONDUIT_ERROR("No MMESH entry in " << root_file_path);
-    if (multimesh->nblocks <= 0)
-        CONDUIT_ERROR ("No blocks in MMESH entry");
-    if (!(multimaterial = DBGetMultimat(silo_file, "MMATERIAL")))
-        CONDUIT_ERROR("No MMATERIAL entry in " << root_file_path);
-    if (multimaterial->nmats <= 0)
-        CONDUIT_ERROR("No materials in MMATERIAL entry");
-    if (multimaterial->nmats != multimesh->nblocks)
-        CONDUIT_ERROR("Unequal numbers MMATERIAL and MMESH entries");
-    meshtype = multimesh->meshtypes[0];  // all mesh types must be same
-    if (meshtype != DB_UCDMESH && meshtype != DB_QUADMESH)
-        CONDUIT_ERROR("Unsupported mesh type");
-    for (i = 0; i < multimesh->nblocks; ++i)
-    {
-        if (multimesh->meshtypes[i] != meshtype)
-            CONDUIT_ERROR("Cannot mix mesh types");
     }
-    for (i = 0; i < multimesh->nblocks; ++i)
-    {
-        conduit::utils::rsplit_file_path(multimaterial->matnames[i],
-                                    ":",
-                                    silo_material_path,
-                                    relative_path);
-        conduit::utils::rsplit_file_path(multimesh->meshnames[i],
-                                    ":",
-                                    silo_mesh_path,
-                                    relative_path);
-        mesh_path = conduit::utils::join_file_path(dirname, relative_path);
-        if (meshtype == DB_UCDMESH){
-            mesh["topologies"]["mesh"]["type"] = "unstructured";
-            fetch_ucd_mesh(mesh_path, silo_mesh_path, silo_material_path, mesh);
-        }
-        else{
-            mesh["topologies"]["mesh"]["type"] = "structured";
-            fetch_quad_mesh(mesh_path, silo_mesh_path, silo_material_path, mesh);
-        }
+    else {
+        filemap.emplace(std::piecewise_construct, std::make_tuple(root_file_path), std::make_tuple(silofile, &DBClose));
+    }
 
+    DBtoc *toc = DBGetToc(silofile);
+    // get the multimesh
+    CONDUIT_ASSERT(toc->nmultimesh > 0, "No multimesh found in file");
+    if (opts["multimesh_name"].dtype().is_empty()){
+        mmesh_name = toc->multimesh_names[0];
     }
-    DBFreeMultimesh(multimesh);
-    CONDUIT_ASSERT(DBClose(silo_file) == 0, "Failed closing silo file " << silo_file);
+    else {
+        for (i = 0; i < toc->nmultimesh; ++i)
+        {
+            if (toc->multimesh_names[i] == opts["multimesh_name"].to_string()){
+                mmesh_name = toc->multimesh_names[i];
+                break;
+            }
+        }
+        CONDUIT_ERROR("No multimesh found matching " << opts["multimesh_name"].to_string());
+    }
+    std::unique_ptr<DBmultimesh, decltype(&DBFreeMultimesh)> multimesh{DBGetMultimesh(silofile, mmesh_name.c_str()), &DBFreeMultimesh};
+    if (!multimesh.get()){
+        multimesh.release();
+        CONDUIT_ERROR("Error fetching multimesh " << mmesh_name);
+    }
+    read_multimesh(silofile, filemap, multimesh.get(), mesh);
+    // get the multivars matching the multimesh
+    for (i = 0; i < toc->nmultivar; ++i)
+    {
+        std::unique_ptr<DBmultivar, decltype(&DBFreeMultivar)> multivar {
+            DBGetMultivar(silofile, multivar.get()->varnames[i]), &DBFreeMultivar
+        };
+        if (!multivar.get()){
+            multivar.release();
+            CONDUIT_ERROR("Error fetching multivar" << multivar.get()->varnames[i]);
+        }
+        if (multivar.get()->mmesh_name == mmesh_name){
+            CONDUIT_ASSERT(multivar.get()->nvars == multimesh.get()->nblocks,
+                "Domain count mismatch between multivar " << multivar.get()->varnames[i]
+                << "and multimesh");
+            for (j = 0; j < multivar.get()->nvars; ++j)
+            {
+                CONDUIT_ASSERT(multivar.get()->vartypes[j] == multimesh.get()->meshtypes[j],
+                    "Type mismatch between multivar and multimesh: " << multivar.get()->vartypes[j]
+                    << "and " << multimesh.get()->meshtypes[j]);
+            }
+            // do something with multivar
+            read_multivar(silofile, filemap, multivar.get(), mesh);
+        }
+    }
 }
 
 //---------------------------------------------------------------------------//
