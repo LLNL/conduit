@@ -1457,15 +1457,89 @@ std::string shapetype_to_string (int shapetype){
     return "";
 }
 
+template <typename T>
+void
+copy_point_coords(void *coords[3], int ndims, int *dims, int coord_sys, conduit::Node &node)
+{
+    T* data;
+    //T* silo_dim;
+    ndims = ndims < 3 ? ndims : 3;
+    const char **labels;
+    const char *cartesian_labels[] = {"x", "y", "z"};
+    const char *cylindrical_labels[] = {"r", "z", "theta"};
+    const char *spherical_labels[] = {"r", "theta", "phi"};
+    if (coord_sys == DB_CARTESIAN){
+        labels = cartesian_labels;
+    } else if (coord_sys == DB_CYLINDRICAL){
+        labels = cylindrical_labels;
+        if (ndims >= 3)
+            CONDUIT_ERROR("Blueprint only supports 2D cylindrical coordinates");
+    } else if (coord_sys == DB_SPHERICAL){
+        labels = spherical_labels;
+    } else {
+        CONDUIT_ERROR("Unsupported coordinate system " << coord_sys);
+    }
+    for (int i = 0; i < ndims; i++)
+    {
+        if (coords[i] != NULL)
+        {
+            data = new T[dims[i]];
+            memcpy(data, coords[i], dims[i] * sizeof(T));
+            node[labels[i]].set(data, dims[i]);
+        } else {
+            return;
+        }
+    }
+}
+
+void
+copy_connectivity(int *nodelist, int nodelist_length, conduit::Node &node){
+    int *nodelist_copy = new int[nodelist_length];
+    memcpy(nodelist_copy, nodelist, nodelist_length * sizeof(nodelist_length));
+    node.set(nodelist_copy, nodelist_length);
+}
+
 void
 read_ucdmesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry){
     DBucdmesh *ucdmesh_ptr;
     if (!(ucdmesh_ptr = DBGetUcdmesh(file, mesh_name.c_str())))
         CONDUIT_ERROR("Error fetching mesh " << mesh_name);
     std::unique_ptr<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh {ucdmesh_ptr, &DBFreeUcdmesh};
-    CONDUIT_ASSERT(ucdmesh_ptr->zones->nshapes == 1, "Expected a single shape type, got " << ucdmesh_ptr->zones->nshapes);
-    mesh_entry["topologies"][ucdmesh_ptr->name]["type"] = "unstructured";
-    mesh_entry["topologies"][ucdmesh_ptr->name]["elements"]["shape"] = shapetype_to_string(ucdmesh_ptr->zones->shapetype[0]);
+    std::string name {ucdmesh_ptr->name};
+    if (ucdmesh_ptr->zones){
+        CONDUIT_ASSERT(!ucdmesh_ptr->phzones, "Both phzones and zones are defined in mesh " << mesh_name);
+        CONDUIT_ASSERT(ucdmesh_ptr->zones->nshapes == 1, "Expected a single shape type, got " << ucdmesh_ptr->zones->nshapes);
+        mesh_entry["topologies"][name]["elements"]["shape"] = shapetype_to_string(ucdmesh_ptr->zones->shapetype[0]);
+        copy_connectivity(ucdmesh_ptr->zones->nodelist,
+            ucdmesh_ptr->zones->lnodelist,
+            mesh_entry["topologies"][name]["elements"]["connectivity"]);
+    }
+    else if (ucdmesh_ptr->phzones){
+        mesh_entry["topologies"][name]["elements"]["shape"] = shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
+    }
+    else {
+        CONDUIT_ERROR("Neither phzones nor zones is defined in mesh " << mesh_name);
+    }
+    mesh_entry["topologies"][name]["coordset"] = name;
+    mesh_entry["coordsets"][name]["type"] = "explicit";
+    mesh_entry["topologies"][name]["type"] = "unstructured";
+
+    int dims[] = {ucdmesh_ptr->nnodes, ucdmesh_ptr->nnodes, ucdmesh_ptr->nnodes};
+    if (ucdmesh_ptr->datatype == DB_DOUBLE){
+        copy_point_coords<double>(ucdmesh_ptr->coords,
+                                  ucdmesh_ptr->ndims,
+                                  dims,
+                                  ucdmesh_ptr->coord_sys,
+                                  mesh_entry["coordsets"][name]["values"]);
+    } else if (ucdmesh_ptr->datatype == DB_FLOAT){
+        copy_point_coords<float>(ucdmesh_ptr->coords,
+                                 ucdmesh_ptr->ndims,
+                                 dims,
+                                 ucdmesh_ptr->coord_sys,
+                                 mesh_entry["coordsets"][name]["values"]);
+    } else {
+        CONDUIT_ERROR ("Unsupported mesh data type " << ucdmesh_ptr->datatype);
+    }
 }
 
 void
@@ -1474,36 +1548,24 @@ read_quadmesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_e
     if (!(quadmesh_ptr = DBGetQuadmesh(file, mesh_name.c_str())))
         CONDUIT_ERROR("Error fetching mesh " << mesh_name);
     std::unique_ptr<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh {quadmesh_ptr, &DBFreeQuadmesh};
-    mesh_entry["topologies"][quadmesh_ptr->name]["type"] = "quad";
-}
-
-void
-read_csgmesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry){
-    DBcsgmesh *csgmesh_ptr;
-    if (!(csgmesh_ptr = DBGetCsgmesh(file, mesh_name.c_str())))
-        CONDUIT_ERROR("Error fetching mesh " << mesh_name);
-    std::unique_ptr<DBcsgmesh, decltype(&DBFreeCsgmesh)> csgmesh {csgmesh_ptr, &DBFreeCsgmesh};
-    (void) mesh_entry;
-}
-
-template <typename T>
-void
-copy_point_mesh_coords(const DBpointmesh *pm, conduit::Node &node)
-{
-    T* dim;
-    for (int i = 0; i < pm->ndims; i++)
-    {
-        if (pm->coords[i] != NULL)
-        {
-            dim = (T*) malloc(pm->nels * sizeof (T));
-            for (int j = 0; j < pm->nels; j++)
-            {
-                dim[j] = ((T**)pm->coords)[i][j];
-            }
-            node[pm->labels[i]].set(dim, pm->ndims);
-        } else {
-            return;
-        }
+    std::string name {quadmesh_ptr->name};
+    mesh_entry["topologies"][name]["type"] = "quad";
+    mesh_entry["topologies"][name]["coordset"] = name;
+    mesh_entry["coordsets"][name]["type"] = "explicit";
+    if (quadmesh_ptr->datatype == DB_DOUBLE){
+        copy_point_coords<double>(quadmesh_ptr->coords,
+                                  quadmesh_ptr->ndims,
+                                  quadmesh_ptr->dims,
+                                  quadmesh_ptr->coord_sys,
+                                  mesh_entry["coordsets"][name]["values"]);
+    } else if (quadmesh_ptr->datatype == DB_FLOAT){
+        copy_point_coords<float>(quadmesh_ptr->coords,
+                                 quadmesh_ptr->ndims,
+                                 quadmesh_ptr->dims,
+                                 quadmesh_ptr->coord_sys,
+                                 mesh_entry["coordsets"][name]["values"]);
+    } else {
+        CONDUIT_ERROR ("Unsupported mesh data type " << quadmesh_ptr->datatype);
     }
 }
 
@@ -1517,10 +1579,19 @@ read_pointmesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_
     mesh_entry["topologies"][name]["type"] = "points";
     mesh_entry["topologies"][name]["coordset"] = name;
     mesh_entry["coordsets"][name]["type"] = "explicit";
+    int dims[] = {pointmesh_ptr->nels, pointmesh_ptr->nels, pointmesh_ptr->nels};
     if (pointmesh_ptr->datatype == DB_DOUBLE){
-        copy_point_mesh_coords<double>(pointmesh_ptr, mesh_entry["coordsets"][name]["values"]);
+        copy_point_coords<double>(pointmesh_ptr->coords,
+                                  pointmesh_ptr->ndims,
+                                  dims,
+                                  DB_CARTESIAN,
+                                  mesh_entry["coordsets"][name]["values"]);
     } else if (pointmesh_ptr->datatype == DB_FLOAT){
-        copy_point_mesh_coords<float>(pointmesh_ptr, mesh_entry["coordsets"][name]["values"]);
+        copy_point_coords<float>(pointmesh_ptr->coords,
+                                 pointmesh_ptr->ndims,
+                                 dims,
+                                 DB_CARTESIAN,
+                                 mesh_entry["coordsets"][name]["values"]);
     } else {
         CONDUIT_ERROR ("Unsupported mesh data type " << pointmesh_ptr->datatype);
     }
@@ -1536,7 +1607,7 @@ read_mesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry
     if (meshtype == DB_UCDMESH)
         return read_ucdmesh_domain(file, mesh_name, mesh_entry);
     if (meshtype == DB_CSGMESH)
-        return read_csgmesh_domain(file, mesh_name, mesh_entry);
+        CONDUIT_ERROR("CSG meshes are not supported by Blueprint");
     if (meshtype == DB_QUADMESH)
         return read_quadmesh_domain(file, mesh_name, mesh_entry);
     if (meshtype == DB_POINTMESH)
@@ -1550,6 +1621,7 @@ read_mesh_domain(DBfile *file, std::string &mesh_name, conduit::Node &mesh_entry
 void
 read_multimesh(DBfile *root_file,
                std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+               std::string &dirname,
                DBmultimesh *multimesh,
                conduit::Node &mesh){
 
@@ -1557,7 +1629,7 @@ read_multimesh(DBfile *root_file,
     for (index_t i = 0; i < multimesh->nblocks; ++i)
     {
         Node &entry = mesh.append();
-        split_silo_path(multimesh->meshnames[i], "", file_path, silo_name);
+        split_silo_path(multimesh->meshnames[i], dirname, file_path, silo_name);
         if (!file_path.empty()){
             read_mesh_domain(get_or_open(filemap, file_path), silo_name, entry, multimesh->meshtypes[i]);
         } else {
@@ -1566,34 +1638,88 @@ read_multimesh(DBfile *root_file,
     }
 }
 
-//-----------------------------------------------------------------------------
-// Read a multimesh from a Silo file.
-//-----------------------------------------------------------------------------
 void
-read_ucdvariable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry){
-    (void) file;
-    (void) var_name;
-    (void) mesh_entry;
+apply_centering(int centering, conduit::Node &field){
+    if (centering == DB_NODECENT){
+        field["association"] = "vertex";
+    } else if (centering == DB_ZONECENT){
+        field["association"] = "element";
+    } else {
+        CONDUIT_ERROR("Unsupported field association " << centering);
+    }
 }
+
+template<typename T>
+void
+apply_values(void **vals, int num_arrays, int num_elems, conduit::Node &values){
+    T* data;
+    for (int i = 0; i < num_arrays; ++i)
+    {
+        data = new T[num_elems];
+        memcpy(data, vals[i], num_elems * sizeof(T));
+        conduit::Node &entry = values.append();
+        entry.set(data, num_elems);
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 // Read a multimesh from a Silo file.
 //-----------------------------------------------------------------------------
 void
 read_quadvariable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry){
-    (void) file;
-    (void) var_name;
-    (void) mesh_entry;
+    DBquadvar *quadvar_ptr;
+    if (!(quadvar_ptr = DBGetQuadvar(file, var_name.c_str())))
+        CONDUIT_ERROR("Error fetching quad variable " << var_name);
+    std::unique_ptr<DBquadvar, decltype(&DBFreeQuadvar)> quadvar {quadvar_ptr, &DBFreeQuadvar};
+    std::string name {quadvar_ptr->name};
+    conduit::Node &field = mesh_entry["fields"][var_name];
+    field["topology"] = std::string(quadvar_ptr->meshname);
+    if(quadvar_ptr->datatype == DB_FLOAT){
+        apply_values<float>(quadvar_ptr->vals, quadvar_ptr->nvals, quadvar_ptr->nels, field["values"]);
+    } else if (quadvar_ptr->datatype == DB_DOUBLE){
+        apply_values<double>(quadvar_ptr->vals, quadvar_ptr->nvals, quadvar_ptr->nels, field["values"]);
+    }
 }
 
 //-----------------------------------------------------------------------------
 // Read a multimesh from a Silo file.
 //-----------------------------------------------------------------------------
 void
-read_csgvariable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry){
-    (void) file;
-    (void) var_name;
-    (void) mesh_entry;
+read_ucdvariable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry){
+    DBucdvar *ucdvar_ptr;
+    if (!(ucdvar_ptr = DBGetUcdvar(file, var_name.c_str())))
+        CONDUIT_ERROR("Error fetching ucd variable " << var_name);
+    std::unique_ptr<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar {ucdvar_ptr, &DBFreeUcdvar};
+    std::string name {ucdvar_ptr->name};
+    conduit::Node &field = mesh_entry["fields"][var_name];
+    field["topology"] = std::string(ucdvar_ptr->meshname);
+    apply_centering(ucdvar_ptr->centering, field);
+    if(ucdvar_ptr->datatype == DB_FLOAT){
+        apply_values<float>(ucdvar_ptr->vals, ucdvar_ptr->nvals, ucdvar_ptr->nels, field["values"]);
+    } else if (ucdvar_ptr->datatype == DB_DOUBLE){
+        apply_values<double>(ucdvar_ptr->vals, ucdvar_ptr->nvals, ucdvar_ptr->nels, field["values"]);
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Read a multimesh from a Silo file.
+//-----------------------------------------------------------------------------
+void
+read_pointvariable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_entry){
+    DBmeshvar *meshvar_ptr;
+    if (!(meshvar_ptr = DBGetPointvar(file, var_name.c_str())))
+        CONDUIT_ERROR("Error fetching variable " << var_name);
+    std::unique_ptr<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar {meshvar_ptr, &DBFreeMeshvar};
+    std::string name {meshvar_ptr->name};
+    conduit::Node &field = mesh_entry["fields"][var_name];
+    field["topology"] = std::string(meshvar_ptr->meshname);
+    apply_centering(meshvar_ptr->centering, field);
+    if(meshvar_ptr->datatype == DB_FLOAT){
+        apply_values<float>(meshvar_ptr->vals, meshvar_ptr->nvals, meshvar_ptr->nels, field["values"]);
+    } else if (meshvar_ptr->datatype == DB_DOUBLE){
+        apply_values<double>(meshvar_ptr->vals, meshvar_ptr->nvals, meshvar_ptr->nels, field["values"]);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1608,7 +1734,9 @@ read_variable_domain(DBfile *file, std::string &var_name, conduit::Node &mesh_en
     if (vartype == DB_QUADVAR)
         return read_quadvariable_domain(file, var_name, mesh_entry);
     if (vartype == DB_CSGVAR)
-        return read_csgvariable_domain(file, var_name, mesh_entry);
+        CONDUIT_ERROR("CSG Variables not supported by Blueprint");
+    if (vartype == DB_POINTVAR)
+        return read_pointvariable_domain(file, var_name, mesh_entry);
     CONDUIT_ERROR("Unsupported variable type " << vartype);
 }
 
@@ -1619,6 +1747,7 @@ void
 read_multivar(DBfile *root_file,
               std::map<std::string,
                        std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+              std::string &dirname,
               DBmultivar *multivar,
               conduit::Node &mesh){
 
@@ -1626,7 +1755,7 @@ read_multivar(DBfile *root_file,
     for (index_t i = 0; i < multivar->nvars; ++i)
     {
         Node &entry = mesh[i];
-        split_silo_path(multivar->varnames[i], "", file_path, silo_name);
+        split_silo_path(multivar->varnames[i], dirname, file_path, silo_name);
         if (!file_path.empty()){
             read_variable_domain(get_or_open(filemap, file_path), silo_name, entry, multivar->vartypes[i]);
         } else {
@@ -1672,7 +1801,7 @@ CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
     DBtoc *toc = DBGetToc(silofile);
     // get the multimesh
     CONDUIT_ASSERT(toc->nmultimesh > 0, "No multimesh found in file");
-    if (opts["multimesh_name"].dtype().is_empty()){
+    if (!opts.has_path("multimesh_name")){
         mmesh_name = toc->multimesh_names[0];
     }
     else {
@@ -1690,12 +1819,12 @@ CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
         multimesh.release();
         CONDUIT_ERROR("Error fetching multimesh " << mmesh_name);
     }
-    read_multimesh(silofile, filemap, multimesh.get(), mesh);
+    read_multimesh(silofile, filemap, dirname, multimesh.get(), mesh);
     // get the multivars matching the multimesh
     for (i = 0; i < toc->nmultivar; ++i)
     {
         std::unique_ptr<DBmultivar, decltype(&DBFreeMultivar)> multivar {
-            DBGetMultivar(silofile, multivar.get()->varnames[i]), &DBFreeMultivar
+            DBGetMultivar(silofile, toc->multivar_names[i]), &DBFreeMultivar
         };
         if (!multivar.get()){
             multivar.release();
@@ -1712,7 +1841,7 @@ CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                     << "and " << multimesh.get()->meshtypes[j]);
             }
             // do something with multivar
-            read_multivar(silofile, filemap, multivar.get(), mesh);
+            read_multivar(silofile, filemap, dirname, multivar.get(), mesh);
         }
     }
 }
