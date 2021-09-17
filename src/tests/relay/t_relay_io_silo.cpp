@@ -75,6 +75,7 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 {
     Node mesh, info;
     io::silo::load_mesh(silo_mesh_path, mesh);
+    std::cout << mesh.to_string();
 
     ASSERT_TRUE(blueprint::mesh::verify(mesh, info));
     ASSERT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
