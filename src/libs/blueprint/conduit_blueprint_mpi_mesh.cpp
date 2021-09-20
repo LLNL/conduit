@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <cmath>
 #include <limits>
+#include <list>
 // access conduit blueprint mesh utilities
 namespace bputils = conduit::blueprint::mesh::utils;
 
@@ -53,8 +54,7 @@ namespace mesh
 struct SharedFace
 {
     index_t m_face_id;
-    index_t m_crse_pt = -1;
-    index_t m_fine_pt = -1;
+    std::vector<index_t> m_fine_subelem;
 };
 
 
@@ -661,7 +661,8 @@ void to_polygonal(const Node &n,
 
 //-----------------------------------------------------------------------------
 void match_nbr_elems(PolyBndry& pbnd,
-                     std::map<index_t, bputils::connectivity::ElemType> nbr_elems,
+                     std::map<index_t, bputils::connectivity::ElemType>& nbr_elems,
+                     std::map<index_t, bputils::connectivity::SubelemMap>& allfaces_map,
                      const Node& ref_topo,
                      const Node& ref_win,
                      const Node& nbr_win,
@@ -725,25 +726,42 @@ void match_nbr_elems(PolyBndry& pbnd,
                 if (local)
                 {
                     auto& nbr_elem = nbr_elems[noffset];
-                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                    index_t face_id =
                         nside == 0 ?
                         nbr_elem[0] :
                         nbr_elem[1];
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id = face_id;
+                    pbnd.m_nbr_faces[roffset][noffset].m_fine_subelem =
+                        allfaces_map[pbnd.m_nbr_id][face_id]; 
                 }
                 else
                 {
+                    std::vector<index_t> nbr_elem;
+                    std::map< index_t, std::vector<index_t> > elem_faces;
+                    bputils::connectivity::make_element_3d(nbr_elem,
+                                                           noffset,
+                                                           nbr_iwidth,
+                                                           nbr_jwidth,
+                                                           nbr_kwidth,
+                                                           elem_faces);
+
                     index_t jfoffset = nj*(nbr_iwidth+1);
                     index_t kfoffset = nk*nbr_jwidth*(nbr_iwidth+1);
+                    index_t face_id;
                     if (nside == 0)
                     {
-                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id =
                             icnst + jfoffset + kfoffset;
                     }
                     else
                     {
-                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id =
                             icnst + jfoffset + kfoffset + 1;
                     }
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id;
+                    pbnd.m_nbr_faces[roffset][noffset].m_fine_subelem =
+                        elem_faces[face_id];
                 }
             }
         }
@@ -782,27 +800,44 @@ void match_nbr_elems(PolyBndry& pbnd,
                 if (local)
                 {
                     auto& nbr_elem = nbr_elems[noffset];
-                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                    index_t face_id =
                         nside == 2 ?
                         nbr_elem[2] :
                         nbr_elem[3];
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id = face_id;
+                    pbnd.m_nbr_faces[roffset][noffset].m_fine_subelem =
+                        allfaces_map[pbnd.m_nbr_id][face_id];
                 }
                 else
                 {
+                    std::vector<index_t> nbr_elem;
+                    std::map< index_t, std::vector<index_t> > elem_faces;
+                    bputils::connectivity::make_element_3d(nbr_elem,
+                                                           noffset,
+                                                           nbr_iwidth,
+                                                           nbr_jwidth,
+                                                           nbr_kwidth,
+                                                           elem_faces);
+
                     index_t ifoffset = ni;
                     index_t kfoffset = nk*(nbr_jwidth+1)*nbr_iwidth;
+                    index_t face_id;
                     if (nside == 2)
                     {
-                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id =
                             jface_start +
                             nbr_iwidth*jcnst + ifoffset + kfoffset;
                     }
                     else
                     {
-                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id =
                             jface_start +
                             nbr_iwidth*(jcnst+1) + ifoffset + kfoffset;
                     }
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id;
+                    pbnd.m_nbr_faces[roffset][noffset].m_fine_subelem =
+                        elem_faces[face_id];
                 }
             }
         }
@@ -843,27 +878,43 @@ void match_nbr_elems(PolyBndry& pbnd,
                 if (local)
                 { 
                     auto& nbr_elem = nbr_elems[noffset];
-                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                    index_t face_id =
                         nside == 4 ?
                         nbr_elem[4] :
                         nbr_elem[5];
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id = face_id;
+                    pbnd.m_nbr_faces[roffset][noffset].m_fine_subelem =
+                        allfaces_map[pbnd.m_nbr_id][face_id];
                 }
                 else
                 {
+                    std::vector<index_t> nbr_elem;
+                    std::map< index_t, std::vector<index_t> > elem_faces;
+                    bputils::connectivity::make_element_3d(nbr_elem,
+                                                           noffset,
+                                                           nbr_iwidth,
+                                                           nbr_jwidth,
+                                                           nbr_kwidth,
+                                                           elem_faces);
                     index_t ifoffset = ni;
                     index_t jfoffset = nj*nbr_iwidth;
+                    index_t face_id;
                     if (nside == 4)
                     {
-                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id =
                             kface_start +
                             nbr_iwidth*nbr_jwidth*kcnst + ifoffset + jfoffset;
                     }
                     else
                     {
-                        pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id =
                             kface_start +
                             nbr_iwidth*nbr_jwidth*(kcnst+1) + ifoffset + jfoffset;
                     }
+                    pbnd.m_nbr_faces[roffset][noffset].m_face_id =
+                        face_id;
+                    pbnd.m_nbr_faces[roffset][noffset].m_fine_subelem =
+                        elem_faces[face_id];
                 } 
             }
         }
@@ -888,6 +939,8 @@ void to_polyhedral(const Node &n,
     NodeConstIterator itr = n.children();
 
     std::map<index_t, std::map<index_t, bputils::connectivity::ElemType> > poly_elems_map;
+    std::map<index_t, std::map<index_t, std::set<index_t> > > new_vert_map;
+    std::map<index_t, std::map<index_t, std::set<index_t> > > new_face_map;
     std::map<index_t, bputils::connectivity::SubelemMap> allfaces_map;
 
     std::map<index_t, std::vector<index_t> > elem_connect;
@@ -955,7 +1008,7 @@ void to_polyhedral(const Node &n,
 
         const index_t i_lo = in_topo["elements/origin/i0"].to_index_t();
         const index_t j_lo = in_topo["elements/origin/j0"].to_index_t();
-        const index_t k_lo = in_topo["elements/origin/j0"].to_index_t();
+        const index_t k_lo = in_topo["elements/origin/k0"].to_index_t();
         const index_t niwidth = in_topo["elements/dims/i"].to_index_t() + 1;
         const index_t njwidth = in_topo["elements/dims/j"].to_index_t() + 1;
 
@@ -1159,6 +1212,8 @@ void to_polyhedral(const Node &n,
     //Outer map: domain_id, inner map: nbr_id to PolyBndry
     std::map<index_t, std::map<index_t, PolyBndry> > poly_bndry_map;
 
+    std::map<index_t, std::vector<index_t> > nbr_ratio;
+
     itr = n.children();
     while(itr.has_next())
     {
@@ -1210,6 +1265,8 @@ void to_polyhedral(const Node &n,
                         index_t ratio_i = nbr_win["ratio/i"].to_index_t();
                         index_t ratio_j = nbr_win["ratio/j"].to_index_t();
                         index_t ratio_k = nbr_win["ratio/k"].to_index_t();
+
+                        nbr_ratio[domain_id] = {ratio_i, ratio_j, ratio_k};
 
                         index_t ref_size_i = ref_win["dims/i"].to_index_t();
                         index_t ref_size_j = ref_win["dims/j"].to_index_t();
@@ -1361,7 +1418,7 @@ void to_polyhedral(const Node &n,
                                 {
                                     pbnd.m_nbr_rank = par_rank;
                                     pbnd.m_nbr_id = nbr_id;
-                                    match_nbr_elems(pbnd, nbr_elems, in_topo,
+                                    match_nbr_elems(pbnd, nbr_elems, allfaces_map, in_topo,
                                                     ref_win, nbr_win,
                                                     nbr_iwidth, nbr_jwidth,
                                                     nbr_kwidth,
@@ -1480,7 +1537,7 @@ void to_polyhedral(const Node &n,
 
                                     pbnd.m_nbr_rank = nbr_rank;
                                     pbnd.m_nbr_id = nbr_id;
-                                    match_nbr_elems(pbnd, nbr_elems, in_topo,
+                                    match_nbr_elems(pbnd, nbr_elems, allfaces_map, in_topo,
                                                     ref_win, nbr_win,
                                                     nbr_iwidth, nbr_jwidth,
                                                     nbr_kwidth,
@@ -1585,6 +1642,7 @@ void to_polyhedral(const Node &n,
                                 index_t iend = istart + nbr_size_i;
                                 index_t jend = jstart + nbr_size_j;
                                 index_t kend = kstart + nbr_size_k;
+
                                 for (index_t kidx = kstart; kidx < kend; ++kidx)
                                 {
                                     index_t koffset = kidx*nbr_iwidth*nbr_jwidth;
@@ -1594,7 +1652,8 @@ void to_polyhedral(const Node &n,
                                         for (index_t iidx = istart; iidx < iend; ++iidx)
                                         {
                                             index_t offset = koffset+joffset+iidx;
-                                            buffidx[offset] = xbuffer.size();
+                                            index_t new_idx = xbuffer.size();
+                                            buffidx[offset] = new_idx;
                                             xbuffer.push_back(xarray[offset]);
                                             ybuffer.push_back(yarray[offset]);
                                             zbuffer.push_back(zarray[offset]);
@@ -1610,7 +1669,6 @@ void to_polyhedral(const Node &n,
     }
 
     std::map<index_t, std::map<index_t, std::map<index_t,index_t> > > dom_to_nbr_to_sharedmap;
-
 
     itr = n.children();
     while(itr.has_next())
@@ -1665,6 +1723,8 @@ void to_polyhedral(const Node &n,
 
 
         auto& poly_elems = poly_elems_map[domain_id];
+        auto& new_vertices = new_vert_map[domain_id];
+        auto& new_subelems = new_face_map[domain_id];
         auto& allfaces = allfaces_map[domain_id];
 
         auto& nbr_to_sharedmap = dom_to_nbr_to_sharedmap[domain_id];
@@ -1675,14 +1735,13 @@ void to_polyhedral(const Node &n,
 
         if (poly_bndry_map.find(domain_id) != poly_bndry_map.end())
         {
-            //std::map<index_t, PolyBndry>
+            //std::map<index_t, PolyBndry> bndries
             auto& bndries = poly_bndry_map[domain_id];
             for (auto bitr = bndries.begin(); bitr != bndries.end(); ++bitr)
             {
-                //One PolyBndry for each fine neighbor
+                //One PolyBndry for each fine neighbor domain
                 PolyBndry& pbnd = bitr->second;
-                index_t nbr_id = pbnd.m_nbr_id; //domain id of nbr.
-                auto& nbr_faces = allfaces_map[nbr_id];
+                index_t nbr_id = pbnd.m_nbr_id; //domain id of nbr
 
                 auto& sharedmap = nbr_to_sharedmap[nbr_id];
                 auto& buffidx = nbr_to_buffidx[nbr_id];
@@ -1704,19 +1763,22 @@ void to_polyhedral(const Node &n,
                     for (size_t n = 0; n < num_nbrs; ++n)
                     {
                         index_t nbr_elem = nbrs[n];
+
                         //nbr_face is subelem offset for the face of
                         //nbr_elem touching the boundary
                         index_t nbr_face = pbnd.m_nbr_faces[ref_offset][nbr_elem].m_face_id;
                         //face_subelem holds the vertices for the nbr_face
-                        auto& face_subelem = nbr_faces[nbr_face];
+                        auto& face_subelem = pbnd.m_nbr_faces[ref_offset][nbr_elem].m_fine_subelem;
+
                         //subelem at ref/nbr interface
                         fv_map[ref_offset][nbr_face] = face_subelem;
                     }
                 }
 
-                //Above:: fv_map maps a coarse subelem to a vector of its
+                std::map<index_t, std::set<index_t> > new_nbr_vertices;
+
+                //fv_map maps a coarse subelem to a vector of its
                 //fine subelems;
-                //
                 for (auto fitr = fv_map.begin(); fitr != fv_map.end(); ++fitr)
                 {
                     index_t ref_offset = fitr->first;
@@ -1724,18 +1786,20 @@ void to_polyhedral(const Node &n,
                     index_t ref_face = ref_elem[pbnd.side];
                     std::vector<index_t>& ref_subelem = allfaces[ref_face];
 
-                    auto nbrs = fitr->second; 
+                    auto& new_nbr_verts = new_nbr_vertices[ref_offset];
+                    std::map<index_t, index_t> face_verts;
+
+                    auto nbrs = fitr->second;
                     std::set<index_t> sh_verts;
                     std::set<index_t> others;
 
                     // This loop causes sh_verts to be filled with the
                     // vertices that only exist once in the neighbor
-                    // subelems.  Those vertices are the once shared by
+                    // subelems.  Those vertices are the ones shared by
                     // the reference subelem.
                     for (auto nitr = nbrs.begin(); nitr != nbrs.end(); ++nitr)
                     {
-                        index_t nbr_face = nitr->first;
-                        std::vector<index_t>& nbr_subelem = nbr_faces[nbr_face];
+                        std::vector<index_t>& nbr_subelem = nitr->second;
                         for (auto nv = nbr_subelem.begin(); nv != nbr_subelem.end(); ++nv)
                         {
                             index_t nvert = *nv;
@@ -1745,12 +1809,25 @@ void to_polyhedral(const Node &n,
                                 {
                                     sh_verts.insert(nvert);
                                 }
+                                else
+                                {
+                                    ++face_verts[nvert];
+                                } 
                             }
                             else
                             {
                                 sh_verts.erase(nvert);
                                 others.insert(nvert);
+                                face_verts[nvert] = 1;
                             }
+                        }
+                    }
+                    for (auto fv = face_verts.begin(); fv != face_verts.end();
+                         ++fv)
+                    {
+                        if (fv->second == 1)
+                        {
+                            new_nbr_verts.insert(fv->first);
                         }
                     }
 
@@ -1785,19 +1862,23 @@ void to_polyhedral(const Node &n,
                         }
 
                         sharedmap[shared_vert] = *rv;
+                        sh_verts.erase(shared_vert);
                     }
                 }
 
                 index_t num_vertices = out_xvec.size();
 
-                //For a 2x refinement ratio, nbr_subelems provide 5 new
-                //vertices in addition to the 4 vertices that are coincident
-                //with the coarse element.
+                //Replace the coarse subelem with a new fine subelems
                 for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr)
                 {
                     index_t ref_offset = eitr->first;
-                    bputils::connectivity::ElemType& ref_elem = poly_elems[ref_offset];
+                    auto& ref_elem = poly_elems[ref_offset];
+                    auto& new_nbr_verts = new_nbr_vertices[ref_offset];
+                    auto& new_verts = new_vertices[ref_offset];
+
                     index_t ref_face = ref_elem[pbnd.side];
+
+                    auto& new_subs = new_subelems[ref_offset];
 
                     auto& nbr_subelems = fv_map[ref_offset];
 
@@ -1805,7 +1886,6 @@ void to_polyhedral(const Node &n,
                     for (auto nb = nbr_subelems.begin();
                          nb != nbr_subelems.end(); ++nb)
                     {
-                        //Here should be code to create each new face
                         std::vector<index_t> new_face;
                         auto& n_subelem = nb->second;
 
@@ -1816,6 +1896,7 @@ void to_polyhedral(const Node &n,
                             {
                                 new_face.push_back(num_vertices);
                                 sharedmap[n_vtx] = num_vertices;
+
                                 ++num_vertices;
 
                                 index_t buf_offset = buffidx[n_vtx];
@@ -1827,24 +1908,317 @@ void to_polyhedral(const Node &n,
                             {
                                 new_face.push_back(sharedmap[n_vtx]);
                             }
+                            if (new_nbr_verts.find(n_vtx) !=
+                                new_nbr_verts.end())
+                            {   
+                                new_verts.insert(new_face.back());
+                            }
+
                         }
                         ++last_added_face;
                         allfaces[last_added_face] = new_face;
                         ref_elem.push_back(last_added_face);
+                        new_subs.insert(last_added_face);
                     }
 
                     allfaces[ref_face] = allfaces[last_added_face];
                     allfaces.erase(last_added_face);
                     ref_elem.pop_back();
+                    new_subs.erase(last_added_face);
+                    new_subs.insert(ref_face);
                 }
             }
         }
 
-// above--go through other faces on ref_elem to add new edge nodes
 
         out_coords["values/x"].set(out_xvec);
         out_coords["values/y"].set(out_yvec);
         out_coords["values/z"].set(out_zvec);
+    }
+
+    itr = n.children();
+    while(itr.has_next())
+    {
+        const Node& chld = itr.next();
+        std::string domain_name = itr.name();
+
+        index_t domain_id = chld["state/domain_id"].to_index_t();
+
+        const Node& in_topo = chld["topologies"][name];
+
+        index_t iwidth = in_topo["elements/dims/i"].to_index_t();
+        index_t jwidth = in_topo["elements/dims/j"].to_index_t();
+        index_t kwidth = in_topo["elements/dims/k"].to_index_t();
+
+        index_t istride = 1;
+        index_t jstride = iwidth+1;
+        index_t kstride = (iwidth+1)*(jwidth+1);
+
+        const auto& ratio = nbr_ratio[domain_id];
+
+        Node& out_coords = dest[domain_name]["coordsets/coords"];
+
+        const double_array& xarray =
+           out_coords["values/x"].as_double_array();
+        const double_array& yarray =
+           out_coords["values/y"].as_double_array();
+        const double_array& zarray =
+           out_coords["values/z"].as_double_array();
+
+        auto& poly_elems = poly_elems_map[domain_id];
+        auto& new_vertices = new_vert_map[domain_id];
+        auto& new_subelems = new_face_map[domain_id];
+        auto& allfaces = allfaces_map[domain_id];
+
+        index_t elemsize = iwidth*jwidth*kwidth;
+
+        for (index_t elem = 0; elem < elemsize; ++elem)
+        {
+            auto& poly_elem = poly_elems[elem];
+
+            if (poly_elem.size() > 6)
+            {
+                auto& new_faces = new_subelems[elem];
+
+                auto& new_verts = new_vertices[elem];
+
+                for (auto pi = poly_elem.begin(); pi != poly_elem.end();
+                     ++pi)
+                {
+                    index_t pface = *pi;
+                    //only if "pface" is an old (coarse) subelem 
+                    if (new_faces.find(pface) == new_faces.end())
+                    {
+                        auto& subelem = allfaces[pface];
+                        if (subelem.size() > 4)
+                        {
+                            continue;
+                        }
+                        //new subelems that are adjacent to pface.
+                        std::set<index_t> edge_verts;
+                        for (auto vi = subelem.begin(); vi != subelem.end();
+                             ++vi)
+                        {
+                            for (auto si = new_faces.begin();
+                                 si != new_faces.end(); ++si)
+                            {
+                                auto& nface = allfaces[*si];
+                                for (auto ni = nface.begin();
+                                     ni != nface.end(); ++ni)
+                                {
+                                    if (*ni == *vi)
+                                    {
+                                        edge_verts.insert(*vi);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (edge_verts.empty())
+                        {
+                            continue;
+                        }
+
+                        
+                        size_t num_edges;
+                        if (edge_verts.size() == 4)
+                        {
+                            //Special case when all 4 vertices of subelem
+                            //are selected.  There may be only 3 edges that
+                            //get new vertices but we have to check them all.
+                            num_edges = edge_verts.size();
+                        }
+                        else
+                        {
+                            num_edges = edge_verts.size() - 1;
+                        }
+
+                        size_t edge_count = 0;
+                        std::vector<std::vector<index_t> > edges(num_edges);
+ 
+                        for (auto vi = subelem.begin(); vi != subelem.end();
+                             ++vi)
+                        {
+                            if (edge_count == num_edges)
+                            {
+                                break;
+                            }
+                            auto next = vi + 1;
+                            if (next == subelem.end())
+                            {
+                                next = subelem.begin();
+                            }
+                            if (edge_verts.find(*vi) != edge_verts.end() &&
+                                edge_verts.find(*next) != edge_verts.end())
+                            {
+                                edges[edge_count].push_back(*vi);
+                                edges[edge_count].push_back(*next);
+                                ++edge_count;
+                            }
+                        }
+               
+
+                        //The edges are going to get more vertices.
+                        //Figure out which of the "new verts" fit on these
+                        //edges.
+
+                        for (auto ei = edges.begin(); ei != edges.end();
+                             ++ei)
+                        {
+                            auto this_edge = *ei;
+
+                            index_t stride =
+                                std::abs(this_edge[1]-this_edge[0]);
+
+                            index_t edge_ratio;
+                            if (stride == istride)
+                            {
+                                edge_ratio = ratio[0]; 
+                            }
+                            else if (stride == jstride)
+                            {
+                                edge_ratio = ratio[1];
+                            } 
+                            else
+                            {
+                                assert(stride == kstride);
+                                edge_ratio = ratio[2];
+                            }
+
+                            //Test each new_vert point (xn,yn,zn) to see
+                            //if it's colinear with (x0,y0,z0) and (x1,y1,z1).
+                            //
+                            //We need something better than these
+                            //epsilon-based floating point comparisons
+                            double x0 = xarray[this_edge[0]];
+                            double y0 = yarray[this_edge[0]];
+                            double z0 = zarray[this_edge[0]];
+                            double x1 = xarray[this_edge[1]];
+                            double y1 = yarray[this_edge[1]];
+                            double z1 = zarray[this_edge[1]];
+
+                            double eps = sqrt(std::numeric_limits<double>::epsilon());
+                            double xedge = x1-x0+eps;
+                            double yedge = y1-y0+eps;
+                            double zedge = z1-z0+eps;
+
+                            std::list<index_t> add_verts;
+                            std::multimap<double,index_t> test_verts;
+                            size_t verts_needed =
+                                static_cast<size_t>(edge_ratio-1);
+                            for (auto nv = new_verts.begin(); nv != new_verts.end();
+                                 ++nv)
+                            {
+                                index_t nvert = *nv;
+                                double xn = xarray[nvert];
+                                double yn = yarray[nvert];
+                                double zn = zarray[nvert];
+                                double xnedge = (xn-x0)*(xn-x0) > eps ? xn-x0 : 0.0;
+                                double ynedge = (yn-y0)*(yn-y0) > eps ? yn-y0 : 0.0;
+                                double znedge = (zn-z0)*(zn-z0) > eps ? zn-z0 : 0.0;
+                                double edgesum = xnedge+ynedge+znedge;
+
+                                double xlam = xnedge/xedge;
+                                double ylam = ynedge/yedge;
+                                double zlam = znedge/zedge;
+                                double lam = (xnedge+ynedge+znedge) /
+                                              (xedge+yedge+zedge);
+                                double testsum = 0.0;
+                                if (xlam*xlam > eps)
+                                {
+                                    testsum += (xlam-lam)*(xlam-lam);
+                                }
+                                if (ylam*ylam > eps)
+                                {
+                                    testsum += (ylam-lam)*(ylam-lam);
+                                }
+                                if (zlam*zlam > eps)
+                                {
+                                    testsum += (zlam-lam)*(zlam-lam);
+                                }
+                                if (testsum > eps && edgesum/testsum < eps)
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    test_verts.emplace(testsum, nvert);
+/*
+                                    if (test_verts.size() == verts_needed)
+                                    {
+                                        break;
+                                    }
+*/
+                                }
+                            }
+
+                            assert(test_verts.size() >= verts_needed ||
+                                   num_edges == 4);
+                            for (auto tv = test_verts.begin();
+                                 tv != test_verts.end(); ++tv)
+                            {
+                                add_verts.push_back(tv->second);
+                                if (add_verts.size() == verts_needed)
+                                {
+                                    break; 
+                                }
+                            }
+
+                            if (add_verts.size() != 1)
+                            {
+                                std::multimap<double,index_t> map_verts;
+
+                                std::list<index_t> tmp_list;
+                                tmp_list.swap(add_verts);
+                                for (auto av = tmp_list.begin();
+                                     av != tmp_list.end(); ++av)
+                                {
+                                    double xa = xarray[*av];
+                                    double ya = yarray[*av];
+                                    double za = zarray[*av];
+
+                                    double dstsq = (xa-x0)*(xa-x0) +
+                                                   (ya-y0)*(ya-y0) +
+                                                   (za-z0)*(za-z0);
+                                    map_verts.emplace(dstsq, *av);
+                                }
+                                for (auto mv = map_verts.begin();
+                                     mv != map_verts.end(); ++mv) 
+                                {
+                                    add_verts.push_back(mv->second);
+                                    new_verts.erase(mv->second);
+                                }
+                            }
+                            else
+                            {
+                                new_verts.erase(add_verts.front());
+                            }
+
+                            if (this_edge[0] == subelem.back())
+                            {
+                                subelem.insert(subelem.end(),
+                                    add_verts.begin(), add_verts.end());
+                            }
+                            else
+                            {
+                                index_t ctr = 0; 
+                                for (auto vi = subelem.begin(); vi != subelem.end();
+                                     ++vi)
+                                {
+                                    if (this_edge[0] == *vi)
+                                    {
+                                        subelem.insert(vi+1,
+                                            add_verts.begin(), add_verts.end());
+                                        break;
+                                    }
+                                    ++ctr;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     itr = n.children();
