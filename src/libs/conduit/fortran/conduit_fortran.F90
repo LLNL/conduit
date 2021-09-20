@@ -174,23 +174,22 @@ module conduit
     !--------------------------------------------------------------------------
 
     !--------------------------------------------------------------------------
-    function conduit_node_is_root(cnode) result(res) &
+    function c_conduit_node_is_root(cnode) result(res) &
              bind(C, name="conduit_node_is_root")
          use iso_c_binding
          implicit none
          type(C_PTR), value, intent(IN) :: cnode
-         logical(C_BOOL) :: res
-     end function conduit_node_is_root
+         integer(C_INT) :: res
+     end function c_conduit_node_is_root
 
-
-    !--------------------------------------------------------------------------
-    function conduit_node_is_data_external(cnode) result(res) &
-          bind(C, name="conduit_node_is_data_external")
-        use iso_c_binding
-        implicit none
-        type(C_PTR), value, intent(IN) :: cnode
-        logical(C_BOOL) :: res
-    end function conduit_node_is_data_external
+     !--------------------------------------------------------------------------
+     function c_conduit_node_is_data_external(cnode) result(res) &
+           bind(C, name="conduit_node_is_data_external")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         integer(C_INT) :: res
+     end function c_conduit_node_is_data_external
 
     !--------------------------------------------------------------------------
     function conduit_node_parent(cnode) result(res) &
@@ -226,7 +225,7 @@ module conduit
           implicit none
           type(C_PTR), value, intent(IN) :: cnode
           character(kind=C_CHAR), intent(IN) :: name(*)
-          logical(C_BOOL) :: res
+          integer(C_INT) :: res
       end function c_conduit_node_has_child
      
       !--------------------------------------------------------------------------
@@ -282,7 +281,7 @@ module conduit
            implicit none
            type(C_PTR), value, intent(IN) :: cnode
            character(kind=C_CHAR), intent(IN) :: path(*)
-           logical(C_BOOL) :: res
+           integer(C_INT) :: res
        end function c_conduit_node_has_path
 
        !--------------------------------------------------------------------------
@@ -313,32 +312,32 @@ module conduit
        end function conduit_node_total_bytes_compact
 
        !--------------------------------------------------------------------------
-       function conduit_node_is_compact(cnode) result(res) &
+       function c_conduit_node_is_compact(cnode) result(res) &
                 bind(C, name="conduit_node_is_compact")
             use iso_c_binding
             implicit none
             type(C_PTR), value, intent(IN) :: cnode
-            logical(C_BOOL) :: res
-        end function conduit_node_is_compact
+            integer(C_INT) :: res
+        end function c_conduit_node_is_compact
     
         !--------------------------------------------------------------------------
-        function conduit_node_is_contiguous(cnode) result(res) &
+        function c_conduit_node_is_contiguous(cnode) result(res) &
              bind(C, name="conduit_node_is_contiguous")
          use iso_c_binding
          implicit none
          type(C_PTR), value, intent(IN) :: cnode
-         logical(C_BOOL) :: res
-        end function conduit_node_is_contiguous
+         integer(C_INT) :: res
+        end function c_conduit_node_is_contiguous
 
         !--------------------------------------------------------------------------
-        function conduit_node_contiguous_with_node(cnode,cother) result(res) &
+        function c_conduit_node_contiguous_with_node(cnode,cother) result(res) &
               bind(C, name="conduit_node_contiguous_with_node")
           use iso_c_binding
           implicit none
           type(C_PTR), value, intent(IN) :: cnode
           type(C_PTR), value, intent(IN) :: cother
-          logical(C_BOOL) :: res
-        end function conduit_node_contiguous_with_node
+          integer(C_INT) :: res
+        end function c_conduit_node_contiguous_with_node
 
         !--------------------------------------------------------------------------
         subroutine conduit_node_compact_to(cnode,cdest) &
@@ -350,7 +349,7 @@ module conduit
          end subroutine conduit_node_compact_to
 
         !--------------------------------------------------------------------------
-        function conduit_node_diff(cnode,cother,cinfo,epsilon) result(res) &
+        function c_conduit_node_diff(cnode,cother,cinfo,epsilon) result(res) &
               bind(C, name="conduit_node_diff")
           use iso_c_binding
           implicit none
@@ -358,11 +357,11 @@ module conduit
           type(C_PTR), value, intent(IN) :: cother
           type(C_PTR), value, intent(IN) :: cinfo
           real(8), value, intent(IN) :: epsilon
-          logical(C_BOOL) :: res
-        end function conduit_node_diff
+          integer(C_INT) :: res
+        end function c_conduit_node_diff
 
         !--------------------------------------------------------------------------
-        function conduit_node_diff_compatible(cnode,cother,cinfo,epsilon) result(res) &
+        function c_conduit_node_diff_compatible(cnode,cother,cinfo,epsilon) result(res) &
               bind(C, name="conduit_node_diff_compatible")
           use iso_c_binding
           implicit none
@@ -370,18 +369,18 @@ module conduit
           type(C_PTR), value, intent(IN) :: cother
           type(C_PTR), value, intent(IN) :: cinfo
           real(8), value, intent(IN) :: epsilon
-          logical(C_BOOL) :: res
-        end function conduit_node_diff_compatible
+          integer(C_INT) :: res
+        end function c_conduit_node_diff_compatible
 
        !--------------------------------------------------------------------------
-       function conduit_node_compatible(cnode,cother) result(res) &
+       function c_conduit_node_compatible(cnode,cother) result(res) &
                bind(C, name="conduit_node_compatible")
            use iso_c_binding
            implicit none
            type(C_PTR), value, intent(IN) :: cnode
            type(C_PTR), value, intent(IN) :: cother
-           logical(C_BOOL) :: res
-        end function conduit_node_compatible
+           integer(C_INT) :: res
+        end function c_conduit_node_compatible
 
         !--------------------------------------------------------------------------
         subroutine conduit_node_info(cnode,cdest) &
@@ -1163,6 +1162,149 @@ module conduit
 contains
 !
 !------------------------------------------------------------------------------
+    !--------------------------------------------------------------------------
+    function conduit_node_is_root(cnode) result(res)
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         logical(C_BOOL) :: res
+         !-- c interface returns an int, we convert to logical here
+         integer(C_INT) :: c_res
+         !---
+         c_res = c_conduit_node_is_root(cnode)
+         if (c_res .EQ. 1) then
+             res = .true.
+         else
+             res = .false.
+         endif
+     end function conduit_node_is_root
+
+    !--------------------------------------------------------------------------
+    function conduit_node_is_data_external(cnode) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        logical(C_BOOL) :: res
+        !-- c interface returns an int, we convert to logical here
+        integer(C_INT) :: c_res
+        !---
+        c_res = c_conduit_node_is_data_external(cnode)
+        if (c_res .EQ. 1) then
+            res = .true.
+        else
+            res = .false.
+        endif
+    end function conduit_node_is_data_external
+
+    !--------------------------------------------------------------------------
+    function conduit_node_is_compact(cnode) result(res)
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         logical(C_BOOL) :: res
+         !-- c interface returns an int, we convert to logical here
+         integer(C_INT) :: c_res
+         !---
+         c_res = c_conduit_node_is_compact(cnode)
+         if (c_res .EQ. 1) then
+             res = .true.
+         else
+             res = .false.
+         endif
+     end function conduit_node_is_compact
+
+     !--------------------------------------------------------------------------
+     function conduit_node_is_contiguous(cnode) result(res)
+      use iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(IN) :: cnode
+          logical(C_BOOL) :: res
+          !-- c interface returns an int, we convert to logical here
+          integer(C_INT) :: c_res
+          !---
+          c_res = c_conduit_node_is_contiguous(cnode)
+          if (c_res .EQ. 1) then
+              res = .true.
+          else
+              res = .false.
+          endif
+     end function conduit_node_is_contiguous
+
+     !--------------------------------------------------------------------------
+     function conduit_node_contiguous_with_node(cnode,cother) result(res)
+       use iso_c_binding
+       implicit none
+       type(C_PTR), value, intent(IN) :: cnode
+       type(C_PTR), value, intent(IN) :: cother
+       logical(C_BOOL) :: res
+       !-- c interface returns an int, we convert to logical here
+       integer(C_INT) :: c_res
+       !---
+       c_res = c_conduit_node_contiguous_with_node(cnode,cother)
+       if (c_res .EQ. 1) then
+           res = .true.
+       else
+           res = .false.
+       endif
+     end function conduit_node_contiguous_with_node
+
+     !--------------------------------------------------------------------------
+     function conduit_node_diff(cnode,cother,cinfo,epsilon) result(res)
+       use iso_c_binding
+       implicit none
+       type(C_PTR), value, intent(IN) :: cnode
+       type(C_PTR), value, intent(IN) :: cother
+       type(C_PTR), value, intent(IN) :: cinfo
+       real(8), value, intent(IN) :: epsilon
+       logical(C_BOOL) :: res
+       !-- c interface returns an int, we convert to logical here
+       integer(C_INT) :: c_res
+       !---
+       c_res = c_conduit_node_diff(cnode,cother,cinfo,epsilon)
+       if (c_res .EQ. 1) then
+           res = .true.
+       else
+           res = .false.
+       endif
+     end function conduit_node_diff
+
+     !--------------------------------------------------------------------------
+     function conduit_node_diff_compatible(cnode,cother,cinfo,epsilon) result(res)
+       use iso_c_binding
+       implicit none
+       type(C_PTR), value, intent(IN) :: cnode
+       type(C_PTR), value, intent(IN) :: cother
+       type(C_PTR), value, intent(IN) :: cinfo
+       real(8), value, intent(IN) :: epsilon
+       logical(C_BOOL) :: res
+       !-- c interface returns an int, we convert to logical here
+       integer(C_INT) :: c_res
+       !---
+       c_res = c_conduit_node_diff_compatible(cnode,cother,cinfo,epsilon)
+       if (c_res .EQ. 1) then
+           res = .true.
+       else
+           res = .false.
+       endif
+     end function conduit_node_diff_compatible
+
+    !--------------------------------------------------------------------------
+    function conduit_node_compatible(cnode,cother) result(res)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        type(C_PTR), value, intent(IN) :: cother
+        logical(C_BOOL) :: res
+        !-- c interface returns an int, we convert to logical here
+        integer(C_INT) :: c_res
+        !---
+        c_res = c_conduit_node_compatible(cnode,cother)
+        if (c_res .EQ. 1) then
+            res = .true.
+        else
+            res = .false.
+        endif
+     end function conduit_node_compatible
 
     !--------------------------------------------------------------------------
     function conduit_node_fetch(cnode, path) result(res)
@@ -1193,8 +1335,15 @@ contains
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: name
         logical(C_BOOL) :: res
+        !-- c interface returns an int, we convert to logical here
+        integer(C_INT) :: c_res
         !---
-        res = c_conduit_node_has_child(cnode, trim(name) // C_NULL_CHAR)
+        c_res = c_conduit_node_has_child(cnode, trim(name) // C_NULL_CHAR)
+        if (c_res .EQ. 1) then
+            res = .true.
+        else
+            res = .false.
+        endif
     end function conduit_node_has_child
 
     !--------------------------------------------------------------------------
@@ -1290,8 +1439,15 @@ contains
         type(C_PTR), value, intent(IN) :: cnode
         character(*), intent(IN) :: path
         logical(C_BOOL) :: res
+        !-- c interface returns an int, we convert to logical here
+        integer(C_INT) :: c_res
         !---
-        res = c_conduit_node_has_path(cnode, trim(path) // C_NULL_CHAR)
+        c_res = c_conduit_node_has_path(cnode, trim(path) // C_NULL_CHAR)
+        if (c_res .EQ. 1) then
+            res = .true.
+        else
+            res = .false.
+        endif
     end function conduit_node_has_path
     
     !--------------------------------------------------------------------------

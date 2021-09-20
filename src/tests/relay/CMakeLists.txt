@@ -14,12 +14,14 @@ set(RELAY_TESTS t_relay_smoke
                 t_relay_io_file_sizes
                 t_relay_io_handle
                 t_relay_io_handle_sidre
-                t_relay_node_viewer
-                t_relay_websocket)
+                t_conduit_intro_bp_and_relay)
 
 ################################
 # Optional Unit Tests
 ################################
+set(RELAY_WEBSERVER_TESTS  t_relay_node_viewer
+                           t_relay_websocket)
+
 set(RELAY_MPI_TESTS      t_relay_mpi_smoke t_relay_mpi_test)
 set(RELAY_SILO_TESTS     t_relay_io_silo)
 
@@ -53,6 +55,16 @@ add_subdirectory("c")
 ################################
 # Add our Optional Unit Tests
 ################################
+if(ENABLE_RELAY_WEBSERVER)
+    foreach(TEST ${RELAY_WEBSERVER_TESTS})
+        add_cpp_test(TEST ${TEST}
+                     DEPENDS_ON conduit conduit_relay
+                     FOLDER tests/relay)
+    endforeach()
+else()
+    message(STATUS "Relay Web Server disabled: Skipping conduit_relay web related tests")
+endif()
+
 
 if(HDF5_FOUND)
     foreach(TEST ${RELAY_HDF5_TESTS})

@@ -630,6 +630,7 @@ PyBlueprint_mesh_examples_polytess(PyObject *, //self
     Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
 
     blueprint::mesh::examples::polytess(nlevels,
+                                        1,
                                         node);
 
     Py_RETURN_NONE;

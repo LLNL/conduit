@@ -1270,11 +1270,36 @@ polytess
     :width: 400px
     :align: center
 
-    Pseudocolor plot of the polytess example ``level`` field.
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 1.
+
+.. figure:: polytess_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 2.
+
+.. figure:: polytess_3d_tall_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 10.
+
+.. figure:: polytess_3d_big_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 6.
 
 The ``polytess()`` function generates a polygonal tessellation in the 2D
 plane comprised of octagons and squares (known formally as a `two-color
 truncated square tiling <https://en.wikipedia.org/wiki/Truncated_square_tiling>`_).
+This can be extended into 3D using the ``nz`` parameter, which, if greater than 1, 
+will stack polytessalations on top of one another as follows: first, a polytess is 
+placed into 3D space, and then a copy of it is placed into a plane parallel to the 
+original. Then "walls" are added, and finally polyhedra are specified that use 
+faces from the original polytess, the reflected copy, and the walls. An ``nz`` value 
+of 3 or more will simply add layers to this setup, essentially stacking "sheets" of 
+polytess on top of one another.
 
 The scalar element-centered field ``level`` defined in the result mesh associates each element with its
 topological distance from the center of the tessellation.
@@ -1282,12 +1307,39 @@ topological distance from the center of the tessellation.
 .. code:: cpp
 
     conduit::blueprint::mesh::examples::polytess(index_t nlevels,
+                                                 index_t nz,
                                                  Node &res);
 
 
 ``nlevels`` specifies the number of tessellation levels/layers to generate. If this value is specified
 as 1 or less, only the central tessellation level (i.e. the octagon in the center of the geometry) will
 be generated in the result.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
+polychain
+++++++++++
+
+.. figure:: polychain.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polyhedral chain example ``chain`` field.
+
+The ``polychain()`` function generates a chain of cubes and triangular prisms that extends diagonally.
+
+The scalar element-centered field ``chain`` defined in the result mesh associates with each cube
+the value 0 and with each triangular prism the value 1.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::polychain(const index_t length,
+                                                  Node &res);
+
+
+``length`` specifies how long the chain ought to be. The length is equal to the number of cubes and
+equal to half the number of prisms.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 

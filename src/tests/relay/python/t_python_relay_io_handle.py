@@ -112,6 +112,177 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             # better be closed
             self.assertFalse(h.is_open())
 
+    def test_io_handle_offset_stride_size(self):
+            # only test hdf5 if relay was built with hdf5 support
+            if relay.io.about()["protocols/hdf5"] != "enabled":
+                return
+
+            # remove files if they already exist
+            tfile_out = "tout_hdf5_io_handle_with_offset.hdf5";
+            if os.path.isfile(tfile_out):
+                os.remove(tfile_out)
+
+            n = conduit.Node()
+            n_read = conduit.Node()
+            n_check = conduit.Node()
+            opts = conduit.Node()
+            info = conduit.Node()
+
+            n["data"]= [0,1,2,3,4,5,6,7,8,9];
+
+            h = conduit.relay.io.IOHandle()
+            h.open(tfile_out)
+            h.write(n)
+
+            h.read(n_read)
+            print(n_read)
+
+            n_check = n
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # strided read
+            n_read.reset()
+            opts.reset()
+            opts["stride"] = 2
+            h.read(n_read,options=opts)
+            print(n_read)
+
+            n_check.reset();
+            n_check["data"] = [0,2,4,6,8];
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # offset write
+            n.set([-1,-1,-1,-1,-1])
+            opts.reset()
+            opts["offset"] = 5
+            h.write(node=n,path="data",options=opts)
+
+            n_read.reset()
+            h.read(n_read)
+            print(n_read)
+
+            n_check.reset()
+            n_check["data"] = [0,1,2,3,4,-1,-1,-1,-1,-1]
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # read the  first part of the seq
+            opts.reset()
+            opts["size"] = 5
+            n_read.reset()
+            h.read(node=n_read, path="data", options=opts)
+            print(n_read)
+
+            n_check.reset()
+            n_check.set([0,1,2,3,4])
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # read the second part of the seq (-1's)
+            opts.reset();
+            opts["offset"] = 5
+            n_read.reset()
+            h.read(path="data",node=n_read,options=opts)
+            print(n_read)
+
+            n_check.reset()
+            n_check.set([-1,-1,-1,-1,-1])
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # strided write
+            n.set([1,1,1,1,1])
+            opts.reset()
+            opts["stride"] = 2
+            h.write(node=n,path="data",options=opts)
+
+            # strided +offset write
+            n.set([2,2,2,2,2])
+            opts.reset()
+            opts["offset"] = 1
+            opts["stride"] = 2
+            h.write(n,"data",opts)
+
+            n_read.reset()
+            h.read(n_read)
+            print(n_read)
+
+            n_check.reset()
+            n_check["data"] = [1, 2, 1, 2, 1, 2,  1, 2, 1, 2];
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+
+            # read the 1's
+            opts.reset();
+            opts["offset"] = 0
+            opts["stride"] = 2
+            n_read.reset()
+            h.read(path="data",node=n_read,options=opts)
+            print(n_read)
+
+            n_check.reset()
+            n_check.set([1, 1, 1, 1, 1])
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # read the 2's
+            opts.reset()
+            opts["offset"] = 1
+            opts["stride"] = 2
+            n_read.reset()
+            h.read(path="data",node=n_read,options=opts)
+            print(n_read)
+
+            n_check.reset()
+            n_check.set([2, 2, 2, 2, 2])
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # read subset of the 2's
+            opts.reset()
+            opts["offset"] = 1
+            opts["stride"] = 2
+            opts["size"] = 2
+            n_read.reset()
+            h.read(path="data",node=n_read,options=opts)
+            print(n_read)
+
+            n_check.reset();
+            n_check.set([2, 2]);
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # huge stride, this will only read the first entry
+            n_read.reset()
+            opts.reset()
+            opts["stride"] = 1000
+            h.read(node=n_read,options=opts)
+            print(n_read)
+
+            n_check.reset()
+            n_check["data"] = [1]
+            # expect no diff
+            self.assertFalse(n_read.diff(n_check,info))
+
+            # huge size
+            n_read.reset()
+            opts.reset()
+            opts["size"] = 1000
+            with self.assertRaises(IOError):
+                h.read(node=n_read,options=opts)
+
+            # huge offset
+            n_read.reset()
+            opts.reset()
+            opts["offset"] = 1000
+            with self.assertRaises(IOError):
+                h.read(node=n_read,options=opts)
+
+
+
 if __name__ == '__main__':
     unittest.main()
 
