@@ -1822,7 +1822,7 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Error fetching multivar"
                           << multivar.get()->varnames[i]);
         }
-        if (multivar.get()->mmesh_name == mmesh_name) {
+        if (multivar.get()->mmesh_name && multivar.get()->mmesh_name == mmesh_name) {
             CONDUIT_ASSERT(multivar.get()->nvars == multimesh.get()->nblocks,
                            "Domain count mismatch between multivar "
                                << multivar.get()->varnames[i]

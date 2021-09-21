@@ -11,6 +11,8 @@
 #include "conduit_relay.hpp"
 #include "conduit_relay_io_silo.hpp"
 #include "conduit_blueprint.hpp"
+#include "t_config.hpp"
+
 #include <iostream>
 #include "gtest/gtest.h"
 
@@ -18,7 +20,14 @@ using namespace conduit;
 using namespace conduit::relay;
 
 
-std::string silo_mesh_path = "box2d.silo";
+std::string
+relay_test_silo_data_path(const std::string &test_fname)
+{
+    std::string res = utils::join_path(CONDUIT_T_SRC_DIR, "relay");
+    res = utils::join_file_path(res, "data");
+    res = utils::join_file_path(res, "silo");
+    return utils::join_file_path(res, test_fname);
+}
 
 
 TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
@@ -71,34 +80,41 @@ TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
 }
 
+// test simple silo 2D and 3D boxes
 TEST(conduit_relay_io_silo, load_mesh_geometry)
 {
-    Node mesh, info;
-    io::silo::load_mesh(silo_mesh_path, mesh);
-    std::cout << mesh.to_string();
+    std::vector<std::string> filename_vec = {"box2d.silo", "box3d.silo"};
+    std::vector<int> dims_vec = {2, 3};
+    std::vector<int> coordset_length_vec = {4, 8};
+    for (int i = 0; i < filename_vec.size(); ++i) {
 
-    ASSERT_TRUE(blueprint::mesh::verify(mesh, info));
-    ASSERT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
+        Node mesh, info;
+        std::string input_file = relay_test_silo_data_path(filename_vec.at(i));
+        io::silo::load_mesh(input_file, mesh);
 
-    const Node &domain = *blueprint::mesh::domains(mesh).front();
-    EXPECT_TRUE(domain.has_child("coordsets"));
-    EXPECT_EQ(domain["coordsets"].number_of_children(), 1);
-    EXPECT_TRUE(domain.has_child("topologies"));
-    EXPECT_EQ(domain["topologies"].number_of_children(), 1);
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        EXPECT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
 
-    { // Coordset Validation //
-        const Node &cset = domain["coordsets"].child(0);
+        const Node &domain = *blueprint::mesh::domains(mesh).front();
+        EXPECT_TRUE(domain.has_child("coordsets"));
+        EXPECT_EQ(domain["coordsets"].number_of_children(), 1);
+        EXPECT_TRUE(domain.has_child("topologies"));
+        EXPECT_EQ(domain["topologies"].number_of_children(), 1);
 
-        EXPECT_EQ(blueprint::mesh::coordset::dims(cset), 2);
-        EXPECT_EQ(blueprint::mesh::coordset::length(cset), 4);
-        EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
-    }
+        { // Coordset Validation //
+            const Node &cset = domain["coordsets"].child(0);
 
-    { // Topology Validation //
-        const Node &topo = domain["topologies"].child(0);
-        EXPECT_EQ(blueprint::mesh::topology::dims(topo), 2);
-        EXPECT_EQ(blueprint::mesh::topology::length(topo), 1);
-        EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(topo, info));
+            EXPECT_EQ(blueprint::mesh::coordset::dims(cset), dims_vec.at(i));
+            EXPECT_EQ(blueprint::mesh::coordset::length(cset), coordset_length_vec.at(i));
+            EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
+        }
+
+        { // Topology Validation //
+            const Node &topo = domain["topologies"].child(0);
+            EXPECT_EQ(blueprint::mesh::topology::dims(topo), dims_vec.at(i));
+            EXPECT_EQ(blueprint::mesh::topology::length(topo), 1);
+            EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(topo, info));
+        }
     }
 }
 
@@ -112,18 +128,4 @@ TEST(conduit_relay_io_silo, save_mesh_geometry)
     io::silo::load_mesh("basic.silo", load_mesh);
     Node info;
     EXPECT_FALSE(load_mesh.diff(save_mesh, info));
-}
-
-
-//-----------------------------------------------------------------------------
-int main(int argc, char* argv[])
-{
-    ::testing::InitGoogleTest(&argc, argv);
-
-    // allow override of the data size via the command line
-    if(argc >= 2)
-    {
-        silo_mesh_path = argv[1];
-    }
-    return RUN_ALL_TESTS();
 }
