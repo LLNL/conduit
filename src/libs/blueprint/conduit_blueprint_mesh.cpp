@@ -5012,6 +5012,171 @@ mesh::adjset::verify(const Node &adjset,
 }
 
 //-----------------------------------------------------------------------------
+bool
+mesh::adjset::is_pairwise(const Node &adjset)
+{
+    bool res = true;
+
+    NodeConstIterator group_itr = adjset["groups"].children();
+    while(group_itr.has_next() && res)
+    {
+        const Node &group = group_itr.next();
+        res &= group["neighbors"].dtype().number_of_elements() == 1;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+mesh::adjset::is_maxshare(const Node &adjset)
+{
+    bool res = true;
+
+    std::set<index_t> ids;
+
+    NodeConstIterator group_itr = adjset["groups"].children();
+    while(group_itr.has_next() && res)
+    {
+        const Node &group = group_itr.next();
+        const Node &group_neighbors = group["neighbors"];
+
+        Node temp(DataType(group_neighbors.dtype().id(), 1));
+        for(index_t ni = 0; ni < group_neighbors.dtype().number_of_elements(); ni++)
+        {
+            temp.set_external(temp.dtype(), (void*)group_neighbors.element_ptr(ni));
+            const index_t next_id = temp.to_index_t();
+
+            res &= ids.find(next_id) == ids.end();
+            ids.insert(next_id);
+        }
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::adjset::to_pairwise(const Node &adjset,
+                          Node &dest)
+{
+    // TODO: Fix up this ugly workaround for getting the current rank's
+    // domain ID if possible.
+    const Node &state = adjset.parent()->parent()->child("state");
+    const index_t domain_id = state["domain_id"].to_index_t();
+
+    // TODO: This code assumes that each unique set of neighbors has its
+    // own group. If this requirement cannot be assumed, then ranks *must*
+    // share domain names, or else there is no way to distinguish order
+    // across processors w/o additional communication.
+    //
+    // Identifying Information for a Group:
+    // 1. Set of neighbors
+    // 2. Name
+    // 3. Included values (i.e. indices, referring to vertices or topological entities)
+    //
+    // At least one of the first two must be unique in order to allow for
+    // lining up adjset groups across ranks w/o doing communication and
+    // topological processing (e.g. comparing topo entities in each group
+    // to make sure they match).
+
+    // NOTE(JRC): We assume that group names are shared across ranks, but
+    // make no assumptions on the uniqueness of a set of neighbors for a group
+    // (i.e. the same set of neighbors can be used in >1 groups).
+    std::map<std::set<index_t>, std::set<std::string>> neighbors_groups_map;
+    {
+        NodeConstIterator groups_it = adjset["groups"].children();
+        while(groups_it.has_next())
+        {
+            const Node &group = groups_it.next();
+            const std::string &group_name = groups_it.name();
+
+            std::set<index_t> group_neighbors;
+            group_neighbors.insert(domain_id);
+
+            const Node &group_nvals = group["neighbors"];
+            DataType group_ntype = group_nvals.dtype();
+            for(index_t ni = 0; ni < group_ntype.number_of_elements(); ++ni)
+            {
+                Node group_nval(DataType(group_ntype.id(), 1),
+                    (void*)group_nvals.element_ptr(ni), true);
+                group_neighbors.insert(group_nval.to_index_t());
+            }
+
+            neighbors_groups_map[group_neighbors].insert(group_name);
+        }
+    }
+
+    std::map<index_t, std::vector<index_t>> pair_values_map;
+    for(const auto &neighbors_groups_pair : neighbors_groups_map)
+    {
+        const std::set<index_t> &neighbor_ids = neighbors_groups_pair.first;
+        const std::set<std::string> &group_names = neighbors_groups_pair.second;
+        for(const std::string &group_name : group_names)
+        {
+            const Node &group_vals = adjset["groups"][group_name]["values"];
+
+            for(const index_t &neighbor_id : neighbor_ids)
+            {
+                if(neighbor_id != domain_id)
+                {
+                    std::vector<index_t> &neighbor_values = pair_values_map[neighbor_id];
+                    DataType group_vtype = group_vals.dtype();
+                    for(index_t vi = 0; vi < group_vtype.number_of_elements(); ++vi)
+                    {
+                        Node group_val(DataType(group_vtype.id(), 1),
+                            (void*)group_vals.element_ptr(vi), true);
+                        neighbor_values.push_back(group_val.to_index_t());
+                    }
+                }
+            }
+        }
+    }
+
+    // Project Core Schema to 'dest' //
+    {
+        Node adjset_template;
+        adjset_template.set_external(adjset);
+        adjset_template.remove("groups");
+
+        dest.set(adjset_template);
+        dest["groups"].set(DataType::object());
+
+        for(const auto &pair_values_pair : pair_values_map)
+        {
+            const index_t &neighbor_id = pair_values_pair.first;
+            const std::vector<index_t> &neighbor_values = pair_values_pair.second;
+
+            std::string group_name = "group";
+            {
+                std::vector<index_t> group_neighbors = {domain_id, neighbor_id};
+                std::sort(group_neighbors.begin(), group_neighbors.end());
+
+                for(index_t gi = 0; gi < (index_t)group_neighbors.size(); gi++)
+                {
+                    group_name += "_" + std::to_string(group_neighbors[gi]);
+                }
+            }
+
+            Node &group_node = dest["groups"][group_name];
+            // TODO: Inherit widest data type from input tree.
+            group_node["neighbors"].set(neighbor_id);
+            group_node["values"].set(neighbor_values);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::adjset::to_maxshare(const Node &/*adjset*/,
+                          Node &/*dest*/)
+{
+    // TODO: need to attribute each node to a set of 
+
+    // TODO: code to handle this is in 'generate_*' functions somewhere
+}
+
+//-----------------------------------------------------------------------------
 // blueprint::mesh::adjset::index protocol interface
 //-----------------------------------------------------------------------------
 
