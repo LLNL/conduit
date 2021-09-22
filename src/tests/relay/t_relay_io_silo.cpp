@@ -83,10 +83,10 @@ TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
 // test simple silo 2D and 3D boxes
 TEST(conduit_relay_io_silo, load_mesh_geometry)
 {
-    std::vector<std::string> filename_vec = {"box2d.silo", "box3d.silo", "diamond.silo"};
-    std::vector<int> dims_vec = {2, 3, 2};
-    std::vector<int> coordset_length_vec = {4, 8, 36};
-    std::vector<int> topology_length_vec = {1, 1, 33};
+    std::vector<std::string> filename_vec = {"box2d.silo", "box3d.silo", "diamond.silo", "testDisk2D_a.silo"};
+    std::vector<int> dims_vec = {2, 3, 2, 2};
+    std::vector<int> coordset_length_vec = {4, 8, 36, 1994};
+    std::vector<int> topology_length_vec = {1, 1, 33, 1920};
     for (int i = 0; i < filename_vec.size(); ++i) {
 
         Node mesh, info;
@@ -104,7 +104,6 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 
         { // Coordset Validation //
             const Node &cset = domain["coordsets"].child(0);
-
             EXPECT_EQ(blueprint::mesh::coordset::dims(cset), dims_vec.at(i));
             EXPECT_EQ(blueprint::mesh::coordset::length(cset), coordset_length_vec.at(i));
             EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
