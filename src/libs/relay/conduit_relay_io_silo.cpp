@@ -1505,9 +1505,13 @@ void add_offsets(DBzonelist *zones, conduit::Node &elements){
 }
 
 void add_shape_info(DBzonelist *zones, conduit::Node &elements){
-    CONDUIT_ASSERT(zones->nshapes == 1,
-                       "Expected a single shape type, got "
-                           << zones->nshapes);
+    for (int i = 0; i < zones->nshapes; ++i)
+    {
+        CONDUIT_ASSERT(zones->shapetype[0] == zones->shapetype[i],
+            "Expected a single shape type, got "
+            << zones->shapetype[0] << " and "
+            << zones->shapetype[i]);
+    }
     elements["shape"] = shapetype_to_string(zones->shapetype[0]);
     copy_and_assign(zones->nodelist, zones->lnodelist, elements["connectivity"]);
     if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON){
@@ -1814,7 +1818,7 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,
                                  conduit::Node &mesh) {
 
-    int i, j;
+    int i;
     std::string mmesh_name;
     std::string dirname;
     DBfile *silofile;
@@ -1868,13 +1872,6 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                            "Domain count mismatch between multivar "
                                << multivar.get()->varnames[i]
                                << "and multimesh");
-            for (j = 0; j < multivar.get()->nvars; ++j) {
-                CONDUIT_ASSERT(multivar.get()->vartypes[j] ==
-                                   multimesh.get()->meshtypes[j],
-                               "Type mismatch between multivar and multimesh: "
-                                   << multivar.get()->vartypes[j] << "and "
-                                   << multimesh.get()->meshtypes[j]);
-            }
             // read in the multivar and add it to the mesh Node
             read_multivar(silofile, filemap, dirname, multivar.get(), mesh);
         }
