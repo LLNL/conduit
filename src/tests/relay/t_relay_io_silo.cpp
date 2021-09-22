@@ -83,9 +83,10 @@ TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
 // test simple silo 2D and 3D boxes
 TEST(conduit_relay_io_silo, load_mesh_geometry)
 {
-    std::vector<std::string> filename_vec = {"box2d.silo", "box3d.silo"};
-    std::vector<int> dims_vec = {2, 3};
-    std::vector<int> coordset_length_vec = {4, 8};
+    std::vector<std::string> filename_vec = {"box2d.silo", "box3d.silo", "diamond.silo"};
+    std::vector<int> dims_vec = {2, 3, 2};
+    std::vector<int> coordset_length_vec = {4, 8, 36};
+    std::vector<int> topology_length_vec = {1, 1, 33};
     for (int i = 0; i < filename_vec.size(); ++i) {
 
         Node mesh, info;
@@ -112,7 +113,7 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
         { // Topology Validation //
             const Node &topo = domain["topologies"].child(0);
             EXPECT_EQ(blueprint::mesh::topology::dims(topo), dims_vec.at(i));
-            EXPECT_EQ(blueprint::mesh::topology::length(topo), 1);
+            EXPECT_EQ(blueprint::mesh::topology::length(topo), topology_length_vec.at(i));
             EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(topo, info));
         }
     }

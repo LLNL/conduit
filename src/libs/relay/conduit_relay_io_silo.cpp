@@ -1450,15 +1450,24 @@ std::string shapetype_to_string(int shapetype) {
         return "hex";
     if (shapetype == DB_ZONETYPE_POLYHEDRON)
         return "polyhedral";
-    CONDUIT_ERROR("Unsupported zone type");
+    if (shapetype == DB_ZONETYPE_POLYGON)
+        return "polygonal";
+    CONDUIT_ERROR("Unsupported zone type " << shapetype);
     return "";
+}
+
+template <typename T>
+void copy_and_assign(T *data, int data_length,
+                       conduit::Node &target) {
+    T *data_copy = new T[data_length];
+    memcpy(data_copy, data, data_length * sizeof(T));
+    target.set(data_copy, data_length);
 }
 
 template <typename T>
 void copy_point_coords(void *coords[3], int ndims, int *dims, int coord_sys,
                        conduit::Node &node) {
-    T *data;
-    // T* silo_dim;
+
     ndims = ndims < 3 ? ndims : 3;
     const char **labels;
     const char *cartesian_labels[] = {"x", "y", "z"};
@@ -1477,21 +1486,40 @@ void copy_point_coords(void *coords[3], int ndims, int *dims, int coord_sys,
     }
     for (int i = 0; i < ndims; i++) {
         if (coords[i] != NULL) {
-            data = new T[dims[i]];
-            memcpy(data, coords[i], dims[i] * sizeof(T));
-            node[labels[i]].set(data, dims[i]);
+            copy_and_assign(static_cast<T*>(coords[i]), dims[i], node[labels[i]]);
         } else {
             return;
         }
     }
 }
 
-void copy_connectivity(int *nodelist, int nodelist_length,
-                       conduit::Node &node) {
-    int *nodelist_copy = new int[nodelist_length];
-    memcpy(nodelist_copy, nodelist, nodelist_length * sizeof(nodelist_length));
-    node.set(nodelist_copy, nodelist_length);
+void add_offsets(DBzonelist *zones, conduit::Node &elements){
+    int offset = 0;
+    int *offset_arr = new int[zones->nzones];
+    for (int i = 0; i < zones->nzones; ++i)
+    {
+        offset_arr[i] = offset;
+        offset += zones->shapesize[i];
+    }
+    elements["offsets"].set(offset_arr, zones->nzones);
 }
+
+void add_shape_info(DBzonelist *zones, conduit::Node &elements){
+    CONDUIT_ASSERT(zones->nshapes == 1,
+                       "Expected a single shape type, got "
+                           << zones->nshapes);
+    elements["shape"] = shapetype_to_string(zones->shapetype[0]);
+    copy_and_assign(zones->nodelist, zones->lnodelist, elements["connectivity"]);
+    if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON){
+        copy_and_assign(zones->shapesize, zones->nzones, elements["sizes"]);
+        CONDUIT_ERROR("Polyhedra not yet supported");
+    }
+    if (zones->shapetype[0] == DB_ZONETYPE_POLYGON){
+        copy_and_assign(zones->shapesize, zones->nzones, elements["sizes"]);
+        add_offsets(zones, elements);
+    }
+}
+
 
 void read_ucdmesh_domain(DBfile *file, std::string &mesh_name,
                          conduit::Node &mesh_entry) {
@@ -1505,17 +1533,11 @@ void read_ucdmesh_domain(DBfile *file, std::string &mesh_name,
         CONDUIT_ASSERT(!ucdmesh_ptr->phzones,
                        "Both phzones and zones are defined in mesh "
                            << mesh_name);
-        CONDUIT_ASSERT(ucdmesh_ptr->zones->nshapes == 1,
-                       "Expected a single shape type, got "
-                           << ucdmesh_ptr->zones->nshapes);
-        mesh_entry["topologies"][name]["elements"]["shape"] =
-            shapetype_to_string(ucdmesh_ptr->zones->shapetype[0]);
-        copy_connectivity(
-            ucdmesh_ptr->zones->nodelist, ucdmesh_ptr->zones->lnodelist,
-            mesh_entry["topologies"][name]["elements"]["connectivity"]);
+        add_shape_info(ucdmesh_ptr->zones, mesh_entry["topologies"][name]["elements"]);
     } else if (ucdmesh_ptr->phzones) {
         mesh_entry["topologies"][name]["elements"]["shape"] =
             shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
+        // TODO: implement support for phzones
     } else {
         CONDUIT_ERROR("Neither phzones nor zones is defined in mesh "
                       << mesh_name);
@@ -1609,6 +1631,12 @@ void read_mesh_domain(DBfile *file, std::string &mesh_name,
 
 //-----------------------------------------------------------------------------
 // Read a multimesh from a Silo file.
+// 'root_file' should be the file containing the multivar entry
+// 'filemap' should be a mapping providing DBfile* for files which have
+//  already been opened.
+// 'dirname' should be the directory containing the root file, as if the
+// `dirname` command were called on the root file path. This directory is used
+// to concretize the paths given by the multivar.
 //-----------------------------------------------------------------------------
 void read_multimesh(
     DBfile *root_file,
@@ -1639,20 +1667,19 @@ void apply_centering(int centering, conduit::Node &field) {
     }
 }
 
+// add a set of data arrays to a Node.
 template <typename T>
 void apply_values(void **vals, int num_arrays, int num_elems,
                   conduit::Node &values) {
-    T *data;
     for (int i = 0; i < num_arrays; ++i) {
-        data = new T[num_elems];
-        memcpy(data, vals[i], num_elems * sizeof(T));
-        conduit::Node &entry = values.append();
-        entry.set(data, num_elems);
+        copy_and_assign(static_cast<T*>(vals[i]), num_elems, values.append());
     }
 }
 
 //-----------------------------------------------------------------------------
-// Read a multimesh from a Silo file.
+// Read a quad variable from a Silo file.
+// 'file' must be a pointer into the file containing the variable domain
+// 'var_name' must be the name of the variable within the file.
 //-----------------------------------------------------------------------------
 void read_quadvariable_domain(DBfile *file, std::string &var_name,
                               conduit::Node &mesh_entry) {
@@ -1674,7 +1701,9 @@ void read_quadvariable_domain(DBfile *file, std::string &var_name,
 }
 
 //-----------------------------------------------------------------------------
-// Read a multimesh from a Silo file.
+// Read a UCD variable domain from a Silo file.
+// 'file' must be a pointer into the file containing the variable domain
+// 'var_name' must be the name of the variable within the file.
 //-----------------------------------------------------------------------------
 void read_ucdvariable_domain(DBfile *file, std::string &var_name,
                              conduit::Node &mesh_entry) {
@@ -1697,7 +1726,9 @@ void read_ucdvariable_domain(DBfile *file, std::string &var_name,
 }
 
 //-----------------------------------------------------------------------------
-// Read a multimesh from a Silo file.
+// Read a pointvariable domain from a Silo file.
+// 'file' must be a pointer into the file containing the variable domain
+// 'var_name' must be the name of the variable within the file.
 //-----------------------------------------------------------------------------
 void read_pointvariable_domain(DBfile *file, std::string &var_name,
                                conduit::Node &mesh_entry) {
@@ -1739,6 +1770,12 @@ void read_variable_domain(DBfile *file, std::string &var_name,
 
 //-----------------------------------------------------------------------------
 // Read a multivar from a Silo file.
+// 'root_file' should be the file containing the multivar entry
+// 'filemap' should be a mapping providing DBfile* for files which have
+//  already been opened.
+// 'dirname' should be the directory containing the root file, as if the
+// `dirname` command were called on the root file path. This directory is used
+// to concretize the paths given by the multivar.
 //-----------------------------------------------------------------------------
 void read_multivar(
     DBfile *root_file,
@@ -1780,10 +1817,11 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
     int i, j;
     std::string mmesh_name;
     std::string dirname;
-    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
-    // get the directory of the root silo file`
-    conduit::utils::rsplit_file_path(root_file_path, mmesh_name, dirname);
     DBfile *silofile;
+    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
+    // get the directory of the root silo file, for concretizing paths found
+    // within the root silo file
+    conduit::utils::rsplit_file_path(root_file_path, mmesh_name, dirname);
     if (!(silofile = DBOpen(root_file_path.c_str(), DB_UNKNOWN, DB_READ))) {
         CONDUIT_ERROR("Cannot open silo file " << root_file_path);
     } else {
@@ -1791,13 +1829,14 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                         std::make_tuple(root_file_path),
                         std::make_tuple(silofile, &DBClose));
     }
-
     DBtoc *toc = DBGetToc(silofile);  // shouldn't be free'd
     // get the multimesh
     CONDUIT_ASSERT(toc->nmultimesh > 0, "No multimesh found in file");
     if (!opts.has_path("name")) {
         mmesh_name = toc->multimesh_names[0];
     } else {
+        CONDUIT_ASSERT(opts["name"].dtype().is_string(),
+                       "opts['name'] must be a string");
         for (i = 0; i < toc->nmultimesh; ++i) {
             if (toc->multimesh_names[i] == opts["name"].as_string()) {
                 mmesh_name = toc->multimesh_names[i];
@@ -1813,6 +1852,7 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
         multimesh.release();
         CONDUIT_ERROR("Error fetching multimesh " << mmesh_name);
     }
+    // read in the multimesh and add it to the mesh Node
     read_multimesh(silofile, filemap, dirname, multimesh.get(), mesh);
     // get the multivars matching the multimesh
     for (i = 0; i < toc->nmultivar; ++i) {
@@ -1820,10 +1860,10 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
             DBGetMultivar(silofile, toc->multivar_names[i]), &DBFreeMultivar};
         if (!multivar.get()) {
             multivar.release();
-            CONDUIT_ERROR("Error fetching multivar"
+            CONDUIT_ERROR("Error fetching multivar "
                           << multivar.get()->varnames[i]);
         }
-        if (multivar.get()->mmesh_name && multivar.get()->mmesh_name == mmesh_name) {
+        if (multivar.get()->mmesh_name != NULL && multivar.get()->mmesh_name == mmesh_name) {
             CONDUIT_ASSERT(multivar.get()->nvars == multimesh.get()->nblocks,
                            "Domain count mismatch between multivar "
                                << multivar.get()->varnames[i]
@@ -1835,7 +1875,7 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                    << multivar.get()->vartypes[j] << "and "
                                    << multimesh.get()->meshtypes[j]);
             }
-            // do something with multivar
+            // read in the multivar and add it to the mesh Node
             read_multivar(silofile, filemap, dirname, multivar.get(), mesh);
         }
     }
