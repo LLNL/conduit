@@ -1769,8 +1769,9 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
 //-----------------------------------------------------------------------------
 ///
 /// opts:
-///      TODO
-///
+///      mesh_name: "{name}"
+///          provide explicit mesh name, for cases where bp data includes
+///           more than one mesh.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,
@@ -1791,20 +1792,20 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                         std::make_tuple(silofile, &DBClose));
     }
 
-    DBtoc *toc = DBGetToc(silofile);
+    DBtoc *toc = DBGetToc(silofile);  // shouldn't be free'd
     // get the multimesh
     CONDUIT_ASSERT(toc->nmultimesh > 0, "No multimesh found in file");
-    if (!opts.has_path("multimesh_name")) {
+    if (!opts.has_path("name")) {
         mmesh_name = toc->multimesh_names[0];
     } else {
         for (i = 0; i < toc->nmultimesh; ++i) {
-            if (toc->multimesh_names[i] == opts["multimesh_name"].to_string()) {
+            if (toc->multimesh_names[i] == opts["name"].as_string()) {
                 mmesh_name = toc->multimesh_names[i];
                 break;
             }
         }
         CONDUIT_ERROR("No multimesh found matching "
-                      << opts["multimesh_name"].to_string());
+                      << opts["name"].as_string());
     }
     std::unique_ptr<DBmultimesh, decltype(&DBFreeMultimesh)> multimesh{
         DBGetMultimesh(silofile, mmesh_name.c_str()), &DBFreeMultimesh};
@@ -1843,17 +1844,6 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
 //---------------------------------------------------------------------------//
 void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
                                  conduit::Node &mesh) {
-    // TODO: 'load_mesh' will read the mesh information encoded in the Silo
-    // root file at the given path and load this information into 'mesh'
-    // as a Blueprint-compliant structure
-    // - 'root_file_path': for example, /path/to/root.silo
-    // - '/path/to/root/Index.silo': the name of the index file pointed to by
-    //   'root.silo'
-    // - '/path/to/root/(name).silo': translated into a Blueprint domain
-    //   at path (name)
-    //
-    // If any data exists in the 'mesh' node when this function is called, it
-    // should be removed prior to processing (e.g. via 'mesh.reset()').
     Node opts;
     load_mesh(root_file_path, opts, mesh);
 }
@@ -1861,8 +1851,9 @@ void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
 //-----------------------------------------------------------------------------
 ///
 /// opts:
-///      TODO
-///
+///      mesh_name: "{name}"
+///          provide explicit mesh name, for cases where silo data includes
+///           more than one mesh.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,
