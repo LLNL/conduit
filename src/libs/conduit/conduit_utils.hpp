@@ -97,7 +97,7 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_ASSERT( cond, msg )                                  \
 {                                                                    \
-    if(!cond)                                                        \
+    if(!(cond))                                                      \
     {                                                                \
         std::ostringstream conduit_oss_assert;                       \
         conduit_oss_assert << msg;                                   \
@@ -120,7 +120,7 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_CHECK( cond, msg )                                   \
 {                                                                    \
-    if(!cond)                                                        \
+    if(!(cond))                                                      \
     {                                                                \
         std::ostringstream conduit_oss_check;                        \
         conduit_oss_check << msg;                                    \
