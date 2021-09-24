@@ -1816,14 +1816,61 @@ void read_material_domain(DBfile *file, std::string &mat_name,
     matset["topology"] = material_ptr->meshname;
     for (int i = 0; i < material_ptr->nmat; ++i)
     {
-        matset["material_map"][material_ptr->matnames[i]] = material_ptr->matnos[i];
+        // material names may not be specified
+        std::string material_name;
+        if (material_ptr->matnames){
+            material_name = material_ptr->matnames[i];
+        } else {
+            material_name = std::to_string(material_ptr->matnos[i]);
+        }
+        matset["material_map"][material_name] = material_ptr->matnos[i];
     }
+    CONDUIT_ASSERT(material_ptr->ndims == 1, "Only single-dimension materials supported, got " << material_ptr->ndims);
     if (material_ptr->mixlen > 0){
-        // has volume fractions
-        CONDUIT_ERROR("Volume fractions not yet supported");
+        // The struct has volume fractions.
+        // In this case, the struct is very confusing.
+        // If an entry in the `matlist` is negative, it implies that the
+        // associated zone has mixed materials, and -(value) - 1 gives the
+        // first index into mix_vf and mix_mat for that zone. mix_next is then
+        // used to find the rest of the indices into mix_vf and mix_mat for
+        // the zone.
+        std::vector<double> volume_fractions;
+        std::vector<int> material_ids;
+        std::vector<int> sizes;
+        std::vector<int> offsets;
+        int curr_offset = 0;
+        for (int i = 0; i < material_ptr->dims[0]; ++i)
+        {
+            int matlist_entry = material_ptr->matlist[i];
+            if (matlist_entry >= 0){
+                volume_fractions.push_back(1.0);
+                material_ids.push_back(matlist_entry);
+                sizes.push_back(1);
+                offsets.push_back(curr_offset);
+                curr_offset++;
+            } else {
+                int mix_id = -(matlist_entry) - 1;
+                int curr_size = 0;
+                while (mix_id >= 0){
+                    material_ids.push_back(material_ptr->mix_mat[mix_id]);
+                    if (material_ptr->datatype == DB_DOUBLE)
+                        volume_fractions.push_back(static_cast<double *>(material_ptr->mix_vf)[mix_id]);
+                    if (material_ptr->datatype == DB_FLOAT)
+                        volume_fractions.push_back(static_cast<float *>(material_ptr->mix_vf)[mix_id]);
+                    curr_size++;
+                    mix_id = material_ptr->mix_next[mix_id] - 1;
+                }
+                sizes.push_back(curr_size);
+                offsets.push_back(curr_offset);
+                curr_offset += curr_size;
+            }
+        }
+        matset["material_ids"].set(material_ids.data(), material_ids.size());
+        matset["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
+        matset["sizes"].set(sizes.data(), sizes.size());
+        matset["offsets"].set(offsets.data(), offsets.size());
     } else {
-        // no volume fractions
-        CONDUIT_ASSERT(material_ptr->ndims == 1, "Only single-dimension materials supported, got " << material_ptr->ndims);
+        // no volume fractions. All zones are single-material.
         int arr_len = material_ptr->dims[0];
         copy_and_assign(material_ptr->matlist, arr_len, matset["material_ids"]);
         double *volume_fractions = new double[arr_len];
