@@ -83,10 +83,15 @@ TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
 // test simple silo 2D and 3D boxes
 TEST(conduit_relay_io_silo, load_mesh_geometry)
 {
-    std::vector<std::string> filename_vec = {"box2d.silo", "box3d.silo", "diamond.silo", "testDisk2D_a.silo"};
-    std::vector<int> dims_vec = {2, 3, 2, 2};
-    std::vector<int> coordset_length_vec = {4, 8, 36, 1994};
-    std::vector<int> topology_length_vec = {1, 1, 33, 1920};
+    std::vector<std::string> filename_vec = {"box2d.silo",
+        "box3d.silo",
+        "diamond.silo",
+        "testDisk2D_a.silo",
+        "donordiv.s2_materials2.silo"
+    };
+    std::vector<int> dims_vec = {2, 3, 2, 2, 2};
+    std::vector<int> coordset_length_vec = {4, 8, 36, 1994, 16};
+    std::vector<int> topology_length_vec = {1, 1, 33, 1920, 9};
     for (int i = 0; i < filename_vec.size(); ++i) {
 
         Node mesh, info;
