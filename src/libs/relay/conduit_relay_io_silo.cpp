@@ -1800,6 +1800,74 @@ void read_multivar(
     }
 }
 
+//-----------------------------------------------------------------------------
+// Read a material domain from a Silo file.
+// 'file' must be a pointer into the file containing the material domain
+// 'mat_name' must be the name of the material within the file.
+//-----------------------------------------------------------------------------
+void read_material_domain(DBfile *file, std::string &mat_name,
+                               conduit::Node &mesh_entry) {
+    DBmaterial *material_ptr;
+    if (!(material_ptr = DBGetMaterial(file, mat_name.c_str())))
+        CONDUIT_ERROR("Error fetching variable " << mat_name);
+    std::unique_ptr<DBmaterial, decltype(&DBFreeMaterial)> material{
+        material_ptr, &DBFreeMaterial};
+    conduit::Node &matset = mesh_entry["matsets"][material_ptr->name];
+    matset["topology"] = material_ptr->meshname;
+    for (int i = 0; i < material_ptr->nmat; ++i)
+    {
+        matset["material_map"][material_ptr->matnames[i]] = material_ptr->matnos[i];
+    }
+    if (material_ptr->mixlen > 0){
+        // has volume fractions
+        CONDUIT_ERROR("Volume fractions not yet supported");
+    } else {
+        // no volume fractions
+        CONDUIT_ASSERT(material_ptr->ndims == 1, "Only single-dimension materials supported, got " << material_ptr->ndims);
+        int arr_len = material_ptr->dims[0];
+        copy_and_assign(material_ptr->matlist, arr_len, matset["material_ids"]);
+        double *volume_fractions = new double[arr_len];
+        int *sizes = new int[arr_len];
+        int *offsets = new int[arr_len];
+        for (int i = 0; i < arr_len; ++i)
+        {
+            volume_fractions[i] = 1.0;
+            offsets[i] = i;
+            sizes[i] = 1;
+        }
+        matset["volume_fractions"].set(volume_fractions, arr_len);
+        matset["sizes"].set(sizes, arr_len);
+        matset["offsets"].set(offsets, arr_len);
+    }
+
+}
+
+//-----------------------------------------------------------------------------
+// Read a multimaterial from a Silo file.
+// 'root_file' should be the file containing the multivar entry
+// 'filemap' should be a mapping providing DBfile* for files which have
+//  already been opened.
+// 'dirname' should be the directory containing the root file, as if the
+// `dirname` command were called on the root file path. This directory is used
+// to concretize the paths given by the multimat.
+//-----------------------------------------------------------------------------
+void read_multimaterial(
+    DBfile *root_file,
+    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+    std::string &dirname, DBmultimat *multimat, conduit::Node &mesh) {
+
+    std::string file_path, silo_name;
+    for (index_t i = 0; i < multimat->nmats; ++i) {
+        Node &entry = mesh[i];
+        split_silo_path(multimat->matnames[i], dirname, file_path, silo_name);
+        if (!file_path.empty()) {
+            read_material_domain(get_or_open(filemap, file_path), silo_name, entry);
+        } else {
+            read_material_domain(root_file, silo_name, entry);
+        }
+    }
+}
+
 //---------------------------------------------------------------------------//
 void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                  conduit::Node &mesh) {
@@ -1874,6 +1942,24 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                                << "and multimesh");
             // read in the multivar and add it to the mesh Node
             read_multivar(silofile, filemap, dirname, multivar.get(), mesh);
+        }
+    }
+    // get the multimaterials matching the multimesh
+    for (i = 0; i < toc->nmultimat; ++i) {
+        std::unique_ptr<DBmultimat, decltype(&DBFreeMultimat)> multimat{
+            DBGetMultimat(silofile, toc->multimat_names[i]), &DBFreeMultimat};
+        if (!multimat.get()) {
+            multimat.release();
+            CONDUIT_ERROR("Error fetching multimaterial "
+                          << multimat.get()->matnames[i]);
+        }
+        if (multimat.get()->mmesh_name != NULL && multimat.get()->mmesh_name == mmesh_name) {
+            CONDUIT_ASSERT(multimat.get()->nmats == multimesh.get()->nblocks,
+                           "Domain count mismatch between multimaterial "
+                               << multimat.get()->matnames[i]
+                               << "and multimesh");
+            // read in the multimaterial and add it to the mesh Node
+            read_multimaterial(silofile, filemap, dirname, multimat.get(), mesh);
         }
     }
 }
