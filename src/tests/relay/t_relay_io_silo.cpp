@@ -87,11 +87,12 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
         "box3d.silo",
         "diamond.silo",
         "testDisk2D_a.silo",
-        "donordiv.s2_materials2.silo"
+        "donordiv.s2_materials2.silo",
+        "donordiv.s2_materials3.silo"
     };
-    std::vector<int> dims_vec = {2, 3, 2, 2, 2};
-    std::vector<int> coordset_length_vec = {4, 8, 36, 1994, 16};
-    std::vector<int> topology_length_vec = {1, 1, 33, 1920, 9};
+    std::vector<int> dims_vec = {2, 3, 2, 2, 2, 2};
+    std::vector<int> coordset_length_vec = {4, 8, 36, 1994, 16, 961};
+    std::vector<int> topology_length_vec = {1, 1, 33, 1920, 9, 900};
     for (int i = 0; i < filename_vec.size(); ++i) {
 
         Node mesh, info;
