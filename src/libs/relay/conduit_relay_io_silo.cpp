@@ -23,6 +23,11 @@
 #include <map>
 
 //-----------------------------------------------------------------------------
+// conduit lib includes
+//-----------------------------------------------------------------------------
+#include "conduit_blueprint.hpp"
+
+//-----------------------------------------------------------------------------
 // external lib includes
 //-----------------------------------------------------------------------------
 #include <silo.h>
@@ -2032,6 +2037,167 @@ void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
     read_mesh(root_file_path, opts, mesh);
 }
 
+void write_adjsets(const conduit::Node &adjsets, const std::string &file, const std::string &silo_dir){
+    (void) adjsets;
+    (void) file;
+    (void) silo_dir;
+}
+
+void write_fields(const conduit::Node &fields, const std::string &file, const std::string &silo_dir){
+    (void) fields;
+    (void) file;
+    (void) silo_dir;
+}
+
+void write_matsets(const conduit::Node &matsets, const std::string &file, const std::string &silo_dir){
+    (void) matsets;
+    (void) file;
+    (void) silo_dir;
+}
+
+void write_topo_coordset(const conduit::Node &topo, const conduit::Node &coords, const std::string &file, const std::string &silo_dir){
+    (void) topo;
+    (void) coords;
+    (void) file;
+    (void) silo_dir;
+}
+
+std::string get_domain_silo_directory(int domain, int nfiles, int ndomains){
+    (void) domain;
+    (void) nfiles;
+    (void) ndomains;
+    return "";
+}
+
+std::string get_domain_file(int domain, int nfiles, const std::string &root_file){
+    (void) domain;
+    (void) nfiles;
+    return root_file;
+}
+
+
+//-----------------------------------------------------------------------------
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///
+///      file_style: "default", "root_only", "multi_file", "overlink"
+///            when # of domains == 1,  "default"   ==> "root_only"
+///            else,                    "default"   ==> "multi_file"
+///
+///      silo_type: "default", "pdb", "hdf5", "hdf5_sec2", "hdf5_stdio",
+///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
+///            when 'path' exists, "default" ==> "unknown"
+///            else,               "default" ==> "hdf5"
+///
+///      suffix: "default", "cycle", "none"
+///            when # of domains == 1,  "default"   ==> "none"
+///            else,                    "default"   ==> "cycle"
+///
+///      mesh_name:  (used if present, default ==> "mesh")
+///
+///      number_of_files:  {# of files}
+///            when "multi_file" or "overlink":
+///                 <= 0, use # of files == # of domains
+///                  > 0, # of files == number_of_files
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+                                  const std::string &path,
+                                  const conduit::Node &opts) {
+
+    int i, type, ndomains, nfiles;
+    std::string mmesh_name;
+    bool overlink = false;
+    DBfile *silofile;
+    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
+    std::vector<const conduit::Node *> domains = blueprint::mesh::domains(mesh);
+    // nfiles is the number of non-root files, so 0 implies root-only
+    // nfiles will == # domains unless:
+    // a) root_only option passed
+    // b) no style option passed and domains == 1
+    // c) number_of_files > 0 specified
+    nfiles = ndomains = domains.size();
+
+    // parse out options
+    if (conduit::utils::is_file(path)){
+        type = DB_UNKNOWN;
+    } else {
+        type = DB_HDF5;
+    }
+    if (opts.has_path("silo_type")){
+        std::string silo_type = opts["silo_type"].as_string();
+        if (silo_type == "pdb"){ type = DB_PDB; }
+        else if (silo_type == "hdf5"){ type = DB_HDF5; }
+        else if (silo_type == "hdf5_sec2"){ type = DB_HDF5_SEC2; }
+        else if (silo_type == "hdf5_stdio"){ type = DB_HDF5_STDIO; }
+        else if (silo_type == "hdf5_mpio"){ type = DB_HDF5_MPIO; }
+        // else if (silo_type == "hdf5_mpiposix"){ type = DB_HDF5_MPIPOSIX; }
+        else if (silo_type == "taurus"){ type = DB_TAURUS; }
+        else if (silo_type == "unknown"){ type = DB_UNKNOWN; }
+        else {
+            CONDUIT_ASSERT(silo_type == "default",
+                "Unrecognized 'silo_type' option " << silo_type);
+        }
+    }
+    if (opts.has_path("name")){
+        mmesh_name = opts["name"].as_string();
+    } else {
+        mmesh_name = "mesh";
+    }
+    if (opts.has_path("file_style")){
+        std::string file_style = opts["file_style"].as_string();
+        if (file_style == "overlink"){
+            mmesh_name = "MMESH";
+            overlink = true;
+        } else if (file_style == "multi"){
+            // nothing to do
+        } else if (file_style == "root_only"){
+            nfiles = 0;
+        } else {
+            CONDUIT_ASSERT(file_style == "default", "Unrecognized file_style option " << file_style);
+            if (nfiles == 1) nfiles = 0;
+        }
+    }
+    if (opts.has_path("number_of_files")){
+        if (opts["number_of_files"].as_int() > 0 && nfiles > 0){
+            nfiles = opts["number_of_files"].as_int();
+        }
+        CONDUIT_ASSERT(nfiles <= ndomains,
+            "More files (" << nfiles
+            << ") than domains (" << ndomains
+            << ") not allowed");
+    }
+    if (!(silofile = DBOpen(path.c_str(), type, DB_APPEND))) {
+        CONDUIT_ERROR("Cannot open silo file " << path);
+    } else {
+        filemap.emplace(std::piecewise_construct,
+                        std::make_tuple(path),
+                        std::make_tuple(silofile, &DBClose));
+    }
+    for (i = 0; i < ndomains; ++i)
+    {
+        std::string domain_file = get_domain_file(i, nfiles, path);
+        std::string silo_dir = get_domain_silo_directory(i, nfiles, ndomains);
+        const Node *dom = domains[i];
+        write_topo_coordset(
+            (*dom)["coordsets"],
+            (*dom)["topologies"],
+            domain_file,
+            silo_dir);
+        if (dom->has_path("fields")){
+            write_fields((*dom)["fields"], domain_file, silo_dir);
+        }
+        if (dom->has_path("matsets")){
+            write_matsets((*dom)["matsets"], domain_file, silo_dir);
+        }
+        if (dom->has_path("adjsets")){
+            write_adjsets((*dom)["adjsets"], domain_file, silo_dir);
+        }
+    }
+
+}
+
 //-----------------------------------------------------------------------------
 // Write a blueprint mesh to silo
 //-----------------------------------------------------------------------------
@@ -2046,22 +2212,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path) {
     Node opts;
     write_mesh(mesh, path, opts);
-}
-
-//-----------------------------------------------------------------------------
-/// The following options can be passed via the opts Node:
-//-----------------------------------------------------------------------------
-/// opts:
-///      TODO
-///
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
-                                  const std::string &path,
-                                  const conduit::Node &opts) {
-    (void)opts;
-    (void)path;
-    (void)mesh;
-    CONDUIT_ERROR("Not implemented");
 }
 
 //-----------------------------------------------------------------------------
@@ -2090,10 +2240,8 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
                                  const conduit::Node &opts) {
-    (void)opts;
-    (void)path;
-    (void)mesh;
-    CONDUIT_ERROR("Not implemented");
+    conduit::utils::remove_path_if_exists(path);
+    write_mesh(mesh, path, opts);
 }
 
 
