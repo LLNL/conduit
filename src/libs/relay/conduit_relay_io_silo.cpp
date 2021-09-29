@@ -39,11 +39,11 @@
 //-----------------------------------------------------------------------------
 #define CONDUIT_CHECK_SILO_ERROR( silo_err, msg )                   \
 {                                                                   \
-    if( silo_err != 0)                                              \
+    if( (silo_err) != 0)                                            \
     {                                                               \
         std::ostringstream silo_err_oss;                            \
-        silo_err_oss << "Silo Error code"                           \
-            << silo_err                                             \
+        silo_err_oss << "Silo Error code "                          \
+            << (silo_err) << " " << DBErrString()                   \
             << " " << msg;                                          \
         CONDUIT_ERROR( silo_err_oss.str());                         \
     }                                                               \
@@ -2037,42 +2037,103 @@ void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
     read_mesh(root_file_path, opts, mesh);
 }
 
-void write_adjsets(const conduit::Node &adjsets, const std::string &file, const std::string &silo_dir){
-    (void) adjsets;
-    (void) file;
-    (void) silo_dir;
-}
+// void write_adjsets(const conduit::Node &adjsets, DBfile *file, const std::string &silo_dir){
+//     (void) adjsets;
+//     (void) file;
+//     (void) silo_dir;
+// }
 
-void write_fields(const conduit::Node &fields, const std::string &file, const std::string &silo_dir){
-    (void) fields;
-    (void) file;
-    (void) silo_dir;
-}
+// void write_fields(const conduit::Node &fields, DBfile *file, const std::string &silo_dir){
+//     (void) fields;
+//     (void) file;
+//     (void) silo_dir;
+// }
 
-void write_matsets(const conduit::Node &matsets, const std::string &file, const std::string &silo_dir){
-    (void) matsets;
-    (void) file;
-    (void) silo_dir;
-}
+// void write_matsets(const conduit::Node &matsets, DBfile *file, const std::string &silo_dir){
+//     (void) matsets;
+//     (void) file;
+//     (void) silo_dir;
+// }
 
-void write_topo_coordset(const conduit::Node &topo, const conduit::Node &coords, const std::string &file, const std::string &silo_dir){
-    (void) topo;
-    (void) coords;
-    (void) file;
-    (void) silo_dir;
-}
+// void write_topo_coordset(const conduit::Node &topo, const conduit::Node &coords, DBfile *file, const std::string &mesh_path){
+//     int nnodes, nzones;
+//     DBPutUcdmesh(file, mesh_path.c_str(), );
+//     (void) topo;
+//     (void) coords;
+// }
 
 std::string get_domain_silo_directory(int domain, int nfiles, int ndomains){
-    (void) domain;
-    (void) nfiles;
-    (void) ndomains;
-    return "";
+    if (ndomains < nfiles){
+        return "domain" + std::to_string(domain);
+    }
+    else {
+        return "";
+    }
 }
 
 std::string get_domain_file(int domain, int nfiles, const std::string &root_file){
     (void) domain;
     (void) nfiles;
     return root_file;
+}
+
+std::string get_mesh_domain_name(const conduit::Node &topo, bool overlink){
+    CONDUIT_ASSERT(topo.number_of_children() == 1, "Multiple topologies not supported");
+    if (overlink) return "MESH";
+    return topo.children().next().name();
+}
+
+void write_multimesh(DBfile *root, const std::string &mmesh_name, std::vector<std::string> mesh_domains){
+    std::vector<const char *> domain_name_ptrs;
+    std::vector<int> domain_mesh_types;
+    for (auto domain : mesh_domains)
+    {
+        domain_name_ptrs.push_back(domain.c_str());
+        domain_mesh_types.push_back(DB_UCDMESH);
+    }
+    CONDUIT_CHECK_SILO_ERROR(DBPutMultimesh(root,
+        mmesh_name.c_str(),
+        domain_name_ptrs.size(),
+        domain_name_ptrs.data(), domain_mesh_types.data(), NULL),
+        "Error putting multimesh");
+}
+
+void write_multimaterial(DBfile *root, const std::string &mmat_name, const std::string &mmesh_name, std::vector<std::string> mat_domains){
+    std::vector<const char *> domain_name_ptrs;
+    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist {DBMakeOptlist(1), &DBFreeOptlist};
+    if (!optlist.get()){
+        optlist.release();
+        CONDUIT_ERROR("Error creating options");
+    }
+    // have to const_cast because converting to void *
+    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.get(), DBOPT_MMESH_NAME, const_cast<char *>(mmesh_name.c_str())),
+        "Error creating options for putting multimat");
+    for (auto domain : mat_domains)
+    {
+        domain_name_ptrs.push_back(domain.c_str());
+    }
+    CONDUIT_CHECK_SILO_ERROR(DBPutMultimat(root, mmat_name.c_str(), mat_domains.size(), domain_name_ptrs.data(), optlist.get()),
+        "Error putting multimaterial");
+}
+
+void write_multivar(DBfile *root, const std::string &mvar_name, const std::string &mmesh_name, std::vector<std::string> var_domains){
+    std::vector<const char *> domain_name_ptrs;
+    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist {DBMakeOptlist(1), &DBFreeOptlist};
+    std::vector<int> domain_var_types;
+    if (!optlist.get()){
+        optlist.release();
+        CONDUIT_ERROR("Error creating options");
+    }
+    // have to const_cast because converting to void *
+    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.get(), DBOPT_MMESH_NAME, const_cast<char *>(mmesh_name.c_str())),
+        "Error creating options for putting multivar");
+    for (auto domain : var_domains)
+    {
+        domain_name_ptrs.push_back(domain.c_str());
+        domain_var_types.push_back(DB_UCDVAR);
+    }
+    CONDUIT_CHECK_SILO_ERROR(DBPutMultivar(root, mvar_name.c_str(), var_domains.size(), domain_name_ptrs.data(), domain_var_types.data(), optlist.get()),
+        "Error putting multivar");
 }
 
 
@@ -2143,7 +2204,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     if (opts.has_path("name")){
         mmesh_name = opts["name"].as_string();
     } else {
-        mmesh_name = "mesh";
+        mmesh_name = "MMESH";
     }
     if (opts.has_path("file_style")){
         std::string file_style = opts["file_style"].as_string();
@@ -2158,8 +2219,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             CONDUIT_ASSERT(file_style == "default", "Unrecognized file_style option " << file_style);
             if (nfiles == 1) nfiles = 0;
         }
+    } else {
+        if (nfiles == 1) nfiles = 0;
     }
-    if (opts.has_path("number_of_files")){
+    if (opts.has_path("number_of_files") && nfiles > 0){
         if (opts["number_of_files"].as_int() > 0 && nfiles > 0){
             nfiles = opts["number_of_files"].as_int();
         }
@@ -2168,31 +2231,61 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             << ") than domains (" << ndomains
             << ") not allowed");
     }
-    if (!(silofile = DBOpen(path.c_str(), type, DB_APPEND))) {
-        CONDUIT_ERROR("Cannot open silo file " << path);
+    if (!(silofile = DBCreate(path.c_str(), DB_CLOBBER, DB_LOCAL, NULL, type))) {
+        CONDUIT_ERROR("Cannot open silo file '" << path << "' " << DBErrString());
     } else {
         filemap.emplace(std::piecewise_construct,
                         std::make_tuple(path),
                         std::make_tuple(silofile, &DBClose));
     }
+    std::vector<std::string> silo_mesh_paths;
+    std::map<std::string, std::vector<std::string>> silo_material_paths;
+    std::map<std::string, std::vector<std::string>> silo_variable_paths;
     for (i = 0; i < ndomains; ++i)
     {
         std::string domain_file = get_domain_file(i, nfiles, path);
         std::string silo_dir = get_domain_silo_directory(i, nfiles, ndomains);
         const Node *dom = domains[i];
-        write_topo_coordset(
-            (*dom)["coordsets"],
-            (*dom)["topologies"],
-            domain_file,
-            silo_dir);
-        if (dom->has_path("fields")){
-            write_fields((*dom)["fields"], domain_file, silo_dir);
+        std::string mesh_domain = conduit::utils::join_path(silo_dir, get_mesh_domain_name((*dom)["topologies"], overlink));
+        #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+            conduit::relay::mpi::io::silo_mesh_write(*dom, get_or_open(filemap, domain_file), silo_dir);
+        #else
+            conduit::relay::io::silo_mesh_write(*dom, get_or_open(filemap, domain_file), silo_dir);
+        #endif
+
+        // write_topo_coordset(
+        //     (*dom)["coordsets"],
+        //     (*dom)["topologies"],
+        //     ,
+        //     mesh_domain);
+        if (domain_file == path){
+            // domain is in root file
+            silo_mesh_paths.push_back(mesh_domain);
+        } else {
+            // domain is not in root file
+            silo_mesh_paths.push_back(domain_file + ":" + mesh_domain);
         }
-        if (dom->has_path("matsets")){
-            write_matsets((*dom)["matsets"], domain_file, silo_dir);
+        // if (dom->has_path("fields")){
+        //     write_fields((*dom)["fields"], get_or_open(filemap, domain_file), silo_dir);
+        // }
+        // if (dom->has_path("matsets")){
+        //     write_matsets((*dom)["matsets"], get_or_open(filemap, domain_file), silo_dir);
+        // }
+        // if (dom->has_path("adjsets")){
+        //     write_adjsets((*dom)["adjsets"], get_or_open(filemap, domain_file), silo_dir);
+        // }
+    }
+    write_multimesh(silofile, mmesh_name, silo_mesh_paths);
+    if (silo_material_paths.size() > 0){
+        for (const auto &pair : silo_material_paths){
+            CONDUIT_ASSERT(pair.second.size() == static_cast<std::size_t>(ndomains), "material " << pair.first << " not specified for all domains");
+            write_multimaterial(silofile,  pair.first, mmesh_name, pair.second);
         }
-        if (dom->has_path("adjsets")){
-            write_adjsets((*dom)["adjsets"], domain_file, silo_dir);
+    }
+    if (silo_variable_paths.size() > 0){
+        for (const auto &pair : silo_variable_paths){
+            CONDUIT_ASSERT(pair.second.size() == static_cast<std::size_t>(ndomains), "variable " << pair.first << " not specified for all domains");
+            write_multivar(silofile,  pair.first, mmesh_name, pair.second);
         }
     }
 
