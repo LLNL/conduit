@@ -80,12 +80,20 @@ TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
 }
 
-// test simple silo 2D and 3D boxes
+// test reading in a handful of different silo files
 TEST(conduit_relay_io_silo, load_mesh_geometry)
 {
+
+    // TODO: all these files are in overlink symlink format.
+    // Symlinks may break on Windows (?)
+    // Could make them overlink format without the symlink.
+    // But would require modifying the files.
     std::vector<std::string> filename_vec = {"box2d.silo",
         "box3d.silo",
         "diamond.silo",
+        // TODO: rename these files to be more descriptive.
+        // would also require modifying the paths stored within the files,
+        // and re-symlinking
         "testDisk2D_a.silo",
         "donordiv.s2_materials2.silo",
         "donordiv.s2_materials3.silo"
@@ -129,6 +137,12 @@ TEST(conduit_relay_io_silo, save_mesh_geometry)
     Node save_mesh;
     blueprint::mesh::examples::basic("quads", 2, 2, 0, save_mesh);
     save_mesh.remove("fields");
+    // since blueprint topologies and cooordsets are combined into
+    // one silo object, one of the names is lost. The diff will fail
+    // unless we rename the coordset name to be the same as the topo.
+    save_mesh["coordsets"].rename_child("coords", "mesh");
+    save_mesh["topologies"]["mesh"]["coordset"].reset();
+    save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
     io::silo::save_mesh(save_mesh, "basic.silo");
     Node load_mesh;
     io::silo::load_mesh("basic.silo", load_mesh);
@@ -138,7 +152,4 @@ TEST(conduit_relay_io_silo, save_mesh_geometry)
     // but the saved mesh is in the single domain format
     EXPECT_EQ(load_mesh.number_of_children(), 1);
     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-    std::cout << info.to_string() << std::endl;
-    std::cout << save_mesh.to_string() << std::endl;
-    std::cout << load_mesh.to_string() << std::endl;
 }

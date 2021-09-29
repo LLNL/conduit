@@ -1839,7 +1839,7 @@ void read_material_domain(DBfile *file, std::string &mat_name,
         // The struct has volume fractions.
         // In this case, the struct is very confusing.
         // If an entry in the `matlist` is negative, it implies that the
-        // associated zone has mixed materials, and -(value) - 1 gives the
+        // associated zone has mixed materials, and `-(value) - 1` gives the
         // first index into mix_vf and mix_mat for that zone. mix_next is then
         // used to find the rest of the indices into mix_vf and mix_mat for
         // the zone.
@@ -2088,28 +2088,6 @@ std::pair<int, const char * const *> get_coordset_type_labels(const Node &values
         return std::make_pair(DB_SPHERICAL, SPHERICAL_LABELS);
     }
 }
-
-// int get_coordsys(const Node &coordsys){
-//     if (coordsys == DB_CARTESIAN) {
-//         return conduit::blueprint::mesh::utils
-//     } else if (coordsys == DB_CYLINDRICAL) {
-//         labels = cylindrical_labels;
-//         if (ndims >= 3)
-//             CONDUIT_ERROR("Blueprint only supports 2D cylindrical coordinates");
-//     } else if (coordsys == DB_SPHERICAL) {
-//         labels = spherical_labels;
-//     } else {
-//         CONDUIT_ERROR("Unsupported coordinate system " << coord_sys);
-//     }
-// }
-
-// const char ** get_dim_labels(int coordsys){
-//     if (coordsys == DB_CARTESIAN){
-//         return
-//     }
-
-// }
-
 
 //---------------------------------------------------------------------------//
 void
@@ -3135,31 +3113,6 @@ silo_mesh_write(const Node &n,
     }
 }
 
-// void write_adjsets(const conduit::Node &adjsets, DBfile *file, const std::string &silo_dir){
-//     (void) adjsets;
-//     (void) file;
-//     (void) silo_dir;
-// }
-
-// void write_fields(const conduit::Node &fields, DBfile *file, const std::string &silo_dir){
-//     (void) fields;
-//     (void) file;
-//     (void) silo_dir;
-// }
-
-// void write_matsets(const conduit::Node &matsets, DBfile *file, const std::string &silo_dir){
-//     (void) matsets;
-//     (void) file;
-//     (void) silo_dir;
-// }
-
-// void write_topo_coordset(const conduit::Node &topo, const conduit::Node &coords, DBfile *file, const std::string &mesh_path){
-//     int nnodes, nzones;
-//     DBPutUcdmesh(file, mesh_path.c_str(), );
-//     (void) topo;
-//     (void) coords;
-// }
-
 std::string get_domain_silo_directory(int domain, int nfiles, int ndomains){
     if (ndomains < nfiles){
         return "domain" + std::to_string(domain);
@@ -3346,12 +3299,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         const Node *dom = domains[i];
         std::string mesh_domain = conduit::utils::join_path(silo_dir, get_mesh_domain_name((*dom)["topologies"], overlink));
         silo_mesh_write(*dom, get_or_open(filemap, domain_file), silo_dir);
-
-        // write_topo_coordset(
-        //     (*dom)["coordsets"],
-        //     (*dom)["topologies"],
-        //     ,
-        //     mesh_domain);
         if (domain_file == path){
             // domain is in root file
             silo_mesh_paths.push_back(mesh_domain);
@@ -3359,15 +3306,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             // domain is not in root file
             silo_mesh_paths.push_back(domain_file + ":" + mesh_domain);
         }
-        // if (dom->has_path("fields")){
-        //     write_fields((*dom)["fields"], get_or_open(filemap, domain_file), silo_dir);
-        // }
-        // if (dom->has_path("matsets")){
-        //     write_matsets((*dom)["matsets"], get_or_open(filemap, domain_file), silo_dir);
-        // }
-        // if (dom->has_path("adjsets")){
-        //     write_adjsets((*dom)["adjsets"], get_or_open(filemap, domain_file), silo_dir);
-        // }
     }
     write_multimesh(silofile, mmesh_name, silo_mesh_paths);
     if (silo_material_paths.size() > 0){
