@@ -133,5 +133,12 @@ TEST(conduit_relay_io_silo, save_mesh_geometry)
     Node load_mesh;
     io::silo::load_mesh("basic.silo", load_mesh);
     Node info;
-    EXPECT_FALSE(load_mesh.diff(save_mesh, info));
+    // the loaded mesh will be in the multidomain format
+    // (it will be a list containing a single mesh domain)
+    // but the saved mesh is in the single domain format
+    EXPECT_EQ(load_mesh.number_of_children(), 1);
+    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+    std::cout << info.to_string() << std::endl;
+    std::cout << save_mesh.to_string() << std::endl;
+    std::cout << load_mesh.to_string() << std::endl;
 }
