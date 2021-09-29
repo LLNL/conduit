@@ -2237,6 +2237,37 @@ void silo_write_field(DBfile *dbfile, const std::string &var_name,
     } // end field topologies itr while
 }
 
+int assign_coords_ptrs(void *coords_ptrs[3], int ndims, conduit::Node &n_coords_compact, const char *const *coordsys_labels){
+
+    DataType dtype = n_coords_compact[coordsys_labels[0]].dtype();
+    CONDUIT_ASSERT(dtype.compatible(n_coords_compact[coordsys_labels[1]].dtype()),
+        "all coordinate arrays must have same type, got " << dtype.to_string()
+        << " and " << n_coords_compact[coordsys_labels[1]].dtype().to_string());
+    if (ndims == 3){
+        CONDUIT_ASSERT(dtype.compatible(n_coords_compact[coordsys_labels[2]].dtype()),
+            "all coordinate arrays must have same type");
+    }
+    if (dtype.is_float()) {
+        coords_ptrs[0] = (void *)n_coords_compact[coordsys_labels[0]].as_float_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact[coordsys_labels[1]].as_float_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact[coordsys_labels[2]].as_float_ptr();
+        }
+        return DB_FLOAT;
+    } else if (dtype.is_double()) {
+        coords_ptrs[0] = (void *)n_coords_compact[coordsys_labels[0]].as_double_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact[coordsys_labels[1]].as_double_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact[coordsys_labels[2]].as_double_ptr();
+        }
+        return DB_DOUBLE;
+    } else {
+        CONDUIT_ERROR("coords data type not implemented, found "
+                      << dtype.name());
+        return DB_FLOAT;  // placeholder
+    }
+}
+
 //---------------------------------------------------------------------------//
 void silo_write_pointmesh(DBfile *dbfile, const std::string &topo_name,
                           const Node &n_coords, DBoptlist *state_optlist,
@@ -2249,7 +2280,7 @@ void silo_write_pointmesh(DBfile *dbfile, const std::string &topo_name,
         get_coordset_type_labels(n_coords);
     CONDUIT_CHECK_SILO_ERROR(
         DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first),
-        "");
+        "error adding coordsys option");
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
@@ -2260,34 +2291,8 @@ void silo_write_pointmesh(DBfile *dbfile, const std::string &topo_name,
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
     n_mesh_info[topo_name]["num_elems"].set(num_pts);
 
-    int coords_dtype = 0;
     void *coords_ptrs[3] = {NULL, NULL, NULL};
-
-    // assume x,y,z are all the same type
-    DataType dtype = n_coords_compact["x"].dtype();
-
-    if (dtype.is_float()) {
-        coords_dtype = DB_FLOAT;
-        coords_ptrs[0] = (void *)n_coords_compact["x"].as_float_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact["y"].as_float_ptr();
-        if (ndims == 3) {
-            coords_ptrs[2] = (void *)n_coords_compact["z"].as_float_ptr();
-        }
-    } else if (dtype.is_double())
-
-    {
-        coords_dtype = DB_DOUBLE;
-        coords_ptrs[0] = (void *)n_coords_compact["x"].as_double_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact["y"].as_double_ptr();
-        if (ndims == 3) {
-            coords_ptrs[2] = (void *)n_coords_compact["z"].as_double_ptr();
-        }
-    } else {
-        // n_coords["x"].to_double_array(n_convert["x"]);
-        // n_coords["y"].to_double_array(n_convert["y"]);
-        CONDUIT_ERROR("coords data type not implemented, found "
-                      << dtype.name());
-    }
+    int coords_dtype = assign_coords_ptrs(coords_ptrs, ndims, n_coords_compact, coordsys_type_labels.second);
 
     int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
                                     topo_name.c_str(), // mesh name
@@ -2425,10 +2430,6 @@ void silo_write_ucd_zonelist(DBfile *dbfile, const std::string &topo_name,
 void silo_write_ucd_mesh(DBfile *dbfile, const std::string &topo_name,
                          const Node &n_coords, DBoptlist *state_optlist,
                          Node &n_mesh_info) {
-    // also support interleaved:
-    // xy, xyz
-    // convert these to separate coord arrays for silo
-    const Node &n_coord_vals = n_coords["values"];
 
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
@@ -2440,41 +2441,15 @@ void silo_write_ucd_mesh(DBfile *dbfile, const std::string &topo_name,
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
-    n_coord_vals.compact_to(n_coords_compact);
+    n_coords["values"].compact_to(n_coords_compact);
 
-    int num_pts = n_coords_compact["x"].dtype().number_of_elements();
+    int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
     // TODO: check that y & z have the same number of points
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
 
-    int coords_type = 0;
     void *coords_ptrs[3] = {NULL, NULL, NULL};
-
-    // assume x,y,z are all the same type
-    DataType dtype = n_coords_compact["x"].dtype();
-
-    if (dtype.is_float()) {
-        coords_type = DB_FLOAT;
-        coords_ptrs[0] = (void *)n_coords_compact["x"].as_float_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact["y"].as_float_ptr();
-        if (ndims == 3) {
-            coords_ptrs[2] = (void *)n_coords_compact["z"].as_float_ptr();
-        }
-    } else if (dtype.is_double())
-
-    {
-        coords_type = DB_DOUBLE;
-        coords_ptrs[0] = (void *)n_coords_compact["x"].as_double_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact["y"].as_double_ptr();
-        if (ndims == 3) {
-            coords_ptrs[2] = (void *)n_coords_compact["z"].as_double_ptr();
-        }
-    } else {
-        // n_coords["x"].to_double_array(n_convert["x"]);
-        // n_coords["y"].to_double_array(n_convert["y"]);
-        CONDUIT_ERROR("coords data type not implemented, found "
-                      << dtype.name());
-    }
+    int coords_dtype = assign_coords_ptrs(coords_ptrs, ndims, n_coords_compact, coordsys_type_labels.second);
 
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
@@ -2488,8 +2463,8 @@ void silo_write_ucd_mesh(DBfile *dbfile, const std::string &topo_name,
                                   num_pts,            // number of points
                                   num_elems,          // number of elements
                                   zlist_name.c_str(), // zone list name
-                                  0,                  // face list names
-                                  coords_type,        // type of data array
+                                  NULL,               // face list names
+                                  coords_dtype,       // type of data array
                                   state_optlist);     // opt list
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutUcdmesh");
@@ -2537,32 +2512,8 @@ void silo_write_quad_rect_mesh(DBfile *dbfile, const std::string &topo_name,
         n_mesh_info[topo_name]["elements/k"] = pts_dims[2] - 1;
     }
 
-    int coords_dtype = 0;
     void *coords_ptrs[3] = {NULL, NULL, NULL};
-
-    // assume x,y,z are all the same type
-    DataType dtype = n_coords_compact["x"].dtype();
-
-    if (dtype.is_float()) {
-        coords_dtype = DB_FLOAT;
-        coords_ptrs[0] = (void *)n_coords_compact["x"].as_float_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact["y"].as_float_ptr();
-        if (ndims == 3) {
-            coords_ptrs[2] = (void *)n_coords_compact["z"].as_float_ptr();
-        }
-    } else if (dtype.is_double()) {
-        coords_dtype = DB_DOUBLE;
-        coords_ptrs[0] = (void *)n_coords_compact["x"].as_double_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact["y"].as_double_ptr();
-        if (ndims == 3) {
-            coords_ptrs[2] = (void *)n_coords_compact["z"].as_double_ptr();
-        }
-    } else {
-        // n_coords["x"].to_double_array(n_convert["x"]);
-        // n_coords["y"].to_double_array(n_convert["y"]);
-        CONDUIT_ERROR("coords data type not implemented, found "
-                      << dtype.name());
-    }
+    int coords_dtype = assign_coords_ptrs(coords_ptrs, ndims, n_coords_compact, coordsys_type_labels.second);
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
@@ -2704,11 +2655,12 @@ void silo_write_structured_mesh(DBfile *dbfile, const std::string &topo_name,
 
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
+    CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
     std::pair<int, const char *const *> coordsys_type_labels =
         get_coordset_type_labels(n_coords);
     CONDUIT_CHECK_SILO_ERROR(
         DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first),
-        "");
+        "Error adding option");
 
     // blueprint::transmute(n_coord_vals,,n_coords_compact)
 
@@ -2716,39 +2668,15 @@ void silo_write_structured_mesh(DBfile *dbfile, const std::string &topo_name,
     // compaction is necessary to support ragged arrays
     n_coord_vals.compact_to(n_coords_compact);
 
-    int num_pts = n_coords_compact["x"].dtype().number_of_elements();
-    // TODO: check that y & z have the same number of points
+    int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
+    CONDUIT_ASSERT(num_pts ==
+                   n_coords_compact[coordsys_type_labels.second[1]].dtype().number_of_elements(),
+                   "element count mismatch");
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
 
-    int coords_dtype = 0;
     void *coords_ptrs[3] = {NULL, NULL, NULL};
-
-    // assume x,y,z are all the same type
-    DataType dtype = n_coords_compact["x"].dtype();
-
-    if (dtype.is_float()) {
-        coords_dtype = DB_FLOAT;
-        coords_ptrs[0] = (void *)n_coords_compact["x"].as_float_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact["y"].as_float_ptr();
-        if (ndims == 3) {
-            coords_ptrs[2] = (void *)n_coords_compact["z"].as_float_ptr();
-        }
-    } else if (dtype.is_double())
-
-    {
-        coords_dtype = DB_DOUBLE;
-        coords_ptrs[0] = (void *)n_coords_compact["x"].as_double_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact["y"].as_double_ptr();
-        if (ndims == 3) {
-            coords_ptrs[2] = (void *)n_coords_compact["z"].as_double_ptr();
-        }
-    } else {
-        // n_coords["x"].to_double_array(n_convert["x"]);
-        // n_coords["y"].to_double_array(n_convert["y"]);
-        CONDUIT_ERROR("coords data type not implemented, found "
-                      << dtype.name());
-    }
+    int coords_dtype = assign_coords_ptrs(coords_ptrs, ndims, n_coords_compact, coordsys_type_labels.second);
 
     int ele_dims[3];
     ele_dims[0] = n_topo["elements/dims/i"].to_value();
