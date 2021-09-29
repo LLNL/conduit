@@ -1466,8 +1466,7 @@ std::string shapetype_to_string(int shapetype) {
 }
 
 template <typename T>
-void copy_and_assign(T *data, int data_length,
-                       conduit::Node &target) {
+void copy_and_assign(T *data, int data_length, conduit::Node &target) {
     T *data_copy = new T[data_length];
     memcpy(data_copy, data, data_length * sizeof(T));
     target.set(data_copy, data_length);
@@ -1495,44 +1494,43 @@ void copy_point_coords(void *coords[3], int ndims, int *dims, int coord_sys,
     }
     for (int i = 0; i < ndims; i++) {
         if (coords[i] != NULL) {
-            copy_and_assign(static_cast<T*>(coords[i]), dims[i], node[labels[i]]);
+            copy_and_assign(static_cast<T *>(coords[i]), dims[i],
+                            node[labels[i]]);
         } else {
             return;
         }
     }
 }
 
-void add_offsets(DBzonelist *zones, conduit::Node &elements){
+void add_offsets(DBzonelist *zones, conduit::Node &elements) {
     int offset = 0;
     int *offset_arr = new int[zones->nzones];
-    for (int i = 0; i < zones->nzones; ++i)
-    {
+    for (int i = 0; i < zones->nzones; ++i) {
         offset_arr[i] = offset;
         offset += zones->shapesize[i];
     }
     elements["offsets"].set(offset_arr, zones->nzones);
 }
 
-void add_shape_info(DBzonelist *zones, conduit::Node &elements){
-    for (int i = 0; i < zones->nshapes; ++i)
-    {
+void add_shape_info(DBzonelist *zones, conduit::Node &elements) {
+    for (int i = 0; i < zones->nshapes; ++i) {
         CONDUIT_ASSERT(zones->shapetype[0] == zones->shapetype[i],
-            "Expected a single shape type, got "
-            << zones->shapetype[0] << " and "
-            << zones->shapetype[i]);
+                       "Expected a single shape type, got "
+                           << zones->shapetype[0] << " and "
+                           << zones->shapetype[i]);
     }
     elements["shape"] = shapetype_to_string(zones->shapetype[0]);
-    copy_and_assign(zones->nodelist, zones->lnodelist, elements["connectivity"]);
-    if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON){
+    copy_and_assign(zones->nodelist, zones->lnodelist,
+                    elements["connectivity"]);
+    if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON) {
         copy_and_assign(zones->shapesize, zones->nzones, elements["sizes"]);
         CONDUIT_ERROR("Polyhedra not yet supported");
     }
-    if (zones->shapetype[0] == DB_ZONETYPE_POLYGON){
+    if (zones->shapetype[0] == DB_ZONETYPE_POLYGON) {
         copy_and_assign(zones->shapesize, zones->nzones, elements["sizes"]);
         add_offsets(zones, elements);
     }
 }
-
 
 void read_ucdmesh_domain(DBfile *file, std::string &mesh_name,
                          conduit::Node &mesh_entry) {
@@ -1546,7 +1544,8 @@ void read_ucdmesh_domain(DBfile *file, std::string &mesh_name,
         CONDUIT_ASSERT(!ucdmesh_ptr->phzones,
                        "Both phzones and zones are defined in mesh "
                            << mesh_name);
-        add_shape_info(ucdmesh_ptr->zones, mesh_entry["topologies"][name]["elements"]);
+        add_shape_info(ucdmesh_ptr->zones,
+                       mesh_entry["topologies"][name]["elements"]);
     } else if (ucdmesh_ptr->phzones) {
         mesh_entry["topologies"][name]["elements"]["shape"] =
             shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
@@ -1685,7 +1684,7 @@ template <typename T>
 void apply_values(void **vals, int num_arrays, int num_elems,
                   conduit::Node &values) {
     for (int i = 0; i < num_arrays; ++i) {
-        copy_and_assign(static_cast<T*>(vals[i]), num_elems, values.append());
+        copy_and_assign(static_cast<T *>(vals[i]), num_elems, values.append());
     }
 }
 
@@ -1815,7 +1814,7 @@ void read_multivar(
 // 'mat_name' must be the name of the material within the file.
 //-----------------------------------------------------------------------------
 void read_material_domain(DBfile *file, std::string &mat_name,
-                               conduit::Node &mesh_entry) {
+                          conduit::Node &mesh_entry) {
     DBmaterial *material_ptr;
     if (!(material_ptr = DBGetMaterial(file, mat_name.c_str())))
         CONDUIT_ERROR("Error fetching variable " << mat_name);
@@ -1823,19 +1822,20 @@ void read_material_domain(DBfile *file, std::string &mat_name,
         material_ptr, &DBFreeMaterial};
     conduit::Node &matset = mesh_entry["matsets"][material_ptr->name];
     matset["topology"] = material_ptr->meshname;
-    for (int i = 0; i < material_ptr->nmat; ++i)
-    {
+    for (int i = 0; i < material_ptr->nmat; ++i) {
         // material names may not be specified
         std::string material_name;
-        if (material_ptr->matnames){
+        if (material_ptr->matnames) {
             material_name = material_ptr->matnames[i];
         } else {
             material_name = std::to_string(material_ptr->matnos[i]);
         }
         matset["material_map"][material_name] = material_ptr->matnos[i];
     }
-    CONDUIT_ASSERT(material_ptr->ndims == 1, "Only single-dimension materials supported, got " << material_ptr->ndims);
-    if (material_ptr->mixlen > 0){
+    CONDUIT_ASSERT(material_ptr->ndims == 1,
+                   "Only single-dimension materials supported, got "
+                       << material_ptr->ndims);
+    if (material_ptr->mixlen > 0) {
         // The struct has volume fractions.
         // In this case, the struct is very confusing.
         // If an entry in the `matlist` is negative, it implies that the
@@ -1848,24 +1848,25 @@ void read_material_domain(DBfile *file, std::string &mat_name,
         std::vector<int> sizes;
         std::vector<int> offsets;
         int curr_offset = 0;
-        for (int i = 0; i < material_ptr->dims[0]; ++i)
-        {
+        for (int i = 0; i < material_ptr->dims[0]; ++i) {
             int matlist_entry = material_ptr->matlist[i];
-            if (matlist_entry >= 0){
+            if (matlist_entry >= 0) {
                 volume_fractions.push_back(1.0);
                 material_ids.push_back(matlist_entry);
                 sizes.push_back(1);
                 offsets.push_back(curr_offset);
                 curr_offset++;
             } else {
-                int mix_id = -(matlist_entry) - 1;
+                int mix_id = -(matlist_entry)-1;
                 int curr_size = 0;
-                while (mix_id >= 0){
+                while (mix_id >= 0) {
                     material_ids.push_back(material_ptr->mix_mat[mix_id]);
                     if (material_ptr->datatype == DB_DOUBLE)
-                        volume_fractions.push_back(static_cast<double *>(material_ptr->mix_vf)[mix_id]);
+                        volume_fractions.push_back(static_cast<double *>(
+                            material_ptr->mix_vf)[mix_id]);
                     if (material_ptr->datatype == DB_FLOAT)
-                        volume_fractions.push_back(static_cast<float *>(material_ptr->mix_vf)[mix_id]);
+                        volume_fractions.push_back(
+                            static_cast<float *>(material_ptr->mix_vf)[mix_id]);
                     curr_size++;
                     mix_id = material_ptr->mix_next[mix_id] - 1;
                 }
@@ -1875,7 +1876,8 @@ void read_material_domain(DBfile *file, std::string &mat_name,
             }
         }
         matset["material_ids"].set(material_ids.data(), material_ids.size());
-        matset["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
+        matset["volume_fractions"].set(volume_fractions.data(),
+                                       volume_fractions.size());
         matset["sizes"].set(sizes.data(), sizes.size());
         matset["offsets"].set(offsets.data(), offsets.size());
     } else {
@@ -1885,8 +1887,7 @@ void read_material_domain(DBfile *file, std::string &mat_name,
         double *volume_fractions = new double[arr_len];
         int *sizes = new int[arr_len];
         int *offsets = new int[arr_len];
-        for (int i = 0; i < arr_len; ++i)
-        {
+        for (int i = 0; i < arr_len; ++i) {
             volume_fractions[i] = 1.0;
             offsets[i] = i;
             sizes[i] = 1;
@@ -1895,7 +1896,6 @@ void read_material_domain(DBfile *file, std::string &mat_name,
         matset["sizes"].set(sizes, arr_len);
         matset["offsets"].set(offsets, arr_len);
     }
-
 }
 
 //-----------------------------------------------------------------------------
@@ -1917,7 +1917,8 @@ void read_multimaterial(
         Node &entry = mesh[i];
         split_silo_path(multimat->matnames[i], dirname, file_path, silo_name);
         if (!file_path.empty()) {
-            read_material_domain(get_or_open(filemap, file_path), silo_name, entry);
+            read_material_domain(get_or_open(filemap, file_path), silo_name,
+                                 entry);
         } else {
             read_material_domain(root_file, silo_name, entry);
         }
@@ -1957,7 +1958,7 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
                         std::make_tuple(root_file_path),
                         std::make_tuple(silofile, &DBClose));
     }
-    DBtoc *toc = DBGetToc(silofile);  // shouldn't be free'd
+    DBtoc *toc = DBGetToc(silofile); // shouldn't be free'd
     // get the multimesh
     CONDUIT_ASSERT(toc->nmultimesh > 0, "No multimesh found in file");
     if (!opts.has_path("name")) {
@@ -1991,7 +1992,8 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Error fetching multivar "
                           << multivar.get()->varnames[i]);
         }
-        if (multivar.get()->mmesh_name != NULL && multivar.get()->mmesh_name == mmesh_name) {
+        if (multivar.get()->mmesh_name != NULL &&
+            multivar.get()->mmesh_name == mmesh_name) {
             CONDUIT_ASSERT(multivar.get()->nvars == multimesh.get()->nblocks,
                            "Domain count mismatch between multivar "
                                << multivar.get()->varnames[i]
@@ -2009,13 +2011,15 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Error fetching multimaterial "
                           << multimat.get()->matnames[i]);
         }
-        if (multimat.get()->mmesh_name != NULL && multimat.get()->mmesh_name == mmesh_name) {
+        if (multimat.get()->mmesh_name != NULL &&
+            multimat.get()->mmesh_name == mmesh_name) {
             CONDUIT_ASSERT(multimat.get()->nmats == multimesh.get()->nblocks,
                            "Domain count mismatch between multimaterial "
                                << multimat.get()->matnames[i]
                                << "and multimesh");
             // read in the multimaterial and add it to the mesh Node
-            read_multimaterial(silofile, filemap, dirname, multimat.get(), mesh);
+            read_multimaterial(silofile, filemap, dirname, multimat.get(),
+                               mesh);
         }
     }
 }
@@ -2042,31 +2046,22 @@ void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
 }
 
 //---------------------------------------------------------------------------//
-DBoptlist *
-silo_generate_state_optlist(const Node &n, int nopts)
-{
+DBoptlist *silo_generate_state_optlist(const Node &n, int nopts) {
     DBoptlist *res = DBMakeOptlist(nopts);
     CONDUIT_ASSERT(res != NULL, "Error creating optlist");
 
-    if (n.has_path("state"))
-    {
+    if (n.has_path("state")) {
         int silo_error = 0;
         const Node &n_state = n["state"];
 
-        if(n.has_path("cycle"))
-        {
+        if (n.has_path("cycle")) {
             int cyc_value = n_state["cycle"].to_int();
-            silo_error += DBAddOption(res,
-                                      DBOPT_CYCLE,
-                                      &cyc_value);
+            silo_error += DBAddOption(res, DBOPT_CYCLE, &cyc_value);
         }
 
-        if(n.has_path("time"))
-        {
-            double time_value =  n_state["time"].to_double();
-            silo_error += DBAddOption(res,
-                                      DBOPT_DTIME,
-                                      &time_value);
+        if (n.has_path("time")) {
+            double time_value = n_state["time"].to_double();
+            silo_error += DBAddOption(res, DBOPT_DTIME, &time_value);
         }
 
         CONDUIT_CHECK_SILO_ERROR(silo_error,
@@ -2076,96 +2071,78 @@ silo_generate_state_optlist(const Node &n, int nopts)
     return res;
 }
 
-std::pair<int, const char * const *> get_coordset_type_labels(const Node &values){
+std::pair<int, const char *const *>
+get_coordset_type_labels(const Node &values) {
 
-    std::string sys = conduit::blueprint::mesh::utils::coordset::coordsys(values);
-    if (sys == "cartesian"){
+    std::string sys =
+        conduit::blueprint::mesh::utils::coordset::coordsys(values);
+    if (sys == "cartesian") {
         return std::make_pair(DB_CARTESIAN, CARTESIAN_LABELS);
-    } else if (sys == "cylindrical"){
+    } else if (sys == "cylindrical") {
         return std::make_pair(DB_CYLINDRICAL, CYLINDRICAL_LABELS);
     } else {
-        CONDUIT_ASSERT(sys == "spherical", "Unrecognized coordinate system " << sys);
+        CONDUIT_ASSERT(sys == "spherical",
+                       "Unrecognized coordinate system " << sys);
         return std::make_pair(DB_SPHERICAL, SPHERICAL_LABELS);
     }
 }
 
 //---------------------------------------------------------------------------//
-void
-silo_write_field(DBfile *dbfile,
-                 const std::string &var_name,
-                 const Node &n_var,
-                 Node &n_mesh_info)
-{
+void silo_write_field(DBfile *dbfile, const std::string &var_name,
+                      const Node &n_var, Node &n_mesh_info) {
 
-
-    if (!n_var.has_path("topology"))
-    {
-        CONDUIT_ERROR( "Missing linked topology! "
-                        << "fields/"
-                        << var_name
-                        << "/topology");
+    if (!n_var.has_path("topology")) {
+        CONDUIT_ERROR("Missing linked topology! "
+                      << "fields/" << var_name << "/topology");
     }
 
     std::vector<std::string> topos;
-    if(n_var["topology"].number_of_children() > 0)
-    {
+    if (n_var["topology"].number_of_children() > 0) {
         // NOTE: this case doesn't seem to make sense WRT the blueprint web doc.
         NodeConstIterator fld_topos_itr = n_var["topology"].children();
-        while(fld_topos_itr.has_next())
-        {
+        while (fld_topos_itr.has_next()) {
             std::string topo_name = fld_topos_itr.next().as_string();
             topos.push_back(topo_name);
         }
-    }
-    else
-    {
+    } else {
         topos.push_back(n_var["topology"].as_string());
     }
 
-    for(size_t i = 0; i < topos.size(); ++i)
-    {
+    for (size_t i = 0; i < topos.size(); ++i) {
         const std::string &topo_name = topos[i];
 
-        if(!n_mesh_info.has_path(topo_name))
-        {
-            CONDUIT_ERROR( "Invalid linked topology! "
-                            << "fields/"
-                            << var_name << "/topology: "
-                            << topo_name);
+        if (!n_mesh_info.has_path(topo_name)) {
+            CONDUIT_ERROR("Invalid linked topology! "
+                          << "fields/" << var_name
+                          << "/topology: " << topo_name);
         }
 
         std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
         int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
-        int num_pts   = n_mesh_info[topo_name]["num_pts"].to_value();;
+        int num_pts = n_mesh_info[topo_name]["num_pts"].to_value();
+        ;
 
-
-        int centering  = 0;
+        int centering = 0;
         int num_values = 0;
 
-        if (!n_var.has_path("association"))
-        {
-            CONDUIT_ERROR( "Missing association! "
-                           << "fields/"
-                           << var_name << "/association");
+        if (!n_var.has_path("association")) {
+            CONDUIT_ERROR("Missing association! "
+                          << "fields/" << var_name << "/association");
         }
 
-        if (n_var["association"].as_string() == "element")
-        {
-            centering  = DB_ZONECENT;
+        if (n_var["association"].as_string() == "element") {
+            centering = DB_ZONECENT;
             num_values = num_elems;
         }
 
-        if (n_var["association"].as_string() == "vertex")
-        {
-            centering  = DB_NODECENT;
+        if (n_var["association"].as_string() == "vertex") {
+            centering = DB_NODECENT;
             num_values = num_pts;
         }
 
-        if (!n_var.has_path("values"))
-        {
-            CONDUIT_ERROR( "Missing field data ! "
-                           << "fields/"
-                           << var_name << "/values");
+        if (!n_var.has_path("values")) {
+            CONDUIT_ERROR("Missing field data ! "
+                          << "fields/" << var_name << "/values");
         }
 
         // we compact to support a strided array cases
@@ -2178,72 +2155,46 @@ silo_write_field(DBfile *dbfile,
 
         DataType dtype = n_var["values"].dtype();
 
-        if( dtype.is_float() )
-        {
+        if (dtype.is_float()) {
             vals_type = DB_FLOAT;
-            vals_ptr = (void*)n_values.as_float_ptr();
-        }
-        else if( dtype.is_double() )
-        {
+            vals_ptr = (void *)n_values.as_float_ptr();
+        } else if (dtype.is_double()) {
             vals_type = DB_DOUBLE;
-            vals_ptr = (void*)n_values.as_double_ptr();
-        }
-        else if( dtype.is_int() )
-        {
+            vals_ptr = (void *)n_values.as_double_ptr();
+        } else if (dtype.is_int()) {
             vals_type = DB_INT;
-            vals_ptr = (void*)n_values.as_int_ptr();
-        }
-        else if( dtype.is_long() )
-        {
+            vals_ptr = (void *)n_values.as_int_ptr();
+        } else if (dtype.is_long()) {
             vals_type = DB_LONG;
-            vals_ptr = (void*)n_values.as_long_ptr();
-        }
-        else if( dtype.is_long_long() )
-        {
+            vals_ptr = (void *)n_values.as_long_ptr();
+        } else if (dtype.is_long_long()) {
             vals_type = DB_LONG_LONG;
-            vals_ptr = (void*)n_values.as_long_long_ptr();
-        }
-        else if( dtype.is_char() )
-        {
+            vals_ptr = (void *)n_values.as_long_long_ptr();
+        } else if (dtype.is_char()) {
             vals_type = DB_CHAR;
-            vals_ptr = (void*)n_values.as_char_ptr();
-        }
-        else if( dtype.is_short() )
-        {
+            vals_ptr = (void *)n_values.as_char_ptr();
+        } else if (dtype.is_short()) {
             vals_type = DB_SHORT;
-            vals_ptr = (void*)n_values.as_short_ptr();
-        }
-        else
-        {
+            vals_ptr = (void *)n_values.as_short_ptr();
+        } else {
             // skip the field if we don't support its type
-            CONDUIT_INFO( "skipping field "
-                           << var_name
-                           << ", since its type is not implemented, found "
-                           << dtype.name() );
+            CONDUIT_INFO("skipping field "
+                         << var_name
+                         << ", since its type is not implemented, found "
+                         << dtype.name());
             continue;
         }
 
         int silo_error = 0;
 
-        if(mesh_type == "unstructured")
-        {
-            silo_error = DBPutUcdvar1(dbfile,
-                                      var_name.c_str(),
-                                      topo_name.c_str(),
-                                      vals_ptr,
-                                      num_values,
-                                      NULL,
-                                      0,
-                                      vals_type,
-                                      centering,
-                                      NULL);
-        }
-        else if(mesh_type == "rectilinear" ||
-                mesh_type == "uniform" ||
-                mesh_type == "structured")
-        {
-            int ele_dims[3] = {0,0,0};
-            int pts_dims[3] = {1,1,1};
+        if (mesh_type == "unstructured") {
+            silo_error = DBPutUcdvar1(dbfile, var_name.c_str(),
+                                      topo_name.c_str(), vals_ptr, num_values,
+                                      NULL, 0, vals_type, centering, NULL);
+        } else if (mesh_type == "rectilinear" || mesh_type == "uniform" ||
+                   mesh_type == "structured") {
+            int ele_dims[3] = {0, 0, 0};
+            int pts_dims[3] = {1, 1, 1};
 
             int num_dims = 2;
 
@@ -2253,67 +2204,52 @@ silo_write_field(DBfile *dbfile,
             pts_dims[0] = ele_dims[0] + 1;
             pts_dims[1] = ele_dims[1] + 1;
 
-            if(n_mesh_info[topo_name]["elements"].has_path("k"))
-            {
+            if (n_mesh_info[topo_name]["elements"].has_path("k")) {
                 num_dims = 3;
                 ele_dims[2] = n_mesh_info[topo_name]["elements/k"].value();
                 pts_dims[2] = ele_dims[2] + 1;
             }
 
-
             int *dims = ele_dims;
-            if(centering == DB_NODECENT)
-            {
+            if (centering == DB_NODECENT) {
                 dims = pts_dims;
             }
 
-            silo_error = DBPutQuadvar1(dbfile,
-                                       var_name.c_str(),
-                                       topo_name.c_str(),
-                                       vals_ptr,
-                                       dims,
-                                       num_dims,
-                                       NULL,
-                                       0,
-                                       vals_type,
-                                       centering,
-                                       NULL);
-        }
-        else if( mesh_type == "points")
-        {
+            silo_error = DBPutQuadvar1(
+                dbfile, var_name.c_str(), topo_name.c_str(), vals_ptr, dims,
+                num_dims, NULL, 0, vals_type, centering, NULL);
+        } else if (mesh_type == "points") {
 
-            silo_error = DBPutPointvar1(dbfile,            // dbfile Database file pointer.
+            silo_error = DBPutPointvar1(dbfile, // dbfile Database file pointer.
                                         var_name.c_str(),  // variable name
                                         topo_name.c_str(), // mesh name
                                         vals_ptr,          // data values
-                                        num_pts,           // Number of elements (points).
-                                        vals_type,         // Datatype of the variable.
+                                        num_pts, // Number of elements (points).
+                                        vals_type, // Datatype of the variable.
                                         NULL);
-        }
-        else
-        {
-            CONDUIT_ERROR( "only DBPutQuadvar1 + DBPutUcdvar1 var are supported");
+        } else {
+            CONDUIT_ERROR(
+                "only DBPutQuadvar1 + DBPutUcdvar1 var are supported");
         }
 
         CONDUIT_CHECK_SILO_ERROR(silo_error,
                                  " after creating field " << var_name);
-    }// end field topologies itr while
+    } // end field topologies itr while
 }
 
 //---------------------------------------------------------------------------//
-void
-silo_write_pointmesh(DBfile *dbfile,
-                     const std::string &topo_name,
-                     const Node &n_coords,
-                     DBoptlist *state_optlist,
-                     Node &n_mesh_info)
-{
+void silo_write_pointmesh(DBfile *dbfile, const std::string &topo_name,
+                          const Node &n_coords, DBoptlist *state_optlist,
+                          Node &n_mesh_info) {
     // expects explicit coords
     const Node &n_coord_vals = n_coords["values"];
 
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    std::pair<int, const char * const *> coordsys_type_labels = get_coordset_type_labels(n_coords);
-    CONDUIT_CHECK_SILO_ERROR(DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first), "");
+    std::pair<int, const char *const *> coordsys_type_labels =
+        get_coordset_type_labels(n_coords);
+    CONDUIT_CHECK_SILO_ERROR(
+        DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first),
+        "");
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
@@ -2330,55 +2266,43 @@ silo_write_pointmesh(DBfile *dbfile,
     // assume x,y,z are all the same type
     DataType dtype = n_coords_compact["x"].dtype();
 
-    if( dtype.is_float() )
-    {
+    if (dtype.is_float()) {
         coords_dtype = DB_FLOAT;
-        coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
-        coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
-        if(ndims == 3)
-        {
-            coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
+        coords_ptrs[0] = (void *)n_coords_compact["x"].as_float_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact["y"].as_float_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact["z"].as_float_ptr();
         }
-    }
-    else if( dtype.is_double() )
+    } else if (dtype.is_double())
 
     {
         coords_dtype = DB_DOUBLE;
-        coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
-        coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
-        if(ndims == 3)
-        {
-            coords_ptrs[2] = (void*)n_coords_compact["z"].as_double_ptr();
+        coords_ptrs[0] = (void *)n_coords_compact["x"].as_double_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact["y"].as_double_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact["z"].as_double_ptr();
         }
-    }
-    else
-    {
+    } else {
         // n_coords["x"].to_double_array(n_convert["x"]);
         // n_coords["y"].to_double_array(n_convert["y"]);
-        CONDUIT_ERROR("coords data type not implemented, found " <<
-                      dtype.name());
+        CONDUIT_ERROR("coords data type not implemented, found "
+                      << dtype.name());
     }
 
-
-    int silo_error = DBPutPointmesh(dbfile, // silo file ptr
+    int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
                                     topo_name.c_str(), // mesh name
-                                    ndims, // num_dims
-                                    coords_ptrs, // coords values
-                                    num_pts, // num eles = num pts
-                                    coords_dtype, // type of data array
-                                    state_optlist); // opt list
+                                    ndims,             // num_dims
+                                    coords_ptrs,       // coords values
+                                    num_pts,           // num eles = num pts
+                                    coords_dtype,      // type of data array
+                                    state_optlist);    // opt list
 
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " after saving DBPutPointmesh");
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " after saving DBPutPointmesh");
 }
 
 //---------------------------------------------------------------------------//
-void
-silo_write_ucd_zonelist(DBfile *dbfile,
-                        const std::string &topo_name,
-                        const Node &n_topo,
-                        Node &n_mesh_info)
-{
+void silo_write_ucd_zonelist(DBfile *dbfile, const std::string &topo_name,
+                             const Node &n_topo, Node &n_mesh_info) {
     Node ucd_zlist;
 
     index_t num_shapes = 0;
@@ -2391,39 +2315,29 @@ silo_write_ucd_zonelist(DBfile *dbfile,
 
     bool shape_list = true;
 
-    if(n_elements.dtype().is_object())
-    {
+    if (n_elements.dtype().is_object()) {
         // simple path case
         num_shapes = 1;
-    }
-    else if(n_elements.dtype().is_list())
-    {
+    } else if (n_elements.dtype().is_list()) {
         shape_list = false;
         num_shapes = n_elements.number_of_children();
-    }
-    else
-    {
+    } else {
         CONDUIT_ERROR("Invalid elements for 'unstructured' case");
     }
 
-
     int *shapetype = ucd_zlist["shapetype"].value();
     int *shapesize = ucd_zlist["shapesize"].value();
-    int *shapecnt  = ucd_zlist["shapecnt"].value();
+    int *shapecnt = ucd_zlist["shapecnt"].value();
 
     int total_num_elems = 0;
-
-
 
     const Node *shape_block = &n_elements;
     Node n_conn;
 
-    for(index_t i=0;i < num_shapes;i++)
-    {
-        if(shape_list)
-        {
+    for (index_t i = 0; i < num_shapes; i++) {
+        if (shape_list) {
             // TODO: This is wrong, re work silo logic post bp verify merge
-            //const Node *shape_block = n_elements.child_ptr(i);
+            // const Node *shape_block = n_elements.child_ptr(i);
         }
 
         std::string topo_shape = shape_block->fetch("shape").as_string();
@@ -2431,108 +2345,86 @@ silo_write_ucd_zonelist(DBfile *dbfile,
         const Node &n_mesh_conn = shape_block->fetch("connectivity");
 
         // convert to compact ints ...
-        if(shape_list)
-        {
+        if (shape_list) {
             n_mesh_conn.compact_to(n_conn.append());
-        }
-        else
-        {
+        } else {
             n_mesh_conn.compact_to(n_conn);
         }
 
-
-        if( topo_shape == "quad")
-        {
+        if (topo_shape == "quad") {
             // TODO: check for explicit # of elems
-            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 4;
+            int num_elems = n_mesh_conn.dtype().number_of_elements() / 4;
             shapetype[i] = DB_ZONETYPE_QUAD;
             shapesize[i] = 4;
-            shapecnt[i]  = num_elems;
-            total_num_elems  += num_elems;
-
-        }
-        else  if( topo_shape == "tri")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems  = n_mesh_conn.dtype().number_of_elements() / 3;
-            shapetype[i]   = DB_ZONETYPE_TRIANGLE;
-            shapesize[i]   = 3;
-            shapecnt[i]    = num_elems;
+            shapecnt[i] = num_elems;
             total_num_elems += num_elems;
-        }
-        else if( topo_shape == "hex")
-        {
+
+        } else if (topo_shape == "tri") {
             // TODO: check for explicit # of elems
-            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 8;
+            int num_elems = n_mesh_conn.dtype().number_of_elements() / 3;
+            shapetype[i] = DB_ZONETYPE_TRIANGLE;
+            shapesize[i] = 3;
+            shapecnt[i] = num_elems;
+            total_num_elems += num_elems;
+        } else if (topo_shape == "hex") {
+            // TODO: check for explicit # of elems
+            int num_elems = n_mesh_conn.dtype().number_of_elements() / 8;
             shapetype[i] = DB_ZONETYPE_HEX;
             shapesize[i] = 8;
-            shapecnt[i]  = num_elems;
-            total_num_elems  += num_elems;
+            shapecnt[i] = num_elems;
+            total_num_elems += num_elems;
 
-        }
-        else  if( topo_shape == "tet")
-        {
+        } else if (topo_shape == "tet") {
             // TODO: check for explicit # of elems
-            int num_elems  = n_mesh_conn.dtype().number_of_elements() / 4;
-            shapetype[i]   = DB_ZONETYPE_TET;
-            shapesize[i]   = 4;
-            shapecnt[i]    = num_elems;
+            int num_elems = n_mesh_conn.dtype().number_of_elements() / 4;
+            shapetype[i] = DB_ZONETYPE_TET;
+            shapesize[i] = 4;
+            shapecnt[i] = num_elems;
+            total_num_elems += num_elems;
+        } else if (topo_shape == "line") {
+            // TODO: check for explicit # of elems
+            int num_elems = n_mesh_conn.dtype().number_of_elements() / 2;
+            shapetype[i] = DB_ZONETYPE_BEAM;
+            shapesize[i] = 2;
+            shapecnt[i] = num_elems;
             total_num_elems += num_elems;
         }
-        else  if( topo_shape == "line")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems  = n_mesh_conn.dtype().number_of_elements() / 2;
-            shapetype[i]   = DB_ZONETYPE_BEAM;
-            shapesize[i]   = 2;
-            shapecnt[i]    = num_elems;
-            total_num_elems += num_elems;
-        }
-
     }
 
     // Final Compaction
     Node n_conn_final;
     n_conn.compact_to(n_conn_final);
 
-    int  conn_len = n_conn_final.total_bytes_compact() / sizeof(int);
-    int *conn_ptr = (int*) n_conn_final.data_ptr();
-
+    int conn_len = n_conn_final.total_bytes_compact() / sizeof(int);
+    int *conn_ptr = (int *)n_conn_final.data_ptr();
 
     n_mesh_info[topo_name]["num_elems"].set(total_num_elems);
 
     std::string zlist_name = topo_name + "_connectivity";
 
-    int silo_error = DBPutZonelist2(dbfile,  // silo file
-                                    zlist_name.c_str() ,  // silo obj name
-                                    total_num_elems,  // number of elements
-                                    2,  // spatial dims
-                                    conn_ptr,  // connectivity array
-                                    conn_len, // len of connectivity array
-                                    0,  // base offset
-                                    0,  // # ghosts low
-                                    0,  // # ghosts high
-                                    shapetype, // list of shapes ids
-                                    shapesize, // number of points per shape id
-                                    shapecnt,  // number of elements each shape id is used for
-                                    num_shapes,  // number of shapes ids
-                                    NULL); // optlist
+    int silo_error =
+        DBPutZonelist2(dbfile,             // silo file
+                       zlist_name.c_str(), // silo obj name
+                       total_num_elems,    // number of elements
+                       2,                  // spatial dims
+                       conn_ptr,           // connectivity array
+                       conn_len,           // len of connectivity array
+                       0,                  // base offset
+                       0,                  // # ghosts low
+                       0,                  // # ghosts high
+                       shapetype,          // list of shapes ids
+                       shapesize,          // number of points per shape id
+                       shapecnt, // number of elements each shape id is used for
+                       num_shapes, // number of shapes ids
+                       NULL);      // optlist
 
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " after saving ucd quad topology");
-
-
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " after saving ucd quad topology");
 }
 
-
 //---------------------------------------------------------------------------//
-void
-silo_write_ucd_mesh(DBfile *dbfile,
-                    const std::string &topo_name,
-                    const Node &n_coords,
-                    DBoptlist *state_optlist,
-                    Node &n_mesh_info)
-{
+void silo_write_ucd_mesh(DBfile *dbfile, const std::string &topo_name,
+                         const Node &n_coords, DBoptlist *state_optlist,
+                         Node &n_mesh_info) {
     // also support interleaved:
     // xy, xyz
     // convert these to separate coord arrays for silo
@@ -2540,8 +2432,11 @@ silo_write_ucd_mesh(DBfile *dbfile,
 
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    std::pair<int, const char * const *> coordsys_type_labels = get_coordset_type_labels(n_coords);
-    CONDUIT_CHECK_SILO_ERROR(DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first), "");
+    std::pair<int, const char *const *> coordsys_type_labels =
+        get_coordset_type_labels(n_coords);
+    CONDUIT_CHECK_SILO_ERROR(
+        DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first),
+        "");
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
@@ -2558,65 +2453,52 @@ silo_write_ucd_mesh(DBfile *dbfile,
     // assume x,y,z are all the same type
     DataType dtype = n_coords_compact["x"].dtype();
 
-    if( dtype.is_float() )
-    {
+    if (dtype.is_float()) {
         coords_type = DB_FLOAT;
-        coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
-        coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
-        if(ndims == 3)
-        {
-            coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
+        coords_ptrs[0] = (void *)n_coords_compact["x"].as_float_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact["y"].as_float_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact["z"].as_float_ptr();
         }
-    }
-    else if( dtype.is_double() )
+    } else if (dtype.is_double())
 
     {
         coords_type = DB_DOUBLE;
-        coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
-        coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
-        if(ndims == 3)
-        {
-            coords_ptrs[2] = (void*)n_coords_compact["z"].as_double_ptr();
+        coords_ptrs[0] = (void *)n_coords_compact["x"].as_double_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact["y"].as_double_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact["z"].as_double_ptr();
         }
-    }
-    else
-    {
+    } else {
         // n_coords["x"].to_double_array(n_convert["x"]);
         // n_coords["y"].to_double_array(n_convert["y"]);
-        CONDUIT_ERROR("coords data type not implemented, found " <<
-                      dtype.name());
+        CONDUIT_ERROR("coords data type not implemented, found "
+                      << dtype.name());
     }
 
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
-    std::string zlist_name =  topo_name + "_connectivity";
+    std::string zlist_name = topo_name + "_connectivity";
 
-    int silo_error = DBPutUcdmesh(dbfile, // silo file ptr
-                                  topo_name.c_str(), // mesh name
-                                  ndims, // number of dims
+    int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
+                                  topo_name.c_str(),           // mesh name
+                                  ndims,                       // number of dims
                                   coordsys_type_labels.second, // coord names
-                                  coords_ptrs, // coords values
-                                  num_pts,  // number of points
-                                  num_elems,  // number of elements
+                                  coords_ptrs,                 // coords values
+                                  num_pts,            // number of points
+                                  num_elems,          // number of elements
                                   zlist_name.c_str(), // zone list name
-                                  0, // face list names
-                                  coords_type, // type of data array
-                                  state_optlist); // opt list
+                                  0,                  // face list names
+                                  coords_type,        // type of data array
+                                  state_optlist);     // opt list
 
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " DBPutUcdmesh");
-
-
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutUcdmesh");
 }
 
 //---------------------------------------------------------------------------//
-void
-silo_write_quad_rect_mesh(DBfile *dbfile,
-                          const std::string &topo_name,
-                          const Node &n_coords,
-                          DBoptlist *state_optlist,
-                          Node &n_mesh_info)
-{
+void silo_write_quad_rect_mesh(DBfile *dbfile, const std::string &topo_name,
+                               const Node &n_coords, DBoptlist *state_optlist,
+                               Node &n_mesh_info) {
     // TODO: also support interleaved:
     // xy, xyz
     // convert these to separate coord arrays for silo
@@ -2624,36 +2506,35 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
 
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    std::pair<int, const char * const *> coordsys_type_labels = get_coordset_type_labels(n_coords);
-    CONDUIT_CHECK_SILO_ERROR(DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first), "");
-
+    std::pair<int, const char *const *> coordsys_type_labels =
+        get_coordset_type_labels(n_coords);
+    CONDUIT_CHECK_SILO_ERROR(
+        DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first),
+        "");
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
     n_coord_vals.compact_to(n_coords_compact);
-
 
     int pts_dims[3];
     pts_dims[0] = n_coords_compact["x"].dtype().number_of_elements();
     pts_dims[1] = n_coords_compact["y"].dtype().number_of_elements();
     pts_dims[2] = 1;
 
-    int num_pts = pts_dims[0]* pts_dims[1];
-    int num_elems = (pts_dims[0]-1)*(pts_dims[1]-1);
-    if(ndims == 3)
-    {
+    int num_pts = pts_dims[0] * pts_dims[1];
+    int num_elems = (pts_dims[0] - 1) * (pts_dims[1] - 1);
+    if (ndims == 3) {
         pts_dims[2] = n_coords_compact["z"].dtype().number_of_elements();
-        num_pts   = num_pts * pts_dims[2];
-        num_elems = num_elems * (pts_dims[2]-1);
+        num_pts = num_pts * pts_dims[2];
+        num_elems = num_elems * (pts_dims[2] - 1);
     }
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
     n_mesh_info[topo_name]["num_elems"].set(num_elems);
-    n_mesh_info[topo_name]["elements/i"] = pts_dims[0]-1;
-    n_mesh_info[topo_name]["elements/j"] = pts_dims[1]-1;
-    if(ndims == 3)
-    {
-        n_mesh_info[topo_name]["elements/k"] = pts_dims[2]-1;
+    n_mesh_info[topo_name]["elements/i"] = pts_dims[0] - 1;
+    n_mesh_info[topo_name]["elements/j"] = pts_dims[1] - 1;
+    if (ndims == 3) {
+        n_mesh_info[topo_name]["elements/k"] = pts_dims[2] - 1;
     }
 
     int coords_dtype = 0;
@@ -2662,56 +2543,45 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
     // assume x,y,z are all the same type
     DataType dtype = n_coords_compact["x"].dtype();
 
-    if( dtype.is_float() )
-    {
+    if (dtype.is_float()) {
         coords_dtype = DB_FLOAT;
-        coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
-        coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
-        if(ndims == 3)
-        {
-            coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
+        coords_ptrs[0] = (void *)n_coords_compact["x"].as_float_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact["y"].as_float_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact["z"].as_float_ptr();
         }
-    }
-    else if( dtype.is_double() )
-    {
+    } else if (dtype.is_double()) {
         coords_dtype = DB_DOUBLE;
-        coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
-        coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
-        if(ndims == 3)
-        {
-            coords_ptrs[2] = (void*)n_coords_compact["z"].as_double_ptr();
+        coords_ptrs[0] = (void *)n_coords_compact["x"].as_double_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact["y"].as_double_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact["z"].as_double_ptr();
         }
-    }
-    else
-    {
+    } else {
         // n_coords["x"].to_double_array(n_convert["x"]);
         // n_coords["y"].to_double_array(n_convert["y"]);
-        CONDUIT_ERROR("coords data type not implemented, found " <<
-                      dtype.name());
+        CONDUIT_ERROR("coords data type not implemented, found "
+                      << dtype.name());
     }
 
-    int silo_error = DBPutQuadmesh(dbfile, // silo file ptr
-                                   topo_name.c_str(), // mesh name
-                                   coordsys_type_labels.second, // coord names
-                                   coords_ptrs, // coords values
-                                   pts_dims, //dims vals
-                                   ndims, // number of dims
-                                   coords_dtype, // type of data array
-                                   DB_COLLINEAR, // DB_COLLINEAR or DB_NONCOLLINEAR
-                                   state_optlist); // opt list
+    int silo_error =
+        DBPutQuadmesh(dbfile,                      // silo file ptr
+                      topo_name.c_str(),           // mesh name
+                      coordsys_type_labels.second, // coord names
+                      coords_ptrs,                 // coords values
+                      pts_dims,                    // dims vals
+                      ndims,                       // number of dims
+                      coords_dtype,                // type of data array
+                      DB_COLLINEAR,   // DB_COLLINEAR or DB_NONCOLLINEAR
+                      state_optlist); // opt list
 
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " DBPutUcdmesh");
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutUcdmesh");
 }
 
 //---------------------------------------------------------------------------//
-void
-silo_write_quad_uniform_mesh(DBfile *dbfile,
-                             const std::string &topo_name,
-                             const Node &n_coords,
-                             DBoptlist *state_optlist,
-                             Node &n_mesh_info)
-{
+void silo_write_quad_uniform_mesh(DBfile *dbfile, const std::string &topo_name,
+                                  const Node &n_coords,
+                                  DBoptlist *state_optlist, Node &n_mesh_info) {
     // TODO: USE XFORM expand uniform coords to rect-style
 
     // silo doesn't have a direct path for a uniform mesh
@@ -2730,144 +2600,115 @@ silo_write_quad_uniform_mesh(DBfile *dbfile,
     float64 dy = 1;
     float64 dz = 1;
 
-    if(!n_coords.has_path("dims"))
-    {
+    if (!n_coords.has_path("dims")) {
         CONDUIT_ERROR("uniform mesh missing 'dims'")
     }
 
     const Node &n_dims = n_coords["dims"];
 
-    if( n_dims.has_path("i") )
-    {
+    if (n_dims.has_path("i")) {
         npts_x = n_dims["i"].to_value();
     }
 
-    if( n_dims.has_path("j") )
-    {
+    if (n_dims.has_path("j")) {
         npts_y = n_dims["j"].to_value();
     }
 
-    if( n_dims.has_path("k") )
-    {
+    if (n_dims.has_path("k")) {
         npts_z = n_dims["k"].to_value();
     }
 
-
-    if(n_coords.has_path("origin"))
-    {
+    if (n_coords.has_path("origin")) {
         const Node &n_origin = n_coords["origin"];
 
-        if( n_origin.has_path("x") )
-        {
+        if (n_origin.has_path("x")) {
             x0 = n_origin["x"].to_value();
         }
 
-        if( n_origin.has_path("y") )
-        {
+        if (n_origin.has_path("y")) {
             y0 = n_origin["y"].to_value();
         }
 
-        if( n_origin.has_path("z") )
-        {
+        if (n_origin.has_path("z")) {
             z0 = n_origin["z"].to_value();
         }
     }
 
-    if(n_coords.has_path("spacing"))
-    {
+    if (n_coords.has_path("spacing")) {
         const Node &n_spacing = n_coords["spacing"];
 
-        if( n_spacing.has_path("dx") )
-        {
+        if (n_spacing.has_path("dx")) {
             dx = n_spacing["dx"].to_value();
         }
 
-        if( n_spacing.has_path("dy") )
-        {
+        if (n_spacing.has_path("dy")) {
             dy = n_spacing["dy"].to_value();
         }
 
-        if( n_spacing.has_path("dz") )
-        {
+        if (n_spacing.has_path("dz")) {
             dz = n_spacing["dz"].to_value();
         }
     }
 
     Node n_rect_coords;
 
-
     n_rect_coords["type"] = "rectilinear";
     Node &n_rect_coord_vals = n_rect_coords["values"];
     n_rect_coord_vals["x"].set(DataType::float64(npts_x));
     n_rect_coord_vals["y"].set(DataType::float64(npts_y));
 
-    if(npts_z > 1)
-    {
+    if (npts_z > 1) {
         n_rect_coord_vals["z"].set(DataType::float64(npts_z));
     }
-
 
     float64 *x_coords_ptr = n_rect_coord_vals["x"].value();
     float64 *y_coords_ptr = n_rect_coord_vals["y"].value();
     float64 *z_coords_ptr = NULL;
 
-    if(npts_z > 1)
-    {
+    if (npts_z > 1) {
         z_coords_ptr = n_rect_coord_vals["z"].value();
     }
 
     float64 cv = x0;
-    for(index_t i=0; i < npts_x; i++)
-    {
+    for (index_t i = 0; i < npts_x; i++) {
         x_coords_ptr[i] = cv;
         cv += dx;
     }
 
     cv = y0;
-    for(index_t i=0; i < npts_y; i++)
-    {
+    for (index_t i = 0; i < npts_y; i++) {
         y_coords_ptr[i] = cv;
         cv += dy;
     }
 
-    if(npts_z > 1)
-    {
+    if (npts_z > 1) {
         cv = z0;
-        for(index_t i=0; i < npts_z; i++)
-        {
+        for (index_t i = 0; i < npts_z; i++) {
             z_coords_ptr[i] = cv;
             cv += dz;
         }
     }
 
-
-    silo_write_quad_rect_mesh(dbfile,
-                              topo_name,
-                              n_rect_coords,
-                              state_optlist,
+    silo_write_quad_rect_mesh(dbfile, topo_name, n_rect_coords, state_optlist,
                               n_mesh_info);
-
 }
 
-
 //---------------------------------------------------------------------------//
-void
-silo_write_structured_mesh(DBfile *dbfile,
-                           const std::string &topo_name,
-                           const Node &n_topo,
-                           const Node &n_coords,
-                           DBoptlist *state_optlist,
-                           Node &n_mesh_info)
-{
+void silo_write_structured_mesh(DBfile *dbfile, const std::string &topo_name,
+                                const Node &n_topo, const Node &n_coords,
+                                DBoptlist *state_optlist, Node &n_mesh_info) {
     // also support interleaved:
     // xy, xyz
     // convert these to separate coord arrays for silo
-    const Node& n_coord_vals = n_coords["values"];
+    const Node &n_coord_vals = n_coords["values"];
 
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    std::pair<int, const char * const *> coordsys_type_labels = get_coordset_type_labels(n_coords);
-    CONDUIT_CHECK_SILO_ERROR(DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first), "");
+    std::pair<int, const char *const *> coordsys_type_labels =
+        get_coordset_type_labels(n_coords);
+    CONDUIT_CHECK_SILO_ERROR(
+        DBAddOption(state_optlist, DBOPT_COORDSYS, &coordsys_type_labels.first),
+        "");
 
     // blueprint::transmute(n_coord_vals,,n_coords_compact)
 
@@ -2886,33 +2727,27 @@ silo_write_structured_mesh(DBfile *dbfile,
     // assume x,y,z are all the same type
     DataType dtype = n_coords_compact["x"].dtype();
 
-    if( dtype.is_float() )
-    {
+    if (dtype.is_float()) {
         coords_dtype = DB_FLOAT;
-        coords_ptrs[0] = (void*)n_coords_compact["x"].as_float_ptr();
-        coords_ptrs[1] = (void*)n_coords_compact["y"].as_float_ptr();
-        if(ndims == 3)
-        {
-            coords_ptrs[2] = (void*)n_coords_compact["z"].as_float_ptr();
+        coords_ptrs[0] = (void *)n_coords_compact["x"].as_float_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact["y"].as_float_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact["z"].as_float_ptr();
         }
-    }
-    else if( dtype.is_double() )
+    } else if (dtype.is_double())
 
     {
         coords_dtype = DB_DOUBLE;
-        coords_ptrs[0] = (void*)n_coords_compact["x"].as_double_ptr();
-        coords_ptrs[1] = (void*)n_coords_compact["y"].as_double_ptr();
-        if(ndims == 3)
-        {
-            coords_ptrs[2] = (void*)n_coords_compact["z"].as_double_ptr();
+        coords_ptrs[0] = (void *)n_coords_compact["x"].as_double_ptr();
+        coords_ptrs[1] = (void *)n_coords_compact["y"].as_double_ptr();
+        if (ndims == 3) {
+            coords_ptrs[2] = (void *)n_coords_compact["z"].as_double_ptr();
         }
-    }
-    else
-    {
+    } else {
         // n_coords["x"].to_double_array(n_convert["x"]);
         // n_coords["y"].to_double_array(n_convert["y"]);
-        CONDUIT_ERROR("coords data type not implemented, found " <<
-                      dtype.name());
+        CONDUIT_ERROR("coords data type not implemented, found "
+                      << dtype.name());
     }
 
     int ele_dims[3];
@@ -2920,10 +2755,9 @@ silo_write_structured_mesh(DBfile *dbfile,
     ele_dims[1] = n_topo["elements/dims/j"].to_value();
     ele_dims[2] = 0;
 
-    index_t num_elems =  ele_dims[0]* ele_dims[1];
+    index_t num_elems = ele_dims[0] * ele_dims[1];
 
-    if( n_topo["elements/dims"].has_path("k") )
-    {
+    if (n_topo["elements/dims"].has_path("k")) {
         ele_dims[2] = n_topo["elements/dims/k"].to_value();
         num_elems *= ele_dims[2];
     }
@@ -2931,8 +2765,8 @@ silo_write_structured_mesh(DBfile *dbfile,
     // silo needs the node dims to define a structured grid
     int pts_dims[3];
 
-    pts_dims[0] = ele_dims[0]+1;
-    pts_dims[1] = ele_dims[1]+1;
+    pts_dims[0] = ele_dims[0] + 1;
+    pts_dims[1] = ele_dims[1] + 1;
     pts_dims[2] = 1;
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
@@ -2940,58 +2774,47 @@ silo_write_structured_mesh(DBfile *dbfile,
     n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
     n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
 
-
-    if(ndims == 3)
-    {
+    if (ndims == 3) {
         n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
-        pts_dims[2] = ele_dims[2]+1;
+        pts_dims[2] = ele_dims[2] + 1;
     }
 
+    int silo_error =
+        DBPutQuadmesh(dbfile,                      // silo file ptr
+                      topo_name.c_str(),           // mesh name
+                      coordsys_type_labels.second, // coord names
+                      coords_ptrs,                 // coords values
+                      pts_dims,                    // dims vals
+                      ndims,                       // number of dims
+                      coords_dtype,                // type of data array
+                      DB_NONCOLLINEAR, // DB_COLLINEAR or DB_NONCOLLINEAR
+                      state_optlist);  // opt list
 
-    int silo_error = DBPutQuadmesh(dbfile, // silo file ptr
-                                   topo_name.c_str(), // mesh name
-                                   coordsys_type_labels.second, // coord names
-                                   coords_ptrs, // coords values
-                                   pts_dims, //dims vals
-                                   ndims, // number of dims
-                                   coords_dtype, // type of data array
-                                   DB_NONCOLLINEAR, // DB_COLLINEAR or DB_NONCOLLINEAR
-                                   state_optlist); // opt list
-
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " DBPutQuadmesh");
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutQuadmesh");
 }
 
-
-
 //---------------------------------------------------------------------------//
-void
-silo_mesh_write(const Node &n,
-                DBfile *dbfile,
-                const std::string &silo_obj_path)
-{
+void silo_mesh_write(const Node &n, DBfile *dbfile,
+                     const std::string &silo_obj_path) {
     int silo_error = 0;
     char silo_prev_dir[256];
 
-    if(!silo_obj_path.empty())
-    {
-        silo_error += DBGetDir(dbfile,silo_prev_dir);
-        silo_error += DBMkDir(dbfile,silo_obj_path.c_str());
-        silo_error += DBSetDir(dbfile,silo_obj_path.c_str());
+    if (!silo_obj_path.empty()) {
+        silo_error += DBGetDir(dbfile, silo_prev_dir);
+        silo_error += DBMkDir(dbfile, silo_obj_path.c_str());
+        silo_error += DBSetDir(dbfile, silo_obj_path.c_str());
 
-        CONDUIT_CHECK_SILO_ERROR(silo_error,
-                                 " failed to make silo directory:"
-                                 << silo_obj_path);
+        CONDUIT_CHECK_SILO_ERROR(
+            silo_error, " failed to make silo directory:" << silo_obj_path);
     }
 
-    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> state_optlist
-        {silo_generate_state_optlist(n, 5), &DBFreeOptlist};
+    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
+        silo_generate_state_optlist(n, 5), &DBFreeOptlist};
 
     Node n_mesh_info; // helps with bookkeeping for all topos
 
     NodeConstIterator topo_itr = n["topologies"].children();
-    while(topo_itr.has_next())
-    {
+    while (topo_itr.has_next()) {
         const Node &n_topo = topo_itr.next();
 
         std::string topo_name = topo_itr.name();
@@ -3000,21 +2823,13 @@ silo_mesh_write(const Node &n,
 
         n_mesh_info[topo_name]["type"].set(topo_type);
 
-
-        if(topo_type == "unstructured")
-        {
+        if (topo_type == "unstructured") {
 
             std::string ele_shape = n_topo["elements/shape"].as_string();
-            if( ele_shape != "point")
-            {
+            if (ele_shape != "point") {
                 // we need a zone list for a ucd mesh
-                silo_write_ucd_zonelist(dbfile,
-                                        topo_name,
-                                        n_topo,
-                                        n_mesh_info);
-            }
-            else
-            {
+                silo_write_ucd_zonelist(dbfile, topo_name, n_topo, n_mesh_info);
+            } else {
                 topo_type = "points";
                 n_mesh_info[topo_name]["type"].set(topo_type);
             }
@@ -3022,9 +2837,8 @@ silo_mesh_write(const Node &n,
 
         // make sure we have coordsets
 
-        if(!n.has_path("coordsets"))
-        {
-             CONDUIT_ERROR( "mesh missing: coordsets");
+        if (!n.has_path("coordsets")) {
+            CONDUIT_ERROR("mesh missing: coordsets");
         }
 
         // get this topo's coordset name
@@ -3033,160 +2847,139 @@ silo_mesh_write(const Node &n,
         n_mesh_info[topo_name]["coordset"].set(coordset_name);
 
         // obtain the coordset with the name
-        if(!n["coordsets"].has_path(coordset_name))
-        {
-             CONDUIT_ERROR( "mesh is missing coordset named "
-                            << coordset_name
-                            << " for topology named "
-                            << topo_name );
+        if (!n["coordsets"].has_path(coordset_name)) {
+            CONDUIT_ERROR("mesh is missing coordset named "
+                          << coordset_name << " for topology named "
+                          << topo_name);
         }
 
         const Node &n_coords = n["coordsets"][coordset_name];
 
-        if(topo_type == "unstructured")
-        {
-            silo_write_ucd_mesh(dbfile,
-                                topo_name,
-                                n_coords,
-                                state_optlist.get(),
-                                n_mesh_info);
-        }
-        else if (topo_type == "rectilinear")
-        {
-            silo_write_quad_rect_mesh(dbfile,
-                                      topo_name,
-                                      n_coords,
-                                      state_optlist.get(),
-                                      n_mesh_info);
-        }
-        else if (topo_type == "uniform")
-        {
-            silo_write_quad_uniform_mesh(dbfile,
-                                         topo_name,
-                                         n_coords,
-                                         state_optlist.get(),
-                                         n_mesh_info);
+        if (topo_type == "unstructured") {
+            silo_write_ucd_mesh(dbfile, topo_name, n_coords,
+                                state_optlist.get(), n_mesh_info);
+        } else if (topo_type == "rectilinear") {
+            silo_write_quad_rect_mesh(dbfile, topo_name, n_coords,
+                                      state_optlist.get(), n_mesh_info);
+        } else if (topo_type == "uniform") {
+            silo_write_quad_uniform_mesh(dbfile, topo_name, n_coords,
+                                         state_optlist.get(), n_mesh_info);
 
-        }
-        else if (topo_type == "structured")
-        {
-            silo_write_structured_mesh(dbfile,
-                                       topo_name,
-                                       n_topo,
-                                       n_coords,
-                                       state_optlist.get(),
-                                       n_mesh_info);
-        }
-        else if (topo_type == "points")
-        {
-            silo_write_pointmesh(dbfile,
-                                 topo_name,
-                                 n_coords,
-                                 state_optlist.get(),
-                                 n_mesh_info);
+        } else if (topo_type == "structured") {
+            silo_write_structured_mesh(dbfile, topo_name, n_topo, n_coords,
+                                       state_optlist.get(), n_mesh_info);
+        } else if (topo_type == "points") {
+            silo_write_pointmesh(dbfile, topo_name, n_coords,
+                                 state_optlist.get(), n_mesh_info);
         }
     }
 
-    if (n.has_path("fields"))
-    {
+    if (n.has_path("fields")) {
         NodeConstIterator itr = n["fields"].children();
 
-        while(itr.has_next())
-        {
+        while (itr.has_next()) {
             const Node &n_var = itr.next();
             std::string var_name = itr.name();
 
-            silo_write_field(dbfile,
-                             var_name,
-                             n_var,
-                             n_mesh_info);
-
+            silo_write_field(dbfile, var_name, n_var, n_mesh_info);
         }
     }
 
-    if(!silo_obj_path.empty())
-    {
-        silo_error = DBSetDir(dbfile,silo_prev_dir);
+    if (!silo_obj_path.empty()) {
+        silo_error = DBSetDir(dbfile, silo_prev_dir);
 
         CONDUIT_CHECK_SILO_ERROR(silo_error,
                                  " changing silo directory to previous path");
     }
 }
 
-std::string get_domain_silo_directory(int domain, int nfiles, int ndomains){
-    if (ndomains < nfiles){
+std::string get_domain_silo_directory(int domain, int nfiles, int ndomains) {
+    if (ndomains < nfiles) {
         return "domain" + std::to_string(domain);
-    }
-    else {
+    } else {
         return "";
     }
 }
 
-std::string get_domain_file(int domain, int nfiles, const std::string &root_file){
-    (void) domain;
-    (void) nfiles;
+std::string get_domain_file(int domain, int nfiles,
+                            const std::string &root_file) {
+    (void)domain;
+    (void)nfiles;
     return root_file;
 }
 
-std::string get_mesh_domain_name(const conduit::Node &topo, bool overlink){
-    CONDUIT_ASSERT(topo.number_of_children() == 1, "Multiple topologies not supported");
-    if (overlink) return "MESH";
+std::string get_mesh_domain_name(const conduit::Node &topo, bool overlink) {
+    CONDUIT_ASSERT(topo.number_of_children() == 1,
+                   "Multiple topologies not supported");
+    if (overlink)
+        return "MESH";
     return topo.children().next().name();
 }
 
-void write_multimesh(DBfile *root, const std::string &mmesh_name, std::vector<std::string> mesh_domains){
+void write_multimesh(DBfile *root, const std::string &mmesh_name,
+                     std::vector<std::string> mesh_domains) {
     std::vector<const char *> domain_name_ptrs;
     std::vector<int> domain_mesh_types;
-    for (auto domain : mesh_domains)
-    {
+    for (auto domain : mesh_domains) {
         domain_name_ptrs.push_back(domain.c_str());
         domain_mesh_types.push_back(DB_UCDMESH);
     }
-    CONDUIT_CHECK_SILO_ERROR(DBPutMultimesh(root,
-        mmesh_name.c_str(),
-        domain_name_ptrs.size(),
-        domain_name_ptrs.data(), domain_mesh_types.data(), NULL),
+    CONDUIT_CHECK_SILO_ERROR(
+        DBPutMultimesh(root, mmesh_name.c_str(), domain_name_ptrs.size(),
+                       domain_name_ptrs.data(), domain_mesh_types.data(), NULL),
         "Error putting multimesh");
 }
 
-void write_multimaterial(DBfile *root, const std::string &mmat_name, const std::string &mmesh_name, std::vector<std::string> mat_domains){
+void write_multimaterial(DBfile *root, const std::string &mmat_name,
+                         const std::string &mmesh_name,
+                         std::vector<std::string> mat_domains) {
     std::vector<const char *> domain_name_ptrs;
-    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist {DBMakeOptlist(1), &DBFreeOptlist};
-    if (!optlist.get()){
+    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+        DBMakeOptlist(1), &DBFreeOptlist};
+    if (!optlist.get()) {
         optlist.release();
         CONDUIT_ERROR("Error creating options");
     }
     // have to const_cast because converting to void *
-    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.get(), DBOPT_MMESH_NAME, const_cast<char *>(mmesh_name.c_str())),
+    CONDUIT_CHECK_SILO_ERROR(
+        DBAddOption(optlist.get(), DBOPT_MMESH_NAME,
+                    const_cast<char *>(mmesh_name.c_str())),
         "Error creating options for putting multimat");
-    for (auto domain : mat_domains)
-    {
+    for (auto domain : mat_domains) {
         domain_name_ptrs.push_back(domain.c_str());
     }
-    CONDUIT_CHECK_SILO_ERROR(DBPutMultimat(root, mmat_name.c_str(), mat_domains.size(), domain_name_ptrs.data(), optlist.get()),
+    CONDUIT_CHECK_SILO_ERROR(
+        DBPutMultimat(root, mmat_name.c_str(), mat_domains.size(),
+                      domain_name_ptrs.data(), optlist.get()),
         "Error putting multimaterial");
 }
 
-void write_multivar(DBfile *root, const std::string &mvar_name, const std::string &mmesh_name, std::vector<std::string> var_domains){
+void write_multivar(DBfile *root, const std::string &mvar_name,
+                    const std::string &mmesh_name,
+                    std::vector<std::string> var_domains) {
     std::vector<const char *> domain_name_ptrs;
-    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist {DBMakeOptlist(1), &DBFreeOptlist};
+    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+        DBMakeOptlist(1), &DBFreeOptlist};
     std::vector<int> domain_var_types;
-    if (!optlist.get()){
+    if (!optlist.get()) {
         optlist.release();
         CONDUIT_ERROR("Error creating options");
     }
     // have to const_cast because converting to void *
-    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.get(), DBOPT_MMESH_NAME, const_cast<char *>(mmesh_name.c_str())),
+    CONDUIT_CHECK_SILO_ERROR(
+        DBAddOption(optlist.get(), DBOPT_MMESH_NAME,
+                    const_cast<char *>(mmesh_name.c_str())),
         "Error creating options for putting multivar");
-    for (auto domain : var_domains)
-    {
+    for (auto domain : var_domains) {
         domain_name_ptrs.push_back(domain.c_str());
         domain_var_types.push_back(DB_UCDVAR);
     }
-    CONDUIT_CHECK_SILO_ERROR(DBPutMultivar(root, mvar_name.c_str(), var_domains.size(), domain_name_ptrs.data(), domain_var_types.data(), optlist.get()),
+    CONDUIT_CHECK_SILO_ERROR(
+        DBPutMultivar(root, mvar_name.c_str(), var_domains.size(),
+                      domain_name_ptrs.data(), domain_var_types.data(),
+                      optlist.get()),
         "Error putting multivar");
 }
-
 
 //-----------------------------------------------------------------------------
 /// The following options can be passed via the opts Node:
@@ -3232,74 +3025,85 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     nfiles = ndomains = domains.size();
 
     // parse out options
-    if (conduit::utils::is_file(path)){
+    if (conduit::utils::is_file(path)) {
         type = DB_UNKNOWN;
     } else {
         type = DB_HDF5;
     }
-    if (opts.has_path("silo_type")){
+    if (opts.has_path("silo_type")) {
         std::string silo_type = opts["silo_type"].as_string();
-        if (silo_type == "pdb"){ type = DB_PDB; }
-        else if (silo_type == "hdf5"){ type = DB_HDF5; }
-        else if (silo_type == "hdf5_sec2"){ type = DB_HDF5_SEC2; }
-        else if (silo_type == "hdf5_stdio"){ type = DB_HDF5_STDIO; }
-        else if (silo_type == "hdf5_mpio"){ type = DB_HDF5_MPIO; }
+        if (silo_type == "pdb") {
+            type = DB_PDB;
+        } else if (silo_type == "hdf5") {
+            type = DB_HDF5;
+        } else if (silo_type == "hdf5_sec2") {
+            type = DB_HDF5_SEC2;
+        } else if (silo_type == "hdf5_stdio") {
+            type = DB_HDF5_STDIO;
+        } else if (silo_type == "hdf5_mpio") {
+            type = DB_HDF5_MPIO;
+        }
         // else if (silo_type == "hdf5_mpiposix"){ type = DB_HDF5_MPIPOSIX; }
-        else if (silo_type == "taurus"){ type = DB_TAURUS; }
-        else if (silo_type == "unknown"){ type = DB_UNKNOWN; }
-        else {
+        else if (silo_type == "taurus") {
+            type = DB_TAURUS;
+        } else if (silo_type == "unknown") {
+            type = DB_UNKNOWN;
+        } else {
             CONDUIT_ASSERT(silo_type == "default",
-                "Unrecognized 'silo_type' option " << silo_type);
+                           "Unrecognized 'silo_type' option " << silo_type);
         }
     }
-    if (opts.has_path("name")){
+    if (opts.has_path("name")) {
         mmesh_name = opts["name"].as_string();
     } else {
         mmesh_name = "MMESH";
     }
-    if (opts.has_path("file_style")){
+    if (opts.has_path("file_style")) {
         std::string file_style = opts["file_style"].as_string();
-        if (file_style == "overlink"){
+        if (file_style == "overlink") {
             mmesh_name = "MMESH";
             overlink = true;
-        } else if (file_style == "multi"){
+        } else if (file_style == "multi") {
             // nothing to do
-        } else if (file_style == "root_only"){
+        } else if (file_style == "root_only") {
             nfiles = 0;
         } else {
-            CONDUIT_ASSERT(file_style == "default", "Unrecognized file_style option " << file_style);
-            if (nfiles == 1) nfiles = 0;
+            CONDUIT_ASSERT(file_style == "default",
+                           "Unrecognized file_style option " << file_style);
+            if (nfiles == 1)
+                nfiles = 0;
         }
     } else {
-        if (nfiles == 1) nfiles = 0;
+        if (nfiles == 1)
+            nfiles = 0;
     }
-    if (opts.has_path("number_of_files") && nfiles > 0){
-        if (opts["number_of_files"].as_int() > 0 && nfiles > 0){
+    if (opts.has_path("number_of_files") && nfiles > 0) {
+        if (opts["number_of_files"].as_int() > 0 && nfiles > 0) {
             nfiles = opts["number_of_files"].as_int();
         }
-        CONDUIT_ASSERT(nfiles <= ndomains,
-            "More files (" << nfiles
-            << ") than domains (" << ndomains
-            << ") not allowed");
+        CONDUIT_ASSERT(nfiles <= ndomains, "More files ("
+                                               << nfiles << ") than domains ("
+                                               << ndomains << ") not allowed");
     }
-    if (!(silofile = DBCreate(path.c_str(), DB_CLOBBER, DB_LOCAL, NULL, type))) {
-        CONDUIT_ERROR("Cannot open silo file '" << path << "' " << DBErrString());
+    if (!(silofile =
+              DBCreate(path.c_str(), DB_CLOBBER, DB_LOCAL, NULL, type))) {
+        CONDUIT_ERROR("Cannot open silo file '" << path << "' "
+                                                << DBErrString());
     } else {
-        filemap.emplace(std::piecewise_construct,
-                        std::make_tuple(path),
+        filemap.emplace(std::piecewise_construct, std::make_tuple(path),
                         std::make_tuple(silofile, &DBClose));
     }
     std::vector<std::string> silo_mesh_paths;
     std::map<std::string, std::vector<std::string>> silo_material_paths;
     std::map<std::string, std::vector<std::string>> silo_variable_paths;
-    for (i = 0; i < ndomains; ++i)
-    {
+    for (i = 0; i < ndomains; ++i) {
         std::string domain_file = get_domain_file(i, nfiles, path);
         std::string silo_dir = get_domain_silo_directory(i, nfiles, ndomains);
         const Node *dom = domains[i];
-        std::string mesh_domain = conduit::utils::join_path(silo_dir, get_mesh_domain_name((*dom)["topologies"], overlink));
+        std::string mesh_domain = conduit::utils::join_path(
+            silo_dir, get_mesh_domain_name((*dom)["topologies"], overlink));
         silo_mesh_write(*dom, get_or_open(filemap, domain_file), silo_dir);
-        if (domain_file == path){
+        if (domain_file == path) {
             // domain is in root file
             silo_mesh_paths.push_back(mesh_domain);
         } else {
@@ -3308,19 +3112,22 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         }
     }
     write_multimesh(silofile, mmesh_name, silo_mesh_paths);
-    if (silo_material_paths.size() > 0){
-        for (const auto &pair : silo_material_paths){
-            CONDUIT_ASSERT(pair.second.size() == static_cast<std::size_t>(ndomains), "material " << pair.first << " not specified for all domains");
-            write_multimaterial(silofile,  pair.first, mmesh_name, pair.second);
+    if (silo_material_paths.size() > 0) {
+        for (const auto &pair : silo_material_paths) {
+            CONDUIT_ASSERT(
+                pair.second.size() == static_cast<std::size_t>(ndomains),
+                "material " << pair.first << " not specified for all domains");
+            write_multimaterial(silofile, pair.first, mmesh_name, pair.second);
         }
     }
-    if (silo_variable_paths.size() > 0){
-        for (const auto &pair : silo_variable_paths){
-            CONDUIT_ASSERT(pair.second.size() == static_cast<std::size_t>(ndomains), "variable " << pair.first << " not specified for all domains");
-            write_multivar(silofile,  pair.first, mmesh_name, pair.second);
+    if (silo_variable_paths.size() > 0) {
+        for (const auto &pair : silo_variable_paths) {
+            CONDUIT_ASSERT(
+                pair.second.size() == static_cast<std::size_t>(ndomains),
+                "variable " << pair.first << " not specified for all domains");
+            write_multivar(silofile, pair.first, mmesh_name, pair.second);
         }
     }
-
 }
 
 //-----------------------------------------------------------------------------
@@ -3368,7 +3175,6 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
     conduit::utils::remove_path_if_exists(path);
     write_mesh(mesh, path, opts);
 }
-
 
 }
 //-----------------------------------------------------------------------------
