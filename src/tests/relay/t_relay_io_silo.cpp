@@ -132,24 +132,67 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     }
 }
 
-TEST(conduit_relay_io_silo, save_mesh_geometry)
+
+// TODO: add tests for fields, matsets, etc.
+TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 {
-    Node save_mesh;
-    blueprint::mesh::examples::basic("quads", 2, 2, 0, save_mesh);
-    save_mesh.remove("fields");
-    // since blueprint topologies and cooordsets are combined into
-    // one silo object, one of the names is lost. The diff will fail
-    // unless we rename the coordset name to be the same as the topo.
-    save_mesh["coordsets"].rename_child("coords", "mesh");
-    save_mesh["topologies"]["mesh"]["coordset"].reset();
-    save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
-    io::silo::save_mesh(save_mesh, "basic.silo");
-    Node load_mesh;
-    io::silo::load_mesh("basic.silo", load_mesh);
-    Node info;
-    // the loaded mesh will be in the multidomain format
-    // (it will be a list containing a single mesh domain)
-    // but the saved mesh is in the single domain format
-    EXPECT_EQ(load_mesh.number_of_children(), 1);
-    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+
+    const std::vector<std::string> mesh_types = {
+    // TODO: the following types fail
+    //      "uniform", "rectilinear", "structured",
+        "tris", "quads"};
+    for (int i = 0; i < mesh_types.size(); ++i) {
+        for (int nx = 2; nx < 4; ++nx) {
+            Node save_mesh;
+            blueprint::mesh::examples::basic(mesh_types[i], nx, nx, (nx - 2) * 2, save_mesh);
+            save_mesh.remove("fields");
+            // since blueprint topologies and cooordsets are combined into
+            // one silo object, one of the names is lost. The diff will fail
+            // unless we rename the coordset name to be the same as the topo.
+            save_mesh["coordsets"].rename_child("coords", "mesh");
+            save_mesh["topologies"]["mesh"]["coordset"].reset();
+            save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
+            io::silo::save_mesh(save_mesh, "basic.silo");
+            Node load_mesh;
+            io::silo::load_mesh("basic.silo", load_mesh);
+            Node info;
+            // the loaded mesh will be in the multidomain format
+            // (it will be a list containing a single mesh domain)
+            // but the saved mesh is in the single domain format
+            EXPECT_EQ(load_mesh.number_of_children(), 1);
+            EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+        }
+    }
+}
+
+// TODO: make this pass?
+// right now multidomain meshes are read out as a list, but
+// blueprint specifies that multidomain meshes are objects.
+// this is one reason the test fails.
+// Problem: in overlink, all domains are named the same ('MESH')
+TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
+{
+    for (int ndomains = 2; ndomains < 4; ++ndomains) {
+        Node save_mesh;
+        blueprint::mesh::examples::spiral(ndomains, save_mesh);
+        for (index_t child = 0; child < save_mesh.number_of_children(); ++child){
+            save_mesh[child].remove("fields");
+            save_mesh[child].remove("state");
+            // since blueprint topologies and cooordsets are combined into
+            // one silo object, one of the names is lost. The diff will fail
+            // unless we rename the coordset name to be the same as the topo.
+            save_mesh[child]["coordsets"].rename_child("coords", "topo");
+            save_mesh[child]["topologies"]["topo"]["coordset"].reset();
+            save_mesh[child]["topologies"]["topo"]["coordset"] = "topo";
+        }
+        io::silo::save_mesh(save_mesh, "spiral.silo");
+        Node load_mesh;
+        io::silo::load_mesh("spiral.silo", load_mesh);
+        Node info;
+        // the loaded mesh will be in the multidomain format
+        // (it will be a list containing a single mesh domain)
+        // but the saved mesh is in the single domain format
+        EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+        EXPECT_FALSE(load_mesh.diff(save_mesh, info));
+    }
 }
