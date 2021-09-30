@@ -1547,6 +1547,7 @@ void add_shape_info(DBzonelist *zones, conduit::Node &elements) {
         copy_and_assign(zones->shapesize, zones->nzones, elements["sizes"]);
         // TODO: support polyhedra
         CONDUIT_ERROR("Polyhedra not yet supported");
+        add_offsets(zones, elements["subelements"]); // TODO: no idea if this is right
     }
     if (zones->shapetype[0] == DB_ZONETYPE_POLYGON) {
         copy_and_assign(zones->shapesize, zones->nzones, elements["sizes"]);
@@ -1719,14 +1720,13 @@ void apply_values(void **vals, int num_arrays, int num_elems,
 // 'var_name' must be the name of the variable within the file.
 //-----------------------------------------------------------------------------
 void read_quadvariable_domain(DBfile *file, std::string &var_name,
-                              conduit::Node &mesh_entry) {
+                              conduit::Node &field) {
     DBquadvar *quadvar_ptr;
     if (!(quadvar_ptr = DBGetQuadvar(file, var_name.c_str())))
         CONDUIT_ERROR("Error fetching quad variable " << var_name);
     std::unique_ptr<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
         quadvar_ptr, &DBFreeQuadvar};
     std::string name{quadvar_ptr->name};
-    conduit::Node &field = mesh_entry["fields"][var_name];
     field["topology"] = std::string(quadvar_ptr->meshname);
     if (quadvar_ptr->datatype == DB_FLOAT) {
         apply_values<float>(quadvar_ptr->vals, quadvar_ptr->nvals,
@@ -1743,14 +1743,13 @@ void read_quadvariable_domain(DBfile *file, std::string &var_name,
 // 'var_name' must be the name of the variable within the file.
 //-----------------------------------------------------------------------------
 void read_ucdvariable_domain(DBfile *file, std::string &var_name,
-                             conduit::Node &mesh_entry) {
+                             conduit::Node &field) {
     DBucdvar *ucdvar_ptr;
     if (!(ucdvar_ptr = DBGetUcdvar(file, var_name.c_str())))
         CONDUIT_ERROR("Error fetching ucd variable " << var_name);
     std::unique_ptr<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{ucdvar_ptr,
                                                               &DBFreeUcdvar};
     std::string name{ucdvar_ptr->name};
-    conduit::Node &field = mesh_entry["fields"][var_name];
     field["topology"] = std::string(ucdvar_ptr->meshname);
     apply_centering(ucdvar_ptr->centering, field);
     if (ucdvar_ptr->datatype == DB_FLOAT) {
@@ -1768,14 +1767,13 @@ void read_ucdvariable_domain(DBfile *file, std::string &var_name,
 // 'var_name' must be the name of the variable within the file.
 //-----------------------------------------------------------------------------
 void read_pointvariable_domain(DBfile *file, std::string &var_name,
-                               conduit::Node &mesh_entry) {
+                               conduit::Node &field) {
     DBmeshvar *meshvar_ptr;
     if (!(meshvar_ptr = DBGetPointvar(file, var_name.c_str())))
         CONDUIT_ERROR("Error fetching variable " << var_name);
     std::unique_ptr<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
         meshvar_ptr, &DBFreeMeshvar};
     std::string name{meshvar_ptr->name};
-    conduit::Node &field = mesh_entry["fields"][var_name];
     field["topology"] = std::string(meshvar_ptr->meshname);
     apply_centering(meshvar_ptr->centering, field);
     if (meshvar_ptr->datatype == DB_FLOAT) {
@@ -1793,15 +1791,15 @@ void read_pointvariable_domain(DBfile *file, std::string &var_name,
 // 'var_name' must be the name of the variable within the file.
 //-----------------------------------------------------------------------------
 void read_variable_domain(DBfile *file, std::string &var_name,
-                          conduit::Node &mesh_entry, int vartype) {
+                          conduit::Node &field, int vartype) {
     if (vartype == DB_UCDVAR)
-        return read_ucdvariable_domain(file, var_name, mesh_entry);
+        return read_ucdvariable_domain(file, var_name, field);
     if (vartype == DB_QUADVAR)
-        return read_quadvariable_domain(file, var_name, mesh_entry);
+        return read_quadvariable_domain(file, var_name, field);
     if (vartype == DB_CSGVAR)
         CONDUIT_ERROR("CSG Variables not supported by Blueprint");
     if (vartype == DB_POINTVAR)
-        return read_pointvariable_domain(file, var_name, mesh_entry);
+        return read_pointvariable_domain(file, var_name, field);
     CONDUIT_ERROR("Unsupported variable type " << vartype);
 }
 
@@ -1817,18 +1815,46 @@ void read_variable_domain(DBfile *file, std::string &var_name,
 void read_multivar(
     DBfile *root_file,
     std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-    std::string &dirname, DBmultivar *multivar, conduit::Node &mesh) {
+    const std::string &dirname, DBmultivar *multivar, conduit::Node &mesh) {
 
     std::string file_path, silo_name;
     for (index_t i = 0; i < multivar->nvars; ++i) {
-        Node &entry = mesh[i];
         split_silo_path(multivar->varnames[i], dirname, file_path, silo_name);
+        Node &field = mesh[i]["fields"][silo_name];
         if (!file_path.empty()) {
             read_variable_domain(get_or_open(filemap, file_path), silo_name,
-                                 entry, multivar->vartypes[i]);
+                                field, multivar->vartypes[i]);
         } else {
-            read_variable_domain(root_file, silo_name, entry,
+            read_variable_domain(root_file, silo_name, field,
                                  multivar->vartypes[i]);
+        }
+    }
+}
+
+void read_all_multivars(
+    DBfile *root_file, DBtoc *toc,
+    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+    const std::string &dirname,
+    const std::string &mmesh_name,
+    int expected_domains,
+    conduit::Node &mesh){
+
+    for (int i = 0; i < toc->nmultivar; ++i) {
+        std::unique_ptr<DBmultivar, decltype(&DBFreeMultivar)> multivar{
+            DBGetMultivar(root_file, toc->multivar_names[i]), &DBFreeMultivar};
+        if (!multivar.get()) {
+            multivar.release();
+            CONDUIT_ERROR("Error fetching multivar "
+                          << multivar.get()->varnames[i]);
+        }
+        if (multivar.get()->mmesh_name != NULL &&
+            multivar.get()->mmesh_name == mmesh_name) {
+            CONDUIT_ASSERT(multivar.get()->nvars == expected_domains,
+                           "Domain count mismatch between multivar "
+                               << multivar.get()->varnames[i]
+                               << "and multimesh");
+            // read in the multivar and add it to the mesh Node
+            read_multivar(root_file, filemap, dirname, multivar.get(), mesh);
         }
     }
 }
@@ -1839,16 +1865,16 @@ void read_multivar(
 // 'mat_name' must be the name of the material within the file.
 //-----------------------------------------------------------------------------
 void read_material_domain(DBfile *file, std::string &mat_name,
-                          conduit::Node &mesh_entry) {
+                          conduit::Node &matsets) {
     DBmaterial *material_ptr;
     if (!(material_ptr = DBGetMaterial(file, mat_name.c_str())))
         CONDUIT_ERROR("Error fetching variable " << mat_name);
     std::unique_ptr<DBmaterial, decltype(&DBFreeMaterial)> material{
         material_ptr, &DBFreeMaterial};
-    conduit::Node &matset = mesh_entry["matsets"][material_ptr->name];
-    matset["topology"] = material_ptr->meshname;
+    conduit::Node &curr_matset = matsets[material_ptr->name];
+    curr_matset["topology"] = material_ptr->meshname;
     for (int i = 0; i < material_ptr->nmat; ++i) {
-        // material names may not be specified
+        // material names may be NULL
         std::string material_name;
         if (material_ptr->matnames) {
             material_name = material_ptr->matnames[i];
@@ -1856,7 +1882,7 @@ void read_material_domain(DBfile *file, std::string &mat_name,
             // but matnos should always be
             material_name = std::to_string(material_ptr->matnos[i]);
         }
-        matset["material_map"][material_name] = material_ptr->matnos[i];
+        curr_matset["material_map"][material_name] = material_ptr->matnos[i];
     }
     // TODO: support multi-dimensional materials
     CONDUIT_ASSERT(material_ptr->ndims == 1,
@@ -1902,15 +1928,16 @@ void read_material_domain(DBfile *file, std::string &mat_name,
                 curr_offset += curr_size;
             }
         }
-        matset["material_ids"].set(material_ids.data(), material_ids.size());
-        matset["volume_fractions"].set(volume_fractions.data(),
+        curr_matset["material_ids"].set(material_ids.data(), material_ids.size());
+        curr_matset["volume_fractions"].set(volume_fractions.data(),
                                        volume_fractions.size());
-        matset["sizes"].set(sizes.data(), sizes.size());
-        matset["offsets"].set(offsets.data(), offsets.size());
+        curr_matset["sizes"].set(sizes.data(), sizes.size());
+        curr_matset["offsets"].set(offsets.data(), offsets.size());
     } else {
+        // TODO: remove, since this is just a special case of the above logic, I think?
         // no volume fractions. All zones are single-material.
         int arr_len = material_ptr->dims[0];
-        copy_and_assign(material_ptr->matlist, arr_len, matset["material_ids"]);
+        copy_and_assign(material_ptr->matlist, arr_len, curr_matset["material_ids"]);
         double *volume_fractions = new double[arr_len];
         int *sizes = new int[arr_len];
         int *offsets = new int[arr_len];
@@ -1919,9 +1946,9 @@ void read_material_domain(DBfile *file, std::string &mat_name,
             offsets[i] = i;
             sizes[i] = 1;
         }
-        matset["volume_fractions"].set(volume_fractions, arr_len);
-        matset["sizes"].set(sizes, arr_len);
-        matset["offsets"].set(offsets, arr_len);
+        curr_matset["volume_fractions"].set(volume_fractions, arr_len);
+        curr_matset["sizes"].set(sizes, arr_len);
+        curr_matset["offsets"].set(offsets, arr_len);
     }
 }
 
@@ -1937,17 +1964,46 @@ void read_material_domain(DBfile *file, std::string &mat_name,
 void read_multimaterial(
     DBfile *root_file,
     std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-    std::string &dirname, DBmultimat *multimat, conduit::Node &mesh) {
+    const std::string &dirname, DBmultimat *multimat, conduit::Node &mesh) {
 
     std::string file_path, silo_name;
     for (index_t i = 0; i < multimat->nmats; ++i) {
-        Node &entry = mesh[i];
+        Node &matsets = mesh[i]["matsets"];
         split_silo_path(multimat->matnames[i], dirname, file_path, silo_name);
         if (!file_path.empty()) {
             read_material_domain(get_or_open(filemap, file_path), silo_name,
-                                 entry);
+                                 matsets);
         } else {
-            read_material_domain(root_file, silo_name, entry);
+            read_material_domain(root_file, silo_name, matsets);
+        }
+    }
+}
+
+void read_all_multimats(
+    DBfile *root_file, DBtoc *toc,
+    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+    const std::string &dirname,
+    const std::string &mmesh_name,
+    int expected_domains,
+    conduit::Node &mesh){
+
+    for (int i = 0; i < toc->nmultimat; ++i) {
+        std::unique_ptr<DBmultimat, decltype(&DBFreeMultimat)> multimat{
+            DBGetMultimat(root_file, toc->multimat_names[i]), &DBFreeMultimat};
+        if (!multimat.get()) {
+            multimat.release();
+            CONDUIT_ERROR("Error fetching multimaterial "
+                          << multimat.get()->matnames[i]);
+        }
+        if (multimat.get()->mmesh_name != NULL &&
+            multimat.get()->mmesh_name == mmesh_name) {
+            CONDUIT_ASSERT(multimat.get()->nmats == expected_domains,
+                           "Domain count mismatch between multimaterial "
+                               << multimat.get()->matnames[i]
+                               << "and multimesh");
+            // read in the multimaterial and add it to the mesh Node
+            read_multimaterial(root_file, filemap, dirname, multimat.get(),
+                               mesh);
         }
     }
 }
@@ -1973,18 +2029,11 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
     int i;
     std::string mmesh_name;
     std::string dirname;
-    DBfile *silofile;
     std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
     // get the directory of the root silo file, for concretizing paths found
     // within the root silo file
     conduit::utils::rsplit_file_path(root_file_path, mmesh_name, dirname);
-    if (!(silofile = DBOpen(root_file_path.c_str(), DB_UNKNOWN, DB_READ))) {
-        CONDUIT_ERROR("Cannot open silo file " << root_file_path);
-    } else {
-        filemap.emplace(std::piecewise_construct,
-                        std::make_tuple(root_file_path),
-                        std::make_tuple(silofile, &DBClose));
-    }
+    DBfile *silofile = get_or_open(filemap, root_file_path);
     DBtoc *toc = DBGetToc(silofile); // shouldn't be free'd
     // get the multimesh
     CONDUIT_ASSERT(toc->nmultimesh > 0, "No multimesh found in file");
@@ -2011,44 +2060,11 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
     // read in the multimesh and add it to the mesh Node
     read_multimesh(silofile, filemap, dirname, multimesh.get(), mesh);
     // get the multivars matching the multimesh
-    for (i = 0; i < toc->nmultivar; ++i) {
-        std::unique_ptr<DBmultivar, decltype(&DBFreeMultivar)> multivar{
-            DBGetMultivar(silofile, toc->multivar_names[i]), &DBFreeMultivar};
-        if (!multivar.get()) {
-            multivar.release();
-            CONDUIT_ERROR("Error fetching multivar "
-                          << multivar.get()->varnames[i]);
-        }
-        if (multivar.get()->mmesh_name != NULL &&
-            multivar.get()->mmesh_name == mmesh_name) {
-            CONDUIT_ASSERT(multivar.get()->nvars == multimesh.get()->nblocks,
-                           "Domain count mismatch between multivar "
-                               << multivar.get()->varnames[i]
-                               << "and multimesh");
-            // read in the multivar and add it to the mesh Node
-            read_multivar(silofile, filemap, dirname, multivar.get(), mesh);
-        }
-    }
+    read_all_multivars(silofile, toc, filemap, dirname,
+        mmesh_name, multimesh.get()->nblocks, mesh);
     // get the multimaterials matching the multimesh
-    for (i = 0; i < toc->nmultimat; ++i) {
-        std::unique_ptr<DBmultimat, decltype(&DBFreeMultimat)> multimat{
-            DBGetMultimat(silofile, toc->multimat_names[i]), &DBFreeMultimat};
-        if (!multimat.get()) {
-            multimat.release();
-            CONDUIT_ERROR("Error fetching multimaterial "
-                          << multimat.get()->matnames[i]);
-        }
-        if (multimat.get()->mmesh_name != NULL &&
-            multimat.get()->mmesh_name == mmesh_name) {
-            CONDUIT_ASSERT(multimat.get()->nmats == multimesh.get()->nblocks,
-                           "Domain count mismatch between multimaterial "
-                               << multimat.get()->matnames[i]
-                               << "and multimesh");
-            // read in the multimaterial and add it to the mesh Node
-            read_multimaterial(silofile, filemap, dirname, multimat.get(),
-                               mesh);
-        }
-    }
+    read_all_multimats(silofile, toc, filemap, dirname, mmesh_name,
+                        multimesh.get()->nblocks, mesh);
 }
 
 //---------------------------------------------------------------------------//
@@ -2307,7 +2323,7 @@ void silo_write_pointmesh(DBfile *dbfile, const std::string &topo_name,
     // compaction is necessary to support ragged arrays
     n_coords["values"].compact_to(n_coords_compact);
 
-    int num_pts = n_coords_compact["x"].dtype().number_of_elements();
+    int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
     n_mesh_info[topo_name]["num_elems"].set(num_pts);
@@ -2511,8 +2527,8 @@ void silo_write_quad_rect_mesh(DBfile *dbfile, const std::string &topo_name,
     n_coords["values"].compact_to(n_coords_compact);
 
     int pts_dims[3];
-    pts_dims[0] = n_coords_compact["x"].dtype().number_of_elements();
-    pts_dims[1] = n_coords_compact["y"].dtype().number_of_elements();
+    pts_dims[0] = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
+    pts_dims[1] = n_coords_compact[coordsys_type_labels.second[1]].dtype().number_of_elements();
     pts_dims[2] = 1;
 
     int num_pts = pts_dims[0] * pts_dims[1];
@@ -2588,6 +2604,7 @@ void silo_write_quad_uniform_mesh(DBfile *dbfile, const std::string &topo_name,
         npts_z = n_dims["k"].to_value();
     }
 
+    // TODO: remove cartesian coords assumptions
     if (n_coords.has_path("origin")) {
         const Node &n_origin = n_coords["origin"];
 
@@ -2740,7 +2757,8 @@ void silo_write_structured_mesh(DBfile *dbfile, const std::string &topo_name,
 
 //---------------------------------------------------------------------------//
 void silo_mesh_write(const Node &n, DBfile *dbfile,
-                     const std::string &silo_obj_path) {
+                     const std::string &silo_obj_path,
+                     std::vector<int> &silo_mesh_types) {
     int silo_error = 0;
     char silo_prev_dir[256];
 
@@ -2801,19 +2819,24 @@ void silo_mesh_write(const Node &n, DBfile *dbfile,
         const Node &n_coords = n["coordsets"][coordset_name];
 
         if (topo_type == "unstructured") {
+            silo_mesh_types.push_back(DB_UCDMESH);
             silo_write_ucd_mesh(dbfile, topo_name, n_coords,
                                 state_optlist.get(), n_mesh_info);
         } else if (topo_type == "rectilinear") {
+            silo_mesh_types.push_back(DB_QUADMESH);
             silo_write_quad_rect_mesh(dbfile, topo_name, n_coords,
                                       state_optlist.get(), n_mesh_info);
         } else if (topo_type == "uniform") {
+            silo_mesh_types.push_back(DB_QUADMESH);
             silo_write_quad_uniform_mesh(dbfile, topo_name, n_coords,
                                          state_optlist.get(), n_mesh_info);
 
         } else if (topo_type == "structured") {
+            silo_mesh_types.push_back(DB_QUADMESH);
             silo_write_structured_mesh(dbfile, topo_name, n_topo, n_coords,
                                        state_optlist.get(), n_mesh_info);
         } else if (topo_type == "points") {
+            silo_mesh_types.push_back(DB_POINTMESH);
             silo_write_pointmesh(dbfile, topo_name, n_coords,
                                  state_optlist.get(), n_mesh_info);
         }
@@ -2876,16 +2899,14 @@ std::string get_mesh_domain_name(const conduit::Node &topo, bool overlink) {
 }
 
 void write_multimesh(DBfile *root, const std::string &mmesh_name,
-                     std::vector<std::string> mesh_domains) {
+                     std::vector<std::string> &mesh_domain_names, std::vector<int> &mesh_domain_types) {
     std::vector<const char *> domain_name_ptrs;
-    std::vector<int> domain_mesh_types;
-    for (auto domain : mesh_domains) {
+    for (auto domain : mesh_domain_names) {
         domain_name_ptrs.push_back(domain.c_str());
-        domain_mesh_types.push_back(DB_UCDMESH);
     }
     CONDUIT_CHECK_SILO_ERROR(
         DBPutMultimesh(root, mmesh_name.c_str(), domain_name_ptrs.size(),
-                       domain_name_ptrs.data(), domain_mesh_types.data(), NULL),
+                       domain_name_ptrs.data(), mesh_domain_types.data(), NULL),
         "Error putting multimesh");
 }
 
@@ -2931,13 +2952,47 @@ void write_multivar(DBfile *root, const std::string &mvar_name,
         "Error creating options for putting multivar");
     for (auto domain : var_domains) {
         domain_name_ptrs.push_back(domain.c_str());
-        domain_var_types.push_back(DB_UCDVAR);
+        domain_var_types.push_back(DB_UCDVAR); // TODO: make general, not always UCDVAR
     }
     CONDUIT_CHECK_SILO_ERROR(
         DBPutMultivar(root, mvar_name.c_str(), var_domains.size(),
                       domain_name_ptrs.data(), domain_var_types.data(),
                       optlist.get()),
         "Error putting multivar");
+}
+
+int parse_type_option(const std::string &path, const conduit::Node &opts){
+    int type = 0;
+
+    if (conduit::utils::is_file(path)) {
+        type = DB_UNKNOWN;
+    } else {
+        type = DB_HDF5;
+    }
+    if (opts.has_path("silo_type")) {
+        std::string silo_type = opts["silo_type"].as_string();
+        if (silo_type == "pdb") {
+            type = DB_PDB;
+        } else if (silo_type == "hdf5") {
+            type = DB_HDF5;
+        } else if (silo_type == "hdf5_sec2") {
+            type = DB_HDF5_SEC2;
+        } else if (silo_type == "hdf5_stdio") {
+            type = DB_HDF5_STDIO;
+        } else if (silo_type == "hdf5_mpio") {
+            type = DB_HDF5_MPIO;
+        }
+        // else if (silo_type == "hdf5_mpiposix"){ type = DB_HDF5_MPIPOSIX; }
+        else if (silo_type == "taurus") {
+            type = DB_TAURUS;
+        } else if (silo_type == "unknown") {
+            type = DB_UNKNOWN;
+        } else {
+            CONDUIT_ASSERT(silo_type == "default",
+                           "Unrecognized 'silo_type' option " << silo_type);
+        }
+    }
+    return type;
 }
 
 //-----------------------------------------------------------------------------
@@ -2984,34 +3039,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     nfiles = ndomains = domains.size();
 
     // parse out options
-    if (conduit::utils::is_file(path)) {
-        type = DB_UNKNOWN;
-    } else {
-        type = DB_HDF5;
-    }
-    if (opts.has_path("silo_type")) {
-        std::string silo_type = opts["silo_type"].as_string();
-        if (silo_type == "pdb") {
-            type = DB_PDB;
-        } else if (silo_type == "hdf5") {
-            type = DB_HDF5;
-        } else if (silo_type == "hdf5_sec2") {
-            type = DB_HDF5_SEC2;
-        } else if (silo_type == "hdf5_stdio") {
-            type = DB_HDF5_STDIO;
-        } else if (silo_type == "hdf5_mpio") {
-            type = DB_HDF5_MPIO;
-        }
-        // else if (silo_type == "hdf5_mpiposix"){ type = DB_HDF5_MPIPOSIX; }
-        else if (silo_type == "taurus") {
-            type = DB_TAURUS;
-        } else if (silo_type == "unknown") {
-            type = DB_UNKNOWN;
-        } else {
-            CONDUIT_ASSERT(silo_type == "default",
-                           "Unrecognized 'silo_type' option " << silo_type);
-        }
-    }
+    type = parse_type_option(path, opts);
     if (opts.has_path("name")) {
         mmesh_name = opts["name"].as_string();
     } else {
@@ -3044,15 +3072,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                                << nfiles << ") than domains ("
                                                << ndomains << ") not allowed");
     }
-    if (!(silofile =
-              DBCreate(path.c_str(), DB_CLOBBER, DB_LOCAL, NULL, type))) {
-        CONDUIT_ERROR("Cannot open silo file '" << path << "' "
-                                                << DBErrString());
-    } else {
-        filemap.emplace(std::piecewise_construct, std::make_tuple(path),
-                        std::make_tuple(silofile, &DBClose));
-    }
+    // end option parsing
+    silofile = get_or_create(filemap, path, type);
     std::vector<std::string> silo_mesh_paths;
+    std::vector<int> silo_mesh_types;
     std::map<std::string, std::vector<std::string>> silo_material_paths;
     std::map<std::string, std::vector<std::string>> silo_variable_paths;
     for (i = 0; i < ndomains; ++i) {
@@ -3061,7 +3084,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         const Node *dom = domains[i];
         std::string mesh_domain = conduit::utils::join_path(
             silo_dir, get_mesh_domain_name((*dom)["topologies"], overlink));
-        silo_mesh_write(*dom, get_or_create(filemap, domain_file, type), silo_dir);
+        silo_mesh_write(*dom, get_or_create(filemap, domain_file, type), silo_dir, silo_mesh_types);
         if (domain_file == path) {
             // domain is in root file
             silo_mesh_paths.push_back(mesh_domain);
@@ -3070,7 +3093,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             silo_mesh_paths.push_back(domain_file + ":" + mesh_domain);
         }
     }
-    write_multimesh(silofile, mmesh_name, silo_mesh_paths);
+    write_multimesh(silofile, mmesh_name, silo_mesh_paths, silo_mesh_types);
     if (silo_material_paths.size() > 0) {
         for (const auto &pair : silo_material_paths) {
             CONDUIT_ASSERT(
