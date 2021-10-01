@@ -5139,12 +5139,120 @@ mesh::adjset::to_pairwise(const Node &adjset,
 
 //-----------------------------------------------------------------------------
 void
-mesh::adjset::to_maxshare(const Node &/*adjset*/,
-                          Node &/*dest*/)
+mesh::adjset::to_maxshare(const Node &adjset,
+                          Node &dest)
 {
-    // TODO: need to attribute each node to a set of 
+    dest.reset();
 
-    // TODO: code to handle this is in 'generate_*' functions somewhere
+    const DataType int_dtype = bputils::find_widest_dtype(adjset, bputils::DEFAULT_INT_DTYPES);
+
+    // NOTE(JRC): We assume that group names are shared across ranks, but
+    // make no assumptions on the uniqueness of a set of neighbors for a group
+    // (i.e. the same set of neighbors can be used in >1 groups).
+    std::vector<std::string> adjset_group_names = adjset["groups"].child_names();
+    std::sort(adjset_group_names.begin(), adjset_group_names.end());
+
+    std::map<index_t, std::set<index_t>> entity_groupset_map;
+    for(const std::string &group_name : adjset_group_names)
+    {
+        const Node &group_node = adjset["groups"][group_name];
+
+        std::vector<index_t> group_neighbors;
+        {
+            const Node &group_nvals = group_node["neighbors"];
+            for(index_t ni = 0; ni < group_nvals.dtype().number_of_elements(); ++ni)
+            {
+                Node temp(DataType(group_nvals.dtype().id(), 1),
+                    (void*)group_nvals.element_ptr(ni), true);
+                group_neighbors.push_back(temp.to_index_t());
+            }
+        }
+
+        std::vector<index_t> group_values;
+        {
+            const Node &group_vals = group_node["values"];
+            for(index_t vi = 0; vi < group_vals.dtype().number_of_elements(); ++vi)
+            {
+                Node temp(DataType(group_vals.dtype().id(), 1),
+                    (void*)group_vals.element_ptr(vi), true);
+                group_values.push_back(temp.to_index_t());
+            }
+        }
+
+        for(const index_t &entity_id : group_values)
+        {
+            std::set<index_t> &entity_groupset = entity_groupset_map[entity_id];
+            entity_groupset.insert(group_neighbors.begin(), group_neighbors.end());
+        }
+    }
+
+    // Given ordered lists of adjset values per neighbor, generate the destination
+    // adjset hierarchy.
+    Node adjset_template;
+    adjset_template.set_external(adjset);
+    adjset_template.remove("groups");
+
+    dest.set(adjset_template);
+    dest["groups"].set(DataType::object());
+
+    std::map<std::set<index_t>, Node *> groupset_groupnode_map;
+    for(const auto &entity_groupset_pair : entity_groupset_map)
+    {
+        const std::set<index_t> &groupset = entity_groupset_pair.second;
+        if(groupset_groupnode_map.find(groupset) == groupset_groupnode_map.end())
+        {
+            Node &group_node = dest["groups"][std::to_string(dest["groups"].number_of_children())];
+            group_node["neighbors"].set(DataType(int_dtype.id(), groupset.size()));
+            {
+                const std::vector<index_t> grouplist(groupset.begin(), groupset.end());
+                Node temp(DataType::index_t(grouplist.size()), (void*)grouplist.data(), true);
+                temp.to_data_type(int_dtype.id(), group_node["neighbors"]);
+            }
+
+            groupset_groupnode_map[groupset] = &group_node;
+        }
+    }
+
+    // Now that the groundwork for each unique max-share group has been set,
+    // we populate the 'values' content of each group in order based on
+    // lexicographically sorted group names
+    std::map<std::set<index_t>, std::pair<std::vector<index_t>, std::set<index_t>>> groupset_values_map;
+    for(const std::string &group_name : adjset_group_names)
+    {
+        const Node &group_node = adjset["groups"][group_name];
+        const Node &group_vals = group_node["values"];
+        for(index_t vi = 0; vi < group_vals.dtype().number_of_elements(); ++vi)
+        {
+            Node temp(DataType(group_vals.dtype().id(), 1),
+                (void*)group_vals.element_ptr(vi), true);
+            const index_t group_entity = temp.to_index_t();
+
+            auto &groupset_pair = groupset_values_map[entity_groupset_map[group_entity]];
+            std::vector<index_t> &groupset_valuelist = groupset_pair.first;
+            std::set<index_t> &groupset_valueset = groupset_pair.second;
+            if(groupset_valueset.find(group_entity) == groupset_valueset.end())
+            {
+                groupset_valuelist.push_back(group_entity);
+                groupset_valueset.insert(group_entity);
+            }
+        }
+    }
+
+    for(const auto &groupset_values_pair : groupset_values_map)
+    {
+        const std::set<index_t> &groupset = groupset_values_pair.first;
+        const std::vector<index_t> &groupset_values = groupset_values_pair.second.first;
+
+        Node &group_node = *groupset_groupnode_map[groupset];
+        group_node["values"].set(DataType(int_dtype.id(), groupset_values.size()));
+        {
+            Node temp(DataType::index_t(groupset_values.size()),
+                (void*)groupset_values.data(), true);
+            temp.to_data_type(int_dtype.id(), group_node["values"]);
+        }
+    }
+
+    bputils::adjset::canonicalize(dest);
 }
 
 //-----------------------------------------------------------------------------
