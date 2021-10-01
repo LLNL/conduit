@@ -42,7 +42,6 @@ PyRelay_io_blueprint_write_mesh(PyObject *, //self
                                 PyObject *args,
                                 PyObject *kwargs)
 {
-    std::cout << "PyRelay_io_blueprint_write_mesh" << std::endl;
     PyObject   *py_node    = NULL;
     const char *path       = NULL;
     const char *protocol   = NULL;

@@ -73,6 +73,14 @@ else()
     message(STATUS "Skipping utilities (ENABLE_UTILS == OFF)")
 endif()
 
+#######################################
+# Relay Web Server Support
+#######################################
+if(ENABLE_RELAY_WEBSERVER)
+    message(STATUS "Building Relay Web Server support (ENABLE_RELAY_WEBSERVER == ON)")
+else()
+    message(STATUS "Skipping Relay Web Server support (ENABLE_RELAY_WEBSERVER == OFF)")
+endif()
 
 #######################################
 # Global Helpers (clear every config)

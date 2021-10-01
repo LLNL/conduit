@@ -5,7 +5,7 @@
 #ifndef CONDUIT_LICENSE_TEXT_HPP
 #define CONDUIT_LICENSE_TEXT_HPP
 
-std::string CONDUIT_LICENSE_TEXT = "Copyright (c) 2014-2020, Lawrence Livermore National Security, LLC.\n"
+std::string CONDUIT_LICENSE_TEXT = "Copyright (c) 2014-2021, Lawrence Livermore National Security, LLC.\n"
 "\n"
 "Produced at the Lawrence Livermore National Laboratory\n"
 "\n"

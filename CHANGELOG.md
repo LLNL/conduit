@@ -6,6 +6,19 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Added
+
+#### General
+- Added support to register custom memory allocators and a custom data movement handler. This allows conduit to move trees of data between heterogenous memory spaces (e.g. CPU and GPU memory). See conduit_utils.hpp for API details.
+
+### Changed
+
+#### General
+- Updated CMake logic to provide more robust Python detection and better support for HDF5 installs that were built with CMake.
+
+#### Relay
+- Added CMake option (`ENABLE_RELAY_WEBSERVER`, default = `ON`) to control if Conduit's Relay Web Server support is built. Down stream codes can check for support via header ifdef `CONDUIT_RELAY_WEBSERVER_ENABLED` or at runtime in `conduit::relay::about`.
+
 ### Fixed
 
 #### General
@@ -20,6 +33,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed a bug that was causing the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
 - Added a new function signature for `blueprint::mesh::topology::unstructured::generate_sides`, which performs the same task as the original and also takes fields from the original topology and maps them onto the new topology.
 
+#### Relay
+- Changed HDF5 offset support to use 64-bit unsigned integers for offsets, strides, and sizes.
 
 ## [0.7.2] - Released 2021-05-19
 

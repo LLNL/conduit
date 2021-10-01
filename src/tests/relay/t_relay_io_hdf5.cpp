@@ -367,15 +367,6 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_extendible_hdf5_datas
     EXPECT_EQ(5,read_vals[7]);
     EXPECT_EQ(6,read_vals[8]);
 
-    opts["offset"] = -1;
-    opts["stride"] = 2;
-    opts_read["offset"] = -1;
-    opts_read["stride"] = 2;
-
-    //this should fail
-    EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
-    EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
-
     opts["offset"] = 0;
     opts["stride"] = 0;
     opts_read["offset"] = 0;
@@ -501,15 +492,6 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_fixed_hdf5_dataset_ha
     EXPECT_EQ(0,read_vals[6]);
     EXPECT_EQ(5,read_vals[7]);
     EXPECT_EQ(6,read_vals[8]);
-
-    opts["offset"] = -1;
-    opts["stride"] = 2;
-    opts_read["offset"] = -1;
-    opts_read["stride"] = 2;
-
-    //this should fail
-    EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
-    EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
 
     opts["offset"] = 0;
     opts["stride"] = 0;
@@ -1906,10 +1888,10 @@ TEST(conduit_relay_io_hdf5, test_ref_path_error_msg)
     catch(conduit::Error &e)
     {
         std::string msg = e.message();
-        std::cout << "error message:" 
+        std::cout << "error message:"
                   <<  msg << std::endl;
         int count = 0;
-        
+
         std::string::size_type pos = 0;
         std::string path = "my/path/to/some/data";
 
@@ -1926,4 +1908,3 @@ TEST(conduit_relay_io_hdf5, test_ref_path_error_msg)
     }
 
 }
-

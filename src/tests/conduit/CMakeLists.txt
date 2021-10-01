@@ -16,6 +16,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_node
                 t_conduit_node_parent
                 t_conduit_node_compare
+                t_conduit_node_static_init
                 t_conduit_serialize
                 t_conduit_array
                 t_conduit_list_of
@@ -36,10 +37,11 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_node_iterator
                 t_conduit_node_cpp_iterator
                 t_conduit_node_obj_names_with_slashes
+                t_conduit_node_type_dispatch
                 t_conduit_schema
                 t_conduit_error
                 t_conduit_log
-                t_conduit_utils
+                t_conduit_mem_allocator
                 t_conduit_intro_cpp_example)
 
 

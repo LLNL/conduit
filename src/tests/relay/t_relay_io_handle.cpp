@@ -697,17 +697,10 @@ TEST(conduit_relay_io_handle, test_offset_and_stride)
     opts["size"] = -100;
     EXPECT_THROW(h.read(n_read,opts),conduit::Error);
 
-
-    // neg stride
+    // zero stride
     n_read.reset();
     opts.reset();
-    opts["stride"] = -1;
-    EXPECT_THROW(h.read(n_read,opts),conduit::Error);
-
-    // neg offset
-    n_read.reset();
-    opts.reset();
-    opts["offset"] = -1;
+    opts["stride"] = 0;
     EXPECT_THROW(h.read(n_read,opts),conduit::Error);
 
     // // huge size
@@ -799,7 +792,7 @@ TEST(conduit_relay_io_handle, test_ref_path_error_msg)
 
     h.read(n_read);
     n_read.print();
-    
+
     n_check = n;
     // expect no diff
     EXPECT_FALSE(n_read.diff(n_check,info));
@@ -815,10 +808,10 @@ TEST(conduit_relay_io_handle, test_ref_path_error_msg)
     catch(conduit::Error &e)
     {
         std::string msg = e.message();
-        std::cout << "error message:" 
+        std::cout << "error message:"
                   <<  msg << std::endl;
         int count = 0;
-        
+
         std::string::size_type pos = 0;
         std::string path = "my/path/to/some/data";
 

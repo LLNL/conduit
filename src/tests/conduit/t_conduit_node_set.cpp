@@ -6905,6 +6905,7 @@ TEST(conduit_node, node_set_non_compact_dtype)
     
 }
 
+
 //-----------------------------------------------------------------------------
 #ifdef CONDUIT_USE_CXX11
 //-----------------------------------------------------------------------------
@@ -7017,4 +7018,34 @@ TEST(conduit_array, cxx_11_init_lists)
 #endif // end CONDUIT_USE_CXX11
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, node_set_with_offset)
+{
+    Node n;
 
+    conduit::float64  vals[6] = { 1.0, 2.0,
+                                  1.0, 2.0,
+                                  1.0, 2.0,};
+
+    n["v1"].set(vals,
+                3,
+                0,
+                2 * sizeof(conduit::float64));
+    n["v2"].set(vals,
+                3,
+                sizeof(conduit::float64),
+                2 * sizeof(conduit::float64));
+    n.print();
+
+    float64_array av1 = n["v1"].value();
+    float64_array av2 = n["v2"].value();
+    
+    EXPECT_EQ(av1[0],1.0);
+    EXPECT_EQ(av1[1],1.0);
+    EXPECT_EQ(av1[2],1.0);
+
+    EXPECT_EQ(av2[0],2.0);
+    EXPECT_EQ(av2[1],2.0);
+    EXPECT_EQ(av2[2],2.0);
+
+}

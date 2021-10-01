@@ -12,10 +12,15 @@
 #  gtest, fruit, and mpi
 ################################
 
+################################
+# Threads support
+################################
 if(UNIX AND NOT APPLE)
-    # on some linux platforms we need to explicitly link threading
-    # options.
-    find_package( Threads REQUIRED )
+    if(ENABLE_RELAY_WEBSERVER)
+        # on some linux platforms we need to explicitly link threading
+        # options.
+        find_package( Threads REQUIRED )
+    endif()
 endif()
 
 
@@ -38,11 +43,6 @@ include_directories(thirdparty_builtin/libb64-1.2.1/include/)
 add_subdirectory(thirdparty_builtin/libyaml-690a781/)
 include_directories(thirdparty_builtin/libyaml-690a781/include)
 
-################################
-# Setup and build civetweb
-################################
-add_subdirectory(thirdparty_builtin/civetweb-0a95342/)
-include_directories(thirdparty_builtin/civetweb-0a95342/include)
 
 ################################
 # Setup includes for fmt
@@ -62,6 +62,14 @@ install(DIRECTORY
 # Optional Features
 ################################
 
+################################
+# Setup and build civetweb
+################################
+if(ENABLE_RELAY_WEBSERVER)
+    add_subdirectory(thirdparty_builtin/civetweb-0a95342/)
+    include_directories(thirdparty_builtin/civetweb-0a95342/include)
+endif()
+
 if(ENABLE_PYTHON)
     ################################
     # Setup includes for Python & Numpy
@@ -73,7 +81,6 @@ if(ENABLE_PYTHON)
     if(NOT PYTHON_FOUND)
         message(FATAL_ERROR "ENABLE_PYTHON is true, but Python wasn't found.")
     endif()
-
 
 
     include(cmake/thirdparty/FindNumPy.cmake)
@@ -151,4 +158,15 @@ if(H5ZZFP_DIR)
     endif()
 endif()
 
+################################
+# Setup Parmetis if available
+################################
+if(PARMETIS_DIR)
+    include(cmake/thirdparty/SetupParmetis.cmake)
+    include_directories(${PARMETIS_INCLUDE_DIR})
+    # if we don't find it, throw a fatal error
+    if(NOT PARMETIS_FOUND)
+        message(FATAL_ERROR "PARMETIS_DIR is set, but parmetis wasn't found.")
+    endif()
+endif()
 

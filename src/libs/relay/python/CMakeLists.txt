@@ -47,17 +47,18 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_blueprint_python
 target_link_libraries(conduit_relay_io_blueprint_python conduit conduit_relay conduit_blueprint)
 
 
-# add relay web submodule
-PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_web_python
-                           DEST_DIR      python-modules 
-                           PY_MODULE_DIR conduit/relay/web
-                           SOURCES       conduit_relay_web_python.cpp
-                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
-                           FOLDER        libs/python)
+if(ENABLE_RELAY_WEBSERVER)
+    # add relay web submodule
+    PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_web_python
+                               DEST_DIR      python-modules 
+                               PY_MODULE_DIR conduit/relay/web
+                               SOURCES       conduit_relay_web_python.cpp
+                                             ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
+                               FOLDER        libs/python)
 
-# link with the proper libs (beyond python)
-target_link_libraries(conduit_relay_web_python conduit conduit_relay)
-
+    # link with the proper libs (beyond python)
+    target_link_libraries(conduit_relay_web_python conduit conduit_relay)
+endif()
 
 ################################################################
 # If we have mpi, add the conduit relay mpi module

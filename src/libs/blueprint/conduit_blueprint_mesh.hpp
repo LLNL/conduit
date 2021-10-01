@@ -56,7 +56,7 @@ bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
                                   conduit::Node &info);
 
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &mesh,
                                   conduit::Node &info);
 
 
@@ -67,21 +67,20 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
 //-----------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API is_multi_domain(const conduit::Node &n);
+bool CONDUIT_BLUEPRINT_API is_multi_domain(const conduit::Node &mesh);
 
 //-------------------------------------------------------------------------
-index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &n);
+index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh);
 
 //-----------------------------------------------------------------------------
-std::vector<conduit::Node *> CONDUIT_BLUEPRINT_API domains(Node &n);
-//-----------------------------------------------------------------------------
-std::vector<const conduit::Node *> CONDUIT_BLUEPRINT_API domains(const Node &n);
+std::vector<conduit::Node *> CONDUIT_BLUEPRINT_API domains(Node &mesh);
+std::vector<const conduit::Node *> CONDUIT_BLUEPRINT_API domains(const Node &mesh);
 
 /// Note: to_multi_domain uses Node::set_external to avoid copying data.
 /// If you need a copy of the data unlinked from the input, set into
 /// another node.
 //-------------------------------------------------------------------------
-void CONDUIT_BLUEPRINT_API to_multi_domain(const conduit::Node &n,
+void CONDUIT_BLUEPRINT_API to_multi_domain(const conduit::Node &mesh,
                                            conduit::Node &dest);
 
 //-------------------------------------------------------------------------
@@ -96,7 +95,7 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
 namespace logical_dims
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &dims,
                                       conduit::Node &info);
 }
 
@@ -106,7 +105,7 @@ namespace logical_dims
 namespace association
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &assoc,
                                       conduit::Node &info);
 }
 
@@ -116,14 +115,14 @@ namespace association
 namespace coordset
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coordset,
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
-    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &coordset);
 
     //-------------------------------------------------------------------------
-    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &coordset);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
@@ -131,15 +130,15 @@ namespace coordset
     namespace uniform
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coordset,
                                           conduit::Node &info);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_rectilinear(const conduit::Node &n,
+        void CONDUIT_BLUEPRINT_API to_rectilinear(const conduit::Node &coordset,
                                                   conduit::Node &dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_explicit(const conduit::Node &n,
+        void CONDUIT_BLUEPRINT_API to_explicit(const conduit::Node &coordset,
                                                conduit::Node &dest);
 
         //---------------------------------------------------------------------
@@ -148,7 +147,7 @@ namespace coordset
         namespace origin
         {
             //-----------------------------------------------------------------
-            bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+            bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &origin,
                                               conduit::Node &info);
         }
 
@@ -158,7 +157,7 @@ namespace coordset
         namespace spacing
         {
             //-----------------------------------------------------------------
-            bool CONDUIT_BLUEPRINT_API  verify(const conduit::Node &n,
+            bool CONDUIT_BLUEPRINT_API  verify(const conduit::Node &spacing,
                                                conduit::Node &info);
         }
 
@@ -170,11 +169,11 @@ namespace coordset
     namespace rectilinear
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coordset,
                                           conduit::Node &info);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_explicit(const conduit::Node &n,
+        void CONDUIT_BLUEPRINT_API to_explicit(const conduit::Node &coordset,
                                                conduit::Node &dest);
     }
 
@@ -184,7 +183,7 @@ namespace coordset
     namespace _explicit
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coordset,
                                           conduit::Node &info);
     }
 
@@ -194,7 +193,7 @@ namespace coordset
     namespace index
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coordset_idx,
                                           conduit::Node &info);
     }
 
@@ -204,7 +203,7 @@ namespace coordset
     namespace type
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &type,
                                           conduit::Node &info);
     }
 
@@ -214,7 +213,7 @@ namespace coordset
     namespace coord_system
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coord_sys,
                                           conduit::Node &info);
     }
 }
@@ -229,14 +228,14 @@ namespace coordset
 namespace topology
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &topo,
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
-    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &topo);
 
     //-------------------------------------------------------------------------
-    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &topo);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::points protocol interface
@@ -244,7 +243,7 @@ namespace topology
     namespace points
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &topo,
                                           conduit::Node &info);
     }
 
@@ -254,23 +253,23 @@ namespace topology
     namespace uniform
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &topo,
                                           conduit::Node &info);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_rectilinear(const conduit::Node &n,
-                                                  conduit::Node &dest,
-                                                  conduit::Node &cdest);
+        void CONDUIT_BLUEPRINT_API to_rectilinear(const conduit::Node &topo,
+                                                  conduit::Node &topo_dest,
+                                                  conduit::Node &coords_dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_structured(const conduit::Node &n,
-                                                 conduit::Node &dest,
-                                                 conduit::Node &cdest);
+        void CONDUIT_BLUEPRINT_API to_structured(const conduit::Node &topo,
+                                                 conduit::Node &topo_dest,
+                                                 conduit::Node &coords_dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_unstructured(const conduit::Node &n,
-                                                   conduit::Node &dest,
-                                                   conduit::Node &cdest);
+        void CONDUIT_BLUEPRINT_API to_unstructured(const conduit::Node &topo,
+                                                   conduit::Node &topo_dest,
+                                                   conduit::Node &coords_dest);
     }
 
     //-------------------------------------------------------------------------
@@ -279,18 +278,18 @@ namespace topology
     namespace rectilinear
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &topo,
                                           conduit::Node &info);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_structured(const conduit::Node &n,
-                                                 conduit::Node &dest,
-                                                 conduit::Node &cdest);
+        void CONDUIT_BLUEPRINT_API to_structured(const conduit::Node &topo,
+                                                 conduit::Node &topo_dest,
+                                                 conduit::Node &coords_dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_unstructured(const conduit::Node &n,
-                                                   conduit::Node &dest,
-                                                   conduit::Node &cdest);
+        void CONDUIT_BLUEPRINT_API to_unstructured(const conduit::Node &topo,
+                                                   conduit::Node &topo_dest,
+                                                   conduit::Node &coords_dest);
     }
 
     //-------------------------------------------------------------------------
@@ -299,13 +298,13 @@ namespace topology
     namespace structured
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &topo,
                                           conduit::Node &info);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_unstructured(const conduit::Node &n,
-                                                   conduit::Node &dest,
-                                                   conduit::Node &cdest);
+        void CONDUIT_BLUEPRINT_API to_unstructured(const conduit::Node &topo,
+                                                   conduit::Node &topo_dest,
+                                                   conduit::Node &coords_dest);
     }
 
     //-------------------------------------------------------------------------
@@ -314,42 +313,42 @@ namespace topology
     namespace unstructured
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &topo,
                                           conduit::Node &info);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &n,
+        void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &topo,
                                                 conduit::Node &dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_points(const conduit::Node &n,
+        void CONDUIT_BLUEPRINT_API generate_points(const conduit::Node &topo,
                                                    conduit::Node &dest,
                                                    conduit::Node &s2dmap,
                                                    conduit::Node &d2smap);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_lines(const conduit::Node &n,
+        void CONDUIT_BLUEPRINT_API generate_lines(const conduit::Node &topo,
                                                   conduit::Node &dest,
                                                   conduit::Node &s2dmap,
                                                   conduit::Node &d2smap);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_faces(const conduit::Node &n,
+        void CONDUIT_BLUEPRINT_API generate_faces(const conduit::Node &topo,
                                                   conduit::Node &dest,
                                                   conduit::Node &s2dmap,
                                                   conduit::Node &d2smap);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_centroids(const conduit::Node &n,
-                                                      conduit::Node &dest,
-                                                      conduit::Node &cdest,
+        void CONDUIT_BLUEPRINT_API generate_centroids(const conduit::Node &topo,
+                                                      conduit::Node &topo_dest,
+                                                      conduit::Node &coords_dest,
                                                       conduit::Node &s2dmap,
                                                       conduit::Node &d2smap);
 
         //---------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &n,
-                                                  conduit::Node &dest,
-                                                  conduit::Node &cdest,
+        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &topo,
+                                                  conduit::Node &topo_dest,
+                                                  conduit::Node &coords_dest,
                                                   conduit::Node &s2dmap,
                                                   conduit::Node &d2smap);
 
@@ -361,23 +360,23 @@ namespace topology
         // node can also have a child "field_names", which should be a string or list
         // of strings that allow the user to specify which fields they want to be 
         // mapped from the original set of fields.
-        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &topo_src,
+        void CONDUIT_BLUEPRINT_API generate_sides(const conduit::Node &topo,
                                                   conduit::Node &topo_dest,
-                                                  conduit::Node &coordset_dest,
+                                                  conduit::Node &coords_dest,
                                                   conduit::Node &fields_dest,
                                                   conduit::Node &s2dmap,
                                                   conduit::Node &d2smap,
                                                   const conduit::Node &options);
 
         //---------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_corners(const conduit::Node &n,
-                                                    conduit::Node &dest,
-                                                    conduit::Node &cdest,
+        void CONDUIT_BLUEPRINT_API generate_corners(const conduit::Node &topo,
+                                                    conduit::Node &topo_dest,
+                                                    conduit::Node &coords_dest,
                                                     conduit::Node &s2dmap,
                                                     conduit::Node &d2smap);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &n,
+        void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &topo,
                                                     conduit::Node &dest);
     }
 
@@ -387,7 +386,7 @@ namespace topology
     namespace index
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &topo_idx,
                                           conduit::Node &info);
     }
 
@@ -397,7 +396,7 @@ namespace topology
     namespace type
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &type,
                                           conduit::Node &info);
     }
 
@@ -407,7 +406,7 @@ namespace topology
     namespace shape
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &shape,
                                           conduit::Node &info);
     }
 }
@@ -421,20 +420,20 @@ namespace topology
 namespace matset
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &matset,
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API is_multi_buffer(const conduit::Node &n);
+    bool CONDUIT_BLUEPRINT_API is_multi_buffer(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API is_uni_buffer(const conduit::Node &n);
+    bool CONDUIT_BLUEPRINT_API is_uni_buffer(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API is_element_dominant(const conduit::Node &n);
+    bool CONDUIT_BLUEPRINT_API is_element_dominant(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &n);
+    bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
     // Converts a blueprint matset to the silo style sparse mixed slot 
@@ -453,7 +452,7 @@ namespace matset
     namespace index
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &matset_idx,
                                           conduit::Node &info);
     }
 }
@@ -467,7 +466,7 @@ namespace matset
 namespace field
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &field,
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
@@ -489,7 +488,7 @@ namespace field
     namespace index
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &field_idx,
                                           conduit::Node &info);
     }
 
@@ -499,7 +498,7 @@ namespace field
     namespace basis
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &basis,
                                           conduit::Node &info);
     }
 }
@@ -513,7 +512,7 @@ namespace field
 namespace specset
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &specset,
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
@@ -522,7 +521,7 @@ namespace specset
     namespace index
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &specset,
                                           conduit::Node &info);
     }
 }
@@ -536,7 +535,7 @@ namespace specset
 namespace adjset
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &adjset,
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
@@ -545,7 +544,7 @@ namespace adjset
     namespace index
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &adjset_idx,
                                           conduit::Node &info);
     }
 }
@@ -559,7 +558,7 @@ namespace adjset
 namespace nestset
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &nestset,
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
@@ -568,7 +567,7 @@ namespace nestset
     namespace index
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &nestset_idx,
                                           conduit::Node &info);
     }
 
@@ -578,7 +577,7 @@ namespace nestset
     namespace type
     {
         //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &type,
                                           conduit::Node &info);
     }
 }
@@ -593,7 +592,7 @@ namespace nestset
 namespace index
 {
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
+    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &idx,
                                       conduit::Node &info);
 
 }
