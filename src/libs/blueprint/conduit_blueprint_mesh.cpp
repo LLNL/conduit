@@ -255,6 +255,7 @@ bool verify_object_field(const std::string &protocol,
                          conduit::Node &info,
                          const std::string &field_name = "",
                          const bool allow_list = false,
+                         const bool allow_empty = false,
                          const index_t num_children = 0)
 {
     Node &field_info = (field_name != "") ? info[field_name] : info;
@@ -271,7 +272,7 @@ bool verify_object_field(const std::string &protocol,
                                        (allow_list ? " or a list" : ""));
             res = false;
         }
-        else if(field_node.number_of_children() == 0)
+        else if(!allow_empty && field_node.number_of_children() == 0)
         {
             log::error(info,protocol, "has no children");
             res = false;
@@ -4922,7 +4923,7 @@ mesh::adjset::verify(const Node &adjset,
     res &= verify_field_exists(protocol, adjset, info, "association") &&
            mesh::association::verify(adjset["association"], info["association"]);
 
-    if(!verify_object_field(protocol, adjset, info, "groups"))
+    if(!verify_object_field(protocol, adjset, info, "groups", false, true))
     {
         res = false;
     }
@@ -4945,7 +4946,6 @@ mesh::adjset::verify(const Node &adjset,
             }
             else if(chld.has_child("windows"))
             {
-
                 group_res &= verify_object_field(protocol, chld,
                     chld_info, "windows");
 
@@ -5039,12 +5039,12 @@ mesh::adjset::is_maxshare(const Node &adjset)
     while(group_itr.has_next() && res)
     {
         const Node &group = group_itr.next();
-        const Node &group_neighbors = group["neighbors"];
+        const Node &group_values = group["values"];
 
-        Node temp(DataType(group_neighbors.dtype().id(), 1));
-        for(index_t ni = 0; ni < group_neighbors.dtype().number_of_elements(); ni++)
+        for(index_t ni = 0; ni < group_values.dtype().number_of_elements(); ni++)
         {
-            temp.set_external(temp.dtype(), (void*)group_neighbors.element_ptr(ni));
+            Node temp(DataType(group_values.dtype().id(), 1),
+                (void*)group_values.element_ptr(ni), true);
             const index_t next_id = temp.to_index_t();
 
             res &= ids.find(next_id) == ids.end();
@@ -5080,10 +5080,10 @@ mesh::adjset::to_pairwise(const Node &adjset,
         std::vector<index_t> group_neighbors;
         {
             const Node &group_nvals = group_node["neighbors"];
-            Node temp(DataType(group_nvals.dtype().id(), 1));
             for(index_t ni = 0; ni < group_nvals.dtype().number_of_elements(); ++ni)
             {
-                temp.set_external(temp.dtype(), (void*)group_nvals.element_ptr(ni));
+                Node temp(DataType(group_nvals.dtype().id(), 1),
+                    (void*)group_nvals.element_ptr(ni), true);
                 group_neighbors.push_back(temp.to_index_t());
             }
         }
@@ -5091,10 +5091,10 @@ mesh::adjset::to_pairwise(const Node &adjset,
         std::vector<index_t> group_values;
         {
             const Node &group_vals = group_node["values"];
-            Node temp(DataType(group_vals.dtype().id(), 1));
             for(index_t vi = 0; vi < group_vals.dtype().number_of_elements(); ++vi)
             {
-                temp.set_external(temp.dtype(), (void*)group_vals.element_ptr(vi));
+                Node temp(DataType(group_vals.dtype().id(), 1),
+                    (void*)group_vals.element_ptr(vi), true);
                 group_values.push_back(temp.to_index_t());
             }
         }
@@ -5219,9 +5219,9 @@ mesh::nestset::verify(const Node &nestset,
             {
                 index_t window_dim = chld["ratio"].number_of_children();
                 window_res &= !chld.has_child("origin") ||
-                    verify_object_field(protocol, chld, chld_info, "origin", false, window_dim);
+                    verify_object_field(protocol, chld, chld_info, "origin", false, false, window_dim);
                 window_res &= !chld.has_child("dims") ||
-                    verify_object_field(protocol, chld, chld_info, "dims", false, window_dim);
+                    verify_object_field(protocol, chld, chld_info, "dims", false, false, window_dim);
             }
 
             log::validation(chld_info,window_res);

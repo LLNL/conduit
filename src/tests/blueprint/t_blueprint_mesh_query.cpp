@@ -88,15 +88,14 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
 
             blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
 
-            for(const std::string &domain_name : mesh.child_names())
+            for(Node *domain : blueprint::mesh::domains(mesh))
             {
-                Node &domain_adjset = mesh[domain_name]["adjsets"].child(0);
+                Node &domain_adjset = (*domain)["adjsets"].child(0);
                 domain_adjset["groups"].reset();
                 domain_adjset["groups"].set(DataType::object());
 
-                // TODO: Need fix to empty groups provided by Conduit-#767.
-                ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
-                ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(mesh));
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+                ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(domain_adjset));
             }
         }
 
@@ -104,28 +103,87 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
             Node mesh, info;
 
             blueprint::mesh::examples::grid("quads",10,10,1,2,1,1,mesh);
-            ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
-            ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(mesh));
+            for(const Node *domain : blueprint::mesh::domains(mesh))
+            {
+                const Node &domain_adjset = (*domain)["adjsets"].child(0);
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+                ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(domain_adjset));
+            }
 
             blueprint::mesh::examples::grid("quads",10,10,1,4,1,1,mesh);
-            ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
-            ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(mesh));
+            for(const Node *domain : blueprint::mesh::domains(mesh))
+            {
+                const Node &domain_adjset = (*domain)["adjsets"].child(0);
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+                ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(domain_adjset));
+            }
         }
 
         { // Negative Test //
             Node mesh, info;
 
             blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
-            ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
-            ASSERT_FALSE(blueprint::mesh::adjset::is_pairwise(mesh));
+            for(const Node *domain : blueprint::mesh::domains(mesh))
+            {
+                const Node &domain_adjset = (*domain)["adjsets"].child(0);
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+                ASSERT_FALSE(blueprint::mesh::adjset::is_pairwise(domain_adjset));
+            }
 
-            blueprint::mesh::examples::grid("quads",10,10,1,2,2,2,mesh);
-            ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
-            ASSERT_FALSE(blueprint::mesh::adjset::is_pairwise(mesh));
+            blueprint::mesh::examples::grid("hexs",10,10,10,2,2,2,mesh);
+            for(const Node *domain : blueprint::mesh::domains(mesh))
+            {
+                const Node &domain_adjset = (*domain)["adjsets"].child(0);
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+                ASSERT_FALSE(blueprint::mesh::adjset::is_pairwise(domain_adjset));
+            }
         }
     }
 
     { // Max-Share Tests //
-        // ASSERT_TRUE(false);
+        { // Empty Test //
+            Node mesh, info;
+
+            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+
+            for(Node *domain : blueprint::mesh::domains(mesh))
+            {
+                Node &domain_adjset = (*domain)["adjsets"].child(0);
+                domain_adjset["groups"].reset();
+                domain_adjset["groups"].set(DataType::object());
+
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+                ASSERT_TRUE(blueprint::mesh::adjset::is_maxshare(domain_adjset));
+            }
+        }
+
+        { // Positive Test //
+            Node mesh, info;
+
+            blueprint::mesh::examples::grid("quads",10,10,1,2,1,1,mesh);
+            for(const Node *domain : blueprint::mesh::domains(mesh))
+            {
+                const Node &domain_adjset = (*domain)["adjsets"].child(0);
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+                ASSERT_TRUE(blueprint::mesh::adjset::is_maxshare(domain_adjset));
+            }
+
+            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+            for(const Node *domain : blueprint::mesh::domains(mesh))
+            {
+                const Node &domain_adjset = (*domain)["adjsets"].child(0);
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+                ASSERT_TRUE(blueprint::mesh::adjset::is_maxshare(domain_adjset));
+            }
+        }
+
+        { // Negative Test //
+            Node mesh, info;
+
+            // TODO: All tests return adjsets that are natively 'max-share',
+            // so testing the negative case will require either using a transform
+            // or constructing a simple non-max-share mesh.
+            // ASSERT_TRUE(true);
+        }
     }
 }
