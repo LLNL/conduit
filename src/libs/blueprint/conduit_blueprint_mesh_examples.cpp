@@ -3249,7 +3249,7 @@ void
 misc(const std::string &mesh_type,
      index_t npts_x, // number of points in x
      index_t npts_y, // number of points in y
-     index_t npts_z, // number of points in z
+     index_t /*npts_z*/, // number of points in z
      Node &res)
 {
     // TODO(JRC): Improve these examples so that they use different example
@@ -3264,45 +3264,6 @@ misc(const std::string &mesh_type,
         braid_quads(npts_x,npts_y,res);
         braid_init_example_matset(npts_x-1,npts_y-1,0,res["matsets/mesh"]);
         braid_init_example_specset(npts_x-1,npts_y-1,0,res["specsets/mesh"]);
-    }
-    else if(mesh_type == "adjsets")
-    {
-        for(index_t j = 0; j < 2; j++)
-        {
-            for(index_t i = 0; i < 2; i++)
-            {
-                const index_t domain_id = j * 2 + i;
-
-                std::ostringstream oss;
-                oss << "domain" << domain_id;
-                const std::string domain_name = oss.str();
-
-                Node &domain_node = res[domain_name];
-                if(npts_z == 0)
-                {
-                    braid_quads(npts_x,npts_y,domain_node);
-                }
-                else
-                {
-                    braid_hexs(npts_x,npts_y,npts_z,domain_node);
-                }
-                domain_node["state/domain_id"].set(domain_id);
-
-                Node &domain_coords = domain_node["coordsets/coords/values"];
-                float64_array domain_coords_x = domain_coords["x"].as_float64_array();
-                for(index_t x = 0; x < domain_coords_x.number_of_elements(); x++)
-                {
-                    domain_coords_x[x] += i * 20.0;
-                }
-                float64_array domain_coords_y = domain_coords["y"].as_float64_array();
-                for(index_t y = 0; y < domain_coords_y.number_of_elements(); y++)
-                {
-                    domain_coords_y[y] += j * 20.0;
-                }
-            }
-        }
-
-        braid_init_example_adjset(res);
     }
     else if(mesh_type == "nestsets")
     {
