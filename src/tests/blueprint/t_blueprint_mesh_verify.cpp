@@ -1456,7 +1456,7 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
         Node mesh, info;
         CHECK_MESH(verify_adjset,mesh,info,false);
 
-        blueprint::mesh::examples::misc("adjsets",10,10,1,mesh);
+        blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
         Node& n = mesh.child(0)["adjsets"].child(0);
         CHECK_MESH(verify_adjset,n,info,true);
 
@@ -2044,7 +2044,7 @@ TEST(conduit_blueprint_mesh_verify, index_adjset)
         Node mesh, index, info;
         CHECK_MESH(verify_adjset_index,mesh,info,false);
 
-        blueprint::mesh::examples::misc("adjsets",10,10,1,mesh);
+        blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
         blueprint::mesh::generate_index(mesh["domain0"],"quads",1,index);
         Node& aindex = index["adjsets"].child(0);
         CHECK_MESH(verify_adjset_index,aindex,info,true);

@@ -157,7 +157,11 @@ void setup_test_mesh(const index_t type,
     rank_mesh.reset();
     full_mesh.reset();
 
-    conduit::blueprint::mesh::examples::misc("adjsets", dims, dims, (ndims == 3) ? dims : 0, full_mesh);
+    conduit::blueprint::mesh::examples::grid(
+        (ndims == 3) ? "hexs" : "quads",
+        dims, dims, (ndims == 3) ? dims : 0,
+        2, 2, 1,
+        full_mesh);
     setup_test_mesh_paths(type, full_mesh, rank_paths);
 
     const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);

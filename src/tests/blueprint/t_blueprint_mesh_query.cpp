@@ -61,7 +61,7 @@ TEST(conduit_blueprint_mesh_query, mesh_domains)
 
         { // Multi-Domain Test //
             Node mesh;
-            blueprint::mesh::examples::misc("adjsets",10,10,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
 
             std::set<Node *> ref_domains;
             for(const std::string &child_name : mesh.child_names())
@@ -82,13 +82,50 @@ TEST(conduit_blueprint_mesh_query, mesh_domains)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_query, adjset_formats)
 {
-    // TODO: set up a few canonical example meshes.
-
     { // Pairwise Tests //
-        ASSERT_TRUE(false);
+        { // Empty Test //
+            Node mesh, info;
+
+            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+
+            for(const std::string &domain_name : mesh.child_names())
+            {
+                Node &domain_adjset = mesh[domain_name]["adjsets"].child(0);
+                domain_adjset["groups"].reset();
+                domain_adjset["groups"].set(DataType::object());
+
+                // TODO: Need fix to empty groups provided by Conduit-#767.
+                ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
+                ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(mesh));
+            }
+        }
+
+        { // Positive Test //
+            Node mesh, info;
+
+            blueprint::mesh::examples::grid("quads",10,10,1,2,1,1,mesh);
+            ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
+            ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(mesh));
+
+            blueprint::mesh::examples::grid("quads",10,10,1,4,1,1,mesh);
+            ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
+            ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(mesh));
+        }
+
+        { // Negative Test //
+            Node mesh, info;
+
+            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+            ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
+            ASSERT_FALSE(blueprint::mesh::adjset::is_pairwise(mesh));
+
+            blueprint::mesh::examples::grid("quads",10,10,1,2,2,2,mesh);
+            ASSERT_TRUE(blueprint::mesh::adjset::verify(mesh, info));
+            ASSERT_FALSE(blueprint::mesh::adjset::is_pairwise(mesh));
+        }
     }
 
     { // Max-Share Tests //
-        ASSERT_TRUE(false);
+        // ASSERT_TRUE(false);
     }
 }
