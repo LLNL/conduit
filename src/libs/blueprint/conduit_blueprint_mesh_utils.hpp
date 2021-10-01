@@ -240,7 +240,9 @@ DataType CONDUIT_BLUEPRINT_API find_widest_dtype(const Node &node, const DataTyp
 DataType CONDUIT_BLUEPRINT_API find_widest_dtype(const Node &node, const std::vector<DataType> &default_dtypes);
 
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API const Node * find_reference_node(const Node &node, const std::string &ref_key);
+const Node * CONDUIT_BLUEPRINT_API find_reference_node(const Node &node, const std::string &ref_key);
+//-----------------------------------------------------------------------------
+index_t CONDUIT_BLUEPRINT_API find_domain_id(const Node &node);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::coordset --
@@ -248,16 +250,16 @@ CONDUIT_BLUEPRINT_API const Node * find_reference_node(const Node &node, const s
 namespace coordset
 {
     //-------------------------------------------------------------------------
-    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &coordset);
 
     //-------------------------------------------------------------------------
-    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &coordset);
 
     //-----------------------------------------------------------------------------
-    std::vector<std::string> CONDUIT_BLUEPRINT_API axes(const Node &n);
+    std::vector<std::string> CONDUIT_BLUEPRINT_API axes(const Node &coordset);
 
     //-----------------------------------------------------------------------------
-    std::string CONDUIT_BLUEPRINT_API coordsys(const Node &n);
+    std::string CONDUIT_BLUEPRINT_API coordsys(const Node &coordset);
 
     //-------------------------------------------------------------------------
     // -- begin conduit::blueprint::mesh::utils::coordset::_explicit --
@@ -265,7 +267,7 @@ namespace coordset
     namespace _explicit
     {
         //-------------------------------------------------------------------------
-        std::vector<float64> CONDUIT_BLUEPRINT_API coords(const Node &n, const index_t i);
+        std::vector<float64> CONDUIT_BLUEPRINT_API coords(const Node &coordset, const index_t i);
     }
     //-------------------------------------------------------------------------
     // -- end conduit::blueprint::mesh::utils::coordset::_explicit --
@@ -281,10 +283,10 @@ namespace coordset
 namespace topology
 {
     //-------------------------------------------------------------------------
-    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &topo);
 
     //-------------------------------------------------------------------------
-    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &n);
+    index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &topo);
 
     //-------------------------------------------------------------------------
     // -- begin conduit::blueprint::mesh::utils::topology::unstructured --
@@ -293,15 +295,15 @@ namespace topology
     {
         // TODO(JRC): Expose this 'cache' version of the function publicly?
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_offsets(Node &n,
+        void CONDUIT_BLUEPRINT_API generate_offsets(Node &topo,
                                                     Node &dest);
 
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_offsets(const Node &n,
+        void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
                                                     Node &dest);
 
         //-------------------------------------------------------------------------
-        std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &n,
+        std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
                                                           const index_t i);
     }
     //-------------------------------------------------------------------------
@@ -310,6 +312,18 @@ namespace topology
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::topology --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::adjset --
+//-----------------------------------------------------------------------------
+namespace adjset
+{
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API canonicalize(Node &adjset);
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::adjset --
 //-----------------------------------------------------------------------------
 
 }

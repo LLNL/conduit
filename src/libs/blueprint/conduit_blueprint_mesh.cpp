@@ -5060,110 +5060,81 @@ void
 mesh::adjset::to_pairwise(const Node &adjset,
                           Node &dest)
 {
-    // TODO: Fix up this ugly workaround for getting the current rank's
-    // domain ID if possible.
-    const Node &state = adjset.parent()->parent()->child("state");
-    const index_t domain_id = state["domain_id"].to_index_t();
+    dest.reset();
 
-    // TODO: This code assumes that each unique set of neighbors has its
-    // own group. If this requirement cannot be assumed, then ranks *must*
-    // share domain names, or else there is no way to distinguish order
-    // across processors w/o additional communication.
-    //
-    // Identifying Information for a Group:
-    // 1. Set of neighbors
-    // 2. Name
-    // 3. Included values (i.e. indices, referring to vertices or topological entities)
-    //
-    // At least one of the first two must be unique in order to allow for
-    // lining up adjset groups across ranks w/o doing communication and
-    // topological processing (e.g. comparing topo entities in each group
-    // to make sure they match).
+    const DataType int_dtype = bputils::find_widest_dtype(adjset, bputils::DEFAULT_INT_DTYPES);
 
     // NOTE(JRC): We assume that group names are shared across ranks, but
     // make no assumptions on the uniqueness of a set of neighbors for a group
     // (i.e. the same set of neighbors can be used in >1 groups).
-    std::map<std::set<index_t>, std::set<std::string>> neighbors_groups_map;
-    {
-        NodeConstIterator groups_it = adjset["groups"].children();
-        while(groups_it.has_next())
-        {
-            const Node &group = groups_it.next();
-            const std::string &group_name = groups_it.name();
+    std::vector<std::string> adjset_group_names = adjset["groups"].child_names();
+    std::sort(adjset_group_names.begin(), adjset_group_names.end());
 
-            std::set<index_t> group_neighbors;
-            group_neighbors.insert(domain_id);
-
-            const Node &group_nvals = group["neighbors"];
-            DataType group_ntype = group_nvals.dtype();
-            for(index_t ni = 0; ni < group_ntype.number_of_elements(); ++ni)
-            {
-                Node group_nval(DataType(group_ntype.id(), 1),
-                    (void*)group_nvals.element_ptr(ni), true);
-                group_neighbors.insert(group_nval.to_index_t());
-            }
-
-            neighbors_groups_map[group_neighbors].insert(group_name);
-        }
-    }
-
+    // Compile ordered lists for each neighbor containing their unique lists
+    // of 'adjset' entity indices, as compiled from all groups in the source 'adjset'.
     std::map<index_t, std::vector<index_t>> pair_values_map;
-    for(const auto &neighbors_groups_pair : neighbors_groups_map)
+    for(const std::string &group_name : adjset_group_names)
     {
-        const std::set<index_t> &neighbor_ids = neighbors_groups_pair.first;
-        const std::set<std::string> &group_names = neighbors_groups_pair.second;
-        for(const std::string &group_name : group_names)
-        {
-            const Node &group_vals = adjset["groups"][group_name]["values"];
+        const Node &group_node = adjset["groups"][group_name];
 
-            for(const index_t &neighbor_id : neighbor_ids)
+        std::vector<index_t> group_neighbors;
+        {
+            const Node &group_nvals = group_node["neighbors"];
+            Node temp(DataType(group_nvals.dtype().id(), 1));
+            for(index_t ni = 0; ni < group_nvals.dtype().number_of_elements(); ++ni)
             {
-                if(neighbor_id != domain_id)
-                {
-                    std::vector<index_t> &neighbor_values = pair_values_map[neighbor_id];
-                    DataType group_vtype = group_vals.dtype();
-                    for(index_t vi = 0; vi < group_vtype.number_of_elements(); ++vi)
-                    {
-                        Node group_val(DataType(group_vtype.id(), 1),
-                            (void*)group_vals.element_ptr(vi), true);
-                        neighbor_values.push_back(group_val.to_index_t());
-                    }
-                }
+                temp.set_external(temp.dtype(), (void*)group_nvals.element_ptr(ni));
+                group_neighbors.push_back(temp.to_index_t());
             }
+        }
+
+        std::vector<index_t> group_values;
+        {
+            const Node &group_vals = group_node["values"];
+            Node temp(DataType(group_vals.dtype().id(), 1));
+            for(index_t vi = 0; vi < group_vals.dtype().number_of_elements(); ++vi)
+            {
+                temp.set_external(temp.dtype(), (void*)group_vals.element_ptr(vi));
+                group_values.push_back(temp.to_index_t());
+            }
+        }
+
+        for(const index_t &neighbor_id : group_neighbors)
+        {
+            std::vector<index_t> &neighbor_values = pair_values_map[neighbor_id];
+            neighbor_values.insert(neighbor_values.end(),
+                group_values.begin(), group_values.end());
         }
     }
 
-    // Project Core Schema to 'dest' //
+    // Given ordered lists of adjset values per neighbor, generate the destination
+    // adjset hierarchy.
+    Node adjset_template;
+    adjset_template.set_external(adjset);
+    adjset_template.remove("groups");
+
+    dest.set(adjset_template);
+    dest["groups"].set(DataType::object());
+
+    for(const auto &pair_values_pair : pair_values_map)
     {
-        Node adjset_template;
-        adjset_template.set_external(adjset);
-        adjset_template.remove("groups");
+        const index_t &neighbor_id = pair_values_pair.first;
+        const std::vector<index_t> &neighbor_values = pair_values_pair.second;
 
-        dest.set(adjset_template);
-        dest["groups"].set(DataType::object());
-
-        for(const auto &pair_values_pair : pair_values_map)
+        Node &group_node = dest["groups"][std::to_string(dest["groups"].number_of_children())];
+        group_node["neighbors"].set(DataType(int_dtype.id(), 1));
         {
-            const index_t &neighbor_id = pair_values_pair.first;
-            const std::vector<index_t> &neighbor_values = pair_values_pair.second;
-
-            std::string group_name = "group";
-            {
-                std::vector<index_t> group_neighbors = {domain_id, neighbor_id};
-                std::sort(group_neighbors.begin(), group_neighbors.end());
-
-                for(index_t gi = 0; gi < (index_t)group_neighbors.size(); gi++)
-                {
-                    group_name += "_" + std::to_string(group_neighbors[gi]);
-                }
-            }
-
-            Node &group_node = dest["groups"][group_name];
-            // TODO: Inherit widest data type from input tree.
-            group_node["neighbors"].set(neighbor_id);
-            group_node["values"].set(neighbor_values);
+            Node temp(DataType::index_t(1), (void*)&neighbor_id, true);
+            temp.to_data_type(int_dtype.id(), group_node["neighbors"]);
+        }
+        group_node["values"].set(DataType(int_dtype.id(), neighbor_values.size()));
+        {
+            Node temp(DataType::index_t(neighbor_values.size()),
+                (void*)neighbor_values.data(), true);
+            temp.to_data_type(int_dtype.id(), group_node["values"]);
         }
     }
+    bputils::adjset::canonicalize(dest);
 }
 
 //-----------------------------------------------------------------------------

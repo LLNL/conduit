@@ -16,6 +16,7 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 //-----------------------------------------------------------------------------
@@ -747,6 +748,7 @@ find_widest_dtype(const Node &node, const DataType &default_dtype)
     return find_widest_dtype(node, std::vector<DataType>(1, default_dtype));
 }
 
+
 //-----------------------------------------------------------------------------
 const Node *
 find_reference_node(const Node &node, const std::string &ref_key)
@@ -780,6 +782,34 @@ find_reference_node(const Node &node, const std::string &ref_key)
     }
 
     return res;
+}
+
+
+//-----------------------------------------------------------------------------
+// NOTE: 'node' can be any subtree of a Blueprint-compliant mesh
+index_t
+find_domain_id(const Node &node)
+{
+    index_t domain_id = -1;
+
+    Node info;
+    const Node *curr_node = &node;
+    while(curr_node != NULL && domain_id == -1)
+    {
+        if(blueprint::mesh::verify(*curr_node, info))
+        {
+            const std::vector<const Node *> domains = blueprint::mesh::domains(*curr_node);
+            const Node &domain = *domains.front();
+            if(domain.has_path("state/domain_id"))
+            {
+                domain_id = domain["state/domain_id"].to_index_t();
+            }
+        }
+
+        curr_node = curr_node->parent();
+    }
+
+    return domain_id;
 }
 
 //-----------------------------------------------------------------------------
@@ -1228,6 +1258,57 @@ topology::unstructured::points(const Node &n,
 
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::topology --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::adjset --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+adjset::canonicalize(Node &adjset)
+{
+    const index_t domain_id = find_domain_id(adjset);
+
+    const std::vector<std::string> &adjset_group_names = adjset["groups"].child_names();
+    for(const std::string &old_group_name : adjset_group_names)
+    {
+        const Node &group_node = adjset["groups"][old_group_name];
+        const Node &neighbors_node = group_node["neighbors"];
+
+        std::string new_group_name;
+        {
+            std::ostringstream oss;
+            oss << "group";
+
+            Node temp;
+            DataType temp_dtype(neighbors_node.dtype().id(), 1);
+
+            // NOTE(JRC): Need to use a vector instead of direct 'Node::to_index_t'
+            // because the local node ID isn't included in the neighbor list and
+            // 'DataArray' uses a static array size.
+            std::vector<index_t> group_neighbors(1, domain_id);
+            for(index_t ni = 0; ni < neighbors_node.dtype().number_of_elements(); ni++)
+            {
+                temp.set_external(temp_dtype, (void*)neighbors_node.element_ptr(ni));
+                group_neighbors.push_back(temp.to_index_t());
+            }
+            std::sort(group_neighbors.begin(), group_neighbors.end());
+
+            for(const index_t &neighbor_id : group_neighbors)
+            {
+                oss << "_" << neighbor_id;
+            }
+
+            new_group_name = oss.str();
+        }
+
+        adjset["groups"].rename_child(old_group_name, new_group_name);
+    }
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::adjset --
 //-----------------------------------------------------------------------------
 
 }

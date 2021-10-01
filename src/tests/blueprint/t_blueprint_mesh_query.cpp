@@ -77,3 +77,18 @@ TEST(conduit_blueprint_mesh_query, mesh_domains)
         }
     }
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_query, adjset_formats)
+{
+    // TODO: set up a few canonical example meshes.
+
+    { // Pairwise Tests //
+        ASSERT_TRUE(false);
+    }
+
+    { // Max-Share Tests //
+        ASSERT_TRUE(false);
+    }
+}
