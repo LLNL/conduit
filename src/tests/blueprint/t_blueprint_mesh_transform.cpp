@@ -300,7 +300,7 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
         const std::string itopology_braid = get_braid_type(itopology_type);
 
         // NOTE(JRC): For the data type checks, we're only interested in the parts
-        // of the subtree that are being transformed; we kull all other data.
+        // of the subtree that are being transformed; we cull all other data.
         Node ibase;
         blueprint::mesh::examples::braid(itopology_braid,2,3,4,ibase);
         {
@@ -328,6 +328,8 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
                     Node &itopology = imesh["topologies"].child(0);
                     Node &icoordset = imesh["coordsets"].child(0);
 
+                    // FIXME(JRC): I think these should be references! i.e. Node &jtopology
+                    // Changing them in this way causes this test to fail.
                     Node jmesh;
                     Node jtopology = jmesh["topologies"][itopology.name()];
                     Node jcoordset = jmesh["coordsets"][icoordset.name()];
@@ -570,6 +572,39 @@ TEST(conduit_blueprint_mesh_transform, adjset_transforms)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_transform, adjset_transform_dtypes)
 {
-    // TODO: implement
-    // ASSERT_TRUE(false);
+    XformCoordsFun xform_funs[2] = {blueprint::mesh::adjset::to_pairwise, blueprint::mesh::adjset::to_maxshare};
+    const std::string xform_types[2] = {"pairwise", "max-share"};
+
+    for(size_t xi = 0; xi < sizeof(xform_funs) / sizeof(xform_funs[0]); xi++)
+    {
+        XformCoordsFun to_new_adjset = xform_funs[xi];
+        const std::string &xform_type = xform_types[xi];
+
+        Node ibase, info;
+        blueprint::mesh::examples::grid("quads",2,2,1,2,2,1,ibase);
+
+        for(size_t ii = 0; ii < bputils::INT_DTYPES.size(); ii++)
+        {
+            // NOTE: The following lines are for debugging purposes only.
+            std::cout << "Testing " <<
+                "int-" << 32 * (ii + 1) << " adjset " <<
+                "baseline" << " -> " << xform_type << "..." << std::endl;
+
+            Node imesh = ibase, jmesh;
+            set_node_data(imesh, bputils::INT_DTYPES[ii]);
+
+            for(const std::string &domain_name : imesh.child_names())
+            {
+                Node &idomain = imesh[domain_name];
+                Node &jdomain = jmesh[domain_name];
+
+                Node &iadjset = idomain["adjsets"].child(0);
+                Node &jadjset = jdomain["adjsets"][iadjset.name()];
+
+                to_new_adjset(iadjset, jadjset);
+            }
+
+            EXPECT_TRUE(verify_node_data(jmesh, bputils::INT_DTYPES[ii]));
+        }
+    }
 }
