@@ -11,6 +11,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Added support to register custom memory allocators and a custom data movement handler. This allows conduit to move trees of data between heterogenous memory spaces (e.g. CPU and GPU memory). See conduit_utils.hpp for API details.
 
+#### Blueprint
+- Added the `blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
+- Added to the `blueprint::mesh::examples::polytess` example. Now `polytess` takes a new argument, called `nz`, which allows it to be extended into 3 dimensions. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess) for more details.
+- Added a new function signature for `blueprint::mesh::topology::unstructured::generate_sides`, which performs the same task as the original and also takes fields from the original topology and maps them onto the new topology.
+
 ### Changed
 
 #### General
@@ -28,10 +33,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed a subtle bug with Node fetch and Object role initialization.
 
 #### Blueprint
-- Added the `blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
-- Added to the `blueprint::mesh::examples::polytess` example. Now `polytess` takes a new argument, called `nz`, which allows it to be extended into 3 dimensions. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess) for more details.
 - Fixed a bug that was causing the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
-- Added a new function signature for `blueprint::mesh::topology::unstructured::generate_sides`, which performs the same task as the original and also takes fields from the original topology and maps them onto the new topology.
+- Fixed a bug with `conduit::relay::io::blueprint::write_mesh` that undermined `truncate=true` option for root-only style output.
+
 
 #### Relay
 - Changed HDF5 offset support to use 64-bit unsigned integers for offsets, strides, and sizes.
