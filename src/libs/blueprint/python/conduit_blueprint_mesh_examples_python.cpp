@@ -595,7 +595,8 @@ const char *PyBlueprint_mesh_examples_polytess_doc_str =
 "\n"
 "Arguments:\n"
 " nlevels: specifies the number of tessellation levels/layers to generate. If this value is specified as 1 or less, only the central tessellation level (i.e. the octagon in the center of the geometry) will be generated in the result.\n"
-" nz: if 1, create 2D tessellation, of great than 1 stack to create a 3D tessellation.\n";
+" nz: if 1, create 2D tessellation\n"
+"      if greater than 1, stack to create a 3D tessellation.\n";
 
 // python func
 static PyObject * 
@@ -653,7 +654,7 @@ const char *PyBlueprint_mesh_examples_polychain_doc_str =
 "https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain\n"
 "\n"
 "Arguments:\n"
-" length: specifies how long the chain ought to be\n";
+" length: specifies how long of a chain to generate\n";
 
 // python func
 static PyObject * 
