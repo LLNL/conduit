@@ -37,6 +37,7 @@ using namespace conduit::relay::io;
 //---------------------------------------------------------------------------//
 // conduit::relay::io::blueprint::write_mesh
 //---------------------------------------------------------------------------//
+// append semantics
 static PyObject * 
 PyRelay_io_blueprint_write_mesh(PyObject *, //self
                                 PyObject *args,
@@ -118,6 +119,92 @@ PyRelay_io_blueprint_write_mesh(PyObject *, //self
     Py_RETURN_NONE;
 }
 
+//---------------------------------------------------------------------------//
+// conduit::relay::io::blueprint::save_mesh
+//---------------------------------------------------------------------------//
+// truncate semantics
+static PyObject * 
+PyRelay_io_blueprint_save_mesh(PyObject *, //self
+                               PyObject *args,
+                               PyObject *kwargs)
+{
+    PyObject   *py_node    = NULL;
+    const char *path       = NULL;
+    const char *protocol   = NULL;
+    PyObject   *py_options = NULL;
+
+    static const char *kwlist[] = {"node",
+                                   "path",
+                                   "protocol",
+                                   "options",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "Os|sO",
+                                     const_cast<char**>(kwlist),
+                                     &py_node,
+                                     &path,
+                                     &protocol,
+                                     &py_options))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "relay::io::blueprint::write_mesh "
+                        "'node' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    if( (py_options != NULL) && !PyConduit_Node_Check(py_options) )
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "relay::io::blueprint::write_mesh "
+                        "'options' argument must "
+                        "be a conduit.Node");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    Node opts;
+    Node *opts_ptr = &opts;
+
+    if(py_options != NULL)
+    {
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_options);
+    }
+
+    // default protocol string is empty which auto detects
+    std::string protocol_str("");
+
+    if(protocol != NULL)
+    {
+        protocol_str = std::string(protocol);
+    }
+    
+    try
+    {
+        relay::io::blueprint::save_mesh(node,
+                                        std::string(path),
+                                        protocol_str,
+                                        *opts_ptr);
+    }
+    catch(conduit::Error &e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
 
 //---------------------------------------------------------------------------//
 // conduit::relay::io::blueprint::read_mesh
@@ -194,6 +281,81 @@ PyRelay_io_blueprint_read_mesh(PyObject *, //self
 }
 
 //---------------------------------------------------------------------------//
+// conduit::relay::io::blueprint::load_mesh
+//---------------------------------------------------------------------------//
+
+static PyObject * 
+PyRelay_io_blueprint_load_mesh(PyObject *, //self
+                               PyObject *args,
+                               PyObject *kwargs)
+{
+    PyObject   *py_node    = NULL;
+    const char *path       = NULL;
+    PyObject   *py_options = NULL;
+    
+    static const char *kwlist[] = {"node",
+                                   "path",
+                                   "options",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "Os|O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node,
+                                     &path,
+                                     &py_options))
+    {
+        return (NULL);
+    }
+    
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "relay::io::blueprint::read_mesh "
+                        "'node' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    if( (py_options != NULL) && !PyConduit_Node_Check(py_options) )
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "relay::io::blueprint::read_mesh "
+                        "'options' argument must "
+                        "be a conduit.Node");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    Node opts;
+    Node *opts_ptr = &opts;
+
+    if(py_options != NULL)
+    {
+        opts_ptr = PyConduit_Node_Get_Node_Ptr(py_options);
+    }
+
+
+    try
+    {
+        relay::io::blueprint::load_mesh(std::string(path),
+                                        *opts_ptr,
+                                        node);
+    }
+    catch(conduit::Error &e)
+    {
+        PyErr_SetString(PyExc_IOError,
+                        e.message().c_str());
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
+//---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
 static PyMethodDef relay_io_blueprint_python_funcs[] =
@@ -203,11 +365,20 @@ static PyMethodDef relay_io_blueprint_python_funcs[] =
     {"write_mesh",
      (PyCFunction)PyRelay_io_blueprint_write_mesh,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      "Write blueprint mesh to files using 'write' (append) semantics"},
+    //-----------------------------------------------------------------------//
+    {"save_mesh",
+     (PyCFunction)PyRelay_io_blueprint_save_mesh,
+      METH_VARARGS | METH_KEYWORDS,
+      "Write blueprint mesh to files using 'save' (truncate) semantics"},
     {"read_mesh",
      (PyCFunction)PyRelay_io_blueprint_read_mesh,
       METH_VARARGS | METH_KEYWORDS,
-      NULL},
+      "Read blueprint mesh from files into passed node"},
+    {"load_mesh",
+     (PyCFunction)PyRelay_io_blueprint_load_mesh,
+      METH_VARARGS | METH_KEYWORDS,
+      "Reset passed node and load blueprint mesh from files into it"},
     //-----------------------------------------------------------------------//
     // end relay io blueprint methods table
     //-----------------------------------------------------------------------//
