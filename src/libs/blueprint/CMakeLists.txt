@@ -29,6 +29,7 @@ set(blueprint_headers
     conduit_blueprint_o2mrelation_utils.hpp
     conduit_blueprint_o2mrelation_iterator.hpp
     conduit_blueprint_o2mrelation_examples.hpp
+    conduit_blueprint_table.hpp
     conduit_blueprint_zfparray.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h
 )
@@ -61,6 +62,7 @@ set(blueprint_sources
     conduit_blueprint_o2mrelation_utils.cpp
     conduit_blueprint_o2mrelation_iterator.cpp
     conduit_blueprint_o2mrelation_examples.cpp
+    conduit_blueprint_table.cpp
     conduit_blueprint_zfparray.cpp
     )
 
