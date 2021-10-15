@@ -40,6 +40,18 @@ if(MPI_FOUND)
   SET(CONDUIT_RELAY_MPI_ENABLED TRUE)
 endif()
 
+if(ENABLE_RELAY_WEBSERVER)
+  SET(CONDUIT_RELAY_WEBSERVER_ENABLED TRUE CACHE STRING "" FORCE)
+else()
+  SET(CONDUIT_RELAY_WEBSERVER_ENABLED FALSE CACHE STRING "" FORCE)
+endif()
+
+# CONDUIT_RELAY_WEBSERVER_ENABLED is used when we export our
+# cmake config (it's basically an output variable )
+# we mark it as advanced b/c otherwise folks may see it in ccmake or
+# the cmake gui  and think they should be setting it
+mark_as_advanced(CONDUIT_RELAY_WEBSERVER_ENABLED)
+
 
 convert_to_native_escaped_file_path(${CMAKE_CURRENT_SOURCE_DIR}
                                     CONDUIT_RELAY_SOURCE_DIR)
@@ -65,8 +77,6 @@ set(conduit_relay_headers
     conduit_relay_io_identify_protocol.hpp
     conduit_relay_io_identify_protocol_api.hpp
     conduit_relay_io_blueprint.hpp
-    conduit_relay_web.hpp
-    conduit_relay_web_node_viewer_server.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_config.h)
 
@@ -87,8 +97,7 @@ set(conduit_relay_sources
     conduit_relay_io_handle_sidre.cpp
     conduit_relay_io_identify_protocol.cpp
     conduit_relay_io_blueprint.cpp
-    conduit_relay_web.cpp
-    conduit_relay_web_node_viewer_server.cpp)
+)
 
 #
 # Specify c sources
@@ -97,6 +106,15 @@ set(conduit_relay_c_sources
     c/conduit_relay_c.cpp
     c/conduit_relay_io_c.cpp)
 
+iF(ENABLE_RELAY_WEBSERVER)
+    list(APPEND conduit_relay_headers
+                conduit_relay_web.hpp
+                conduit_relay_web_node_viewer_server.hpp
+        )
+    list(APPEND conduit_relay_sources
+                conduit_relay_web.cpp
+                conduit_relay_web_node_viewer_server.cpp)
+endif()
 
 if(HDF5_FOUND)
     list(APPEND conduit_relay_headers
@@ -154,12 +172,18 @@ set(conduit_relay_fortran_sources
 set(conduit_relay_deps conduit conduit_blueprint)
 
 if(UNIX AND NOT APPLE)
-    # we need these for civetweb on linux, we may need similar libs
-    # on windows (OSX appears ok without them)
-    list(APPEND conduit_relay_deps dl rt Threads::Threads)
-    set(CONDUIT_MAKE_EXTRA_LIBS "${CONDUIT_MAKE_EXTRA_LIBS} -ldl -lrt ${CMAKE_THREAD_LIBS_INIT}" CACHE STRING "" FORCE)
+    if(ENABLE_RELAY_WEBSERVER)
+        # we need these for civetweb on linux, we may need similar libs
+        # on windows (OSX appears ok without them)
+        list(APPEND conduit_relay_deps dl rt Threads::Threads)
+        set(CONDUIT_MAKE_EXTRA_LIBS "${CONDUIT_MAKE_EXTRA_LIBS} -ldl -lrt ${CMAKE_THREAD_LIBS_INIT}" CACHE STRING "" FORCE)
+    endif()
 endif()
 
+# CONDUIT_MAKE_EXTRA_LIBS is basically used as an output var so
+# we mark it as advanced b/c otherwise folks may see it in ccmake or
+# the cmake gui  and think they should be setting it
+mark_as_advanced(CONDUIT_MAKE_EXTRA_LIBS)
 
 #
 # Link with silo and hdf5 and adios if these are enabled
@@ -171,7 +195,7 @@ endif()
 if(HDF5_FOUND)
     list(APPEND conduit_relay_deps hdf5)
     if(HDF5_IS_PARALLEL)
-        list(APPEND conduit_relay_deps conduit_blt_mpi_deps)
+        list(APPEND conduit_relay_deps ${conduit_blt_mpi_deps})
     endif()
 endif()
 
@@ -197,25 +221,33 @@ add_compiled_library(NAME conduit_relay
                      HEADERS ${conduit_relay_headers} ${conduit_relay_c_headers}
                      SOURCES ${conduit_relay_sources} ${conduit_relay_c_sources}
                              ${conduit_relay_fortran_sources}
-                             $<TARGET_OBJECTS:conduit_civetweb>
                      DEPENDS_ON ${conduit_relay_deps}
                      HEADERS_DEST_DIR include/conduit
                      FOLDER libs)
 
-if(ENABLE_UTILS)
-    ###################################
-    # add conduit_relay_node_viewer exe
-    ###################################
-    blt_add_executable(
-        NAME        conduit_relay_node_viewer
-        SOURCES     conduit_relay_web_node_viewer_exe.cpp
-        DEPENDS_ON  conduit_relay
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-        FOLDER utils)
+# add civetweb if web server support is enabled
+if(ENABLE_RELAY_WEBSERVER)
+    target_sources(conduit_relay PRIVATE $<TARGET_OBJECTS:conduit_civetweb>)
+endif()
 
-    # add install target for conduit_relay_node_viewer
-    install(TARGETS conduit_relay_node_viewer
-            RUNTIME DESTINATION bin)
+
+if(ENABLE_UTILS)
+
+    if(ENABLE_RELAY_WEBSERVER)
+    ###################################
+        # add conduit_relay_node_viewer exe
+        ###################################
+        blt_add_executable(
+            NAME        conduit_relay_node_viewer
+            SOURCES     conduit_relay_web_node_viewer_exe.cpp
+            DEPENDS_ON  conduit_relay
+            OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+            FOLDER utils)
+
+        # add install target for conduit_relay_node_viewer
+        install(TARGETS conduit_relay_node_viewer
+                RUNTIME DESTINATION bin)
+    endif()
 
     ###################################
     # add conduit_relay_io_ls exe
@@ -248,18 +280,19 @@ if(ENABLE_UTILS)
             RUNTIME DESTINATION bin)
 endif()
 
-##############################################################
-# install files needed for the relay web node viewer client
-#############################################################
-install(DIRECTORY web_clients/node_viewer
-        DESTINATION share/conduit/web_clients/)
+if(ENABLE_RELAY_WEBSERVER)
+    ##############################################################
+    # install files needed for the relay web node viewer client
+    #############################################################
+    install(DIRECTORY web_clients/node_viewer
+            DESTINATION share/conduit/web_clients/)
 
-#############################################################
-# add install of entangle helper script
-#############################################################
-install(FILES scripts/conduit_relay_entangle.py
-        DESTINATION bin)
-
+    #############################################################
+    # add install of entangle helper script
+    #############################################################
+    install(FILES scripts/conduit_relay_entangle.py
+            DESTINATION bin)
+endif()
 
 ################################
 # Add python wrappers if python
@@ -306,7 +339,7 @@ set(conduit_relay_mpi_sources conduit_relay_mpi.cpp)
 # Specify the relay mpi deps
 #
 set(conduit_relay_mpi_deps conduit
-                           conduit_blt_mpi_deps)
+                           ${conduit_blt_mpi_deps})
 
 #
 # setup conduit relay mpi lib
@@ -343,7 +376,7 @@ set(conduit_relay_mpi_io_headers conduit_relay_mpi_io.hpp)
 # Specify the relay mpi io deps
 #
 set(conduit_relay_mpi_io_deps conduit
-                              conduit_blt_mpi_deps
+                              ${conduit_blt_mpi_deps}
                               conduit_relay_mpi
                               conduit_relay)
 

@@ -698,6 +698,7 @@ load_merged(const std::string &path,
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
         hdf5_read(path,options,node);
 #else
+        CONDUIT_UNUSED(options);
         CONDUIT_ERROR("relay lacks HDF5 support: " <<
                       "Failed to read conduit node from path " << path);
 #endif

@@ -484,7 +484,7 @@ TEST(conduit_yaml, parse_error_detailed)
             Node n_res;
             g.walk(n_res);
         }
-        catch(conduit::Error e)
+        catch(conduit::Error &e)
         {
             CONDUIT_INFO(e.message());
              throw_occured = true;
@@ -503,7 +503,7 @@ TEST(conduit_yaml, parse_error_detailed)
             Node n_res;
             g.walk(n_res);
         }
-        catch(conduit::Error e)
+        catch(conduit::Error &e)
         {
             CONDUIT_INFO(e.message());
             throw_occured = true;
@@ -523,7 +523,7 @@ TEST(conduit_yaml, parse_error_detailed)
             Node n_res;
             g.walk(n_res);
         }
-        catch(conduit::Error e)
+        catch(conduit::Error &e)
         {
             CONDUIT_INFO(e.message());
             throw_occured = true;
@@ -543,7 +543,7 @@ TEST(conduit_yaml, parse_error_detailed)
             Node n_res;
             g.walk(n_res);
         }
-        catch(conduit::Error e)
+        catch(conduit::Error &e)
         {
             CONDUIT_INFO(e.message());
             throw_occured = true;

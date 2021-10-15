@@ -8,10 +8,12 @@ include(CMakeFindDependencyMacro)
 # Setup Threads
 ###############################################################################
 if(UNIX AND NOT APPLE)
-# we depend on Threads::Threads in our exported targets
-# so we need to bootstrap that here
-    if(NOT Threads::Threads)
-        find_package( Threads REQUIRED )
+    if(CONDUIT_RELAY_WEBSERVER_ENABLED)
+        # we depend on Threads::Threads in our exported targets
+        # so we need to bootstrap that here
+        if(NOT TARGET Threads::Threads)
+            find_package( Threads REQUIRED )
+        endif()
     endif()
 endif()
 
@@ -19,7 +21,9 @@ endif()
 # Setup HDF5
 ###############################################################################
 if(CONDUIT_HDF5_DIR)
-    message(STATUS "Conduit was built with HDF5 Support")
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Conduit was built with HDF5 Support")
+    endif()
     # we depend on hdf5 in our exported targets
     # If ZZZ_DIR not set, use known install path for HDF5
     if(NOT HDF5_DIR)
@@ -32,7 +36,9 @@ if(CONDUIT_HDF5_DIR)
     # find the absolute path w/ symlinks resolved of the passed HDF5_DIR, 
     # since sanity checks later need to compare against the real path
     get_filename_component(HDF5_DIR_REAL "${HDF5_DIR}" REALPATH)
-    message(STATUS "Looking for HDF5 at: " ${HDF5_DIR_REAL})
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Looking for HDF5 at: " ${HDF5_DIR_REAL})
+    endif()
 
     if(POLICY CMP0074)
         #policy for <PackageName>_ROOT variables
@@ -55,7 +61,7 @@ if(CONDUIT_HDF5_DIR)
         # CMake's FindHDF5 module is buggy on windows and will put the dll
         # in HDF5_LIBRARY.  Instead, use the 'CONFIG' signature of find_package
         # with appropriate hints for where cmake can find hdf5-config.cmake.
-        find_package(HDF5 CONFIG 
+        find_package(HDF5 CONFIG
                      REQUIRED
                      HINTS ${HDF5_DIR}/cmake/hdf5 
                            ${HDF5_DIR}/lib/cmake/hdf5
@@ -77,12 +83,14 @@ if(CONDUIT_HDF5_DIR)
     get_filename_component(HDF5_DIR_REAL "${HDF5_ROOT}" REALPATH)
 
     set(HDF5_DIR ${HDF5_DIR_REAL} CACHE PATH "" FORCE)
-    message(STATUS "HDF5_DIR_REAL=${HDF5_DIR_REAL}")
-    #
-    # Sanity check to alert us if some how we found an hdf5 instance
-    # in an unexpected location.
-    #
-    message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "HDF5_DIR_REAL=${HDF5_DIR_REAL}")
+        #
+        # Sanity check to alert us if some how we found an hdf5 instance
+        # in an unexpected location.
+        #
+        message(STATUS "Checking that found HDF5_INCLUDE_DIRS are in HDF5_DIR")
+    endif()
 
     #
     # HDF5_INCLUDE_DIRS may also include paths to external lib headers 
@@ -100,7 +108,10 @@ if(CONDUIT_HDF5_DIR)
         endif()
     endif()
 
-    message(STATUS "HDF5_INCLUDE_DIRS=${HDF5_INCLUDE_DIRS}")
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "HDF5_INCLUDE_DIRS=${HDF5_INCLUDE_DIRS}")
+    endif()
+
     set(check_hdf5_inc_dir_ok 0)
     foreach(IDIR ${HDF5_INCLUDE_DIRS})
 
@@ -110,12 +121,16 @@ if(CONDUIT_HDF5_DIR)
         # check if idir_real is a substring of hdf5_dir
 
         if("${IDIR_REAL}" MATCHES "${HDF5_DIR}")
-            message(STATUS " ${IDIR_REAL} includes HDF5_DIR (${HDF5_DIR})")
+            if(NOT Conduit_FIND_QUIETLY)
+                message(STATUS " ${IDIR_REAL} includes HDF5_DIR (${HDF5_DIR})")
+            endif()
             set(check_hdf5_inc_dir_ok 1)
         endif()
 
         if("${IDIR_REAL}" MATCHES "${HDF5_REAL_DIR}")
-            message(STATUS " ${IDIR_REAL} includes HDF5_REAL_DIR (${HDF5_REAL_DIR})")
+            if(NOT Conduit_FIND_QUIETLY)
+                message(STATUS " ${IDIR_REAL} includes HDF5_REAL_DIR (${HDF5_REAL_DIR})")
+            endif()
             set(check_hdf5_inc_dir_ok 1)
         endif()
 
@@ -138,11 +153,15 @@ if(CONDUIT_HDF5_DIR)
     endforeach()
 
     if(HDF5_HL_LIB)
-        message(STATUS "Removing hdf5_hl from HDF5_LIBRARIES")
+        if(NOT Conduit_FIND_QUIETLY)
+            message(STATUS "Removing hdf5_hl from HDF5_LIBRARIES")
+        endif()
         list(REMOVE_ITEM HDF5_LIBRARIES ${HDF5_HL_LIB})
     endif()
 
-    message(STATUS "HDF5 is parallel:  ${HDF5_IS_PARALLEL}")
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "HDF5 is parallel:  ${HDF5_IS_PARALLEL}")
+    endif()
     # if HDF5 was built with parallel support, we need to find MPI
     # to make sure the targets propgate correctly.
     # in other cases, folks will 
@@ -158,7 +177,8 @@ if(CONDUIT_HDF5_DIR)
     endif()
 
 else()
-    message(STATUS "Conduit was NOT built with HDF5 Support")
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Conduit was NOT built with HDF5 Support")
+    endif()
 endif()
-
 

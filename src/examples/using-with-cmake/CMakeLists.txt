@@ -49,10 +49,7 @@ endif()
 get_filename_component(CONDUIT_DIR ${CONDUIT_DIR} ABSOLUTE)
 # check for expected cmake exported target files
 if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit/ConduitConfig.cmake)
-    # also allow old style, but if neither case is found display error msg
-    if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/ConduitConfig.cmake)
-        MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit/ConduitConfig.cmake)")
-    endif()
+    message(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit/ConduitConfig.cmake)")
 endif()
 
 #

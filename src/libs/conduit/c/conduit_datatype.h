@@ -29,7 +29,19 @@ extern "C" {
 // -- typedef for conduit_datatype --
 //-----------------------------------------------------------------------------
 
-typedef void  conduit_datatype;
+struct conduit_datatype_impl;
+typedef struct conduit_datatype_impl  conduit_datatype;
+
+CONDUIT_API conduit_index_t conduit_datatype_id(const conduit_datatype *cdatatype);
+CONDUIT_API char* conduit_datatype_name(const conduit_datatype *cdatatype);
+CONDUIT_API void conduit_datatype_name_destroy(char *name);
+
+CONDUIT_API conduit_index_t conduit_datatype_number_of_elements(const conduit_datatype *cdatatype);
+CONDUIT_API conduit_index_t conduit_datatype_offset(const conduit_datatype *cdatatype);
+CONDUIT_API conduit_index_t conduit_datatype_stride(const conduit_datatype *cdatatype);
+CONDUIT_API conduit_index_t conduit_datatype_element_bytes(const conduit_datatype *cdatatype);
+CONDUIT_API conduit_index_t conduit_datatype_endianness(const conduit_datatype *cdatatype);
+CONDUIT_API conduit_index_t conduit_datatype_element_index(const conduit_datatype *cdatatype, conduit_index_t idx);
 
 CONDUIT_API int conduit_datatype_is_empty(const conduit_datatype *cdatatype);
 CONDUIT_API int conduit_datatype_is_object(const conduit_datatype *cdatatype);

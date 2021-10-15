@@ -30,19 +30,24 @@ endif()
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
 if(ENABLE_MPI)
+    # on some platforms (mostly cray systems) folks skip mpi
+    # detection in BLT by setting ENABLE_FIND_MPI = OFF
+    # in these cases, we need to set FOUND_MPI = TRUE,
+    # since the rest of our cmake logic to include MPI uses FOUND_MPI
+    if(NOT ENABLE_FIND_MPI)
+        set(FOUND_MPI ON CACHE BOOL "")
+    endif()
+
     # adjust MPI from BLT
     if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
-        # older cmake, we use BLT imported targets
-        # this is simply a target alias
-        blt_register_library(NAME conduit_blt_mpi_deps
-                             LIBRARIES mpi)
+        # older cmake, we use BLT's mpi support, it uses 
+        # the name mpi
+        set(conduit_blt_mpi_deps mpi CACHE STRING "")
     else()
         if(TARGET MPI::MPI_CXX)
             message(STATUS "Using MPI CMake imported target: MPI::MPI_CXX")
-            # newer cmake we use find mpi targets directly,
-            # this is simply a target alias
-            blt_register_library(NAME conduit_blt_mpi_deps
-                                 LIBRARIES MPI::MPI_CXX)
+            # newer cmake we use find mpi targets directly
+            set(conduit_blt_mpi_deps MPI::MPI_CXX CACHE STRING "")
         else()
             message(FATAL_ERROR "Cannot use CMake imported targets for MPI."
                                 "(CMake > 3.15, ENABLE_MPI == ON, but "

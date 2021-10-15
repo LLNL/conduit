@@ -66,8 +66,17 @@ namespace examples
                                       conduit::Node &res);
 
     /// Generates a tessellated heterogeneous polygonal mesh consisting of
-    /// packed octogons and rectangles.
+    /// packed octogons and rectangles. The parameter nz can be any nonzero
+    /// natural number. An nz value of 1 will produce a polytess in 2D,
+    /// while an nz value of 2 will produce a polytess in 3D, which can be 
+    /// explained as follows: first, polytess is placed into 3D space, and 
+    /// then a copy of it is placed into a plane parallel to the original. 
+    /// Then "walls" are added, and finally polyhedra are specified that use 
+    /// faces from the original polytess, the reflected copy, and the walls.
+    /// An nz value of 3 or more will simply add layers to this setup,
+    /// essentially stacking "sheets" of polytess on top of one another.
     void CONDUIT_BLUEPRINT_API polytess(conduit::index_t nlevels,
+                                        conduit::index_t nz,
                                         conduit::Node &res);
 
     /// Generates an assortment of extra meshes that demonstrate the use of
@@ -80,6 +89,10 @@ namespace examples
 
     /// Generates a mesh that uses uniform adjsets
     void CONDUIT_BLUEPRINT_API adjset_uniform(conduit::Node &res);
+
+    /// Generates a chain of cubes and triangular prisms
+    void CONDUIT_BLUEPRINT_API polychain(const conduit::index_t length,
+                                         conduit::Node &res);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --

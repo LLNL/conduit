@@ -23,9 +23,11 @@
 #include "conduit_relay_io.hpp"
 #include "conduit_relay_io_handle.hpp"
 #include "conduit_relay_io_blueprint.hpp"
+
+#ifdef CONDUIT_RELAY_WEBSERVER_ENABLED
 #include "conduit_relay_web.hpp"
 #include "conduit_relay_web_node_viewer_server.hpp"
-
+#endif 
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

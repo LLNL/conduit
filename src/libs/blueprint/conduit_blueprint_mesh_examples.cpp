@@ -2668,75 +2668,345 @@ void polytess_recursive(index_t nlevels,
 
 //---------------------------------------------------------------------------//
 void polytess(index_t nlevels,
+              index_t nz,
               Node &res)
 {
-    std::map< point, index_t > point_map;
-    std::map< index_t, point > point_rmap;
-    std::vector< std::vector<index_t> > polygons;
-    std::vector< index_t > levels;
-
-    polytess_recursive(nlevels, point_map, point_rmap, polygons, levels);
-
-    index_t conn_size = 0;
-    for(index_t p = 0; p < (index_t)polygons.size(); p++)
+    if (nz == 1)
     {
-        conn_size += polygons[p].size();
-    }
+        std::map< point, index_t > point_map;
+        std::map< index_t, point > point_rmap;
+        std::vector< std::vector<index_t> > polygons;
+        std::vector< index_t > levels;
 
-    // Populate Coordinates //
+        polytess_recursive(nlevels, point_map, point_rmap, polygons, levels);
 
-    Node &coordset = res["coordsets/coords"];
-    coordset["type"].set("explicit");
-    coordset["values/x"].set(DataType::float64(point_map.size()));
-    coordset["values/y"].set(DataType::float64(point_map.size()));
-
-    float64_array x_coords = coordset["values/x"].value();
-    float64_array y_coords = coordset["values/y"].value();
-    for(index_t pi = 0; pi < (index_t)point_map.size(); pi++)
-    {
-        const point &p = point_rmap[pi];
-        x_coords[pi] = p.x;
-        y_coords[pi] = p.y;
-    }
-
-    // Populate Topology //
-
-    Node &topology = res["topologies/topo"];
-    topology["coordset"].set("coords");
-    topology["type"].set("unstructured");
-    topology["elements/shape"].set("polygonal");
-    topology["elements/connectivity"].set(DataType::uint64(conn_size));
-    topology["elements/sizes"].set(DataType::uint64(polygons.size()));
-
-    uint64_array conn_array = topology["elements/connectivity"].value();
-    uint64_array size_array = topology["elements/sizes"].value();  
-    for(index_t pi = 0, ci = 0; pi < (index_t)polygons.size(); pi++)
-    {
-        const std::vector<index_t> &p = polygons[pi];
-
-        size_array[pi] = p.size();
-        for(index_t ii = 0; ii < (index_t)p.size(); ii++)
+        index_t conn_size = 0;
+        for(index_t p = 0; p < (index_t)polygons.size(); p++)
         {
-            conn_array[ci++] = p[ii];
+            conn_size += polygons[p].size();
+        }
+
+        // Populate Coordinates //
+
+        Node &coordset = res["coordsets/coords"];
+        coordset["type"].set("explicit");
+        coordset["values/x"].set(DataType::float64(point_map.size()));
+        coordset["values/y"].set(DataType::float64(point_map.size()));
+
+        float64_array x_coords = coordset["values/x"].value();
+        float64_array y_coords = coordset["values/y"].value();
+        for(index_t pi = 0; pi < (index_t)point_map.size(); pi++)
+        {
+            const point &p = point_rmap[pi];
+            x_coords[pi] = p.x;
+            y_coords[pi] = p.y;
+        }
+
+        // Populate Topology //
+
+        Node &topology = res["topologies/topo"];
+        topology["coordset"].set("coords");
+        topology["type"].set("unstructured");
+        topology["elements/shape"].set("polygonal");
+        topology["elements/connectivity"].set(DataType::uint64(conn_size));
+        topology["elements/sizes"].set(DataType::uint64(polygons.size()));
+
+        uint64_array conn_array = topology["elements/connectivity"].value();
+        uint64_array size_array = topology["elements/sizes"].value();  
+        for(index_t pi = 0, ci = 0; pi < (index_t)polygons.size(); pi++)
+        {
+            const std::vector<index_t> &p = polygons[pi];
+
+            size_array[pi] = p.size();
+            for(index_t ii = 0; ii < (index_t)p.size(); ii++)
+            {
+                conn_array[ci++] = p[ii];
+            }
+        }
+
+        blueprint::mesh::topology::unstructured::generate_offsets(
+            topology, topology["elements/offsets"]);
+
+        // Populate Field //
+
+        Node &field =  res["fields/level"];
+        field["topology"].set("topo");
+        field["association"].set("element");
+        field["volume_dependent"].set("false");
+        // TODO: should we try to use index_t as the data type here?
+        field["values"].set(DataType::uint32(polygons.size()));
+
+        uint32_array level_array = field["values"].value();
+        for(index_t pi = 0; pi < (index_t)polygons.size(); pi++)
+        {
+            level_array[pi] = (uint32) levels[pi];
         }
     }
-
-    blueprint::mesh::topology::unstructured::generate_offsets(
-        topology, topology["elements/offsets"]);
-
-    // Populate Field //
-
-    Node &field =  res["fields/level"];
-    field["topology"].set("topo");
-    field["association"].set("element");
-    field["volume_dependent"].set("false");
-    // TODO: should we try to use index_t as the data type here?
-    field["values"].set(DataType::uint32(polygons.size()));
-
-    uint32_array level_array = field["values"].value();
-    for(index_t pi = 0; pi < (index_t)polygons.size(); pi++)
+    else if (nz > 1)
     {
-        level_array[pi] = (uint32) levels[pi];
+        // Our goal here is to take the original polytess and extend it
+        // into 3 dimensions. The way we will accomplish this is by
+        // placing the original polytess into the z = 0 plane, placing a 
+        // copy of it into the z = 1 plane, another into the z = 2 plane, 
+        // etc., and constructing "walls" between the top and bottom edges
+        // of each polytessalation. Then we will specify polyhedra that use
+        // all the faces at our disposal.
+        Node poly;
+        polytess(nlevels, 1, poly);
+
+        Node &res_coords = res["coordsets/coords"];
+        Node &res_topo = res["topologies/topo"];
+        Node &res_fields = res["fields"];
+
+        // SET UP COORDINATES
+
+        res_coords["type"] = poly["coordsets/coords/type"];
+
+        int num_orig_points = poly["coordsets/coords/values/x"].dtype().number_of_elements();
+        int num_points = nz * num_orig_points;
+
+        res_coords["values/x"].set(conduit::DataType::float64(num_points));
+        res_coords["values/y"].set(conduit::DataType::float64(num_points));
+        res_coords["values/z"].set(conduit::DataType::float64(num_points));
+
+        float64 *poly_x_vals = poly["coordsets/coords/values/x"].value();
+        float64 *poly_y_vals = poly["coordsets/coords/values/y"].value();
+
+        float64 *x_vals = res_coords["values/x"].value();
+        float64 *y_vals = res_coords["values/y"].value();
+        float64 *z_vals = res_coords["values/z"].value();
+
+        // all the original points are added nz times, the first time with a z-value of 0,
+        // and the second time with a z-value of 1, etc.
+        for (int i = 0; i < num_points; i ++)
+        {
+            int i_mod_num_orig_points = i % num_orig_points;
+            x_vals[i] = poly_x_vals[i_mod_num_orig_points];
+            y_vals[i] = poly_y_vals[i_mod_num_orig_points];
+            z_vals[i] = i / num_orig_points;
+        }
+
+        res_topo["type"] = poly["topologies/topo/type"];
+        res_topo["coordset"] = poly["topologies/topo/coordset"];
+
+        // SUBELEMENTS
+
+            // In the nz = 2 case, 
+            // if we take our polytess and reflect it, we have two polytessalations on top of one another,
+            // with a distance of 1 unit in between. If we go through each polygon, and for each one, 
+            // select every pair of adjacent points and add a new polygon that uses the points from that pair
+            // as well as the points directly above in the reflected polytess, then we will have duplicate
+            // polygons, simply because the polygons share vertices with one another, so multiple polygons
+            // will have the same "walls". This section accounts for that. The nz > 2 cases are similar, 
+            // except this situation is repeated for each level of the stacked polytess layers.
+
+            res_topo["subelements/shape"] = poly["topologies/topo/elements/shape"];
+
+            // CALCULATE THE NUMBER OF NEW POLYGONS
+            int num_duplicate_polygons = 0;
+            for (int n = 1; n < nlevels; n ++)
+            {
+                // this formula is the sum of two other formulas:
+                // 1) the number of outward edges for an (n - 1) polytess, and
+                // 2) the number of edges that squares in the polytess share with 
+                //    neighboring octagons in their level.
+                // This sum is again summed for each level, which will produce the 
+                // number of duplicates we would have gotten had we simply made a 
+                // polygon for each pair of adjacent points in each polygon, 
+                // as described above.
+                num_duplicate_polygons += 8 * (3 * n - 1);
+            }
+            int num_new_polygons = -1 * num_duplicate_polygons;
+            int sizeof_poly_sizes = poly["topologies/topo/elements/sizes"].dtype().number_of_elements();
+            uint64 *poly_sizes = poly["topologies/topo/elements/sizes"].value();
+            for (int i = 0; i < sizeof_poly_sizes; i ++)
+            {
+                num_new_polygons += poly_sizes[i];
+            }
+            // we need this number of polygons for each level we add
+            num_new_polygons *= nz - 1;
+
+            // SET UP SIZES
+            const int points_per_quad = 4;
+            // the sizes must have space for the original sizes array, nz copies of it extending upwards, 
+            // and all the walls; hence the addition of the num_new_polygons.
+            int length_of_new_sizes = sizeof_poly_sizes * nz + num_new_polygons;
+            res_topo["subelements/sizes"].set(conduit::DataType::uint64(length_of_new_sizes));
+            uint64 *sizes = res_topo["subelements/sizes"].value();
+            for (int i = 0; i < length_of_new_sizes; i ++)
+            {
+                // the original and reflected polytess sizes
+                if (i < sizeof_poly_sizes * nz)
+                {
+                    sizes[i] = poly_sizes[i % sizeof_poly_sizes];
+                }
+                // all the new polygons are quads
+                else
+                {
+                    sizes[i] = points_per_quad;
+                }
+            }
+
+            // SET UP OFFSETS
+            res_topo["subelements/offsets"].set(conduit::DataType::uint64(length_of_new_sizes));
+            uint64 *offsets = res_topo["subelements/offsets"].value();
+            offsets[0] = 0;
+            for (int i = 1; i < length_of_new_sizes; i ++)
+            {
+                offsets[i] = sizes[i - 1] + offsets[i - 1];
+            }
+
+            // SET UP CONNECTIVITY
+            const int sizeof_poly_connec = poly["topologies/topo/elements/connectivity"].dtype().number_of_elements();
+            const int sizeof_sub_connec = sizeof_poly_connec * nz + num_new_polygons * points_per_quad;
+            res_topo["subelements/connectivity"].set(conduit::DataType::uint64(sizeof_sub_connec));
+            uint64 *connec = res_topo["subelements/connectivity"].value();
+            uint64 *poly_connec = poly["topologies/topo/elements/connectivity"].value();
+
+            // first, copy the original connectivity, then the reflected connectivities, which luckily
+            // is as simple as adding an offset to the original.
+            for (int i = 0; i < sizeof_poly_connec * nz; i ++)
+            {
+                connec[i] = poly_connec[i % sizeof_poly_connec] + (i / sizeof_poly_connec) * num_orig_points;
+            }
+
+            // now the tricky part, where we want to add new faces for the quads that make 
+            // up the walls, and, most importantly, keep track of them.
+            // To do this, we use a map. Put simply, it maps quad faces to polyhedra that 
+            // will use them.
+
+            // map a quad (a set of 4 ints) to a pair,
+            // where car is the index of the quad in connec (an int)
+            // and cdr is the list of associated polyhedra (a vector of integers)
+            std::map<std::set<int>, std::pair<int, std::vector<int>>> quad_map;
+
+            int k = 0;
+            for (int i = 0; i < sizeof_poly_sizes * (nz - 1); i ++)
+            {
+                for (uint64 j = 0; j < sizes[i]; j ++)
+                {
+                    int curr = connec[offsets[i] + j];
+                    int next = connec[(j + 1) % sizes[i] + offsets[i]];
+
+                    // adding num_orig_points will give us the points directly above (one level up) in our mesh
+                    std::set<int> quad = {curr, next, next + num_orig_points, curr + num_orig_points};
+                    std::vector<int> associated_polyhedra{i};
+                    int currpos = sizeof_poly_sizes * nz + k / points_per_quad;
+
+                    if (quad_map.insert(std::make_pair(quad, std::make_pair(currpos, associated_polyhedra))).second)
+                    {
+                        connec[sizeof_poly_connec * nz + k] = curr;
+                        k ++;
+                        connec[sizeof_poly_connec * nz + k] = next;
+                        k ++;
+                        connec[sizeof_poly_connec * nz + k] = next + num_orig_points;
+                        k ++;
+                        connec[sizeof_poly_connec * nz + k] = curr + num_orig_points;
+                        k ++;
+                    }
+                    else
+                    {
+                        quad_map[quad].second.push_back(i);
+                    }
+                }
+            }
+
+        // ELEMENTS
+
+            res_topo["elements/shape"] = "polyhedral";
+
+            const int num_polyhedra = sizeof_poly_sizes * (nz - 1);
+
+            // SET UP SIZES
+            const int points_per_octagon = 8;
+            const int faces_per_octaprism = 10;
+            const int faces_per_hex = 6;
+            res_topo["elements/sizes"].set(conduit::DataType::uint64(num_polyhedra));
+            uint64 *elements_sizes = res_topo["elements/sizes"].value();
+            for (int i = 0; i < num_polyhedra; i ++)
+            {
+                // this ensures that each original octagon is associated with an octagonal prism,
+                // and each original square gets a cube.
+                elements_sizes[i] = (poly_sizes[i % sizeof_poly_sizes] == points_per_octagon) ? faces_per_octaprism : faces_per_hex;
+            }
+
+            // SET UP OFFSETS
+            res_topo["elements/offsets"].set(conduit::DataType::uint64(num_polyhedra));
+            uint64 *elements_offsets = res_topo["elements/offsets"].value();
+            elements_offsets[0] = 0;
+            for (int i = 1; i < num_polyhedra; i ++)
+            {
+                elements_offsets[i] = elements_sizes[i - 1] + elements_offsets[i - 1];
+            }
+
+            // SET UP CONNECTIVITY
+            std::map<int, std::vector<int>> polyhedra_to_quads;
+            std::map<std::set<int>, std::pair<int, std::vector<int>>>::iterator itr;
+            // the one-to-many map we set up before must be reversed. Before, we mapped
+            // quads to polyhedra that used them, now, we wish to map polyhedra to
+            // quads they use.
+            for (itr = quad_map.begin(); itr != quad_map.end(); itr ++)
+            {
+                int pos = itr->second.first;
+                std::vector<int> curr = itr->second.second;
+                for (uint64 i = 0; i < curr.size(); i ++)
+                {
+                    std::vector<int> quads{pos};
+                    if (!polyhedra_to_quads.insert(std::make_pair(curr[i], quads)).second)
+                    {
+                        polyhedra_to_quads[curr[i]].push_back(pos);
+                    }
+                }
+            }
+
+            int sizeof_elements_connec = 0;
+            for (int i = 0; i < num_polyhedra; i ++)
+            {
+                sizeof_elements_connec += elements_sizes[i];
+            }
+
+            res_topo["elements/connectivity"].set(conduit::DataType::uint64(sizeof_elements_connec));
+            uint64 *elements_connec = res_topo["elements/connectivity"].value();
+            int l = 0;
+            for (int i = 0; i < num_polyhedra; i ++)
+            {
+                // to the polyhedral connectivity array, for each polyhedron, we first add 
+                // the polygon from the original polytess, then the polygon directly above,
+                // then each of the vertical faces, thanks to the maps we set up earlier
+                elements_connec[l] = i;
+                l ++;
+                elements_connec[l] = i + sizeof_poly_sizes;
+                l ++;
+                std::vector<int> quads = polyhedra_to_quads[i];
+                for (uint64 j = 0; j < quads.size(); j ++)
+                {
+                    elements_connec[l] = quads[j];
+                    l ++;
+                }
+            }
+
+        // SET UP FIELDS
+        res_fields["level/topology"] = poly["fields/level/topology"];
+        res_fields["level/association"] = poly["fields/level/association"];
+        res_fields["level/volume_dependent"] = poly["fields/level/volume_dependent"];
+
+        const int sizeof_poly_field_values = poly["fields/level/values"].dtype().number_of_elements();
+        res_fields["level/values"].set(conduit::DataType::uint32(num_polyhedra));
+
+        uint32 *values = res_fields["level/values"].value();
+        uint32 *poly_values = poly["fields/level/values"].value();
+
+        // because for each original polygon we have made nz new polyhedra, 
+        // setting up the field is a simple matter of just copying over our 
+        // original field data a few times.
+        for (int i = 0; i < num_polyhedra; i ++)
+        {
+            values[i] = poly_values[i % sizeof_poly_field_values];
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("polytess: nz must be an integer greater than 0.")
     }
 }
 
@@ -3421,7 +3691,173 @@ adjset_uniform(Node &res)
     }
 }
 
+//-----------------------------------------------------------------------------
+void 
+polychain(const index_t length, // how long the chain ought to be
+          Node &res)
+{
+    res.reset();
+
+    Node &chain_coords = res["coordsets/coords"];
+    Node &chain_topo = res["topologies/topo"];
+    Node &chain_fields = res["fields"];
+
+    chain_coords["type"] = "explicit";
+
+    const index_t num_verts_per_hex = 8;
+    const index_t num_verts_per_triprism = 6;
+    const index_t num_verts_per_chain_pair = num_verts_per_hex + 2 * num_verts_per_triprism;
+
+    chain_coords["values/x"].set(conduit::DataType::int64(length * num_verts_per_chain_pair));
+    chain_coords["values/y"].set(conduit::DataType::int64(length * num_verts_per_chain_pair));
+    chain_coords["values/z"].set(conduit::DataType::int64(length * num_verts_per_chain_pair));
+
+    int64 *values_x = chain_coords["values/x"].value();
+    int64 *values_y = chain_coords["values/y"].value();
+    int64 *values_z = chain_coords["values/z"].value();
+
+    for (int i = 0; i < length; i ++)
+    {
+        // points for the cubes
+        values_x[i * num_verts_per_chain_pair] = 1 + i * 2;           values_y[i * num_verts_per_chain_pair] = 1;       values_z[i * num_verts_per_chain_pair] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 1] = 1 + i * 2;       values_y[i * num_verts_per_chain_pair + 1] = 1;   values_z[i * num_verts_per_chain_pair + 1] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 2] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 2] = 1;   values_z[i * num_verts_per_chain_pair + 2] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 3] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 3] = 1;   values_z[i * num_verts_per_chain_pair + 3] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 4] = 1 + i * 2;       values_y[i * num_verts_per_chain_pair + 4] = -1;  values_z[i * num_verts_per_chain_pair + 4] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 5] = 1 + i * 2;       values_y[i * num_verts_per_chain_pair + 5] = -1;  values_z[i * num_verts_per_chain_pair + 5] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 6] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 6] = -1;  values_z[i * num_verts_per_chain_pair + 6] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 7] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 7] = -1;  values_z[i * num_verts_per_chain_pair + 7] = 1 + i * 2;
+
+        // points for half the triangular prisms
+        values_x[i * num_verts_per_chain_pair + 8] = 1 + i * 2;       values_y[i * num_verts_per_chain_pair + 8] = 1;   values_z[i * num_verts_per_chain_pair + 8] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 9] = -1 + i * 2;      values_y[i * num_verts_per_chain_pair + 9] = 1;   values_z[i * num_verts_per_chain_pair + 9] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 10] = -1 + i * 2 + 2; values_y[i * num_verts_per_chain_pair + 10] = 1;  values_z[i * num_verts_per_chain_pair + 10] = 1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 11] = 1 + i * 2;      values_y[i * num_verts_per_chain_pair + 11] = -1; values_z[i * num_verts_per_chain_pair + 11] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 12] = -1 + i * 2;     values_y[i * num_verts_per_chain_pair + 12] = -1; values_z[i * num_verts_per_chain_pair + 12] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 13] = -1 + i * 2 + 2; values_y[i * num_verts_per_chain_pair + 13] = -1; values_z[i * num_verts_per_chain_pair + 13] = 1 + i * 2 + 2;
+
+        // points for the other half
+        values_x[i * num_verts_per_chain_pair + 14] = 1 + i * 2;      values_y[i * num_verts_per_chain_pair + 14] = 1;  values_z[i * num_verts_per_chain_pair + 14] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 15] = -1 + i * 2 + 2; values_y[i * num_verts_per_chain_pair + 15] = 1;  values_z[i * num_verts_per_chain_pair + 15] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 16] = -1 + i * 2 + 4; values_y[i * num_verts_per_chain_pair + 16] = 1;  values_z[i * num_verts_per_chain_pair + 16] = 1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 17] = 1 + i * 2;      values_y[i * num_verts_per_chain_pair + 17] = -1; values_z[i * num_verts_per_chain_pair + 17] = -1 + i * 2 + 2;
+        values_x[i * num_verts_per_chain_pair + 18] = -1 + i * 2 + 2; values_y[i * num_verts_per_chain_pair + 18] = -1; values_z[i * num_verts_per_chain_pair + 18] = -1 + i * 2;
+        values_x[i * num_verts_per_chain_pair + 19] = -1 + i * 2 + 4; values_y[i * num_verts_per_chain_pair + 19] = -1; values_z[i * num_verts_per_chain_pair + 19] = 1 + i * 2;
+    }
+
+    chain_topo["type"] = "unstructured";
+    chain_topo["coordset"] = "coords";
+    chain_topo["elements/shape"] = "polyhedral";
+
+    const index_t num_faces_per_hex = 6;
+    const index_t num_faces_per_triprism = 5;
+    const index_t num_faces_per_chain_pair = num_faces_per_hex + 2 * num_faces_per_triprism;
+
+    chain_topo["elements/connectivity"].set(conduit::DataType::int64(length * num_faces_per_chain_pair));
+    int64 *connec = chain_topo["elements/connectivity"].value();
+    for (int i = 0; i < length * num_faces_per_chain_pair; i ++)
+    {
+        // our faces are specified in order and no faces are reused
+        connec[i] = i;
+    }
+
+    // this is 3 because every time length is increased by 1, 3 more polyhedra are added,
+    const index_t num_polyhedra_per_chain_pair = 3;
+
+    // the cube and two prisms
+    chain_topo["elements/sizes"].set(conduit::DataType::int64(length * num_polyhedra_per_chain_pair));
+    int64 *sizes = chain_topo["elements/sizes"].value();
+    for (int i = 0; i < length * num_polyhedra_per_chain_pair; i ++)
+    {
+        // this ensures that sizes will be of the form {6,5,5, 6,5,5, 6,5,5, ..., 6,5,5}
+        sizes[i] = ((i % num_polyhedra_per_chain_pair) > 0) ? num_faces_per_triprism : num_faces_per_hex;
+    }
+
+    chain_topo["subelements/shape"] = "polygonal";
+
+    const index_t num_points_per_quad_face = 4;
+    const index_t num_points_per_tri_face = 3;
+    const index_t num_tri_faces_in_triprism = 2;
+    const index_t num_quad_faces_in_triprism = 3;
+    const index_t sizeof_hex_connectivity = num_faces_per_hex * num_points_per_quad_face;
+    const index_t sizeof_triprism_connectivity = num_tri_faces_in_triprism * num_points_per_tri_face +
+                                                 num_quad_faces_in_triprism * num_points_per_quad_face;
+    const index_t sizeof_chainpair_connec = sizeof_hex_connectivity + sizeof_triprism_connectivity * 2;
+
+    chain_topo["subelements/connectivity"].set(conduit::DataType::int64(length * sizeof_chainpair_connec));
+    int64 *sub_connec = chain_topo["subelements/connectivity"].value();
+    for (int i = 0; i < length; i ++)
+    {
+        // CUBE
+        // top                                                          // bottom
+        sub_connec[i * sizeof_chainpair_connec] = 0 + i * 20;        sub_connec[i * sizeof_chainpair_connec + 4] = 4 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 1] = 1 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 5] = 5 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 2] = 2 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 6] = 6 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 3] = 3 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 7] = 7 + i * 20;
+        
+        // side where x = 1                                             // side where x = -1
+        sub_connec[i * sizeof_chainpair_connec + 8] = 0 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 12] = 2 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 9] = 1 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 13] = 3 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 10] = 5 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 14] = 7 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 11] = 4 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 15] = 6 + i * 20;
+        
+        // side where z = 1                                             // side where z = -1
+        sub_connec[i * sizeof_chainpair_connec + 16] = 0 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 20] = 1 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 17] = 3 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 21] = 2 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 18] = 7 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 22] = 6 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 19] = 4 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 23] = 5 + i * 20;
+
+        // PRISM 1
+        sub_connec[i * sizeof_chainpair_connec + 24] = 9 + i * 20;  sub_connec[i * sizeof_chainpair_connec + 28] = 8 + i * 20;  sub_connec[i * sizeof_chainpair_connec + 32] = 8 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 25] = 10 + i * 20; sub_connec[i * sizeof_chainpair_connec + 29] = 9 + i * 20;  sub_connec[i * sizeof_chainpair_connec + 33] = 10 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 26] = 13 + i * 20; sub_connec[i * sizeof_chainpair_connec + 30] = 12 + i * 20; sub_connec[i * sizeof_chainpair_connec + 34] = 13 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 27] = 12 + i * 20; sub_connec[i * sizeof_chainpair_connec + 31] = 11 + i * 20; sub_connec[i * sizeof_chainpair_connec + 35] = 11 + i * 20;
+
+        sub_connec[i * sizeof_chainpair_connec + 36] = 8 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 39] = 11 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 37] = 9 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 40] = 12 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 38] = 10 + i * 20;  sub_connec[i * sizeof_chainpair_connec + 41] = 13 + i * 20;
+
+        // PRISM 2
+        sub_connec[i * sizeof_chainpair_connec + 42] = 15 + i * 20; sub_connec[i * sizeof_chainpair_connec + 46] = 14 + i * 20; sub_connec[i * sizeof_chainpair_connec + 50] = 14 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 43] = 16 + i * 20; sub_connec[i * sizeof_chainpair_connec + 47] = 15 + i * 20; sub_connec[i * sizeof_chainpair_connec + 51] = 16 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 44] = 19 + i * 20; sub_connec[i * sizeof_chainpair_connec + 48] = 18 + i * 20; sub_connec[i * sizeof_chainpair_connec + 52] = 19 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 45] = 18 + i * 20; sub_connec[i * sizeof_chainpair_connec + 49] = 17 + i * 20; sub_connec[i * sizeof_chainpair_connec + 53] = 17 + i * 20;
+
+        sub_connec[i * sizeof_chainpair_connec + 54] = 14 + i * 20; sub_connec[i * sizeof_chainpair_connec + 57] = 17 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 55] = 15 + i * 20; sub_connec[i * sizeof_chainpair_connec + 58] = 18 + i * 20;
+        sub_connec[i * sizeof_chainpair_connec + 56] = 16 + i * 20; sub_connec[i * sizeof_chainpair_connec + 59] = 19 + i * 20;
+    }
+
+    chain_topo["subelements/sizes"].set(conduit::DataType::int64(length * num_faces_per_chain_pair));
+
+    int64 *sub_sizes = chain_topo["subelements/sizes"].value();
+
+    for (int i = 0; i < length * num_faces_per_chain_pair; i ++)
+    {
+        // this ensures sizes will be of the form {4,4,4,4,4,4,4,4,4,3,3,4,4,4,3,3, 4,4,4,4,4,4,4,4,4,3,3,4,4,4,3,3, ...}
+        int imodfaces = i % num_faces_per_chain_pair;
+        sub_sizes[i] = ((imodfaces < 9) || ((imodfaces > 10) && (imodfaces < 14))) ? num_points_per_quad_face : num_points_per_tri_face;
+    }
+
+    blueprint::mesh::topology::unstructured::generate_offsets(chain_topo,
+                                                              chain_topo["elements/offsets"]);
+    
+    chain_fields["chain/topology"] = "topo";
+    chain_fields["chain/association"] = "element";
+    chain_fields["chain/volume_dependent"] = "false";
+    chain_fields["chain/values"].set(conduit::DataType::int64(length * num_polyhedra_per_chain_pair));
+    int64 *field_values = chain_fields["chain/values"].value();
+
+    for (int i = 0; i < length * num_polyhedra_per_chain_pair; i ++)
+    {
+        // ensures that the field is of the form {0,1,1, 0,1,1, ..., 0,1,1}
+        field_values[i] = (i % num_polyhedra_per_chain_pair) == 0 ? 0 : 1;
+    }
 }
+
+}
+
+
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples --
 //-----------------------------------------------------------------------------
