@@ -2691,10 +2691,13 @@ TEST(conduit_blueprint_mesh_verify, empty_mesh_vs_gen_index)
 {
     Node empty;
     Node info;
-    //empty.append();
     bool res = blueprint::mesh::verify(empty,info);
     EXPECT_TRUE(res);
+    // expect this to throw, while mesh bp can have empty domains
+    // we can't create an index for the input domain case
     Node n_idx;
-    blueprint::mesh::generate_index(empty,"",1,n_idx);
+    EXPECT_THROW(blueprint::mesh::generate_index(empty,"",1,n_idx),conduit::Error);
+    
+    
 }
 

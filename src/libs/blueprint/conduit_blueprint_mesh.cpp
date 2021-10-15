@@ -1512,6 +1512,12 @@ mesh::generate_index(const Node &mesh,
 {
     index_out.reset();
 
+    if(!mesh.has_child("coordsets"))
+    {
+        CONDUIT_ERROR("Cannot generate mesh blueprint index for empty mesh."
+                      " (input mesh missing 'coordsets')");
+    }
+    
     index_out["state/number_of_domains"] = number_of_domains;
 
 
