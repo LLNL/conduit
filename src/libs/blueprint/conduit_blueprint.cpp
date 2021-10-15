@@ -54,6 +54,8 @@ about(Node &n)
     
     n["protocols/mcarray"]  = "enabled";
     n["protocols/zfparray"] = "enabled";
+
+    n["protocols/table"] = "enabled";
 }
 
 //---------------------------------------------------------------------------//
@@ -79,6 +81,10 @@ verify(const std::string &protocol,
         {
             res = mcarray::verify(p_next,n,info);
         }
+        else if(p_curr == "table")
+        {
+            res = table::verify(p_next, n, info);
+        }
     }
     else
     {
@@ -89,6 +95,10 @@ verify(const std::string &protocol,
         else if(p_curr == "mcarray")
         {
             res = mcarray::verify(n,info);
+        }
+        else if(p_curr == "table")
+        {
+            res = table::verify(n, info);
         }
     }
 

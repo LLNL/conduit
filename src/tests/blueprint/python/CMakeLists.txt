@@ -7,7 +7,8 @@
 ####################################
 set(PYTHON_MODULE_TESTS t_python_blueprint_smoke
                         t_python_blueprint_mcarray
-                        t_python_blueprint_mesh)
+                        t_python_blueprint_mesh
+                        t_python_blueprint_table)
 
 
 foreach(TEST ${PYTHON_MODULE_TESTS})

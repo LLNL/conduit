@@ -4,13 +4,6 @@
 
 ###############################################################################
 # file: __init__.py
-# Purpose: Main init for the conduit blueprint module.
+# Purpose: Main init for the conduit blueprint table examples module.
 ###############################################################################
-from .conduit_blueprint_python import *
-
-from . import mcarray
-from . import mesh
-from . import table
-
-
-
+from .conduit_blueprint_table_examples_python import *

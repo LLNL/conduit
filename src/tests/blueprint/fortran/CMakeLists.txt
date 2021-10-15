@@ -9,7 +9,8 @@
 set(FORTRAN_TESTS 
     t_f_blueprint_smoke
     t_f_blueprint_mcarray
-    t_f_blueprint_mesh)
+    t_f_blueprint_mesh
+    t_f_blueprint_table)
 
 ################################
 # Add our tests

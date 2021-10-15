@@ -197,6 +197,18 @@ bool verify(const conduit::Node &n,
     return res;
 }
 
+//-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const std::string &,
+                                  const conduit::Node &,
+                                  conduit::Node &info)
+{
+    // Table doesn't currently provide any nested protocols
+
+    info.reset();
+    utils::log::validation(info,false);
+    return false;
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::table --

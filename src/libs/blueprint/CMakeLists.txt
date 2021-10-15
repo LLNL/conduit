@@ -42,6 +42,7 @@ set(blueprint_c_headers
     c/conduit_blueprint.h
     c/conduit_blueprint_mcarray.h
     c/conduit_blueprint_mesh.h
+    c/conduit_blueprint_table.h
     )
 
 
@@ -75,6 +76,7 @@ set(blueprint_c_sources
     c/conduit_blueprint_c.cpp
     c/conduit_blueprint_mcarray_c.cpp
     c/conduit_blueprint_mesh_c.cpp
+    c/conduit_blueprint_table_c.cpp
     )
 
 #################################
@@ -89,7 +91,9 @@ if(FORTRAN_FOUND)
     set(blueprint_fortran_sources
         fortran/conduit_blueprint_fortran.f90
         fortran/conduit_blueprint_mcarray_fortran.f90
-        fortran/conduit_blueprint_mesh_fortran.f90)
+        fortran/conduit_blueprint_mesh_fortran.f90
+        fortran/conduit_blueprint_table_fortran.f90
+        )
 
 endif()
 
@@ -113,7 +117,9 @@ if(FORTRAN_FOUND)
     set(conduit_blueprint_fortran_modules
         ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint.mod
         ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mesh.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mcarray.mod)
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mcarray.mod
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_table.mod
+        )
 
     # Setup install to copy the fortran modules
     install(FILES

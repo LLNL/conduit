@@ -41,6 +41,11 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
                                   conduit::Node &info);
 
 //-----------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
+                                  const conduit::Node &n,
+                                  conduit::Node &info);
+
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh --

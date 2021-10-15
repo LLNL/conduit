@@ -4,12 +4,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint.h
+/// file: conduit_blueprint_table.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_H
-#define CONDUIT_BLUEPRINT_H
+#ifndef CONDUIT_BLUEPRINT_TABLE_H
+#define CONDUIT_BLUEPRINT_TABLE_H
 
 //-----------------------------------------------------------------------------
 // -- includes for the public conduit blueprint c interface -- 
@@ -26,19 +26,32 @@ extern "C" {
 #endif
 
 //-----------------------------------------------------------------------------
-// -- conduit_blueprint c interface  --
+// -- conduit_blueprint_table c interface  --
 //-----------------------------------------------------------------------------
 
-CONDUIT_BLUEPRINT_API void conduit_blueprint_about(conduit_node *cnode);
-
+//-----------------------------------------------------------------------------
+/// Verify passed node conforms to the blueprint table protocol.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API int conduit_blueprint_table_verify(
+                                                    const conduit_node *cnode,
+                                                    conduit_node *cinfo);
 
 //-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
+/// Verify passed node conforms to given blueprint table sub protocol.
 //-----------------------------------------------------------------------------
-CONDUIT_BLUEPRINT_API int conduit_blueprint_verify(const char *protocol,
-                                                   const conduit_node *cnode,
-                                                   conduit_node *cinfo);
+CONDUIT_BLUEPRINT_API int conduit_blueprint_table_verify_sub_protocol(
+                                                    const char *protocol,
+                                                    const conduit_node *cnode,
+                                                    conduit_node *cinfo);
+
+//-----------------------------------------------------------------------------
+/// Interface to generate example table blueprint data.
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API void conduit_blueprint_table_examples_basic(
+                                                    conduit_index_t nx,
+                                                    conduit_index_t ny,
+                                                    conduit_index_t nz,
+                                                    conduit_node *cres);
 
 #ifdef __cplusplus
 }
@@ -46,10 +59,6 @@ CONDUIT_BLUEPRINT_API int conduit_blueprint_verify(const char *protocol,
 //-----------------------------------------------------------------------------
 // -- end extern C
 //-----------------------------------------------------------------------------
-
-#include "conduit_blueprint_mcarray.h"
-#include "conduit_blueprint_mesh.h"
-#include "conduit_blueprint_table.h"
 
 
 //-----------------------------------------------------------------------------

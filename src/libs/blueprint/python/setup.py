@@ -57,7 +57,9 @@ setup (name = 'conduit blueprint',
                  'conduit.blueprint.mcarray',
                  'conduit.blueprint.mcarray.examples',
                  'conduit.blueprint.mesh',
-                 'conduit.blueprint.mesh.examples'],
+                 'conduit.blueprint.mesh.examples',
+                 'conduit.blueprint.table',
+                 'conduit.blueprint.table.examples'],
        cmdclass={'install_egg_info': SkipEggInfo})
 
 
