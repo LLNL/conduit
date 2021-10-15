@@ -207,18 +207,18 @@ Uberenv Options for Building Third Party Dependencies
 
 ``uberenv.py`` has a few options that allow you to control how dependencies are built:
 
- ==================== ============================================== ================================================
+ ==================== ============================================== ==============================================================
   Option               Description                                     Default
- ==================== ============================================== ================================================
+ ==================== ============================================== ==============================================================
   --prefix             Destination directory                          ``uberenv_libs``
   --spec               Spack spec                                     linux: **%gcc**
                                                                       osx: **%clang**
   --spack-config-dir   Folder with Spack settings files               linux: (empty)
-                                                                      osx: ``scripts/uberenv/spack_configs/darwin/``
+                                                                      osx: ``scripts/uberenv_configs/spack_configs/config/darwin/``
   -k                   Ignore SSL Errors                              **False**
   --install            Fully install conduit, not just dependencies   **False**
   --run_tests          Invoke tests during build and against install  **False** 
- ==================== ============================================== ================================================
+ ==================== ============================================== ==============================================================
 
 The ``-k`` option exists for sites where SSL certificate interception undermines fetching
 from github and https hosted source tarballs. When enabled, ``uberenv.py`` clones spack using:
@@ -243,7 +243,7 @@ Default invocation on OSX:
 
     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
                                       --spec %clang \
-                                      --spack-config-dir scripts/uberenv/spack_configs/darwin/
+                                      --spack-config-dir scripts/uberenv_configs/spack_configs/configs/darwin/
 
 
 The uberenv `--install` installs conduit\@develop (not just the development dependencies):
