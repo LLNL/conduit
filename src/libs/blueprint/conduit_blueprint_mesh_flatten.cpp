@@ -389,7 +389,9 @@ MeshFlattener::default_initialize_column(Node &column) const
         *data_ptr++ = static_cast<Type>(default_value);\
     }\
 }
-    if(is_floating_point)
+    // Nodes calloc their data, no need to re-set everything to 0.
+    // Question: Is this a guarantee of Node::set(DataType)?
+    if(is_floating_point && this->float_fill_value != 0.)
     {
         switch(column.dtype().id())
         {
@@ -405,7 +407,7 @@ MeshFlattener::default_initialize_column(Node &column) const
         }
         }
     }
-    else if(is_integer)
+    else if(is_integer && this->int_fill_value != 0)
     {
         switch(column.dtype().id())
         {
@@ -441,7 +443,7 @@ MeshFlattener::default_initialize_column(Node &column) const
         }
         }
     }
-    else
+    else if(!is_floating_point && !is_integer)
     {
         CONDUIT_ERROR("Node with invalid type passed to default_initialize_column()." <<
             " Must be an integer or floating point number.");
@@ -464,16 +466,19 @@ MeshFlattener::allocate_column(Node &column, index_t nrows, index_t dtype_id,
             {
                 const Node &n = itr.next();
                 column[n.name()].set(DataType(dtype_id, nrows));
+                default_initialize_column(column[n.name()]);
             }
         }
         else
         {
             column.set(DataType(dtype_id, nrows));
+            default_initialize_column(column);
         }
     }
     else
     {
         column.set(DataType(dtype_id, nrows));
+        default_initialize_column(column);
     }
 }
 
@@ -690,7 +695,7 @@ MeshFlattener::for_each_in_range(Node &node, index_t start, index_t end, FuncTyp
     {\
         AccessType temp = static_cast<AccessType>(value[offset]);\
         func(i, temp);\
-        value[offset] = static_cast<AccessType>(temp);\
+        value[offset] = static_cast<ActualType>(temp);\
     }\
 }
     switch(dtype_id)
