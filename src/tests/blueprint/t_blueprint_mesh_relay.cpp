@@ -278,7 +278,48 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate_root_only)
+{
+    // test truncate with root only style
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping save_read_mesh_truncate test");
+        return;
+    }
+    
 
+    std::string output_base = "tout_relay_mesh_save_load_truncate";
+    
+    Node data;
+
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     data);
+
+    remove_path_if_exists(output_base + ".cycle_000100.root");
+
+    Node opts;
+    relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
+
+    blueprint::mesh::examples::braid("uniform",
+                                     10,
+                                     10,
+                                     10,
+                                     data);
+
+
+    EXPECT_THROW( relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts),Error);
+    opts["truncate"] = "true";
+    // this will succed
+    relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
+    
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
