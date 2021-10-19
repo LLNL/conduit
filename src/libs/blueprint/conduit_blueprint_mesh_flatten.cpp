@@ -11,6 +11,7 @@
 //-----------------------------------------------------------------------------
 // std lib includes
 //-----------------------------------------------------------------------------
+#include <array>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -20,6 +21,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_mesh_utils_iterate_elements.hpp"
 #include "conduit_log.hpp"
 
 #define DEBUG_MESH_FLATTEN 1
@@ -48,11 +50,24 @@ private:
     const Node &get_coordset(const Node &mesh) const;
     const Node &get_topology(const Node &mesh) const;
 
+    /**
+    @brief Inspects the type of the given coordset and calls
+        the correct to_explicit function. If the given coordset
+        is already explicit then out_cset is just - out_cset.set_external(cset).
+    @note The data returned through the parameter out_cset is READ ONLY.
+    @param cset The input coordset.
+    @param[out] values READ ONLY "explicit" coordset.
+    */
+    void coordset_to_explicit(const Node &cset, Node &out_cset) const;
+
     void get_fields_to_flatten(const Node &mesh, std::vector<std::string> &fields_to_flatten) const;
     index_t determine_element_dtype(const Node &data) const;
     void default_initialize_column(Node &column) const;
     void allocate_column(Node &column, index_t nrows, index_t dtype_id,
         const Node *ref_node = nullptr) const;
+    
+    void generate_element_centers(const Node &topo, const Node &explicit_cset,
+        Node &output, index_t offset) const;
 
     template<typename SrcType, typename DestType>
     static void append_data_array_impl2(const DataArray<SrcType> &src, DataArray<DestType> &dest, index_t offset);
@@ -96,9 +111,10 @@ private:
 
 //-----------------------------------------------------------------------------
 MeshFlattener::MeshFlattener()
-    : topology(""), field_names(), default_dtype(blueprint::mesh::utils::DEFAULT_FLOAT_DTYPE.id()),
-    float_fill_value(0.), int_fill_value(0), add_cell_centers(true), add_domain_info(true),
-    add_vertex_locations(true)
+    : topology(""), field_names(),
+    default_dtype(blueprint::mesh::utils::DEFAULT_FLOAT_DTYPE.id()),
+    float_fill_value(0.), int_fill_value(0), add_cell_centers(true),
+    add_domain_info(true), add_vertex_locations(true)
 {
     // Construct with defaults
 }
@@ -292,6 +308,29 @@ MeshFlattener::get_topology(const Node &mesh) const
 
 //-----------------------------------------------------------------------------
 void
+MeshFlattener::coordset_to_explicit(const Node &cset, Node &out_cset) const
+{
+    const std::string &cset_type = cset["type"].as_string();
+    if(cset_type == "uniform")
+    {
+        blueprint::mesh::coordset::uniform::to_explicit(cset, out_cset);
+    }
+    else if(cset_type == "rectilinear")
+    {
+        blueprint::mesh::coordset::rectilinear::to_explicit(cset, out_cset);
+    }
+    else if(cset_type == "explicit")
+    {
+        out_cset.set_external(cset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported coordset type passed to MeshFlattener::coordset_to_explicit()");
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
 MeshFlattener::get_fields_to_flatten(const Node &mesh, std::vector<std::string> &fields_to_flatten) const
 {
     fields_to_flatten.clear();
@@ -480,6 +519,41 @@ MeshFlattener::allocate_column(Node &column, index_t nrows, index_t dtype_id,
         column.set(DataType(dtype_id, nrows));
         default_initialize_column(column);
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+MeshFlattener::generate_element_centers(const Node &topo,
+    const Node &explicit_cset, Node &output, index_t offset) const
+{
+    using namespace blueprint::mesh::utils::topology;
+    
+    const index_t dimension = explicit_cset["values"].number_of_children();
+    const std::array<const DataArray<double>, 3> cset_values{
+        (dimension > 0) ? explicit_cset["values"][0].value() : DataArray<double>(),
+        (dimension > 1) ? explicit_cset["values"][1].value() : DataArray<double>(),
+        (dimension > 2) ? explicit_cset["values"][2].value() : DataArray<double>(),
+    };
+    std::array<DataArray<float>, 3> output_values{
+        (dimension > 0) ? output[0].value() : DataArray<float>(),
+        (dimension > 1) ? output[1].value() : DataArray<float>(),
+        (dimension > 2) ? output[2].value() : DataArray<float>(),
+    };
+
+    index_t output_idx = offset;
+    iterate_elements(topo, [&](const entity &e) {
+        const index_t nids = static_cast<index_t>(e.element_ids.size());
+        for(index_t d = 0; d < dimension; d++)
+        {
+            float sum = 0.f;
+            for(index_t i = 0; i < nids; i++)
+            {
+                sum += cset_values[d][e.element_ids[i]];
+            }
+            output_values[d][output_idx] = sum / static_cast<float>(nids);
+        }
+        output_idx++;
+    }); 
 }
 
 //-----------------------------------------------------------------------------
@@ -759,6 +833,7 @@ MeshFlattener::for_each_in_range(Node &node, index_t start, index_t end, FuncTyp
         CONDUIT_ERROR("Invalid data type passed to for_each_in_range");
     }
     }
+#undef FOR_EACH_IN_RANGE_IMPL
 }
 
 //-----------------------------------------------------------------------------
@@ -773,34 +848,31 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
     Node &vert_table = output["vertex_data"];
     Node &elem_table = output["element_data"];
 
+    // Used to store an explicit version of the current cset.
+    //  Either holds ownership of data created by coordset::<type>::to_explicit
+    //  OR points to the actual coordset data via set_external.
+    //  Should be treated as READ ONLY.
+    // NOTE: Is there a better way for me todo this? Don't want to have
+    //  to copy an entire explicit coordset if it's already explicit.
+    Node explicit_cset;
+
     // Add coordset data to table
     if(this->add_vertex_locations)
     {
-        const std::string &cset_type = cset["type"].as_string();
+        coordset_to_explicit(cset, explicit_cset);
         Node &cset_output = vert_table["values"][0];
-        if(cset_type == "uniform" || cset_type == "rectilinear")
-        {
-            Node temp;
-            if(cset_type == "uniform")
-            {
-                blueprint::mesh::coordset::uniform::to_explicit(cset, temp);
-            }
-            else
-            {
-                blueprint::mesh::coordset::rectilinear::to_explicit(cset, temp);
-            }
-            append_data(temp["values"], cset_output, vert_offset);
-        }
-        else if(cset_type == "explicit")
-        {
-            append_data(cset["values"], cset_output, vert_offset);
-        }
+        append_data(explicit_cset["values"], cset_output, vert_offset);
     }
 
     // Add cell center information to element table
     if(this->add_cell_centers)
     {
-        // TODO
+        if(explicit_cset.dtype().is_empty())
+        {
+            coordset_to_explicit(cset, explicit_cset);
+        }
+        Node &element_center_output = elem_table["values/element_centers"];
+        generate_element_centers(topo, explicit_cset, element_center_output, elem_offset);
     }
 
     // Add domain_id + vertex/element ids to their respective tables
@@ -940,7 +1012,7 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
         for(index_t d = 0; d < dimension; d++)
         {
             allocate_column(element_table[elem_center_output_path + "/" + axes[d]],
-                nelems, coord_type);
+                nelems, this->default_dtype);
         }
     }
 
