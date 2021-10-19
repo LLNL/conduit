@@ -52,7 +52,7 @@ namespace utils
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::topology --
 //-----------------------------------------------------------------------------
-namespace topology 
+namespace topology
 {
 
 struct entity
@@ -91,8 +91,8 @@ inline void
 build_element_vector(const Node &element_types, std::vector<id_elem_pair> &eles)
 {
     /*
-        element_types: 
-        (String name): (Q: Could this also be a list entry?) 
+        element_types:
+        (String name): (Q: Could this also be a list entry?)
             stream_id: (index_t id)
             shape: (String name of shape)
     */
@@ -148,84 +148,124 @@ Multiple topology formats
         shape: (String name of shape)
         connectivity: (Integer array of vertex ids)
 3. Stream based toplogy 1
-  mesh: 
+  mesh:
     type: "unstructured"
     coordset: "coords"
-    elements: 
-      element_types: 
-        (String name): (Q: Could this also be a list entry?) 
+    elements:
+      element_types:
+        (String name): (Q: Could this also be a list entry?)
           stream_id: (index_t id)
           shape: (String name of shape)
-      element_index: 
+      element_index:
         stream_ids: (index_t array of stream ids, must be one of the ids listed in element_types)
         element_counts: (index_t array of element counts at a given index (IE 2 would mean 2 of the associated stream ID))
       stream: (index_t array of vertex ids)
 4. Stream based topology 2
-  topo: 
+  topo:
     type: unstructured
     coordset: (String name of coordset)
-    elements: 
-      element_types: 
+    elements:
+      element_types:
         (String name): (Q: Could this also be a list entry?)
           stream_id: (index_t id)
           shape: (String name of shape)
-      element_index: 
+      element_index:
         stream_ids: (index_t array of stream ids, must be one of the ids listed in element_types)
         offsets: (index_t array of offsets into stream for each element)
       stream: (index_t array of vertex ids)
+5. Points - vertex celltype
+  topo:
+    type: "points"
+    coords: "coords"
+6. Uniform - line, quad, hex celltype
+  topo:
+    type: "uniform"
+    coords: "coords"
+7. Rectilinear - line, quad, hex celltype
+  topo:
+    type: "rectilinear"
+    coords: "coords"
+8. Structured - line, quad, hex celltype
+  topo:
+    type: "structured"
+    coords: "coords"
+    dims:
+      i: (Integer)
+      j: (Integer)
+      k: (Integer)
 */
-    const Node *shape = topo.fetch_ptr("elements/shape");
     int case_num = -1;
-    if(shape)
+    const std::string topo_type = topo["type"].as_string();
+    if(topo_type == "unstructured")
     {
-        // This is a single shape topology
-        const ShapeType st(shape->as_string());
-        if(!st.is_valid())
+        const Node *shape = topo.fetch_ptr("elements/shape");
+        if(shape)
         {
-            CONDUIT_ERROR("Invalid topology passed to iterate_elements.");
+            // This is a single shape topology
+            const ShapeType st(shape->as_string());
+            if(!st.is_valid())
+            {
+                CONDUIT_ERROR("Invalid topology passed to iterate_elements.");
+            }
+            else
+            {
+                case_num = 0;
+            }
         }
         else
         {
-            case_num = 0;
+            const Node *elements = topo.fetch_ptr("elements");
+            if(!elements)
+            {
+                CONDUIT_ERROR("Invalid topology passed to iterate elements, no \"elements\" node.");
+            }
+
+            const Node *etypes = elements->fetch_ptr("element_types");
+            const Node *eindex = elements->fetch_ptr("element_index");
+            const Node *estream = elements->fetch_ptr("stream");
+            if(!etypes && !eindex && !estream)
+            {
+                // Not a stream based toplogy, either a list or object of element buckets
+                if(elements->dtype().is_list())
+                {
+                    case_num = 1;
+                }
+                else if(elements->dtype().is_object())
+                {
+                    case_num = 2;
+                }
+            }
+            else if(etypes && eindex && estream)
+            {
+                // Stream based topology, either offsets or counts
+                const Node *eoffsets = eindex->fetch_ptr("offsets");
+                const Node *ecounts  = eindex->fetch_ptr("element_counts");
+                if(ecounts)
+                {
+                    case_num = 3;
+                }
+                else if(eoffsets)
+                {
+                    case_num = 4;
+                }
+            }
         }
     }
-    else
+    else if(topo_type == "points")
     {
-        const Node *elements = topo.fetch_ptr("elements");
-        if(!elements)
-        {
-            CONDUIT_ERROR("Invalid topology passed to iterate elements, no \"elements\" node.");
-        }
-
-        const Node *etypes = elements->fetch_ptr("element_types");
-        const Node *eindex = elements->fetch_ptr("element_index");
-        const Node *estream = elements->fetch_ptr("stream");
-        if(!etypes && !eindex && !estream)
-        {
-            // Not a stream based toplogy, either a list or object of element buckets
-            if(elements->dtype().is_list())
-            {
-                case_num = 1;
-            }
-            else if(elements->dtype().is_object())
-            {
-                case_num = 2;
-            }
-        }
-        else if(etypes && eindex && estream)
-        {
-            // Stream based topology, either offsets or counts
-            const Node *eoffsets = eindex->fetch_ptr("offsets");
-            const Node *ecounts  = eindex->fetch_ptr("element_counts");
-            if(ecounts)
-            {
-                case_num = 3;
-            }
-            else if(eoffsets)
-            {
-                case_num = 4;
-            }
-        }
+        case_num = 5;
+    }
+    else if(topo_type == "uniform")
+    {
+        case_num = 6;
+    }
+    else if(topo_type == "rectilinear")
+    {
+        case_num = 7;
+    }
+    else if(topo_type == "structured")
+    {
+        case_num = 8;
     }
     return case_num;
 }
@@ -434,6 +474,125 @@ traverse_stream(FuncType &&func, const Node &elements)
     }
 }
 
+//-----------------------------------------------------------------------------
+template<typename FuncType>
+inline void
+traverse_points(FuncType &&func, const Node &topo)
+{
+    std::array<index_t, 3> dims{1, 1, 1};
+    // TODO: Double check that 1 doesn't need to be added to each dimension.
+    topology::logical_dims(topo, dims.data(), 3);
+
+    index_t npts = 1;
+    for(const auto d : dims)
+    {
+        if(d > 0)
+        {
+            npts *= d;
+        }
+    }
+
+    entity e;
+    e.shape = ShapeType((index_t)ShapeId::Point);
+    e.element_ids.resize(1);
+    e.subelement_ids.clear();
+    for(index_t i = 0; i < npts; i++)
+    {
+        e.entity_id = i;
+        e.element_ids[0] = i;
+        func(e);
+    }
+}
+
+//-----------------------------------------------------------------------------
+template<typename FuncType>
+inline void
+traverse_structured(FuncType &&func, const Node &topo)
+{
+    std::array<index_t, 3> dims{1, 1, 1};
+    topology::logical_dims(topo, dims.data(), 3);
+    const index_t dimension = topology::dims(topo);
+
+    if(dimension == 1)
+    {
+        // Line elements
+        entity e;
+        e.shape = ShapeType((index_t)ShapeId::Line);
+        e.element_ids.resize(2);
+        e.subelement_ids.clear();
+        for(index_t i = 0; i < dims[0]; i++)
+        {
+            e.entity_id = i;
+            e.element_ids[0] = i;
+            e.element_ids[1] = i + 1;
+            func(e);
+        }
+    }
+    else if(dimension == 2)
+    {
+        // Quad elements
+        entity e;
+        e.shape = ShapeType((index_t)ShapeId::Quad);
+        e.element_ids.resize(4);
+        e.subelement_ids.clear();
+        const index_t nx = dims[0] + 1;
+        index_t id = 0;
+        for(index_t j = 0; j < dims[1]; j++)
+        {
+            const index_t jnx  = j * nx;
+            const index_t j1nx = (j + 1) * nx;
+            for(index_t i = 0; i < dims[0]; i++)
+            {
+                e.entity_id = id++;
+                e.element_ids[0] = jnx + i;
+                e.element_ids[1] = jnx + i + 1;
+                e.element_ids[2] = j1nx + i + 1;
+                e.element_ids[3] = j1nx + i;
+                func(e);
+            }
+        }
+    }
+    else if(dimension == 3)
+    {
+        // Hex elements
+        entity e;
+        e.shape = ShapeType((index_t)ShapeId::Hex);
+        e.element_ids.resize(8);
+        e.subelement_ids.clear();
+        const index_t nx = dims[0] + 1;
+        const index_t ny = dims[1] + 1;
+        index_t id = 0;
+        for(index_t k = 0; k < dims[2]; k++)
+        {
+            const index_t knxny  = k * nx * ny;
+            const index_t k1nxny = (k + 1) * nx * ny;
+            for(index_t j = 0; j < dims[1]; j++)
+            {
+                const index_t jnx  = j * nx;
+                const index_t j1nx = (j + 1) * nx;
+                for(index_t i = 0; i < dims[0]; i++)
+                {
+                    e.entity_id = id++;
+                    e.element_ids[0] = knxny  + jnx  + i;
+                    e.element_ids[1] = knxny  + jnx  + i + 1;
+                    e.element_ids[2] = knxny  + j1nx + i + 1;
+                    e.element_ids[3] = knxny  + j1nx + i;
+                    e.element_ids[4] = k1nxny + jnx  + i;
+                    e.element_ids[5] = k1nxny + jnx  + i + 1;
+                    e.element_ids[6] = k1nxny + j1nx + i + 1;
+                    e.element_ids[7] = k1nxny + j1nx + i;
+                    func(e);
+                }
+            }
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported dimension given to iterate_elements (traverse_structured) "
+            << dimension << ".");
+    }
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::topology::impl --
@@ -455,7 +614,6 @@ iterate_elements(const Node &topo, Func &&func)
         return;
     }
 
-    using impl::id_elem_pair;
     index_t ent_id = 0;
     switch(case_num)
     {
@@ -522,6 +680,20 @@ iterate_elements(const Node &topo, Func &&func)
     {
         // Stream with element counts or offsets
         impl::traverse_stream(func, topo["elements"]);
+        break;
+    }
+    case 5:
+    {
+        // Points topology
+        impl::traverse_points(func, topo);
+        break;
+    }
+    case 6: /* Fallthrough */
+    case 7: /* Fallthrough */
+    case 8:
+    {
+        // Uniform, Rectilinear, Structured topology
+        impl::traverse_structured(func, topo);
         break;
     }
     default:
