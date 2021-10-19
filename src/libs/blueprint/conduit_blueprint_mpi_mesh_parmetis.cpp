@@ -231,9 +231,11 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
 //-----------------------------------------------------------------------------
 void generate_partition_field(conduit::Node &mesh,
+                              int npartitions,
                               MPI_Comm comm)
 {
     Node opts;
+    opts["partitions"] = npartitions;
     generate_partition_field(mesh,opts,comm);
 }
 
@@ -262,6 +264,7 @@ void generate_partition_field(conduit::Node &mesh,
     // parse options
     std::string topo_name = "";
     std::string field_prefix = "";
+    idx_t nparts = -1;
     if( options.has_child("topology") )
     {
         topo_name = options["topology"].as_string();
@@ -273,10 +276,34 @@ void generate_partition_field(conduit::Node &mesh,
         const Node &dom_topo = domains[0]->fetch("topologies")[0];
         topo_name = dom_topo.name();
     }
+    idx_t ncommonnodes;
+    if ( options.has_child("parmetis_ncommonnodes") )
+    {
+        ncommonnodes = options["parmetis_ncommonnodes"].as_int();
+    }
+    else
+    {
+        // in 2D, zones adjacent if they share 2 nodes (edge)
+        // in 3D, zones adjacent if they share 3 nodes (plane)
+        std::string coordset_name
+            = domains[0]->fetch(std::string("topologies/") + topo_name + "/coordset").as_string();
+        const Node& coordset = domains[0]->fetch(std::string("coordsets/") + coordset_name);
+        ncommonnodes = conduit::blueprint::mesh::coordset::dims(coordset);
+    }
 
     if( options.has_child("field_prefix") )
     {
         field_prefix = options["field_prefix"].as_string();
+    }
+
+    if( options.has_child("partitions") )
+    {
+        nparts = options["partitions"].as_int();
+    }
+    else
+    {
+        CONDUIT_ERROR("Missing required option in generate_partition_field(): "
+                      << "expected \"partitions\" field with number of partitions.");
     }
 
     // we now have global element and vertex ids
@@ -481,10 +508,8 @@ void generate_partition_field(conduit::Node &mesh,
     idx_t wgtflag = 0; // weights are NULL
     idx_t numflag = 0; // C-style numbering
     idx_t ncon = 1; // the number of weights per vertex
-    idx_t ncommonnodes = 4; // we have quads
-    idx_t nparts = 2; //
     // equal weights for each proc
-    real_t tpwgts[] = {0.5,0.5};
+    std::vector<real_t> tpwgts(nparts, 1.0/nparts);
     real_t ubvec = 1.050000;
 
     // options == extra output
@@ -513,7 +538,7 @@ void generate_partition_field(conduit::Node &mesh,
                                                 &ncon,
                                                 &ncommonnodes,
                                                 &nparts,
-                                                tpwgts,
+                                                tpwgts.data(),
                                                 &ubvec,
                                                 parmetis_opts,
                                                 &edgecut,

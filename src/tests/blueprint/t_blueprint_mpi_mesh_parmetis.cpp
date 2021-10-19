@@ -66,7 +66,7 @@ TEST(blueprint_mpi_parmetis, basic)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     // paint a field with parmetis result (WIP)
-    conduit::blueprint::mpi::mesh::generate_partition_field(mesh,MPI_COMM_WORLD);
+    conduit::blueprint::mpi::mesh::generate_partition_field(mesh,2,MPI_COMM_WORLD);
 
     Node s2dmap, d2smap;
     Node &side_coords = side_mesh["coordsets/coords"];
@@ -144,6 +144,7 @@ TEST(blueprint_mpi_parmetis, braid)
 
     Node options;
     options["topology"] = "mesh";
+    options["partitions"] = 3;
 
     // paint a field with parmetis result (WIP)
     conduit::blueprint::mpi::mesh::generate_partition_field(mesh,options,MPI_COMM_WORLD);
@@ -226,7 +227,7 @@ TEST(blueprint_mpi_parmetis, uniform_adjset)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(local_mesh, info));
 
     // paint a field with parmetis result (WIP)
-    conduit::blueprint::mpi::mesh::generate_partition_field(local_mesh,MPI_COMM_WORLD);
+    conduit::blueprint::mpi::mesh::generate_partition_field(local_mesh, 3, MPI_COMM_WORLD);
 
     for (int i = 0; i < 8; i++)
     {

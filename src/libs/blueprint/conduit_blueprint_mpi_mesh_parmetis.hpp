@@ -49,6 +49,7 @@ namespace mesh
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_partition_field(conduit::Node &mesh,
+                                                    int npartitions,
                                                     MPI_Comm comm);
 
 //-------------------------------------------------------------------------
