@@ -100,6 +100,16 @@ void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
                                      const conduit::Node &options,
                                      conduit::Node &output);
 
+/**
+ @brief Convert the given blueprint mesh into a blueprint table.
+ @param mesh    A Conduit node containing a blueprint mesh or set of mesh domains.
+ @param options A Conduit node containing options for the flatten operation.
+ @param[out] output A Conduit node that will contain the blueprint table output.
+*/
+void CONDUIT_BLUEPRINT_API flatten(const conduit::Node &mesh,
+                                   const conduit::Node &options,
+                                   conduit::Node &output);
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------
