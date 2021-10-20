@@ -5728,10 +5728,12 @@ public:
                     n_new_topo["type"] = "structured";
                     n_new_topo["coordset"] = n_cset.name();
 
-                    auto logical_dims = utils::coordset::dim_lengths(n_cset);
-                    for(size_t ldi = 0; ldi < logical_dims.size(); ldi++)
+                    const index_t dim = utils::topology::dims(n_topo);
+                    std::array<index_t, MAXDIM> logical_dims;
+                    utils::topology::logical_dims(n_topo, logical_dims.data(), dim);
+                    for(index_t ldi = 0; ldi < dim; ldi++)
                     {
-                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims[ldi] - 1;
+                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims[ldi];
                     }
 
                     if(n_topo.has_path("elements/origin"))
