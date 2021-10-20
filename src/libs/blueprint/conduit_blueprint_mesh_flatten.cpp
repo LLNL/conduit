@@ -75,12 +75,28 @@ private:
         Node &output, index_t offset) const;
 
     template<typename SrcType, typename DestType>
-    static void append_data_array_impl2(const DataArray<SrcType> &src, DataArray<DestType> &dest, index_t offset);
+    static void append_data_array_impl2(const DataArray<SrcType> &src,
+        DataArray<DestType> &dest, index_t offset, index_t nelems);
     template<typename SrcType>
-    static void append_data_array_impl1(const DataArray<SrcType> &src, Node &dest, index_t offset);
-    static void append_data_array(const Node &src, Node &dest, index_t offset);
-    static void append_mc_data(const Node &src, Node &dest, index_t offset);
-    static void append_data(const Node &src, Node &dest, index_t offset);
+    static void append_data_array_impl1(const DataArray<SrcType> &src, Node &dest,
+        index_t offset, index_t nelems);
+    static void append_data_array(const Node &src, Node &dest,
+        index_t offset, index_t nelems);
+    static void append_mc_data(const Node &src, Node &dest, index_t offset,
+        index_t nelems);
+    /**
+    @brief Reads the data stored in src and copies it into dest starting
+        at the given offset into dest's memory.
+    @note Data from src is read as its native type and static_cast is used
+        to convert each element into dest's memory.
+    @param src Input data, must be a leaf node or mcarray
+    @param dest Output node, must have allocated enough memory to store
+        offset + src.dtype().number_of_elements() elements.
+    @param offset An offset into dest's memory to start copying.
+    @param nelems The number of elements to copy from src to dest.
+    */
+    static void append_data(const Node &src, Node &dest,
+        index_t offset, index_t nelems);
 
     /**
     @brief Determines node's actual data type then iterates the elements in range [start, end),
@@ -718,12 +734,12 @@ MeshFlattener::generate_element_centers(const Node &topo,
 template<typename SrcType, typename DestType>
 void
 MeshFlattener::append_data_array_impl2(const DataArray<SrcType> &src,
-    DataArray<DestType> &dest, index_t offset)
+    DataArray<DestType> &dest, index_t offset, index_t nelems)
 {
-    const index_t N = src.number_of_elements();
-    for(index_t i = 0; i < N; i++)
+    index_t off = offset;
+    for(index_t i = 0; i < nelems; i++)
     {
-        dest[offset + i] = static_cast<DestType>(src[i]);
+        dest[off++] = static_cast<DestType>(src[i]);
     }
 }
 
@@ -731,7 +747,7 @@ MeshFlattener::append_data_array_impl2(const DataArray<SrcType> &src,
 template<typename SrcType>
 void
 MeshFlattener::append_data_array_impl1(const DataArray<SrcType> &src, Node &dest,
-    index_t offset)
+    index_t offset, index_t nelems)
 {
     const index_t dtype_id = dest.dtype().id();
     switch(dtype_id)
@@ -740,63 +756,63 @@ MeshFlattener::append_data_array_impl1(const DataArray<SrcType> &src, Node &dest
     case DataType::INT8_ID:
     {
         DataArray<int8> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     case DataType::INT16_ID:
     {
         DataArray<int16> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     case DataType::INT32_ID:
     {
         DataArray<int32> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     case DataType::INT64_ID:
     {
         DataArray<int64> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     // Unsigned int types
     case DataType::UINT8_ID:
     {
         DataArray<uint8> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     case DataType::UINT16_ID:
     {
         DataArray<uint16> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     case DataType::UINT32_ID:
     {
         DataArray<uint32> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     case DataType::UINT64_ID:
     {
         DataArray<uint64> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     // Floating point types
     case DataType::FLOAT32_ID:
     {
         DataArray<float32> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     case DataType::FLOAT64_ID:
     {
         DataArray<float64> value = dest.value();
-        append_data_array_impl2(src, value, offset);
+        append_data_array_impl2(src, value, offset, nelems);
         break;
     }
     default:
@@ -808,8 +824,23 @@ MeshFlattener::append_data_array_impl1(const DataArray<SrcType> &src, Node &dest
 
 //-----------------------------------------------------------------------------
 void
-MeshFlattener::append_data_array(const Node &src, Node &dest, index_t offset)
+MeshFlattener::append_data_array(const Node &src, Node &dest,
+    index_t offset, index_t nelems)
 {
+    DEBUG_PRINT("MeshFlattener::append_data_array"
+        << "\n  src.dtype().number_of_elements(): " << src.dtype().number_of_elements()
+        << "\n  dest.dtype().number_of_elements(): " << dest.dtype().number_of_elements()
+        << "\n  offset: " << offset << std::endl);
+    if(offset + nelems > dest.dtype().number_of_elements())
+    {
+        CONDUIT_ERROR("Invalid arguments passed to append_data_array."
+            << "  Trying copy " << nelems << " elements into an array of "
+            << dest.dtype().number_of_elements() << " elements starting at "
+            << "offset " << offset << ". " << offset << " + " << nelems
+            << " > " << dest.dtype().number_of_elements() << ".");
+        return;
+    }
+
     const index_t dtype_id = src.dtype().id();
     switch(dtype_id)
     {
@@ -817,63 +848,63 @@ MeshFlattener::append_data_array(const Node &src, Node &dest, index_t offset)
     case DataType::INT8_ID:
     {
         const DataArray<int8> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     case DataType::INT16_ID:
     {
         const DataArray<int16> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     case DataType::INT32_ID:
     {
         const DataArray<int32> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     case DataType::INT64_ID:
     {
         const DataArray<int64> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     // Unsigned int types
     case DataType::UINT8_ID:
     {
         const DataArray<uint8> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     case DataType::UINT16_ID:
     {
         const DataArray<uint16> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     case DataType::UINT32_ID:
     {
         const DataArray<uint32> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     case DataType::UINT64_ID:
     {
         const DataArray<uint64> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     // Floating point types
     case DataType::FLOAT32_ID:
     {
         const DataArray<float32> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     case DataType::FLOAT64_ID:
     {
         const DataArray<float64> value = src.value();
-        append_data_array_impl1(value, dest, offset);
+        append_data_array_impl1(value, dest, offset, nelems);
         break;
     }
     default:
@@ -885,7 +916,8 @@ MeshFlattener::append_data_array(const Node &src, Node &dest, index_t offset)
 
 //-----------------------------------------------------------------------------
 void
-MeshFlattener::append_mc_data(const Node &src, Node &dest, index_t offset)
+MeshFlattener::append_mc_data(const Node &src, Node &dest,
+    index_t offset, index_t nelems)
 {
     auto itr = src.children();
     while(itr.has_next())
@@ -896,22 +928,23 @@ MeshFlattener::append_mc_data(const Node &src, Node &dest, index_t offset)
             CONDUIT_ERROR("Dest does not have a child named " << utils::log::quote(s.name()));
             continue;
         }
-        append_data_array(s, dest[s.name()], offset);
+        append_data_array(s, dest[s.name()], offset, nelems);
     }
 }
 
 //-----------------------------------------------------------------------------
 void
-MeshFlattener::append_data(const Node &src, Node &dest, index_t offset)
+MeshFlattener::append_data(const Node &src, Node &dest, index_t offset,
+    index_t nelems)
 {
     const DataType &src_dtype = src.dtype();
     if(src_dtype.is_list() || src_dtype.is_object())
     {
-        append_mc_data(src, dest, offset);
+        append_mc_data(src, dest, offset, nelems);
     }
     else
     {
-        append_data_array(src, dest, offset);
+        append_data_array(src, dest, offset, nelems);
     }
 }
 
@@ -1021,7 +1054,7 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
     {
         coordset_to_explicit(cset, explicit_cset);
         Node &cset_output = vert_table["values"][0];
-        append_data(explicit_cset["values"], cset_output, vert_offset);
+        append_data(explicit_cset["values"], cset_output, vert_offset, nverts);
     }
 
     // Add cell center information to element table
@@ -1070,11 +1103,13 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
             const std::string association = field["association"].as_string();
             if(association == "vertex")
             {
-                append_data(field["values"], vert_table["values/" + field.name()], vert_offset);
+                append_data(field["values"], vert_table["values/" + field.name()],
+                    vert_offset, nverts);
             }
             else if(association == "element")
             {
-                append_data(field["values"], elem_table["values/" + field.name()], elem_offset);
+                append_data(field["values"], elem_table["values/" + field.name()],
+                    elem_offset, nelems);
             }
         }
     }
