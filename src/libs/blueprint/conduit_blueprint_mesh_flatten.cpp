@@ -65,7 +65,12 @@ private:
     void default_initialize_column(Node &column) const;
     void allocate_column(Node &column, index_t nrows, index_t dtype_id,
         const Node *ref_node = nullptr) const;
-    
+
+    template<typename CsetType, typename OutputType>
+    static void generate_element_centers_impl(
+        const Node &topo, const index_t dimension,
+        const DataArray<CsetType> *cset_values, DataArray<OutputType> *output_values,
+        const index_t offset);
     void generate_element_centers(const Node &topo, const Node &explicit_cset,
         Node &output, index_t offset) const;
 
@@ -522,44 +527,198 @@ MeshFlattener::allocate_column(Node &column, index_t nrows, index_t dtype_id,
 }
 
 //-----------------------------------------------------------------------------
+template<typename CsetType, typename OutputType>
 void
-MeshFlattener::generate_element_centers(const Node &topo,
-    const Node &explicit_cset, Node &output, index_t offset) const
+MeshFlattener::generate_element_centers_impl(const Node &topo, const index_t dimension,
+    const DataArray<CsetType> *cset_values, DataArray<OutputType> *output_values,
+    const index_t offset)
 {
     using namespace blueprint::mesh::utils::topology;
-    
-    const index_t dimension = explicit_cset["values"].number_of_children();
-    const std::array<const DataArray<double>, 3> cset_values{
-        (dimension > 0) ? explicit_cset["values"][0].value() : DataArray<double>(),
-        (dimension > 1) ? explicit_cset["values"][1].value() : DataArray<double>(),
-        (dimension > 2) ? explicit_cset["values"][2].value() : DataArray<double>(),
-    };
-    std::array<DataArray<float>, 3> output_values{
-        (dimension > 0) ? output[0].value() : DataArray<float>(),
-        (dimension > 1) ? output[1].value() : DataArray<float>(),
-        (dimension > 2) ? output[2].value() : DataArray<float>(),
-    };
-
     index_t output_idx = offset;
     iterate_elements(topo, [&](const entity &e) {
         const index_t nids = static_cast<index_t>(e.element_ids.size());
         for(index_t d = 0; d < dimension; d++)
         {
-            float sum = 0.f;
+            OutputType sum = 0;
             for(index_t i = 0; i < nids; i++)
             {
-                sum += cset_values[d][e.element_ids[i]];
+                sum += static_cast<OutputType>(cset_values[d][e.element_ids[i]]);
             }
-            output_values[d][output_idx] = sum / static_cast<float>(nids);
+            output_values[d][output_idx] = sum / static_cast<OutputType>(nids);
         }
         output_idx++;
-    }); 
+    });
+}
+
+//-----------------------------------------------------------------------------
+void
+MeshFlattener::generate_element_centers(const Node &topo,
+    const Node &explicit_cset, Node &output, index_t offset) const
+{
+    using namespace blueprint::mesh::utils::topology;
+    const Node &n_cset_values = explicit_cset["values"];
+    const index_t dimension = n_cset_values.number_of_children();
+    if(!output[0].dtype().is_floating_point())
+    {
+        CONDUIT_ERROR("Cell center output DataType must be floating point.");
+        return;
+    }
+
+    // Figure out the type of the input coordinates
+    // Need to be sure that they are all the same type
+    const index_t cset_type = determine_element_dtype(n_cset_values);
+    bool all_same = true;
+    for(index_t i = 0; i < dimension; i++)
+    {
+        if(cset_type != n_cset_values[i].dtype().id())
+        {
+            all_same = false;
+        }
+    }
+
+    Node temp;
+    if(all_same)
+    {
+        // Zero copy
+        temp.set_external(n_cset_values);
+    }
+    else
+    {
+        // Need to convert coords to all the same type
+        for(index_t i = 0; i < dimension; i++)
+        {
+            const Node &n_comp = n_cset_values[i];
+            // Only convert what we need to convert
+            if(n_comp.dtype().id() != cset_type)
+            {
+                n_cset_values.to_data_type(cset_type, temp[n_comp.name()]);
+            }
+            else
+            {
+                temp[n_comp.name()].set_external(n_comp);
+            }
+        }
+    }
+
+#define GENERATE_ELEMENT_CENTERS_CSET_TYPE(CsetType, OutputType)\
+{\
+    const std::array<const DataArray<CsetType>, 3> cset_values{\
+        (dimension > 0) ? n_cset_values[0].value() : DataArray<CsetType>(),\
+        (dimension > 1) ? n_cset_values[1].value() : DataArray<CsetType>(),\
+        (dimension > 2) ? n_cset_values[2].value() : DataArray<CsetType>(),\
+    };\
+    generate_element_centers_impl<CsetType, OutputType>(topo, dimension,\
+        cset_values.data(), output_values.data(), offset);\
+}
+
+    // Invoke the algorithm with the proper types
+    // Output is allocated by us so we know each component has the same type.
+    if(output[0].dtype().is_float32())
+    {
+        std::array<DataArray<float32>, 3> output_values{
+            (dimension > 0) ? output[0].value() : DataArray<float32>(),
+            (dimension > 1) ? output[1].value() : DataArray<float32>(),
+            (dimension > 2) ? output[2].value() : DataArray<float32>(),
+        };
+
+        switch(cset_type)
+        {
+        // Signed int types
+        case DataType::INT8_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(int8, float32)
+            break;
+        case DataType::INT16_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(int16, float32)
+            break;
+        case DataType::INT32_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(int32, float32)
+            break;
+        case DataType::INT64_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(int64, float32)
+            break;
+        // Unsigned int types
+        case DataType::UINT8_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(uint8, float32)
+            break;
+        case DataType::UINT16_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(uint16, float32)
+            break;
+        case DataType::UINT32_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(uint32, float32)
+            break;
+        case DataType::UINT64_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(uint64, float32)
+            break;
+        // Floating point types
+        case DataType::FLOAT32_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(float32, float32)
+            break;
+        case DataType::FLOAT64_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(float64, float32)
+            break;
+        default:
+        {
+            CONDUIT_ERROR("Invalid coordinate data type passed to generate_element_centers.");
+        }
+        }
+    }
+    else
+    {
+        std::array<DataArray<float64>, 3> output_values{
+            (dimension > 0) ? output[0].value() : DataArray<float64>(),
+            (dimension > 1) ? output[1].value() : DataArray<float64>(),
+            (dimension > 2) ? output[2].value() : DataArray<float64>(),
+        };
+
+        switch(cset_type)
+        {
+        // Signed int types
+        case DataType::INT8_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(int8, float64)
+            break;
+        case DataType::INT16_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(int16, float64)
+            break;
+        case DataType::INT32_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(int32, float64)
+            break;
+        case DataType::INT64_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(int64, float64)
+            break;
+        // Unsigned int types
+        case DataType::UINT8_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(uint8, float64)
+            break;
+        case DataType::UINT16_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(uint16, float64)
+            break;
+        case DataType::UINT32_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(uint32, float64)
+            break;
+        case DataType::UINT64_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(uint64, float64)
+            break;
+        // Floating point types
+        case DataType::FLOAT32_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(float32, float64)
+            break;
+        case DataType::FLOAT64_ID:
+            GENERATE_ELEMENT_CENTERS_CSET_TYPE(float64, float64)
+            break;
+        default:
+        {
+            CONDUIT_ERROR("Invalid coordinate data type passed to generate_element_centers.");
+        }
+        }
+    }
+#undef GENERATE_ELEMENT_CENTERS_CSET_TYPE
 }
 
 //-----------------------------------------------------------------------------
 template<typename SrcType, typename DestType>
 void
-MeshFlattener::append_data_array_impl2(const DataArray<SrcType> &src, DataArray<DestType> &dest, index_t offset)
+MeshFlattener::append_data_array_impl2(const DataArray<SrcType> &src,
+    DataArray<DestType> &dest, index_t offset)
 {
     const index_t N = src.number_of_elements();
     for(index_t i = 0; i < N; i++)
@@ -571,7 +730,8 @@ MeshFlattener::append_data_array_impl2(const DataArray<SrcType> &src, DataArray<
 //-----------------------------------------------------------------------------
 template<typename SrcType>
 void
-MeshFlattener::append_data_array_impl1(const DataArray<SrcType> &src, Node &dest, index_t offset)
+MeshFlattener::append_data_array_impl1(const DataArray<SrcType> &src, Node &dest,
+    index_t offset)
 {
     const index_t dtype_id = dest.dtype().id();
     switch(dtype_id)
