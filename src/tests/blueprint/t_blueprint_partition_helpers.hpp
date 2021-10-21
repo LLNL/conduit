@@ -69,8 +69,8 @@ compare_baseline(const std::string &filename, const conduit::Node &n)
     if(!equal)
     {
        const char *line = "*************************************************************";
-       cout << "Difference!" << endl;
-       cout << line << endl;
+       std::cout << "Difference!" << std::endl;
+       std::cout << line << std::endl;
        info.print();
     }
     return equal;

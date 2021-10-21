@@ -75,7 +75,7 @@ private:
     /**
     @brief Inspects the given multi-domain mesh and provides a list of
         fields to include in the output along with their associations.
-    @param mesh 
+    @param mesh
     */
     void get_fields_to_flatten(const Node &mesh, const std::string &topo_name,
         std::vector<std::string> &fields_to_flatten) const;
@@ -92,7 +92,7 @@ private:
     const Node *get_reference_field(const Node &mesh,
         const std::string &topo_name,
         const std::string &field_name) const;
-    
+
     index_t determine_element_dtype(const Node &data) const;
     void default_initialize_column(Node &column) const;
     void allocate_column(Node &column, index_t nrows, index_t dtype_id,
