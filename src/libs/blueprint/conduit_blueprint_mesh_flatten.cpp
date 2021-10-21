@@ -13,6 +13,7 @@
 //-----------------------------------------------------------------------------
 #include <array>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -60,7 +61,38 @@ private:
     */
     void coordset_to_explicit(const Node &cset, Node &out_cset) const;
 
-    void get_fields_to_flatten(const Node &mesh, std::vector<std::string> &fields_to_flatten) const;
+    /**
+    @brief Checks if the given field node is supported by the flatten
+        operation. Currently ensures the field exists on the given
+        topology and checks that the association field exists
+        FUTURE: Add necessary logic for supporting grid_functions
+        and matsets.
+    */
+    bool check_field_supported(const Node &field,
+        const std::string &topo_name,
+        bool report_issues = true) const;
+
+    /**
+    @brief Inspects the given multi-domain mesh and provides a list of
+        fields to include in the output along with their associations.
+    @param mesh 
+    */
+    void get_fields_to_flatten(const Node &mesh, const std::string &topo_name,
+        std::vector<std::string> &fields_to_flatten) const;
+
+    /**
+    @brief Inspects the given multi-domain mesh and provides the a reference
+        to the first valid field found with the given name.
+    @param mesh Mesh node containing all local domains
+    @param topo_name Used to check that field exists on the correct topology
+    @param field_name The name of the field to find.
+    @return Returns a pointer to the first valid field with the given name,
+        if none exist then nullptr is returned.
+    */
+    const Node *get_reference_field(const Node &mesh,
+        const std::string &topo_name,
+        const std::string &field_name) const;
+    
     index_t determine_element_dtype(const Node &data) const;
     void default_initialize_column(Node &column) const;
     void allocate_column(Node &column, index_t nrows, index_t dtype_id,
@@ -117,7 +149,8 @@ private:
 
     // TODO: Consider what we will do with material based fields, more tables?
     void flatten_single_domain(const Node &mesh, Node &output,
-        index_t domain_id = 0, index_t vert_offset = 0, index_t elem_offset = 0) const;
+        const std::vector<std::string> &fields_to_flatten, index_t domain_id,
+        index_t vert_offset, index_t elem_offset) const;
     void flatten_many_domains(const Node &mesh, Node &output) const;
 
     std::string topology;
@@ -351,79 +384,151 @@ MeshFlattener::coordset_to_explicit(const Node &cset, Node &out_cset) const
 }
 
 //-----------------------------------------------------------------------------
+bool
+MeshFlattener::check_field_supported(const Node &field,
+    const std::string &topo_name, bool report_issues) const
+{
+    const std::string field_name = field.name();
+    if(!field.has_child("topology"))
+    {
+        if(field.has_child("matset"))
+        {
+            if(report_issues)
+            {
+                CONDUIT_INFO("The field " << utils::log::quote(field_name) <<
+                    " appears to be material-dependent which is currently unsupported by mesh::flatten().");
+            }
+            return false;
+        }
+        else
+        {
+            if(report_issues)
+            {
+                CONDUIT_ERROR("The field " << utils::log::quote(field_name) <<
+                    " does not have an associated topology or matset.");
+            }
+            return false;
+        }
+    }
+
+    const std::string field_topo_name = field.child("topology").as_string();
+    if(field_topo_name != topo_name)
+    {
+        if(report_issues)
+        {
+            CONDUIT_INFO("The selected field " << utils::log::quote(field_name) <<
+                " does not exist on the active mesh toplogy " << utils::log::quote(topo_name) <<
+                ".");
+        }
+        return false;
+    }
+
+    if(!field.has_child("association"))
+    {
+        if(report_issues)
+        {
+            CONDUIT_INFO("The selected field " << utils::log::quote(field_name) <<
+                " is not associated with verticies or elements. It will not be present in the output.");
+        }
+        return false;
+    }
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 void
-MeshFlattener::get_fields_to_flatten(const Node &mesh, std::vector<std::string> &fields_to_flatten) const
+MeshFlattener::get_fields_to_flatten(const Node &mesh,
+    const std::string &topo_name,
+    std::vector<std::string> &fields_to_flatten) const
 {
     fields_to_flatten.clear();
-    const Node &topo = get_topology(mesh);
-    const std::string &topo_name = topo.name();
-    const Node &fields = mesh["fields"];
+    const index_t ndomains = mesh.number_of_children();
     if(!this->field_names.empty())
     {
-        // Always use the fields provided via options, always check for issues to report to the user.
-        for(const std::string &field_name : this->field_names)
+        // Find each of the given fields, keep the order given by the user
+        std::vector<std::string> field_stack;
+        for(auto itr = this->field_names.rbegin(); itr != this->field_names.rend(); itr++)
         {
-            fields_to_flatten.push_back(field_name);
+            field_stack.push_back(*itr);
+        }
 
-            const Node *field = fields.fetch_ptr(field_name);
-            if(field)
+        while(!field_stack.empty())
+        {
+            const std::string field_name = field_stack.back();
+            field_stack.pop_back();
+            bool found = false;
+            for(index_t i = 0; i < ndomains; i++)
             {
-                if(!field->has_child("topology"))
+                const Node &domain = mesh[i];
+                const Node &fields = domain["fields"];
+                const Node *field = fields.fetch_ptr(field_name);
+                if(field)
                 {
-                    if(field->has_child("matset"))
+                    if(check_field_supported(*field, topo_name))
                     {
-                        CONDUIT_INFO("The field " << utils::log::quote(field->name()) <<
-                            " appears to be material-dependent which is currently unsupported by mesh::flatten().");
-                        continue;
-                    }
-                    else
-                    {
-                        CONDUIT_ERROR("The field " << utils::log::quote(field->name()) <<
-                            " does not have an associated topology or matset.");
-                        continue;
+                        const std::string association = field->child("association").as_string();
+                        fields_to_flatten.push_back(field_name);
+                        found = true;
+                        break;
                     }
                 }
+            }
 
-                const std::string field_topo_name = field->child("topology").as_string();
-                if(field_topo_name != topo_name)
-                {
-                    CONDUIT_INFO("The selected field " << utils::log::quote(field->name()) <<
-                        " does not exist on the active mesh toplogy " << utils::log::quote(topo_name) <<
-                        ".");
-                }
+            if(!found)
+            {
+                CONDUIT_INFO("Field name " << field_name << " was provided as an"
+                    << " option to mesh::flatten(), but it does not exist on any of"
+                    << " the mesh domains. It will not be present in the output.")
             }
         }
     }
     else
     {
         // If no fields were provided in the options then use all fields associated with the active topology
-        auto itr = fields.children();
-        while(itr.has_next())
+        std::set<std::string> field_set;
+        for(index_t i = 0; i < ndomains; i++)
         {
-            const Node &field = itr.next();
-            if(!field.has_child("topology"))
+            const Node &domain = mesh[i];
+            const Node &fields = domain["fields"];
+            auto itr = fields.children();
+            while(itr.has_next())
             {
-                if(field.has_child("matset"))
+                const Node &field = itr.next();
+                const std::string field_name = field.name();
+                if(field_set.count(field_name) == 0)
                 {
-                    CONDUIT_INFO("The field " + utils::log::quote(field.name()) +
-                        " appears to be material-dependent which is currently unsupported by mesh::flatten().");
-                    continue;
+                    if(check_field_supported(field, topo_name))
+                    {
+                        const std::string association = field["association"].as_string();
+                        field_set.insert(field_name); // Make sure we don't add this field again
+                        fields_to_flatten.push_back(field_name);
+                    }
                 }
-                else
-                {
-                    CONDUIT_ERROR("The field " + utils::log::quote(field.name()) +
-                        " does not have an associated topology or matset.");
-                    continue;
-                }
-            }
-
-            const std::string field_topo_name = field["topology"].as_string();
-            if(field_topo_name == topo_name)
-            {
-                fields_to_flatten.push_back(field.name());
             }
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+const Node *
+MeshFlattener::get_reference_field(const Node &mesh,
+    const std::string &topo_name,
+    const std::string &field_name) const
+{
+    const index_t ndomains = mesh.number_of_children();
+    for(index_t i = 0; i < ndomains; i++)
+    {
+        const Node &fields = mesh[i]["fields"];
+        if(fields.has_child(field_name))
+        {
+            const Node &field = fields[field_name];
+            if(check_field_supported(field, topo_name, false))
+            {
+                return &field;
+            }
+        }
+    }
+    return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -431,8 +536,13 @@ index_t
 MeshFlattener::determine_element_dtype(const Node &data) const
 {
     // Turns out blueprint::mesh::utils has a function for this
+    const std::vector<DataType> default_dtypes{
+        DataType::float32(),
+        DataType::int32(),
+        DataType::uint32()
+    };
     return blueprint::mesh::utils::find_widest_dtype(
-        data, DataType(default_dtype, 1)).id();
+        data, default_dtypes).id();
 }
 
 //-----------------------------------------------------------------------------
@@ -1032,7 +1142,8 @@ MeshFlattener::for_each_in_range(Node &node, index_t start, index_t end, FuncTyp
 //-----------------------------------------------------------------------------
 void
 MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
-        index_t domain_id, index_t vert_offset, index_t elem_offset) const
+    const std::vector<std::string> &fields_to_flatten, index_t domain_id,
+    index_t vert_offset, index_t elem_offset) const
 {
     const conduit::Node &topo = get_topology(mesh);
     const conduit::Node &cset = get_coordset(mesh);
@@ -1092,26 +1203,42 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
     }
 
     // Add fields to their respective tables
+    const Node &fields = mesh["fields"];
+#ifdef DEBUG_MESH_FLATTEN
+    std::cout << "Domain[" << domain_id << "] fields to flatten:\n";
+    for(index_t i = 0; i < (index_t)fields_to_flatten.size(); i++)
     {
-        const Node &fields = mesh["fields"];
-        std::vector<std::string> fields_to_flatten;
-        get_fields_to_flatten(mesh, fields_to_flatten);
-
-        for(const std::string &field_name : fields_to_flatten)
+        const std::string &field_name = fields_to_flatten[i];
+        std::cout << "  " << utils::log::quote(field_name) <<
+            (i < (index_t)(fields_to_flatten.size() - 1) ? "\n" : "");
+    }
+    std::cout << std::endl;
+#endif
+    for(const std::string &field_name : fields_to_flatten)
+    {
+        const Node *field = fields.fetch_ptr(field_name);
+        if(field)
         {
-            const Node &field = fields[field_name];
-            const std::string association = field["association"].as_string();
+            const std::string association = field->child("association").as_string();
+            const Node &field_values = field->child("values");
             if(association == "vertex")
             {
-                append_data(field["values"], vert_table["values/" + field.name()],
+                append_data(field_values, vert_table["values/" + field_name],
                     vert_offset, nverts);
             }
             else if(association == "element")
             {
-                append_data(field["values"], elem_table["values/" + field.name()],
+                append_data(field_values, elem_table["values/" + field_name],
                     elem_offset, nelems);
             }
         }
+#ifdef DEBUG_MESH_FLATTEN
+        else
+        {
+            std::cout << "  field " << utils::log::quote(field_name)
+                << "does not exist on domain!" << std::endl;
+        }
+#endif
     }
 }
 
@@ -1222,41 +1349,45 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
     }
 
     // Allocate fields output
-    // TODO: Find the field if it doesn't exist in domain 0
+    std::vector<std::string> fields_to_flatten;
+    get_fields_to_flatten(mesh, get_topology(mesh[0]).name(), fields_to_flatten);
+    for(const std::string &field_name : fields_to_flatten)
     {
-        std::vector<std::string> fields_to_flatten;
-        get_fields_to_flatten(mesh[0], fields_to_flatten);
-        const Node &temp_fields = mesh[0]["fields"];
-        for(const std::string &field_name : fields_to_flatten)
+        const Node *ref_field = get_reference_field(mesh, get_topology(mesh[0]).name(),
+            field_name);
+        if(ref_field)
         {
-            const Node *field = temp_fields.fetch_ptr(field_name);
-            if(field)
+            const std::string assoc = ref_field->child("association").as_string();
+            const Node &field_values = ref_field->child("values");
+            const index_t elem_dtype_id = determine_element_dtype(field_values);
+            if(assoc == "vertex")
             {
-                // TODO: Support material-based fields
-                const Node &field_values = field->child("values");
-                const index_t elem_dtype_id = determine_element_dtype(field_values);
-                const std::string assoc = field->child("association").as_string();
-                if(assoc == "vertex")
-                {
-                    allocate_column(vertex_table["values/" + field_name], nverts, elem_dtype_id, &field_values);
-                }
-                else if(assoc == "element")
-                {
-                    allocate_column(element_table["values/" + field_name], nelems, elem_dtype_id, &field_values);
-                }
+                allocate_column(vertex_table["values/" + field_name], nverts, elem_dtype_id, &field_values);
+            }
+            else if(assoc == "element")
+            {
+                allocate_column(element_table["values/" + field_name], nelems, elem_dtype_id, &field_values);
             }
             else
             {
-                CONDUIT_ERROR("Cannot allocate table entry for " << utils::log::quote(field_name) <<
-                    " because it doesn't exist on domain 0.");
+                CONDUIT_ERROR("Unknown field association type - " << assoc);
             }
+        }
+        else
+        {
+            // NOTE: Must be a logic error in get_reference_field or get_fields_to_flatten,
+            //  this should never happen.
+            CONDUIT_ERROR("Unable to find reference field for " << field_name);
         }
     }
 
+    DEBUG_PRINT("Table allocation:" << output.schema().to_json() << std::endl);
+
+    // Flatten each domain
     index_t vert_offset = 0, elem_offset = 0;
     for(index_t i = 0; i < ndomains; i++)
     {
-        flatten_single_domain(mesh[i], output, domain_ids[i], vert_offset, elem_offset);
+        flatten_single_domain(mesh[i], output, fields_to_flatten, domain_ids[i], vert_offset, elem_offset);
         vert_offset += verts_per_domain[i];
         elem_offset += elems_per_domain[i];
     }
