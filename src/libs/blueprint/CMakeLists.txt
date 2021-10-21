@@ -165,8 +165,10 @@ if(MPI_FOUND)
 set(conduit_blueprint_mpi_sources
     conduit_blueprint_mpi.cpp
     conduit_blueprint_mpi_mesh.cpp
+    conduit_blueprint_mpi_mesh_examples.cpp
+    conduit_blueprint_mpi_mesh_flatten.cpp
     conduit_blueprint_mpi_mesh_partition.cpp
-    conduit_blueprint_mpi_mesh_examples.cpp)
+    )
 
 #
 # Specify blueprint mpi headers

@@ -58,13 +58,14 @@ else()
     message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
-set(BLUEPRINT_MPI_TESTS_RANKS_2 
+set(BLUEPRINT_MPI_TESTS_RANKS_2
     t_blueprint_mpi_smoke
     t_blueprint_mpi_mesh_verify)
 
 set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_mesh_relay)
 
-set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4 
+set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4
+    t_blueprint_mpi_mesh_flatten
     t_blueprint_mpi_mesh_partition)
 
 if(MPI_FOUND)

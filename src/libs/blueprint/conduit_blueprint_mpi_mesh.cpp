@@ -13,6 +13,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mpi_mesh.hpp"
+#include "conduit_blueprint_mpi_mesh_flatten.hpp"
 #include "conduit_blueprint_mpi_mesh_partition.hpp"
 #include "conduit_relay_mpi.hpp"
 
@@ -204,6 +205,18 @@ partition(const conduit::Node &n_mesh, const conduit::Node &options,
         P.split_selections();
         P.execute(output);
     }
+}
+
+//-------------------------------------------------------------------------
+void
+flatten(const conduit::Node &mesh, const conduit::Node &options,
+    conduit::Node &output, MPI_Comm comm)
+{
+    output.reset();
+
+    ParallelMeshFlattener do_flatten(comm);
+    do_flatten.set_options(options);
+    do_flatten.execute(mesh, output);
 }
 
 //-----------------------------------------------------------------------------

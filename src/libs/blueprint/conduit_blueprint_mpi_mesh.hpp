@@ -38,7 +38,7 @@ namespace mpi
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh --
+// -- begin conduit::blueprint::mpi::mesh --
 //-----------------------------------------------------------------------------
 
 namespace mesh 
@@ -81,6 +81,12 @@ void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
                                      const conduit::Node &options,
                                      conduit::Node &output,
                                      MPI_Comm comm);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API flatten(const conduit::Node &mesh,
+                                   const conduit::Node &options,
+                                   conduit::Node &output,
+                                   MPI_Comm comm);
 
 //-----------------------------------------------------------------------------
 }

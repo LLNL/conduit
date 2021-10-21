@@ -89,13 +89,12 @@ class CONDUIT_BLUEPRINT_API MeshFlattener
 {
 public:
     MeshFlattener();
-    ~MeshFlattener();
+    virtual ~MeshFlattener();
 
     bool set_options(const Node &options);
 
     void execute(const Node &mesh, Node &output) const;
-private:
-
+protected:
     const Node &get_coordset(const Node &mesh) const;
     const Node &get_topology(const Node &mesh) const;
 
@@ -153,7 +152,15 @@ private:
     void flatten_single_domain(const Node &mesh, Node &output,
         const std::vector<std::string> &fields_to_flatten, index_t domain_id,
         index_t vert_offset, index_t elem_offset) const;
-    void flatten_many_domains(const Node &mesh, Node &output) const;
+
+    /**
+    @brief Handles allocating output table and invoking flatten_single_domain() over
+        each domain at the proper offsets, to be overridden by parallel implementation.
+    @param mesh Input mesh, must be an object or list of mesh domains.
+    @param output The output to be returned by execute()
+    */
+    virtual void
+    flatten_many_domains(const Node &mesh, Node &output) const;
 
     std::string topology;
     std::vector<std::string> field_names;
