@@ -32,6 +32,7 @@
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mesh_partition.hpp"
+#include "conduit_blueprint_mesh_flatten.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
 
@@ -4387,6 +4388,19 @@ mesh::partition(const conduit::Node &n_mesh, const conduit::Node &options,
         output.reset();
         P.execute(output);
     }
+}
+
+//-------------------------------------------------------------------------
+void
+mesh::flatten(const conduit::Node &mesh,
+              const conduit::Node &options,
+              conduit::Node &output)
+{
+    output.reset();
+
+    MeshFlattener do_flatten;
+    do_flatten.set_options(options);
+    do_flatten.execute(mesh, output);
 }
 
 }

@@ -7,6 +7,7 @@
 /// file: conduit_blueprint_mesh_flatten.cpp
 ///
 //-----------------------------------------------------------------------------
+#include "conduit_blueprint_mesh_flatten.hpp"
 
 //-----------------------------------------------------------------------------
 // std lib includes
@@ -25,6 +26,9 @@
 #include "conduit_blueprint_mesh_utils_iterate_elements.hpp"
 #include "conduit_log.hpp"
 
+using ::conduit::utils::log::quote;
+
+// Debug macros
 #define DEBUG_MESH_FLATTEN 1
 
 #ifdef DEBUG_MESH_FLATTEN
@@ -36,132 +40,277 @@ do {\
 #define DEBUG_PRINT(msg)
 #endif
 
-using namespace conduit;
-
-class MeshFlattener
+//-----------------------------------------------------------------------------
+// -- begin conduit --
+//-----------------------------------------------------------------------------
+namespace conduit
 {
-public:
-    MeshFlattener();
 
-    bool set_options(const Node &options);
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint --
+//-----------------------------------------------------------------------------
+namespace blueprint
+{
 
-    void execute(const Node &mesh, Node &output) const;
-private:
+//-----------------------------------------------------------------------------
+// -- begin conduit::mesh --
+//-----------------------------------------------------------------------------
+namespace mesh
+{
 
-    const Node &get_coordset(const Node &mesh) const;
-    const Node &get_topology(const Node &mesh) const;
+//-----------------------------------------------------------------------------
+// -- begin conduit::mesh::utils --
+//-----------------------------------------------------------------------------
+namespace utils
+{
 
-    /**
-    @brief Inspects the type of the given coordset and calls
-        the correct to_explicit function. If the given coordset
-        is already explicit then out_cset is just - out_cset.set_external(cset).
-    @note The data returned through the parameter out_cset is READ ONLY.
-    @param cset The input coordset.
-    @param[out] values READ ONLY "explicit" coordset.
-    */
-    void coordset_to_explicit(const Node &cset, Node &out_cset) const;
+//-----------------------------------------------------------------------------
+template<typename SrcType, typename DestType>
+static void
+append_data_array_impl2(const DataArray<SrcType> &src,
+    DataArray<DestType> &dest, index_t offset, index_t nelems)
+{
+    index_t off = offset;
+    for(index_t i = 0; i < nelems; i++)
+    {
+        dest[off++] = static_cast<DestType>(src[i]);
+    }
+}
 
-    /**
-    @brief Checks if the given field node is supported by the flatten
-        operation. Currently ensures the field exists on the given
-        topology and checks that the association field exists
-        FUTURE: Add necessary logic for supporting grid_functions
-        and matsets.
-    */
-    bool check_field_supported(const Node &field,
-        const std::string &topo_name,
-        bool report_issues = true) const;
+//-----------------------------------------------------------------------------
+template<typename SrcType>
+static void
+append_data_array_impl1(const DataArray<SrcType> &src, Node &dest,
+    index_t offset, index_t nelems)
+{
+    const index_t dtype_id = dest.dtype().id();
+    switch(dtype_id)
+    {
+    // Signed int types
+    case DataType::INT8_ID:
+    {
+        DataArray<int8> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    case DataType::INT16_ID:
+    {
+        DataArray<int16> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    case DataType::INT32_ID:
+    {
+        DataArray<int32> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    case DataType::INT64_ID:
+    {
+        DataArray<int64> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    // Unsigned int types
+    case DataType::UINT8_ID:
+    {
+        DataArray<uint8> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    case DataType::UINT16_ID:
+    {
+        DataArray<uint16> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    case DataType::UINT32_ID:
+    {
+        DataArray<uint32> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    case DataType::UINT64_ID:
+    {
+        DataArray<uint64> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    // Floating point types
+    case DataType::FLOAT32_ID:
+    {
+        DataArray<float32> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    case DataType::FLOAT64_ID:
+    {
+        DataArray<float64> value = dest.value();
+        append_data_array_impl2(src, value, offset, nelems);
+        break;
+    }
+    default:
+    {
+        CONDUIT_ERROR("Invalid data type passed to append_data");
+    }
+    }
+}
 
-    /**
-    @brief Inspects the given multi-domain mesh and provides a list of
-        fields to include in the output along with their associations.
-    @param mesh
-    */
-    void get_fields_to_flatten(const Node &mesh, const std::string &topo_name,
-        std::vector<std::string> &fields_to_flatten) const;
+//-----------------------------------------------------------------------------
+static void
+append_data_array(const Node &src, Node &dest,
+    index_t offset, index_t nelems)
+{
+    DEBUG_PRINT("utils::append_data_array"
+        << "\n  src.dtype().number_of_elements(): " << src.dtype().number_of_elements()
+        << "\n  dest.dtype().number_of_elements(): " << dest.dtype().number_of_elements()
+        << "\n  offset: " << offset << std::endl);
+    if(offset + nelems > dest.dtype().number_of_elements())
+    {
+        CONDUIT_ERROR("Invalid arguments passed to utils::append_data()."
+            << "  Trying copy " << nelems << " elements into an array of "
+            << dest.dtype().number_of_elements() << " elements starting at "
+            << "offset " << offset << ". " << offset << " + " << nelems
+            << " > " << dest.dtype().number_of_elements() << ".");
+        return;
+    }
 
-    /**
-    @brief Inspects the given multi-domain mesh and provides the a reference
-        to the first valid field found with the given name.
-    @param mesh Mesh node containing all local domains
-    @param topo_name Used to check that field exists on the correct topology
-    @param field_name The name of the field to find.
-    @return Returns a pointer to the first valid field with the given name,
-        if none exist then nullptr is returned.
-    */
-    const Node *get_reference_field(const Node &mesh,
-        const std::string &topo_name,
-        const std::string &field_name) const;
+    const index_t dtype_id = src.dtype().id();
+    switch(dtype_id)
+    {
+    // Signed int types
+    case DataType::INT8_ID:
+    {
+        const DataArray<int8> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    case DataType::INT16_ID:
+    {
+        const DataArray<int16> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    case DataType::INT32_ID:
+    {
+        const DataArray<int32> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    case DataType::INT64_ID:
+    {
+        const DataArray<int64> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    // Unsigned int types
+    case DataType::UINT8_ID:
+    {
+        const DataArray<uint8> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    case DataType::UINT16_ID:
+    {
+        const DataArray<uint16> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    case DataType::UINT32_ID:
+    {
+        const DataArray<uint32> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    case DataType::UINT64_ID:
+    {
+        const DataArray<uint64> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    // Floating point types
+    case DataType::FLOAT32_ID:
+    {
+        const DataArray<float32> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    case DataType::FLOAT64_ID:
+    {
+        const DataArray<float64> value = src.value();
+        append_data_array_impl1(value, dest, offset, nelems);
+        break;
+    }
+    default:
+    {
+        CONDUIT_ERROR("Invalid data type passed to append_data");
+    }
+    }
+}
 
-    index_t determine_element_dtype(const Node &data) const;
-    void default_initialize_column(Node &column) const;
-    void allocate_column(Node &column, index_t nrows, index_t dtype_id,
-        const Node *ref_node = nullptr) const;
+//-----------------------------------------------------------------------------
+static void
+append_mc_data(const Node &src, Node &dest,
+    index_t offset, index_t nelems)
+{
+    auto itr = src.children();
+    while(itr.has_next())
+    {
+        const Node &s = itr.next();
+        if(!dest.has_child(s.name()))
+        {
+            CONDUIT_ERROR("Dest does not have a child named " << quote(s.name()));
+            continue;
+        }
+        append_data_array(s, dest[s.name()], offset, nelems);
+    }
+}
 
-    template<typename CsetType, typename OutputType>
-    static void generate_element_centers_impl(
-        const Node &topo, const index_t dimension,
-        const DataArray<CsetType> *cset_values, DataArray<OutputType> *output_values,
-        const index_t offset);
-    void generate_element_centers(const Node &topo, const Node &explicit_cset,
-        Node &output, index_t offset) const;
+//-----------------------------------------------------------------------------
+// NOTE: Public API
+void
+append_data(const Node &src, Node &dest, index_t offset,
+    index_t nelems)
+{
+    const DataType &src_dtype = src.dtype();
+    if(src_dtype.is_list() || src_dtype.is_object())
+    {
+        append_mc_data(src, dest, offset, nelems);
+    }
+    else
+    {
+        append_data_array(src, dest, offset, nelems);
+    }
+}
 
-    template<typename SrcType, typename DestType>
-    static void append_data_array_impl2(const DataArray<SrcType> &src,
-        DataArray<DestType> &dest, index_t offset, index_t nelems);
-    template<typename SrcType>
-    static void append_data_array_impl1(const DataArray<SrcType> &src, Node &dest,
-        index_t offset, index_t nelems);
-    static void append_data_array(const Node &src, Node &dest,
-        index_t offset, index_t nelems);
-    static void append_mc_data(const Node &src, Node &dest, index_t offset,
-        index_t nelems);
-    /**
-    @brief Reads the data stored in src and copies it into dest starting
-        at the given offset into dest's memory.
-    @note Data from src is read as its native type and static_cast is used
-        to convert each element into dest's memory.
-    @param src Input data, must be a leaf node or mcarray
-    @param dest Output node, must have allocated enough memory to store
-        offset + src.dtype().number_of_elements() elements.
-    @param offset An offset into dest's memory to start copying.
-    @param nelems The number of elements to copy from src to dest.
-    */
-    static void append_data(const Node &src, Node &dest,
-        index_t offset, index_t nelems);
+//-----------------------------------------------------------------------------
+template<typename CsetType, typename OutputType>
+static void
+generate_element_centers_impl(const Node &topo, const index_t dimension,
+    const DataArray<CsetType> *cset_values, DataArray<OutputType> *output_values,
+    const index_t offset)
+{
+    using conduit::blueprint::mesh::utils::topology::entity;
+    index_t output_idx = offset;
+    utils::topology::iterate_elements(topo, [&](const entity &e) {
+        const index_t nids = static_cast<index_t>(e.element_ids.size());
+        for(index_t d = 0; d < dimension; d++)
+        {
+            OutputType sum = 0;
+            for(index_t i = 0; i < nids; i++)
+            {
+                sum += static_cast<OutputType>(cset_values[d][e.element_ids[i]]);
+            }
+            output_values[d][output_idx] = sum / static_cast<OutputType>(nids);
+        }
+        output_idx++;
+    });
+}
 
-    /**
-    @brief Determines node's actual data type then iterates the elements in range [start, end),
-        calling func on each element.
-    @param node The input data to be read or modified.
-    @param start The starting offset into node's data.
-    @param end The end of the range to be iterated.
-    @param func A callable object that accepts the arguments (index_t i, AccessType &value)
-        where "i" is the current iteration value (from 0 to (end-start-1)), and "value" is a
-        temporary reference to the current value in node's data.
-    @note The template parameter AccessType is defaulted to float. This type is used to determine
-        the value that each element should be cast to before entering func. After func is invoked
-        on a given element the data_array is updated by casting the value of "value" back to the node's
-        data type.
-    */
-    template<typename AccessType = float, typename FuncType>
-    static void for_each_in_range(Node &node, index_t start, index_t end, FuncType &&func);
-
-    // TODO: Consider what we will do with material based fields, more tables?
-    void flatten_single_domain(const Node &mesh, Node &output,
-        const std::vector<std::string> &fields_to_flatten, index_t domain_id,
-        index_t vert_offset, index_t elem_offset) const;
-    void flatten_many_domains(const Node &mesh, Node &output) const;
-
-    std::string topology;
-    std::vector<std::string> field_names;
-    index_t default_dtype; // Must be either float32 or float64
-    float64 float_fill_value;
-    int64 int_fill_value;
-    bool add_cell_centers;
-    bool add_domain_info;
-    bool add_vertex_locations;
-};
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 MeshFlattener::MeshFlattener()
@@ -171,6 +320,12 @@ MeshFlattener::MeshFlattener()
     add_domain_info(true), add_vertex_locations(true)
 {
     // Construct with defaults
+}
+
+//-----------------------------------------------------------------------------
+MeshFlattener::~MeshFlattener()
+{
+    // Nothing special
 }
 
 //-----------------------------------------------------------------------------
@@ -189,7 +344,7 @@ MeshFlattener::set_options(const Node &options)
         else
         {
             ok = false;
-            CONDUIT_ERROR("options[" << utils::log::quote("topology") << "] must be the string name of the desired topology");
+            CONDUIT_ERROR("options[" << quote("topology") << "] must be the string name of the desired topology");
         }
     }
 
@@ -210,7 +365,7 @@ MeshFlattener::set_options(const Node &options)
                 else
                 {
                     ok = false;
-                    CONDUIT_ERROR("options[" << utils::log::quote("field_names") <<
+                    CONDUIT_ERROR("options[" << quote("field_names") <<
                         "] entries must be the string names of desired output fields.");
                 }
             }
@@ -218,7 +373,7 @@ MeshFlattener::set_options(const Node &options)
         else
         {
             ok = false;
-            CONDUIT_ERROR("options[" << utils::log::quote("field_names")  <<
+            CONDUIT_ERROR("options[" << quote("field_names")  <<
                 "] must be a list containing the string names of desired output fields.");
         }
     }
@@ -240,14 +395,14 @@ MeshFlattener::set_options(const Node &options)
             if(n_fill_value.has_child("int") && !n_fill_value["int"].dtype().is_number())
             {
                 ok = false;
-                CONDUIT_ERROR("options[" << utils::log::quote("fill_value/int") <<
+                CONDUIT_ERROR("options[" << quote("fill_value/int") <<
                     "] must be a number.");
             }
 
             if(n_fill_value.has_child("float") && !n_fill_value["float"].dtype().is_number())
             {
                 ok = false;
-                CONDUIT_ERROR("options[" << utils::log::quote("fill_value/float") <<
+                CONDUIT_ERROR("options[" << quote("fill_value/float") <<
                     "] must be a number.");
             }
 
@@ -269,7 +424,7 @@ MeshFlattener::set_options(const Node &options)
         else
         {
             ok = false;
-            CONDUIT_ERROR("options[" << utils::log::quote("fill_value") <<
+            CONDUIT_ERROR("options[" << quote("fill_value") <<
                 "] must be a number.")
         }
     }
@@ -286,7 +441,7 @@ MeshFlattener::set_options(const Node &options)
         else
         {
             ok = false;
-            CONDUIT_ERROR("options[" << utils::log::quote("add_domain_info") <<
+            CONDUIT_ERROR("options[" << quote("add_domain_info") <<
                 "] must be a number. It will be treated as a boolean (.to_int() != 0).");
         }
     }
@@ -303,7 +458,7 @@ MeshFlattener::set_options(const Node &options)
         else
         {
             ok = false;
-            CONDUIT_ERROR("options[" << utils::log::quote("add_cell_centers") <<
+            CONDUIT_ERROR("options[" << quote("add_cell_centers") <<
                 "] must be a number. It will be treated as a boolean (.to_int() != 0).");
         }
     }
@@ -319,7 +474,7 @@ MeshFlattener::set_options(const Node &options)
         else
         {
             ok = false;
-            CONDUIT_ERROR("options[" << utils::log::quote("add_vertex_locations") <<
+            CONDUIT_ERROR("options[" << quote("add_vertex_locations") <<
                 "] must be a number. It will be treated as a boolean (.to_int() != 0).");
         }
     }
@@ -395,7 +550,7 @@ MeshFlattener::check_field_supported(const Node &field,
         {
             if(report_issues)
             {
-                CONDUIT_INFO("The field " << utils::log::quote(field_name) <<
+                CONDUIT_INFO("The field " << quote(field_name) <<
                     " appears to be material-dependent which is currently unsupported by mesh::flatten().");
             }
             return false;
@@ -404,7 +559,7 @@ MeshFlattener::check_field_supported(const Node &field,
         {
             if(report_issues)
             {
-                CONDUIT_ERROR("The field " << utils::log::quote(field_name) <<
+                CONDUIT_ERROR("The field " << quote(field_name) <<
                     " does not have an associated topology or matset.");
             }
             return false;
@@ -416,8 +571,8 @@ MeshFlattener::check_field_supported(const Node &field,
     {
         if(report_issues)
         {
-            CONDUIT_INFO("The selected field " << utils::log::quote(field_name) <<
-                " does not exist on the active mesh toplogy " << utils::log::quote(topo_name) <<
+            CONDUIT_INFO("The selected field " << quote(field_name) <<
+                " does not exist on the active mesh toplogy " << quote(topo_name) <<
                 ".");
         }
         return false;
@@ -427,7 +582,7 @@ MeshFlattener::check_field_supported(const Node &field,
     {
         if(report_issues)
         {
-            CONDUIT_INFO("The selected field " << utils::log::quote(field_name) <<
+            CONDUIT_INFO("The selected field " << quote(field_name) <<
                 " is not associated with verticies or elements. It will not be present in the output.");
         }
         return false;
@@ -653,30 +808,6 @@ MeshFlattener::allocate_column(Node &column, index_t nrows, index_t dtype_id,
 }
 
 //-----------------------------------------------------------------------------
-template<typename CsetType, typename OutputType>
-void
-MeshFlattener::generate_element_centers_impl(const Node &topo, const index_t dimension,
-    const DataArray<CsetType> *cset_values, DataArray<OutputType> *output_values,
-    const index_t offset)
-{
-    using namespace blueprint::mesh::utils::topology;
-    index_t output_idx = offset;
-    iterate_elements(topo, [&](const entity &e) {
-        const index_t nids = static_cast<index_t>(e.element_ids.size());
-        for(index_t d = 0; d < dimension; d++)
-        {
-            OutputType sum = 0;
-            for(index_t i = 0; i < nids; i++)
-            {
-                sum += static_cast<OutputType>(cset_values[d][e.element_ids[i]]);
-            }
-            output_values[d][output_idx] = sum / static_cast<OutputType>(nids);
-        }
-        output_idx++;
-    });
-}
-
-//-----------------------------------------------------------------------------
 void
 MeshFlattener::generate_element_centers(const Node &topo,
     const Node &explicit_cset, Node &output, index_t offset) const
@@ -733,7 +864,7 @@ MeshFlattener::generate_element_centers(const Node &topo,
         (dimension > 1) ? n_cset_values[1].value() : DataArray<CsetType>(),\
         (dimension > 2) ? n_cset_values[2].value() : DataArray<CsetType>(),\
     };\
-    generate_element_centers_impl<CsetType, OutputType>(topo, dimension,\
+    utils::generate_element_centers_impl<CsetType, OutputType>(topo, dimension,\
         cset_values.data(), output_values.data(), offset);\
 }
 
@@ -841,305 +972,6 @@ MeshFlattener::generate_element_centers(const Node &topo,
 }
 
 //-----------------------------------------------------------------------------
-template<typename SrcType, typename DestType>
-void
-MeshFlattener::append_data_array_impl2(const DataArray<SrcType> &src,
-    DataArray<DestType> &dest, index_t offset, index_t nelems)
-{
-    index_t off = offset;
-    for(index_t i = 0; i < nelems; i++)
-    {
-        dest[off++] = static_cast<DestType>(src[i]);
-    }
-}
-
-//-----------------------------------------------------------------------------
-template<typename SrcType>
-void
-MeshFlattener::append_data_array_impl1(const DataArray<SrcType> &src, Node &dest,
-    index_t offset, index_t nelems)
-{
-    const index_t dtype_id = dest.dtype().id();
-    switch(dtype_id)
-    {
-    // Signed int types
-    case DataType::INT8_ID:
-    {
-        DataArray<int8> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    case DataType::INT16_ID:
-    {
-        DataArray<int16> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    case DataType::INT32_ID:
-    {
-        DataArray<int32> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    case DataType::INT64_ID:
-    {
-        DataArray<int64> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    // Unsigned int types
-    case DataType::UINT8_ID:
-    {
-        DataArray<uint8> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    case DataType::UINT16_ID:
-    {
-        DataArray<uint16> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    case DataType::UINT32_ID:
-    {
-        DataArray<uint32> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    case DataType::UINT64_ID:
-    {
-        DataArray<uint64> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    // Floating point types
-    case DataType::FLOAT32_ID:
-    {
-        DataArray<float32> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    case DataType::FLOAT64_ID:
-    {
-        DataArray<float64> value = dest.value();
-        append_data_array_impl2(src, value, offset, nelems);
-        break;
-    }
-    default:
-    {
-        CONDUIT_ERROR("Invalid data type passed to append_data");
-    }
-    }
-}
-
-//-----------------------------------------------------------------------------
-void
-MeshFlattener::append_data_array(const Node &src, Node &dest,
-    index_t offset, index_t nelems)
-{
-    DEBUG_PRINT("MeshFlattener::append_data_array"
-        << "\n  src.dtype().number_of_elements(): " << src.dtype().number_of_elements()
-        << "\n  dest.dtype().number_of_elements(): " << dest.dtype().number_of_elements()
-        << "\n  offset: " << offset << std::endl);
-    if(offset + nelems > dest.dtype().number_of_elements())
-    {
-        CONDUIT_ERROR("Invalid arguments passed to append_data_array."
-            << "  Trying copy " << nelems << " elements into an array of "
-            << dest.dtype().number_of_elements() << " elements starting at "
-            << "offset " << offset << ". " << offset << " + " << nelems
-            << " > " << dest.dtype().number_of_elements() << ".");
-        return;
-    }
-
-    const index_t dtype_id = src.dtype().id();
-    switch(dtype_id)
-    {
-    // Signed int types
-    case DataType::INT8_ID:
-    {
-        const DataArray<int8> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    case DataType::INT16_ID:
-    {
-        const DataArray<int16> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    case DataType::INT32_ID:
-    {
-        const DataArray<int32> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    case DataType::INT64_ID:
-    {
-        const DataArray<int64> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    // Unsigned int types
-    case DataType::UINT8_ID:
-    {
-        const DataArray<uint8> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    case DataType::UINT16_ID:
-    {
-        const DataArray<uint16> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    case DataType::UINT32_ID:
-    {
-        const DataArray<uint32> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    case DataType::UINT64_ID:
-    {
-        const DataArray<uint64> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    // Floating point types
-    case DataType::FLOAT32_ID:
-    {
-        const DataArray<float32> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    case DataType::FLOAT64_ID:
-    {
-        const DataArray<float64> value = src.value();
-        append_data_array_impl1(value, dest, offset, nelems);
-        break;
-    }
-    default:
-    {
-        CONDUIT_ERROR("Invalid data type passed to append_data");
-    }
-    }
-}
-
-//-----------------------------------------------------------------------------
-void
-MeshFlattener::append_mc_data(const Node &src, Node &dest,
-    index_t offset, index_t nelems)
-{
-    auto itr = src.children();
-    while(itr.has_next())
-    {
-        const Node &s = itr.next();
-        if(!dest.has_child(s.name()))
-        {
-            CONDUIT_ERROR("Dest does not have a child named " << utils::log::quote(s.name()));
-            continue;
-        }
-        append_data_array(s, dest[s.name()], offset, nelems);
-    }
-}
-
-//-----------------------------------------------------------------------------
-void
-MeshFlattener::append_data(const Node &src, Node &dest, index_t offset,
-    index_t nelems)
-{
-    const DataType &src_dtype = src.dtype();
-    if(src_dtype.is_list() || src_dtype.is_object())
-    {
-        append_mc_data(src, dest, offset, nelems);
-    }
-    else
-    {
-        append_data_array(src, dest, offset, nelems);
-    }
-}
-
-//-----------------------------------------------------------------------------
-template<typename AccessType, typename FuncType>
-void
-MeshFlattener::for_each_in_range(Node &node, index_t start, index_t end, FuncType &&func)
-{
-    const index_t dtype_id = node.dtype().id();
-#define FOR_EACH_IN_RANGE_IMPL(ActualType)\
-{\
-    DataArray<ActualType> value = node.value();\
-    index_t offset = start;\
-    for(index_t i = 0; offset < end; i++, offset++)\
-    {\
-        AccessType temp = static_cast<AccessType>(value[offset]);\
-        func(i, temp);\
-        value[offset] = static_cast<ActualType>(temp);\
-    }\
-}
-    switch(dtype_id)
-    {
-    // Signed int types
-    case DataType::INT8_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(int8)
-        break;
-    }
-    case DataType::INT16_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(int16)
-        break;
-        break;
-    }
-    case DataType::INT32_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(int32)
-        break;
-    }
-    case DataType::INT64_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(int64)
-        break;
-    }
-    // Unsigned int types
-    case DataType::UINT8_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(uint8)
-        break;
-    }
-    case DataType::UINT16_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(uint16)
-        break;
-    }
-    case DataType::UINT32_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(uint32)
-        break;
-    }
-    case DataType::UINT64_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(uint64)
-        break;
-    }
-    // Floating point types
-    case DataType::FLOAT32_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(float32)
-        break;
-    }
-    case DataType::FLOAT64_ID:
-    {
-        FOR_EACH_IN_RANGE_IMPL(float64)
-        break;
-    }
-    default:
-    {
-        CONDUIT_ERROR("Invalid data type passed to for_each_in_range");
-    }
-    }
-#undef FOR_EACH_IN_RANGE_IMPL
-}
-
-//-----------------------------------------------------------------------------
 void
 MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
     const std::vector<std::string> &fields_to_flatten, index_t domain_id,
@@ -1165,7 +997,7 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
     {
         coordset_to_explicit(cset, explicit_cset);
         Node &cset_output = vert_table["values"][0];
-        append_data(explicit_cset["values"], cset_output, vert_offset, nverts);
+        utils::append_data(explicit_cset["values"], cset_output, vert_offset, nverts);
     }
 
     // Add cell center information to element table
@@ -1190,15 +1022,15 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
         };
 
         // Vertex table values
-        for_each_in_range<index_t>(vert_table["values/domain_id"], vert_offset,
+        utils::for_each_in_range<index_t>(vert_table["values/domain_id"], vert_offset,
             vert_offset + nverts, set_domain_id);
-        for_each_in_range<index_t>(vert_table["values/vertex_id"], vert_offset,
+        utils::for_each_in_range<index_t>(vert_table["values/vertex_id"], vert_offset,
             vert_offset + nverts, set_id);
 
         // Element table values
-        for_each_in_range<index_t>(elem_table["values/domain_id"], elem_offset,
+        utils::for_each_in_range<index_t>(elem_table["values/domain_id"], elem_offset,
             elem_offset + nelems, set_domain_id);
-        for_each_in_range<index_t>(elem_table["values/element_id"], elem_offset,
+        utils::for_each_in_range<index_t>(elem_table["values/element_id"], elem_offset,
             elem_offset + nelems, set_id);
     }
 
@@ -1209,7 +1041,7 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
     for(index_t i = 0; i < (index_t)fields_to_flatten.size(); i++)
     {
         const std::string &field_name = fields_to_flatten[i];
-        std::cout << "  " << utils::log::quote(field_name) <<
+        std::cout << "  " << quote(field_name) <<
             (i < (index_t)(fields_to_flatten.size() - 1) ? "\n" : "");
     }
     std::cout << std::endl;
@@ -1223,19 +1055,19 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
             const Node &field_values = field->child("values");
             if(association == "vertex")
             {
-                append_data(field_values, vert_table["values/" + field_name],
+                utils::append_data(field_values, vert_table["values/" + field_name],
                     vert_offset, nverts);
             }
             else if(association == "element")
             {
-                append_data(field_values, elem_table["values/" + field_name],
+                utils::append_data(field_values, elem_table["values/" + field_name],
                     elem_offset, nelems);
             }
         }
 #ifdef DEBUG_MESH_FLATTEN
         else
         {
-            std::cout << "  field " << utils::log::quote(field_name)
+            std::cout << "  field " << quote(field_name)
                 << "does not exist on domain!" << std::endl;
         }
 #endif
@@ -1402,36 +1234,6 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
     {
         output.remove_child("element_data");
     }
-}
-
-//-----------------------------------------------------------------------------
-// -- begin conduit --
-//-----------------------------------------------------------------------------
-namespace conduit
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint --
-//-----------------------------------------------------------------------------
-namespace blueprint
-{
-
-//-----------------------------------------------------------------------------
-// -- begin conduit::mesh --
-//-----------------------------------------------------------------------------
-namespace mesh
-{
-
-void flatten(const conduit::Node &mesh,
-             const conduit::Node &options,
-             conduit::Node &output)
-{
-    output.reset();
-
-    MeshFlattener do_flatten;
-    do_flatten.set_options(options);
-    do_flatten.execute(mesh, output);
-    return;
 }
 
 }
