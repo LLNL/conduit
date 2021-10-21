@@ -50,6 +50,16 @@ module conduit_blueprint_mesh
             type(C_PTR), value, intent(IN) :: cindex_dest
         end subroutine c_conduit_blueprint_mesh_generate_index
 
+        !--------------------------------------------------------------------------
+        subroutine c_conduit_blueprint_mesh_flatten(cmesh, copts, coutput) &
+                bind(C, name="conduit_blueprint_mesh_flatten")
+            use iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(IN) :: cmesh
+            type(C_PTR), value, intent(IN) :: copts
+            type(C_PTR), value, intent(IN) :: coutput
+        end subroutine c_conduit_blueprint_mesh_flatten
+
         !----------------------------------------------------------------------
         subroutine c_conduit_blueprint_mesh_examples_braid(mesh_type,nx,ny,nz,cdest) &
                 bind(C, name="conduit_blueprint_mesh_examples_braid")
@@ -102,6 +112,16 @@ module conduit_blueprint_mesh
                                                           cindex_dest)
          end subroutine conduit_blueprint_mesh_generate_index
 
+         !--------------------------------------------------------------------------
+         subroutine conduit_blueprint_mesh_flatten(cmesh, copts, coutput)
+             use iso_c_binding
+             implicit none
+             type(C_PTR), value, intent(IN) :: cmesh
+             type(C_PTR), value, intent(IN) :: copts
+             type(C_PTR), value, intent(IN) :: coutput
+             !---
+             call c_conduit_blueprint_mesh_flatten(cmesh, copts, coutput)
+         end subroutine conduit_blueprint_mesh_flatten
 
          !---------------------------------------------------------------------
          subroutine conduit_blueprint_mesh_examples_braid(mesh_type,nx,ny,nz,cdest)
