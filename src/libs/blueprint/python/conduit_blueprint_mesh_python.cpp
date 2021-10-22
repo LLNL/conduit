@@ -291,7 +291,7 @@ const char *PyBlueprint_mesh_flatten_doc_str =
 "  output: Output node, a blueprint table. (conduit.Node instance)\n";
 
 // py func
-static PyObject * 
+static PyObject *
 PyBlueprint_mesh_flatten(PyObject *, //self
                          PyObject *args,
                          PyObject *kwargs)
@@ -301,7 +301,6 @@ PyBlueprint_mesh_flatten(PyObject *, //self
     PyObject   *py_options  = NULL;
     PyObject   *py_output   = NULL;
 
-    
     static const char *kwlist[] = {"mesh",
                                    "options",
                                    "output",
@@ -311,13 +310,13 @@ PyBlueprint_mesh_flatten(PyObject *, //self
                                      kwargs,
                                      "OOO",
                                      const_cast<char**>(kwlist),
-                                     &py_mesh, 
+                                     &py_mesh,
                                      &py_options,
                                      &py_output))
     {
         return NULL;
     }
-    
+
     if(!PyConduit_Node_Check(py_mesh))
     {
         PyErr_SetString(PyExc_TypeError,
@@ -341,7 +340,6 @@ PyBlueprint_mesh_flatten(PyObject *, //self
                         "conduit.Node instance");
         return NULL;
     }
-    
 
     const Node &mesh = *PyConduit_Node_Get_Node_Ptr(py_mesh);
     const Node &options = *PyConduit_Node_Get_Node_Ptr(py_options);

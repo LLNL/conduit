@@ -517,6 +517,72 @@ MeshFlattener::get_topology(const Node &mesh) const
 
 //-----------------------------------------------------------------------------
 void
+MeshFlattener::collect_mesh_info(const Node &mesh, MeshInfo &out) const
+{
+    out.verts_per_domain.clear();
+    out.elems_per_domain.clear();
+    out.domain_ids.clear();
+    out.axes.clear();
+    out.cset_name.clear();
+    out.dimension = 0;
+    out.coord_type = DataType::EMPTY_ID;
+    out.ndomains = 0;
+    out.nverts = 0;
+    out.nelems = 0;
+
+    // Collect information about the mesh
+    out.ndomains = mesh.number_of_children();
+    bool first = true;
+    for(index_t i = 0; i < out.ndomains; i++)
+    {
+        const Node &domain = mesh[i];
+        const Node &dom_topo = get_topology(domain);
+        const Node &dom_cset = get_coordset(domain);
+        out.elems_per_domain.push_back(blueprint::mesh::topology::length(dom_topo));
+        out.verts_per_domain.push_back(blueprint::mesh::coordset::length(dom_cset));
+
+        if(domain.has_child("state") && domain.has_child("domain_id")
+            && domain["state/domain_id"].dtype().is_integer())
+        {
+            out.domain_ids.push_back(domain["state/domain_id"].to_index_t());
+        }
+
+        if(first)
+        {
+            first = false;
+            out.dimension = blueprint::mesh::coordset::dims(dom_cset);
+            out.axes = blueprint::mesh::utils::coordset::axes(dom_cset);
+            const std::string cset_type_name = dom_cset["type"].as_string();
+            if(cset_type_name == "uniform" || cset_type_name == "rectilinear")
+            {
+                out.coord_type = determine_element_dtype(dom_cset);
+            }
+            else if(cset_type_name == "explicit")
+            {
+                out.coord_type = determine_element_dtype(dom_cset["values"]);
+            }
+            out.cset_name = dom_cset.name();
+        }
+    }
+
+    // Check if each domain had a proper domain_id, if not replace domain
+    //  ids with their index into the top level mesh
+    if((index_t)out.domain_ids.size() != out.ndomains)
+    {
+        out.domain_ids.resize(out.ndomains);
+        for(index_t i = 0; i < out.ndomains; i++)
+        {
+            out.domain_ids[i] = i;
+        }
+    }
+
+    // Calculate totals, will be used for number of rows
+    for(const auto dom_verts : out.verts_per_domain) out.nverts += dom_verts;
+    for(const auto dom_elems : out.elems_per_domain) out.nelems += dom_elems;
+}
+
+//-----------------------------------------------------------------------------
+void
 MeshFlattener::coordset_to_explicit(const Node &cset, Node &out_cset) const
 {
     const std::string &cset_type = cset["type"].as_string();
@@ -1078,70 +1144,11 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
 void
 MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
 {
-    std::vector<index_t> verts_per_domain;
-    std::vector<index_t> elems_per_domain;
-    std::vector<index_t> domain_ids;
-    std::vector<std::string> axes;
-    std::string cset_name;
-    index_t dimension = 0;
-    index_t coord_type = DataType::EMPTY_ID;
-
-    // Collect information about the mesh
-    const index_t ndomains = mesh.number_of_children();
-    {
-        bool first = true;
-        for(index_t i = 0; i < ndomains; i++)
-        {
-            const Node &domain = mesh[i];
-            const Node &dom_topo = get_topology(domain);
-            const Node &dom_cset = get_coordset(domain);
-            elems_per_domain.push_back(blueprint::mesh::topology::length(dom_topo));
-            verts_per_domain.push_back(blueprint::mesh::coordset::length(dom_cset));
-
-            if(domain.has_child("state") && domain.has_child("domain_id")
-                && domain["state/domain_id"].dtype().is_integer())
-            {
-                domain_ids.push_back(domain["state/domain_id"].to_index_t());
-            }
-
-            if(first)
-            {
-                first = false;
-                dimension = blueprint::mesh::coordset::dims(dom_cset);
-                axes = blueprint::mesh::utils::coordset::axes(dom_cset);
-                const std::string cset_type_name = dom_cset["type"].as_string();
-                if(cset_type_name == "uniform" || cset_type_name == "rectilinear")
-                {
-                    coord_type = determine_element_dtype(dom_cset);
-                }
-                else if(cset_type_name == "explicit")
-                {
-                    coord_type = determine_element_dtype(dom_cset["values"]);
-                }
-                cset_name = dom_cset.name();
-            }
-        }
-
-        // Check if each domain had a proper domain_id, if not replace domain
-        //  ids with their index into the top level mesh
-        if((index_t)domain_ids.size() != ndomains)
-        {
-            domain_ids.resize(ndomains);
-            for(index_t i = 0; i < ndomains; i++)
-            {
-                domain_ids[i] = i;
-            }
-        }
-    }
-
-    // Calculate totals, will be used for number of rows
-    index_t nverts = 0;
-    index_t nelems = 0;
-    for(const auto dom_verts : verts_per_domain) nverts += dom_verts;
-    for(const auto dom_elems : elems_per_domain) nelems += dom_elems;
+    MeshInfo info;
+    collect_mesh_info(mesh, info);
 #ifdef DEBUG_MESH_FLATTEN
-    std::cout << "Total number of verticies: " << nverts << "\n"
-        << "Total number of elements: " << nelems << std::endl;
+    std::cout << "Total number of verticies: " << info.nverts << "\n"
+        << "Total number of elements: " << info.nelems << std::endl;
 #endif
 
     // Make allocations
@@ -1151,11 +1158,11 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
     // Allocate cset output
     if(this->add_vertex_locations)
     {
-        const std::string cset_output_path = "values/" + cset_name;
-        for(index_t d = 0; d < dimension; d++)
+        const std::string cset_output_path = "values/" + info.cset_name;
+        for(index_t d = 0; d < info.dimension; d++)
         {
-            allocate_column(vertex_table[cset_output_path + "/" + axes[d]],
-                nverts, coord_type);
+            allocate_column(vertex_table[cset_output_path + "/" + info.axes[d]],
+                info.nverts, info.coord_type);
         }
     }
 
@@ -1163,10 +1170,10 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
     if(this->add_cell_centers)
     {
         const std::string elem_center_output_path = "values/element_centers";
-        for(index_t d = 0; d < dimension; d++)
+        for(index_t d = 0; d < info.dimension; d++)
         {
-            allocate_column(element_table[elem_center_output_path + "/" + axes[d]],
-                nelems, this->default_dtype);
+            allocate_column(element_table[elem_center_output_path + "/" + info.axes[d]],
+                info.nelems, this->default_dtype);
         }
     }
 
@@ -1174,10 +1181,10 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
     if(this->add_domain_info)
     {
         const DataType dt_index_t = DataType::index_t(1);
-        allocate_column(vertex_table["values/domain_id"], nverts, dt_index_t.id());
-        allocate_column(vertex_table["values/vertex_id"], nverts, dt_index_t.id());
-        allocate_column(element_table["values/domain_id"], nelems, dt_index_t.id());
-        allocate_column(element_table["values/element_id"], nelems, dt_index_t.id());
+        allocate_column(vertex_table["values/domain_id"], info.nverts, dt_index_t.id());
+        allocate_column(vertex_table["values/vertex_id"], info.nverts, dt_index_t.id());
+        allocate_column(element_table["values/domain_id"], info.nelems, dt_index_t.id());
+        allocate_column(element_table["values/element_id"], info.nelems, dt_index_t.id());
     }
 
     // Allocate fields output
@@ -1194,11 +1201,11 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
             const index_t elem_dtype_id = determine_element_dtype(field_values);
             if(assoc == "vertex")
             {
-                allocate_column(vertex_table["values/" + field_name], nverts, elem_dtype_id, &field_values);
+                allocate_column(vertex_table["values/" + field_name], info.nverts, elem_dtype_id, &field_values);
             }
             else if(assoc == "element")
             {
-                allocate_column(element_table["values/" + field_name], nelems, elem_dtype_id, &field_values);
+                allocate_column(element_table["values/" + field_name], info.nelems, elem_dtype_id, &field_values);
             }
             else
             {
@@ -1217,11 +1224,11 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
 
     // Flatten each domain
     index_t vert_offset = 0, elem_offset = 0;
-    for(index_t i = 0; i < ndomains; i++)
+    for(index_t i = 0; i < info.ndomains; i++)
     {
-        flatten_single_domain(mesh[i], output, fields_to_flatten, domain_ids[i], vert_offset, elem_offset);
-        vert_offset += verts_per_domain[i];
-        elem_offset += elems_per_domain[i];
+        flatten_single_domain(mesh[i], output, fields_to_flatten, info.domain_ids[i], vert_offset, elem_offset);
+        vert_offset += info.verts_per_domain[i];
+        elem_offset += info.elems_per_domain[i];
     }
 
     // TODO: Clear material tables if they end up existing

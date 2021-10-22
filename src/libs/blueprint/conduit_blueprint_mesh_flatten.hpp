@@ -98,6 +98,20 @@ protected:
     const Node &get_coordset(const Node &mesh) const;
     const Node &get_topology(const Node &mesh) const;
 
+    struct MeshInfo {
+        std::vector<index_t> verts_per_domain;
+        std::vector<index_t> elems_per_domain;
+        std::vector<index_t> domain_ids;
+        std::vector<std::string> axes;
+        std::string cset_name;
+        index_t dimension = 0;
+        index_t coord_type = DataType::EMPTY_ID;
+        index_t ndomains = 0;
+        index_t nverts = 0;
+        index_t nelems = 0;
+    };
+    void collect_mesh_info(const Node &mesh, MeshInfo &out) const;
+
     /**
     @brief Inspects the type of the given coordset and calls
         the correct to_explicit function. If the given coordset
