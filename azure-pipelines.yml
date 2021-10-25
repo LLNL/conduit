@@ -536,6 +536,8 @@ stages:
            export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
            export PATH=${CMAKE_BIN_DIR}:$PATH
            which ctest
+           # this should already be set by our cmake, but still seeing oversubscribe errors ...
+           export OMPI_MCA_rmaps_base_oversubscribe=1
            cd build
            # run ctest
            ctest -T test --output-on-failure -V
@@ -613,6 +615,8 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
+          # this should already be set by our cmake, but still seeing oversubscribe errors ...
+          export OMPI_MCA_rmaps_base_oversubscribe=1
           cd install/examples/conduit/using-with-cmake-mpi
           rm -rf _test_build
           mkdir _test_build
