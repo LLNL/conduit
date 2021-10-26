@@ -46,7 +46,7 @@ stages:
   ###############################################################################
   # Ubuntu build and test, using spack to build tpls
   ###############################################################################
-  - job: Ubuntu
+  - job: Ubuntu_Latest
     pool:
       vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
@@ -215,7 +215,7 @@ stages:
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_16/
+           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/
         displayName: 'Spack Build Tpls'
 
       - script: |
