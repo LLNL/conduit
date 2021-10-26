@@ -22,6 +22,8 @@
 
 #include <mpi.h>
 
+#include "blueprint_test_helpers.hpp"
+
 using std::cout;
 using std::endl;
 
@@ -68,7 +70,7 @@ barrier()
 
 //-----------------------------------------------------------------------------
 // Include some helper function definitions
-#include "t_blueprint_partition_helpers.hpp"
+#include "blueprint_baseline_helpers.hpp"
 
 //-----------------------------------------------------------------------------
 void
@@ -719,7 +721,7 @@ TEST(blueprint_mesh_mpi_partition, field_selection)
 
     conduit::Node input, output, options;
     int masks[] = {1, 2, 4, 8};
-    make_field_selection_example(input, masks[rank]);
+    partition::make_field_selection_example(input, masks[rank]);
 
     const char *opt0 =
 "selections:\n"

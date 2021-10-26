@@ -20,6 +20,8 @@
 #include <array>
 #include "gtest/gtest.h"
 
+#include "blueprint_test_helpers.hpp"
+
 using std::cout;
 using std::endl;
 
@@ -64,7 +66,7 @@ void barrier() { }
 
 //-----------------------------------------------------------------------------
 // Include some helper function definitions
-#include "t_blueprint_partition_helpers.hpp"
+#include "blueprint_baseline_helpers.hpp"
 
 //-----------------------------------------------------------------------------
 void
@@ -1929,7 +1931,7 @@ TEST(conduit_blueprint_mesh_partition, field_selection)
 {
     std::string base("field_selection");
     conduit::Node input, output, options;
-    make_field_selection_example(input, -1);
+    partition::make_field_selection_example(input, -1);
     save_visit("fs", input);
 
     const char *opt0 =

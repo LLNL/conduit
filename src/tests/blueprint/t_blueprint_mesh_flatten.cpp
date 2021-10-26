@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+#include "blueprint_test_helpers.hpp"
+
 using namespace conduit;
 
 // #define GENERATE_BASELINES
@@ -50,73 +52,7 @@ void barrier() { }
 
 //-----------------------------------------------------------------------------
 // Include some helper function definitions
-#include "t_blueprint_partition_helpers.hpp"
-
-//-----------------------------------------------------------------------------
-static void
-compare_to_baseline_leaf(const Node &test, const Node &baseline)
-{
-    if(test.dtype().is_empty() || test.dtype().is_list() || test.dtype().is_object()
-        || baseline.dtype().is_empty() || baseline.dtype().is_list()
-        || baseline.dtype().is_object())
-    {
-        CONDUIT_ERROR("compare_to_baseline_leaf only operates on leaf nodes.");
-    }
-    // Sometimes when we read from a file the data types don't match.
-    // Convert test to the same type as baseline then compare.
-    Node temp, info;
-    if(test.dtype().id() != baseline.dtype().id())
-    {
-        test.to_data_type(baseline.dtype().id(), temp);
-    }
-    else
-    {
-        temp.set_external(test);
-    }
-    EXPECT_FALSE(baseline.diff(temp, info)) << info.to_json();
-}
-
-//-----------------------------------------------------------------------------
-static void
-compare_to_baseline(const Node &test, const Node &baseline)
-{
-    Node info;
-    ASSERT_TRUE(blueprint::table::verify(baseline, info));
-    ASSERT_TRUE(blueprint::table::verify(test, info));
-    ASSERT_EQ(baseline.number_of_children(), test.number_of_children());
-    for(index_t i = 0; i < baseline.number_of_children(); i++)
-    {
-        EXPECT_EQ(baseline[i].name(), test[i].name());
-        const Node &baseline_values = baseline[i]["values"];
-        const Node &test_values = test[i]["values"];
-        ASSERT_EQ(baseline_values.number_of_children(), test_values.number_of_children());
-        for(index_t j = 0; j < baseline_values.number_of_children(); j++)
-        {
-            const Node &baseline_value = baseline_values[j];
-            const Node &test_value = test_values[j];
-            EXPECT_EQ(baseline_value.name(), test_value.name());
-            if(baseline_value.dtype().is_list() || baseline_value.dtype().is_object())
-            {
-                // mcarray
-                ASSERT_EQ(baseline_value.number_of_children(), test_value.number_of_children());
-                EXPECT_EQ(baseline_value.dtype().is_list(), test_value.dtype().is_list());
-                EXPECT_EQ(baseline_value.dtype().is_object(), test_value.dtype().is_object());
-                for(index_t k = 0; k < baseline_value.number_of_children(); k++)
-                {
-                    const Node &baseline_comp = baseline_value[k];
-                    const Node &test_comp = test_value[k];
-                    EXPECT_EQ(baseline_comp.name(), test_comp.name());
-                    compare_to_baseline_leaf(test_comp, baseline_comp);
-                }
-            }
-            else
-            {
-                // data array
-                compare_to_baseline_leaf(test_value, baseline_value);
-            }
-        }
-    }
-}
+#include "blueprint_baseline_helpers.hpp"
 
 //-----------------------------------------------------------------------------
 /**
@@ -188,9 +124,15 @@ test_mesh_single_domain(const Node &mesh, const std::string &case_name)
 
     // Check the domain info
     {
+        index_t domid = 0;
+        if(mesh.has_path("state/domain_id") && mesh["state/domain_id"].dtype().is_integer())
+        {
+            domid = mesh["state/domain_id"].to_index_t();
+        }
+
         {
             const index_t nverts = blueprint::mesh::coordset::length(n_cset);
-            std::vector<index_t> domain_ids(nverts, 0);
+            std::vector<index_t> domain_ids(nverts, domid);
             std::vector<index_t> vert_ids(nverts);
             for(index_t i = 0; i < nverts; i++) vert_ids[i] = i;
 
@@ -209,7 +151,7 @@ test_mesh_single_domain(const Node &mesh, const std::string &case_name)
 
         {
             const index_t nelems = blueprint::mesh::topology::length(n_topo);
-            std::vector<index_t> domain_ids(nelems, 0);
+            std::vector<index_t> domain_ids(nelems, domid);
             std::vector<index_t> elem_ids(nelems);
             for(index_t i = 0; i < nelems; i++) elem_ids[i] = i;
 
@@ -437,7 +379,7 @@ TEST(blueprint_mesh_flatten, spiral)
     make_baseline(filename, table);
 #endif
     load_baseline(filename, baseline);
-    compare_to_baseline(table, baseline);
+    table::compare_to_baseline(table, baseline);
 
     std::cout << "-- End testing " << case_name << " --" << std::endl;
 }
@@ -489,6 +431,6 @@ TEST(blueprint_mesh_flatten, domains_missing_fields)
 #endif
         Node baseline;
         load_baseline(filename, baseline);
-        compare_to_baseline(table, baseline);
+        table::compare_to_baseline(table, baseline);
     }
 }

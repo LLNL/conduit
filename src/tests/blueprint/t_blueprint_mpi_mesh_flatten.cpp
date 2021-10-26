@@ -16,12 +16,15 @@
 #include <conduit_blueprint_mpi.hpp>
 #include <conduit_relay.hpp>
 #include <conduit_relay_mpi.hpp>
+#include <conduit_relay_mpi_io_blueprint.hpp>
 
 #include <mpi.h>
 #include "gtest/gtest.h"
 
+#include "blueprint_test_helpers.hpp"
+
 // Enable this macro to generate baselines.
-//#define GENERATE_BASELINES
+// #define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
@@ -63,7 +66,7 @@ barrier()
 
 //-----------------------------------------------------------------------------
 // Include some helper function definitions
-#include "t_blueprint_partition_helpers.hpp"
+#include "blueprint_baseline_helpers.hpp"
 
 using namespace conduit;
 
@@ -73,15 +76,58 @@ TEST(t_blueprint_mpi_mesh_flatten, braid)
     Node mesh;
     blueprint::mpi::mesh::examples::braid_uniform_multi_domain(mesh, comm);
 
+#ifdef WRITE_MESH
+    relay::mpi::io::blueprint::save_mesh(mesh, "flatten_braid.yaml", "yaml", comm);
+#endif
+
     Node table, opts;
+    opts["add_rank"] = 1;
     blueprint::mpi::mesh::flatten(mesh, opts, table, comm);
 
     int rank = -1;
     MPI_Comm_rank(comm, &rank);
+    const std::string filename = baseline_file("braid");
     if(rank == 0)
     {
-        std::cout << table.to_json() << std::endl;
+#ifdef GENERATE_BASELINES
+        make_baseline(filename, table);
+#endif
+        Node baseline;
+        load_baseline(filename, baseline);
+        table::compare_to_baseline(table, baseline);
     }
+
+    MPI_Barrier(comm);
+}
+
+TEST(t_blueprint_mpi_mesh_flatten, spiral)
+{
+    const MPI_Comm comm = MPI_COMM_WORLD;
+    Node mesh;
+    blueprint::mpi::mesh::examples::spiral_round_robin(4, mesh, comm);
+
+#ifdef WRITE_MESH
+    relay::mpi::io::blueprint::save_mesh(mesh, "flatten_spiral.yaml", "yaml", comm);
+#endif
+
+    Node table, opts;
+    opts["add_rank"] = 1;
+    blueprint::mpi::mesh::flatten(mesh, opts, table, comm);
+
+    int rank = -1;
+    MPI_Comm_rank(comm, &rank);
+    const std::string filename = baseline_file("spiral");
+    if(rank == 0)
+    {
+#ifdef GENERATE_BASELINES
+        make_baseline(filename, table);
+#endif
+        Node baseline;
+        load_baseline(filename, baseline);
+        table::compare_to_baseline(table, baseline);
+    }
+
+    MPI_Barrier(comm);
 }
 
 //-----------------------------------------------------------------------------
