@@ -16,6 +16,8 @@ jobs:
     - name: Setup Python Env
       run: python3 -m pip install --upgrade numpy
     - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
     - name: Build & Install
       run: |
         cmake -S src -B build               `
