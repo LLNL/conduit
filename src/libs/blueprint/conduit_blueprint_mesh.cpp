@@ -1512,6 +1512,12 @@ mesh::generate_index(const Node &mesh,
 {
     index_out.reset();
 
+    if(!mesh.has_child("coordsets"))
+    {
+        CONDUIT_ERROR("Cannot generate mesh blueprint index for empty mesh."
+                      " (input mesh missing 'coordsets')");
+    }
+    
     index_out["state/number_of_domains"] = number_of_domains;
 
 
@@ -1534,110 +1540,121 @@ mesh::generate_index(const Node &mesh,
         index_out["state/path"] = join_path(ref_path, "state");
     }
 
-    NodeConstIterator itr = mesh["coordsets"].children();
-    while(itr.has_next())
+    // an empty node is a valid blueprint mesh
+    // so we nede to check for coordsets, can't assume they exist
+
+    if(mesh.has_child("coordsets"))
     {
-        const Node &coordset = itr.next();
-        std::string coordset_name = itr.name();
-        Node &idx_coordset = index_out["coordsets"][coordset_name];
-
-        std::string coordset_type =   coordset["type"].as_string();
-        idx_coordset["type"] = coordset_type;
-        if(coordset_type == "uniform")
+        NodeConstIterator itr = mesh["coordsets"].children();
+        while(itr.has_next())
         {
-            // default to cartesian, but check if origin or spacing exist
-            // b/c they may name axes from cyln or sph
-            if(coordset.has_child("origin"))
-            {
-                NodeConstIterator origin_itr = coordset["origin"].children();
-                while(origin_itr.has_next())
-                {
-                    origin_itr.next();
-                    idx_coordset["coord_system/axes"][origin_itr.name()];
-                }
-            }
-            else if(coordset.has_child("spacing"))
-            {
-                NodeConstIterator spacing_itr = coordset["spacing"].children();
-                while(spacing_itr.has_next())
-                {
-                    spacing_itr.next();
-                    std::string axis_name = spacing_itr.name();
+            const Node &coordset = itr.next();
+            std::string coordset_name = itr.name();
+            Node &idx_coordset = index_out["coordsets"][coordset_name];
 
-                    // if spacing names start with "d", use substr
-                    // to determine axis name
-
-                    // otherwise use spacing name directly, to avoid empty
-                    // path fetch if just 'x', etc are passed
-                    if(axis_name[0] == 'd' && axis_name.size() > 1)
+            std::string coordset_type =   coordset["type"].as_string();
+            idx_coordset["type"] = coordset_type;
+            if(coordset_type == "uniform")
+            {
+                // default to cartesian, but check if origin or spacing exist
+                // b/c they may name axes from cyln or sph
+                if(coordset.has_child("origin"))
+                {
+                    NodeConstIterator origin_itr = coordset["origin"].children();
+                    while(origin_itr.has_next())
                     {
-                        axis_name = axis_name.substr(1);
+                        origin_itr.next();
+                        idx_coordset["coord_system/axes"][origin_itr.name()];
                     }
-                    idx_coordset["coord_system/axes"][axis_name];
+                }
+                else if(coordset.has_child("spacing"))
+                {
+                    NodeConstIterator spacing_itr = coordset["spacing"].children();
+                    while(spacing_itr.has_next())
+                    {
+                        spacing_itr.next();
+                        std::string axis_name = spacing_itr.name();
+
+                        // if spacing names start with "d", use substr
+                        // to determine axis name
+
+                        // otherwise use spacing name directly, to avoid empty
+                        // path fetch if just 'x', etc are passed
+                        if(axis_name[0] == 'd' && axis_name.size() > 1)
+                        {
+                            axis_name = axis_name.substr(1);
+                        }
+                        idx_coordset["coord_system/axes"][axis_name];
+                    }
+                }
+                else
+                {
+                    // assume cartesian
+                    index_t num_comps = coordset["dims"].number_of_children();
+
+                    if(num_comps > 0)
+                    {
+                        idx_coordset["coord_system/axes/x"];
+                    }
+
+                    if(num_comps > 1)
+                    {
+                        idx_coordset["coord_system/axes/y"];
+                    }
+
+                    if(num_comps > 2)
+                    {
+                        idx_coordset["coord_system/axes/z"];
+                    }
                 }
             }
             else
             {
-                // assume cartesian
-                index_t num_comps = coordset["dims"].number_of_children();
-
-                if(num_comps > 0)
+                // use child names as axes
+                NodeConstIterator values_itr = coordset["values"].children();
+                while(values_itr.has_next())
                 {
-                    idx_coordset["coord_system/axes/x"];
-                }
-
-                if(num_comps > 1)
-                {
-                    idx_coordset["coord_system/axes/y"];
-                }
-
-                if(num_comps > 2)
-                {
-                    idx_coordset["coord_system/axes/z"];
+                    values_itr.next();
+                    idx_coordset["coord_system/axes"][values_itr.name()];
                 }
             }
-        }
-        else
-        {
-            // use child names as axes
-            NodeConstIterator values_itr = coordset["values"].children();
-            while(values_itr.has_next())
-            {
-                values_itr.next();
-                idx_coordset["coord_system/axes"][values_itr.name()];
-            }
-        }
 
-        idx_coordset["coord_system/type"] = bputils::coordset::coordsys(coordset);
+            idx_coordset["coord_system/type"] = bputils::coordset::coordsys(coordset);
 
-        std::string cs_ref_path = join_path(ref_path, "coordsets");
-        cs_ref_path = join_path(cs_ref_path, coordset_name);
-        idx_coordset["path"] = cs_ref_path;
+            std::string cs_ref_path = join_path(ref_path, "coordsets");
+            cs_ref_path = join_path(cs_ref_path, coordset_name);
+            idx_coordset["path"] = cs_ref_path;
+        }
     }
 
-    itr = mesh["topologies"].children();
-    while(itr.has_next())
+    // an empty node is a valid blueprint mesh
+    // so we nede to check for topologies, can't assume they exist
+    if(mesh.has_child("topologies"))
     {
-        const Node &topo = itr.next();
-        std::string topo_name = itr.name();
-        Node &idx_topo = index_out["topologies"][topo_name];
-        idx_topo["type"] = topo["type"].as_string();
-        idx_topo["coordset"] = topo["coordset"].as_string();
-
-        std::string tp_ref_path = join_path(ref_path,"topologies");
-        tp_ref_path = join_path(tp_ref_path,topo_name);
-        idx_topo["path"] = tp_ref_path;
-
-        // a topology may also specify a grid_function
-        if(topo.has_child("grid_function"))
+        NodeConstIterator itr = mesh["topologies"].children();
+        while(itr.has_next())
         {
-            idx_topo["grid_function"] = topo["grid_function"].as_string();
+            const Node &topo = itr.next();
+            std::string topo_name = itr.name();
+            Node &idx_topo = index_out["topologies"][topo_name];
+            idx_topo["type"] = topo["type"].as_string();
+            idx_topo["coordset"] = topo["coordset"].as_string();
+
+            std::string tp_ref_path = join_path(ref_path,"topologies");
+            tp_ref_path = join_path(tp_ref_path,topo_name);
+            idx_topo["path"] = tp_ref_path;
+
+            // a topology may also specify a grid_function
+            if(topo.has_child("grid_function"))
+            {
+                idx_topo["grid_function"] = topo["grid_function"].as_string();
+            }
         }
     }
 
     if(mesh.has_child("matsets"))
     {
-        itr = mesh["matsets"].children();
+        NodeConstIterator itr = mesh["matsets"].children();
         while(itr.has_next())
         {
             const Node &matset = itr.next();
@@ -1691,7 +1708,7 @@ mesh::generate_index(const Node &mesh,
 
     if(mesh.has_child("specsets"))
     {
-        itr = mesh["specsets"].children();
+        NodeConstIterator itr = mesh["specsets"].children();
         while(itr.has_next())
         {
             const Node &specset = itr.next();
@@ -1716,7 +1733,7 @@ mesh::generate_index(const Node &mesh,
 
     if(mesh.has_child("fields"))
     {
-        itr = mesh["fields"].children();
+        NodeConstIterator itr = mesh["fields"].children();
         while(itr.has_next())
         {
             const Node &fld = itr.next();
@@ -1766,7 +1783,7 @@ mesh::generate_index(const Node &mesh,
 
     if(mesh.has_child("adjsets"))
     {
-        itr = mesh["adjsets"].children();
+        NodeConstIterator itr = mesh["adjsets"].children();
         while(itr.has_next())
         {
             const Node &adjset = itr.next();
@@ -1786,7 +1803,7 @@ mesh::generate_index(const Node &mesh,
 
     if(mesh.has_child("nestsets"))
     {
-        itr = mesh["nestsets"].children();
+        NodeConstIterator itr = mesh["nestsets"].children();
         while(itr.has_next())
         {
             const Node &nestset = itr.next();
