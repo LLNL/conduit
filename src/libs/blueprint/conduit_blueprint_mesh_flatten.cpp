@@ -29,7 +29,7 @@
 using ::conduit::utils::log::quote;
 
 // Debug macros
-#define DEBUG_MESH_FLATTEN 1
+// #define DEBUG_MESH_FLATTEN 1
 
 #ifdef DEBUG_MESH_FLATTEN
 #define DEBUG_PRINT(stream)\
@@ -519,16 +519,8 @@ MeshFlattener::get_topology(const Node &mesh) const
 void
 MeshFlattener::collect_mesh_info(const Node &mesh, MeshInfo &out) const
 {
-    out.verts_per_domain.clear();
-    out.elems_per_domain.clear();
-    out.domain_ids.clear();
-    out.axes.clear();
-    out.cset_name.clear();
-    out.dimension = 0;
-    out.coord_type = DataType::EMPTY_ID;
-    out.ndomains = 0;
-    out.nverts = 0;
-    out.nelems = 0;
+    // Reset output
+    out = MeshInfo();
 
     // Collect information about the mesh
     out.ndomains = mesh.number_of_children();
@@ -541,7 +533,7 @@ MeshFlattener::collect_mesh_info(const Node &mesh, MeshInfo &out) const
         out.elems_per_domain.push_back(blueprint::mesh::topology::length(dom_topo));
         out.verts_per_domain.push_back(blueprint::mesh::coordset::length(dom_cset));
 
-        if(domain.has_child("state") && domain.has_child("domain_id")
+        if(domain.has_child("state") && domain.has_path("state/domain_id")
             && domain["state/domain_id"].dtype().is_integer())
         {
             out.domain_ids.push_back(domain["state/domain_id"].to_index_t());

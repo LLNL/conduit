@@ -91,7 +91,7 @@ public:
     MeshFlattener();
     virtual ~MeshFlattener();
 
-    bool set_options(const Node &options);
+    virtual bool set_options(const Node &options);
 
     void execute(const Node &mesh, Node &output) const;
 protected:
