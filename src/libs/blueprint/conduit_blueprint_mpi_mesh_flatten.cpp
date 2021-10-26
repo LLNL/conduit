@@ -26,7 +26,7 @@
 using conduit::utils::log::quote;
 
 // Debug macros
-#define DEBUG_MESH_FLATTEN 1
+// #define DEBUG_MESH_FLATTEN 1
 
 #ifdef DEBUG_MESH_FLATTEN
 #define DEBUG_PRINT(stream)\
@@ -407,9 +407,11 @@ ParallelMeshFlattener::gather_values(int nrows, int *rank_counts,
                 Node &column = value[i];
                 void *ptr = column.element_ptr(0);
                 const auto mtype = relay::mpi::conduit_dtype_to_mpi_dtype(column.dtype());
-                DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << nrows
-                    << ", " << mtype << ", " << ptr << ", " << rank_counts << ", " << rank_offsets
-                    << ", " << mtype << ", " << root << ", " << comm << ");" << std::endl);
+                // DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << nrows
+                //     << ", " << mtype << ", " << ptr << ", " << rank_counts << ", " << rank_offsets
+                //     << ", " << mtype << ", " << root << ", " << comm << ");" << std::endl);
+                DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << value.name()
+                    << "[" << column.name() << "]);" << std::endl);
                 MPI_Gatherv(ptr, nrows, mtype,
                     ptr, rank_counts, rank_offsets,
                     mtype, root, comm);
@@ -419,9 +421,10 @@ ParallelMeshFlattener::gather_values(int nrows, int *rank_counts,
         {
             void *ptr = value.element_ptr(0);
             const auto mtype = relay::mpi::conduit_dtype_to_mpi_dtype(value.dtype());
-            DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << nrows
-                << ", " << mtype << ", " << ptr << ", " << rank_counts << ", " << rank_offsets
-                << ", " << mtype << ", " << root << ", " << comm << ");" << std::endl);
+            // DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << nrows
+            //     << ", " << mtype << ", " << ptr << ", " << rank_counts << ", " << rank_offsets
+            //     << ", " << mtype << ", " << root << ", " << comm << ");" << std::endl);
+            DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << value.name() << ");" << std::endl);
             MPI_Gatherv(ptr, nrows, mtype, ptr, rank_counts,
                 rank_offsets, mtype, root, comm);
         }
@@ -463,6 +466,7 @@ ParallelMeshFlattener::gather_results(const MeshInfo &my_info,
 
     gather_values(my_info.nverts, rank_counts.data(), rank_offsets.data(),
         output["vertex_data/values"]);
+    DEBUG_PRINT("Rank " << rank << " - done gathering vertex values." << std::endl);
 
     if(rank == root)
     {
@@ -486,6 +490,7 @@ ParallelMeshFlattener::gather_results(const MeshInfo &my_info,
 
     gather_values(my_info.nelems, rank_counts.data(), rank_offsets.data(),
         output["element_data/values"]);
+    DEBUG_PRINT("Rank " << rank << " - done gathering element values." << std::endl);
 }
 
 //-----------------------------------------------------------------------------

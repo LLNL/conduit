@@ -533,7 +533,7 @@ MeshFlattener::collect_mesh_info(const Node &mesh, MeshInfo &out) const
         out.elems_per_domain.push_back(blueprint::mesh::topology::length(dom_topo));
         out.verts_per_domain.push_back(blueprint::mesh::coordset::length(dom_cset));
 
-        if(domain.has_child("state") && domain.has_path("state/domain_id")
+        if(domain.has_path("state/domain_id")
             && domain["state/domain_id"].dtype().is_integer())
         {
             out.domain_ids.push_back(domain["state/domain_id"].to_index_t());
