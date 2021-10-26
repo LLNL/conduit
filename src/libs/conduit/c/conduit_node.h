@@ -31,7 +31,8 @@ extern "C" {
 // -- typedef for conduit_node --
 //-----------------------------------------------------------------------------
 
-typedef void  conduit_node;
+struct conduit_node_impl;
+typedef struct conduit_node_impl  conduit_node;
 
 //-----------------------------------------------------------------------------
 // -- conduit_node creation and destruction --

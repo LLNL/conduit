@@ -1022,6 +1022,8 @@ void write_mesh(const Node &mesh,
                         && opts_truncate)
                     {
                         Node open_opts;
+                        open_opts["mode"] = "wt";
+                        hnd.open(root_filename,file_protocol,open_opts);
                         local_root_file_created.set((int)1);
                     }
                     

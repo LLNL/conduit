@@ -1525,23 +1525,18 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
     hid_t h5_dtype_id = conduit_dtype_to_hdf5_dtype(dt,ref_path);
     herr_t h5_status = -1;
 
-    int offset = 0;
+    hsize_t offset = 0;
     if(opts.has_child("offset"))
     {
         offset = opts["offset"].to_value();
     }
 
-    int stride = 1;
+    hsize_t stride = 1;
     if(opts.has_child("stride"))
     {
         stride = opts["stride"].to_value();
     }
-
-    if (offset < 0)
-    {
-        CONDUIT_ERROR("Offset must be non-negative.");
-    }
-    else if (stride < 1)
+    if (stride == 0)
     {
         CONDUIT_ERROR("Stride must be greater than zero.");
     }
@@ -1591,8 +1586,8 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
         hsize_t node_size[1] = {(hsize_t) dt.number_of_elements()};
         hid_t nodespace = H5Screate_simple(1, node_size, NULL);
 
-        hsize_t offsets[1] = {(hsize_t) offset};
-        hsize_t strides[1] = {(hsize_t) stride};
+        hsize_t offsets[1] = {offset};
+        hsize_t strides[1] = {stride};
 
         // convert the fixed dataset to an extendible dataset if necessary
         if (dataset_max_dims[0] != H5S_UNLIMITED)
@@ -2606,26 +2601,19 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
 
         index_t nelems     = H5Sget_simple_extent_npoints(h5_dspace_id);
 
-        int offset = 0;
+        hsize_t offset = 0;
         if(opts.has_child("offset"))
         {
             offset = opts["offset"].to_value();
         }
 
-        int stride = 1;
+        hsize_t stride = 1;
         if(opts.has_child("stride"))
         {
             stride = opts["stride"].to_value();
         }
 
-        if (offset < 0)
-        {
-            CONDUIT_HDF5_ERROR(ref_path,
-                               "Error reading HDF5 Dataset with options:"
-                               << opts.to_yaml() <<
-                               "`offset` must be non-negative.");
-        }
-        else if (stride < 1)
+        if (stride == 0)
         {
             CONDUIT_HDF5_ERROR(ref_path,
                                "Error reading HDF5 Dataset with options:"
@@ -2634,13 +2622,13 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         }
 
         // get the number of elements in the dataset given the offset and stride
-        int nelems_from_offset = (nelems - offset) / stride;
+        hsize_t nelems_from_offset = (nelems - offset) / stride;
         if ((nelems - offset) % stride != 0)
         {
             nelems_from_offset++;
         }
 
-        int nelems_to_read = nelems_from_offset;
+        hsize_t nelems_to_read = nelems_from_offset;
         if(opts.has_child("size"))
         {
             nelems_to_read = opts["size"].to_value();
@@ -2656,7 +2644,7 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         // copy metadata to the node under hard-coded keys
         if (only_get_metadata)
         {
-            dest["num_elements"] = (int) nelems_from_offset;
+            dest["num_elements"] = nelems_from_offset;
         }
         else
         {
@@ -2704,9 +2692,9 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                 conduit_dtype_to_hdf5_dtype_cleanup(h5_dtype_id);
             }
 
-            hsize_t node_size[1] = {(hsize_t) nelems_to_read};
-            hsize_t offsets[1] = {(hsize_t) offset};
-            hsize_t strides[1] = {(hsize_t) stride};
+            hsize_t node_size[1] = {nelems_to_read};
+            hsize_t offsets[1] = {offset};
+            hsize_t strides[1] = {stride};
             hid_t nodespace = H5Screate_simple(1,node_size,NULL);
             hid_t dataspace = H5Dget_space(hdf5_dset_id);
 
@@ -2737,7 +2725,7 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             {
                 CONDUIT_HDF5_ERROR(ref_path,
                                    "Error reading HDF5 Dataset with options:"
-                                   << opts.to_yaml() 
+                                   << opts.to_yaml()
                                    << "Cannot read using offset (" << offset << ")"
                                    << " greater than the number of entries in"
                                    << " the HDF5 dataset (" << nelems << ")");

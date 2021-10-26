@@ -18,19 +18,20 @@
 namespace conduit
 {
 
+struct conduit_node_impl {};
 
 //---------------------------------------------------------------------------//
 Node *
 cpp_node(conduit_node *cnode)
 {
-    return static_cast<Node*>(cnode);
+    return reinterpret_cast<Node*>(cnode);
 }
 
 //---------------------------------------------------------------------------//
 conduit_node *
 c_node(Node *node)
 {
-    return (void*)node;
+    return reinterpret_cast<conduit_node*>(node);
 }
 
 
@@ -38,42 +39,44 @@ c_node(Node *node)
 const Node *
 cpp_node(const conduit_node *cnode)
 {
-    return static_cast<const Node*>(cnode);
+    return reinterpret_cast<const Node*>(cnode);
 }
 
 //---------------------------------------------------------------------------//
 const conduit_node *
 c_node(const Node *node)
 {
-    return (void*)node;
+    return reinterpret_cast<const conduit_node*>(node);
 }
 
 //---------------------------------------------------------------------------//
 Node &
 cpp_node_ref(conduit_node *cnode)
 {
-    return *static_cast<Node*>(cnode);
+    return *reinterpret_cast<Node*>(cnode);
 }
 
 //---------------------------------------------------------------------------//
 const Node &
 cpp_node_ref(const conduit_node *cnode)
 {
-    return *static_cast<const Node*>(cnode);
+    return *reinterpret_cast<const Node*>(cnode);
 }
+
+struct conduit_datatype_impl {};
 
 //---------------------------------------------------------------------------//
 DataType *
 cpp_datatype(conduit_datatype *cdatatype)
 {
-    return static_cast<DataType*>(cdatatype);
+    return reinterpret_cast<DataType*>(cdatatype);
 }
 
 //---------------------------------------------------------------------------//
 conduit_datatype *
 c_datatype(DataType *datatype)
 {
-    return (void*)datatype;
+    return reinterpret_cast<conduit_datatype*>(datatype);
 }
 
 
@@ -81,28 +84,28 @@ c_datatype(DataType *datatype)
 const DataType *
 cpp_datatype(const conduit_datatype *cdatatype)
 {
-    return static_cast<const DataType*>(cdatatype);
+    return reinterpret_cast<const DataType*>(cdatatype);
 }
 
 //---------------------------------------------------------------------------//
 const conduit_datatype *
 c_datatype(const DataType *datatype)
 {
-    return (void*)datatype;
+    return reinterpret_cast<const conduit_datatype*>(datatype);
 }
 
 //---------------------------------------------------------------------------//
 DataType &
 cpp_datatype_ref(conduit_datatype *cdatatype)
 {
-    return *static_cast<DataType*>(cdatatype);
+    return *reinterpret_cast<DataType*>(cdatatype);
 }
 
 //---------------------------------------------------------------------------//
 const DataType &
 cpp_datatype_ref(const conduit_datatype *cdatatype)
 {
-    return *static_cast<const DataType*>(cdatatype);
+    return *reinterpret_cast<const DataType*>(cdatatype);
 }
 
 }

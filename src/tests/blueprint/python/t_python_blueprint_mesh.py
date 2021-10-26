@@ -153,18 +153,26 @@ class Test_Blueprint_Mesh(unittest.TestCase):
     def test_polytess(self):
         n = Node()
         info = Node()
-        self.assertTrue(blueprint.verify("mesh",n,info))
-        self.assertTrue(self.has_empty_warning(info))
-        self.assertTrue(blueprint.mesh.verify(n,info))
-        self.assertTrue(self.has_empty_warning(info))
-        # simple case
-        blueprint.mesh.examples.polytess(3,n);
+
+        # 2D case
+        blueprint.mesh.examples.polytess(3,1,n);
         self.assertTrue(blueprint.mesh.verify(n,info))
         self.assertFalse(self.has_empty_warning(info))
-        n_idx = Node()
-        blueprint.mesh.generate_index(n,"",1,n_idx)
-        self.assertTrue(blueprint.verify("mesh/index",n_idx,info))
-        self.assertTrue(blueprint.mesh.verify(protocol="index",node=n_idx,info=info))
+
+        # 3D case
+        blueprint.mesh.examples.polytess(3,3,n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
+
+    def test_polychain(self):
+        n = Node()
+        info = Node()
+
+        # simple case
+        blueprint.mesh.examples.polychain(5,n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
+
 
 
 

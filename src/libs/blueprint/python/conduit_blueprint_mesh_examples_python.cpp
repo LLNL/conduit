@@ -586,7 +586,7 @@ PyBlueprint_mesh_examples_venn(PyObject *, //self
 
 // doc string
 const char *PyBlueprint_mesh_examples_polytess_doc_str =
-"polytess(nlevels, dest)\n"
+"polytess(nlevels, nz, dest)\n"
 "\n"
 "Generates a mesh of a polygonal tessellation in the 2D plane comprised of "
 "octagons and squares\n"
@@ -594,7 +594,9 @@ const char *PyBlueprint_mesh_examples_polytess_doc_str =
 "https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess\n"
 "\n"
 "Arguments:\n"
-" nlevels: specifies the number of tessellation levels/layers to generate.\n";
+" nlevels: specifies the number of tessellation levels/layers to generate. If this value is specified as 1 or less, only the central tessellation level (i.e. the octagon in the center of the geometry) will be generated in the result.\n"
+" nz: if 1, create 2D tessellation\n"
+"      if greater than 1, stack to create a 3D tessellation.\n";
 
 // python func
 static PyObject * 
@@ -603,17 +605,20 @@ PyBlueprint_mesh_examples_polytess(PyObject *, //self
                                    PyObject *kwargs)
 {
     Py_ssize_t nlevels = 0;
+    Py_ssize_t nz = 0;
     PyObject   *py_node  = NULL;
 
     static const char *kwlist[] = {"nlevels",
+                                   "nz",
                                    "dest",
                                    NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "nO",
+                                     "nnO",
                                      const_cast<char**>(kwlist),
                                      &nlevels,
+                                     &nz,
                                      &py_node))
     {
         return (NULL);
@@ -630,7 +635,62 @@ PyBlueprint_mesh_examples_polytess(PyObject *, //self
     Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
 
     blueprint::mesh::examples::polytess(nlevels,
+                                        nz,
                                         node);
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::polytess
+//---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_polychain_doc_str =
+"polychain(length, dest)\n"
+"\n"
+"Generates a chain of cubes and triangular prisms that extends diagonally.\n"
+"\n"
+"https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain\n"
+"\n"
+"Arguments:\n"
+" length: specifies how long of a chain to generate\n";
+
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_polychain(PyObject *, //self
+                                   PyObject *args,
+                                   PyObject *kwargs)
+{
+    Py_ssize_t length = 0;
+    PyObject   *py_node  = NULL;
+
+    static const char *kwlist[] = {"length",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "nO",
+                                     const_cast<char**>(kwlist),
+                                     &length,
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    blueprint::mesh::examples::polychain(length,
+                                         node);
 
     Py_RETURN_NONE;
 }
@@ -681,6 +741,11 @@ static PyMethodDef blueprint_mesh_examples_python_funcs[] =
      (PyCFunction)PyBlueprint_mesh_examples_polytess,
       METH_VARARGS | METH_KEYWORDS,
       PyBlueprint_mesh_examples_polytess_doc_str},
+    //-----------------------------------------------------------------------//
+    {"polychain",
+     (PyCFunction)PyBlueprint_mesh_examples_polychain,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_polychain_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//

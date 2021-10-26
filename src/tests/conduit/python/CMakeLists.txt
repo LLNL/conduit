@@ -12,7 +12,8 @@ set(PYTHON_MODULE_TESTS t_python_conduit_smoke
                         t_python_conduit_datatype
                         t_python_conduit_generator
                         t_python_conduit_node_iterator
-                        t_python_conduit_endianness)
+                        t_python_conduit_endianness
+                        t_python_conduit_intro_py_example)
 
 
 foreach(TEST ${PYTHON_MODULE_TESTS})
