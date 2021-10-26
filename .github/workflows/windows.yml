@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_windows_msvc:
-    name: MSVC Base with Python
+    name: MSVC Base Release with Python
     runs-on: windows-latest   
     steps:
     - name: Setup Python Env
@@ -22,7 +22,7 @@ jobs:
         cmake --build build --config Release --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
   build_windows_clang:
-    name: Clang Base with Python
+    name: Clang Base Debug
     runs-on: windows-2019
     steps:
     - name: Setup Python Env
@@ -39,7 +39,6 @@ jobs:
                 -G "Ninja"                    ^
                 -DCMAKE_C_COMPILER=clang-cl   ^
                 -DCMAKE_CXX_COMPILER=clang-cl ^
-                -DCMAKE_BUILD_TYPE=Release    ^
-                -DENABLE_PYTHON=ON
-        cmake --build build --config Release --parallel 2
-        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+                -DCMAKE_BUILD_TYPE=Debug
+        cmake --build build --config Debug --parallel 2
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target test
