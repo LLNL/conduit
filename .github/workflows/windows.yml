@@ -14,14 +14,13 @@ jobs:
     runs-on: windows-latest   
     steps:
     - name: Setup Python Env
-      run: python3 -m pip install --upgrade numpy
+      run: python3 -m pip install --upgrade pip numpy
     - uses: actions/checkout@v2
       with: 
         submodules: 'recursive'
     - name: Build & Install
       run: |
-        cmake -S src -B build               `
+        cmake -S src -B build             `
               -DCMAKE_BUILD_TYPE=Debug    `
-              -DENABLE_PYTHON=ON          `
-              -DPYTHON_EXECUTABLE=python3
+              -DENABLE_PYTHON=ON
         cmake --build build --config Debug --parallel 2
