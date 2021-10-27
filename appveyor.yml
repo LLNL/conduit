@@ -12,18 +12,14 @@ environment:
   #   MPI_HOME: "C:/Program Files (x86)/Microsoft SDKs/MPI"
   - CMAKE_GENERATOR: "Visual Studio 15 2017"
     CONFIG: Release
-    PYTHON_VERSION: 3.6
     BUILD_SHARED_LIBS: ON
     ENABLE_PYTHON: ON
-    MINICONDA: C:\Miniconda36
     ENABLE_MPI: ON
     MPI_HOME: "C:/Program Files (x86)/Microsoft SDKs/MPI"
   - CMAKE_GENERATOR: "Visual Studio 15 2017"
     CONFIG: Release
-    PYTHON_VERSION: 3.6
     BUILD_SHARED_LIBS: OFF
     ENABLE_PYTHON: OFF
-    MINICONDA: C:\Miniconda36
     ENABLE_MPI: ON
     MPI_HOME: "C:/Program Files (x86)/Microsoft SDKs/MPI"
 
@@ -40,20 +36,10 @@ install:
   # setup python via mini conda
   #- ps: Start-Process -FilePath msiexec -ArgumentList /i, "hdf5\HDF5-1.8.18-win64.msi", /quiet -Wait
   #
-  ####
-  # remove default python paths to avoid crossing with miniconda
-  ####
-  - set PATH=%PATH:C:\Python27;=%
-  - set PATH=%PATH:C:\Python27\Scripts;=%
-  # add built-in mini conda path
-  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
   # check path
   - "echo %PATH%"
   - "echo %PYTHONPATH%"
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a
-  - conda install numpy
+  - pip install numpy
   # try to import numpy to as conda gut-check
   - python -c "import numpy as n; print(n.__version__); print(n.get_include());"
   # try to import numpy to as conda gut-check

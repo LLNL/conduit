@@ -1,0 +1,44 @@
+name: Windows
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_windows_msvc:
+    name: MSVC Base Release with Python
+    runs-on: windows-latest   
+    steps:
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build & Test
+      run: |
+        cmake -S src -B build            `
+              -DCMAKE_BUILD_TYPE=Release `
+              -DENABLE_PYTHON=ON
+        cmake --build build --config Release --parallel 2
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+  build_windows_clang:
+    name: Clang Base Debug
+    runs-on: windows-2019
+    steps:
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - uses: seanmiddleditch/gha-setup-ninja@master
+    - name: Build & Test
+      shell: cmd
+      run: |
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
+              cmake -S src -B build           ^
+                -G "Ninja"                    ^
+                -DCMAKE_C_COMPILER=clang-cl   ^
+                -DCMAKE_CXX_COMPILER=clang-cl ^
+                -DCMAKE_BUILD_TYPE=Debug
+        cmake --build build --config Debug --parallel 2
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target test
