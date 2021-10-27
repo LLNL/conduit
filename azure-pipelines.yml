@@ -61,6 +61,7 @@ stages:
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
+          FORCE_COMPILERS: OFF
           COMPILER_SPEC: gcc
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -82,6 +83,7 @@ stages:
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
           COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: ON
@@ -99,32 +101,12 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py37:
-          COMPILER_CC: gcc
-          COMPILER_CXX: g++
-          COMPILER_FC: gfortran
-          COMPILER_SPEC: gcc
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_COVERAGE: OFF
-          ENABLE_MPI: ON
-          ENABLE_DOCS: ON
-          ENABLE_RELAY_WEBSERVER: ON
-          ENABLE_SILO: ON
-          ENABLE_ADIOS: OFF
-          ENABLE_PARMETIS: ON
-          ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.7.6
-          CMAKE_VERSION: 3.14.2
-          BLT_CXX_STD: c++11
-          BLT_ENABLE_FIND_MPI: ON
-
         static_py27:
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
           COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
@@ -141,12 +123,35 @@ stages:
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
+          
+        shared_py37:
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_SILO: ON
+          ENABLE_ADIOS: OFF
+          ENABLE_PARMETIS: ON
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.7.6
+          CMAKE_VERSION: 3.14.2
+          BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
 
         shared_py38_cmake20:
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
           COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
@@ -163,28 +168,35 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py36:
-          COMPILER_CC: gcc
-          COMPILER_CXX: g++
-          COMPILER_FC: gfortran
-          COMPILER_SPEC: gcc
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_COVERAGE: OFF
-          ENABLE_MPI: ON
-          ENABLE_DOCS: ON
-          ENABLE_SILO: ON
-          ENABLE_ADIOS: OFF
-          ENABLE_PYTHON: ON
-          CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
-          BLT_ENABLE_FIND_MPI: ON
+
+      shared_py38_cmake21:
+            COMPILER_CC: gcc
+            COMPILER_CXX: g++
+            COMPILER_FC: gfortran
+            COMPILER_SPEC: gcc
+            FORCE_COMPILERS: OFF
+            BUILD_SHARED_LIBS: ON
+            CMAKE_BUILD_TYPE: Debug
+            ENABLE_COVERAGE: OFF
+            ENABLE_MPI: ON
+            ENABLE_DOCS: ON
+            ENABLE_RELAY_WEBSERVER: ON
+            ENABLE_SILO: ON
+            ENABLE_ADIOS: OFF
+            ENABLE_PARMETIS: ON
+            ENABLE_PYTHON: ON
+            ENABLE_PYTHON2: OFF
+            PYTHON_VERSION: 3.8.8
+            CMAKE_VERSION: 3.21.1
+            BLT_CXX_STD: c++11
+            BLT_ENABLE_FIND_MPI: ON
           
-        shared_py36_mpi_compilers_direct:
+        shared_mpi_compilers_direct:
           COMPILER_CC: mpicc
           COMPILER_CXX: mpic++
           COMPILER_FC: mpif90
           COMPILER_SPEC: gcc
+          FORCE_COMPILERS: ON
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
@@ -192,7 +204,7 @@ stages:
           ENABLE_DOCS: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
-          ENABLE_PYTHON: ON
+          ENABLE_PYTHON: OFF
           CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: OFF
@@ -296,15 +308,18 @@ stages:
            mkdir build
            cd build
            # setup cmake options
-           export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-           export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+           export CMAKE_OPTS="-C ${HOST_CONFIG}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FIND_MPI=${BLT_ENABLE_FIND_MPI}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${COMPILER_CC}"; fi
+           if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${COMPILER_CXX}"; fi
+           if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${COMPILER_FC}"; fi 
            # configure
-           cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+           cmake ${CMAKE_OPTS} ../src
         displayName: 'Configure with CMake'
 
       - script: |
@@ -325,8 +340,6 @@ stages:
            export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
            export PATH=${CMAKE_BIN_DIR}:$PATH
            which ctest
-           # this should already be set by our cmake, but still seeing oversubscribe errors ...
-           export OMPI_MCA_rmaps_base_oversubscribe=1
            cd build
            # run ctest
            ctest -T test --output-on-failure -V
@@ -363,6 +376,9 @@ stages:
           ###########################
           # using with cmake example
           ###########################
+          export CC=${COMPILER_CC}
+          export CXX=${COMPILER_CXX}
+          export FC=${COMPILER_FC}
           pwd
           ls -l
           # find spack installed cmake
@@ -384,6 +400,9 @@ stages:
           ###########################
           # using with make example
           ###########################
+          export CC=${COMPILER_CC}
+          export CXX=${COMPILER_CXX}
+          export FC=${COMPILER_FC}
           cat install/share/conduit/conduit_config.mk
           pwd
           ls -l
@@ -396,6 +415,9 @@ stages:
           ################################
           # using with cmake mpi example
           ###############################
+          export CC=${COMPILER_CC}
+          export CXX=${COMPILER_CXX}
+          export FC=${COMPILER_FC}
           pwd
           ls -l
           # find spack installed cmake
@@ -404,8 +426,6 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
-          # this should already be set by our cmake, but still seeing oversubscribe errors ...
-          export OMPI_MCA_rmaps_base_oversubscribe=1
           cd install/examples/conduit/using-with-cmake-mpi
           rm -rf _test_build
           mkdir _test_build
