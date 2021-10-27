@@ -46,43 +46,59 @@ compare_to_baseline_leaf(const Node &test, const Node &baseline)
 }
 
 //-----------------------------------------------------------------------------
+static void
+compare_to_baseline_values(const Node &test, const Node &baseline)
+{
+    ASSERT_EQ(baseline.number_of_children(), test.number_of_children());
+    for(index_t j = 0; j < baseline.number_of_children(); j++)
+    {
+        const Node &baseline_value = baseline[j];
+        const Node &test_value = test[j];
+        EXPECT_EQ(baseline_value.name(), test_value.name());
+        if(baseline_value.dtype().is_list() || baseline_value.dtype().is_object())
+        {
+            // mcarray
+            ASSERT_EQ(baseline_value.number_of_children(), test_value.number_of_children());
+            EXPECT_EQ(baseline_value.dtype().is_list(), test_value.dtype().is_list());
+            EXPECT_EQ(baseline_value.dtype().is_object(), test_value.dtype().is_object());
+            for(index_t k = 0; k < baseline_value.number_of_children(); k++)
+            {
+                const Node &baseline_comp = baseline_value[k];
+                const Node &test_comp = test_value[k];
+                EXPECT_EQ(baseline_comp.name(), test_comp.name());
+                compare_to_baseline_leaf(test_comp, baseline_comp);
+            }
+        }
+        else
+        {
+            // data array
+            compare_to_baseline_leaf(test_value, baseline_value);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 void compare_to_baseline(const conduit::Node &test,
     const conduit::Node &baseline)
 {
     Node info;
     ASSERT_TRUE(blueprint::table::verify(baseline, info));
     ASSERT_TRUE(blueprint::table::verify(test, info));
-    ASSERT_EQ(baseline.number_of_children(), test.number_of_children());
-    for(index_t i = 0; i < baseline.number_of_children(); i++)
+    if(baseline.has_child("values"))
     {
-        EXPECT_EQ(baseline[i].name(), test[i].name());
-        const Node &baseline_values = baseline[i]["values"];
-        const Node &test_values = test[i]["values"];
-        ASSERT_EQ(baseline_values.number_of_children(), test_values.number_of_children());
-        for(index_t j = 0; j < baseline_values.number_of_children(); j++)
+        const Node &baseline_values = baseline["values"];
+        const Node &test_values = test["values"];
+        compare_to_baseline_values(test_values, baseline_values);
+    }
+    else
+    {
+        ASSERT_EQ(baseline.number_of_children(), test.number_of_children());
+        for(index_t i = 0; i < baseline.number_of_children(); i++)
         {
-            const Node &baseline_value = baseline_values[j];
-            const Node &test_value = test_values[j];
-            EXPECT_EQ(baseline_value.name(), test_value.name());
-            if(baseline_value.dtype().is_list() || baseline_value.dtype().is_object())
-            {
-                // mcarray
-                ASSERT_EQ(baseline_value.number_of_children(), test_value.number_of_children());
-                EXPECT_EQ(baseline_value.dtype().is_list(), test_value.dtype().is_list());
-                EXPECT_EQ(baseline_value.dtype().is_object(), test_value.dtype().is_object());
-                for(index_t k = 0; k < baseline_value.number_of_children(); k++)
-                {
-                    const Node &baseline_comp = baseline_value[k];
-                    const Node &test_comp = test_value[k];
-                    EXPECT_EQ(baseline_comp.name(), test_comp.name());
-                    compare_to_baseline_leaf(test_comp, baseline_comp);
-                }
-            }
-            else
-            {
-                // data array
-                compare_to_baseline_leaf(test_value, baseline_value);
-            }
+            EXPECT_EQ(baseline[i].name(), test[i].name());
+            const Node &baseline_values = baseline[i]["values"];
+            const Node &test_values = test[i]["values"];
+            compare_to_baseline_values(test_values, baseline_values);
         }
     }
 }

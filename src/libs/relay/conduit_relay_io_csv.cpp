@@ -9,13 +9,19 @@
 //-----------------------------------------------------------------------------
 #include "conduit_relay_io_csv.hpp"
 
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "conduit_log.hpp"
 #include "conduit_blueprint_table.hpp"
 
 using conduit::utils::log::quote;
+
+const char child_sep = '/';
+const char *whitespace = " \t\n\r\f\v";
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -148,9 +154,18 @@ write_row_based(const Node &table, const std::string &path,
 {
     const Node &values = table["values"];
 
+    // Open the file
     std::ofstream fout(path);
+    if(!fout.is_open())
+    {
+        CONDUIT_ERROR("Unable to open file " << quote(path) << ".");
+        return;
+    }
+
+    // First line, column names
     write_header(values, fout);
 
+    // Write each row: col0, col1, col2, col3 ...
     const index_t nrows = get_nrows(table);
     const index_t ncols = values.number_of_children();
     Node temp;
@@ -182,7 +197,6 @@ write_row_based(const Node &table, const std::string &path,
         }
         fout << "\n";
     }
-    fout.flush();
 }
 
 //-----------------------------------------------------------------------------
@@ -190,9 +204,180 @@ static void
 write_single_table(const Node &table, const std::string &path,
     const OptionsCsv &options)
 {
-    if(options.column_width == 0)
+    // TODO: Write column based writer and benchmark performance
+    write_row_based(table, path, options);
+}
+
+//-----------------------------------------------------------------------------
+static Node &
+add_column(const std::string &name, Node &values)
+{
+    // Add the column to the table
+    std::size_t child_pos = name.rfind(child_sep);
+    if(child_pos != std::string::npos)
     {
-        write_row_based(table, path, options);
+        // Q: What if the string contains many '/'s
+        // mcarray
+        std::string base_name = name.substr(0, child_pos);
+        Node &base_node = values[base_name];
+
+        child_pos++;
+        std::string child_name = name.substr(child_pos, name.length() - child_pos);
+        return base_node.add_child(child_name);
+    }
+    else
+    {
+        return values.add_child(name);
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void
+trim(std::string &str, const char *t = whitespace)
+{
+    // ltrim, rtrim
+    str.erase(0, str.find_first_not_of(t));
+    str.erase(str.find_last_not_of(t) + 1);
+}
+
+//-----------------------------------------------------------------------------
+void
+read_csv(const std::string &path, const Node &, Node &table)
+{
+    table.reset();
+    std::ifstream fin(path);
+    if(!fin.is_open())
+    {
+        CONDUIT_ERROR("Unable to open file " << quote(path) << ".");
+        return;
+    }
+
+    // Some basic sanity checks on the file
+    // Q: Need to support comment character?
+
+    // Make sure the file has data
+    std::string first_line;
+    if(!std::getline(fin, first_line))
+    {
+        CONDUIT_ERROR("The file " << quote(path) << "appears to be empty.");
+        return;
+    }
+
+    // Get number of rows in file
+    const auto data_start = fin.tellg();
+    std::string line;
+    index_t nrows = 0;
+    while(std::getline(fin, line))
+    {
+        nrows++;
+    }
+
+    // Make sure the file is a CSV file.
+    // Q: What if it was one column
+    const char del = ',';
+    std::size_t pos = first_line.find(del);
+    if(pos == std::string::npos)
+    {
+        CONDUIT_ERROR("The file " << quote(path) << "does not appear to contain CSV data.");
+        return;
+    }
+
+    // TODO: Handle CSV files without column names
+    // Allocate the output table
+    const DataType dtype(DataType::FLOAT32_ID, nrows);
+    std::vector<std::string> column_names;
+    Node &values = table["values"];
+    {
+        std::size_t start = 0;
+        std::size_t end = first_line.find(del);
+        while(end != std::string::npos)
+        {
+            const auto len = end - start;
+            column_names.push_back(first_line.substr(start, len));
+
+            trim(column_names.back(), whitespace);
+            Node &col = add_column(column_names.back(), values);
+            col.set_dtype(dtype);
+
+            // Update positions
+            start = end + 1;
+            end = first_line.find(del, start);
+        }
+        // Get the last name
+        column_names.push_back(first_line.substr(start));
+        trim(column_names.back(), whitespace);
+        Node &col = add_column(column_names.back(), values);
+        col.set_dtype(dtype);
+    }
+
+    line.erase();
+    fin.clear();
+    fin.seekg(data_start, fin.beg);
+    index_t row = 0;
+    while(std::getline(fin, line))
+    {
+        std::size_t icol = 0;
+        std::size_t start = 0;
+        std::size_t end = line.find(del);
+        while(end != std::string::npos)
+        {
+            const auto len = end - start;
+            if(icol > column_names.size())
+            {
+                CONDUIT_ERROR("Error while reading file, row " << row << " contains too many column entries!");
+                return;
+            }
+
+            Node *n = values.fetch_ptr(column_names[icol]);
+            if(!n)
+            {
+                CONDUIT_ERROR("The allocated output table does not contain the path " << quote(column_names[icol]) << ".");
+                return;
+            }
+
+            std::string data = line.substr(start, len);
+            float *d = static_cast<float*>(n->element_ptr(row));
+            try
+            {
+                *d = std::stof(data);
+            }
+            catch(const std::exception &e)
+            {
+                CONDUIT_ERROR(e.what());
+                return;
+            }
+
+            // Update positions
+            icol++;
+            start = end + 1;
+            end = line.find(del, start);
+        }
+        // Get the last name
+        if(icol > column_names.size())
+        {
+            CONDUIT_ERROR("Error while reading file, row " << row << " contains too many column entries!");
+            return;
+        }
+
+        Node *n = values.fetch_ptr(column_names[icol]);
+        if(!n)
+        {
+            CONDUIT_ERROR("The allocated output table does not contain the path " << quote(column_names[icol]) << ".");
+            return;
+        }
+
+        std::string data = line.substr(start);
+        float *d = static_cast<float*>(n->element_ptr(row));
+        try
+        {
+            *d = std::stof(data);
+        }
+        catch(const std::exception &e)
+        {
+            CONDUIT_ERROR(e.what());
+            return;
+        }
+        row++;
     }
 }
 
@@ -214,6 +399,10 @@ write_csv(const Node &table, const std::string &path, const Node &options)
     {
         write_single_table(table, path, opts);
     }
+    // else
+    // {
+    //     write_multiple_tables(table, path, opts);
+    // }
 }
 
 }

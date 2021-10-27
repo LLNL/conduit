@@ -556,6 +556,10 @@ load(const std::string &path,
     {
         node.load(path,protocol);
     }
+    else if(protocol == "csv")
+    {
+        read_csv(path, options, node);
+    }
     else if( protocol == "hdf5")
     {
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED

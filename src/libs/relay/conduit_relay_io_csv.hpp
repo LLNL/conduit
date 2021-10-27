@@ -38,6 +38,11 @@ namespace io
 {
 
 //-----------------------------------------------------------------------------
+CONDUIT_RELAY_API void read_csv(const std::string &path,
+                                const Node &options,
+                                Node &table);
+
+//-----------------------------------------------------------------------------
 /**
 @brief Accepts a blueprint table and writes it out to the given filename.
 */
