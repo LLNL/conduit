@@ -44,341 +44,6 @@ stages:
 - stage: Main
   jobs:
   ###############################################################################
-  # Ubuntu build and test, using spack to build tpls
-  ###############################################################################
-  # - job: Ubuntu_Latest
-  #   pool:
-  #     vmImage: 'ubuntu-latest'
-  #   timeoutInMinutes: 0
-  #   variables:
-  #     COMPILER_CC: gcc
-  #     COMPILER_CXX: g++
-  #     COMPILER_FC: gfortran
-  #     COMPILER_SPEC: gcc
-  #   strategy:
-  #     matrix:
-  #       shared_minimal:
-  #         BUILD_SHARED_LIBS: ON
-  #         CMAKE_BUILD_TYPE: Debug
-  #         ENABLE_COVERAGE: OFF
-  #         ENABLE_MPI: OFF
-  #         ENABLE_DOCS: OFF
-  #         ENABLE_RELAY_WEBSERVER: OFF
-  #         ENABLE_SILO: OFF
-  #         ENABLE_ADIOS: OFF
-  #         ENABLE_PARMETIS: OFF
-  #         ENABLE_PYTHON: OFF
-  #         ENABLE_PYTHON2: OFF
-  #         CMAKE_VERSION: 3.14.2
-  #         BLT_CXX_STD: c++11
-  #
-  #       shared_py27:
-  #         BUILD_SHARED_LIBS: ON
-  #         CMAKE_BUILD_TYPE: Debug
-  #         ENABLE_COVERAGE: ON
-  #         ENABLE_MPI: ON
-  #         ENABLE_DOCS: OFF
-  #         ENABLE_RELAY_WEBSERVER: ON
-  #         ENABLE_SILO: ON
-  #         ENABLE_ADIOS: OFF
-  #         ENABLE_PYTHON: ON
-  #         ENABLE_PARMETIS: ON
-  #         ENABLE_PYTHON2: ON
-  #         PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
-  #         PYTHON_VERSION: 2.7.18
-  #         CMAKE_VERSION: 3.14.2
-  #         BLT_CXX_STD: c++11
-  #
-  #       shared_py37:
-  #         BUILD_SHARED_LIBS: ON
-  #         CMAKE_BUILD_TYPE: Debug
-  #         ENABLE_COVERAGE: OFF
-  #         ENABLE_MPI: ON
-  #         ENABLE_DOCS: ON
-  #         ENABLE_RELAY_WEBSERVER: ON
-  #         ENABLE_SILO: ON
-  #         ENABLE_ADIOS: OFF
-  #         ENABLE_PARMETIS: ON
-  #         ENABLE_PYTHON: ON
-  #         ENABLE_PYTHON2: OFF
-  #         PYTHON_VERSION: 3.7.6
-  #         CMAKE_VERSION: 3.14.2
-  #         BLT_CXX_STD: c++11
-  #
-  #       static_py27:
-  #         BUILD_SHARED_LIBS: OFF
-  #         CMAKE_BUILD_TYPE: Debug
-  #         ENABLE_COVERAGE: OFF
-  #         ENABLE_MPI: ON
-  #         ENABLE_DOCS: OFF
-  #         ENABLE_RELAY_WEBSERVER: ON
-  #         ENABLE_SILO: ON
-  #         ENABLE_ADIOS: OFF
-  #         ENABLE_PARMETIS: ON
-  #         ENABLE_PYTHON: ON
-  #         ENABLE_PYTHON2: ON
-  #         PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
-  #         PYTHON_VERSION: 2.7.18
-  #         CMAKE_VERSION: 3.14.2
-  #         BLT_CXX_STD: c++11
-  #
-  #       shared_py38_cmake20:
-  #         BUILD_SHARED_LIBS: ON
-  #         CMAKE_BUILD_TYPE: Debug
-  #         ENABLE_COVERAGE: OFF
-  #         ENABLE_MPI: ON
-  #         ENABLE_DOCS: ON
-  #         ENABLE_RELAY_WEBSERVER: ON
-  #         ENABLE_SILO: ON
-  #         ENABLE_ADIOS: OFF
-  #         ENABLE_PARMETIS: ON
-  #         ENABLE_PYTHON: ON
-  #         ENABLE_PYTHON2: OFF
-  #         PYTHON_VERSION: 3.8.8
-  #         CMAKE_VERSION: 3.20.0
-  #         BLT_CXX_STD: c++11
-  #
-  #   steps:
-  #     - checkout: self
-  #       clean: boolean
-  #       submodules: recursive
-  #
-  #     - script: |
-  #          ##################
-  #          # setup build env
-  #          ##################
-  #          # output env
-  #          cat etc/*rel*
-  #          env
-  #          # clean default paths
-  #          sudo rm -rf /usr/local/lib/android/
-  #          sudo rm -rf /usr/share/miniconda/
-  #          # add extra repo and update
-  #          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-  #          sudo apt-get update
-  #          # list pkgs we need
-  #          export APT_PKGS=binutils
-  #          export APT_PKGS="$APT_PKGS gcc"
-  #          export APT_PKGS="$APT_PKGS g++"
-  #          export APT_PKGS="$APT_PKGS gfortran"
-  #          export APT_PKGS="$APT_PKGS openmpi-bin"
-  #          export APT_PKGS="$APT_PKGS libopenmpi-dev"
-  #          export APT_PKGS="$APT_PKGS libncurses-dev"
-  #          export APT_PKGS="$APT_PKGS libssl-dev"
-  #          export APT_PKGS="$APT_PKGS libblas-dev"
-  #          export APT_PKGS="$APT_PKGS liblapack-dev"
-  #          export APT_PKGS="$APT_PKGS zlib1g-dev"
-  #          export APT_PKGS="$APT_PKGS libgdbm-dev"
-  #          export APT_PKGS="$APT_PKGS libreadline-dev"
-  #          export APT_PKGS="$APT_PKGS libsqlite3-dev"
-  #          export APT_PKGS="$APT_PKGS libbz2-dev"
-  #          # install pkgs we need
-  #          sudo apt-get -y install $APT_PKGS
-  #       displayName: 'Prepare build env'
-  #
-  #     - script: |
-  #          #################################
-  #          # run uber to build tpls
-  #          #################################
-  #          #
-  #          pwd
-  #          # echo system python details
-  #          which python
-  #          python --version
-  #          # setup spack spec
-  #          export SPACK_SPEC="%${COMPILER_SPEC}"
-  #          # mpi
-  #          if [ $ENABLE_MPI  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+mpi"; fi
-  #          if [ $ENABLE_MPI  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
-  #          # silo
-  #          if [ $ENABLE_SILO  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+silo"; fi
-  #          if [ $ENABLE_SILO  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~silo"; fi
-  #          # adios
-  #          if [ $ENABLE_ADIOS  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios~zfp"; fi
-  #          if [ $ENABLE_ADIOS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
-  #          #parmetis
-  #          if [ $ENABLE_PARMETIS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+parmetis"; fi
-  #          if [ $ENABLE_PARMETIS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~parmetis"; fi
-  #          # python
-  #          if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+python"; fi
-  #          if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
-  #          # docs
-  #          if [ $ENABLE_DOCS  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
-  #          if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
-  #          # package ver selections and extra tweaks
-  #          export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
-  #          if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-  #          if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
-  #          if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
-  #          # turn off hdf5 mpi support
-  #          export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"
-  #          # show final spec
-  #          echo $SPACK_SPEC
-  #          # run uber to build tpls
-  #          python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/
-  #       displayName: 'Spack Build Tpls'
-  #
-  #     - script: |
-  #          #################################
-  #          # configure
-  #          #################################
-  #          # setup compiler env vars
-  #          export CC=${COMPILER_CC}
-  #          export CXX=${COMPILER_CXX}
-  #          export FC=${COMPILER_FC}
-  #          ${CC} --version
-  #          # capture current path
-  #          export ROOT_DIR=`pwd`
-  #          # find spack generated host config file
-  #          export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
-  #          echo $HOST_CONFIG
-  #          # find spack installed cmake
-  #          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #          export PATH=${CMAKE_BIN_DIR}:$PATH
-  #          echo $PATH
-  #          which cmake
-  #          cmake --version
-  #          # prepare build dir
-  #          mkdir build
-  #          cd build
-  #          # setup cmake options
-  #          export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-  #          # configure
-  #          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
-  #       displayName: 'Configure with CMake'
-  #
-  #     - script: |
-  #          #################################
-  #          # build
-  #          #################################
-  #          # build
-  #          cd build
-  #          make VERBOSE=1
-  #       displayName: 'Build'
-  #
-  #     - script: |
-  #          #################################
-  #          # test
-  #          #################################
-  #          # find spack installed cmake
-  #          export ROOT_DIR=`pwd`
-  #          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #          export PATH=${CMAKE_BIN_DIR}:$PATH
-  #          which ctest
-  #          cd build
-  #          # run ctest
-  #          ctest -T test --output-on-failure -V
-  #       displayName: 'Run Unit Tests'
-  #
-  #     - task: PublishTestResults@2
-  #       inputs:
-  #         testResultsFormat: 'cTest'
-  #         testResultsFiles: '**/Test.xml'
-  #       displayName: 'Unit Test Results'
-  #       condition: always()
-  #
-  #     - task: CopyFiles@2
-  #       inputs:
-  #         contents: 'build/tests/_output/**'
-  #         targetFolder: $(Build.ArtifactStagingDirectory)
-  #       condition: always()
-  #
-  #     - task: PublishBuildArtifacts@1
-  #       inputs:
-  #         pathToPublish: $(Build.ArtifactStagingDirectory)
-  #         artifactName: Conduit_Test_Outputs
-  #       condition: always()
-  #
-  #     - script: |
-  #          #################################
-  #          # install
-  #          #################################
-  #          cd build
-  #          make install
-  #       displayName: 'Install'
-  #
-  #     - script: |
-  #         ###########################
-  #         # using with cmake example
-  #         ###########################
-  #         pwd
-  #         ls -l
-  #         # find spack installed cmake
-  #         export ROOT_DIR=`pwd`
-  #         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #         export PATH=${CMAKE_BIN_DIR}:$PATH
-  #         echo $PATH
-  #         which cmake
-  #         cd install/examples/conduit/using-with-cmake
-  #         rm -rf _test_build
-  #         mkdir _test_build
-  #         cd _test_build
-  #         cmake ../
-  #         make VERBOSE=1
-  #         ./conduit_example
-  #       displayName: 'Test vs Install (using-with-cmake)'
-  #
-  #     - script: |
-  #         ###########################
-  #         # using with make example
-  #         ###########################
-  #         cat install/share/conduit/conduit_config.mk
-  #         pwd
-  #         ls -l
-  #         cd install/examples/conduit/using-with-make
-  #         make
-  #         ./conduit_example
-  #       displayName: 'Test vs Install (using-with-make)'
-  #
-  #     - script: |
-  #         ################################
-  #         # using with cmake mpi example
-  #         ###############################
-  #         pwd
-  #         ls -l
-  #         # find spack installed cmake
-  #         export ROOT_DIR=`pwd`
-  #         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #         export PATH=${CMAKE_BIN_DIR}:$PATH
-  #         echo $PATH
-  #         which cmake
-  #         cd install/examples/conduit/using-with-cmake-mpi
-  #         rm -rf _test_build
-  #         mkdir _test_build
-  #         cd _test_build
-  #         cmake ../
-  #         make VERBOSE=1
-  #         mpiexec -n 1 ./conduit_mpi_example
-  #       displayName: 'Test vs Install (using-with-cmake-mpi)'
-  #       condition: eq(variables['ENABLE_MPI'], 'ON')
-  #
-  #     - script: |
-  #         ################################################
-  #         # using with cmake example vs reloc-ed install
-  #         ################################################
-  #         pwd
-  #         ls -l
-  #         # find spack installed cmake
-  #         export ROOT_DIR=`pwd`
-  #         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #         export PATH=${CMAKE_BIN_DIR}:$PATH
-  #         echo $PATH
-  #         which cmake
-  #         mv install bananas
-  #         cd bananas/examples/conduit/using-with-cmake
-  #         rm -rf _test_build
-  #         mkdir _test_build
-  #         cd _test_build
-  #         cmake ../
-  #         make VERBOSE=1
-  #         ./conduit_example
-  #       displayName: 'Test vs Relocated Install (using-with-cmake)'
-
-  ###############################################################################
   # Ubuntu 18 build and test, using spack to build tpls
   #
   # When setup in Ascent, Azure didint have an Ubuntu 18 dev image, so we are 
@@ -390,14 +55,13 @@ stages:
       vmImage: 'ubuntu-latest'
     container: ${{ variables.ubuntu18_tag }}
     timeoutInMinutes: 0
-    variables:
-      COMPILER_CC: gcc
-      COMPILER_CXX: g++
-      COMPILER_FC: gfortran
-      COMPILER_SPEC: gcc
     strategy:
       matrix:
         shared_minimal:
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
@@ -411,8 +75,13 @@ stages:
           ENABLE_PYTHON2: OFF
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
 
         shared_py27:
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: ON
@@ -428,8 +97,13 @@ stages:
           PYTHON_VERSION: 2.7.18
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
 
         shared_py37:
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
@@ -444,8 +118,13 @@ stages:
           PYTHON_VERSION: 3.7.6
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
 
         static_py27:
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
@@ -461,8 +140,13 @@ stages:
           PYTHON_VERSION: 2.7.18
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
 
         shared_py38_cmake20:
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
@@ -477,8 +161,13 @@ stages:
           PYTHON_VERSION: 3.8.8
           CMAKE_VERSION: 3.20.0
           BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
 
         shared_py36:
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
@@ -489,6 +178,24 @@ stages:
           ENABLE_PYTHON: ON
           CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
+          
+        shared_py36_mpi_compilers_direct:
+          COMPILER_CC: mpicc
+          COMPILER_CXX: mpic++
+          COMPILER_FC: mpif90
+          COMPILER_SPEC: gcc
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_SILO: ON
+          ENABLE_ADIOS: OFF
+          ENABLE_PYTHON: ON
+          CMAKE_VERSION: 3.21.1
+          BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: OFF
     steps:
       - checkout: self
         clean: boolean
@@ -594,6 +301,7 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FIND_MPI=${BLT_ENABLE_FIND_MPI}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src

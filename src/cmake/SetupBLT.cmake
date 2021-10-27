@@ -44,14 +44,21 @@ if(ENABLE_MPI)
         # the name mpi
         set(conduit_blt_mpi_deps mpi CACHE STRING "")
     else()
-        if(TARGET MPI::MPI_CXX)
-            message(STATUS "Using MPI CMake imported target: MPI::MPI_CXX")
-            # newer cmake we use find mpi targets directly
-            set(conduit_blt_mpi_deps MPI::MPI_CXX CACHE STRING "")
+        # if we are using BLT's enable mpi, then we must
+        # make sure the MPI targets exist
+        if(ENABLE_FIND_MPI)
+            if(TARGET MPI::MPI_CXX)
+                message(STATUS "Using MPI CMake imported target: MPI::MPI_CXX")
+                # newer cmake we use find mpi targets directly
+                set(conduit_blt_mpi_deps MPI::MPI_CXX CACHE STRING "")
+            else()
+                message(FATAL_ERROR "Cannot use CMake imported targets for MPI."
+                                    "(CMake > 3.15, ENABLE_MPI == ON, but "
+                                    "MPI::MPI_CXX CMake target is missing.)")
+            endif()
         else()
-            message(FATAL_ERROR "Cannot use CMake imported targets for MPI."
-                                "(CMake > 3.15, ENABLE_MPI == ON, but "
-                                "MPI::MPI_CXX CMake target is missing.)")
+            # compiler will handle them implicitly
+            set(conduit_blt_mpi_deps "" CACHE STRING "")
         endif()
     endif()
 endif()
