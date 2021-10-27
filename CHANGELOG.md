@@ -20,6 +20,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### General
 - Updated CMake logic to provide more robust Python detection and better support for HDF5 installs that were built with CMake.
+- Improved Node::diff and Node::diff_compatible to show string values when strings differ.
 
 #### Relay
 - Added CMake option (`ENABLE_RELAY_WEBSERVER`, default = `ON`) to control if Conduit's Relay Web Server support is built. Down stream codes can check for support via header ifdef `CONDUIT_RELAY_WEBSERVER_ENABLED` or at runtime in `conduit::relay::about`.
