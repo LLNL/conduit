@@ -209,6 +209,40 @@ write_single_table(const Node &table, const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
+static void
+write_multiple_tables(const Node &all_tables, const std::string &base_path,
+    const OptionsCsv &opts)
+{
+    const index_t ntables = all_tables.number_of_children();
+    if(ntables < 1)
+    {
+        return;
+    }
+
+    utils::create_directory(base_path);
+    if(all_tables.dtype().is_list())
+    {
+        for(index_t i = 0; i < ntables; i++)
+        {
+            const Node &table = all_tables[i];
+            const std::string full_path = base_path + utils::file_path_separator()
+                + "table_list_" + std::to_string(i) + ".csv";
+            write_single_table(table, full_path, opts);
+        }
+    }
+    else // if(table.dtype().is_object())
+    {
+        for(index_t i = 0; i < ntables; i++)
+        {
+            const Node &table = all_tables[i];
+            const std::string full_path = base_path + utils::file_path_separator()
+                + table.name() + ".csv";
+            write_single_table(table, full_path, opts);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 static Node &
 add_column(const std::string &name, Node &values)
 {
@@ -399,10 +433,10 @@ write_csv(const Node &table, const std::string &path, const Node &options)
     {
         write_single_table(table, path, opts);
     }
-    // else
-    // {
-    //     write_multiple_tables(table, path, opts);
-    // }
+    else
+    {
+        write_multiple_tables(table, path, opts);
+    }
 }
 
 }
