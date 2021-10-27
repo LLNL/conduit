@@ -751,7 +751,7 @@ Adjacency Set Variants
 =================================
 
 There's a great deal of flexibility in how the adjacency groups of an Adjacency Set can be constructed.
-Blueprint Mesh contains detection and transformation functions for the most commonly targeted format.
+Blueprint Mesh contains detection and transformation functions for the most commonly targeted formats.
 The two variants currently supported are **pairwise** and **max-share**.
 
 
