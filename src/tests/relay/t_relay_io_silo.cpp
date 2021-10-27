@@ -193,6 +193,15 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
         // (it will be a list containing a single mesh domain)
         // but the saved mesh is in the single domain format
         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-        EXPECT_FALSE(load_mesh.diff(save_mesh, info));
+        NodeConstIterator l_itr = load_mesh.children();
+        NodeConstIterator s_itr = save_mesh.children();
+        while(l_itr.has_next())
+        {
+            const Node &l_curr = l_itr.next();
+            const Node &s_curr = s_itr.next();
+            info.reset();
+            EXPECT_FALSE(l_curr.diff(s_curr, info));
+            std::cout << "DIFF FROM TEST" << info.to_yaml();
+        }
     }
 }
