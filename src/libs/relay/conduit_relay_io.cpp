@@ -32,6 +32,7 @@
 #endif
 
 #include "conduit_relay_io_handle.hpp"
+#include "conduit_relay_io_csv.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -79,6 +80,9 @@ about(Node &n)
 
     // standard binary io
     io_protos["conduit_bin"] = "enabled";
+
+    // write table blueprints to csv
+    io_protos["csv"] = "enabled";
 
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
     // hdf5
@@ -333,6 +337,10 @@ save(const Node &node,
        protocol == "yaml" )
     {
         node.save(path,protocol);
+    }
+    else if(protocol == "csv")
+    {
+        write_csv(node, path, options);
     }
     else if( protocol == "hdf5")
     {

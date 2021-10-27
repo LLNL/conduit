@@ -24,7 +24,9 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mesh_flatten
                     t_blueprint_mesh_matset_xforms
                     t_blueprint_table_verify
-                    t_blueprint_table_examples)
+                    t_blueprint_table_examples
+                    t_blueprint_table_relay
+                    )
 
 ################################
 # Blueprint test helpers
