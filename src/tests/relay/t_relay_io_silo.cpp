@@ -188,7 +188,13 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
         io::silo::save_mesh(save_mesh, "spiral.silo");
         Node load_mesh;
         io::silo::load_mesh("spiral.silo", load_mesh);
+
         Node info;
+
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+        info.print();
+
         // the loaded mesh will be in the multidomain format
         // (it will be a list containing a single mesh domain)
         // but the saved mesh is in the single domain format
@@ -199,9 +205,17 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
         {
             const Node &l_curr = l_itr.next();
             const Node &s_curr = s_itr.next();
-            info.reset();
+
+            std::cout << "comparing domain " << l_itr.index() << std::endl;
+            std::cout << "{input}" << std::endl;
+            s_curr.print();
+            std::cout << "{loaded}" << std::endl;
+            l_curr.print();
+
             EXPECT_FALSE(l_curr.diff(s_curr, info));
-            std::cout << "DIFF FROM TEST" << info.to_yaml();
+            std::cout << "{diff}" << std::endl;
+            info.print();
+            std::cout << std::endl;
         }
     }
 }
