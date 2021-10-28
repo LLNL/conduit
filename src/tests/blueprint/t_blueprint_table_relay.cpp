@@ -139,3 +139,30 @@ TEST(t_blueprint_table_relay, read_write_multi_table_list)
 
     table::compare_to_baseline(read_table, table);
 }
+
+TEST(t_blueprint_table_relay, read_write_table_with_list_values)
+{
+    const std::string filename =
+        "t_blueprint_table_relay_read_write_table_with_list_values.csv";
+    ASSERT_EQ(0, cleanup_dir(filename));
+
+    Node basic_table;
+    blueprint::table::examples::basic(5, 4, 3, basic_table);
+
+    // Remove the names
+    Node table;
+    Node &table_values = table["values"];
+    const index_t ncolumns = basic_table["values"].number_of_children();
+    for(index_t i = 0; i < ncolumns; i++)
+    {
+        Node &n = table_values.append();
+        n.set_external(basic_table["values"][i]);
+    }
+
+    relay::io::save(table, filename);
+
+    Node read_table;
+    relay::io::load(filename, read_table);
+
+    table::compare_to_baseline(read_table, table);
+}
