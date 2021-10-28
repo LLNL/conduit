@@ -105,6 +105,23 @@ void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
  @param mesh    A Conduit node containing a blueprint mesh or set of mesh domains.
  @param options A Conduit node containing options for the flatten operation.
  @param[out] output A Conduit node that will contain the blueprint table output.
+    Output will contain the two tables "vertex_data" and "element_data". If one
+    of these tables is empty it will be removed from the output.
+    (example - If no vertex_data then output will contain one child "element_data" table).
+
+ Supported options:
+    "topology": The name of the topology to use for reference. (Defaults to first topology).
+    "field_names": A list of field names to include in the output table.
+        (Defaults to all fields associated with the active "topology")
+    "fill_value": The default value of every element in the table (Default 0)
+    "add_domain_info": Determines whether "domain_id", "vertex_id", and "element_id"
+        are included in the output table. Should be passed as int. (Default 1 (true))
+    "add_element_centers": Determines whether the centers of every element in the mesh
+        should be calculated and added to the output table. Should be passed as int.
+        (Default 1 (true))
+    "add_vertex_locations": Determines whether the coordinate locations of every vertex
+        in the mesh should be included in the output table. Should be passed as int.
+        (Default 1 (true))
 */
 void CONDUIT_BLUEPRINT_API flatten(const conduit::Node &mesh,
                                    const conduit::Node &options,
