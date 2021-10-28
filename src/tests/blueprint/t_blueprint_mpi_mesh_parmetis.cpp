@@ -62,22 +62,21 @@ TEST(blueprint_mpi_parmetis, basic)
             xvals[i] += 6.0;
         }
     }
-    
+
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     // paint a field with parmetis result (WIP)
-<<<<<<< HEAD
+    Node part_opts;
+    part_opts["partitions"] = 2;
     conduit::blueprint::mpi::mesh::generate_partition_field(mesh,
+                                                            part_opts,
                                                             MPI_COMM_WORLD);
-=======
-    conduit::blueprint::mpi::mesh::generate_partition_field(mesh,2,MPI_COMM_WORLD);
->>>>>>> 7946d940c505f4f35fa5a0c505a083b881dde4db
 
     Node s2dmap, d2smap;
     Node &side_coords = side_mesh["coordsets/coords"];
     Node &side_topo = side_mesh["topologies/topo"];
     Node &side_fields = side_mesh["fields"];
-    
+
     // we can't map vert assoced fields yet
     Node opts;
     opts["field_names"].append().set("global_element_ids");
@@ -232,7 +231,11 @@ TEST(blueprint_mpi_parmetis, uniform_adjset)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(local_mesh, info));
 
     // paint a field with parmetis result (WIP)
-    conduit::blueprint::mpi::mesh::generate_partition_field(local_mesh, 3, MPI_COMM_WORLD);
+    Node part_opts;
+    part_opts["partition"] = 3;
+    conduit::blueprint::mpi::mesh::generate_partition_field(local_mesh,
+                                                             part_opts,
+                                                             MPI_COMM_WORLD);
 
     for (int i = 0; i < 8; i++)
     {

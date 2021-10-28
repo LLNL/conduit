@@ -231,11 +231,9 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
 //-----------------------------------------------------------------------------
 void generate_partition_field(conduit::Node &mesh,
-                              int npartitions,
                               MPI_Comm comm)
 {
     Node opts;
-    opts["partitions"] = npartitions;
     generate_partition_field(mesh,opts,comm);
 }
 
@@ -299,8 +297,7 @@ void generate_partition_field(conduit::Node &mesh,
 
     if( options.has_child("partitions") )
     {
-        nparts = (idx_t) options["partitons"].to_int64();
-        nparts = options["partitions"].as_int();
+        nparts = (idx_t) options["partitions"].to_int64();
     }
     // TODO: Should this be an error or use default (discuss more)
     // else
@@ -357,10 +354,10 @@ void generate_partition_field(conduit::Node &mesh,
         }
         
 
-        if(par_rank==1)
-        {
-            dom.print();
-        }
+        // if(par_rank==1)
+        // {
+        //     dom.print();
+        // }
 
         
         
