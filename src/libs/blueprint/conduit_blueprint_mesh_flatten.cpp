@@ -448,17 +448,17 @@ MeshFlattener::set_options(const Node &options)
 
     // "add_domain_info", determines whether domain_id + vertex/element id should
     //   be added to the tables
-    if(options.has_child("add_cell_centers"))
+    if(options.has_child("add_element_centers"))
     {
-        const Node &n_add_cell_centers = options["add_cell_centers"];
+        const Node &n_add_cell_centers = options["add_element_centers"];
         if(n_add_cell_centers.dtype().is_number())
         {
-            this->add_cell_centers = options["add_cell_centers"].to_int() != 0;
+            this->add_cell_centers = options["add_element_centers"].to_int() != 0;
         }
         else
         {
             ok = false;
-            CONDUIT_ERROR("options[" << quote("add_cell_centers") <<
+            CONDUIT_ERROR("options[" << quote("add_element_centers") <<
                 "] must be a number. It will be treated as a boolean (.to_int() != 0).");
         }
     }
