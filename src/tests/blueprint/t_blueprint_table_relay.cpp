@@ -62,3 +62,16 @@ TEST(t_blueprint_table_relay, read_write_relay)
 
     table::compare_to_baseline(read_table, table);
 }
+
+TEST(t_blueprint_table_relay, read_write_multi_table)
+{
+    const std::string filename = "t_blueprint_table_relay_read_write_multi_table.csv";
+
+    Node mesh;
+    blueprint::mesh::examples::spiral(4, mesh);
+
+    Node table, opts;
+    blueprint::mesh::flatten(mesh, opts, table);
+
+    relay::io::save(table, filename);
+}

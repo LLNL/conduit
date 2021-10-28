@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <type_traits>
 
 #include "conduit_log.hpp"
 #include "conduit_blueprint_table.hpp"
@@ -246,7 +247,11 @@ write_multiple_tables(const Node &all_tables, const std::string &base_path,
 static Node &
 add_column(const std::string &name, Node &values)
 {
-    // Add the column to the table
+    if(name.empty())
+    {
+        return values.append();
+    }
+
     std::size_t child_pos = name.rfind(child_sep);
     if(child_pos != std::string::npos)
     {
@@ -267,6 +272,30 @@ add_column(const std::string &name, Node &values)
 
 //-----------------------------------------------------------------------------
 static void
+add_columns(Node &values, std::vector<std::string> &col_names,
+    index_t ncols, const DataType &dtype)
+{
+    if(col_names.empty())
+    {
+        for(index_t i = 0; i < ncols; i++)
+        {
+            Node &col = add_column("", values);
+            col.set_dtype(dtype);
+            col_names.push_back(col.name());
+        }
+    }
+    else
+    {
+        for(const std::string &name : col_names)
+        {
+            Node &col = add_column(name, values);
+            col.set_dtype(dtype);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void
 trim(std::string &str, const char *t = whitespace)
 {
     // ltrim, rtrim
@@ -274,9 +303,160 @@ trim(std::string &str, const char *t = whitespace)
     str.erase(str.find_last_not_of(t) + 1);
 }
 
+
 //-----------------------------------------------------------------------------
+/**
+@brief Reads the first line of the file. Populates "col_names" with the names
+    of each column. If there are no column names "col_names" will be empty.
+@return The number of columns
+*/
+static index_t
+read_column_names(const std::string &line, std::vector<std::string> &col_names,
+    const char sep = ',')
+{
+    col_names.clear();
+    std::size_t start = 0;
+    std::size_t end = line.find(sep);
+    while(end != std::string::npos)
+    {
+        const auto len = end - start;
+        col_names.push_back(line.substr(start, len));
+        trim(col_names.back(), whitespace);
+        // Update positions
+        start = end + 1;
+        end = line.find(sep, start);
+    }
+    // Get the last name
+    col_names.push_back(line.substr(start));
+    trim(col_names.back(), whitespace);
+
+    // Check these are column names and not data
+    bool all_numbers = true;
+    for(const std::string &name : col_names)
+    {
+        std::size_t idx = 0;
+        try
+        {
+            // NOTE: C++ version of this function can throw
+            std::stod(name, &idx);
+        }
+        catch (...)
+        {
+            idx = 0;
+        }
+        if(idx != name.size())
+        {
+            all_numbers = false;
+            break;
+        }
+    }
+
+    // If all numbers then this row should not be treated as column names
+    if(all_numbers)
+    {
+        col_names.clear();
+    }
+    return static_cast<index_t>(col_names.size());
+}
+
+//-----------------------------------------------------------------------------
+template<typename FloatType>
 void
-read_csv(const std::string &path, const Node &, Node &table)
+read_csv_data(std::ifstream &fin, const std::ifstream::pos_type &offset,
+    const std::vector<std::string> &col_names, Node &values,
+    const char sep = ',')
+{
+    static_assert(std::is_floating_point<FloatType>().value,
+        "Function can only read floating point types from CSV file.");
+    std::string line;
+    fin.clear();
+    fin.seekg(offset, fin.beg);
+    index_t row = 0;
+    while(std::getline(fin, line))
+    {
+        std::size_t icol = 0;
+        std::size_t start = 0;
+        std::size_t end = line.find(sep);
+        while(end != std::string::npos)
+        {
+            const auto len = end - start;
+            if(icol > col_names.size())
+            {
+                CONDUIT_ERROR("Error while reading file, row " << row << " contains too many column entries!");
+                return;
+            }
+
+            Node *n = values.fetch_ptr(col_names[icol]);
+            if(!n)
+            {
+                CONDUIT_ERROR("The allocated output table does not contain the path " << quote(col_names[icol]) << ".");
+                return;
+            }
+
+            std::string data = line.substr(start, len);
+            try
+            {
+                if(std::is_same<float, FloatType>().value)
+                {
+                    float *d = static_cast<float*>(n->element_ptr(row));
+                    *d = std::stof(data);
+                }
+                else if(std::is_same<double, FloatType>().value)
+                {
+                    double *d = static_cast<double*>(n->element_ptr(row));
+                    *d = std::stod(data);
+                }
+#ifdef CONDUIT_HAS_LONG_DOUBLE
+                else if(std::is_same<long double, FloatType>().value)
+                {
+                    long double *d = static_cast<long double*>(n->element_ptr(row));
+                    *d = std::stold(data);
+                }
+#endif
+            }
+            catch (...)
+            {
+                CONDUIT_ERROR("Unable to parse row " << row << " in column " << icol << "."
+                    << " The string " << quote(data) << "is not a number.");
+            }
+
+            // Update positions
+            icol++;
+            start = end + 1;
+            end = line.find(sep, start);
+        }
+        // Get the last name
+        if(icol > col_names.size())
+        {
+            CONDUIT_ERROR("Error while reading file, row " << row << " contains too many column entries!");
+            return;
+        }
+
+        Node *n = values.fetch_ptr(col_names[icol]);
+        if(!n)
+        {
+            CONDUIT_ERROR("The allocated output table does not contain the path " << quote(col_names[icol]) << ".");
+            return;
+        }
+
+        std::string data = line.substr(start);
+        float *d = static_cast<float*>(n->element_ptr(row));
+        try
+        {
+            *d = std::stof(data);
+        }
+        catch(const std::exception &e)
+        {
+            CONDUIT_ERROR(e.what());
+            return;
+        }
+        row++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void
+read_single_table(const std::string &path, Node &table)
 {
     table.reset();
     std::ifstream fin(path);
@@ -297,6 +477,14 @@ read_csv(const std::string &path, const Node &, Node &table)
         return;
     }
 
+    std::vector<std::string> column_names;
+    const index_t ncols = read_column_names(first_line, column_names);
+    // If there was no header for the column names, seek back to start
+    if(column_names.empty())
+    {
+        fin.seekg(0, fin.beg);
+    }
+
     // Get number of rows in file
     const auto data_start = fin.tellg();
     std::string line;
@@ -306,112 +494,53 @@ read_csv(const std::string &path, const Node &, Node &table)
         nrows++;
     }
 
-    // Make sure the file is a CSV file.
-    // Q: What if it was one column
-    const char del = ',';
-    std::size_t pos = first_line.find(del);
-    if(pos == std::string::npos)
-    {
-        CONDUIT_ERROR("The file " << quote(path) << "does not appear to contain CSV data.");
-        return;
-    }
-
     // TODO: Handle CSV files without column names
     // Allocate the output table
     const DataType dtype(DataType::FLOAT32_ID, nrows);
-    std::vector<std::string> column_names;
     Node &values = table["values"];
+    add_columns(values, column_names, ncols, dtype);
+
+    if(dtype.is_float())
     {
-        std::size_t start = 0;
-        std::size_t end = first_line.find(del);
-        while(end != std::string::npos)
-        {
-            const auto len = end - start;
-            column_names.push_back(first_line.substr(start, len));
-
-            trim(column_names.back(), whitespace);
-            Node &col = add_column(column_names.back(), values);
-            col.set_dtype(dtype);
-
-            // Update positions
-            start = end + 1;
-            end = first_line.find(del, start);
-        }
-        // Get the last name
-        column_names.push_back(first_line.substr(start));
-        trim(column_names.back(), whitespace);
-        Node &col = add_column(column_names.back(), values);
-        col.set_dtype(dtype);
+        read_csv_data<float>(fin, data_start, column_names, values);
     }
-
-    line.erase();
-    fin.clear();
-    fin.seekg(data_start, fin.beg);
-    index_t row = 0;
-    while(std::getline(fin, line))
+    else if(dtype.is_double())
     {
-        std::size_t icol = 0;
-        std::size_t start = 0;
-        std::size_t end = line.find(del);
-        while(end != std::string::npos)
-        {
-            const auto len = end - start;
-            if(icol > column_names.size())
-            {
-                CONDUIT_ERROR("Error while reading file, row " << row << " contains too many column entries!");
-                return;
-            }
+        read_csv_data<double>(fin, data_start, column_names, values);
+    }
+#ifdef CONDUIT_HAS_LONG_DOUBLE
+    else if(dtype.is_long_double())
+    {
+        read_csv_data<long double>(fin, data_start, column_names, values);
+    }
+#endif
+    else
+    {
+        CONDUIT_ERROR("Unsupported data type for read_csv_data, needs to be a floating point type.");
+    }
+}
 
-            Node *n = values.fetch_ptr(column_names[icol]);
-            if(!n)
-            {
-                CONDUIT_ERROR("The allocated output table does not contain the path " << quote(column_names[icol]) << ".");
-                return;
-            }
+//-----------------------------------------------------------------------------
+static void
+read_many_tables(const std::string &, Node &)
+{
+    // TODO:
+    CONDUIT_ERROR("Cannot read a csv directory - TODO!");
+}
 
-            std::string data = line.substr(start, len);
-            float *d = static_cast<float*>(n->element_ptr(row));
-            try
-            {
-                *d = std::stof(data);
-            }
-            catch(const std::exception &e)
-            {
-                CONDUIT_ERROR(e.what());
-                return;
-            }
+//-----------------------------------------------------------------------------
+void
+read_csv(const std::string &path, const Node &/*opts*/, Node &table)
+{
+    const bool many_tables = utils::is_directory(path);
 
-            // Update positions
-            icol++;
-            start = end + 1;
-            end = line.find(del, start);
-        }
-        // Get the last name
-        if(icol > column_names.size())
-        {
-            CONDUIT_ERROR("Error while reading file, row " << row << " contains too many column entries!");
-            return;
-        }
-
-        Node *n = values.fetch_ptr(column_names[icol]);
-        if(!n)
-        {
-            CONDUIT_ERROR("The allocated output table does not contain the path " << quote(column_names[icol]) << ".");
-            return;
-        }
-
-        std::string data = line.substr(start);
-        float *d = static_cast<float*>(n->element_ptr(row));
-        try
-        {
-            *d = std::stof(data);
-        }
-        catch(const std::exception &e)
-        {
-            CONDUIT_ERROR(e.what());
-            return;
-        }
-        row++;
+    if(!many_tables)
+    {
+        read_single_table(path, table);
+    }
+    else
+    {
+        read_many_tables(path, table);
     }
 }
 
