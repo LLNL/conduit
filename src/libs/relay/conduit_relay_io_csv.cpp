@@ -566,8 +566,9 @@ read_many_tables(const std::string &path, const bool use_float64, Node &table)
     bool is_list = true;
     for(const auto &filename : csv_files)
     {
+        const auto should_start = filename.rfind(utils::file_path_separator()) + 1;
         const auto loc = filename.find(table_list_prefix);
-        if(loc != 0)
+        if(loc != should_start)
         {
             is_list = false;
             break;

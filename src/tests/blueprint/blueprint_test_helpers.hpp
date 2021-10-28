@@ -25,7 +25,7 @@ namespace table
 
 //-----------------------------------------------------------------------------
 void compare_to_baseline(const conduit::Node &test,
-    const conduit::Node &baseline, bool order_matters = false);
+    const conduit::Node &baseline, bool order_matters = true);
 
 }
 //-----------------------------------------------------------------------------
