@@ -448,15 +448,30 @@ read_csv_data(std::ifstream &fin, const std::ifstream::pos_type &offset,
         }
 
         std::string data = line.substr(start);
-        float *d = static_cast<float*>(n->element_ptr(row));
         try
         {
-            *d = std::stof(data);
+            if(std::is_same<float, FloatType>().value)
+            {
+                float *d = static_cast<float*>(n->element_ptr(row));
+                *d = std::stof(data);
+            }
+            else if(std::is_same<double, FloatType>().value)
+            {
+                double *d = static_cast<double*>(n->element_ptr(row));
+                *d = std::stod(data);
+            }
+#ifdef CONDUIT_HAS_LONG_DOUBLE
+            else if(std::is_same<long double, FloatType>().value)
+            {
+                long double *d = static_cast<long double*>(n->element_ptr(row));
+                *d = std::stold(data);
+            }
+#endif
         }
-        catch(const std::exception &e)
+        catch (...)
         {
-            CONDUIT_ERROR(e.what());
-            return;
+            CONDUIT_ERROR("Unable to parse row " << row << " in column " << icol << "."
+                << " The string " << quote(data) << "is not a number.");
         }
         row++;
     }
@@ -464,7 +479,7 @@ read_csv_data(std::ifstream &fin, const std::ifstream::pos_type &offset,
 
 //-----------------------------------------------------------------------------
 static void
-read_single_table(const std::string &path, Node &table)
+read_single_table(const std::string &path, const bool use_float64, Node &table)
 {
     table.reset();
     std::ifstream fin(path);
@@ -504,7 +519,8 @@ read_single_table(const std::string &path, Node &table)
 
     // TODO: Handle CSV files without column names
     // Allocate the output table
-    const DataType dtype(DataType::FLOAT32_ID, nrows);
+    const DataType dtype((use_float64) ? DataType::FLOAT64_ID : DataType::FLOAT32_ID,
+        nrows);
     Node &values = table["values"];
     add_columns(values, column_names, ncols, dtype);
 
@@ -530,7 +546,7 @@ read_single_table(const std::string &path, Node &table)
 
 //-----------------------------------------------------------------------------
 static void
-read_many_tables(const std::string &path, Node &table)
+read_many_tables(const std::string &path, const bool use_float64, Node &table)
 {
     // Path must've been a directory
     std::vector<std::string> dir_contents;
@@ -562,7 +578,7 @@ read_many_tables(const std::string &path, Node &table)
     {
         for(const auto &filename : csv_files)
         {
-            read_single_table(filename, table.append());
+            read_single_table(filename, use_float64, table.append());
         }
     }
     else
@@ -572,24 +588,39 @@ read_many_tables(const std::string &path, Node &table)
             const auto no_ext = filename.size() - 4;
             const auto no_sep = filename.rfind(utils::file_path_separator());
             const auto len = no_ext - no_sep;
-            read_single_table(filename, table[filename.substr(no_sep, len)]);
+            read_single_table(filename, use_float64, table[filename.substr(no_sep, len)]);
         }
     }
 }
 
 //-----------------------------------------------------------------------------
 void
-read_csv(const std::string &path, const Node &/*opts*/, Node &table)
+read_csv(const std::string &path, const Node &opts, Node &table)
 {
     const bool many_tables = utils::is_directory(path);
 
+    bool use_float64 = false;
+    if(opts.has_child("use_float64"))
+    {
+        const Node &n_use_float64 = opts["use_float64"];
+        if(n_use_float64.dtype().is_number())
+        {
+            use_float64 = opts["use_float64"].to_int() != 0;
+        }
+        else
+        {
+            CONDUIT_ERROR("options[" << quote("use_float64") <<
+                "] must be a number. It will be treated as a boolean (.to_int() != 0).");
+        }
+    }
+
     if(!many_tables)
     {
-        read_single_table(path, table);
+        read_single_table(path, use_float64, table);
     }
     else
     {
-        read_many_tables(path, table);
+        read_many_tables(path, use_float64, table);
     }
 }
 
