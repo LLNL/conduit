@@ -59,7 +59,6 @@ Error::Error(const std::string &msg,
  m_line(line),
  m_what("")
 {
-    std::cout << " SOMETHING IS WRONG! " << message() << std::endl;
     m_what = message();
 }
 

@@ -66,7 +66,8 @@ TEST(blueprint_mpi_parmetis, basic)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     // paint a field with parmetis result (WIP)
-    conduit::blueprint::mpi::mesh::generate_partition_field(mesh,MPI_COMM_WORLD);
+    conduit::blueprint::mpi::mesh::generate_partition_field(mesh,
+                                                            MPI_COMM_WORLD);
 
     Node s2dmap, d2smap;
     Node &side_coords = side_mesh["coordsets/coords"];

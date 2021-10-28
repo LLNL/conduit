@@ -44,16 +44,21 @@ namespace mpi
 namespace mesh 
 {
 
-// NOTE: Final Name TBD
-// result is added to the mesh b/c we are multi domain here?
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_partition_field(conduit::Node &mesh,
                                                     MPI_Comm comm);
 
+
+//-----------------------------------------------------------------------------
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      partitions:  # of partitions to use (integer) 
+///         (default ==> # of MPI Tasks)
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_partition_field(conduit::Node &mesh,
-                                                    const conduit::Node &options,
+                                                    const conduit::Node &opts,
                                                     MPI_Comm comm);
 
 //-----------------------------------------------------------------------------

@@ -72,8 +72,24 @@ bool CONDUIT_BLUEPRINT_API is_multi_domain(const conduit::Node &mesh);
 //-------------------------------------------------------------------------
 index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh);
 
+
 //-----------------------------------------------------------------------------
 std::vector<const conduit::Node *> CONDUIT_BLUEPRINT_API domains(const Node &mesh);
+
+
+//-----------------------------------------------------------------------------
+//
+// NOTE: These method variants exist b/c we can't overload on return type to
+// create a non const version of the mesh::domains method above
+
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API domains(const Node &mesh,
+                                   std::vector<const conduit::Node *> &res);
+
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API domains(Node &mesh,
+                                   std::vector<conduit::Node *> &res);
+
 
 // TODO: revisit this name
 // can't overload on return type here, use out ref

@@ -1483,8 +1483,8 @@ mesh::domains(const conduit::Node &mesh)
 
 //-------------------------------------------------------------------------
 void
-mesh::non_empty_domains(conduit::Node &mesh,
-                        std::vector<conduit::Node *> &res)
+mesh::domains(conduit::Node &mesh,
+              std::vector<conduit::Node *> &res)
 {
     // this is a blueprint property, we can assume it will be called
     // only when mesh verify is true. Given that - it is easy to
@@ -1506,6 +1506,30 @@ mesh::non_empty_domains(conduit::Node &mesh,
     }
 }
 
+//-------------------------------------------------------------------------
+void
+mesh::domains(const conduit::Node &mesh,
+              std::vector<const conduit::Node *> &res)
+{
+    // this is a blueprint property, we can assume it will be called
+    // only when mesh verify is true. Given that - it is easy to
+    // aggregate all of the domains into a list
+
+    res.clear();
+
+    if(!mesh::is_multi_domain(mesh))
+    {
+        res.push_back(&mesh);
+    }
+    else if(!mesh.dtype().is_empty())
+    {
+        NodeConstIterator nitr = mesh.children();
+        while(nitr.has_next())
+        {
+            res.push_back(&nitr.next());
+        }
+    }
+}
 
 
 

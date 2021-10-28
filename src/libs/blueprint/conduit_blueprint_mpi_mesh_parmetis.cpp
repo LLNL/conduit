@@ -74,7 +74,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     }
 
     std::vector<Node*> domains;
-    ::conduit::blueprint::mesh::non_empty_domains(mesh,domains);
+    ::conduit::blueprint::mesh::domains(mesh,domains);
 
     // parse options
     std::string topo_name = "";
@@ -257,11 +257,13 @@ void generate_partition_field(conduit::Node &mesh,
     }
 
     std::vector<Node*> domains;
-    ::conduit::blueprint::mesh::non_empty_domains(mesh,domains);
+    ::conduit::blueprint::mesh::domains(mesh,domains);
 
     // parse options
     std::string topo_name = "";
     std::string field_prefix = "";
+    idx_t nparts = (idx_t)global_num_doms;
+
     if( options.has_child("topology") )
     {
         topo_name = options["topology"].as_string();
@@ -277,6 +279,11 @@ void generate_partition_field(conduit::Node &mesh,
     if( options.has_child("field_prefix") )
     {
         field_prefix = options["field_prefix"].as_string();
+    }
+
+    if( options.has_child("partitions") )
+    {
+        nparts = (idx_t) options["partitons"].to_int64();
     }
 
     // we now have global element and vertex ids
@@ -452,7 +459,6 @@ void generate_partition_field(conduit::Node &mesh,
     idx_t numflag = 0; // C-style numbering
     idx_t ncon = 1; // the number of weights per vertex
     idx_t ncommonnodes = 4; // we have quads
-    idx_t nparts = 2; //
     // equal weights for each proc
     real_t tpwgts[] = {0.5,0.5};
     real_t ubvec = 1.050000;
