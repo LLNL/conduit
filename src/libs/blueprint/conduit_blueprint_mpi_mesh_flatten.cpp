@@ -97,7 +97,7 @@ bool
 ParallelMeshFlattener::set_options(const Node &opts)
 {
     bool ok = MeshFlattener::set_options(opts);
-    // "add_vertex_locations", boolean
+    // "add_rank", boolean
     if(opts.has_child("add_rank"))
     {
         const Node &n_add_vertex_locations = opts["add_rank"];
@@ -402,9 +402,9 @@ ParallelMeshFlattener::gather_values(int nrows, int *rank_counts,
         if(ncomps > 0)
         {
             // mcarray
-            for(index_t i = 0; i < ncomps; i++)
+            for(index_t j = 0; j < ncomps; j++)
             {
-                Node &column = value[i];
+                Node &column = value[j];
                 void *ptr = column.element_ptr(0);
                 const auto mtype = relay::mpi::conduit_dtype_to_mpi_dtype(column.dtype());
                 // DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << nrows
@@ -712,6 +712,8 @@ ParallelMeshFlattener::flatten_many_domains(const Node &mesh, Node &output) cons
     }
 
     gather_results(my_mesh_info, global_metadata, output);
+
+    // TODO: REmove empty tables
     DEBUG_PRINT("Rank " << rank << " done flattening.");
 }
 

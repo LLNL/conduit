@@ -673,6 +673,8 @@ MeshFlattener::get_fields_to_flatten(const Node &mesh,
             for(index_t i = 0; i < ndomains; i++)
             {
                 const Node &domain = mesh[i];
+
+                // TODO: Check that fields exist
                 const Node &fields = domain["fields"];
                 const Node *field = fields.fetch_ptr(field_name);
                 if(field)
