@@ -231,9 +231,11 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
 //-----------------------------------------------------------------------------
 void generate_partition_field(conduit::Node &mesh,
+                              int npartitions,
                               MPI_Comm comm)
 {
     Node opts;
+    opts["partitions"] = npartitions;
     generate_partition_field(mesh,opts,comm);
 }
 
@@ -275,6 +277,20 @@ void generate_partition_field(conduit::Node &mesh,
         const Node &dom_topo = domains[0]->fetch("topologies")[0];
         topo_name = dom_topo.name();
     }
+    idx_t ncommonnodes;
+    if ( options.has_child("parmetis_ncommonnodes") )
+    {
+        ncommonnodes = options["parmetis_ncommonnodes"].as_int();
+    }
+    else
+    {
+        // in 2D, zones adjacent if they share 2 nodes (edge)
+        // in 3D, zones adjacent if they share 3 nodes (plane)
+        std::string coordset_name
+            = domains[0]->fetch(std::string("topologies/") + topo_name + "/coordset").as_string();
+        const Node& coordset = domains[0]->fetch(std::string("coordsets/") + coordset_name);
+        ncommonnodes = conduit::blueprint::mesh::coordset::dims(coordset);
+    }
 
     if( options.has_child("field_prefix") )
     {
@@ -284,7 +300,14 @@ void generate_partition_field(conduit::Node &mesh,
     if( options.has_child("partitions") )
     {
         nparts = (idx_t) options["partitons"].to_int64();
+        nparts = options["partitions"].as_int();
     }
+    // TODO: Should this be an error or use default (discuss more)
+    // else
+    // {
+    //     CONDUIT_ERROR("Missing required option in generate_partition_field(): "
+    //                   << "expected \"partitions\" field with number of partitions.");
+    // }
 
     // we now have global element and vertex ids
     // we just need to do some counting and then 
@@ -315,7 +338,17 @@ void generate_partition_field(conduit::Node &mesh,
 
             // for unstrcut poly: 
             // add up all the sizes, don't use offsets?
-            uint64_array sizes_vals = dom_topo["elements/sizes"].value();
+            Node sizes_node;
+            if (dom_topo["elements/sizes"].dtype().is_uint64() &&
+                dom_topo["elements/sizes"].dtype().is_compact())
+            {
+                sizes_node.set_external(dom_topo["elements/sizes"]);
+            }
+            else
+            {
+                dom_topo["elements/sizes"].to_uint64_array(sizes_node);
+            }
+            uint64_array sizes_vals = sizes_node.value();
             for(index_t i=0; i < sizes_vals.number_of_elements();i++)
             {
                local_total_ele_to_verts_size += sizes_vals[i];
@@ -404,11 +437,21 @@ void generate_partition_field(conduit::Node &mesh,
         if(dom["topologies"].has_child(topo_name))
         {
             // get the topo node
-            const Node &dom_topo = dom["topologies"][topo_name];
+            Node &dom_topo = dom["topologies"][topo_name];
             const Node &dom_g_vert_ids = dom["fields"][field_prefix + "global_vertex_ids"]["values"];
 
             // for unstruct poly: use sizes
-            uint64_array sizes_vals = dom_topo["elements/sizes"].value();
+            Node sizes_node;
+            if (dom_topo["elements/sizes"].dtype().is_uint64() &&
+                dom_topo["elements/sizes"].dtype().is_compact())
+            {
+                sizes_node.set_external(dom_topo["elements/sizes"]);
+            }
+            else
+            {
+                dom_topo["elements/sizes"].to_uint64_array(sizes_node);
+            }
+            uint64_array sizes_vals = sizes_node.value();
             for(index_t i=0; i < sizes_vals.number_of_elements(); i++)
             {
                 eptr_vals[eptr_idx] = curr_offset;
@@ -422,7 +465,17 @@ void generate_partition_field(conduit::Node &mesh,
             // for each element:
             //   loop over each local vertex, and use global vert map to add and entry to eind
 
-            uint64_array conn_vals = dom_topo["elements/connectivity"].value();
+            Node conn_node;
+            if (dom_topo["elements/connectivity"].dtype().is_uint64() &&
+                dom_topo["elements/connectivity"].dtype().is_compact())
+            {
+                conn_node.set_external(dom_topo["elements/connectivity"]);
+            }
+            else
+            {
+                dom_topo["elements/connectivity"].to_uint64_array(conn_node);
+            }
+            uint64_array conn_vals = conn_node.value();
 
             o2mrelation::O2MIterator o2miter(dom_topo["elements"]);
             while(o2miter.has_next(conduit::blueprint::o2mrelation::ONE))
@@ -458,9 +511,8 @@ void generate_partition_field(conduit::Node &mesh,
     idx_t wgtflag = 0; // weights are NULL
     idx_t numflag = 0; // C-style numbering
     idx_t ncon = 1; // the number of weights per vertex
-    idx_t ncommonnodes = 4; // we have quads
     // equal weights for each proc
-    real_t tpwgts[] = {0.5,0.5};
+    std::vector<real_t> tpwgts(nparts, 1.0/nparts);
     real_t ubvec = 1.050000;
 
     // options == extra output
@@ -489,7 +541,7 @@ void generate_partition_field(conduit::Node &mesh,
                                                 &ncon,
                                                 &ncommonnodes,
                                                 &nparts,
-                                                tpwgts,
+                                                tpwgts.data(),
                                                 &ubvec,
                                                 parmetis_opts,
                                                 &edgecut,
