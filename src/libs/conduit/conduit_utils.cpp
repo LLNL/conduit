@@ -25,6 +25,7 @@
 #undef min
 #undef max
 #else
+#include <dirent.h>
 #include <time.h>
 #endif
 
@@ -509,6 +510,97 @@ is_directory(const std::string &path)
             res = true;
     }
     return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+list_directory_contents(const std::string &path,
+                        std::vector<std::string> &contents,
+                        bool ignore_dot)
+{
+    contents.clear();
+    if(path.empty())
+    {
+        return false;
+    }
+
+    // If the given path doesn't end with a path sep, add it to the end
+    const std::string directory =
+        (path.substr(path.size()-1) != file_path_sep_string)
+            ? (path + file_path_sep_string)
+            : path;
+
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+    // NOTE: Adapted from VisIt
+    if(path == "My Computer")
+    {
+        // Add the drives to the list.
+        char buf[200];
+        DWORD bufLen = 200;
+        DWORD slen = GetLogicalDriveStrings(200, buf);
+
+        if(slen > 0)
+        {
+            char *ptr = buf;
+            while(*ptr != 0)
+            {
+                contents.push_back(ptr);
+                ptr += (contents.back().size() + 1);
+            }
+        }
+    }
+    else
+    {
+        // Search all files in the given directory
+        std::string search_path(directory + "*");
+        WIN32_FIND_DATA fd;
+        HANDLE dirHandle = FindFirstFile(search_path.c_str(), &fd);
+        if(dirHandle != INVALID_HANDLE_VALUE)
+        {
+            // Iterate the contents of the directory using FindNextFile
+            do
+            {
+                const std::string name(fd.cFileName);
+                if(name.empty())
+                {
+                    continue;
+                }
+
+                if(ignore_dot && name[0] == '.')
+                {
+                    continue;
+                }
+                contents.push_back(directory + name);
+            } while(FindNextFile(dirHandle, &fd));
+            FindClose(dirHandle);
+        }
+    }
+#else
+    DIR *dir;
+    dirent *ent;
+    // Open the directory
+    dir = opendir(path.c_str());
+    if(dir)
+    {
+        // Iterate the contents of the directory using ent
+        while((ent = readdir(dir)) != NULL)
+        {
+            const std::string name(ent->d_name);
+            if(name.empty())
+            {
+                continue;
+            }
+
+            if(ignore_dot && name[0] == '.')
+            {
+                continue;
+            }
+
+            contents.push_back(directory + ent->d_name);
+        }
+    }
+#endif
+    return !contents.empty();
 }
 
 //-----------------------------------------------------------------------------

@@ -79,11 +79,11 @@ compare_to_baseline_values(const Node &test, const Node &baseline)
 
 //-----------------------------------------------------------------------------
 void compare_to_baseline(const conduit::Node &test,
-    const conduit::Node &baseline)
+    const conduit::Node &baseline, bool order_matters)
 {
     Node info;
-    ASSERT_TRUE(blueprint::table::verify(baseline, info));
-    ASSERT_TRUE(blueprint::table::verify(test, info));
+    ASSERT_TRUE(blueprint::table::verify(baseline, info)) << info.to_json();
+    ASSERT_TRUE(blueprint::table::verify(test, info)) << info.to_json();
     if(baseline.has_child("values"))
     {
         const Node &baseline_values = baseline["values"];
@@ -95,10 +95,20 @@ void compare_to_baseline(const conduit::Node &test,
         ASSERT_EQ(baseline.number_of_children(), test.number_of_children());
         for(index_t i = 0; i < baseline.number_of_children(); i++)
         {
-            EXPECT_EQ(baseline[i].name(), test[i].name());
-            const Node &baseline_values = baseline[i]["values"];
-            const Node &test_values = test[i]["values"];
-            compare_to_baseline_values(test_values, baseline_values);
+            if(order_matters)
+            {
+                ASSERT_EQ(baseline[i].name(), test[i].name());
+                const Node &baseline_values = baseline[i]["values"];
+                const Node &test_values = test[i]["values"];
+                compare_to_baseline_values(test_values, baseline_values);
+            }
+            else
+            {
+                ASSERT_TRUE(test.has_child(baseline[i].name()));
+                const Node &b = baseline[i];
+                const Node &baseline_values = b["values"];
+                const Node &test_values = test[b.name()]["values"];
+            }
         }
     }
 }

@@ -337,6 +337,23 @@ namespace utils
      bool CONDUIT_API is_directory(const std::string &path);
 
 //-----------------------------------------------------------------------------
+/// Lists the pathnames contained in the given directory
+///
+/// Queries the system for the contents of the given directory.
+/// Does not perform any checks on the returned filenames, could be
+/// directories or files (anything a directory may contain).
+///
+/// Param "directory" must be the path to a directory.
+/// Param "ignore_dot" ignores any items starting with '.'
+///   (ie: "." or ".." or ".dotfile"), defaulted to true.
+/// returns false if there was an error opening the provided directory,
+/// true otherwise.
+//-----------------------------------------------------------------------------
+     bool CONDUIT_API list_directory_contents(const std::string &directory,
+                                              std::vector<std::string> &contents,
+                                              bool ignore_dot = true);
+
+//-----------------------------------------------------------------------------
      index_t CONDUIT_API file_size(const std::string &path);
 
 //-----------------------------------------------------------------------------

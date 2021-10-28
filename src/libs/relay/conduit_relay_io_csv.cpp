@@ -21,8 +21,16 @@
 
 using conduit::utils::log::quote;
 
+// Some constants used by writer/reader
+
+// Child separator used by writer to name columns
 const char child_sep = '/';
+
+// Default argument to trim
 const char *whitespace = " \t\n\r\f\v";
+
+// Prefix used for file names when the given table collection is a list
+const std::string table_list_prefix = "table_list_";
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -227,7 +235,7 @@ write_multiple_tables(const Node &all_tables, const std::string &base_path,
         {
             const Node &table = all_tables[i];
             const std::string full_path = base_path + utils::file_path_separator()
-                + "table_list_" + std::to_string(i) + ".csv";
+                + table_list_prefix + std::to_string(i) + ".csv";
             write_single_table(table, full_path, opts);
         }
     }
@@ -522,10 +530,51 @@ read_single_table(const std::string &path, Node &table)
 
 //-----------------------------------------------------------------------------
 static void
-read_many_tables(const std::string &, Node &)
+read_many_tables(const std::string &path, Node &table)
 {
-    // TODO:
-    CONDUIT_ERROR("Cannot read a csv directory - TODO!");
+    // Path must've been a directory
+    std::vector<std::string> dir_contents;
+    utils::list_directory_contents(path, dir_contents);
+
+    // We will only attempt to read the csv files
+    std::vector<std::string> csv_files;
+    for(const auto &filename : dir_contents)
+    {
+        if(utils::is_file(filename)
+            && filename.substr(filename.length() - 4) == ".csv")
+        {
+            csv_files.push_back(filename);
+        }
+    }
+
+    bool is_list = true;
+    for(const auto &filename : csv_files)
+    {
+        const auto loc = filename.find(table_list_prefix);
+        if(loc != 0)
+        {
+            is_list = false;
+            break;
+        }
+    }
+
+    if(is_list)
+    {
+        for(const auto &filename : csv_files)
+        {
+            read_single_table(filename, table.append());
+        }
+    }
+    else
+    {
+        for(const auto &filename : csv_files)
+        {
+            const auto no_ext = filename.size() - 4;
+            const auto no_sep = filename.rfind(utils::file_path_separator());
+            const auto len = no_ext - no_sep;
+            read_single_table(filename, table[filename.substr(no_sep, len)]);
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
