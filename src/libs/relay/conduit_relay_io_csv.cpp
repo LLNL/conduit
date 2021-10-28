@@ -53,38 +53,6 @@ namespace io
 // Static functions, internal types
 
 //-----------------------------------------------------------------------------
-struct OptionsCsv {
-    int column_width = 0;
-};
-
-//-----------------------------------------------------------------------------
-/**
-@brief Initialize an OptionsCsv with default values then update with values
-    from options node.
-*/
-static OptionsCsv
-parse_options(const Node &options)
-{
-    OptionsCsv retval;
-    retval.column_width = 0;
-    if(options.has_child("fixed_width"))
-    {
-        const Node &fixed_width = options["fixed_width"];
-        if(fixed_width.dtype().is_integer())
-        {
-            retval.column_width = fixed_width.to_int();
-            if(retval.column_width < 0) retval.column_width = 0;
-        }
-        else
-        {
-            CONDUIT_INFO("Option " << quote("fixed_width") << "passed to"
-                << " write_csv, but it is not an integer. Ignored.");
-        }
-    }
-    return retval;
-}
-
-//-----------------------------------------------------------------------------
 static index_t
 get_nrows(const Node &table)
 {
@@ -158,8 +126,7 @@ write_element(const Node &e, std::ostream &fout)
 
 //-----------------------------------------------------------------------------
 static void
-write_row_based(const Node &table, const std::string &path,
-    const OptionsCsv &)
+write_row_based(const Node &table, const std::string &path)
 {
     const Node &values = table["values"];
 
@@ -210,17 +177,15 @@ write_row_based(const Node &table, const std::string &path,
 
 //-----------------------------------------------------------------------------
 static void
-write_single_table(const Node &table, const std::string &path,
-    const OptionsCsv &options)
+write_single_table(const Node &table, const std::string &path)
 {
     // TODO: Write column based writer and benchmark performance
-    write_row_based(table, path, options);
+    write_row_based(table, path);
 }
 
 //-----------------------------------------------------------------------------
 static void
-write_multiple_tables(const Node &all_tables, const std::string &base_path,
-    const OptionsCsv &opts)
+write_multiple_tables(const Node &all_tables, const std::string &base_path)
 {
     const index_t ntables = all_tables.number_of_children();
     if(ntables < 1)
@@ -236,7 +201,7 @@ write_multiple_tables(const Node &all_tables, const std::string &base_path,
             const Node &table = all_tables[i];
             const std::string full_path = base_path + utils::file_path_separator()
                 + table_list_prefix + std::to_string(i) + ".csv";
-            write_single_table(table, full_path, opts);
+            write_single_table(table, full_path);
         }
     }
     else // if(table.dtype().is_object())
@@ -246,7 +211,7 @@ write_multiple_tables(const Node &all_tables, const std::string &base_path,
             const Node &table = all_tables[i];
             const std::string full_path = base_path + utils::file_path_separator()
                 + table.name() + ".csv";
-            write_single_table(table, full_path, opts);
+            write_single_table(table, full_path);
         }
     }
 }
@@ -303,6 +268,7 @@ add_columns(Node &values, std::vector<std::string> &col_names,
 }
 
 //-----------------------------------------------------------------------------
+// Q: Should this go in conduit utilities?
 static void
 trim(std::string &str, const char *t = whitespace)
 {
@@ -627,7 +593,7 @@ read_csv(const std::string &path, const Node &opts, Node &table)
 
 //-----------------------------------------------------------------------------
 void
-write_csv(const Node &table, const std::string &path, const Node &options)
+write_csv(const Node &table, const std::string &path, const Node &)
 {
     Node info;
     const bool ok = blueprint::table::verify(table, info);
@@ -637,15 +603,17 @@ write_csv(const Node &table, const std::string &path, const Node &options)
             << "blueprint table!");
     }
 
-    const OptionsCsv opts = parse_options(options);
+    // IDEA: Support a "fixed_width" option and write the file
+    //  one column at a time instead of one row at a time.
+    // Benchmark performance vs row-based writer.
 
     if(table.has_child("values"))
     {
-        write_single_table(table, path, opts);
+        write_single_table(table, path);
     }
     else
     {
-        write_multiple_tables(table, path, opts);
+        write_multiple_tables(table, path);
     }
 }
 
