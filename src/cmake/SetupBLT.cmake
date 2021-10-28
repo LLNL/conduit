@@ -33,10 +33,10 @@ if(ENABLE_MPI)
     #set(CONDUIT_MPI_USES_CMAKE_TARGETS OFF CACHE BOOL "")
     # on some platforms (mostly cray systems) folks skip mpi
     # detection in BLT by setting ENABLE_FIND_MPI = OFF
-    # in these cases, we need to set FOUND_MPI = TRUE,
-    # since the rest of our cmake logic to include MPI uses FOUND_MPI
+    # in these cases, we need to set MPI_FOUND = TRUE,
+    # since the rest of our cmake logic to include MPI uses MPI_FOUND
     if(NOT ENABLE_FIND_MPI)
-        set(FOUND_MPI ON CACHE BOOL "")
+        set(MPI_FOUND ON CACHE BOOL "")
     endif()
 
     # adjust MPI from BLT
