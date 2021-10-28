@@ -316,7 +316,8 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${COMPILER_CC}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${COMPILER_CXX}"; fi
-           if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${COMPILER_FC}"; fi 
+           if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${COMPILER_FC}"; fi
+           if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMPIEXEC_NUMPROC_FLAG=-n"; fi
            # configure
            cmake ${CMAKE_OPTS} ../src
         displayName: 'Configure with CMake'
