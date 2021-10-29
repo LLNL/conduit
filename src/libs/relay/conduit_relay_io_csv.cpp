@@ -9,11 +9,13 @@
 //-----------------------------------------------------------------------------
 #include "conduit_relay_io_csv.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <type_traits>
 
 #include "conduit_log.hpp"
@@ -543,9 +545,36 @@ read_many_tables(const std::string &path, const bool use_float64, Node &table)
 
     if(is_list)
     {
-        for(const auto &filename : csv_files)
+        // Extract the index number out of the name
+        using idx_pair = std::pair<int, const std::string*>;
+        std::vector<idx_pair> list_idxs;
+        list_idxs.reserve(csv_files.size());
+        for(const std::string &name : csv_files)
         {
-            read_single_table(filename, use_float64, table.append());
+            const auto offset = name.rfind(table_list_prefix) + table_list_prefix.size();
+            int idx = std::numeric_limits<int>::max();
+            std::cout << name.substr(offset) << std::endl;
+            try {
+                idx = std::stoi(name.substr(offset));
+            }
+            catch (...)
+            {
+                idx = std::numeric_limits<int>::max();
+            }
+            list_idxs.push_back({idx, &name});
+        }
+
+        // Sort buy the index number
+        std::sort(list_idxs.begin(), list_idxs.end(),
+            [&](const idx_pair &p0, const idx_pair &p1)
+        {
+            return p0.first < p1.first;
+        });
+
+        for(const auto &pair : list_idxs)
+        {
+            // std::cout << pair.first << " " << *pair.second << std::endl;
+            read_single_table(*pair.second, use_float64, table.append());
         }
     }
     else
