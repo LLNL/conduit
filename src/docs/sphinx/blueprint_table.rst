@@ -37,7 +37,7 @@ An example of a *table* blueprint in yaml format:
             y: [0, 1, 2, 3]
             z: [0, 1, 2, 3]
 
-An example of a *table* blueprint containing multiple tables in yaml format:
+An example of a collection of *tables* in yaml format:
 
 .. code:: yaml
 
