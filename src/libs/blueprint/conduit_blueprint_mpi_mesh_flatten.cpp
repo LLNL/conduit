@@ -527,23 +527,6 @@ ParallelMeshFlattener::make_local_allocations(const MeshInfo &info,
         }
     }
 
-    // Add domain information to each table
-    if(this->add_domain_info)
-    {
-        const DataType dt_index_t = DataType::index_t(1);
-        allocate_column(vertex_values["domain_id"], info.nverts, dt_index_t.id());
-        allocate_column(vertex_values["vertex_id"], info.nverts, dt_index_t.id());
-        allocate_column(element_values["domain_id"], info.nelems, dt_index_t.id());
-        allocate_column(element_values["element_id"], info.nelems, dt_index_t.id());
-    }
-
-    if(this->add_rank)
-    {
-        const DataType dt_index_t = DataType::index_t(1);
-        allocate_column(vertex_values["mpi_rank"], info.nverts, dt_index_t.id());
-        allocate_column(element_values["mpi_rank"], info.nelems, dt_index_t.id());
-    }
-
     // Allocate fields output
     for(index_t i = 0; i < (index_t)fi.field_names.size(); i++)
     {
@@ -571,6 +554,37 @@ ParallelMeshFlattener::make_local_allocations(const MeshInfo &info,
         else
         {
             allocate_column(table_values[name], nrows, dtype);
+        }
+    }
+
+    // Add domain / rank information to each table
+    // Only if the table contains data.
+    const DataType dt_index_t = DataType::index_t(1);
+    if(vertex_values.number_of_children() > 0)
+    {
+        if(this->add_domain_info)
+        {
+            allocate_column(vertex_values["domain_id"], info.nverts, dt_index_t.id());
+            allocate_column(vertex_values["vertex_id"], info.nverts, dt_index_t.id());
+        }
+
+        if(this->add_rank)
+        {
+            allocate_column(vertex_values["mpi_rank"], info.nverts, dt_index_t.id());
+        }
+    }
+
+    if(element_values.number_of_children() > 0)
+    {
+        if(this->add_domain_info)
+        {
+            allocate_column(element_values["domain_id"], info.nelems, dt_index_t.id());
+            allocate_column(element_values["element_id"], info.nelems, dt_index_t.id());
+        }
+
+        if(this->add_rank)
+        {
+            allocate_column(element_values["mpi_rank"], info.nelems, dt_index_t.id());
         }
     }
 }
@@ -609,23 +623,6 @@ ParallelMeshFlattener::make_root_allocations(const MeshMetaData &mdata,
         }
     }
 
-    // Add domain information to each table
-    if(this->add_domain_info)
-    {
-        const DataType dt_index_t = DataType::index_t(1);
-        allocate_column(vertex_values["domain_id"], mdata.nverts, dt_index_t.id());
-        allocate_column(vertex_values["vertex_id"], mdata.nverts, dt_index_t.id());
-        allocate_column(element_values["domain_id"], mdata.nelems, dt_index_t.id());
-        allocate_column(element_values["element_id"], mdata.nelems, dt_index_t.id());
-    }
-
-    if(this->add_rank)
-    {
-        const DataType dt_index_t = DataType::index_t(1);
-        allocate_column(vertex_values["mpi_rank"], mdata.nverts, dt_index_t.id());
-        allocate_column(element_values["mpi_rank"], mdata.nelems, dt_index_t.id());
-    }
-
     // Allocate fields output
     for(index_t i = 0; i < (index_t)fi.field_names.size(); i++)
     {
@@ -654,6 +651,52 @@ ParallelMeshFlattener::make_root_allocations(const MeshMetaData &mdata,
         {
             allocate_column(table_values[name], nrows, dtype);
         }
+    }
+
+    // Add domain / rank information to each table
+    // Only if the table contains data.
+    const DataType dt_index_t = DataType::index_t(1);
+    if(vertex_values.number_of_children() > 0)
+    {
+        if(this->add_domain_info)
+        {
+            allocate_column(vertex_values["domain_id"], mdata.nverts, dt_index_t.id());
+            allocate_column(vertex_values["vertex_id"], mdata.nverts, dt_index_t.id());
+        }
+
+        if(this->add_rank)
+        {
+            allocate_column(vertex_values["mpi_rank"], mdata.nverts, dt_index_t.id());
+        }
+    }
+
+    if(element_values.number_of_children() > 0)
+    {
+        if(this->add_domain_info)
+        {
+            allocate_column(element_values["domain_id"], mdata.nelems, dt_index_t.id());
+            allocate_column(element_values["element_id"], mdata.nelems, dt_index_t.id());
+        }
+
+        if(this->add_rank)
+        {
+            allocate_column(element_values["mpi_rank"], mdata.nelems, dt_index_t.id());
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+ParallelMeshFlattener::cleanup_output(Node &output) const
+{
+    // On all ranks other than root, remove data.
+    if(rank != root)
+    {
+        output.reset();
+    }
+    else
+    {
+        blueprint::mesh::MeshFlattener::cleanup_output(output);
     }
 }
 
@@ -713,7 +756,9 @@ ParallelMeshFlattener::flatten_many_domains(const Node &mesh, Node &output) cons
 
     gather_results(my_mesh_info, global_metadata, output);
 
-    // TODO: REmove empty tables
+    cleanup_output(output);
+
+    // TODO: Remove empty tables
     DEBUG_PRINT("Rank " << rank << " done flattening.");
 }
 

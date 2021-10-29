@@ -162,6 +162,12 @@ protected:
     void generate_element_centers(const Node &topo, const Node &explicit_cset,
         Node &output, index_t offset) const;
 
+    /**
+    @brief Inspects the output node and removes tables that do not have any
+        columns.
+    */
+    virtual void cleanup_output(Node &output) const;
+
     // TODO: Consider what we will do with material based fields, more tables? Separate option?
     void flatten_single_domain(const Node &mesh, Node &output,
         const std::vector<std::string> &fields_to_flatten, index_t domain_id,
