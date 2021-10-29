@@ -766,10 +766,11 @@ MeshFlattener::default_initialize_column(Node &column) const
     const bool is_integer = column.dtype().is_integer();
 #define DEFAULT_INITIALIZE_COLUMN_IMPL(Type, default_value)\
 {\
+    Type dv = static_cast<Type>(default_value); \
     Type *data_ptr = (Type*)column.element_ptr(0);\
     Type *const data_ptr_end = data_ptr + column.dtype().number_of_elements();\
     while(data_ptr != data_ptr_end) {\
-        *data_ptr++ = static_cast<Type>(default_value);\
+        *data_ptr++ = dv;\
     }\
 }
     // Nodes calloc their data, no need to re-set everything to 0.

@@ -198,9 +198,9 @@ bool verify(const conduit::Node &n,
 }
 
 //-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &,
-                                  const conduit::Node &,
-                                  conduit::Node &info)
+bool verify(const std::string &,
+            const conduit::Node &,
+            conduit::Node &info)
 {
     // Table doesn't currently provide any nested protocols
 
