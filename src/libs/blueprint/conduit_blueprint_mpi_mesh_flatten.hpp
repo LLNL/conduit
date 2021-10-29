@@ -111,6 +111,8 @@ protected:
         const MeshInfo &my_info,
         Node &output) const;
 
+    virtual void cleanup_output(Node &output) const override;
+
     virtual void flatten_many_domains(const Node &mesh,
                                       Node &output) const override;
 

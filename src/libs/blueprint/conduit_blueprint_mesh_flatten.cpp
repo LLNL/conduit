@@ -673,10 +673,7 @@ MeshFlattener::get_fields_to_flatten(const Node &mesh,
             for(index_t i = 0; i < ndomains; i++)
             {
                 const Node &domain = mesh[i];
-
-                // TODO: Check that fields exist
-                const Node &fields = domain["fields"];
-                const Node *field = fields.fetch_ptr(field_name);
+                const Node *field = domain.fetch_ptr("fields/" + field_name);
                 if(field)
                 {
                     if(check_field_supported(*field, topo_name))
@@ -1034,6 +1031,32 @@ MeshFlattener::generate_element_centers(const Node &topo,
 
 //-----------------------------------------------------------------------------
 void
+MeshFlattener::cleanup_output(Node &output) const
+{
+    const auto clean_table = [&](const std::string &name) {
+        if(output[name].dtype().is_empty())
+        {
+            output.remove_child(name);
+        }
+        else
+        {
+            // If it wasn't empty make sure it contains
+            //  data in values.
+            Node &table = output[name];
+            if(table["values"].dtype().is_empty()
+                || table["values"].number_of_children() == 0)
+            {
+                output.remove_child(name);
+            }
+        }
+    };
+
+    clean_table("vertex_data");
+    clean_table("element_data");
+}
+
+//-----------------------------------------------------------------------------
+void
 MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
     const std::vector<std::string> &fields_to_flatten, index_t domain_id,
     index_t vert_offset, index_t elem_offset) const
@@ -1073,7 +1096,6 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
     }
 
     // Add domain_id + vertex/element ids to their respective tables
-    if(this->add_domain_info)
     {
         const auto set_domain_id = [domain_id](index_t, index_t &value) {
             value = domain_id;
@@ -1082,17 +1104,25 @@ MeshFlattener::flatten_single_domain(const Node &mesh, Node &output,
             value = i;
         };
 
-        // Vertex table values
-        utils::for_each_in_range<index_t>(vert_table["values/domain_id"], vert_offset,
-            vert_offset + nverts, set_domain_id);
-        utils::for_each_in_range<index_t>(vert_table["values/vertex_id"], vert_offset,
-            vert_offset + nverts, set_id);
+        // Only add if allocated
+        if(vert_table.has_path("values/domain_id")
+            && vert_table.has_path("values/vertex_id"))
+        {
+            utils::for_each_in_range<index_t>(vert_table["values/domain_id"],
+                vert_offset, vert_offset + nverts, set_domain_id);
+            utils::for_each_in_range<index_t>(vert_table["values/vertex_id"],
+                vert_offset, vert_offset + nverts, set_id);
+        }
 
-        // Element table values
-        utils::for_each_in_range<index_t>(elem_table["values/domain_id"], elem_offset,
-            elem_offset + nelems, set_domain_id);
-        utils::for_each_in_range<index_t>(elem_table["values/element_id"], elem_offset,
-            elem_offset + nelems, set_id);
+        if(elem_table.has_path("values/domain_id")
+            && elem_table.has_path("values/element_id"))
+        {
+            // Element table values
+            utils::for_each_in_range<index_t>(elem_table["values/domain_id"],
+                elem_offset, elem_offset + nelems, set_domain_id);
+            utils::for_each_in_range<index_t>(elem_table["values/element_id"],
+                elem_offset, elem_offset + nelems, set_id);
+        }
     }
 
     // Add fields to their respective tables
@@ -1172,16 +1202,6 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
         }
     }
 
-    // Add domain information to each table
-    if(this->add_domain_info)
-    {
-        const DataType dt_index_t = DataType::index_t(1);
-        allocate_column(vertex_table["values/domain_id"], info.nverts, dt_index_t.id());
-        allocate_column(vertex_table["values/vertex_id"], info.nverts, dt_index_t.id());
-        allocate_column(element_table["values/domain_id"], info.nelems, dt_index_t.id());
-        allocate_column(element_table["values/element_id"], info.nelems, dt_index_t.id());
-    }
-
     // Allocate fields output
     std::vector<std::string> fields_to_flatten;
     get_fields_to_flatten(mesh, get_topology(mesh[0]).name(), fields_to_flatten);
@@ -1215,6 +1235,27 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
         }
     }
 
+    // Add domain / rank information to each table
+    // Only if the table contains data.
+    const DataType dt_index_t = DataType::index_t(1);
+    if(vertex_table["values"].number_of_children() > 0)
+    {
+        if(this->add_domain_info)
+        {
+            allocate_column(vertex_table["values/domain_id"], info.nverts, dt_index_t.id());
+            allocate_column(vertex_table["values/vertex_id"], info.nverts, dt_index_t.id());
+        }
+    }
+
+    if(element_table["values"].number_of_children() > 0)
+    {
+        if(this->add_domain_info)
+        {
+            allocate_column(element_table["values/domain_id"], info.nelems, dt_index_t.id());
+            allocate_column(element_table["values/element_id"], info.nelems, dt_index_t.id());
+        }
+    }
+
     DEBUG_PRINT("Table allocation:" << output.schema().to_json() << std::endl);
 
     // Flatten each domain
@@ -1226,16 +1267,7 @@ MeshFlattener::flatten_many_domains(const Node &mesh, Node &output) const
         elem_offset += info.elems_per_domain[i];
     }
 
-    // TODO: Clear material tables if they end up existing
-    if(output["vertex_data"].dtype().is_empty())
-    {
-        output.remove_child("vertex_data");
-    }
-
-    if(output["element_data"].dtype().is_empty())
-    {
-        output.remove_child("element_data");
-    }
+    cleanup_output(output);
 }
 
 }
