@@ -1193,7 +1193,7 @@ topology::unstructured::points(const Node &n,
     const ShapeType topo_shape(ntemp);
 
     std::set<index_t> pidxs;
-    if(!topo_shape.is_polyhedral())
+    if(!topo_shape.is_poly())
     {
         const Node &poffs_node = ntemp["elements/offsets"];
         temp.set_external(DataType(poffs_node.dtype().id(), 1),
@@ -1208,7 +1208,7 @@ topology::unstructured::points(const Node &n,
             pidxs.insert(temp.to_index_t());
         }
     }
-    else // if(topo_shape.is_polyhedral())
+    else // if(topo_shape.is_poly())
     {
         Node enode;
         std::set<index_t> eidxs;
