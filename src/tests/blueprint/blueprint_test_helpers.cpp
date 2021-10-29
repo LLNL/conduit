@@ -42,7 +42,7 @@ compare_to_baseline_leaf(const Node &test, const Node &baseline)
     {
         temp.set_external(test);
     }
-    EXPECT_FALSE(baseline.diff(temp, info)) << info.to_json();
+    EXPECT_FALSE(baseline.diff(temp, info)) << "Column " << test.name() << info.to_json();
 }
 
 //-----------------------------------------------------------------------------
@@ -104,10 +104,11 @@ void compare_to_baseline(const conduit::Node &test,
             }
             else
             {
-                ASSERT_TRUE(test.has_child(baseline[i].name()));
+                ASSERT_TRUE(test.has_child(baseline[i].name())) << "With name = " << baseline[i].name();
                 const Node &b = baseline[i];
                 const Node &baseline_values = b["values"];
                 const Node &test_values = test[b.name()]["values"];
+                compare_to_baseline_values(test_values, baseline_values);
             }
         }
     }

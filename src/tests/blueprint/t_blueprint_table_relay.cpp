@@ -93,9 +93,11 @@ TEST(t_blueprint_table_relay, read_write_multi_table)
     ASSERT_EQ(0, cleanup_dir(filename));
 
     Node mesh;
-    blueprint::mesh::examples::spiral(4, mesh);
+    blueprint::mesh::examples::basic("uniform", 5, 4, 3, mesh);
 
     Node table, opts;
+    opts["add_vertex_locations"] = 0;
+    opts["add_element_centers"] = 0;
     blueprint::mesh::flatten(mesh, opts, table);
 
     relay::io::save(table, filename);
@@ -103,7 +105,64 @@ TEST(t_blueprint_table_relay, read_write_multi_table)
     ASSERT_TRUE(utils::is_directory(filename));
 
     Node read_table;
+    relay::io::load(filename, opts, read_table);
+
+    // std::cout << read_table.to_json() << std::endl;
+    table::compare_to_baseline(read_table, table, false);
+}
+
+TEST(t_blueprint_table_relay, read_write_multi_table_list)
+{
+    const std::string filename = "t_blueprint_table_relay_read_write_multi_table_list.csv";
+    ASSERT_EQ(0, cleanup_dir(filename));
+
+    Node table;
+    blueprint::table::examples::basic(5, 4, 3, table.append());
+    {
+        // Add another column
+        const index_t nrows = table[0]["values/points/x"].dtype().number_of_elements();
+        Node &n = table[0]["values/new_column"];
+        n.set_dtype(DataType::index_t(nrows));
+        index_t *data = static_cast<index_t*>(n.element_ptr(0));
+        for(index_t i = 0; i < nrows; i++)
+        {
+            data[i] = nrows - 1 - i;
+        }
+    }
+
+    blueprint::table::examples::basic(6, 3, 2, table.append());
+
+    relay::io::save(table, filename);
+
+    Node read_table;
     relay::io::load(filename, read_table);
 
-    table::compare_to_baseline(read_table, table, false);
+    table::compare_to_baseline(read_table, table);
+}
+
+TEST(t_blueprint_table_relay, read_write_table_with_list_values)
+{
+    const std::string filename =
+        "t_blueprint_table_relay_read_write_table_with_list_values.csv";
+    ASSERT_EQ(0, cleanup_dir(filename));
+
+    Node basic_table;
+    blueprint::table::examples::basic(5, 4, 3, basic_table);
+
+    // Remove the names
+    Node table;
+    Node &table_values = table["values"];
+    const index_t ncolumns = basic_table["values"].number_of_children();
+    for(index_t i = 0; i < ncolumns; i++)
+    {
+        Node &n = table_values.append();
+        n.set_external(basic_table["values"][i]);
+    }
+
+    relay::io::save(table, filename);
+
+    Node read_table;
+    relay::io::load(filename, read_table);
+
+    table::compare_to_baseline(read_table, table);
 }

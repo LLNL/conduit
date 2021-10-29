@@ -598,6 +598,7 @@ list_directory_contents(const std::string &path,
 
             contents.push_back(directory + ent->d_name);
         }
+        closedir(dir);
     }
 #endif
     return !contents.empty();
