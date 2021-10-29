@@ -96,8 +96,6 @@ TEST(t_blueprint_mpi_mesh_flatten, braid)
         load_baseline(filename, baseline);
         table::compare_to_baseline(table, baseline);
     }
-
-    MPI_Barrier(comm);
 }
 
 TEST(t_blueprint_mpi_mesh_flatten, spiral)
@@ -126,8 +124,36 @@ TEST(t_blueprint_mpi_mesh_flatten, spiral)
         load_baseline(filename, baseline);
         table::compare_to_baseline(table, baseline);
     }
+}
 
-    MPI_Barrier(comm);
+TEST(t_blueprint_mpi_mesh_flatten, spiral_select_fields)
+{
+    const MPI_Comm comm = MPI_COMM_WORLD;
+    Node mesh;
+    blueprint::mpi::mesh::examples::spiral_round_robin(4, mesh, comm);
+
+    // Only want the "rank" field and vertex centers
+    //  in the output
+    Node table, opts;
+    opts["add_rank"].set(0);
+    opts["field_names"].append().set("rank");
+    opts["add_element_centers"].set(0);
+    blueprint::mpi::mesh::flatten(mesh, opts, table, comm);
+
+    int rank = -1;
+    MPI_Comm_rank(comm, &rank);
+    const std::string filename = baseline_file("spiral_select_fields");
+    if(rank == 0)
+    {
+#ifdef GENERATE_BASELINES
+        ASSERT_FALSE(table.has_child("element_data"));
+        ASSERT_TRUE(table.has_path("vertex_data/values/rank"));
+        make_baseline(filename, table);
+#endif
+        Node baseline;
+        load_baseline(filename, baseline);
+        table::compare_to_baseline(table, baseline);
+    }
 }
 
 //-----------------------------------------------------------------------------

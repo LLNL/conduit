@@ -350,6 +350,7 @@ ParallelMeshFlattener::determine_global_fields(const Node &mesh) const
             build_local_field_info(fields_to_flatten, mesh, topo_name, global_fields);
         }
         relay::mpi::broadcast_using_schema(global_fields, root, comm);
+        info.from_node(global_fields);
     }
     return info;
 }
