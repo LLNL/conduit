@@ -13,17 +13,15 @@ Nodes that conform to the *table* blueprint protocol are easily translated to an
 Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The *table* blueprint protocol comes in two forms - *single table* and *many table*.
-
-To conform to the *single table* blueprint protocol, a Node must have a "values" child which is a *list* OR an *object* and:
+To conform to the *table* blueprint protocol, a Node must have a "values" child which is a *list* OR an *object* and:
 
  * All of "values" children are data arrays OR *mcarrays*
  * All of "values" children must have the same number of elements
 
-To conform to the *many table* blueprint protocol, a Node must be a
-*list* OR an *object* and:
+A node will also conform to the *table* blueprint protocol if it is a collection of tables.
+A valid collection of *tables* must be a *list* OR an *object* and:
 
- * All of its children are valid *single tables* as defined above.
+ * All of its children are valid *tables* as defined above.
 
 Table Examples
 ~~~~~~~~~~~~~~~~~~~
