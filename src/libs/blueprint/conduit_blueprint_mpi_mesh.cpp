@@ -26,6 +26,27 @@
 
 #include "conduit_blueprint_mpi_mesh.hpp"
 
+// TODO(JRC): Consider moving an improved version of this type to a more accessible location.
+struct ffloat64
+{
+    conduit::float64 data;
+
+    ffloat64(conduit::float64 input = 0.0)
+    {
+        data = input;
+    }
+
+    operator conduit::float64() const
+    {
+        return this->data;
+    }
+
+    bool operator<(const ffloat64 &other) const
+    {
+        return this->data < other.data && std::abs(this->data - other.data) > CONDUIT_EPSILON;
+    }
+};
+
 // access conduit blueprint mesh utilities
 namespace bputils = conduit::blueprint::mesh::utils;
 // access one-to-many index types
@@ -33,7 +54,7 @@ namespace O2MIndex = conduit::blueprint::o2mrelation;
 
 // typedefs for verbose but commonly used types
 typedef std::tuple<conduit::Node*, conduit::Node*, conduit::Node*> DomMapsTuple;
-typedef std::tuple<conduit::float64, conduit::float64, conduit::float64> PointTuple;
+typedef std::tuple<ffloat64, ffloat64, ffloat64> PointTuple;
 // typedefs to enable passing around function pointers
 typedef void (*GenDerivedFun)(const conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&);
 typedef void (*GenDecomposedFun)(const conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&, conduit::Node&);
