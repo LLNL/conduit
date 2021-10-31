@@ -238,6 +238,8 @@ void test_mesh_paths(const index_t type,
 // put this function alongside 'test_mesh_paths' in all the test cases.
 // TODO(JRC): Add a test case for input meshes that have an adjsets entry
 // with no groups (e.g. 1-rank case).
+// TODO(JRC): Add a test case to ensure that per-dimension fuzz factor comparisons
+// are working as expected in parallel 'generate_*' functions.
 
 /// Transform Tests ///
 
