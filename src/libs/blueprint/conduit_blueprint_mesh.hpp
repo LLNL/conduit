@@ -91,11 +91,6 @@ void CONDUIT_BLUEPRINT_API domains(const Node &mesh,
 void CONDUIT_BLUEPRINT_API domains(Node &mesh,
                                    std::vector<conduit::Node *> &res);
 
-
-// TODO: revisit this name
-// can't overload on return type here, use out ref
-void CONDUIT_BLUEPRINT_API  non_empty_domains(Node &mesh, std::vector<conduit::Node *>&out);
-
 /// Note: to_multi_domain uses Node::set_external to avoid copying data.
 /// If you need a copy of the data unlinked from the input, set into
 /// another node.
