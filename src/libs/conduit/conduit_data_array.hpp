@@ -397,6 +397,9 @@ typedef DataArray<uint64>   uint64_array;
 typedef DataArray<float32>  float32_array;
 typedef DataArray<float64>  float64_array;
 
+/// index type arrays
+typedef DataArray<index_t>  index_t_array;
+
 /// native c types arrays
 typedef DataArray<char>       char_array;
 typedef DataArray<short>      short_array;

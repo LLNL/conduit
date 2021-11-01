@@ -46,8 +46,8 @@ add_compiled_library(NAME   conduit_civetweb
 
 #  avoid unknown pragma warnings when compiling civetweb with clang
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    add_target_compile_flags(TARGET conduit_civetweb
-                             FLAGS -Wno-unknown-pragmas)
+    target_compile_options(conduit_civetweb
+        PRIVATE -Wno-unknown-pragmas)
 endif()
 
 

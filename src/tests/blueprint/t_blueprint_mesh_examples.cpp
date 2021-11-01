@@ -452,8 +452,10 @@ TEST(conduit_blueprint_mesh_examples, spiral)
 TEST(conduit_blueprint_mesh_examples, polytess)
 {
     const index_t nlevels = 3;
+    const index_t nz = 1;
     Node res;
     blueprint::mesh::examples::polytess(nlevels,
+                                        nz,
                                         res);
 
     Node info;
@@ -461,6 +463,25 @@ TEST(conduit_blueprint_mesh_examples, polytess)
     CONDUIT_INFO(info.to_yaml());
 
     test_save_mesh_helper(res,"polytess_example");
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polytess_3d)
+{
+    Node res;
+    blueprint::mesh::examples::polytess(3, 10, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_yaml());
+
+    if(conduit::utils::is_file("polytess_3d_example_hdf5.root"))
+    {
+        conduit::utils::remove_file("polytess_3d_example_hdf5.root");
+    }
+
+    test_save_mesh_helper(res,"polytess_3d_example");
 }
 
 
@@ -505,7 +526,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_misc)
     std::vector<std::string> misc_type_strings;
     misc_type_strings.push_back("matsets");
     misc_type_strings.push_back("specsets");
-    misc_type_strings.push_back("adjsets");
     misc_type_strings.push_back("nestsets");
 
     Node mesh;
@@ -823,6 +843,80 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, grid_bad_inputs)
+{
+    Node res;
+
+    // several with bad inputs
+    EXPECT_THROW(blueprint::mesh::examples::grid("uniform",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  -1,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::grid("uniform",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  1,
+                                                  1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::grid("uniform",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  -1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::grid("hexs",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::grid("polyhedra",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    // a few ok
+    blueprint::mesh::examples::grid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     res);
+
+    blueprint::mesh::examples::grid("tets",
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     res);
+
+}
+
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, braid_bad_inputs)
 {
@@ -963,6 +1057,20 @@ TEST(conduit_blueprint_mesh_examples, number_of_domains)
     EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(data),7);
 
 
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polychain)
+{
+    Node res;
+    blueprint::mesh::examples::polychain(7, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res,"polychain_example");
 }
 
 

@@ -17,8 +17,8 @@
 
 #include "conduit_relay_mpi.hpp"
 #include <mpi.h>
-using partitioner = conduit::blueprint::mesh::partitioner;
-using selection = conduit::blueprint::mesh::selection;
+using Partitioner = conduit::blueprint::mesh::Partitioner;
+using Selection   = conduit::blueprint::mesh::Selection;
 
 using std::cout;
 using std::endl;
@@ -55,7 +55,8 @@ namespace mpi
 namespace mesh 
 {
 //---------------------------------------------------------------------------
-parallel_partitioner::parallel_partitioner(MPI_Comm c) : partitioner()
+ParallelPartitioner::ParallelPartitioner(MPI_Comm c)
+: Partitioner()
 {
     comm = c;
     MPI_Comm_size(comm, &size);
@@ -64,19 +65,19 @@ parallel_partitioner::parallel_partitioner(MPI_Comm c) : partitioner()
 }
 
 //---------------------------------------------------------------------------
-parallel_partitioner::~parallel_partitioner()
+ParallelPartitioner::~ParallelPartitioner()
 {
     free_chunk_info_dt();
 }
 
 //---------------------------------------------------------------------------
 bool
-parallel_partitioner::options_get_target(const conduit::Node &options,
-    unsigned int &value) const
+ParallelPartitioner::options_get_target(const conduit::Node &options,
+                                        unsigned int &value) const
 {
     // Get the target value using the base class method.
     unsigned int val = 0;
-    partitioner::options_get_target(options, val);
+    Partitioner::options_get_target(options, val);
 
     // Take the max target across ranks. Ranks that did not provide it use 0.
     MPI_Allreduce(&val, &value, 1, MPI_UNSIGNED, MPI_MAX, comm);
@@ -87,7 +88,7 @@ parallel_partitioner::options_get_target(const conduit::Node &options,
 
 //---------------------------------------------------------------------------
 unsigned int
-parallel_partitioner::count_targets() const
+ParallelPartitioner::count_targets() const
 {
     // Get the number of selections from all ranks. Count them.
     auto nlocal_sel = static_cast<int>(selections.size());
@@ -127,7 +128,7 @@ parallel_partitioner::count_targets() const
     std::set<int> named_domains;
     for(size_t i = 0; i < global_dd.size(); i++)
     {
-        if(global_dd[i] == selection::FREE_DOMAIN_ID)
+        if(global_dd[i] == Selection::FREE_DOMAIN_ID)
             free_domains++;
         else
             named_domains.insert(global_dd[i]);
@@ -139,7 +140,7 @@ parallel_partitioner::count_targets() const
 
 //---------------------------------------------------------------------------
 long
-parallel_partitioner::get_total_selections() const
+ParallelPartitioner::get_total_selections() const
 {
     // Gather the number of selections on each rank.
     long nselections = static_cast<long>(selections.size());
@@ -157,7 +158,7 @@ parallel_partitioner::get_total_selections() const
        can be used with MPI_MAXLOC.
  */
 void
-parallel_partitioner::get_largest_selection(int &sel_rank, int &sel_index) const
+ParallelPartitioner::get_largest_selection(int &sel_rank, int &sel_index) const
 {
     // Find largest selection locally.
     long_int largest_selection;
@@ -200,7 +201,7 @@ parallel_partitioner::get_largest_selection(int &sel_rank, int &sel_index) const
 
 //-------------------------------------------------------------------------
 void
-parallel_partitioner::create_chunk_info_dt()
+ParallelPartitioner::create_chunk_info_dt()
 {
     chunk_info obj;
     int slen = 3;
@@ -223,7 +224,7 @@ parallel_partitioner::create_chunk_info_dt()
 
 //-------------------------------------------------------------------------
 void
-parallel_partitioner::free_chunk_info_dt()
+ParallelPartitioner::free_chunk_info_dt()
 {
     MPI_Type_free(&chunk_info_dt);
 }
@@ -248,10 +249,10 @@ a domain going to a single rank though.
       global information to do matching sends/recvs.
 */
 void
-parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
-    std::vector<int> &dest_rank,
-    std::vector<int> &dest_domain,
-    std::vector<int> &_offsets)
+ParallelPartitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
+                                std::vector<int> &dest_rank,
+                                std::vector<int> &dest_domain,
+                                std::vector<int> &_offsets)
 {
     // Gather number of chunks on each rank.
     auto nlocal_chunks = static_cast<int>(chunks.size());
@@ -325,7 +326,7 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     for(int i = 0; i < ntotal_chunks; i++)
     {
         int domid = global_chunk_info[i].destination_domain;
-        if(domid == selection::FREE_DOMAIN_ID)
+        if(domid == Selection::FREE_DOMAIN_ID)
             free_to_move++;
         else
             reserved_dd.insert(domid);
@@ -363,7 +364,7 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     std::map<int,int> domain_elem_counts;
     for(int i = 0; i < ntotal_chunks; i++)
     {
-        if(dest_domain[i] != selection::FREE_DOMAIN_ID)
+        if(dest_domain[i] != Selection::FREE_DOMAIN_ID)
         {
             std::map<int,int>::iterator it = domain_elem_counts.find(dest_domain[i]);
             if(it == domain_elem_counts.end())
@@ -402,7 +403,7 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
     // Assign any unassigned domains to the domains in domain_elem_counts
     for(int i = 0; i < ntotal_chunks; i++)
     {
-        if(dest_domain[i] == selection::FREE_DOMAIN_ID)
+        if(dest_domain[i] == Selection::FREE_DOMAIN_ID)
         {
             // Find the domain that has the least cells.
             std::map<int,int>::iterator it, dit;
@@ -430,7 +431,7 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
         rank_elem_counts[i] = 0;
     for(int i = 0; i < ntotal_chunks; i++)
     {
-        if(dest_rank[i] == selection::FREE_RANK_ID)
+        if(dest_rank[i] == Selection::FREE_RANK_ID)
         {
             // This domain is not assigned to a rank.                
             domains_to_assign.insert(dest_domain[i]);
@@ -505,11 +506,11 @@ parallel_partitioner::map_chunks(const std::vector<partitioner::chunk> &chunks,
        this rank.
  */
 void
-parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &chunks,
+ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &chunks,
     const std::vector<int> &dest_rank,
     const std::vector<int> &dest_domain,
     const std::vector<int> &offsets,
-    std::vector<partitioner::chunk> &chunks_to_assemble,
+    std::vector<Partitioner::Chunk> &chunks_to_assemble,
     std::vector<int> &chunks_to_assemble_domains)
 {
     const int PARTITION_TAG_BASE = 12000;
@@ -600,11 +601,11 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
                 (*n_recv)["state/domain_id"] = dest_domain[i];
 
                 // Save the chunk "wrapper" that has its own state.
-                chunks_to_assemble.push_back(chunk(n_recv, true));
+                chunks_to_assemble.push_back(Chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
 #else
                 // Pass the chunk through since we already own it on this rank.
-                chunks_to_assemble.push_back(chunk(chunks[local_i].mesh, false));
+                chunks_to_assemble.push_back(Chunk(chunks[local_i].mesh, false));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
 #endif
             }
@@ -622,7 +623,7 @@ parallel_partitioner::communicate_chunks(const std::vector<partitioner::chunk> &
                 node_domains[n_recv] = dest_domain[i];
 #endif
                 // Save the received chunk and indicate we own it for later.
-                chunks_to_assemble.push_back(chunk(n_recv, true));
+                chunks_to_assemble.push_back(Chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
             }
         }

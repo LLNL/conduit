@@ -18,6 +18,7 @@
 #include <math.h>
 #include <iostream>
 #include <array>
+#include <cmath>
 #include "gtest/gtest.h"
 
 #include "blueprint_test_helpers.hpp"
@@ -1006,7 +1007,7 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
                 chunks.push_back(&split[i]);
             }
 
-            conduit::blueprint::mesh::partitioner p;
+            conduit::blueprint::mesh::Partitioner p;
             p.combine(0, chunks, combine);
         #ifdef DEBUG_RECOMBINE_BRAID
             save_visit(base_name + "_combined", combine);

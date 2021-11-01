@@ -8,10 +8,12 @@ include(CMakeFindDependencyMacro)
 # Setup Threads
 ###############################################################################
 if(UNIX AND NOT APPLE)
-# we depend on Threads::Threads in our exported targets
-# so we need to bootstrap that here
-    if(NOT Threads::Threads)
-        find_package( Threads REQUIRED )
+    if(CONDUIT_RELAY_WEBSERVER_ENABLED)
+        # we depend on Threads::Threads in our exported targets
+        # so we need to bootstrap that here
+        if(NOT TARGET Threads::Threads)
+            find_package( Threads REQUIRED )
+        endif()
     endif()
 endif()
 
@@ -164,7 +166,9 @@ if(CONDUIT_HDF5_DIR)
     # to make sure the targets propgate correctly.
     # in other cases, folks will 
     if(HDF5_IS_PARALLEL AND NOT MPI_FOUND)
-        find_package(MPI COMPONENTS CXX)
+        if(CONDUIT_USE_CMAKE_MPI_TARGETS)
+            find_package(MPI COMPONENTS CXX)
+        endif()
     endif()
 
     if(HDF5_IS_PARALLEL)

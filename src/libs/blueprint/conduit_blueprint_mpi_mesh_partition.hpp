@@ -53,11 +53,12 @@ namespace mesh
        so this class is in here so we do not have to make it public via a
        hpp file.
  */
-class CONDUIT_BLUEPRINT_API parallel_partitioner : public conduit::blueprint::mesh::partitioner
+class CONDUIT_BLUEPRINT_API ParallelPartitioner
+: public conduit::blueprint::mesh::Partitioner
 {
 public:
-    parallel_partitioner(MPI_Comm c);
-    virtual ~parallel_partitioner();
+    ParallelPartitioner(MPI_Comm c);
+    virtual ~ParallelPartitioner();
 
 protected:
     virtual long get_total_selections() const override;
@@ -95,16 +96,16 @@ protected:
         int destination_domain;
     };
 
-    virtual void map_chunks(const std::vector<chunk> &chunks,
+    virtual void map_chunks(const std::vector<Chunk> &chunks,
                             std::vector<int> &dest_ranks,
                             std::vector<int> &dest_domain,
                             std::vector<int> &offsets) override;
 
-    virtual void communicate_chunks(const std::vector<chunk> &chunks,
+    virtual void communicate_chunks(const std::vector<Chunk> &chunks,
                                     const std::vector<int> &dest_rank,
                                     const std::vector<int> &dest_domain,
                                     const std::vector<int> &offsets,
-                                    std::vector<chunk> &chunks_to_assemble,
+                                    std::vector<Chunk> &chunks_to_assemble,
                                     std::vector<int> &chunks_to_assemble_domains) override;
 
 private:

@@ -94,6 +94,7 @@ CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_spiral(conduit_index_
                                                                   conduit_node *cres);
 
 CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_polytess(conduit_index_t nlevels,
+                                                                    conduit_index_t nz,
                                                                     conduit_node *cres);
 
 CONDUIT_BLUEPRINT_API void conduit_blueprint_mesh_examples_misc(const char *mesh_type,

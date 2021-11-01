@@ -255,7 +255,6 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             # expect no diff
             self.assertFalse(n_read.diff(n_check,info))
 
-
             # huge stride, this will only read the first entry
             n_read.reset()
             opts.reset()
@@ -267,29 +266,6 @@ class Test_Relay_IO_Handle(unittest.TestCase):
             n_check["data"] = [1]
             # expect no diff
             self.assertFalse(n_read.diff(n_check,info))
-
-
-            # now some error conditions:
-            # neg size
-            n_read.reset()
-            opts.reset()
-            opts["size"] = -100
-            with self.assertRaises(IOError):
-                h.read(node=n_read,options=opts)
-
-            # neg stride
-            n_read.reset()
-            opts.reset()
-            opts["stride"] = -1
-            with self.assertRaises(IOError):
-                h.read(node=n_read,options=opts)
-
-            # neg offset
-            n_read.reset()
-            opts.reset()
-            opts["offset"] = -1
-            with self.assertRaises(IOError):
-                h.read(node=n_read,options=opts)
 
             # huge size
             n_read.reset()

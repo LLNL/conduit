@@ -40,6 +40,7 @@
 #include <algorithm>
 #include <limits>
 #include <fstream>
+#include <map>
 
 
 // define proper path sep
@@ -75,6 +76,242 @@ namespace conduit
 //-----------------------------------------------------------------------------
 namespace utils
 {
+
+//-----------------------------------------------------------------------------
+void *
+default_alloc_handler(size_t items, size_t item_size)
+{
+  return calloc(items, item_size);
+}
+
+//-----------------------------------------------------------------------------
+void
+default_free_handler(void *data_ptr)
+{
+  free(data_ptr);
+}
+
+//-----------------------------------------------------------------------------
+void
+default_memset_handler(void * ptr, int value, size_t num )
+{
+  memset(ptr,value,num);
+}
+
+//-----------------------------------------------------------------------------
+void
+default_memcpy_handler(void * destination, const void * source, size_t num)
+{
+  memcpy(destination,source,num);
+}
+
+
+//-----------------------------------------------------------------------------
+// Private namespace member that holds our memcpy callback.
+void (*conduit_handle_memcpy)(void * destination,
+                              const void * source,
+                              size_t num) = default_memcpy_handler;
+
+//-----------------------------------------------------------------------------
+// Private namespace member that holds our memset callback.
+void (*conduit_handle_memset)(void * ptr,
+                              int value,
+                              size_t num ) = default_memset_handler;
+
+//-----------------------------------------------------------------------------
+void
+set_memcpy_handler(void(*conduit_hnd_copy)(void*,
+                                           const void *,
+                                           size_t))
+{
+    conduit_handle_memcpy = conduit_hnd_copy;
+}
+
+//-----------------------------------------------------------------------------
+void
+set_memset_handler(void(*conduit_hnd_memset)(void*,
+                                             int,
+                                             size_t))
+{
+    conduit_handle_memset = conduit_hnd_memset;
+}
+
+namespace detail
+{
+    //
+    // AllocManager: A singleton that holds our alloc and free function maps
+    //
+    //
+    // NOTE: THE SINGLETON INSTNACE IS INTENTIONALLY LEAKED!
+    // 
+    // These maps are used by Node instances to alloc and free
+    // memory, they need to exist as long as any Node object exists!
+    //
+    // We are doing static init correctly here, so we
+    // avoid the C++ static obj init fiasco:
+    // https://isocpp.org/wiki/faq/ctors#static-init-order 
+    //
+    // However, we still can't apply fine grained control
+    // to when these objects are cleaned up. This means
+    // if you use a statically initialized Node object
+    // you could get a crash on exit
+    //  (unless we leak the singleton)
+    //
+    // One strategy to avoid this is to move everything
+    // into the same compilation unit. We tried this
+    // but we still hit an on exit cleanup where
+    // the alloc maps were destructed, but a static Node
+    // object still needed to cleanup. 
+    //
+    // If leaking this singleton offends your sensibilities,
+    // I am sorry. Ideally, these would be cleaned up on 
+    // exit absolutely last - meaning you could never use
+    // those few precious bytes for anything else.
+    //
+    class AllocManager {
+
+     public:
+          static AllocManager& instance()
+          {
+            //
+            // NOTE: THIS IS INTENTIONALLY LEAKED
+            // See note above.
+            //
+            static AllocManager *inst = new AllocManager();
+            return *inst;
+          }
+
+          // reg interface
+          index_t register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
+                                     void(*conduit_hnd_free)(void *))
+          {
+              m_allocator_map[m_allocator_id] = conduit_hnd_allocate;
+              m_free_map[m_allocator_id]      = conduit_hnd_free;
+              return m_allocator_id++;
+          }
+
+          // alloc interface
+          void *allocate(size_t n_items,
+                         size_t item_size,
+                         index_t allocator_id)
+          {
+              return m_allocator_map[allocator_id](n_items, item_size);
+          }
+
+          // free interface
+          void free(void *ptr,
+                   index_t allocator_id)
+          {
+              m_free_map[allocator_id](ptr);
+          }
+
+     private:
+          // constructor
+          AllocManager()
+          : m_allocator_map(),
+            m_free_map()
+          {
+              // register default handlers
+              m_allocator_map[0] = &default_alloc_handler;
+              m_free_map[0]      = &default_free_handler;
+
+              m_allocator_id = 1;
+
+          }
+
+          // destructor
+          ~AllocManager()
+          {
+
+          }
+
+          // vars
+          index_t                                    m_allocator_id;
+          std::map<index_t,void*(*)(size_t, size_t)> m_allocator_map;
+          std::map<index_t,void(*)(void*)>           m_free_map;
+
+    };
+}
+
+//-----------------------------------------------------------------------------
+index_t
+register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
+                   void(*conduit_hnd_free)(void *))
+{
+    return detail::AllocManager::instance().register_allocator(conduit_hnd_allocate,
+                                                               conduit_hnd_free);
+}
+
+
+//-----------------------------------------------------------------------------
+void *
+conduit_allocate(size_t n_items,
+                 size_t item_size,
+                 index_t allocator_id)
+{
+    return detail::AllocManager::instance().allocate(n_items,
+                                                     item_size,
+                                                     allocator_id);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_free(void *ptr,
+             index_t allocator_id)
+{
+    detail::AllocManager::instance().free(ptr,allocator_id);
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_memcpy(void *destination,
+               const void *source,
+               size_t num)
+{
+    conduit_handle_memcpy(destination,source,num);
+}
+
+
+//-----------------------------------------------------------------------------
+void conduit_memset(void *ptr,
+                    int value,
+                    size_t num)
+{
+    conduit_handle_memset(ptr,value,num);
+}
+//-----------------------------------------------------------------------------
+void
+conduit_memcpy_strided_elements(void *dest,
+                                size_t num_elements,
+                                size_t ele_bytes,
+                                size_t dest_stride,
+                                const void *src,
+                                size_t src_stride)
+{
+    // source and dest are compact
+    if( dest_stride == ele_bytes && src_stride == ele_bytes)
+    {
+        utils::conduit_memcpy(dest,
+                              src,
+                              ele_bytes * num_elements);
+    }
+    else // the source or dest are strided in a non compact way
+    {
+        char *src_data_ptr  = (char*) src;
+        char *dest_data_ptr = (char*) dest;
+        for(size_t i=0; i< num_elements; i++)
+        {
+            // copy next strided element
+            utils::conduit_memcpy(dest_data_ptr,
+                                  src_data_ptr,
+                                  ele_bytes);
+            // move by src stride
+            src_data_ptr  += src_stride;
+            // move by dest stride
+            dest_data_ptr += dest_stride;
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------
 // default info message handler callback, simply prints to std::cout.

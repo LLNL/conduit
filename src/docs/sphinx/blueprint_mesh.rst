@@ -711,6 +711,125 @@ The fully-defined Blueprint schema for the ``adjsets`` entries looks like the fo
    * adjsets/adjset/groups/group/neighbors: (integer array)
    * adjsets/adjset/groups/group/values: (integer array)
 
+It's important to note that the groups in an Adjacency Set associate across domains based on their names (e.g. ``domain0/adjsets/adjset/groups/1`` will be associated with ``domain*/adjsets/adjset/groups/1``).
+For data publishers that are agnostic about group names, the ``conduit::blueprint::mesh::utils::adjset::canonicalize`` utility method can be used to assign cross-domain matching names:
+
+.. code:: cpp
+
+   conduit::Node &unidomain_mesh = // loaded from the client code
+   conduit::Node &unidomain_adjset = unidomain_mesh["adjsets"].child(0);
+   conduit::Node &unidomain_domid = unidomain_mesh["state/domain_id"];
+
+   unidomain_domid.print();
+   // > 0
+   unidomain_adjset["groups"].print();
+   // > a:
+   // >   neighbors: [1, 2, 3]
+   // >   values: [...]
+   // > b:
+   // >   neighbors: [1]
+   // >   values: [...]
+   // > c:
+   // >   neighbors: [2]
+   // >   values: [...]
+
+   conduit::bleuprint::mesh::utils::adjset::canonicalize(unidomain_adjset);
+
+   unidomain_adjset["groups"].print();
+   // > group_0_1_2_3:
+   // >   neighbors: [1, 2, 3]
+   // >   values: [...]
+   // > group_0_1:
+   // >   neighbors: [1]
+   // >   values: [...]
+   // > group_0_2:
+   // >   neighbors: [2]
+   // >   values: [...]
+
+
+Adjacency Set Variants
+=================================
+
+There's a great deal of flexibility in how the adjacency groups of an Adjacency Set can be constructed.
+Blueprint Mesh contains detection and transformation functions for the most commonly targeted formats.
+The two variants currently supported are **pairwise** and **max-share**.
+
+
+Pairwise Adjacency Sets
+*********************************
+
+A **pairwise** adjacency set is one that contains groups that represent the relationship between the host domain and a single neighboring domain (i.e. domain "pairs").
+
+The following diagram illustrates a simple **pairwise** material set example:
+
+  .. code:: yaml
+
+      #  domain0    domain1
+      # +--------++--------+
+      # |     v01||v11     |
+      # |        ||        |
+      # |     v00||v10     |
+      # +--------++--------+
+      # +--------+
+      # |     v20|
+      # |        |
+      # |     v21|
+      # +--------+
+      #  domain2
+
+      domain0:
+        state:
+          domain_id: 0
+        adjsets:
+          adjset:
+            association: vertex
+            topology: topology
+            groups:
+              domain_0_1:
+                neighbors: [1]
+                values: [v00, v01]
+              domain_0_2:
+                neighbors: [2]
+                values: [v00]
+
+
+Max-Share Adjacency Sets
+*********************************
+
+A **max-share** adjacency set is one with groups that "maximally share" index data.
+In other words, these adjacency sets present index data so that it isn't duplicated between groups.
+
+The following diagram illustrates a simple **pairwise** material set example:
+
+  .. code:: yaml
+
+      #  domain0    domain1
+      # +--------++--------+
+      # |     v01||v11     |
+      # |        ||        |
+      # |     v00||v10     |
+      # +--------++--------+
+      # +--------+
+      # |     v20|
+      # |        |
+      # |     v21|
+      # +--------+
+      #  domain2
+
+      domain0:
+        state:
+          domain_id: 0
+        adjsets:
+          adjset:
+            association: vertex
+            topology: topology
+            groups:
+              domain_0_1_2:
+                neighbors: [1, 2]
+                values: [v00]
+              domain_0_1:
+                neighbors: [1]
+                values: [v01]
 
 
 State
@@ -1270,11 +1389,36 @@ polytess
     :width: 400px
     :align: center
 
-    Pseudocolor plot of the polytess example ``level`` field.
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 1.
+
+.. figure:: polytess_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 2.
+
+.. figure:: polytess_3d_tall_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 10.
+
+.. figure:: polytess_3d_big_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polytess example ``level`` field, with ``nz`` = 6.
 
 The ``polytess()`` function generates a polygonal tessellation in the 2D
 plane comprised of octagons and squares (known formally as a `two-color
 truncated square tiling <https://en.wikipedia.org/wiki/Truncated_square_tiling>`_).
+This can be extended into 3D using the ``nz`` parameter, which, if greater than 1, 
+will stack polytessalations on top of one another as follows: first, a polytess is 
+placed into 3D space, and then a copy of it is placed into a plane parallel to the 
+original. Then "walls" are added, and finally polyhedra are specified that use 
+faces from the original polytess, the reflected copy, and the walls. An ``nz`` value 
+of 3 or more will simply add layers to this setup, essentially stacking "sheets" of 
+polytess on top of one another.
 
 The scalar element-centered field ``level`` defined in the result mesh associates each element with its
 topological distance from the center of the tessellation.
@@ -1282,12 +1426,39 @@ topological distance from the center of the tessellation.
 .. code:: cpp
 
     conduit::blueprint::mesh::examples::polytess(index_t nlevels,
+                                                 index_t nz,
                                                  Node &res);
 
 
 ``nlevels`` specifies the number of tessellation levels/layers to generate. If this value is specified
 as 1 or less, only the central tessellation level (i.e. the octagon in the center of the geometry) will
 be generated in the result.
+
+The resulting data is placed the Node ``res``, which is passed in via reference.
+
+
+polychain
+++++++++++
+
+.. figure:: polychain.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of the polyhedral chain example ``chain`` field.
+
+The ``polychain()`` function generates a chain of cubes and triangular prisms that extends diagonally.
+
+The scalar element-centered field ``chain`` defined in the result mesh associates with each cube
+the value 0 and with each triangular prism the value 1.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::polychain(const index_t length,
+                                                  Node &res);
+
+
+``length`` specifies how long the chain ought to be. The length is equal to the number of cubes and
+equal to half the number of prisms.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
