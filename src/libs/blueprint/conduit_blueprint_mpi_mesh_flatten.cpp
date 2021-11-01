@@ -112,6 +112,33 @@ ParallelMeshFlattener::set_options(const Node &opts)
                 "] must be a number. It will be treated as a boolean (.to_int() != 0).");
         }
     }
+
+    // "root", int
+    if(opts.has_child("root"))
+    {
+        const Node &n_root = opts["root"];
+        if(n_root.dtype().is_integer())
+        {
+            this->root = opts["root"].to_int();
+        }
+        else
+        {
+            ok = false;
+            CONDUIT_ERROR("options[" << quote("root") <<
+                "] must be a non-negative integer < MPI_Comm_size.");
+        }
+
+        int size = 0;
+        MPI_Comm_size(comm, &size);
+        if(this->root < 0 || this->root >= size)
+        {
+            root = 0;
+            ok = false;
+            CONDUIT_ERROR("options[" << quote("root") <<
+                "] must be a non-negative integer < MPI_Comm_size (root = "
+                << this->root << ").");
+        }
+    }
     return ok;
 }
 
@@ -189,7 +216,8 @@ ParallelMeshFlattener::MeshMetaData::MeshMetaData()
 
 //-----------------------------------------------------------------------------
 void
-ParallelMeshFlattener::add_mpi_rank(const MeshInfo &my_mesh, Node &output) const
+ParallelMeshFlattener::add_mpi_rank(const MeshInfo &my_mesh,
+    index_t vert_offset_start, index_t elem_offset_start, Node &output) const
 {
     const auto set_rank = [this](index_t, index_t &cval) {
         cval = (index_t)this->rank;
@@ -201,7 +229,8 @@ ParallelMeshFlattener::add_mpi_rank(const MeshInfo &my_mesh, Node &output) const
         if(vertex_values.has_child("mpi_rank"))
         {
             Node &mpi_rank = vertex_values["mpi_rank"];
-            blueprint::mesh::utils::for_each_in_range<index_t>(mpi_rank, 0, my_mesh.nverts, set_rank);
+            blueprint::mesh::utils::for_each_in_range<index_t>(mpi_rank,
+                vert_offset_start, vert_offset_start + my_mesh.nverts, set_rank);
         }
     }
 
@@ -211,7 +240,8 @@ ParallelMeshFlattener::add_mpi_rank(const MeshInfo &my_mesh, Node &output) const
         if(element_values.has_child("mpi_rank"))
         {
             Node &mpi_rank = element_values["mpi_rank"];
-            blueprint::mesh::utils::for_each_in_range<index_t>(mpi_rank, 0, my_mesh.nelems, set_rank);
+            blueprint::mesh::utils::for_each_in_range<index_t>(mpi_rank,
+                elem_offset_start, elem_offset_start + my_mesh.nelems, set_rank);
         }
     }
 }
@@ -756,8 +786,23 @@ ParallelMeshFlattener::flatten_many_domains(const Node &mesh, Node &output) cons
     DEBUG_PRINT("Rank " << rank << output.schema().to_json() << std::endl);
 
     // Do local flattening on each rank
-    index_t vert_offset = 0;
-    index_t elem_offset = 0;
+    index_t vert_offset_start = 0;
+    index_t elem_offset_start = 0;
+
+    // Root needs to update offsets before doing local flatten
+    if(rank == root)
+    {
+        // counts stored as [nverts0, nelems0, nverts1, nelems1, ...]
+        const index_t *c = global_metadata.counts.data();
+        for(int i = 0; i < root; i++)
+        {
+            vert_offset_start += *c++;
+            elem_offset_start += *c++;
+        }
+    }
+
+    index_t vert_offset = vert_offset_start;
+    index_t elem_offset = elem_offset_start;
     for(index_t i = 0; i < my_mesh_info.ndomains; i++)
     {
         DEBUG_PRINT("Rank " << rank << " flattening domain " << i << std::endl);
@@ -769,7 +814,8 @@ ParallelMeshFlattener::flatten_many_domains(const Node &mesh, Node &output) cons
 
     if(this->add_rank)
     {
-        add_mpi_rank(my_mesh_info, output);
+        add_mpi_rank(my_mesh_info, vert_offset_start,
+            elem_offset_start, output);
     }
 
     gather_results(my_mesh_info, global_metadata, output);

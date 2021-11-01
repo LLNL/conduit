@@ -84,7 +84,8 @@ protected:
         MeshMetaData();
     };
 
-    void add_mpi_rank(const MeshInfo &my_mesh, Node &output) const;
+    void add_mpi_rank(const MeshInfo &my_mesh, index_t vert_offset,
+        index_t elem_offset, Node &output) const;
 
     void build_local_field_info(const std::vector<std::string> &fields_to_flatten,
         const Node &mesh, const std::string &topo_name, Node &field_info) const;

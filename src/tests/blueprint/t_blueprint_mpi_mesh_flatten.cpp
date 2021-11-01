@@ -201,6 +201,30 @@ TEST(t_blueprint_mpi_mesh_flatten, spiral_missing_fields)
     }
 }
 
+TEST(t_blueprint_mpi_mesh_flatten, spiral_arbitrary_root)
+{
+    const MPI_Comm comm = MPI_COMM_WORLD;
+    const int root = 2;
+    Node mesh;
+    blueprint::mpi::mesh::examples::spiral_round_robin(4, mesh, comm);
+
+    Node table, opts;
+    opts["add_rank"] = 1;
+    opts["root"] = root;
+    blueprint::mpi::mesh::flatten(mesh, opts, table, comm);
+
+    // Should create same data as "spiral" test, reuse same baseline.
+    int rank = -1;
+    MPI_Comm_rank(comm, &rank);
+    const std::string filename = baseline_file("spiral");
+    if(rank == root)
+    {
+        Node baseline;
+        load_baseline(filename, baseline);
+        table::compare_to_baseline(table, baseline);
+    }
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {

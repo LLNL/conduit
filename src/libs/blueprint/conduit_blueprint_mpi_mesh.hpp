@@ -89,10 +89,13 @@ void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
  @param mesh    A Conduit node containing a blueprint mesh or set of mesh domains.
  @param options A Conduit node containing options for the flatten operation.
  @param[out] output A Conduit node that will contain the blueprint table output.
+ @param comm The MPI communicator to be used.
 
 Supports the same options as serial flatten() plus:
     "add_rank": Includes the rank number as a column in the output table.
-        (Default = 1 (true))
+        (Default = 0 (false))
+    "root": The rank that will contain the output table for all ranks in comm.
+        (Default = 0)
 */
 void CONDUIT_BLUEPRINT_API flatten(const conduit::Node &mesh,
                                    const conduit::Node &options,
