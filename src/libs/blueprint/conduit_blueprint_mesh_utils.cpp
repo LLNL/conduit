@@ -1210,8 +1210,8 @@ topology::logical_dims(const Node &n, index_t *d, index_t maxdims)
         for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
         {
             d[i] = ((type == "uniform") ?
-                coordset["dims"][LOGICAL_AXES[i]].to_index_t() :
-                coordset["values"][csys_axes[i]].dtype().number_of_elements()) - 1;
+                coordset->fetch_existing("dims")[LOGICAL_AXES[i]].to_index_t() :
+                coordset->fetch_existing("values")[csys_axes[i]].dtype().number_of_elements()) - 1;
         }
     }
     else if(type == "structured")

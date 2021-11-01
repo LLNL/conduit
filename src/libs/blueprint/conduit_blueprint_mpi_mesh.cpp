@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <tuple>
 #include <vector>
+#include <cmath>
 
 //-----------------------------------------------------------------------------
 // conduit includes
