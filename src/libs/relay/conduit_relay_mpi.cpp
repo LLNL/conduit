@@ -256,7 +256,6 @@ mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt)
     return res;
 }
 
-
 //---------------------------------------------------------------------------//
 int 
 send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
@@ -354,8 +353,6 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
     
     return mpi_error;
 }
-
-
 
 //---------------------------------------------------------------------------//
 int 
@@ -1457,6 +1454,278 @@ broadcast_using_schema(Node &node,
     return mpi_error;
 }
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+const int communicate_using_schema::OP_SEND = 1;
+const int communicate_using_schema::OP_RECV = 2;
+
+//-----------------------------------------------------------------------------
+communicate_using_schema::communicate_using_schema(MPI_Comm c) :
+    comm(c), operations(), logging(false)
+{
+}
+
+//-----------------------------------------------------------------------------
+communicate_using_schema::~communicate_using_schema()
+{
+    clear();
+}
+
+//-----------------------------------------------------------------------------
+void
+communicate_using_schema::clear()
+{
+    for(size_t i = 0; i < operations.size(); i++)
+    {
+        if(operations[i].free[0])
+            delete operations[i].node[0];
+        if(operations[i].free[1])
+            delete operations[i].node[1];
+    }
+    operations.clear();
+}
+
+//-----------------------------------------------------------------------------
+void
+communicate_using_schema::set_logging(bool val)
+{
+    logging = val;
+}
+
+//-----------------------------------------------------------------------------
+void
+communicate_using_schema::add_isend(const Node &node, int dest, int tag)
+{
+    // Append the work to the operations.
+    operation work;
+    work.op = OP_SEND;
+    work.rank = dest;
+    work.tag = tag;
+    work.node[0] = const_cast<Node *>(&node); // The node we're sending.
+    work.free[0] = false;
+    work.node[1] = nullptr;
+    work.free[1] = false;
+    operations.push_back(work);
+}
+
+//-----------------------------------------------------------------------------
+void
+communicate_using_schema::add_irecv(Node &node, int src, int tag)
+{
+    // Append the work to the operations.
+    operation work;
+    work.op = OP_RECV;
+    work.rank = src;
+    work.tag = tag;
+    work.node[0] = &node; // Node that will contain final data.
+    work.free[0] = false; // Don't need to free it.
+    work.node[1] = nullptr;
+    work.free[1] = false;
+    operations.push_back(work);    
+}
+
+//-----------------------------------------------------------------------------
+int
+communicate_using_schema::execute()
+{
+    int mpi_error = 0;
+    std::vector<MPI_Request> requests(operations.size());
+    std::vector<MPI_Status>  statuses(operations.size());
+
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    std::ofstream log;
+    double t0 = MPI_Wtime();
+    if(logging)
+    {
+        char fn[128];
+        sprintf(fn, "communicate_using_schema.%04d.log", rank);
+        log.open(fn, std::ofstream::out);
+        log << "* Log started on rank " << rank << " at " << t0 << std::endl;
+    }
+
+    // Issue all the sends (so they are in flight by the time we probe them)
+    for(size_t i = 0; i < operations.size(); i++)
+    {
+        if(operations[i].op == OP_SEND)
+        {
+            Schema s_data_compact;
+            const Node &node = *operations[i].node[0];
+            // schema will only be valid if compact and contig
+            if( node.is_compact() && node.is_contiguous())
+            {
+                s_data_compact = node.schema();
+            }
+            else
+            {
+                node.schema().compact_to(s_data_compact);
+            }
+    
+            std::string snd_schema_json = s_data_compact.to_json();
+        
+            Schema s_msg;
+            s_msg["schema_len"].set(DataType::int64());
+            s_msg["schema"].set(DataType::char8_str(snd_schema_json.size()+1));
+            s_msg["data"].set(s_data_compact);
+    
+            // create a compact schema to use
+            Schema s_msg_compact;
+            s_msg.compact_to(s_msg_compact);
+    
+            operations[i].node[1] = new Node(s_msg_compact);
+            operations[i].free[1] = true;
+            Node &n_msg = *operations[i].node[1];
+            // these sets won't realloc since schemas are compatible
+            n_msg["schema_len"].set((int64)snd_schema_json.length());
+            n_msg["schema"].set(snd_schema_json);
+            n_msg["data"].update(node);
+
+            // Send the serialized node data.
+            index_t msg_data_size = operations[i].node[1]->total_bytes_compact();
+            if(logging)
+            {
+                log << "    MPI_Isend("
+                    << const_cast<void*>(operations[i].node[1]->data_ptr()) << ", "
+                    << msg_data_size << ", "
+                    << "MPI_BYTE, "
+                    << operations[i].rank << ", "
+                    << operations[i].tag << ", "
+                    << "comm, &requests[" << i << "]);" << std::endl;
+            }
+            mpi_error = MPI_Isend(const_cast<void*>(operations[i].node[1]->data_ptr()),
+                                  static_cast<int>(msg_data_size),
+                                  MPI_BYTE,
+                                  operations[i].rank,
+                                  operations[i].tag,
+                                  comm,
+                                  &requests[i]);
+            CONDUIT_CHECK_MPI_ERROR(mpi_error);
+        }
+    }
+    double t1 = MPI_Wtime();
+    if(logging)
+    {
+        log << "* Time issuing MPI_Isend calls: " << (t1-t0) << std::endl;
+    }
+
+    // Issue all the recvs.
+    for(size_t i = 0; i < operations.size(); i++)
+    {
+        if(operations[i].op == OP_RECV)
+        {
+            // Probe the message for its buffer size.
+            if(logging)
+            {
+                log << "    MPI_Probe("
+                    << operations[i].rank << ", "
+                    << operations[i].tag << ", "
+                    << "comm, &statuses[" << i << "]);" << std::endl;
+            }
+            mpi_error = MPI_Probe(operations[i].rank, operations[i].tag, comm, &statuses[i]);    
+            CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    
+            int buffer_size = 0;
+            MPI_Get_count(&statuses[i], MPI_BYTE, &buffer_size);
+            if(logging)
+            {
+                log << "    MPI_Get_count(&statuses[" << i << "], MPI_BYTE, &buffer_size); -> "
+                    << buffer_size << std::endl;
+            }
+
+            // Allocate a node into which we'll receive the raw data.
+            operations[i].node[1] = new Node(DataType::uint8(buffer_size));
+            operations[i].free[1] = true;
+
+            if(logging)
+            {
+                log << "    MPI_Irecv("
+                    << operations[i].node[1]->data_ptr() << ", "
+                    << buffer_size << ", "
+                    << "MPI_BYTE, "
+                    << operations[i].rank << ", "
+                    << operations[i].tag << ", "
+                    << "comm, &requests[" << i << "]);" << std::endl;
+            }
+
+            // Post the actual receive.
+            mpi_error = MPI_Irecv(operations[i].node[1]->data_ptr(),
+                                  buffer_size,
+                                  MPI_BYTE,
+                                  operations[i].rank,
+                                  operations[i].tag,
+                                  comm,
+                                  &requests[i]);
+            CONDUIT_CHECK_MPI_ERROR(mpi_error);
+        }
+    }
+    double t2 = MPI_Wtime();
+    if(logging)
+    {
+        log << "* Time issuing MPI_Irecv calls: " << (t2-t1) << std::endl;
+    }
+
+    // Wait for the requests to complete.
+    int n = static_cast<int>(operations.size());
+    if(logging)
+    {
+        log << "    MPI_Waitall(" << n << ", &requests[0], &statuses[0]);" << std::endl;
+    }
+    mpi_error = MPI_Waitall(n, &requests[0], &statuses[0]);
+    CONDUIT_CHECK_MPI_ERROR(mpi_error);
+    double t3 = MPI_Wtime();
+    if(logging)
+    {
+        log << "* Time in MPI_Waitall: " << (t3-t2) << std::endl;
+    }
+
+    // Finish building the nodes for which we received data.
+    for(size_t i = 0; i < operations.size(); i++)
+    {
+        if(operations[i].op == OP_RECV)
+        {
+            // Get the buffer of the data we received.
+            uint8 *n_buff_ptr = (uint8*)operations[i].node[1]->data_ptr();
+
+            Node n_msg;
+            // length of the schema is sent as a 64-bit signed int
+            // NOTE: we aren't using this value  ... 
+            n_msg["schema_len"].set_external((int64*)n_buff_ptr);
+            n_buff_ptr +=8;
+            // wrap the schema string
+            n_msg["schema"].set_external_char8_str((char*)(n_buff_ptr));
+            // create the schema
+            Schema rcv_schema;
+            Generator gen(n_msg["schema"].as_char8_str());
+            gen.walk(rcv_schema);
+
+            // advance by the schema length
+            n_buff_ptr += n_msg["schema"].total_bytes_compact();
+    
+            // apply the schema to the data
+            n_msg["data"].set_external(rcv_schema,n_buff_ptr);
+    
+            // copy out to our result node
+            operations[i].node[0]->update(n_msg["data"]);
+
+            if(logging)
+            {
+                log << "* Built output node " << i << std::endl;
+            }
+        }
+    }
+    double t4 = MPI_Wtime();
+    if(logging)
+    {
+        log << "* Time building output nodes " << (t4-t3) << std::endl;
+        log.close();
+    }
+
+    // Cleanup
+    clear();
+
+    return 0;
+}
 
 //---------------------------------------------------------------------------//
 std::string
