@@ -1648,7 +1648,13 @@ inline auto make_args_checked(const S& format_str,
  */
 template <typename Char, typename T>
 inline detail::named_arg<Char, T> arg(const Char* name, const T& arg) {
+//
+// CHANGE FOR CONDUIT
+// Intel 17 doesn't like this static assert.
+// 
+#if (!FMT_ICC_VERSION || FMT_ICC_VERSION >= 1800)
   static_assert(!detail::is_named_arg<T>(), "nested named arguments");
+#endif
   return {name, arg};
 }
 

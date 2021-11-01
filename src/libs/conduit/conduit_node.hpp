@@ -225,11 +225,34 @@ public:
     void mmap(const std::string &stream_path,
               const Schema &schema);
 
+
 //-----------------------------------------------------------------------------
 ///@}
 //-----------------------------------------------------------------------------
 //
 // -- end declaration of Node basic i/o methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node allocator selection methods --
+//
+//-----------------------------------------------------------------------------
+///@name Allocator Selection
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///
+//-----------------------------------------------------------------------------
+    void    set_allocator(index_t allocator_id);
+    index_t allocator();
+    void    reset_allocator();
+//-----------------------------------------------------------------------------
+///@}
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node allocator selection methods --
 //
 //-----------------------------------------------------------------------------
 
@@ -3194,6 +3217,9 @@ public:
     void    to_float32_array(Node &res) const;
     void    to_float64_array(Node &res) const;
 
+    /// convert to the index type
+    void    to_index_t_array(Node &res) const;
+
     /// convert to c types
     void    to_char_array(Node &res)  const;
     void    to_short_array(Node &res) const;
@@ -3979,6 +4005,9 @@ public:
     float32_array    as_float32_array();
     float64_array    as_float64_array();
 
+    // index type array types via conduit::DataArray
+    index_t_array    as_index_t_array() const;
+
     // signed integer array types via conduit::DataArray (const variants)
 
     const int8_array       as_int8_array()  const;
@@ -4223,7 +4252,6 @@ public:
 //
 //-----------------------------------------------------------------------------
 
-
 private:
 //-----------------------------------------------------------------------------
 //
@@ -4322,7 +4350,8 @@ private:
     // work horse for complex node hierarchical setup
     static void      walk_schema(Node   *node,
                                  Schema *schema,
-                                 void   *data);
+                                 void   *data,
+                                 index_t allocator_id);
 
     static void      mirror_node(Node *node,
                                  Schema *schema,
@@ -4554,6 +4583,9 @@ private:
     // initializing nodes using memory maps, so it is still needed apart from
     // simply knowing if this pointer is valid.
     MMap     *m_mmap;
+
+    // allocator id for memory
+    index_t m_allocator_id;
 };
 //-----------------------------------------------------------------------------
 // -- end conduit::Node --

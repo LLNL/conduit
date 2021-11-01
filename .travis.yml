@@ -194,7 +194,7 @@ script:
   - while sleep 540; do echo "=====[ $SECONDS seconds still running ]====="; done &
   # build deps using uberenv
   # use -k to avoid suprises related to certs
-  - python scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/travis/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/ || travis_terminate 1;
+  - python scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/travis/ || travis_terminate 1;
   # todo:
   #- export SPACK_PYTHON_BIN_DIR=`ls -d ${TRAVIS_BUILD_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin`
   #- pip install cpp-coveralls

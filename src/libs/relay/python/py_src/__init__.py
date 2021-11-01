@@ -9,7 +9,12 @@
 from .conduit_relay_python import *
 
 from . import io
-from . import web
+
+# web support is optional, so drive on if we can't import
+try:
+    from . import web
+except:
+    pass
 
 # mpi support is optional, so drive on if we can't import
 try:

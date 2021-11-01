@@ -140,10 +140,12 @@ conduit_blueprint_mesh_examples_spiral(conduit_index_t ndomains,
 
 void
 conduit_blueprint_mesh_examples_polytess(conduit_index_t nlevels,
+                                         conduit_index_t nz,
                                          conduit_node *cres)
 {
     Node &res = cpp_node_ref(cres);
     blueprint::mesh::examples::polytess(nlevels,
+                                        nz,
                                         res);
 }
 
