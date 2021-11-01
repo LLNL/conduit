@@ -172,35 +172,22 @@ Building Third Party Dependencies for Development
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
-  Conduit developers use ``bootstrap-env.sh`` and ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit development.
+  Conduit developers use ``scripts/uberenv/uberenv.py`` to setup third party libraries for Conduit development.
   For info on how to use the Conduit Spack package see :ref:`building_with_spack`.
   
 
-On OSX and Linux, you can use ``bootstrap-env.sh`` (located at the root of the conduit repo) to help setup your development environment. This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
+On OSX and Linux, you can use ``scripts/uberenv/uberenv.py`` to help setup your development environment. This script leverages **Spack** to build all of the external third party libraries and tools used by Conduit. Fortran support is optional and all dependencies should build without a fortran compiler. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH so can immediately call the ``config-build.sh`` helper script to configure a conduit build.
 
 .. code:: bash
     
     #build third party libs using spack
-    source bootstrap-env.sh
+    python scripts/uberenv/uberenv.py
     
-    #copy the generated host-config file into the standard location
-    cp uberenv_libs/`hostname`*.cmake host-configs/
-    
-    # run the configure helper script
-    ./config-build.sh
-
-    # or you can run the configure helper script and give it the 
+    # run the configure helper script and give it the 
     # path to a host-config file 
     ./config-build.sh uberenv_libs/`hostname`*.cmake
 
 
-When ``bootstrap-env.sh`` runs ``uberenv.py``, all command line arguments are forwarded:
-
-.. code:: bash
-
-    python scripts/uberenv/uberenv.py $@
-
-So any options to ``bootstrap-env.sh`` are effectively ``uberenv.py`` options.
 
 Uberenv Options for Building Third Party Dependencies
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
