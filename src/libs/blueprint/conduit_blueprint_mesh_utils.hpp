@@ -138,13 +138,17 @@ private:
 //---------------------------------------------------------------------------//
 struct CONDUIT_BLUEPRINT_API ShapeCascade
 {
+public:
     ShapeCascade(const conduit::Node &topology);
+    ShapeCascade(const ShapeType &shape_type);
 
     index_t get_num_embedded(const index_t level) const;
     const ShapeType& get_shape(const index_t level = -1) const;
 
     ShapeType dim_types[4];
     index_t dim;
+private:
+    void init(const ShapeType &shape_type);
 };
 
 //---------------------------------------------------------------------------//
@@ -259,6 +263,36 @@ namespace coordset
     std::vector<std::string> CONDUIT_BLUEPRINT_API axes(const Node &coordset);
 
     //-----------------------------------------------------------------------------
+    std::string CONDUIT_BLUEPRINT_API coordsys(const Node &n);
+
+    //-----------------------------------------------------------------------------
+    /**
+    @brief Returns the number of verticies in each dimension for the given coordset.
+    @return A vector of index_t in the format {d0_nverts, ... , dNnverts}
+    */
+    std::vector<index_t> dim_lengths(const conduit::Node &n);
+
+    //-----------------------------------------------------------------------------
+    /**
+    @brief Reads the coordset's data and determines min/max for each axis.
+    NOTE: This simply takes the min/max of each data array for recilinear/explicit,
+    are there any special considerations for cylindrical and spherical coordinates?
+    For uniform it calculates min/max based off of origin/spacing/dims.
+    @return A vector of float64 in the format {d0min, d0max, ... , dNmin, dNmax}
+    */
+    std::vector<float64> CONDUIT_BLUEPRINT_API extents(const Node &n);
+
+    namespace uniform
+    {
+        /**
+        @brief Reads the given uniform coordset and extracts to spacing
+               to an index_t vector
+        */
+        std::vector<double> CONDUIT_BLUEPRINT_API spacing(const Node &n);
+
+        std::vector<index_t> CONDUIT_BLUEPRINT_API origin(const Node &n);
+    }
+
     std::string CONDUIT_BLUEPRINT_API coordsys(const Node &coordset);
 
     //-------------------------------------------------------------------------
@@ -284,6 +318,9 @@ namespace topology
 {
     //-------------------------------------------------------------------------
     index_t CONDUIT_BLUEPRINT_API dims(const conduit::Node &topo);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API logical_dims(const Node &n, index_t *d, index_t maxdims);
 
     //-------------------------------------------------------------------------
     index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &topo);

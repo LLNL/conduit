@@ -1982,49 +1982,12 @@ braid_hexs_and_tets(index_t npts_x,
     res["topologies/mesh/elements/element_types/tets/shape"] = "tet";
 
     res["topologies/mesh/elements/element_index/stream_ids"].set(DataType::int32(4));
-    res["topologies/mesh/elements/element_index/element_counts"].set(DataType::int32(4));
-
-    int32* sidx_ids = res["topologies/mesh/elements/element_index/stream_ids"].value();
-    int32* sidx_lengths = res["topologies/mesh/elements/element_index/element_counts"].value();
-
-    // There are four groups -- alternating between hexs and tets
-    sidx_ids[0] = 0;
-    sidx_ids[1] = 1;
-    sidx_ids[2] = 0;
-    sidx_ids[3] = 1;
-
-    // Set the lengths of the groups
-    // The first two groups have at most length 1
-    // The last two groups have the balance of the elements
-    switch(nele_hexs)
-    {
-    case 0:
-        sidx_lengths[0] = 0;  sidx_lengths[1] = 0;
-        sidx_lengths[2] = 0;  sidx_lengths[3] = 0;
-        break;
-    case 1:
-        sidx_lengths[0] = 1;  sidx_lengths[1] = 0;
-        sidx_lengths[2] = 0;  sidx_lengths[3] = 0;
-        break;
-    case 2:
-        sidx_lengths[0] = 1;  sidx_lengths[1] = 1;
-        sidx_lengths[2] = 0;  sidx_lengths[3] = 0;
-        break;
-    case 3:
-        sidx_lengths[0] = 1;  sidx_lengths[1] = 1;
-        sidx_lengths[2] = 1;  sidx_lengths[3] = 0;
-        break;
-    default:
-        sidx_lengths[0] = 1;
-        sidx_lengths[1] = 1;
-        sidx_lengths[2] = n_hex_hexs-1;
-        sidx_lengths[3] = n_hex_tets-1;
-        break;
-    }
 
     res["topologies/mesh/elements/stream"].set( DataType::int32(n_hexs_verts + n_tets_verts) );
     int32* conn = res["topologies/mesh/elements/stream"].value();
 
+    std::vector<int32> ele_counts;
+    std::vector<int32> stream_ids;
     int32 idx = 0;
     int32 elem_count = 0;
     for(int32 k = 0; k < nele_hexs_z ; k++)
@@ -2066,6 +2029,8 @@ braid_hexs_and_tets(index_t npts_x,
                     conn[idx++] = vidx[5];
                     conn[idx++] = vidx[6];
                     conn[idx++] = vidx[7];
+                    ele_counts.push_back(1);
+                    stream_ids.push_back(0);
                 }
                 else // it is a tet
                 {
@@ -2100,12 +2065,16 @@ braid_hexs_and_tets(index_t npts_x,
                     conn[idx++] = vidx[1];
                     conn[idx++] = vidx[5];
                     conn[idx++] = vidx[6];
+                    ele_counts.push_back(6);
+                    stream_ids.push_back(1);
                 }
 
                 elem_count++;
             }
         }
     }
+    res["topologies/mesh/elements/element_index/element_counts"].set(ele_counts);
+    res["topologies/mesh/elements/element_index/stream_ids"].set(stream_ids);
 
     Node &fields = res["fields"];
 

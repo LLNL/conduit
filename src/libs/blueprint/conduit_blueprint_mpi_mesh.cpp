@@ -14,11 +14,14 @@
 #include <algorithm>
 #include <tuple>
 #include <vector>
+#include <cmath>
 
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint_mesh.hpp"
+#include "conduit_blueprint_mpi_mesh.hpp"
+#include "conduit_blueprint_mpi_mesh_partition.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
@@ -231,6 +234,28 @@ number_of_domains(const conduit::Node &n,
     return global_num_domains;
 }
 
+//-------------------------------------------------------------------------
+void
+partition(const conduit::Node &n_mesh,
+          const conduit::Node &options,
+          conduit::Node &output,
+          MPI_Comm comm)
+{
+    ParallelPartitioner p(comm);
+    output.reset();
+
+    // Partitioners on different ranks ought to return the same value but
+    // perhaps some did not when they examined their own domains against
+    // selection.
+    int iinit, ginit;
+    iinit = p.initialize(n_mesh, options) ? 1 : 0;
+    MPI_Allreduce(&iinit, &ginit, 1, MPI_INT, MPI_MAX, comm);
+    if(ginit > 0)
+    {
+        p.split_selections();
+       p.execute(output);
+    }
+}
 
 //-----------------------------------------------------------------------------
 void
