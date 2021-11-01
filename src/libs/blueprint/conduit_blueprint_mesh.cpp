@@ -4377,15 +4377,16 @@ mesh::index::verify(const Node &n,
 
 //-------------------------------------------------------------------------
 void
-mesh::partition(const conduit::Node &n_mesh, const conduit::Node &options,
-    conduit::Node &output)
+mesh::partition(const conduit::Node &n_mesh,
+                const conduit::Node &options,
+                conduit::Node &output)
 {
-    mesh::partitioner P;
-    if(P.initialize(n_mesh, options))
+    mesh::Partitioner p;
+    if(p.initialize(n_mesh, options))
     {
-        P.split_selections();
+        p.split_selections();
         output.reset();
-        P.execute(output);
+        p.execute(output);
     }
 }
 

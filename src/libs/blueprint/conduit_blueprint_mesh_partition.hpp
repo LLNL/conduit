@@ -48,20 +48,20 @@ namespace mesh
  @brief Base class for selections that identify regions of interest that will
         be extracted from a mesh.
  */
-class CONDUIT_BLUEPRINT_API selection
+class CONDUIT_BLUEPRINT_API Selection
 {
 public:
     static constexpr int FREE_DOMAIN_ID = -1; // The domain number needs to be assigned.
     static constexpr int FREE_RANK_ID = -1;   // The rank needs to be assigned.
 
-    selection();
-    selection(const selection &obj);
-    virtual ~selection();
+    Selection();
+    Selection(const Selection &obj);
+    virtual ~Selection();
 
     /**
      Create a copy of the selection.
      */
-    virtual std::shared_ptr<selection> copy() const = 0;
+    virtual std::shared_ptr<Selection> copy() const = 0;
 
     /**
      @brief Initializes the selection from the provided Conduit node.
@@ -111,7 +111,7 @@ public:
      @param n_mesh A Conduit conduit::Node containing the mesh.
      @return A vector of selection pointers that cover the input selection.
      */
-    virtual std::vector<std::shared_ptr<selection> > partition(const conduit::Node &n_mesh) const = 0;
+    virtual std::vector<std::shared_ptr<Selection> > partition(const conduit::Node &n_mesh) const = 0;
 
     /**
      @brief Return the domain index to which the selection is being applied.
@@ -217,7 +217,7 @@ protected:
         Conduit node that refashions the selections into a target number of
         mesh domains. This is the serial implementation.
  */
-class CONDUIT_BLUEPRINT_API partitioner
+class CONDUIT_BLUEPRINT_API Partitioner
 {
 public:
     /**
@@ -227,11 +227,11 @@ public:
             call free(), which will free the mesh if we own it. The struct
             does not have a destructor on purpose.
      */
-    struct CONDUIT_BLUEPRINT_API chunk
+    struct CONDUIT_BLUEPRINT_API Chunk
     {
-        chunk();
-        chunk(const Node *m, bool own);
-        chunk(const Node *m, bool own, int dr, int dd);
+        Chunk();
+        Chunk(const Node *m, bool own);
+        Chunk(const Node *m, bool own, int dr, int dd);
         void free();
 
         const Node *mesh;
@@ -243,12 +243,12 @@ public:
     /**
      @brief Constructor.
      */
-    partitioner();
+    Partitioner();
 
     /**
      @brief Destructor.
      */
-    virtual ~partitioner();
+    virtual ~Partitioner();
 
     /**
      @brief Initialize the partitioner using the input mesh (which could be
@@ -361,7 +361,7 @@ protected:
      @param type The name of the selection type to create.
      @return A new instance of the requested selection type.
      */
-    virtual std::shared_ptr<selection> create_selection(const std::string &type) const;
+    virtual std::shared_ptr<Selection> create_selection(const std::string &type) const;
 
     /**
      @brief Create a selection of the type that best selects all of the 
@@ -371,7 +371,7 @@ protected:
      @param n_mesh A Conduit node that contains the mesh we're selecting.
      @return A new selection object that selects all cells in the mesh.
      */
-    std::shared_ptr<selection> create_selection_all_elements(const conduit::Node &n_mesh) const;
+    std::shared_ptr<Selection> create_selection_all_elements(const conduit::Node &n_mesh) const;
 
     /**
      @brief Use the vertex_ids and element_ids to copy from the original
@@ -545,7 +545,7 @@ protected:
      
      @return The starting domain index on this rank.
      */
-    virtual unsigned int starting_index(const std::vector<chunk> &chunks);
+    virtual unsigned int starting_index(const std::vector<Chunk> &chunks);
 
     /**
      @brief Assign the chunks on this rank a destination rank to which it will
@@ -568,7 +568,7 @@ protected:
                              It contains a single 0 in serial.
      @note Reimplemented in parallel
      */
-    virtual void map_chunks(const std::vector<chunk> &chunks,
+    virtual void map_chunks(const std::vector<Chunk> &chunks,
                             std::vector<int> &dest_ranks,
                             std::vector<int> &dest_domain,
                             std::vector<int> &offsets);
@@ -594,17 +594,17 @@ protected:
                                             into a single output domain.
      @note Reimplemented in parallel
      */
-    virtual void communicate_chunks(const std::vector<chunk> &chunks,
+    virtual void communicate_chunks(const std::vector<Chunk> &chunks,
                                     const std::vector<int> &dest_rank,
                                     const std::vector<int> &dest_domain,
                                     const std::vector<int> &offsets,
-                                    std::vector<chunk> &chunks_to_assemble,
+                                    std::vector<Chunk> &chunks_to_assemble,
                                     std::vector<int> &chunks_to_assemble_domains);
 
     int rank, size;
     unsigned int target;
     std::vector<const Node *>                meshes;
-    std::vector<std::shared_ptr<selection> > selections;
+    std::vector<std::shared_ptr<Selection> > selections;
     std::vector<std::string>                 selected_fields;
     bool                                     mapping;
     double                                   merge_tolerance;
