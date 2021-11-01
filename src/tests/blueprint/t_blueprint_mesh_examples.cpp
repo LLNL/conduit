@@ -526,7 +526,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_misc)
     std::vector<std::string> misc_type_strings;
     misc_type_strings.push_back("matsets");
     misc_type_strings.push_back("specsets");
-    misc_type_strings.push_back("adjsets");
     misc_type_strings.push_back("nestsets");
 
     Node mesh;
@@ -843,6 +842,80 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
                                      res);
 
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, grid_bad_inputs)
+{
+    Node res;
+
+    // several with bad inputs
+    EXPECT_THROW(blueprint::mesh::examples::grid("uniform",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  -1,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::grid("uniform",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  1,
+                                                  1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::grid("uniform",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  -1,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::grid("hexs",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::grid("polyhedra",
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    // a few ok
+    blueprint::mesh::examples::grid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     res);
+
+    blueprint::mesh::examples::grid("tets",
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     2,
+                                     res);
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, braid_bad_inputs)

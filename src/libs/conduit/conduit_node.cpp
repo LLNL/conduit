@@ -10458,6 +10458,83 @@ Node::to_float64_array(Node &res) const
 }
 
 //---------------------------------------------------------------------------//
+/// convert array to the index type
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+void
+Node::to_index_t_array(Node &res) const
+{
+    res.set(DataType::index_t(dtype().number_of_elements()));
+
+    index_t_array res_array = res.as_index_t_array();
+
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:
+        {
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_ID:
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_ID:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_ID:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
+                        << " type to float64_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
 /// convert array to c signed integer arrays
 //---------------------------------------------------------------------------//
 
@@ -14446,6 +14523,17 @@ Node::as_float64_array()
                         "as_float64_array()",
                         float64_array());
     return float64_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+index_t_array
+Node::as_index_t_array() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        DataType::index_t(1).id(),
+                        "as_index_t_array()",
+                        index_t_array());
+    return index_t_array(m_data,dtype());
 }
 
 //---------------------------------------------------------------------------//

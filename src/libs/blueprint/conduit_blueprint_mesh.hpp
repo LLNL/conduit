@@ -73,6 +73,7 @@ bool CONDUIT_BLUEPRINT_API is_multi_domain(const conduit::Node &mesh);
 index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh);
 
 //-----------------------------------------------------------------------------
+std::vector<conduit::Node *> CONDUIT_BLUEPRINT_API domains(Node &mesh);
 std::vector<const conduit::Node *> CONDUIT_BLUEPRINT_API domains(const Node &mesh);
 
 /// Note: to_multi_domain uses Node::set_external to avoid copying data.
@@ -536,6 +537,20 @@ namespace adjset
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &adjset,
                                       conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    bool CONDUIT_BLUEPRINT_API is_pairwise(const conduit::Node &adjset);
+
+    //-------------------------------------------------------------------------
+    bool CONDUIT_BLUEPRINT_API is_maxshare(const conduit::Node &adjset);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_pairwise(const conduit::Node &adjset,
+                                           conduit::Node &dest);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_maxshare(const conduit::Node &adjset,
+                                           conduit::Node &dest);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::adjset::index protocol interface

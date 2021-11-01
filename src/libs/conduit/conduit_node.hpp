@@ -3217,6 +3217,9 @@ public:
     void    to_float32_array(Node &res) const;
     void    to_float64_array(Node &res) const;
 
+    /// convert to the index type
+    void    to_index_t_array(Node &res) const;
+
     /// convert to c types
     void    to_char_array(Node &res)  const;
     void    to_short_array(Node &res) const;
@@ -3999,6 +4002,9 @@ public:
     // floating point array types via conduit::DataArray
     float32_array    as_float32_array();
     float64_array    as_float64_array();
+
+    // index type array types via conduit::DataArray
+    index_t_array    as_index_t_array() const;
 
     // signed integer array types via conduit::DataArray (const variants)
 

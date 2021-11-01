@@ -255,6 +255,7 @@ bool verify_object_field(const std::string &protocol,
                          conduit::Node &info,
                          const std::string &field_name = "",
                          const bool allow_list = false,
+                         const bool allow_empty = false,
                          const index_t num_children = 0)
 {
     Node &field_info = (field_name != "") ? info[field_name] : info;
@@ -271,7 +272,7 @@ bool verify_object_field(const std::string &protocol,
                                        (allow_list ? " or a list" : ""));
             res = false;
         }
-        else if(field_node.number_of_children() == 0)
+        else if(!allow_empty && field_node.number_of_children() == 0)
         {
             log::error(info,protocol, "has no children");
             res = false;
@@ -950,9 +951,8 @@ convert_topology_to_rectilinear(const std::string &/*base_type*/,
     dest.reset();
     cdest.reset();
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-    blueprint::mesh::coordset::uniform::to_rectilinear(coordset, cdest);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    blueprint::mesh::coordset::uniform::to_rectilinear(*coordset, cdest);
 
     dest.set(topo);
     dest["type"].set("rectilinear");
@@ -972,15 +972,14 @@ convert_topology_to_structured(const std::string &base_type,
     dest.reset();
     cdest.reset();
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
     if(is_base_rectilinear)
     {
-        blueprint::mesh::coordset::rectilinear::to_explicit(coordset, cdest);
+        blueprint::mesh::coordset::rectilinear::to_explicit(*coordset, cdest);
     }
     else if(is_base_uniform)
     {
-        blueprint::mesh::coordset::uniform::to_explicit(coordset, cdest);
+        blueprint::mesh::coordset::uniform::to_explicit(*coordset, cdest);
     }
 
     dest["type"].set("structured");
@@ -994,14 +993,14 @@ convert_topology_to_structured(const std::string &base_type,
     // and use its types to inform those of the topology?
     DataType int_dtype = bputils::find_widest_dtype(topo, bputils::DEFAULT_INT_DTYPES);
 
-    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
     const std::vector<std::string> &logical_axes = bputils::LOGICAL_AXES;
     for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
     {
         Node src_dlen_node;
         src_dlen_node.set(is_base_uniform ?
-            coordset["dims"][logical_axes[i]].to_int64() :
-            coordset["values"][csys_axes[i]].dtype().number_of_elements());
+            (*coordset)["dims"][logical_axes[i]].to_int64() :
+            (*coordset)["values"][csys_axes[i]].dtype().number_of_elements());
         // NOTE: The number of elements in the topology is one less
         // than the number of points along each dimension.
         src_dlen_node.set(src_dlen_node.to_int64() - 1);
@@ -1025,19 +1024,18 @@ convert_topology_to_unstructured(const std::string &base_type,
     dest.reset();
     cdest.reset();
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
     if(is_base_structured)
     {
-        cdest.set(coordset);
+        cdest.set(*coordset);
     }
     else if(is_base_rectilinear)
     {
-        blueprint::mesh::coordset::rectilinear::to_explicit(coordset, cdest);
+        blueprint::mesh::coordset::rectilinear::to_explicit(*coordset, cdest);
     }
     else if(is_base_uniform)
     {
-        blueprint::mesh::coordset::uniform::to_explicit(coordset, cdest);
+        blueprint::mesh::coordset::uniform::to_explicit(*coordset, cdest);
     }
 
     dest["type"].set("unstructured");
@@ -1051,7 +1049,7 @@ convert_topology_to_unstructured(const std::string &base_type,
     // and use its types to inform those of the topology?
     DataType int_dtype = bputils::find_widest_dtype(topo, bputils::DEFAULT_INT_DTYPES);
 
-    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
     dest["elements/shape"].set(
         (csys_axes.size() == 1) ? "line" : (
         (csys_axes.size() == 2) ? "quad" : (
@@ -1069,7 +1067,7 @@ convert_topology_to_unstructured(const std::string &base_type,
     }
     else if(is_base_rectilinear)
     {
-        const conduit::Node &dim_node = coordset["values"];
+        const conduit::Node &dim_node = (*coordset)["values"];
         for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
         {
             edims_axes[i] =
@@ -1078,7 +1076,7 @@ convert_topology_to_unstructured(const std::string &base_type,
     }
     else if(is_base_uniform)
     {
-        const conduit::Node &dim_node = coordset["dims"];
+        const conduit::Node &dim_node = (*coordset)["dims"];
         for(index_t i = 0; i < (index_t)csys_axes.size(); i++)
         {
             edims_axes[i] = dim_node[logical_axes[i]].to_int() - 1;
@@ -1455,6 +1453,33 @@ mesh::number_of_domains(const conduit::Node &mesh)
     {
         return mesh.number_of_children();
     }
+}
+
+
+//-------------------------------------------------------------------------
+std::vector<conduit::Node *>
+mesh::domains(conduit::Node &n)
+{
+    // this is a blueprint property, we can assume it will be called
+    // only when mesh verify is true. Given that - it is easy to
+    // aggregate all of the domains into a list
+
+    std::vector<conduit::Node *> doms;
+
+    if(!mesh::is_multi_domain(n))
+    {
+        doms.push_back(&n);
+    }
+    else if(!n.dtype().is_empty())
+    {
+        NodeIterator nitr = n.children();
+        while(nitr.has_next())
+        {
+            doms.push_back(&nitr.next());
+        }
+    }
+
+    return std::vector<conduit::Node *>(std::move(doms));
 }
 
 
@@ -2685,11 +2710,8 @@ mesh::topology::unstructured::generate_points(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
-    Node coordset;
-
-    bputils::find_reference_node(topo, "coordset", coordset);
-
-    TopologyMetadata topo_data(topo, coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[0]);
 
@@ -2707,10 +2729,8 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-
-    TopologyMetadata topo_data(topo, coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[1]);
 
@@ -2728,10 +2748,8 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-
-    TopologyMetadata topo_data(topo, coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
     dest.set(topo_data.dim_topos[2]);
 
@@ -2750,10 +2768,8 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
 {
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_centroids".
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-
-    calculate_unstructured_centroids(topo, coordset, topo_dest, coords_dest);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    calculate_unstructured_centroids(topo, *coordset, topo_dest, coords_dest);
 
     Node map_node;
     std::vector<index_t> map_vec;
@@ -2764,7 +2780,7 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
     }
     map_node.set(map_vec);
 
-    DataType int_dtype = bputils::find_widest_dtype(bputils::link_nodes(topo, coordset), bputils::DEFAULT_INT_DTYPES);
+    DataType int_dtype = bputils::find_widest_dtype(bputils::link_nodes(topo, *coordset), bputils::DEFAULT_INT_DTYPES);
     s2dmap.reset();
     d2smap.reset();
     map_node.to_data_type(int_dtype.id(), s2dmap);
@@ -2781,9 +2797,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 {
     // Retrieve Relevent Coordinate/Topology Metadata //
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
 
     const ShapeCascade topo_cascade(topo);
     const ShapeType topo_shape = topo_cascade.get_shape();
@@ -2797,7 +2812,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     // Extract Derived Coordinate/Topology Data //
 
-    const TopologyMetadata topo_data(topo, coordset);
+    const TopologyMetadata topo_data(topo, *coordset);
     const DataType &int_dtype = topo_data.int_dtype;
     const DataType &float_dtype = topo_data.float_dtype;
 
@@ -2811,7 +2826,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         if(di == line_shape.dim) { continue; }
 
         calculate_unstructured_centroids(
-            topo_data.dim_topos[di], coordset,
+            topo_data.dim_topos[di], *coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
@@ -2851,10 +2866,14 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         {
             dim_coord_offsets[di] = doffset;
 
+            // TODO(JRC): This comment may be important for parallel processing;
+            // there are a lot of assumptions in that code on how ordering is
+            // presented via 'TopologyMataData'.
+            //
             // NOTE: The centroid ordering for the positions is different
             // from the base ordering, which messes up all subsequent indexing.
             // We must use the coordinate set associated with the base topology.
-            const Node &cset = (di != 0) ? dim_cent_coords[di] : coordset;
+            const Node &cset = (di != 0) ? dim_cent_coords[di] : *coordset;
             if(!cset.dtype().is_empty())
             {
                 const Node &cset_axis = cset["values"][csys_axes[ai]];
@@ -3947,9 +3966,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 {
     // Retrieve Relevent Coordinate/Topology Metadata //
 
-    Node coordset;
-    bputils::find_reference_node(topo, "coordset", coordset);
-    const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+    const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
 
     const ShapeCascade topo_cascade(topo);
     const ShapeType topo_shape = topo_cascade.get_shape();
@@ -3966,7 +3984,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     // Extract Derived Coordinate/Topology Data //
 
-    const TopologyMetadata topo_data(topo, coordset);
+    const TopologyMetadata topo_data(topo, *coordset);
     const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
     const DataType &int_dtype = topo_data.int_dtype;
     const DataType &float_dtype = topo_data.float_dtype;
@@ -3976,7 +3994,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
         calculate_unstructured_centroids(
-            topo_data.dim_topos[di], coordset,
+            topo_data.dim_topos[di], *coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
@@ -4017,6 +4035,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         Node dst_data;
         Node &dst_axis = coords_dest["values"][csys_axes[ai]];
 
+        // TODO(JRC): This is how centroids offsets are generated in the
+        // final topology!
         for(index_t di = 0, doffset = 0; di <= topo_shape.dim; di++)
         {
             dim_coord_offsets[di] = doffset;
@@ -4024,7 +4044,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             // NOTE: The centroid ordering for the positions is different
             // from the base ordering, which messes up all subsequent indexing.
             // We must use the coordinate set associated with the base topology.
-            const Node &cset = (di != 0) ? dim_cent_coords[di] : coordset;
+            const Node &cset = (di != 0) ? dim_cent_coords[di] : *coordset;
             const Node &cset_axis = cset["values"][csys_axes[ai]];
             index_t cset_length = cset_axis.dtype().number_of_elements();
 
@@ -4920,7 +4940,7 @@ mesh::adjset::verify(const Node &adjset,
     res &= verify_field_exists(protocol, adjset, info, "association") &&
            mesh::association::verify(adjset["association"], info["association"]);
 
-    if(!verify_object_field(protocol, adjset, info, "groups"))
+    if(!verify_object_field(protocol, adjset, info, "groups", false, true))
     {
         res = false;
     }
@@ -4943,7 +4963,6 @@ mesh::adjset::verify(const Node &adjset,
             }
             else if(chld.has_child("windows"))
             {
-
                 group_res &= verify_object_field(protocol, chld,
                     chld_info, "windows");
 
@@ -5007,6 +5026,250 @@ mesh::adjset::verify(const Node &adjset,
     log::validation(info, res);
 
     return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+mesh::adjset::is_pairwise(const Node &adjset)
+{
+    bool res = true;
+
+    NodeConstIterator group_itr = adjset["groups"].children();
+    while(group_itr.has_next() && res)
+    {
+        const Node &group = group_itr.next();
+        res &= group["neighbors"].dtype().number_of_elements() == 1;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+mesh::adjset::is_maxshare(const Node &adjset)
+{
+    bool res = true;
+
+    std::set<index_t> ids;
+
+    NodeConstIterator group_itr = adjset["groups"].children();
+    while(group_itr.has_next() && res)
+    {
+        const Node &group = group_itr.next();
+        const Node &group_values = group["values"];
+
+        for(index_t ni = 0; ni < group_values.dtype().number_of_elements(); ni++)
+        {
+            Node temp(DataType(group_values.dtype().id(), 1),
+                (void*)group_values.element_ptr(ni), true);
+            const index_t next_id = temp.to_index_t();
+
+            res &= ids.find(next_id) == ids.end();
+            ids.insert(next_id);
+        }
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::adjset::to_pairwise(const Node &adjset,
+                          Node &dest)
+{
+    dest.reset();
+
+    const DataType int_dtype = bputils::find_widest_dtype(adjset, bputils::DEFAULT_INT_DTYPES);
+
+    // NOTE(JRC): We assume that group names are shared across ranks, but
+    // make no assumptions on the uniqueness of a set of neighbors for a group
+    // (i.e. the same set of neighbors can be used in >1 groups).
+    std::vector<std::string> adjset_group_names = adjset["groups"].child_names();
+    std::sort(adjset_group_names.begin(), adjset_group_names.end());
+
+    // Compile ordered lists for each neighbor containing their unique lists
+    // of 'adjset' entity indices, as compiled from all groups in the source 'adjset'.
+    std::map<index_t, std::vector<index_t>> pair_values_map;
+    for(const std::string &group_name : adjset_group_names)
+    {
+        const Node &group_node = adjset["groups"][group_name];
+
+        std::vector<index_t> group_neighbors;
+        {
+            const Node &group_nvals = group_node["neighbors"];
+            for(index_t ni = 0; ni < group_nvals.dtype().number_of_elements(); ++ni)
+            {
+                Node temp(DataType(group_nvals.dtype().id(), 1),
+                    (void*)group_nvals.element_ptr(ni), true);
+                group_neighbors.push_back(temp.to_index_t());
+            }
+        }
+
+        std::vector<index_t> group_values;
+        {
+            const Node &group_vals = group_node["values"];
+            for(index_t vi = 0; vi < group_vals.dtype().number_of_elements(); ++vi)
+            {
+                Node temp(DataType(group_vals.dtype().id(), 1),
+                    (void*)group_vals.element_ptr(vi), true);
+                group_values.push_back(temp.to_index_t());
+            }
+        }
+
+        for(const index_t &neighbor_id : group_neighbors)
+        {
+            std::vector<index_t> &neighbor_values = pair_values_map[neighbor_id];
+            neighbor_values.insert(neighbor_values.end(),
+                group_values.begin(), group_values.end());
+        }
+    }
+
+    // Given ordered lists of adjset values per neighbor, generate the destination
+    // adjset hierarchy.
+    Node adjset_template;
+    adjset_template.set_external(adjset);
+    adjset_template.remove("groups");
+
+    dest.set(adjset_template);
+    dest["groups"].set(DataType::object());
+
+    for(const auto &pair_values_pair : pair_values_map)
+    {
+        const index_t &neighbor_id = pair_values_pair.first;
+        const std::vector<index_t> &neighbor_values = pair_values_pair.second;
+
+        Node &group_node = dest["groups"][std::to_string(dest["groups"].number_of_children())];
+        group_node["neighbors"].set(DataType(int_dtype.id(), 1));
+        {
+            Node temp(DataType::index_t(1), (void*)&neighbor_id, true);
+            temp.to_data_type(int_dtype.id(), group_node["neighbors"]);
+        }
+        group_node["values"].set(DataType(int_dtype.id(), neighbor_values.size()));
+        {
+            Node temp(DataType::index_t(neighbor_values.size()),
+                (void*)neighbor_values.data(), true);
+            temp.to_data_type(int_dtype.id(), group_node["values"]);
+        }
+    }
+    bputils::adjset::canonicalize(dest);
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::adjset::to_maxshare(const Node &adjset,
+                          Node &dest)
+{
+    dest.reset();
+
+    const DataType int_dtype = bputils::find_widest_dtype(adjset, bputils::DEFAULT_INT_DTYPES);
+
+    // NOTE(JRC): We assume that group names are shared across ranks, but
+    // make no assumptions on the uniqueness of a set of neighbors for a group
+    // (i.e. the same set of neighbors can be used in >1 groups).
+    std::vector<std::string> adjset_group_names = adjset["groups"].child_names();
+    std::sort(adjset_group_names.begin(), adjset_group_names.end());
+
+    std::map<index_t, std::set<index_t>> entity_groupset_map;
+    for(const std::string &group_name : adjset_group_names)
+    {
+        const Node &group_node = adjset["groups"][group_name];
+
+        std::vector<index_t> group_neighbors;
+        {
+            const Node &group_nvals = group_node["neighbors"];
+            for(index_t ni = 0; ni < group_nvals.dtype().number_of_elements(); ++ni)
+            {
+                Node temp(DataType(group_nvals.dtype().id(), 1),
+                    (void*)group_nvals.element_ptr(ni), true);
+                group_neighbors.push_back(temp.to_index_t());
+            }
+        }
+
+        std::vector<index_t> group_values;
+        {
+            const Node &group_vals = group_node["values"];
+            for(index_t vi = 0; vi < group_vals.dtype().number_of_elements(); ++vi)
+            {
+                Node temp(DataType(group_vals.dtype().id(), 1),
+                    (void*)group_vals.element_ptr(vi), true);
+                group_values.push_back(temp.to_index_t());
+            }
+        }
+
+        for(const index_t &entity_id : group_values)
+        {
+            std::set<index_t> &entity_groupset = entity_groupset_map[entity_id];
+            entity_groupset.insert(group_neighbors.begin(), group_neighbors.end());
+        }
+    }
+
+    // Given ordered lists of adjset values per neighbor, generate the destination
+    // adjset hierarchy.
+    Node adjset_template;
+    adjset_template.set_external(adjset);
+    adjset_template.remove("groups");
+
+    dest.set(adjset_template);
+    dest["groups"].set(DataType::object());
+
+    std::map<std::set<index_t>, Node *> groupset_groupnode_map;
+    for(const auto &entity_groupset_pair : entity_groupset_map)
+    {
+        const std::set<index_t> &groupset = entity_groupset_pair.second;
+        if(groupset_groupnode_map.find(groupset) == groupset_groupnode_map.end())
+        {
+            Node &group_node = dest["groups"][std::to_string(dest["groups"].number_of_children())];
+            group_node["neighbors"].set(DataType(int_dtype.id(), groupset.size()));
+            {
+                const std::vector<index_t> grouplist(groupset.begin(), groupset.end());
+                Node temp(DataType::index_t(grouplist.size()), (void*)grouplist.data(), true);
+                temp.to_data_type(int_dtype.id(), group_node["neighbors"]);
+            }
+
+            groupset_groupnode_map[groupset] = &group_node;
+        }
+    }
+
+    // Now that the groundwork for each unique max-share group has been set,
+    // we populate the 'values' content of each group in order based on
+    // lexicographically sorted group names
+    std::map<std::set<index_t>, std::pair<std::vector<index_t>, std::set<index_t>>> groupset_values_map;
+    for(const std::string &group_name : adjset_group_names)
+    {
+        const Node &group_node = adjset["groups"][group_name];
+        const Node &group_vals = group_node["values"];
+        for(index_t vi = 0; vi < group_vals.dtype().number_of_elements(); ++vi)
+        {
+            Node temp(DataType(group_vals.dtype().id(), 1),
+                (void*)group_vals.element_ptr(vi), true);
+            const index_t group_entity = temp.to_index_t();
+
+            auto &groupset_pair = groupset_values_map[entity_groupset_map[group_entity]];
+            std::vector<index_t> &groupset_valuelist = groupset_pair.first;
+            std::set<index_t> &groupset_valueset = groupset_pair.second;
+            if(groupset_valueset.find(group_entity) == groupset_valueset.end())
+            {
+                groupset_valuelist.push_back(group_entity);
+                groupset_valueset.insert(group_entity);
+            }
+        }
+    }
+
+    for(const auto &groupset_values_pair : groupset_values_map)
+    {
+        const std::set<index_t> &groupset = groupset_values_pair.first;
+        const std::vector<index_t> &groupset_values = groupset_values_pair.second.first;
+
+        Node &group_node = *groupset_groupnode_map[groupset];
+        group_node["values"].set(DataType(int_dtype.id(), groupset_values.size()));
+        {
+            Node temp(DataType::index_t(groupset_values.size()),
+                (void*)groupset_values.data(), true);
+            temp.to_data_type(int_dtype.id(), group_node["values"]);
+        }
+    }
+
+    bputils::adjset::canonicalize(dest);
 }
 
 //-----------------------------------------------------------------------------
@@ -5081,9 +5344,9 @@ mesh::nestset::verify(const Node &nestset,
             {
                 index_t window_dim = chld["ratio"].number_of_children();
                 window_res &= !chld.has_child("origin") ||
-                    verify_object_field(protocol, chld, chld_info, "origin", false, window_dim);
+                    verify_object_field(protocol, chld, chld_info, "origin", false, false, window_dim);
                 window_res &= !chld.has_child("dims") ||
-                    verify_object_field(protocol, chld, chld_info, "dims", false, window_dim);
+                    verify_object_field(protocol, chld, chld_info, "dims", false, false, window_dim);
             }
 
             log::validation(chld_info,window_res);
