@@ -395,7 +395,10 @@ void
 ParallelMeshFlattener::gather_values(int nrows, int *rank_counts,
     int *rank_offsets, Node &values) const
 {
+// #define DEBUG_GATHER_VERBOSE
     DEBUG_PRINT("Rank " << rank << " - gather_values" << std::endl);
+    int send_count = (rank == root) ? 0 : nrows;
+    int no_data[] = {0};
     for(index_t i = 0; i < values.number_of_children(); i++)
     {
         Node &value = values[i];
@@ -406,27 +409,37 @@ ParallelMeshFlattener::gather_values(int nrows, int *rank_counts,
             for(index_t j = 0; j < ncomps; j++)
             {
                 Node &column = value[j];
-                void *ptr = column.element_ptr(0);
+                // On root our send_count is 0. Send buff and recv buff may not alias.
+                void *ptr = (rank == root) ? no_data : column.element_ptr(0);
+                void *recv_ptr = (rank == root) ? column.element_ptr(0) : nullptr;
                 const auto mtype = relay::mpi::conduit_dtype_to_mpi_dtype(column.dtype());
-                // DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << nrows
-                //     << ", " << mtype << ", " << ptr << ", " << rank_counts << ", " << rank_offsets
-                //     << ", " << mtype << ", " << root << ", " << comm << ");" << std::endl);
+#ifdef DEBUG_GATHER_VERBOSE
+                DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << send_count
+                    << ", " << mtype << ", " << recv_ptr << ", " << rank_counts << ", " << rank_offsets
+                    << ", " << mtype << ", " << root << ", " << comm << ");" << std::endl);
+#else
                 DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << value.name()
                     << "[" << column.name() << "]);" << std::endl);
-                MPI_Gatherv(ptr, nrows, mtype,
-                    ptr, rank_counts, rank_offsets,
+#endif
+                MPI_Gatherv(ptr, send_count, mtype,
+                    recv_ptr, rank_counts, rank_offsets,
                     mtype, root, comm);
             }
         }
         else
         {
-            void *ptr = value.element_ptr(0);
+            // On root our send_count is 0. Send buff and recv buff may not alias.
+            void *ptr = (rank == root) ? no_data : value.element_ptr(0);
+            void *recv_ptr = (rank == root) ? value.element_ptr(0) : nullptr;
             const auto mtype = relay::mpi::conduit_dtype_to_mpi_dtype(value.dtype());
-            // DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << nrows
-            //     << ", " << mtype << ", " << ptr << ", " << rank_counts << ", " << rank_offsets
-            //     << ", " << mtype << ", " << root << ", " << comm << ");" << std::endl);
+#ifdef DEBUG_GATHER_VERBOSE
+            DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << ptr << ", " << send_count
+                << ", " << mtype << ", " << recv_ptr << ", " << rank_counts << ", " << rank_offsets
+                << ", " << mtype << ", " << root << ", " << comm << ");" << std::endl);
+#else
             DEBUG_PRINT("Rank " << rank << " - MPI_Gatherv(" << value.name() << ");" << std::endl);
-            MPI_Gatherv(ptr, nrows, mtype, ptr, rank_counts,
+#endif
+            MPI_Gatherv(ptr, send_count, mtype, recv_ptr, rank_counts,
                 rank_offsets, mtype, root, comm);
         }
     }
@@ -456,6 +469,8 @@ ParallelMeshFlattener::gather_results(const MeshInfo &my_info,
             rank_offsets[i] = offset;
             offset += count;
         }
+        // Root will perform the operation "in place".
+        rank_counts[root] = 0;
 #ifdef DEBUG_MESH_FLATTEN
         std::cout << "Rank counts:\n  ";
         for(int count : rank_counts) std::cout << count << ", ";
@@ -480,6 +495,8 @@ ParallelMeshFlattener::gather_results(const MeshInfo &my_info,
             rank_offsets[i] = offset;
             offset += count;
         }
+        // Root will perform the operation "in place".
+        rank_counts[root] = 0;
 #ifdef DEBUG_MESH_FLATTEN
         std::cout << "Rank counts:\n  ";
         for(int count : rank_counts) std::cout << count << ", ";
@@ -760,7 +777,7 @@ ParallelMeshFlattener::flatten_many_domains(const Node &mesh, Node &output) cons
     cleanup_output(output);
 
     // TODO: Remove empty tables
-    DEBUG_PRINT("Rank " << rank << " done flattening.");
+    DEBUG_PRINT("Rank " << rank << " done flattening." << std::endl);
 }
 
 }
