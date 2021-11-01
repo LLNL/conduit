@@ -279,7 +279,7 @@ PyBlueprint_mesh_partition(PyObject *, //self
 
 // doc str
 const char *PyBlueprint_mesh_flatten_doc_str =
-"partition(mesh, options, output)\n"
+"flatten(mesh, options, output)\n"
 "\n"
 "Assumes mesh::verify() is True\n"
 "\n"

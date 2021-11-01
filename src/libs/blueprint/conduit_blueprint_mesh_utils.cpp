@@ -1230,9 +1230,15 @@ topology::logical_dims(const Node &n, index_t *d, index_t maxdims)
     }
     else if(type == "points")
     {
-        Node coordset;
-        find_reference_node(n, "coordset", coordset);
-        coordset::logical_dims(coordset, d, maxdims);
+        const Node *coordset = find_reference_node(n, "coordset");
+        if(coordset)
+        {
+            coordset::logical_dims(*coordset, d, maxdims);
+        }
+        else
+        {
+            CONDUIT_ERROR("Unable to find reference node 'coordset'.");
+        }
     }
     else // if(type == "unstructured")
     {

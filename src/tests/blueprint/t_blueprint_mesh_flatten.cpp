@@ -347,7 +347,7 @@ TEST(blueprint_mesh_flatten, braid)
 TEST(blueprint_mesh_flatten, polytess)
 {
     Node mesh;
-    blueprint::mesh::examples::polytess(5, mesh);
+    blueprint::mesh::examples::polytess(5, 1, mesh);
     test_mesh_single_domain(mesh, "polytess");
 }
 
