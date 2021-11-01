@@ -16,6 +16,7 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_o2mrelation_examples
                     t_blueprint_mesh_verify
                     t_blueprint_mesh_transform
+                    t_blueprint_mesh_partition
                     t_blueprint_mesh_query
                     t_blueprint_mesh_relay
                     t_blueprint_mesh_generate
@@ -55,7 +56,7 @@ else()
     message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
-set(BLUEPRINT_MPI_TESTS 
+set(BLUEPRINT_MPI_TESTS_RANKS_2 
     t_blueprint_mpi_smoke
     t_blueprint_mpi_mesh_query
     t_blueprint_mpi_mesh_transform
@@ -63,9 +64,12 @@ set(BLUEPRINT_MPI_TESTS
 
 set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_mesh_relay)
 
+set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4 
+    t_blueprint_mpi_mesh_partition)
+
 if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
-    foreach(TEST ${BLUEPRINT_MPI_TESTS})
+    foreach(TEST ${BLUEPRINT_MPI_TESTS_RANKS_2})
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit
                                                                  conduit_blueprint_mpi)
     endforeach()
@@ -73,6 +77,15 @@ if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
     foreach(TEST ${BLUEPRINT_RELAY_MPI_TESTS})
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit
+                                                                 conduit_blueprint
+                                                                 conduit_blueprint_mpi
+                                                                 conduit_relay
+                                                                 conduit_relay_mpi
+                                                                 conduit_relay_mpi_io)
+    endforeach()
+
+    foreach(TEST ${BLUEPRINT_RELAY_MPI_TESTS_RANKS_4})
+        add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 4 DEPENDS_ON conduit
                                                                  conduit_blueprint
                                                                  conduit_blueprint_mpi
                                                                  conduit_relay

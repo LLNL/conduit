@@ -16793,7 +16793,7 @@ Node::find_first_data_ptr() const
 
 //---------------------------------------------------------------------------//
 bool
-Node::diff(const Node &n, Node &info, const float64 epsilon) const
+Node::diff(const Node &n, Node &info, const float64 epsilon, bool relaxint) const
 {
     const std::string protocol = "node::diff";
     bool res = false;
@@ -16804,14 +16804,31 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
 
     if(t_dtid != n_dtid)
     {
-        std::ostringstream oss;
-        oss << "data type mismatch ("
-            << dtype().name()
-            << " vs "
-            << n.dtype().name()
-            << ")";
-        log::error(info, protocol, oss.str());
-        res = true;
+        // We ought to be able to compare integers of different sizes.
+        if(relaxint)
+        {
+            if(dtype().is_signed_integer() && n.dtype().is_signed_integer())
+                res = to_int64() != n.to_int64();
+            else if(dtype().is_unsigned_integer() && n.dtype().is_unsigned_integer())
+                res = to_uint64() != n.to_uint64();
+            else if(dtype().is_integer() && n.dtype().is_integer())
+                res = to_int64() != n.to_int64();
+            else
+                res = true;
+        }
+        else
+            res = true;
+
+        if(res)
+        {
+            std::ostringstream oss;
+            oss << "data type mismatch ("
+                << dtype().name()
+                << " vs "
+                << n.dtype().name()
+                << ")";
+            log::error(info, protocol, oss.str());
+        }
     }
     else if(t_dtid == DataType::EMPTY_ID)
     {
@@ -16836,7 +16853,7 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             else
             {
                 Node &info_child = info_children["diff"].add_child(child_path);
-                res |= t_child.diff(n.child(child_path), info_child, epsilon);
+                res |= t_child.diff(n.child(child_path), info_child, epsilon, relaxint);
             }
         }
 
@@ -16854,7 +16871,7 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             else
             {
                 Node &info_child = info_children["diff"].add_child(child_path);
-                res |= child(child_path).diff(n_child, info_child, epsilon);
+                res |= child(child_path).diff(n_child, info_child, epsilon, relaxint);
             }
         }
     }
@@ -16870,7 +16887,7 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
-            res |= t_child.diff(n_child, info_children["diff"].append(), epsilon);
+            res |= t_child.diff(n_child, info_children["diff"].append(), epsilon, relaxint);
         }
         for(; i < std::max(t_nchild, n_nchild); i++)
         {
@@ -16963,7 +16980,8 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
 
 //---------------------------------------------------------------------------//
 bool
-Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
+Node::diff_compatible(const Node &n, Node &info, const float64 epsilon,
+    bool relaxint) const
 {
     const std::string protocol = "node::diff_compatible";
     bool res = false;
@@ -16974,14 +16992,31 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
 
     if(t_dtid != n_dtid)
     {
-        std::ostringstream oss;
-        oss << "data type incompatibility ("
-            << dtype().name()
-            << " vs "
-            << n.dtype().name()
-            << ")";
-        log::error(info, protocol, oss.str());
-        res = true;
+        // We ought to be able to compare integers of different sizes.
+        if(relaxint)
+        {
+            if(dtype().is_signed_integer() && n.dtype().is_signed_integer())
+                res = to_int64() != n.to_int64();
+            else if(dtype().is_unsigned_integer() && n.dtype().is_unsigned_integer())
+                res = to_uint64() != n.to_uint64();
+            else if(dtype().is_integer() && n.dtype().is_integer())
+                res = to_int64() != n.to_int64();
+            else
+                res = true;
+        }
+        else
+            res = true;
+
+        if(res)
+        {
+            std::ostringstream oss;
+            oss << "data type incompatibility ("
+                << dtype().name()
+                << " vs "
+                << n.dtype().name()
+                << ")";
+            log::error(info, protocol, oss.str());
+        }
     }
     else if(t_dtid == DataType::EMPTY_ID)
     {
@@ -17005,7 +17040,7 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
             else
             {
                 Node &info_child = info_children["diff"].add_child(child_path);
-                res |= t_child.diff_compatible(n.child(child_path), info_child, epsilon);
+                res |= t_child.diff_compatible(n.child(child_path), info_child, epsilon, relaxint);
             }
         }
     }
@@ -17021,7 +17056,7 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
-            res |= t_child.diff_compatible(n_child, info_children["diff"].append(), epsilon);
+            res |= t_child.diff_compatible(n_child, info_children["diff"].append(), epsilon, relaxint);
         }
         for(; i < t_nchild; i++)
         {

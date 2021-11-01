@@ -1,0 +1,156 @@
+
+- 
+  state: 
+    cycle: 0
+    domain_id: 0
+  coordsets: 
+    coords: 
+      type: "rectilinear"
+      values: 
+        x: [0.0, 1.0]
+        y: [0.0, 1.0]
+  topologies: 
+    topo: 
+      type: "rectilinear"
+      coordset: "coords"
+  fields: 
+    dist: 
+      association: "vertex"
+      topology: "topo"
+      values: [0.414213562373095, 0.0, 0.0, -1.0]
+    original_vertex_ids: 
+      association: "vertex"
+      topology: "topo"
+      values: 
+        domains: [0, 0, 0, 0]
+        ids: [0, 1, 2, 3]
+    original_element_ids: 
+      association: "element"
+      topology: "topo"
+      values: 
+        domains: 0
+        ids: 0
+- 
+  state: 
+    cycle: 0
+    domain_id: 1
+  coordsets: 
+    coords: 
+      type: "rectilinear"
+      values: 
+        x: [1.0, 2.0]
+        y: [0.0, 1.0]
+  topologies: 
+    topo: 
+      type: "rectilinear"
+      coordset: "coords"
+  fields: 
+    dist: 
+      association: "vertex"
+      topology: "topo"
+      values: [0.0, 0.414213562373095, -1.0, 0.0]
+    original_vertex_ids: 
+      association: "vertex"
+      topology: "topo"
+      values: 
+        domains: [10, 10, 10, 10]
+        ids: [0, 1, 2, 3]
+    original_element_ids: 
+      association: "element"
+      topology: "topo"
+      values: 
+        domains: 10
+        ids: 0
+- 
+  state: 
+    cycle: 0
+    domain_id: 2
+  coordsets: 
+    coords: 
+      type: "rectilinear"
+      values: 
+        x: [0.0, 1.0, 2.0]
+        y: [1.0, 2.0, 3.0]
+  topologies: 
+    topo: 
+      type: "rectilinear"
+      coordset: "coords"
+  fields: 
+    dist: 
+      association: "vertex"
+      topology: "topo"
+      values: [-2.0, -1.0, 0.0, -1.0, -0.585786437626905, 0.23606797749979, 0.0, 0.23606797749979, 0.82842712474619]
+    original_vertex_ids: 
+      association: "vertex"
+      topology: "topo"
+      values: 
+        domains: [20, 20, 20, 20, 20, 20, 20, 20, 20]
+        ids: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    original_element_ids: 
+      association: "element"
+      topology: "topo"
+      values: 
+        domains: [20, 20, 20, 20]
+        ids: [0, 1, 2, 3]
+- 
+  coordsets: 
+    coords: 
+      type: "rectilinear"
+      values: 
+        x: [-3.0, -2.0, -1.0, 0.0]
+        y: [0.0, 1.0, 2.0, 3.0]
+  topologies: 
+    topo: 
+      type: "rectilinear"
+      coordset: "coords"
+  fields: 
+    dist: 
+      association: "vertex"
+      topology: "topo"
+      values: [0.0, -1.0, -2.0, -3.0, 0.16227766016838, -0.76393202250021, -1.5857864376269, -2.0, 0.605551275463989, -0.17157287525381, -0.76393202250021, -1.0, 1.24264068711928, 0.605551275463989, 0.16227766016838, 0.0]
+    original_vertex_ids: 
+      association: "vertex"
+      topology: "topo"
+      values: 
+        domains: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+        ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    original_element_ids: 
+      association: "element"
+      topology: "topo"
+      values: 
+        domains: [30, 30, 30, 30, 30, 30, 30, 30, 30]
+        ids: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+  state: 
+    cycle: 0
+    domain_id: 3
+- 
+  coordsets: 
+    coords: 
+      values: 
+        x: [3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        y: [9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]
+      type: "rectilinear"
+  topologies: 
+    topo: 
+      type: "rectilinear"
+      coordset: "coords"
+  state: 
+    cycle: 0
+    domain_id: 9
+  fields: 
+    dist: 
+      association: "vertex"
+      topology: "topo"
+      values: [-4.51471862576143, -3.78045554270711, -3.0, -2.18334617360803, -1.3380962103094, -0.470035913858332, 0.416407864998739, 1.31782106327635, -3.78045554270711, -3.10050506338833, -2.36985418726535, -1.59824574900862, -0.793444384266298, 0.0384048104052983, 0.892443989449804, 1.7648230602334, -3.0, -2.36985418726535, -1.68629150101524, -0.958405421207704, -0.193751525134303, 0.601470508735444, 1.42220510185596, 2.26433752247375, -2.18334617360803, -1.59824574900862, -0.958405421207704, -0.272077938642145, 0.45362404707371, 1.2126704035519, 2.0, 2.8113883008419, -1.3380962103094, -0.793444384266298, -0.193751525134303, 0.45362404707371, 1.14213562373095, 1.86606874731851, 2.62049935181331, 3.40121946685673, -0.470035913858332, 0.0384048104052983, 0.601470508735444, 1.2126704035519, 1.86606874731851, 2.55634918610405, 3.27882059609971, 4.0293863659264, 0.416407864998739, 0.892443989449804, 1.42220510185596, 2.0, 2.62049935181331, 3.27882059609971, 3.97056274847714, 4.69180601295413, 1.31782106327635, 1.7648230602334, 2.26433752247375, 2.8113883008419, 3.40121946685673, 4.0293863659264, 4.69180601295413, 5.38477631085023]
+    original_vertex_ids: 
+      association: "vertex"
+      topology: "topo"
+      values: 
+        domains: [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+        ids: [90, 91, 92, 93, 94, 95, 96, 97, 104, 105, 106, 107, 108, 109, 110, 111, 118, 119, 120, 121, 122, 123, 124, 125, 132, 133, 134, 135, 136, 137, 138, 139, 146, 147, 148, 149, 150, 151, 152, 153, 160, 161, 162, 163, 164, 165, 166, 167, 174, 175, 176, 177, 178, 179, 180, 181, 188, 189, 190, 191, 192, 193, 194, 195]
+    original_element_ids: 
+      association: "element"
+      topology: "topo"
+      values: 
+        domains: [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+        ids: [84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 110, 111, 112, 113, 114, 115, 116, 123, 124, 125, 126, 127, 128, 129, 136, 137, 138, 139, 140, 141, 142, 149, 150, 151, 152, 153, 154, 155, 162, 163, 164, 165, 166, 167, 168]

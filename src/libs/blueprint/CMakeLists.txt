@@ -49,6 +49,7 @@ set(blueprint_c_headers
 set(blueprint_sources
     conduit_blueprint.cpp
     conduit_blueprint_mesh.cpp
+    conduit_blueprint_mesh_partition.cpp
     conduit_blueprint_mesh_utils.cpp
     conduit_blueprint_mesh_matset_xforms.cpp
     conduit_blueprint_mesh_examples.cpp
@@ -143,7 +144,6 @@ if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
-
 ################################################################
 # If we have mpi, add the conduit blueprint mpi library
 ################################################################
@@ -154,6 +154,7 @@ if(MPI_FOUND)
 set(conduit_blueprint_mpi_sources
     conduit_blueprint_mpi.cpp
     conduit_blueprint_mpi_mesh.cpp
+    conduit_blueprint_mpi_mesh_partition.cpp
     conduit_blueprint_mpi_mesh_examples.cpp)
 
 #
@@ -162,9 +163,20 @@ set(conduit_blueprint_mpi_sources
 set(conduit_blueprint_mpi_headers
     conduit_blueprint_mpi.hpp
     conduit_blueprint_mpi_mesh.hpp
+    conduit_blueprint_mpi_mesh_partition.hpp
     conduit_blueprint_mpi_mesh_examples.hpp
 ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h)
 
+#
+# Specify blueprint mpi c sources
+#
+set(blueprint_mpi_c_headers
+    c/conduit_blueprint_mpi_mesh.h
+    )
+
+set(blueprint_mpi_c_sources
+    c/conduit_blueprint_mpi_mesh_c.cpp
+    )
 
 #
 # Specify blueprint mpi deps
@@ -179,8 +191,8 @@ set(conduit_blueprint_mpi_deps conduit
 #
 add_compiled_library(NAME conduit_blueprint_mpi
                      EXPORT conduit
-                     HEADERS ${conduit_blueprint_mpi_headers}
-                     SOURCES ${conduit_blueprint_mpi_sources}
+                     HEADERS ${conduit_blueprint_mpi_headers} ${blueprint_mpi_c_headers}
+                     SOURCES ${conduit_blueprint_mpi_sources} ${blueprint_mpi_c_sources}
                      DEPENDS_ON ${conduit_blueprint_mpi_deps}
                      HEADERS_DEST_DIR include/conduit
                      FOLDER libs)
