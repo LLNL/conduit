@@ -989,7 +989,6 @@ coordset::_explicit::coords(const Node &n, const index_t i)
 }
 
 //-----------------------------------------------------------------------------
-<<<<<<< HEAD
 std::vector<index_t>
 coordset::dim_lengths(const conduit::Node &n)
 {
