@@ -29,26 +29,6 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_table_relay
                     )
 
-################################
-# Blueprint test helpers
-################################
-# NOTE: Should not be installed
-add_library(conduit_blueprint_test_helpers
-    OBJECT
-        blueprint_baseline_helpers.hpp
-        blueprint_test_helpers.hpp
-        blueprint_test_helpers.cpp)
-
-# So BLT knows not to call target_link_libraries
-blt_register_library(NAME conduit_blueprint_test_helpers
-                     OBJECT TRUE)
-
-# Use generators to extract gtest headers
-target_include_directories(conduit_blueprint_test_helpers
-    PRIVATE
-        $<TARGET_PROPERTY:gtest,INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:gtest,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>)
 
 ################################
 # Add our Main Unit Tests
@@ -57,7 +37,7 @@ target_include_directories(conduit_blueprint_test_helpers
 message(STATUS "Adding blueprint lib unit tests")
 foreach(TEST ${BLUEPRINT_TESTS})
     add_cpp_test(TEST ${TEST}
-                 DEPENDS_ON conduit conduit_blueprint conduit_relay conduit_blueprint_test_helpers
+                 DEPENDS_ON conduit conduit_blueprint conduit_relay
                  FOLDER tests/blueprint)
 endforeach()
 
@@ -98,8 +78,7 @@ if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
     foreach(TEST ${BLUEPRINT_MPI_TESTS_RANKS_2})
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON conduit
-                                                                 conduit_blueprint_mpi
-                                                                 conduit_blueprint_test_helpers)
+                                                                 conduit_blueprint_mpi)
     endforeach()
 
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
@@ -109,8 +88,7 @@ if(MPI_FOUND)
                                                                  conduit_blueprint_mpi
                                                                  conduit_relay
                                                                  conduit_relay_mpi
-                                                                 conduit_relay_mpi_io
-                                                                 conduit_blueprint_test_helpers)
+                                                                 conduit_relay_mpi_io)
     endforeach()
 
     foreach(TEST ${BLUEPRINT_RELAY_MPI_TESTS_RANKS_4})
@@ -119,8 +97,7 @@ if(MPI_FOUND)
                                                                  conduit_blueprint_mpi
                                                                  conduit_relay
                                                                  conduit_relay_mpi
-                                                                 conduit_relay_mpi_io
-                                                                 conduit_blueprint_test_helpers)
+                                                                 conduit_relay_mpi_io)
     endforeach()
 else()
     message(STATUS "MPI disabled: Skipping conduit_blueprint_mpi tests")
