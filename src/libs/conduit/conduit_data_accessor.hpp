@@ -15,7 +15,10 @@
 //-----------------------------------------------------------------------------
 // -- conduit  includes -- 
 //-----------------------------------------------------------------------------
-#include "conduit_node.hpp"
+#include "conduit_core.hpp"
+#include "conduit_data_type.hpp"
+#include "conduit_utils.hpp"
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -46,9 +49,10 @@ public:
 //-----------------------------------------------------------------------------
 // Construction and Destruction
 //-----------------------------------------------------------------------------
-        /// main constructor
+        /// Access a pointer to raw data according to dtype description.
         DataAccessor(void *data, const DataType &dtype);
-        DataAccessor(Node &node);
+        /// Access a const pointer to raw data according to dtype description.
+        DataAccessor(const void *data, const DataType &dtype);
         ~DataAccessor();
 
 //-----------------------------------------------------------------------------
@@ -99,7 +103,7 @@ private:
 /// signed integer arrays
 typedef DataAccessor<int8>     int8_accessor;
 typedef DataAccessor<int16>    int16_accessor;
-typedef DataAccessor<int32>    int32_accessory;
+typedef DataAccessor<int32>    int32_accessor;
 typedef DataAccessor<int64>    int64_accessor;
 
 /// unsigned integer arrays
@@ -138,13 +142,13 @@ typedef DataAccessor<unsigned short>  unsigned_short_accessor;
 typedef DataAccessor<unsigned int>    unsigned_int_accessor;
 typedef DataAccessor<unsigned long>   unsigned_long_accessor;
 #ifdef CONDUIT_HAS_LONG_LONG
-typedef DataArray<unsigned long long>  unsigned_long_long_accessor;
+typedef DataAccessor<unsigned long long>  unsigned_long_long_accessor;
 #endif
 
 
 /// floating point arrays
 typedef DataAccessor<float>   float_accessor;
-typedef DataAccessor<double>  double_accessory;
+typedef DataAccessor<double>  double_accessor;
 #ifdef CONDUIT_USE_LONG_DOUBLE
 typedef DataAccessor<long double>  long_double_accessor;
 #endif

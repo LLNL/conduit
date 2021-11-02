@@ -167,7 +167,7 @@ array_convert(Node &n)
 float64 
 data_accessor(Node &n)
 {
-    float64_accessor vals(n);
+    float64_accessor vals = n.value();
     float64 res = 0;
     index_t nele = vals.number_of_elements();
 

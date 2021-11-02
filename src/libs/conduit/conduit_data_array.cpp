@@ -1822,6 +1822,10 @@ template class DataArray<float>;
 template class DataArray<double>;
 #endif
 
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    ltemplate class DataArray<long double>;
+#endif
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --

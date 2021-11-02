@@ -30,9 +30,17 @@ DataAccessor<T>::DataAccessor()
 
 //---------------------------------------------------------------------------//
 template <typename T> 
-DataAccessor<T>::DataAccessor(Node &node)
-: m_data(node.data_ptr()),
-  m_dtype(node.dtype())
+DataAccessor<T>::DataAccessor(void *data, const DataType &dtype)
+: m_data(data),
+  m_dtype(dtype)
+{}
+
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+DataAccessor<T>::DataAccessor(const void *data, const DataType &dtype)
+: m_data(const_cast<void*>(data)),
+  m_dtype(dtype)
 {}
 
 //---------------------------------------------------------------------------//
@@ -135,6 +143,11 @@ template class DataAccessor<float>;
 #ifndef CONDUIT_USE_DOUBLE
 template class DataAccessor<double>;
 #endif
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    ltemplate class DataAccessor<long double>;
+#endif
+
 
 }
 //-----------------------------------------------------------------------------
