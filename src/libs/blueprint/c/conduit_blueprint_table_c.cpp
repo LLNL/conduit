@@ -7,7 +7,7 @@
 /// file: conduit_blueprint_table_c.cpp
 ///
 //-----------------------------------------------------------------------------
-#include "conduit_blueprint_mesh.h"
+#include "conduit_blueprint_table.h"
 
 #include "conduit_node.hpp"
 #include "conduit_blueprint_table.hpp"
