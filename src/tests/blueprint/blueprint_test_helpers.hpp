@@ -107,14 +107,18 @@ compare_to_baseline(const conduit::Node &test,
         {
             if(order_matters)
             {
-                ASSERT_EQ(baseline[i].name(), test[i].name());
+                ASSERT_EQ(baseline[i].name(), test[i].name())
+                    << "baseline[i].name() = " << baseline[i].name()
+                    << " test[i].name() = " << test[i].name();
                 const conduit::Node &baseline_values = baseline[i]["values"];
                 const conduit::Node &test_values = test[i]["values"];
                 compare_to_baseline_values(test_values, baseline_values);
             }
             else
             {
-                ASSERT_TRUE(test.has_child(baseline[i].name())) << "With name = " << baseline[i].name();
+                ASSERT_TRUE(test.has_child(baseline[i].name()))
+                    << "With name = " << baseline[i].name()
+                    << test.schema().to_json();
                 const conduit::Node &b = baseline[i];
                 const conduit::Node &baseline_values = b["values"];
                 const conduit::Node &test_values = test[b.name()]["values"];
