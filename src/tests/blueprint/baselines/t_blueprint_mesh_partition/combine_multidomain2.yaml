@@ -1,0 +1,31 @@
+
+state: 
+  cycle: 0
+  domain_id: 0
+coordsets: 
+  coords: 
+    type: "rectilinear"
+    values: 
+      x: [0.0, 1.0, 2.0]
+      y: [0.0, 1.0]
+topologies: 
+  topo: 
+    type: "rectilinear"
+    coordset: "coords"
+fields: 
+  dist: 
+    topology: "topo"
+    association: "vertex"
+    values: [0.414213562373095, 0.0, 0.414213562373095, 0.0, -1.0, 0.0]
+  original_vertex_ids: 
+    topology: "topo"
+    association: "vertex"
+    values: 
+      domains: [0, 1, 1, 0, 1, 1]
+      ids: [0, 0, 1, 2, 2, 3]
+  original_element_ids: 
+    topology: "topo"
+    association: "element"
+    values: 
+      domains: [0, 1]
+      ids: [0, 0]

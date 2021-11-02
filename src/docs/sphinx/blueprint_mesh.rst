@@ -711,6 +711,125 @@ The fully-defined Blueprint schema for the ``adjsets`` entries looks like the fo
    * adjsets/adjset/groups/group/neighbors: (integer array)
    * adjsets/adjset/groups/group/values: (integer array)
 
+It's important to note that the groups in an Adjacency Set associate across domains based on their names (e.g. ``domain0/adjsets/adjset/groups/1`` will be associated with ``domain*/adjsets/adjset/groups/1``).
+For data publishers that are agnostic about group names, the ``conduit::blueprint::mesh::utils::adjset::canonicalize`` utility method can be used to assign cross-domain matching names:
+
+.. code:: cpp
+
+   conduit::Node &unidomain_mesh = // loaded from the client code
+   conduit::Node &unidomain_adjset = unidomain_mesh["adjsets"].child(0);
+   conduit::Node &unidomain_domid = unidomain_mesh["state/domain_id"];
+
+   unidomain_domid.print();
+   // > 0
+   unidomain_adjset["groups"].print();
+   // > a:
+   // >   neighbors: [1, 2, 3]
+   // >   values: [...]
+   // > b:
+   // >   neighbors: [1]
+   // >   values: [...]
+   // > c:
+   // >   neighbors: [2]
+   // >   values: [...]
+
+   conduit::bleuprint::mesh::utils::adjset::canonicalize(unidomain_adjset);
+
+   unidomain_adjset["groups"].print();
+   // > group_0_1_2_3:
+   // >   neighbors: [1, 2, 3]
+   // >   values: [...]
+   // > group_0_1:
+   // >   neighbors: [1]
+   // >   values: [...]
+   // > group_0_2:
+   // >   neighbors: [2]
+   // >   values: [...]
+
+
+Adjacency Set Variants
+=================================
+
+There's a great deal of flexibility in how the adjacency groups of an Adjacency Set can be constructed.
+Blueprint Mesh contains detection and transformation functions for the most commonly targeted formats.
+The two variants currently supported are **pairwise** and **max-share**.
+
+
+Pairwise Adjacency Sets
+*********************************
+
+A **pairwise** adjacency set is one that contains groups that represent the relationship between the host domain and a single neighboring domain (i.e. domain "pairs").
+
+The following diagram illustrates a simple **pairwise** material set example:
+
+  .. code:: yaml
+
+      #  domain0    domain1
+      # +--------++--------+
+      # |     v01||v11     |
+      # |        ||        |
+      # |     v00||v10     |
+      # +--------++--------+
+      # +--------+
+      # |     v20|
+      # |        |
+      # |     v21|
+      # +--------+
+      #  domain2
+
+      domain0:
+        state:
+          domain_id: 0
+        adjsets:
+          adjset:
+            association: vertex
+            topology: topology
+            groups:
+              domain_0_1:
+                neighbors: [1]
+                values: [v00, v01]
+              domain_0_2:
+                neighbors: [2]
+                values: [v00]
+
+
+Max-Share Adjacency Sets
+*********************************
+
+A **max-share** adjacency set is one with groups that "maximally share" index data.
+In other words, these adjacency sets present index data so that it isn't duplicated between groups.
+
+The following diagram illustrates a simple **pairwise** material set example:
+
+  .. code:: yaml
+
+      #  domain0    domain1
+      # +--------++--------+
+      # |     v01||v11     |
+      # |        ||        |
+      # |     v00||v10     |
+      # +--------++--------+
+      # +--------+
+      # |     v20|
+      # |        |
+      # |     v21|
+      # +--------+
+      #  domain2
+
+      domain0:
+        state:
+          domain_id: 0
+        adjsets:
+          adjset:
+            association: vertex
+            topology: topology
+            groups:
+              domain_0_1_2:
+                neighbors: [1, 2]
+                values: [v00]
+              domain_0_1:
+                neighbors: [1]
+                values: [v01]
 
 
 State

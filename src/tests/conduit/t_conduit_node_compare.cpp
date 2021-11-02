@@ -92,22 +92,32 @@ TEST(conduit_node_compare, compare_basic)
 //-----------------------------------------------------------------------------
 TEST(conduit_node_compare, compare_leaf_numeric)
 {
-    const DataType::TypeID leaf_tids[10] = {
-        DataType::INT8_ID, DataType::INT16_ID, DataType::INT32_ID, DataType::INT64_ID,
-        DataType::UINT8_ID, DataType::UINT16_ID, DataType::UINT32_ID, DataType::UINT64_ID,
-        DataType::FLOAT32_ID, DataType::FLOAT64_ID
-    };
+    const DataType::TypeID leaf_tids[10] = { DataType::INT8_ID,
+                                             DataType::INT16_ID,
+                                             DataType::INT32_ID,
+                                             DataType::INT64_ID,
+                                             DataType::UINT8_ID,
+                                             DataType::UINT16_ID,
+                                             DataType::UINT32_ID,
+                                             DataType::UINT64_ID,
+                                             DataType::FLOAT32_ID,
+                                             DataType::FLOAT64_ID};
 
+    // test both diff and diff compat
     for(index_t fi = 0; fi < 2; fi++)
     {
         NodeDiffFun diff_nodes = NODE_DIFF_FUNS[fi];
 
+        // test all types
         for(index_t ti = 0; ti < 10; ti++)
         {
             const DataType::TypeID leaf_tid = leaf_tids[ti];
-            DataType leaf_type(leaf_tid, 5, 5 * DataType::default_bytes(leaf_tid),
-                DataType::default_bytes(leaf_tid), DataType::default_bytes(leaf_tid),
-                Endianness::DEFAULT_ID);
+            DataType leaf_type(leaf_tid,
+                               5,
+                               5 * DataType::default_bytes(leaf_tid),
+                               DataType::default_bytes(leaf_tid),
+                               DataType::default_bytes(leaf_tid),
+                               Endianness::DEFAULT_ID);
 
             const index_t type_bytes = leaf_type.stride();
             const index_t leaf_bytes = leaf_type.spanned_bytes();
@@ -170,22 +180,29 @@ TEST(conduit_node_compare, compare_leaf_string)
             //         leaf_buff
             //   [ _ _ _ _ _ _ _ m e / ]
             //     0 1 2 3 4 5 6 7 8 9
-            DataType leaf_type(leaf_tid, leaf_str.length() + 1,
-                (10 - leaf_str.length() - 1) * DataType::default_bytes(leaf_tid),
-                DataType::default_bytes(leaf_tid), DataType::default_bytes(leaf_tid),
-                Endianness::DEFAULT_ID);
+            DataType leaf_type(leaf_tid, //id 
+                               leaf_str.length() + 1, // size 
+                               (10 - leaf_str.length() - 1) * DataType::default_bytes(leaf_tid), // offset
+                               DataType::default_bytes(leaf_tid),
+                               DataType::default_bytes(leaf_tid),
+                               Endianness::DEFAULT_ID);
 
+            // full buffer ?
             char* leaf_buff = (char*)&compare_buffs[ci];
             char* leaf_cstr = (char*)&compare_buffs[ci+1] - leaf_str.length() - 1;
+
             size_t leaf_buff_size = (size_t)leaf_type.spanned_bytes();
             memset(leaf_buff, 0, leaf_buff_size);
             snprintf(leaf_cstr, leaf_buff_size, "%s", leaf_str.c_str());
 
             Node n(leaf_type, (void*)leaf_buff, true);
+            n.print();
 
             { // String Similarity Test //
                 Node  o(leaf_type, (void*)leaf_buff, true), info;
+                o.print();
                 EXPECT_FALSE(diff_nodes(n, o, info));
+                info.print();
             }
 
             { // String Difference Test //
@@ -195,6 +212,7 @@ TEST(conduit_node_compare, compare_leaf_string)
 
                 Node  o(leaf_type, (void*)diff_buff, true), info;
                 EXPECT_TRUE(diff_nodes(n, o, info));
+                info.print();
             }
         }
     }
@@ -442,4 +460,27 @@ TEST(conduit_node_compare, compare_list_size_diff)
             EXPECT_EQ(info_diff.number_of_children(), n_num_children/2);
         }
     }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, check_string_diffs)
+{
+    Node n_a, n_b, info;
+    
+    n_a.set("a is first");
+    n_b.set("b is second");
+
+    n_a.diff(n_b,info);
+    info.print();
+    EXPECT_EQ(info["errors"][0].as_string(),
+              "data_array::diff: data string mismatch (\"a is first\" vs \"b is second\")");
+
+    n_a.diff_compatible(n_b,info);
+    info.print();
+    EXPECT_EQ(info["errors"][0].as_string(),
+              "data_array::diff_compatible: data string mismatch (\"a is first\" vs \"b is second\")");
+
+    
+    
 }
