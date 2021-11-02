@@ -63,6 +63,7 @@ struct PolyBndry
     index_t side; //which 3D side 0-5
     index_t m_nbr_rank;
     index_t m_nbr_id;
+    index_t m_nbrs_per_face;
     std::vector<index_t> m_elems; //elems of nbr domain that touch side
     std::map<index_t, index_t> m_bface; //map from nbr elem to face of nbr elem
     std::map<index_t, std::vector<index_t> > m_nbr_elems; //map from local
@@ -695,6 +696,8 @@ void match_nbr_elems(PolyBndry& pbnd,
 
     if (side == 0 || side == 1)
     {
+        pbnd.m_nbrs_per_face = ratio_j*ratio_k;
+
         index_t nside = (side+1)%2;     //nbr side counterpart to  ref side
         index_t shift = -(nside%2); //0 on low side, -1 on high side
         index_t icnst = origin_i - ni_lo + shift;
@@ -768,6 +771,8 @@ void match_nbr_elems(PolyBndry& pbnd,
     }
     else if (side == 2 || side == 3)
     {
+        pbnd.m_nbrs_per_face = ratio_i*ratio_k;
+
         index_t jface_start = (nbr_iwidth+1)*nbr_jwidth*nbr_kwidth;
         index_t nside = 2 + (side+1)%2;     //nbr side counterpart to  ref side
         index_t shift = -(nside%2); //0 on low side, -1 on high side
@@ -844,6 +849,8 @@ void match_nbr_elems(PolyBndry& pbnd,
     }
     else if (side == 4 || side == 5)
     {
+        pbnd.m_nbrs_per_face = ratio_i*ratio_j;
+
         index_t jface_start = (nbr_iwidth+1)*nbr_jwidth*nbr_kwidth;
         index_t kface_start = jface_start +
                               nbr_iwidth*(nbr_jwidth+1)*nbr_kwidth;
@@ -926,6 +933,64 @@ void match_nbr_elems(PolyBndry& pbnd,
 
 }
 
+
+//-------------------------------------------------------------------------
+void fix_duplicated_vertices(std::set<index_t>& check_verts,
+std::vector<index_t>& elem,
+bputils::connectivity::SubelemMap& allfaces,
+        const double_array& xarray,
+        const double_array& yarray,
+        const double_array& zarray)
+{
+
+    double eps = sqrt(std::numeric_limits<double>::epsilon());
+
+    std::set<index_t> erase_verts;
+    for (auto it0 = check_verts.begin(); it0 != check_verts.end(); ++it0)
+    {
+        const index_t& v0 = *it0;
+        double x0 = xarray[v0]; 
+        double y0 = yarray[v0]; 
+        double z0 = zarray[v0]; 
+
+        auto it1 = it0;
+        ++it1;
+
+        for ( ; it1 != check_verts.end(); ++it1)
+        {
+            const index_t& v1 = *it1;
+            double x1 = xarray[v1];
+            double y1 = yarray[v1];
+            double z1 = zarray[v1];
+            double xdiff = x0-x1;
+            double ydiff = y0-y1;
+            double zdiff = z0-z1;
+            double distsqr = xdiff*xdiff+ydiff*ydiff+zdiff*zdiff;
+
+            if (distsqr < eps)
+            {
+                for (auto eitr = elem.begin(); eitr != elem.end(); ++eitr)
+                {
+                    auto& face = allfaces[*eitr]; 
+                    for (auto fitr = face.begin(); fitr != face.end(); ++fitr)
+                    {
+                        index_t& vert = *fitr;
+                        if (vert == v1)
+                        {
+                            vert = v0;
+                        }
+                    }
+                }
+                erase_verts.insert(v1);
+            }
+        }
+    }
+
+    for (auto ev = erase_verts.begin(); ev != erase_verts.end(); ++ev)
+    {
+        check_verts.erase(*ev);
+    }
+}
 
 //-------------------------------------------------------------------------
 void to_polyhedral(const Node &n,
@@ -1733,8 +1798,12 @@ void to_polyhedral(const Node &n,
         auto& nbr_to_ybuffer = dom_to_nbr_to_ybuffer[domain_id];
         auto& nbr_to_zbuffer = dom_to_nbr_to_zbuffer[domain_id];
 
+        std::set<index_t> track_offsets;
+
         if (poly_bndry_map.find(domain_id) != poly_bndry_map.end())
         {
+            std::map<index_t, std::map<index_t, index_t> > elem_to_new_faces;
+
             //std::map<index_t, PolyBndry> bndries
             auto& bndries = poly_bndry_map[domain_id];
             for (auto bitr = bndries.begin(); bitr != bndries.end(); ++bitr)
@@ -1749,6 +1818,8 @@ void to_polyhedral(const Node &n,
                 auto& ybuffer = nbr_to_ybuffer[nbr_id];
                 auto& zbuffer = nbr_to_zbuffer[nbr_id];
 
+                index_t orig_num_vertices = out_xvec.size();
+
                 std::map<index_t, std::map<index_t, std::vector<index_t> > >fv_map;
 
                 auto& nbr_elems = pbnd.m_nbr_elems;
@@ -1756,6 +1827,12 @@ void to_polyhedral(const Node &n,
                 {
                     //offset for a single domain elem
                     index_t ref_offset = eitr->first;
+
+                    auto& num_new_faces = elem_to_new_faces[ref_offset];
+                    if (num_new_faces.find(pbnd.side) == num_new_faces.end())
+                    {
+                        num_new_faces[pbnd.side] = 0;
+                    }
 
                     //Holds neighbor elem offsets
                     std::vector<index_t>& nbrs = eitr->second;
@@ -1831,6 +1908,8 @@ void to_polyhedral(const Node &n,
                         }
                     }
 
+                    double eps = sqrt(std::numeric_limits<double>::epsilon());
+
                     // Determine which reference vertex is shared with
                     // each neighbor vertex.
                     for (auto rv = ref_subelem.begin(); rv != ref_subelem.end(); ++rv)
@@ -1861,14 +1940,17 @@ void to_polyhedral(const Node &n,
                             }
                         }
 
-                        sharedmap[shared_vert] = *rv;
-                        sh_verts.erase(shared_vert);
+                        if (min_dist_sqr < eps)
+                        {
+                            sharedmap[shared_vert] = *rv;
+                            sh_verts.erase(shared_vert);
+                        }
                     }
                 }
 
                 index_t num_vertices = out_xvec.size();
 
-                //Replace the coarse subelem with a new fine subelems
+                //Replace the coarse subelem with new fine subelems
                 for (auto eitr = nbr_elems.begin(); eitr != nbr_elems.end(); ++eitr)
                 {
                     index_t ref_offset = eitr->first;
@@ -1881,6 +1963,16 @@ void to_polyhedral(const Node &n,
                     auto& new_subs = new_subelems[ref_offset];
 
                     auto& nbr_subelems = fv_map[ref_offset];
+
+                    auto& num_added_faces =
+                        elem_to_new_faces[ref_offset][pbnd.side];
+
+                    bool track_all_new = false;
+                    if (nbr_subelems.size() != pbnd.m_nbrs_per_face)
+                    {
+                        track_all_new = true;
+                        track_offsets.insert(ref_offset);
+                    }
 
                     index_t last_added_face = allfaces.rbegin()->first;
                     for (auto nb = nbr_subelems.begin();
@@ -1902,38 +1994,64 @@ void to_polyhedral(const Node &n,
                                 index_t buf_offset = buffidx[n_vtx];
                                 out_xvec.push_back(xbuffer[buf_offset]); 
                                 out_yvec.push_back(ybuffer[buf_offset]); 
-                                out_zvec.push_back(zbuffer[buf_offset]); 
+                                out_zvec.push_back(zbuffer[buf_offset]);
+                                if (track_all_new)
+                                {
+                                    new_verts.insert(new_face.back());
+                                }
                             }
                             else
                             {
                                 new_face.push_back(sharedmap[n_vtx]);
+                                if (track_all_new &&
+                                    new_face.back() > orig_num_vertices)
+                                {
+                                    new_verts.insert(new_face.back());
+                                }
                             }
-                            if (new_nbr_verts.find(n_vtx) !=
+                            if (!track_all_new &&
+                                new_nbr_verts.find(n_vtx) !=
                                 new_nbr_verts.end())
                             {   
                                 new_verts.insert(new_face.back());
                             }
-
                         }
+                        ++num_added_faces;
                         ++last_added_face;
                         allfaces[last_added_face] = new_face;
                         ref_elem.push_back(last_added_face);
                         new_subs.insert(last_added_face);
                     }
 
-                    allfaces[ref_face] = allfaces[last_added_face];
-                    allfaces.erase(last_added_face);
-                    ref_elem.pop_back();
-                    new_subs.erase(last_added_face);
-                    new_subs.insert(ref_face);
+                    if (num_added_faces == pbnd.m_nbrs_per_face)
+                    {
+                        allfaces[ref_face] = allfaces[last_added_face];
+                        allfaces.erase(last_added_face);
+                        ref_elem.pop_back();
+                        new_subs.erase(last_added_face);
+                        new_subs.insert(ref_face);
+                    }
                 }
             }
         }
 
-
         out_coords["values/x"].set(out_xvec);
         out_coords["values/y"].set(out_yvec);
         out_coords["values/z"].set(out_zvec);
+        const double_array& out_xarray =
+           out_coords["values/x"].as_double_array();
+        const double_array& out_yarray =
+           out_coords["values/y"].as_double_array();
+        const double_array& out_zarray =
+           out_coords["values/z"].as_double_array();
+
+        for (auto ti = track_offsets.begin(); ti != track_offsets.end(); ++ti)
+        {
+            const index_t& offset = *ti;
+            fix_duplicated_vertices(new_vertices[offset], poly_elems[offset],
+                                    allfaces, out_xarray, out_yarray,
+                                    out_zarray);
+        }
     }
 
     itr = n.children();
@@ -1976,6 +2094,7 @@ void to_polyhedral(const Node &n,
         {
             auto& poly_elem = poly_elems[elem];
 
+            //Unchanged elems have 6 sides, no need to do more
             if (poly_elem.size() > 6)
             {
                 auto& new_faces = new_subelems[elem];
@@ -1992,8 +2111,10 @@ void to_polyhedral(const Node &n,
                         auto& subelem = allfaces[pface];
                         if (subelem.size() > 4)
                         {
+                            //This subelem has already added new vertices
                             continue;
                         }
+
                         //new subelems that are adjacent to pface.
                         std::set<index_t> edge_verts;
                         for (auto vi = subelem.begin(); vi != subelem.end();
@@ -2143,17 +2264,12 @@ void to_polyhedral(const Node &n,
                                 else
                                 {
                                     test_verts.emplace(testsum, nvert);
-/*
-                                    if (test_verts.size() == verts_needed)
-                                    {
-                                        break;
-                                    }
-*/
                                 }
                             }
 
                             assert(test_verts.size() >= verts_needed ||
                                    num_edges == 4);
+
                             for (auto tv = test_verts.begin();
                                  tv != test_verts.end(); ++tv)
                             {
@@ -2216,6 +2332,11 @@ void to_polyhedral(const Node &n,
                             }
                         }
                     }
+                }
+                if (new_verts.size() > 1)
+                {
+                    fix_duplicated_vertices(new_verts, poly_elem, allfaces,
+                                            xarray, yarray, zarray);
                 }
             }
         }
