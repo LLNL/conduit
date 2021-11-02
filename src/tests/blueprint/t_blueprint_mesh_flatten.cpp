@@ -7,6 +7,7 @@
 /// file: t_blueprint_mesh_flatten.cpp
 ///
 //-----------------------------------------------------------------------------
+#include <array>
 #include <iostream>
 #include <string>
 
