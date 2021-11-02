@@ -1456,7 +1456,6 @@ mesh::number_of_domains(const conduit::Node &mesh)
     }
 }
 
-
 //-------------------------------------------------------------------------
 std::vector<conduit::Node *>
 mesh::domains(conduit::Node &n)
@@ -1509,6 +1508,57 @@ mesh::domains(const conduit::Node &mesh)
 
     return std::vector<const conduit::Node *>(std::move(doms));
 }
+
+//-------------------------------------------------------------------------
+void
+mesh::domains(conduit::Node &mesh,
+              std::vector<conduit::Node *> &res)
+{
+    // this is a blueprint property, we can assume it will be called
+    // only when mesh verify is true. Given that - it is easy to
+    // aggregate all of the domains into a list
+
+    res.clear();
+
+    if(!mesh::is_multi_domain(mesh))
+    {
+        res.push_back(&mesh);
+    }
+    else if(!mesh.dtype().is_empty())
+    {
+        NodeIterator nitr = mesh.children();
+        while(nitr.has_next())
+        {
+            res.push_back(&nitr.next());
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+void
+mesh::domains(const conduit::Node &mesh,
+              std::vector<const conduit::Node *> &res)
+{
+    // this is a blueprint property, we can assume it will be called
+    // only when mesh verify is true. Given that - it is easy to
+    // aggregate all of the domains into a list
+
+    res.clear();
+
+    if(!mesh::is_multi_domain(mesh))
+    {
+        res.push_back(&mesh);
+    }
+    else if(!mesh.dtype().is_empty())
+    {
+        NodeConstIterator nitr = mesh.children();
+        while(nitr.has_next())
+        {
+            res.push_back(&nitr.next());
+        }
+    }
+}
+
 
 
 //-------------------------------------------------------------------------
@@ -3955,6 +4005,27 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
     {
         CONDUIT_ERROR("Unsupported field type in " << d2smap["values"].dtype().to_yaml());
     }
+}
+
+// this variant of the function same as generate sides and map fields
+// with empty options
+//----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::generate_sides(const conduit::Node &topo,
+                                             conduit::Node &topo_dest,
+                                             conduit::Node &coords_dest,
+                                             conduit::Node &fields_dest,
+                                             conduit::Node &s2dmap,
+                                             conduit::Node &d2smap)
+{
+    Node opts;
+    mesh::topology::unstructured::generate_sides(topo,
+                                                 topo_dest,
+                                                 coords_dest,
+                                                 fields_dest,
+                                                 s2dmap,
+                                                 d2smap,
+                                                 opts);
 }
 
 //-----------------------------------------------------------------------------
