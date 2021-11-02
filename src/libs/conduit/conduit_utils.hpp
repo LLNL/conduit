@@ -407,7 +407,9 @@ namespace utils
      bool CONDUIT_API is_directory(const std::string &path);
 
 //-----------------------------------------------------------------------------
-/// Lists the pathnames contained in the given directory
+/// Lists the items contained in the given directory.
+/// Each entry returned in "contents" will have the directory
+/// included in the path.
 ///
 /// Queries the system for the contents of the given directory.
 /// Does not perform any checks on the returned filenames, could be

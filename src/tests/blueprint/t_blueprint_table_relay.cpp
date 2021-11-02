@@ -7,8 +7,10 @@
 /// file: t_blueprint_table_relay.cpp
 ///
 //-----------------------------------------------------------------------------
-
+#include <algorithm>
 #include <cstdlib>
+#include <string>
+#include <vector>
 
 #include <conduit.hpp>
 #include <conduit_blueprint_mesh.hpp>
@@ -114,6 +116,21 @@ TEST(t_blueprint_table_relay, read_write_multi_table)
     relay::io::save(table, filename);
 
     ASSERT_TRUE(utils::is_directory(filename));
+    {
+        std::vector<std::string> files;
+        utils::list_directory_contents(filename, files);
+        // Remove the directory
+        for(auto i = 0u; i < files.size(); i++)
+        {
+            std::cout << files[i] << std::endl;
+            files[i] = files[i].substr(files[i].rfind(utils::file_path_separator()) + 1);
+        }
+        EXPECT_EQ(2, files.size());
+        auto itr = std::find(files.begin(), files.end(), "element_data.csv");
+        EXPECT_NE(files.end(), itr);
+        itr = std::find(files.begin(), files.end(), "vertex_data.csv");
+        EXPECT_NE(files.end(), itr);
+    }
 
     Node read_table;
     relay::io::load(filename, opts, read_table);
