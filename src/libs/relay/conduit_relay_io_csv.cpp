@@ -552,7 +552,7 @@ read_many_tables(const std::string &path, const bool use_float64, Node &table)
         {
             const auto offset = name.rfind(table_list_prefix) + table_list_prefix.size();
             int idx = std::numeric_limits<int>::max();
-            std::cout << name.substr(offset) << std::endl;
+            // std::cout << name.substr(offset) << std::endl;
             try {
                 idx = std::stoi(name.substr(offset));
             }
@@ -581,7 +581,7 @@ read_many_tables(const std::string &path, const bool use_float64, Node &table)
         for(const auto &filename : csv_files)
         {
             const auto no_ext = filename.size() - 4;
-            const auto no_sep = filename.rfind(utils::file_path_separator());
+            const auto no_sep = filename.rfind(utils::file_path_separator()) + 1;
             const auto len = no_ext - no_sep;
             read_single_table(filename, use_float64, table[filename.substr(no_sep, len)]);
         }
