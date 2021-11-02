@@ -1625,16 +1625,14 @@ void
 DataArray<T>::compact_elements_to(uint8 *data) const
 { 
     // copy all elements 
-    index_t num_ele   = m_dtype.number_of_elements();
-    index_t ele_bytes = DataType::default_bytes(m_dtype.id());
-    uint8 *data_ptr = data;
-    for(index_t i=0;i<num_ele;i++)
-    {
-        memcpy(data_ptr,
-               element_ptr(i),
-               (size_t)ele_bytes);
-        data_ptr+=ele_bytes;
-    }
+    index_t ele_bytes = DataType::default_bytes(dtype().id());
+
+    utils::conduit_memcpy_strided_elements(data,   // dest
+                    (size_t)dtype().number_of_elements(), // num eles to copy
+                    ele_bytes,      // bytes per element
+                    ele_bytes,      // dest stride per ele
+                    element_ptr(0),             // src
+                    (size_t)dtype().stride());  // src stride per ele
 }
 
 

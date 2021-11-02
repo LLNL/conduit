@@ -30,6 +30,14 @@ endif()
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
 if(ENABLE_MPI)
+    # on some platforms (mostly cray systems) folks skip mpi
+    # detection in BLT by setting ENABLE_FIND_MPI = OFF
+    # in these cases, we need to set FOUND_MPI = TRUE,
+    # since the rest of our cmake logic to include MPI uses FOUND_MPI
+    if(NOT ENABLE_FIND_MPI)
+        set(FOUND_MPI ON CACHE BOOL "")
+    endif()
+
     # adjust MPI from BLT
     if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
         # older cmake, we use BLT's mpi support, it uses 

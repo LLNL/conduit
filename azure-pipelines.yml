@@ -77,31 +77,15 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: ON
           ENABLE_MPI: ON
-          ENABLE_DOCS: ON
+          ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
           ENABLE_PARMETIS: ON
-          PYTHON_VERSION: 2.7.18
           ENABLE_PYTHON2: ON
-          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-pygments@2.4.2 "
-          CMAKE_VERSION: 3.14.2
-          BLT_CXX_STD: c++11
-
-        shared_py36:
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_COVERAGE: OFF
-          ENABLE_MPI: ON
-          ENABLE_RELAY_WEBSERVER: ON
-          ENABLE_DOCS: ON
-          ENABLE_SILO: ON
-          ENABLE_ADIOS: OFF
-          ENABLE_PARMETIS: ON
-          ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.6.3
+          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
+          PYTHON_VERSION: 2.7.18
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
 
@@ -126,15 +110,15 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: ON
-          ENABLE_DOCS: ON
+          ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: ON
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
           ENABLE_PYTHON2: ON
+          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
           PYTHON_VERSION: 2.7.18
-          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-pygments@2.4.2 "
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
 
@@ -224,7 +208,6 @@ stages:
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-           # fix constraint issue for python 2
            if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # turn off hdf5 mpi support
@@ -232,7 +215,7 @@ stages:
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/ci/ubuntu_16/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/
+           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_16/
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -404,7 +387,7 @@ stages:
   ###############################################################################
   - job: Ubuntu_18
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-latest'
     container: ${{ variables.ubuntu18_tag }}
     timeoutInMinutes: 0
     variables:
@@ -423,8 +406,7 @@ stages:
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
-          PYTHON_VERSION: 3.6.3
-          CMAKE_VERSION: 3.14.2
+          CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
     steps:
       - checkout: self
@@ -493,16 +475,13 @@ stages:
            if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
-           if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-           # fix constraint issue for python 2
-           if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # turn off hdf5 mpi support
            export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/ci/ubuntu_16/ --mirror=https://www.ascent-dav.org/mirror/conduit/latest/
+           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -703,7 +682,7 @@ stages:
   ###############################################################################
   - job: Docker_Ubuntu
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
     steps:
       - checkout: self
@@ -718,185 +697,3 @@ stages:
         displayName: 'Docker Build'
 
 
-  # ###############################################################################
-  # # macOS 10.14 testing
-  # #
-  # ###############################################################################
-  # - job: macOS_14
-  #   pool:
-  #     vmImage: 'macOS-10.14'
-  #   timeoutInMinutes: 0
-  #   variables:
-  #     COMPILER_CC: clang
-  #     COMPILER_CXX: clang++
-  #     COMPILER_SPEC: clang
-  #   strategy:
-  #     matrix:
-  #       shared_py36:
-  #         BUILD_SHARED_LIBS: ON
-  #         CMAKE_BUILD_TYPE: Debug
-  #         ENABLE_COVERAGE: OFF
-  #         ENABLE_MPI: ON
-  #         ENABLE_DOCS: ON
-  #         ENABLE_SILO: ON
-  #         ENABLE_ADIOS: OFF
-  #         ENABLE_PYTHON: ON
-  #         PYTHON_VERSION: 3.6.3
-  #         CMAKE_VERSION: 3.9.4
-  #         BLT_CXX_STD: c++11
-  #   steps:
-  #     - checkout: self
-  #       clean: boolean
-  #       submodules: recursive
-  #
-  #     - script: |
-  #          #################################
-  #          # run uber to build tpls
-  #          #################################
-  #          #
-  #          pwd
-  #          # echo system python details
-  #          which python
-  #          python --version
-  #          # setup spack spec
-  #          export SPACK_SPEC="%${COMPILER_SPEC}"
-  #          # mpi
-  #          if [ $ENABLE_MPI  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+mpi"; fi
-  #          if [ $ENABLE_MPI  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
-  #          # silo
-  #          if [ $ENABLE_SILO  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+silo"; fi
-  #          if [ $ENABLE_SILO  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~silo"; fi
-  #          # adios
-  #          if [ $ENABLE_ADIOS  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios~zfp"; fi
-  #          if [ $ENABLE_ADIOS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
-  #          # python
-  #          if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+python"; fi
-  #          if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
-  #          # docs
-  #          if [ $ENABLE_DOCS  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
-  #          if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
-  #          # package ver selections and extra tweaks
-  #          export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
-  #          if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-  #          if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
-  #          if [ $ENABLE_MPI = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^mpich"; fi
-  #          # show final spec
-  #          echo $SPACK_SPEC
-  #          # run uber to build tpls
-  #          python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}"
-  #       displayName: 'Spack Build Tpls'
-  #
-  #     - script: |
-  #          #################################
-  #          # configure
-  #          #################################
-  #          # setup compiler env vars
-  #          export CC=${COMPILER_CC}
-  #          export CXX=${COMPILER_CXX}
-  #          ${CC} --version
-  #          # capture current path
-  #          export ROOT_DIR=`pwd`
-  #          # find spack generated host config file
-  #          export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
-  #          echo $HOST_CONFIG
-  #          # find spack installed cmake
-  #          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #          export PATH=${CMAKE_BIN_DIR}:$PATH
-  #          echo $PATH
-  #          which cmake
-  #          cmake --version
-  #          # prepare build dir
-  #          mkdir build
-  #          cd build
-  #          # setup cmake options
-  #          export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-  #          export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
-  #          export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-  #          # configure
-  #          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
-  #       displayName: 'Configure with CMake'
-  #
-  #     - script: |
-  #          #################################
-  #          # build
-  #          #################################
-  #          # build
-  #          cd build
-  #          make VERBOSE=1
-  #       displayName: 'Build'
-  #
-  #     - script: |
-  #          #################################
-  #          # test
-  #          #################################
-  #          # find spack installed cmake
-  #          export ROOT_DIR=`pwd`
-  #          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #          export PATH=${CMAKE_BIN_DIR}:$PATH
-  #          which ctest
-  #          cd build
-  #          # run ctest
-  #          ctest -T test --output-on-failure -V
-  #       displayName: 'Run Unit Tests'
-  #
-  #     - task: PublishTestResults@2
-  #       inputs:
-  #         testResultsFormat: 'cTest'
-  #         testResultsFiles: '**/Test.xml'
-  #       displayName: 'Unit Test Results'
-  #       condition: always()
-  #
-  #     - task: CopyFiles@2
-  #       inputs:
-  #         contents: 'build/tests/_output/**'
-  #         targetFolder: $(Build.ArtifactStagingDirectory)
-  #       condition: always()
-  #
-  #     - task: PublishBuildArtifacts@1
-  #       inputs:
-  #         pathToPublish: $(Build.ArtifactStagingDirectory)
-  #         artifactName: Conduit_Test_Outputs
-  #       condition: always()
-  #
-  #     - script: |
-  #          #################################
-  #          # install
-  #          #################################
-  #          cd build
-  #          make install
-  #       displayName: 'Install'
-  #
-  #     - script: |
-  #         ###########################
-  #         # using with cmake example
-  #         ###########################
-  #         pwd
-  #         ls -l
-  #         # find spack installed cmake
-  #         export ROOT_DIR=`pwd`
-  #         export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-  #         export PATH=${CMAKE_BIN_DIR}:$PATH
-  #         echo $PATH
-  #         which cmake
-  #         cd install/examples/conduit/using-with-cmake
-  #         mkdir _test_build
-  #         cd _test_build
-  #         cmake ../
-  #         make VERBOSE=1
-  #         ./conduit_example
-  #       displayName: 'Test vs Install (using-with-cmake)'
-  #
-  #     - script: |
-  #         ###########################
-  #         # using with make example
-  #         ###########################
-  #         cat install/share/conduit/conduit_config.mk
-  #         pwd
-  #         ls -l
-  #         cd install/examples/conduit/using-with-make
-  #         make
-  #         ./conduit_example
-  #       displayName: 'Test vs Install (using-with-make)'

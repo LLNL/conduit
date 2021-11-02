@@ -263,6 +263,76 @@ namespace utils
     conduit_error_handler CONDUIT_API error_handler();
 
 
+
+//-----------------------------------------------------------------------------
+/// Primary interface used by the conduit API to move memory.
+//-----------------------------------------------------------------------------
+
+    // conduit uses a single pair of memset and memcpy functions to
+    // manage data movement.
+
+    // this strategy allows downstream users to support complex cases
+    // like moving between memory spaces not accessible on the host.
+    //
+    // These methods aren't bound to allocators b/c allocators
+    // won't be tied into all of the places where source and dest pointers
+    // need to be located.
+    //
+    void CONDUIT_API set_memcpy_handler(void(*conduit_hnd_copy)(void*,
+                                                                const void *,
+                                                                size_t));
+    void CONDUIT_API set_memset_handler(void(*conduit_hnd_memset)(void*,
+                                                                  int,
+                                                                  size_t));
+
+    void CONDUIT_API default_memset_handler(void *ptr,
+                                            int value,
+                                            size_t num);
+
+    void CONDUIT_API default_memcpy_handler(void *destination,
+                                            const void *source,
+                                            size_t num);
+
+    // general memcpy interface used by conduit 
+    void CONDUIT_API conduit_memcpy(void *destination,
+                                    const void *source,
+                                    size_t num);
+
+    void CONDUIT_API conduit_memcpy_strided_elements(void *dest,
+                                                     size_t num_elements,
+                                                     size_t ele_bytes,
+                                                     size_t dest_stride,
+                                                     const void *src,
+                                                     size_t src_stride);
+
+    // general memset interface used by conduit
+    // NOTE (cyrush): The default memset returns the orig pointer, but
+    // other allocators like cuda do not.
+    //    TODO: GIVEN THIS DO WE NEED TO PASS AN ALLOC_ID?
+    void CONDUIT_API conduit_memset(void * ptr,
+                                    int value,
+                                    size_t num);
+
+//-----------------------------------------------------------------------------
+/// Primary interface used by the conduit API to allocate memory.
+//-----------------------------------------------------------------------------
+
+    // register a custom allocator
+    index_t CONDUIT_API register_allocator(void*(*conduit_hnd_allocate) (size_t, size_t),
+                                           void(*conduit_hnd_free)(void *));
+
+    // generic allocate interface
+    // allocator_id 0 is the default
+    void CONDUIT_API * conduit_allocate(size_t num_items,
+                                        size_t item_size,
+                                        index_t allocator_id = 0);
+
+    // generic free interface
+    void CONDUIT_API conduit_free(void *data_ptr,
+                                  index_t allocator_id = 0);
+
+
+
 //-----------------------------------------------------------------------------
 /// Helpers for common string splitting operations.
 //-----------------------------------------------------------------------------
@@ -388,7 +458,7 @@ namespace utils
 
 //-----------------------------------------------------------------------------
 /// fmt style string formatting helpers
-//-----------------------------------------------------------------------------    
+//-----------------------------------------------------------------------------
 
     std::string CONDUIT_API format(const std::string &s,
                                    const conduit::Node &args);

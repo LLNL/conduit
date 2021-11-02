@@ -226,11 +226,34 @@ public:
     void mmap(const std::string &stream_path,
               const Schema &schema);
 
+
 //-----------------------------------------------------------------------------
 ///@}
 //-----------------------------------------------------------------------------
 //
 // -- end declaration of Node basic i/o methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Node allocator selection methods --
+//
+//-----------------------------------------------------------------------------
+///@name Allocator Selection
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///
+//-----------------------------------------------------------------------------
+    void    set_allocator(index_t allocator_id);
+    index_t allocator();
+    void    reset_allocator();
+//-----------------------------------------------------------------------------
+///@}
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Node allocator selection methods --
 //
 //-----------------------------------------------------------------------------
 
@@ -4335,7 +4358,6 @@ public:
 //
 //-----------------------------------------------------------------------------
 
-
 private:
 //-----------------------------------------------------------------------------
 //
@@ -4434,7 +4456,8 @@ private:
     // work horse for complex node hierarchical setup
     static void      walk_schema(Node   *node,
                                  Schema *schema,
-                                 void   *data);
+                                 void   *data,
+                                 index_t allocator_id);
 
     static void      mirror_node(Node *node,
                                  Schema *schema,
@@ -4666,6 +4689,9 @@ private:
     // initializing nodes using memory maps, so it is still needed apart from
     // simply knowing if this pointer is valid.
     MMap     *m_mmap;
+
+    // allocator id for memory
+    index_t m_allocator_id;
 };
 //-----------------------------------------------------------------------------
 // -- end conduit::Node --

@@ -1086,7 +1086,7 @@ TEST(conduit_node, test_parse_all_protos)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_node, to_string_and_parse_all_protos)
-{ 
+{
     Node n;
 
     n["a/b/c"] = (int64) 10;
@@ -1094,18 +1094,18 @@ TEST(conduit_node, to_string_and_parse_all_protos)
     n["a/b/e"] = " string !";
 
     std::ostringstream oss;
-    
+
     std::vector<std::string> txt_cases;
     txt_cases.push_back(n.to_string()); // yaml
     txt_cases.push_back(n.to_string_default()); // yaml
 
-    n.to_string_stream(oss); 
+    n.to_string_stream(oss);
     txt_cases.push_back(oss.str()); // yaml
 
     txt_cases.push_back(n.to_string("yaml"));
 
     oss.str("");
-    n.to_string_stream(oss,"json"); 
+    n.to_string_stream(oss,"json");
     txt_cases.push_back(oss.str()); // json
 
     txt_cases.push_back(n.to_string("json"));
