@@ -181,7 +181,7 @@ write_row_based(const Node &table, const std::string &path)
 static void
 write_single_table(const Node &table, const std::string &path)
 {
-    // TODO: Write column based writer and benchmark performance
+    // IDEA: Write column based writer and benchmark performance
     write_row_based(table, path);
 }
 
@@ -485,7 +485,6 @@ read_single_table(const std::string &path, const bool use_float64, Node &table)
         nrows++;
     }
 
-    // TODO: Handle CSV files without column names
     // Allocate the output table
     const DataType dtype((use_float64) ? DataType::FLOAT64_ID : DataType::FLOAT32_ID,
         nrows);

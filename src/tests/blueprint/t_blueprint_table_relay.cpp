@@ -95,6 +95,17 @@ TEST(t_blueprint_table_relay, read_write_multi_table)
     Node mesh;
     blueprint::mesh::examples::basic("uniform", 5, 4, 3, mesh);
 
+    // Need to create a vertex field, don't want to compare float coord locations.
+    const int npts = 5 * 4 * 3;
+    mesh["fields/vertex_field/topology"].set(mesh["topologies"][0].name());
+    mesh["fields/vertex_field/association"].set("vertex");
+    mesh["fields/vertex_field/values"].set_dtype(DataType::c_int(npts));
+    int *vf = static_cast<int*>(mesh["fields/vertex_field/values"].element_ptr(0));
+    for(int i = 0; i < npts; i++)
+    {
+        *vf++ = npts - 1 - i;
+    }
+
     Node table, opts;
     opts["add_vertex_locations"] = 0;
     opts["add_element_centers"] = 0;
