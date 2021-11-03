@@ -343,7 +343,7 @@ stages:
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # final hdf5 spec
-           if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^{HDF5_SPEC}"; fi
+           if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^${HDF5_SPEC}"; fi
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
