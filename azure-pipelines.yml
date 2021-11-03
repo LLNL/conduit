@@ -133,21 +133,6 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py36:
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_COVERAGE: OFF
-          ENABLE_MPI: ON
-          ENABLE_HDF5: ON
-          ENABLE_HDF5_COMPAT: ON
-          HDF5_SPEC: "hdf5~mpi"
-          ENABLE_DOCS: ON
-          ENABLE_SILO: ON
-          ENABLE_ADIOS: OFF
-          ENABLE_PYTHON: ON
-          CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
-
         shared_py37:
           COMPILER_CC: gcc
           COMPILER_CXX: g++
@@ -172,7 +157,6 @@ stages:
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
-
 
         shared_py38_cmake20:
           COMPILER_CC: gcc
@@ -238,7 +222,7 @@ stages:
           ENABLE_RELAY_WEBSERVER: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: OFF
-          HDF5_SPEC: " ^hdf5@1.12.0~mpi"
+          HDF5_SPEC: "hdf5@1.12.0~mpi"
           # silo requires hdf5 1.10, so for now we can't
           # test both silo and hdft 1.12 support
           ENABLE_SILO: OFF
@@ -341,9 +325,10 @@ stages:
            if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
-           if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
-           # final hdf5 spec
+           # hdf5 constraints
            if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^${HDF5_SPEC}"; fi
+           # silo constraints
+           if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # show final spec
            echo $SPACK_SPEC
            # run uber to build tpls
