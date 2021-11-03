@@ -77,12 +77,16 @@ protected:
 
     struct MeshMetaData {
         index_t coord_type;
+        index_t dimension;
         std::vector<index_t> counts;
+        std::vector<std::string> axes;
         index_t nverts;
         index_t nelems;
 
         MeshMetaData();
     };
+
+    bool rank_has_data(const MeshInfo &mesh) const;
 
     void add_mpi_rank(const MeshInfo &my_mesh, index_t vert_offset,
         index_t elem_offset, Node &output) const;
@@ -92,6 +96,10 @@ protected:
     void calculate_unique_fields(const Node &all_rank_fields, Node &output) const;
     FieldInfo determine_global_fields(const Node &mesh) const;
 
+    /**
+    @brief On all ranks, populates out.coord_type and out.dimension.
+        On root, populates the entire MeshMetaData struct
+    */
     void gather_global_mesh_metadata(const MeshInfo &my_info, MeshMetaData &out) const;
 
     void gather_values(int nrows,
@@ -104,7 +112,6 @@ protected:
 
     void make_local_allocations(const MeshInfo &my_info,
         const FieldInfo &global_field_info,
-        const index_t coords_dtype,
         Node &output) const;
 
     void make_root_allocations(const MeshMetaData &global_meta_data,

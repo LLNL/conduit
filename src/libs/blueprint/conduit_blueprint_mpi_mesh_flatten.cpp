@@ -20,6 +20,7 @@
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
+#include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_log.hpp"
 #include "conduit_relay_mpi.hpp"
 
@@ -208,10 +209,17 @@ ParallelMeshFlattener::FieldInfo::to_node(Node &out) const
 
 //-----------------------------------------------------------------------------
 ParallelMeshFlattener::MeshMetaData::MeshMetaData()
-    : coord_type(DataType::EMPTY_ID), counts(), nverts(0), nelems(0)
+    : coord_type(DataType::EMPTY_ID), dimension(0), counts(), nverts(0), nelems(0)
 //      field_info()
 {
 
+}
+
+//-----------------------------------------------------------------------------
+bool
+ParallelMeshFlattener::rank_has_data(const MeshInfo &info) const
+{
+    return info.nelems != 0 && info.nverts != 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -333,26 +341,37 @@ ParallelMeshFlattener::determine_global_fields(const Node &mesh) const
     DEBUG_PRINT("Rank " << rank << " - determine_global_fields" << std::endl);
     FieldInfo info;
 
-    // The user has not provided a list of fields
-    const Node &topo = get_topology(mesh[0]);
-    const std::string topo_name = topo.name();
-
+    // Need to make sure this rank has data, don't want to throw any uncaught exceptions
+    std::string topo_name = "";
     std::vector<std::string> fields_to_flatten;
-    try
+    if(mesh.number_of_children() > 0)
     {
-        get_fields_to_flatten(mesh, topo_name, fields_to_flatten);
-    }
-    catch(const conduit::Error &e)
-    {
-        CONDUIT_INFO("Error caught trying to get_fields_to_flatten on rank " << relay::mpi::rank(comm)
-            << ", this rank will not contribute to the final table. The error: "
-            << e.message());
-        fields_to_flatten.clear();
+        try
+        {
+            const Node &topo = get_topology(mesh[0]);
+            topo_name = topo.name();
+        }
+        catch(const conduit::Error &)
+        {
+            // Not an issue, we just won't contribute anything
+            topo_name = "";
+        }
+
+        try
+        {
+            get_fields_to_flatten(mesh, topo_name, fields_to_flatten);
+        }
+        catch(const conduit::Error &e)
+        {
+            CONDUIT_INFO("Error caught trying to get_fields_to_flatten on rank " << relay::mpi::rank(comm)
+                << ", this rank will not contribute to the final table. The error: "
+                << e.message());
+            fields_to_flatten.clear();
+        }
     }
 
-    if(this->field_names.empty())
     {
-        // TODO: Optimize for large N ranks.
+        // TODO: Optimize for large N ranks. Maybe use a checksum of the field names?
 
         // Create the local list of field info
         Node my_fields;
@@ -371,8 +390,12 @@ ParallelMeshFlattener::determine_global_fields(const Node &mesh) const
         DEBUG_PRINT("Broadcast using schema worked!" << std::endl);
         info.from_node(global_fields);
     }
+#if 0
+    // This specialization assumes root has all the fields requested by the user.
     else
     {
+        // NOTE: Could allreduce type information but what about component names
+        //  for mcarrays?
         // The user has provided a list of fields, rely on root's data types and ordering.
         Node global_fields;
         if(rank == root)
@@ -382,6 +405,7 @@ ParallelMeshFlattener::determine_global_fields(const Node &mesh) const
         relay::mpi::broadcast_using_schema(global_fields, root, comm);
         info.from_node(global_fields);
     }
+#endif
     return info;
 }
 
@@ -394,8 +418,13 @@ ParallelMeshFlattener::gather_global_mesh_metadata(const MeshInfo &my_info,
     out = MeshMetaData();
     const auto mtype = relay::mpi::conduit_dtype_to_mpi_dtype(DataType::index_t());
 
+    std::array<index_t, 2> my_data{my_info.coord_type, my_info.dimension};
+    std::array<index_t, 2> g_data;
+
     // NOTE: small ints < large ints < small floats < large floats, can compute max
-    MPI_Allreduce(&my_info.coord_type, &out.coord_type, 1, mtype, MPI_MAX, comm);
+    MPI_Allreduce(my_data.data(), g_data.data(), my_data.size(), mtype, MPI_MAX, comm);
+    out.coord_type = g_data[0];
+    out.dimension = g_data[1];
 
     // Now need per rank nverts / nelems
     const std::array<index_t, 2> my_counts{my_info.nverts, my_info.nelems};
@@ -407,8 +436,46 @@ ParallelMeshFlattener::gather_global_mesh_metadata(const MeshInfo &my_info,
     MPI_Gather(my_counts.data(), my_counts.size(), mtype, out.counts.data(),
         my_counts.size(), mtype, root, comm);
 
+    // Lastly root needs an educated guess at dimension names.
+    index_t my_axes = 0;
+    if(my_info.axes.size() > 1)
+    {
+        if(my_info.axes[0] == blueprint::mesh::utils::CYLINDRICAL_AXES[0])
+        {
+            my_axes = 1;
+            if(my_info.axes[1] == blueprint::mesh::utils::SPHERICAL_AXES[1])
+            {
+                my_axes = 2;
+            }
+        }
+        else if(my_info.axes[0] == blueprint::mesh::utils::LOGICAL_AXES[0])
+        {
+            my_axes = 3;
+        }
+    }
+    // Prefer cartesian
+    index_t g_axes = 0;
+    MPI_Reduce(&my_axes, &g_axes, 1, mtype, MPI_MIN, root, comm);
+
     if(rank == root)
     {
+        // Translate the int to the actual string vector
+        switch(g_axes)
+        {
+        case 1:
+            out.axes = blueprint::mesh::utils::CYLINDRICAL_AXES;
+            break;
+        case 2:
+            out.axes = blueprint::mesh::utils::SPHERICAL_AXES;
+            break;
+        case 3:
+            out.axes = blueprint::mesh::utils::LOGICAL_AXES;
+            break;
+        default: // 0
+            out.axes = blueprint::mesh::utils::CARTESIAN_AXES;
+            break;
+        }
+
         out.nverts = 0;
         out.nelems = 0;
         auto itr = out.counts.begin();
@@ -439,8 +506,9 @@ ParallelMeshFlattener::gather_values(int nrows, int *rank_counts,
             for(index_t j = 0; j < ncomps; j++)
             {
                 Node &column = value[j];
+                // If we don't have data send_count is 0.
                 // On root our send_count is 0. Send buff and recv buff may not alias.
-                void *ptr = (rank == root) ? no_data : column.element_ptr(0);
+                void *ptr = (send_count == 0) ? no_data : column.element_ptr(0);
                 void *recv_ptr = (rank == root) ? column.element_ptr(0) : nullptr;
                 const auto mtype = relay::mpi::conduit_dtype_to_mpi_dtype(column.dtype());
 #ifdef DEBUG_GATHER_VERBOSE
@@ -458,8 +526,9 @@ ParallelMeshFlattener::gather_values(int nrows, int *rank_counts,
         }
         else
         {
+            // If we don't have data send_count is 0.
             // On root our send_count is 0. Send buff and recv buff may not alias.
-            void *ptr = (rank == root) ? no_data : value.element_ptr(0);
+            void *ptr = (send_count == 0) ? no_data : value.element_ptr(0);
             void *recv_ptr = (rank == root) ? value.element_ptr(0) : nullptr;
             const auto mtype = relay::mpi::conduit_dtype_to_mpi_dtype(value.dtype());
 #ifdef DEBUG_GATHER_VERBOSE
@@ -478,8 +547,7 @@ ParallelMeshFlattener::gather_values(int nrows, int *rank_counts,
 //-----------------------------------------------------------------------------
 void
 ParallelMeshFlattener::gather_results(const MeshInfo &my_info,
-    const MeshMetaData &global_meta_data,
-    Node &output) const
+    const MeshMetaData &global_meta_data, Node &output) const
 {
     DEBUG_PRINT("Rank " << rank << " - gather_results" << std::endl);
     // Everyone should have the same exact columns
@@ -544,14 +612,12 @@ ParallelMeshFlattener::gather_results(const MeshInfo &my_info,
 //-----------------------------------------------------------------------------
 void
 ParallelMeshFlattener::make_local_allocations(const MeshInfo &info,
-    const FieldInfo &fi, const index_t coords_dtype, Node &output) const
+    const FieldInfo &fi, Node &output) const
 {
     DEBUG_PRINT("Rank " << rank << " - make_local_allocations" << std::endl);
     output.reset();
     Node &vertex_values = output["vertex_data/values"];
     Node &element_values = output["element_data/values"];
-    vertex_values.set(DataType::object());
-    vertex_values.set(DataType::object());
 
     // Allocate cset output
     if(this->add_vertex_locations)
@@ -560,7 +626,7 @@ ParallelMeshFlattener::make_local_allocations(const MeshInfo &info,
         for(index_t d = 0; d < info.dimension; d++)
         {
             allocate_column(cset_values[info.axes[d]],
-                info.nverts, coords_dtype);
+                info.nverts, info.coord_type);
         }
     }
 
@@ -653,9 +719,9 @@ ParallelMeshFlattener::make_root_allocations(const MeshMetaData &mdata,
     if(this->add_vertex_locations)
     {
         Node &cset_values = vertex_values[my_info.cset_name];
-        for(index_t d = 0; d < my_info.dimension; d++)
+        for(index_t d = 0; d < mdata.dimension; d++)
         {
-            allocate_column(cset_values[my_info.axes[d]],
+            allocate_column(cset_values[mdata.axes[d]],
                 mdata.nverts, mdata.coord_type);
         }
     }
@@ -664,9 +730,9 @@ ParallelMeshFlattener::make_root_allocations(const MeshMetaData &mdata,
     if(this->add_cell_centers)
     {
         Node &elem_center_values = element_values["element_centers"];
-        for(index_t d = 0; d < my_info.dimension; d++)
+        for(index_t d = 0; d < mdata.dimension; d++)
         {
-            allocate_column(elem_center_values[my_info.axes[d]],
+            allocate_column(elem_center_values[mdata.axes[d]],
                 mdata.nelems, this->default_dtype);
         }
     }
@@ -754,6 +820,7 @@ ParallelMeshFlattener::flatten_many_domains(const Node &mesh, Node &output) cons
 {
     DEBUG_PRINT("Rank " << rank << " - flatten_many_domains" << std::endl);
     FieldInfo global_field_info = determine_global_fields(mesh);
+    DEBUG_PRINT("Rank " << rank << " - global_fields determined!" << std::endl);
 
     MeshInfo my_mesh_info;
     try
@@ -768,14 +835,27 @@ ParallelMeshFlattener::flatten_many_domains(const Node &mesh, Node &output) cons
         my_mesh_info = MeshInfo();
     }
 
-    // Only coord_type filled in on all ranks, everything else is only on root.
+    // Only coord_type and dimension filled in on all ranks, everything else is only on root.
     MeshMetaData global_metadata;
     gather_global_mesh_metadata(my_mesh_info, global_metadata);
 
+    // Update my_mesh_info with global_metadata
+    my_mesh_info.coord_type = global_metadata.coord_type;
+    my_mesh_info.dimension = global_metadata.dimension;
+
+    // Table still needs to have the same shape as everyone
+    // else's even if we have no data to contribue.
+    const bool has_data = rank_has_data(my_mesh_info);
+    if(!has_data)
+    {
+        // The names don't matter, we gather in the order that the columns are defined.
+        my_mesh_info.axes = blueprint::mesh::utils::CARTESIAN_AXES;
+        my_mesh_info.cset_name = "coords";
+    }
+
     if(rank != root)
     {
-        make_local_allocations(my_mesh_info, global_field_info,
-            global_metadata.coord_type, output);
+        make_local_allocations(my_mesh_info, global_field_info, output);
     }
     else
     {
@@ -785,37 +865,42 @@ ParallelMeshFlattener::flatten_many_domains(const Node &mesh, Node &output) cons
 
     DEBUG_PRINT("Rank " << rank << output.schema().to_json() << std::endl);
 
-    // Do local flattening on each rank
-    index_t vert_offset_start = 0;
-    index_t elem_offset_start = 0;
-
-    // Root needs to update offsets before doing local flatten
-    if(rank == root)
+    // No collective operations happen in here,
+    //  if we have no data just skip this stuff.
+    if(has_data)
     {
-        // counts stored as [nverts0, nelems0, nverts1, nelems1, ...]
-        const index_t *c = global_metadata.counts.data();
-        for(int i = 0; i < root; i++)
+        // Do local flattening on each rank
+        index_t vert_offset_start = 0;
+        index_t elem_offset_start = 0;
+
+        // Root needs to update offsets before doing local flatten
+        if(rank == root)
         {
-            vert_offset_start += *c++;
-            elem_offset_start += *c++;
+            // counts stored as [nverts0, nelems0, nverts1, nelems1, ...]
+            const index_t *c = global_metadata.counts.data();
+            for(int i = 0; i < root; i++)
+            {
+                vert_offset_start += *c++;
+                elem_offset_start += *c++;
+            }
         }
-    }
 
-    index_t vert_offset = vert_offset_start;
-    index_t elem_offset = elem_offset_start;
-    for(index_t i = 0; i < my_mesh_info.ndomains; i++)
-    {
-        DEBUG_PRINT("Rank " << rank << " flattening domain " << i << std::endl);
-        flatten_single_domain(mesh[i], output, global_field_info.field_names,
-            my_mesh_info.domain_ids[i], vert_offset, elem_offset);
-        vert_offset += my_mesh_info.verts_per_domain[i];
-        elem_offset += my_mesh_info.elems_per_domain[i];
-    }
+        index_t vert_offset = vert_offset_start;
+        index_t elem_offset = elem_offset_start;
+        for(index_t i = 0; i < my_mesh_info.ndomains; i++)
+        {
+            DEBUG_PRINT("Rank " << rank << " flattening domain " << i << std::endl);
+            flatten_single_domain(mesh[i], output, global_field_info.field_names,
+                my_mesh_info.domain_ids[i], vert_offset, elem_offset);
+            vert_offset += my_mesh_info.verts_per_domain[i];
+            elem_offset += my_mesh_info.elems_per_domain[i];
+        }
 
-    if(this->add_rank)
-    {
-        add_mpi_rank(my_mesh_info, vert_offset_start,
-            elem_offset_start, output);
+        if(this->add_rank)
+        {
+            add_mpi_rank(my_mesh_info, vert_offset_start,
+                elem_offset_start, output);
+        }
     }
 
     gather_results(my_mesh_info, global_metadata, output);
