@@ -37,7 +37,7 @@ std::string get_braid_type(const std::string &mesh_type)
     std::string braid_type;
     try
     {
-        conduit::Node mesh;
+        Node mesh;
         blueprint::mesh::examples::braid(mesh_type,2,2,2,mesh);
         braid_type = mesh_type;
     }
@@ -51,13 +51,13 @@ std::string get_braid_type(const std::string &mesh_type)
 
 // TODO(JRC): It would be useful to eventually have this type of procedure
 // available as an abstracted iteration strategy within Conduit (e.g. leaf iterate).
-void set_node_data(conduit::Node &node, const conduit::DataType &dtype)
+void set_node_data(Node &node, const DataType &dtype)
 {
-    std::vector<conduit::Node*> node_bag(1, &node);
+    std::vector<Node*> node_bag(1, &node);
     while(!node_bag.empty())
     {
-        conduit::Node* curr_node = node_bag.back(); node_bag.pop_back();
-        conduit::DataType curr_dtype = curr_node->dtype();
+        Node* curr_node = node_bag.back(); node_bag.pop_back();
+        DataType curr_dtype = curr_node->dtype();
 
         bool are_types_equivalent =
             (curr_dtype.is_floating_point() && dtype.is_floating_point()) ||
@@ -65,12 +65,12 @@ void set_node_data(conduit::Node &node, const conduit::DataType &dtype)
             (curr_dtype.is_string() && dtype.is_string());
         if(curr_dtype.is_object() || curr_dtype.is_list())
         {
-            conduit::NodeIterator curr_node_it = curr_node->children();
+            NodeIterator curr_node_it = curr_node->children();
             while(curr_node_it.has_next()) { node_bag.push_back(&curr_node_it.next()); }
         }
         else if(are_types_equivalent)
         {
-            conduit::Node temp_node;
+            Node temp_node;
             curr_node->to_data_type(dtype.id(), temp_node);
             curr_node->set(temp_node);
         }
@@ -78,15 +78,15 @@ void set_node_data(conduit::Node &node, const conduit::DataType &dtype)
 }
 
 
-bool verify_node_data(conduit::Node &node, const conduit::DataType &dtype)
+bool verify_node_data(Node &node, const DataType &dtype)
 {
     bool is_data_valid = true;
 
-    std::vector<conduit::Node*> node_bag(1, &node);
+    std::vector<Node*> node_bag(1, &node);
     while(!node_bag.empty())
     {
-        conduit::Node* curr_node = node_bag.back(); node_bag.pop_back();
-        conduit::DataType curr_dtype = curr_node->dtype();
+        Node* curr_node = node_bag.back(); node_bag.pop_back();
+        DataType curr_dtype = curr_node->dtype();
 
         bool are_types_equivalent =
             (curr_dtype.is_floating_point() && dtype.is_floating_point()) ||
@@ -94,7 +94,7 @@ bool verify_node_data(conduit::Node &node, const conduit::DataType &dtype)
             (curr_dtype.is_string() && dtype.is_string());
         if(curr_dtype.is_object() || curr_dtype.is_list())
         {
-            conduit::NodeIterator curr_node_it = curr_node->children();
+            NodeIterator curr_node_it = curr_node->children();
             while(curr_node_it.has_next()) { node_bag.push_back(&curr_node_it.next()); }
         }
         else if(are_types_equivalent)
@@ -126,9 +126,9 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
         const std::string icoordset_type = bputils::COORD_TYPES[xi];
         const std::string icoordset_braid = get_braid_type(icoordset_type);
 
-        conduit::Node imesh;
+        Node imesh;
         blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
-        const conduit::Node &icoordset = imesh["coordsets"].child(0);
+        const Node &icoordset = imesh["coordsets"].child(0);
 
         for(size_t xj = xi + 1; xj < bputils::COORD_TYPES.size(); xj++)
         {
@@ -139,14 +139,14 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
             std::cout << "Testing coordset " << icoordset_type << " -> " <<
                 jcoordset_type << "..." << std::endl;
 
-            conduit::Node jmesh;
+            Node jmesh;
             blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
-            conduit::Node &jcoordset = jmesh["coordsets"].child(0);
+            Node &jcoordset = jmesh["coordsets"].child(0);
 
             XformCoordsFun to_new_coordset = xform_funs[xi][xj];
             VerifyFun verify_new_coordset = verify_funs[xj];
 
-            conduit::Node xcoordset, info;
+            Node xcoordset, info;
             to_new_coordset(icoordset, xcoordset);
 
             EXPECT_TRUE(verify_new_coordset(xcoordset, info));
@@ -169,13 +169,13 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
         const std::string icoordset_type = bputils::COORD_TYPES[xi];
         const std::string icoordset_braid = get_braid_type(icoordset_type);
 
-        conduit::Node imesh;
+        Node imesh;
         blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
-        const conduit::Node &icoordset = imesh["coordsets"].child(0);
+        const Node &icoordset = imesh["coordsets"].child(0);
 
         for(size_t xj = xi + 1; xj < bputils::COORD_TYPES.size(); xj++)
         {
-            conduit::Node jcoordset;
+            Node jcoordset;
             const std::string jcoordset_type = bputils::COORD_TYPES[xj];
             XformCoordsFun to_new_coordset = xform_funs[xi][xj];
 
@@ -188,8 +188,8 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
                         "int-" << 32 * (ii + 1) << "/float-" << 32 * (fi + 1) << " coordset " <<
                         icoordset_type << " -> " << jcoordset_type << "..." << std::endl;
 
-                    conduit::Node icoordset = imesh["coordsets"].child(0);
-                    conduit::Node jcoordset;
+                    Node icoordset = imesh["coordsets"].child(0);
+                    Node jcoordset;
 
                     set_node_data(icoordset, bputils::INT_DTYPES[ii]);
                     set_node_data(icoordset, bputils::FLOAT_DTYPES[fi]);
@@ -234,10 +234,10 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
         const std::string itopology_type = bputils::TOPO_TYPES[xi];
         const std::string itopology_braid = get_braid_type(itopology_type);
 
-        conduit::Node imesh;
+        Node imesh;
         blueprint::mesh::examples::braid(itopology_braid,2,3,4,imesh);
-        const conduit::Node &itopology = imesh["topologies"].child(0);
-        const conduit::Node &icoordset = imesh["coordsets"].child(0);
+        const Node &itopology = imesh["topologies"].child(0);
+        const Node &icoordset = imesh["coordsets"].child(0);
 
         for(size_t xj = xi + 1; xj < bputils::TOPO_TYPES.size(); xj++)
         {
@@ -248,18 +248,18 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
             std::cout << "Testing topology " << itopology_type << " -> " <<
                 jtopology_type << "..." << std::endl;
 
-            conduit::Node jmesh;
+            Node jmesh;
             blueprint::mesh::examples::braid(jtopology_braid,2,3,4,jmesh);
-            conduit::Node &jtopology = jmesh["topologies"].child(0);
-            conduit::Node &jcoordset = jmesh["coordsets"].child(0);
+            Node &jtopology = jmesh["topologies"].child(0);
+            Node &jcoordset = jmesh["coordsets"].child(0);
 
             XformTopoFun to_new_topology = xform_funs[xi][xj];
             VerifyFun verify_new_topology = verify_topology_funs[xj];
             VerifyFun verify_new_coordset = verify_coordset_funs[xj];
 
-            conduit::Node info;
-            conduit::Node &xtopology = imesh["topologies/test"];
-            conduit::Node &xcoordset = imesh["coordsets/test"];
+            Node info;
+            Node &xtopology = imesh["topologies/test"];
+            Node &xcoordset = imesh["coordsets/test"];
             to_new_topology(itopology, xtopology, xcoordset);
 
             EXPECT_TRUE(verify_new_topology(xtopology, info));
@@ -269,7 +269,7 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
             // NOTE(JRC): This is necessary because the 'coordset' value
             // will be different from the transform topology since it
             // will always create a unique personal one and reference it.
-            conduit::Node dxtopology = xtopology;
+            Node dxtopology = xtopology;
             dxtopology["coordset"].set(itopology["coordset"].as_string());
 
             EXPECT_FALSE(jtopology.diff(dxtopology, info));
@@ -300,11 +300,11 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
         const std::string itopology_braid = get_braid_type(itopology_type);
 
         // NOTE(JRC): For the data type checks, we're only interested in the parts
-        // of the subtree that are being transformed; we kull all other data.
-        conduit::Node ibase;
+        // of the subtree that are being transformed; we cull all other data.
+        Node ibase;
         blueprint::mesh::examples::braid(itopology_braid,2,3,4,ibase);
         {
-            conduit::Node temp;
+            Node temp;
             temp["coordsets"].set(ibase["coordsets"]);
             temp["topologies"].set(ibase["topologies"]);
             ibase.set(temp);
@@ -324,13 +324,15 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
                         "int-" << 32 * (ii + 1) << "/float-" << 32 * (fi + 1) << " topology " <<
                         itopology_type << " -> " << jtopology_type << "..." << std::endl;
 
-                    conduit::Node imesh = ibase;
-                    conduit::Node &itopology = imesh["topologies"].child(0);
-                    conduit::Node &icoordset = imesh["coordsets"].child(0);
+                    Node imesh = ibase;
+                    Node &itopology = imesh["topologies"].child(0);
+                    Node &icoordset = imesh["coordsets"].child(0);
 
-                    conduit::Node jmesh;
-                    conduit::Node jtopology = jmesh["topologies"][itopology.name()];
-                    conduit::Node jcoordset = jmesh["coordsets"][icoordset.name()];
+                    // FIXME(JRC): I think these should be references! i.e. Node &jtopology
+                    // Changing them in this way causes this test to fail.
+                    Node jmesh;
+                    Node jtopology = jmesh["topologies"][itopology.name()];
+                    Node jcoordset = jmesh["coordsets"][icoordset.name()];
 
                     set_node_data(imesh, bputils::INT_DTYPES[ii]);
                     set_node_data(imesh, bputils::FLOAT_DTYPES[fi]);
@@ -371,18 +373,16 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
         std::cout << "Testing topology type '" << topo_type << "' -> " <<
             "polygonal..." << std::endl;
 
-        conduit::Node topo_mesh;
+        Node topo_mesh, info;
         blueprint::mesh::examples::braid(topo_type,
             MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],topo_mesh);
-        const conduit::Node &topo_node = topo_mesh["topologies"].child(0);
+        const Node &topo_node = topo_mesh["topologies"].child(0);
 
-        conduit::Node topo_poly;
+        Node topo_poly;
         blueprint::mesh::topology::unstructured::to_polygonal(topo_node, topo_poly);
 
-        conduit::Node info;
-
         { // Verify Non-Elements Components //
-            conduit::Node topo_noelem, poly_noelem;
+            Node topo_noelem, poly_noelem;
             topo_noelem.set_external(topo_node);
             topo_noelem.remove("elements");
             poly_noelem.set_external(topo_poly);
@@ -398,9 +398,9 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             EXPECT_EQ(topo_poly["elements/shape"].as_string(),
                 is_topo_3d ? "polyhedral" : "polygonal");
 
-            const conduit::Node &topo_conn = topo_node["elements/connectivity"];
-            conduit::Node &poly_conn = topo_poly["elements/connectivity"];
-            conduit::Node poly_subconn;
+            const Node &topo_conn = topo_node["elements/connectivity"];
+            Node &poly_conn = topo_poly["elements/connectivity"];
+            Node poly_subconn;
             // BHAN - Error when trying to convert empty poly_subconn,
             // set to element/connectivity for polygonal (unused)
             if (is_topo_3d)
@@ -421,20 +421,20 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
             EXPECT_EQ(poly_stride, is_topo_3d ? topo_faces : topo_findices );
             EXPECT_EQ(poly_len % topo_elems, 0);
 
-            conduit::Node topo_conn_array, poly_conn_array, poly_subconn_array;
+            Node topo_conn_array, poly_conn_array, poly_subconn_array;
             topo_conn.to_int64_array(topo_conn_array);
             poly_conn.to_int64_array(poly_conn_array);
             poly_subconn.to_int64_array(poly_subconn_array);
-            const conduit::int64_array topo_data = topo_conn_array.as_int64_array();
-            const conduit::int64_array poly_data = poly_conn_array.as_int64_array();
-            const conduit::int64_array poly_subdata = poly_subconn_array.as_int64_array();
+            const int64_array topo_data = topo_conn_array.as_int64_array();
+            const int64_array poly_data = poly_conn_array.as_int64_array();
+            const int64_array poly_subdata = poly_subconn_array.as_int64_array();
 
-            conduit::Node poly_size;
+            Node poly_size;
             poly_size = topo_poly["elements/sizes"];
 
             // BHAN - Error when trying to convert empty poly_subsize,
             // set to element/sizes for polygonal (unused)
-            conduit::Node poly_subsize;
+            Node poly_subsize;
             if (is_topo_3d)
             {
                 poly_subsize = topo_poly["subelements/sizes"];
@@ -444,13 +444,13 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
                 poly_subsize = topo_poly["elements/sizes"];
             }
 
-            conduit::Node poly_size_array;
+            Node poly_size_array;
             poly_size.to_int64_array(poly_size_array);
-            const conduit::int64_array poly_size_data = poly_size_array.as_int64_array();
+            const int64_array poly_size_data = poly_size_array.as_int64_array();
 
-            conduit::Node poly_subsize_array;
+            Node poly_subsize_array;
             poly_subsize.to_int64_array(poly_subsize_array);
-            const conduit::int64_array poly_subsize_data = poly_subsize_array.as_int64_array();
+            const int64_array poly_subsize_data = poly_subsize_array.as_int64_array();
 
             for(index_t ep = 0, et = 0; ep < poly_len;
                 ep += poly_stride, et += topo_indices)
@@ -494,6 +494,117 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
                         poly_index_set.begin(), poly_index_set.end()));
                 }
             }
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, adjset_transforms)
+{
+    // run test -> pairwise, then test -> pairwise -> maxshare
+    // use different grid configurations, e.g.
+    // {{2, 1, 1}, {2, 2, 1}, {2, 2, 2}}
+    const std::string ADJSET_ELEM_TYPES[4]      = {"quads", "quads", "hexs", "hexs"};
+    const index_t ADJSET_DOM_DIMS[4][3]         = {{2, 1, 1}, {2, 2, 1}, {2, 2, 1}, {2, 2, 2}};
+    const index_t ADJSET_POINT_DIMS[4][3]       = {{3, 3, 1}, {3, 3, 1}, {3, 3, 3}, {3, 3, 3}};
+
+    for(index_t ai = 0; ai < 4; ai++)
+    {
+        const std::string &adjset_etype = ADJSET_ELEM_TYPES[ai];
+        const index_t *adjset_ddims = &ADJSET_DOM_DIMS[ai][0];
+        const index_t *adjset_pdims = &ADJSET_POINT_DIMS[ai][0];
+
+        const index_t adjset_num_doms = adjset_ddims[0] * adjset_ddims[1] * adjset_ddims[2];
+
+        // NOTE: The following lines are for debugging purposes only.
+        std::cout << "Testing adjset for " <<
+            "(" << adjset_ddims[0] << ", " << adjset_ddims[1] << ", " << adjset_ddims[2] << ") domains w/ " <<
+            "(" << adjset_pdims[0]-1 << ", " << adjset_pdims[1]-1 << ", " << adjset_pdims[2]-1 << ") " <<
+            "'" << adjset_etype << "' elements..." << std::endl;
+
+        Node mesh, info;
+        blueprint::mesh::examples::grid(adjset_etype,
+            adjset_pdims[0], adjset_pdims[1], adjset_pdims[2],
+            adjset_ddims[0], adjset_ddims[1], adjset_ddims[2],
+            mesh);
+
+        // NOTE: The following lines are for debugging purposes only.
+        std::cout << "  Testing max-share -> pairwise transform..." << std::endl;
+
+        for(Node *domain : blueprint::mesh::domains(mesh))
+        {
+            Node &domain_adjset = (*domain)["adjsets"].child(0);
+            ASSERT_TRUE(blueprint::mesh::adjset::verify(domain_adjset, info));
+
+            Node &pairwise_adjset = (*domain)["adjsets"][domain_adjset.name() + "_pairwise"];
+            blueprint::mesh::adjset::to_pairwise(domain_adjset, pairwise_adjset);
+            ASSERT_TRUE(blueprint::mesh::adjset::verify(pairwise_adjset, info));
+            ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(pairwise_adjset));
+
+            ASSERT_EQ(pairwise_adjset["association"].as_string(), domain_adjset["association"].as_string());
+            ASSERT_EQ(pairwise_adjset["topology"].as_string(), domain_adjset["topology"].as_string());
+            ASSERT_EQ(pairwise_adjset["groups"].number_of_children(), adjset_num_doms - 1);
+        }
+
+        // NOTE: The following lines are for debugging purposes only.
+        std::cout << "  Testing pairwise -> max-share transform..." << std::endl;
+
+        for(Node *domain : blueprint::mesh::domains(mesh))
+        {
+            Node &domain_adjset = (*domain)["adjsets"].child(0);
+            Node &pairwise_adjset = (*domain)["adjsets"][domain_adjset.name() + "_pairwise"];
+
+            Node &maxshare_adjset = (*domain)["adjsets"][domain_adjset.name() + "_maxshare"];
+            blueprint::mesh::adjset::to_maxshare(pairwise_adjset, maxshare_adjset);
+            ASSERT_TRUE(blueprint::mesh::adjset::verify(maxshare_adjset, info));
+            ASSERT_TRUE(blueprint::mesh::adjset::is_maxshare(maxshare_adjset));
+
+            ASSERT_EQ(maxshare_adjset["association"].as_string(), domain_adjset["association"].as_string());
+            ASSERT_EQ(maxshare_adjset["topology"].as_string(), domain_adjset["topology"].as_string());
+            // TODO: Calculate this amount based on input domain configuration.
+            // ASSERT_EQ(maxshare_adjset["groups"].number_of_children(), adjset_num_doms - 1);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, adjset_transform_dtypes)
+{
+    XformCoordsFun xform_funs[2] = {blueprint::mesh::adjset::to_pairwise, blueprint::mesh::adjset::to_maxshare};
+    const std::string xform_types[2] = {"pairwise", "max-share"};
+
+    for(size_t xi = 0; xi < sizeof(xform_funs) / sizeof(xform_funs[0]); xi++)
+    {
+        XformCoordsFun to_new_adjset = xform_funs[xi];
+        const std::string &xform_type = xform_types[xi];
+
+        Node ibase, info;
+        blueprint::mesh::examples::grid("quads",2,2,1,2,2,1,ibase);
+
+        for(size_t ii = 0; ii < bputils::INT_DTYPES.size(); ii++)
+        {
+            // NOTE: The following lines are for debugging purposes only.
+            std::cout << "Testing " <<
+                "int-" << 32 * (ii + 1) << " adjset " <<
+                "baseline" << " -> " << xform_type << "..." << std::endl;
+
+            Node imesh = ibase, jmesh;
+            set_node_data(imesh, bputils::INT_DTYPES[ii]);
+
+            for(const std::string &domain_name : imesh.child_names())
+            {
+                Node &idomain = imesh[domain_name];
+                Node &jdomain = jmesh[domain_name];
+
+                Node &iadjset = idomain["adjsets"].child(0);
+                Node &jadjset = jdomain["adjsets"][iadjset.name()];
+
+                to_new_adjset(iadjset, jadjset);
+            }
+
+            EXPECT_TRUE(verify_node_data(jmesh, bputils::INT_DTYPES[ii]));
         }
     }
 }
