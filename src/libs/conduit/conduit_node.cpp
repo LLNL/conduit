@@ -10458,6 +10458,83 @@ Node::to_float64_array(Node &res) const
 }
 
 //---------------------------------------------------------------------------//
+/// convert array to the index type
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+void
+Node::to_index_t_array(Node &res) const
+{
+    res.set(DataType::index_t(dtype().number_of_elements()));
+
+    index_t_array res_array = res.as_index_t_array();
+
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:
+        {
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_ID:
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_ID:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_ID:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
+                        << " type to float64_array.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
 /// convert array to c signed integer arrays
 //---------------------------------------------------------------------------//
 
@@ -14691,6 +14768,17 @@ Node::as_float64_array()
 }
 
 //---------------------------------------------------------------------------//
+index_t_array
+Node::as_index_t_array() const
+{
+    CONDUIT_CHECK_DTYPE(this,
+                        DataType::index_t(1).id(),
+                        "as_index_t_array()",
+                        index_t_array());
+    return index_t_array(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
 // signed integer array types via conduit::DataArray (const variants)
 //---------------------------------------------------------------------------//
 
@@ -17215,7 +17303,7 @@ Node::find_first_data_ptr() const
 
 //---------------------------------------------------------------------------//
 bool
-Node::diff(const Node &n, Node &info, const float64 epsilon) const
+Node::diff(const Node &n, Node &info, const float64 epsilon, bool relaxint) const
 {
     const std::string protocol = "node::diff";
     bool res = false;
@@ -17226,14 +17314,31 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
 
     if(t_dtid != n_dtid)
     {
-        std::ostringstream oss;
-        oss << "data type mismatch ("
-            << dtype().name()
-            << " vs "
-            << n.dtype().name()
-            << ")";
-        log::error(info, protocol, oss.str());
-        res = true;
+        // We ought to be able to compare integers of different sizes.
+        if(relaxint)
+        {
+            if(dtype().is_signed_integer() && n.dtype().is_signed_integer())
+                res = to_int64() != n.to_int64();
+            else if(dtype().is_unsigned_integer() && n.dtype().is_unsigned_integer())
+                res = to_uint64() != n.to_uint64();
+            else if(dtype().is_integer() && n.dtype().is_integer())
+                res = to_int64() != n.to_int64();
+            else
+                res = true;
+        }
+        else
+            res = true;
+
+        if(res)
+        {
+            std::ostringstream oss;
+            oss << "data type mismatch ("
+                << dtype().name()
+                << " vs "
+                << n.dtype().name()
+                << ")";
+            log::error(info, protocol, oss.str());
+        }
     }
     else if(t_dtid == DataType::EMPTY_ID)
     {
@@ -17258,7 +17363,7 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             else
             {
                 Node &info_child = info_children["diff"].add_child(child_path);
-                res |= t_child.diff(n.child(child_path), info_child, epsilon);
+                res |= t_child.diff(n.child(child_path), info_child, epsilon, relaxint);
             }
         }
 
@@ -17276,7 +17381,7 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
             else
             {
                 Node &info_child = info_children["diff"].add_child(child_path);
-                res |= child(child_path).diff(n_child, info_child, epsilon);
+                res |= child(child_path).diff(n_child, info_child, epsilon, relaxint);
             }
         }
     }
@@ -17292,7 +17397,7 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
-            res |= t_child.diff(n_child, info_children["diff"].append(), epsilon);
+            res |= t_child.diff(n_child, info_children["diff"].append(), epsilon, relaxint);
         }
         for(; i < std::max(t_nchild, n_nchild); i++)
         {
@@ -17385,7 +17490,8 @@ Node::diff(const Node &n, Node &info, const float64 epsilon) const
 
 //---------------------------------------------------------------------------//
 bool
-Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
+Node::diff_compatible(const Node &n, Node &info, const float64 epsilon,
+    bool relaxint) const
 {
     const std::string protocol = "node::diff_compatible";
     bool res = false;
@@ -17396,14 +17502,31 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
 
     if(t_dtid != n_dtid)
     {
-        std::ostringstream oss;
-        oss << "data type incompatibility ("
-            << dtype().name()
-            << " vs "
-            << n.dtype().name()
-            << ")";
-        log::error(info, protocol, oss.str());
-        res = true;
+        // We ought to be able to compare integers of different sizes.
+        if(relaxint)
+        {
+            if(dtype().is_signed_integer() && n.dtype().is_signed_integer())
+                res = to_int64() != n.to_int64();
+            else if(dtype().is_unsigned_integer() && n.dtype().is_unsigned_integer())
+                res = to_uint64() != n.to_uint64();
+            else if(dtype().is_integer() && n.dtype().is_integer())
+                res = to_int64() != n.to_int64();
+            else
+                res = true;
+        }
+        else
+            res = true;
+
+        if(res)
+        {
+            std::ostringstream oss;
+            oss << "data type incompatibility ("
+                << dtype().name()
+                << " vs "
+                << n.dtype().name()
+                << ")";
+            log::error(info, protocol, oss.str());
+        }
     }
     else if(t_dtid == DataType::EMPTY_ID)
     {
@@ -17427,7 +17550,7 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
             else
             {
                 Node &info_child = info_children["diff"].add_child(child_path);
-                res |= t_child.diff_compatible(n.child(child_path), info_child, epsilon);
+                res |= t_child.diff_compatible(n.child(child_path), info_child, epsilon, relaxint);
             }
         }
     }
@@ -17443,7 +17566,7 @@ Node::diff_compatible(const Node &n, Node &info, const float64 epsilon) const
         {
             const Node &t_child = child(i);
             const Node &n_child = n.child(i);
-            res |= t_child.diff_compatible(n_child, info_children["diff"].append(), epsilon);
+            res |= t_child.diff_compatible(n_child, info_children["diff"].append(), epsilon, relaxint);
         }
         for(; i < t_nchild; i++)
         {

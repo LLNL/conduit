@@ -68,6 +68,8 @@ public:
 //-----------------------------------------------------------------------------
 // Data and Info Access
 //-----------------------------------------------------------------------------
+    typedef T ElementType;
+
     T              &operator[](index_t idx)
                     {return element(idx);}
     T              &operator[](index_t idx) const
@@ -394,6 +396,9 @@ typedef DataArray<uint64>   uint64_array;
 /// floating point arrays
 typedef DataArray<float32>  float32_array;
 typedef DataArray<float64>  float64_array;
+
+/// index type arrays
+typedef DataArray<index_t>  index_t_array;
 
 /// native c types arrays
 typedef DataArray<char>       char_array;
