@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 #include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_mesh.hpp"
 
 #include <mpi.h>
 
@@ -60,11 +61,17 @@ bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &n,
 /// These methods can be called on any verified blueprint mesh.
 //-----------------------------------------------------------------------------
 
-//-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           const std::string &ref_path,
                                           Node &index_out,
                                           MPI_Comm comm);
+
+void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &n,
+                                        conduit::Node &dest,
+                                        const std::string& name);
+void CONDUIT_BLUEPRINT_API to_polyhedral(const conduit::Node &n,
+                                         conduit::Node &dest,
+                                         const std::string& name);
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_domain_to_rank_map(
