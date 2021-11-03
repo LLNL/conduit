@@ -166,7 +166,9 @@ if(CONDUIT_HDF5_DIR)
     # to make sure the targets propgate correctly.
     # in other cases, folks will 
     if(HDF5_IS_PARALLEL AND NOT MPI_FOUND)
-        find_package(MPI COMPONENTS CXX)
+        if(CONDUIT_USE_CMAKE_MPI_TARGETS)
+            find_package(MPI COMPONENTS CXX)
+        endif()
     endif()
 
     if(HDF5_IS_PARALLEL)

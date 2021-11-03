@@ -122,8 +122,78 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
 
     index_t t_nelems = number_of_elements();
     index_t o_nelems = array.number_of_elements();
+    
+    if(dtype().is_char8_str())
+    {
+        // the number of elements includes the null term
+        // so shrink to the actual string size so 
+        // we can pass that to the std::string constructors
+        // and avoid creating strings with embedded
+        // null terms in the middle :-)
+        if(t_nelems > 1)
+        {
+            t_nelems--;
+        }
+        if(o_nelems > 1)
+        {
+            o_nelems--;
+        }
 
-    if(t_nelems != o_nelems)
+        uint8 *t_compact_data = NULL;
+        uint8 *o_compact_data = NULL;
+        std::string t_string = "";
+        std::string o_string = "";
+        
+        if(dtype().is_compact())
+        {
+            t_string = std::string((const char*)element_ptr(0),
+                                   (size_t)t_nelems);
+        }
+        else
+        {
+            // if not compact, we need to compact to get our data into std::string
+            t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
+            compact_elements_to(t_compact_data);
+            t_string = std::string((const char*)t_compact_data,
+                                   (size_t)t_nelems);
+        }
+
+        if(array.dtype().is_compact())
+        {
+            o_string = std::string((const char*)array.element_ptr(0),
+                                   (size_t)o_nelems);
+        }
+        else
+        {
+            // if not compact, we need to compact to get our data into std::string
+            o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
+            array.compact_elements_to(o_compact_data);
+            o_string = std::string((const char*)o_compact_data, (size_t)o_nelems);
+        }
+
+        if(t_string != o_string)
+        {
+            std::ostringstream oss;
+            oss << "data string mismatch ("
+                << "\"" << t_string << "\""
+                << " vs "
+                << "\"" << o_string << "\""
+                << ")";
+            log::error(info, protocol, oss.str());
+            res = true;
+        }
+
+        if(t_compact_data)
+        {
+            delete [] t_compact_data;
+        }
+
+        if(o_compact_data)
+        {
+            delete [] o_compact_data;
+        }
+    }
+    else if(t_nelems != o_nelems)
     {
         std::ostringstream oss;
         oss << "data length mismatch ("
@@ -136,54 +206,26 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
     }
     else
     {
-        if(dtype().is_char8_str())
+        Node &info_value = info["value"];
+        info_value.set(DataType(array.dtype().id(), t_nelems));
+        T* info_ptr = (T*)info_value.data_ptr();
+
+        for(index_t i = 0; i < t_nelems; i++)
         {
-            uint8 *t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
-            compact_elements_to(t_compact_data);
-            std::string t_string((const char*)t_compact_data, (size_t)t_nelems);
-
-            uint8 *o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
-            array.compact_elements_to(o_compact_data);
-            std::string o_string((const char*)o_compact_data, (size_t)o_nelems);
-
-            if(t_string != o_string)
+            info_ptr[i] = (*this)[i] - array[i];
+            if(dtype().is_floating_point())
             {
-                std::ostringstream oss;
-                oss << "data string mismatch ("
-                    << "\"" << t_string << "\""
-                    << " vs "
-                    << "\"" << o_string << "\""
-                    << ")";
-                log::error(info, protocol, oss.str());
-                res = true;
+                res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
             }
-
-            delete [] t_compact_data;
-            delete [] o_compact_data;
+            else
+            {
+                res |= (*this)[i] != array[i];
+            }
         }
-        else
+
+        if(res)
         {
-            Node &info_value = info["value"];
-            info_value.set(DataType(array.dtype().id(), t_nelems));
-            T* info_ptr = (T*)info_value.data_ptr();
-
-            for(index_t i = 0; i < t_nelems; i++)
-            {
-                info_ptr[i] = (*this)[i] - array[i];
-                if(dtype().is_floating_point())
-                {
-                    res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
-                }
-                else
-                {
-                    res |= (*this)[i] != array[i];
-                }
-            }
-
-            if(res)
-            {
-                log::error(info, protocol, "data item(s) mismatch; see 'value' section");
-            }
+            log::error(info, protocol, "data item(s) mismatch; see 'value' section");
         }
     }
 
@@ -204,7 +246,82 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
     index_t t_nelems = number_of_elements();
     index_t o_nelems = array.number_of_elements();
 
-    if(t_nelems > o_nelems)
+    // TODO(JRC): Currently, due to the way that strings are represented
+    // in C/C++ (i.e. null-terminated), a 'compatible'-type comparison
+    // isn't very useful/intuitive (e.g. "a" isn't compatible with "aa"
+    // because of the null terminator). Until a better compatible compare
+    // strategy is found, 'diff_compatible' just uses the 'diff' comparison
+    // operation for strings.
+    if(dtype().is_char8_str())
+    {
+        // the number of elements includes the null term
+        // so shrink to the actual string size so 
+        // we can pass that to the std::string constructors
+        // and avoid creating strings with embedded
+        // null terms in the middle :-)
+        if(t_nelems > 1)
+        {
+            t_nelems--;
+        }
+        if(o_nelems > 1)
+        {
+            o_nelems--;
+        }
+        
+        uint8 *t_compact_data = NULL;
+        uint8 *o_compact_data = NULL;
+        std::string t_string = "";
+        std::string o_string = "";
+        
+        if(dtype().is_compact())
+        {
+            t_string = std::string((const char*)element_ptr(0),
+                                   (size_t)t_nelems);
+        }
+        else
+        {
+            // if not compact, we need to compact to get our data into std::string
+            t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
+            compact_elements_to(t_compact_data);
+            t_string = std::string((const char*)t_compact_data, (size_t)t_nelems);
+        }
+
+        if(array.dtype().is_compact())
+        {
+            o_string = std::string((const char*)array.element_ptr(0),
+                                   (size_t)o_nelems);
+        }
+        else
+        {
+            // if not compact, we need to compact to get our data into std::string
+            o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
+            array.compact_elements_to(o_compact_data);
+            o_string = std::string((const char*)o_compact_data, (size_t)o_nelems);
+        }
+
+        if(t_string != o_string)
+        {
+            std::ostringstream oss;
+            oss << "data string mismatch ("
+                << "\"" << t_string << "\""
+                << " vs "
+                << "\"" << o_string << "\""
+                << ")";
+            log::error(info, protocol, oss.str());
+            res = true;
+        }
+
+        if(t_compact_data)
+        {
+            delete [] t_compact_data;
+        }
+
+        if(o_compact_data)
+        {
+            delete [] o_compact_data;
+        }
+    }
+    else if(t_nelems > o_nelems)
     {
         std::ostringstream oss;
         oss << "arg data length incompatible ("
@@ -217,60 +334,26 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
     }
     else
     {
-        if(dtype().is_char8_str())
+        Node &info_value = info["value"];
+        info_value.set(DataType(array.dtype().id(), t_nelems));
+        T* info_ptr = (T*)info_value.data_ptr();
+
+        for(index_t i = 0; i < t_nelems; i++)
         {
-            // TODO(JRC): Currently, due to the way that strings are represented
-            // in C/C++ (i.e. null-terminated), a 'compatible'-type comparison
-            // isn't very useful/intuitive (e.g. "a" isn't compatible with "aa"
-            // because of the null terminator). Until a better compatible compare
-            // strategy is found, 'diff_compatible' just uses the 'diff' comparison
-            // operation for strings.
-            uint8 *t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
-            compact_elements_to(t_compact_data);
-            std::string t_string((const char*)t_compact_data, (size_t)t_nelems);
-
-            uint8 *o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
-            array.compact_elements_to(o_compact_data);
-            std::string o_string((const char*)o_compact_data, (size_t)o_nelems);
-
-            if(t_string != o_string)
+            info_ptr[i] = (*this)[i] - array[i];
+            if(dtype().is_floating_point())
             {
-                std::ostringstream oss;
-                oss << "data string mismatch ("
-                    << "\"" << t_string << "\""
-                    << " vs "
-                    << "\"" << o_string << "\""
-                    << ")";
-                log::error(info, protocol, oss.str());
-                res = true;
+                res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
             }
-
-            delete [] t_compact_data;
-            delete [] o_compact_data;
+            else
+            {
+                res |= (*this)[i] != array[i];
+            }
         }
-        else
+
+        if(res)
         {
-            Node &info_value = info["value"];
-            info_value.set(DataType(array.dtype().id(), t_nelems));
-            T* info_ptr = (T*)info_value.data_ptr();
-
-            for(index_t i = 0; i < t_nelems; i++)
-            {
-                info_ptr[i] = (*this)[i] - array[i];
-                if(dtype().is_floating_point())
-                {
-                    res |= info_ptr[i] > epsilon || info_ptr[i] < -epsilon;
-                }
-                else
-                {
-                    res |= (*this)[i] != array[i];
-                }
-            }
-
-            if(res)
-            {
-                log::error(info, protocol, "data item(s) mismatch; see diff below");
-            }
+            log::error(info, protocol, "data item(s) mismatch; see diff below");
         }
     }
 
