@@ -499,6 +499,25 @@ namespace utils
            return  oss.str();
      }
 
+//-----------------------------------------------------------------------------
+// Helpers to identify value cast consequences 
+//-----------------------------------------------------------------------------
+    template< typename T_SRC, typename T_DEST>
+    bool value_fits(T_SRC value)
+    {
+        if(std::is_same<T_SRC,T_DEST>())
+        {
+            return true;
+        }
+        
+        return ( (value > static_cast<T_SRC>(0) ) == 
+                 (static_cast<T_DEST>(value) > static_cast<T_DEST>(0))
+               ) && static_cast<T_SRC>(static_cast<T_DEST>(value)) == value;
+
+    }
+
+
+
 
 //-----------------------------------------------------------------------------
 // Helpers to identify if a string contains an integer.
