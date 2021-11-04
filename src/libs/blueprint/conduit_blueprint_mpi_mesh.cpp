@@ -156,50 +156,52 @@ generate_index(const conduit::Node &mesh,
                Node &index_out,
                MPI_Comm comm)
 {
-    int par_rank = relay::mpi::rank(comm);
-    int par_size = relay::mpi::size(comm);
-    // we need to know the mesh structure and the number of domains
-    // we can't assume rank zero has any domains (could be empty)
-    // so we look for the lowest rank with 1 or more domains
+    // we need a list of all possible topos, coordsets, etc
+    // for the blueprint index in the root file. 
+    //
+    // across ranks, domains may be sparse
+    //  for example: a topo may only exist in one domain
+    // so we union all local mesh indices, and then 
+    // se an all gather and union the results together
+    // to create an accurate global index. 
 
-    index_t local_num_domains = ::conduit::blueprint::mesh::number_of_domains(mesh);
-    index_t global_num_domains = number_of_domains(mesh,comm);
+    index_t local_num_domains = blueprint::mesh::number_of_domains(mesh);
+    // note: 
+    // find global # of domains w/o conduit_blueprint_mpi for now
+    // since we aren't yet linking conduit_blueprint_mpi
+    Node n_src, n_reduce;
+    n_src = local_num_domains;
 
-    index_t rank_send = par_size;
-    index_t selected_rank = par_size;
+    relay::mpi::sum_all_reduce(n_src,
+                               n_reduce,
+                               comm);
+
+    index_t global_num_domains = n_reduce.to_int();
+
+    index_out.reset();
+
+    Node local_idx, gather_idx;
+
     if(local_num_domains > 0)
-        rank_send = par_rank;
-
-    Node n_snd, n_reduce;
-    // make sure some MPI task actually had bp data
-    n_snd.set_external(&rank_send,1);
-    n_reduce.set_external(&selected_rank,1);
-
-    relay::mpi::min_all_reduce(n_snd, n_reduce, comm);
-
-    if(par_rank == selected_rank )
     {
-        if(::conduit::blueprint::mesh::is_multi_domain(mesh))
-        {
-            ::conduit::blueprint::mesh::generate_index(mesh.child(0),
-                                                       ref_path,
-                                                       global_num_domains,
-                                                       index_out);
-        }
-        else
-        {
-            ::conduit::blueprint::mesh::generate_index(mesh,
-                                                       ref_path,
-                                                       global_num_domains,
-                                                       index_out);
-        }
-
+        ::conduit::blueprint::mesh::generate_index(mesh,
+                                                   ref_path,
+                                                   global_num_domains,
+                                                   local_idx);
     }
 
-    // broadcast the resulting index to all other ranks
-    relay::mpi::broadcast_using_schema(index_out,
-                                       selected_rank,
-                                       comm);
+    relay::mpi::all_gather_using_schema(local_idx,
+                                        gather_idx,
+                                        comm);
+
+    // union all entries into final index that reps
+    // all domains
+    NodeConstIterator itr = gather_idx.children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        index_out.update(curr);
+    }
 }
 
 
