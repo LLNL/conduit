@@ -291,6 +291,13 @@ send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 
     
     index_t msg_data_size = n_msg.total_bytes_compact();
+    
+    if(!conduit::utils::value_fits<index_t,int>(msg_data_size))
+    {
+        CONDUIT_INFO("Warning size value (" << msg_data_size << ")"
+                     " exceeds the size of MPI_Send max value "
+                     "(" << std::numeric_limits<int>::max() << ")")
+    }
 
     int mpi_error = MPI_Send(const_cast<void*>(n_msg.data_ptr()),
                              static_cast<int>(msg_data_size),
@@ -372,6 +379,13 @@ send(const Node &node, int dest, int tag, MPI_Comm comm)
          snd_ptr = snd_compact.data_ptr();
     }
 
+    if(!conduit::utils::value_fits<index_t,int>(snd_size))
+    {
+        CONDUIT_INFO("Warning size value (" << snd_size << ")"
+                     " exceeds the size of MPI_Send max value "
+                     "(" << std::numeric_limits<int>::max() << ")")
+    }
+
     int mpi_error = MPI_Send(const_cast<void*>(snd_ptr),
                              static_cast<int>(snd_size),
                              MPI_BYTE,
@@ -407,6 +421,14 @@ recv(Node &node, int src, int tag, MPI_Comm comm)
         rcv_compact.set_schema(s_rcv_compact);
         rcv_ptr  = rcv_compact.data_ptr();
     }
+
+    if(!conduit::utils::value_fits<index_t,int>(rcv_size))
+    {
+        CONDUIT_INFO("Warning size value (" << rcv_size << ")"
+                     " exceeds the size of MPI_Recv max value "
+                     "(" << std::numeric_limits<int>::max() << ")")
+    }
+
 
     int mpi_error = MPI_Recv(const_cast<void*>(rcv_ptr),
                              static_cast<int>(rcv_size),
@@ -728,6 +750,14 @@ isend(const Node &node,
     // isend case must always be NULL
     request->m_rcv_ptr = NULL;
 
+
+    if(!conduit::utils::value_fits<index_t,int>(data_size))
+    {
+        CONDUIT_INFO("Warning size value (" << data_size << ")"
+                     " exceeds the size of MPI_Isend max value "
+                     "(" << std::numeric_limits<int>::max() << ")")
+    }
+
     int mpi_error =  MPI_Isend(const_cast<void*>(data_ptr), 
                                static_cast<int>(data_size),
                                MPI_BYTE, 
@@ -767,6 +797,13 @@ irecv(Node &node,
         node.compact_to(request->m_buffer);
         data_ptr  = request->m_buffer.data_ptr();
         request->m_rcv_ptr = &node;
+    }
+
+    if(!conduit::utils::value_fits<index_t,int>(data_size))
+    {
+        CONDUIT_INFO("Warning size value (" << data_size << ")"
+                     " exceeds the size of MPI_Irecv max value "
+                     "(" << std::numeric_limits<int>::max() << ")")
     }
 
     int mpi_error =  MPI_Irecv(data_ptr,
@@ -918,6 +955,13 @@ gather(Node &send_node,
                           mpi_size);
     }
 
+    if(!conduit::utils::value_fits<index_t,int>(snd_size))
+    {
+        CONDUIT_INFO("Warning size value (" << snd_size << ")"
+                     " exceeds the size of MPI_Gather max value "
+                     "(" << std::numeric_limits<int>::max() << ")")
+    }
+
     int mpi_error = MPI_Gather( const_cast<void*>(snd_ptr), // local data
                                 static_cast<int>(snd_size), // local data len
                                 MPI_BYTE, // send chars
@@ -963,6 +1007,13 @@ all_gather(Node &send_node,
     //       of a given type w/ # of elements == # of ranks. 
     recv_node.list_of(n_snd_compact.schema(),
                       mpi_size);
+
+    if(!conduit::utils::value_fits<index_t,int>(snd_size))
+    {
+        CONDUIT_INFO("Warning size value (" << snd_size << ")"
+                     " exceeds the size of MPI_Gather max value "
+                     "(" << std::numeric_limits<int>::max() << ")")
+    }
 
     int mpi_error = MPI_Allgather( const_cast<void*>(snd_ptr), // local data
                                    static_cast<int>(snd_size), // local data len
@@ -1306,6 +1357,14 @@ broadcast(Node &node,
     }
 
 
+    if(!conduit::utils::value_fits<index_t,int>(bcast_data_size))
+    {
+        CONDUIT_INFO("Warning size value (" << bcast_data_size << ")"
+                     " exceeds the size of MPI_Bcast max value "
+                     "(" << std::numeric_limits<int>::max() << ")")
+    }
+
+
     int mpi_error = MPI_Bcast(bcast_data_ptr,
                               static_cast<int>(bcast_data_size),
                               MPI_BYTE,
@@ -1593,6 +1652,14 @@ communicate_using_schema::execute()
                     << operations[i].tag << ", "
                     << "comm, &requests[" << i << "]);" << std::endl;
             }
+            
+            if(!conduit::utils::value_fits<index_t,int>(msg_data_size))
+            {
+                CONDUIT_INFO("Warning size value (" << msg_data_size << ")"
+                             " exceeds the size of MPI_Isend max value "
+                             "(" << std::numeric_limits<int>::max() << ")")
+            }
+            
             mpi_error = MPI_Isend(const_cast<void*>(operations[i].node[1]->data_ptr()),
                                   static_cast<int>(msg_data_size),
                                   MPI_BYTE,
