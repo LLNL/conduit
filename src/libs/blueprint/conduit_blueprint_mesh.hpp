@@ -74,14 +74,9 @@ index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh);
 
 
 //-----------------------------------------------------------------------------
-std::vector<conduit::Node *> CONDUIT_BLUEPRINT_API domains(Node &mesh);
+std::vector<conduit::Node *>       CONDUIT_BLUEPRINT_API domains(Node &mesh);
 std::vector<const conduit::Node *> CONDUIT_BLUEPRINT_API domains(const Node &mesh);
 
-
-//-----------------------------------------------------------------------------
-//
-// NOTE: These method variants exist b/c we can't overload on return type to
-// create a non const version of the mesh::domains method above
 
 //-----------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API domains(const Node &mesh,
@@ -101,8 +96,14 @@ void CONDUIT_BLUEPRINT_API to_multi_domain(const conduit::Node &mesh,
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           const std::string &ref_path,
-                                          index_t num_domains,
+                                          index_t number_of_domains,
                                           Node &index_out);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_index_for_single_domain(const conduit::Node &mesh,
+                                                            const std::string &ref_path,
+                                                            Node &index_out);
+
 
 //-------------------------------------------------------------------------
 /**
