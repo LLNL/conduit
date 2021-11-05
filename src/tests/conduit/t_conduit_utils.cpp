@@ -820,4 +820,54 @@ TEST(conduit_utils, format_maps)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, value_fits)
+{
+    uint64 ui64v_max = std::numeric_limits<uint64>::max();
+    uint64 ui64v_min = std::numeric_limits<uint64>::min();
+    uint64 ui64v_low = std::numeric_limits<uint64>::lowest();
+
+    int64 i64v_max = std::numeric_limits<int64>::max();
+    int64 i64v_min = std::numeric_limits<int64>::min();
+    int64 i64v_low = std::numeric_limits<int64>::lowest();
+
+
+    int8 i8_val_pos  = 1;
+    int8 i8_val_neg  = -1;
+    int8 i8_val_zero = 0;
+
+
+    uint8 ui8_val_pos  = 1;
+    uint8 ui8_val_zero = 0;
+
+
+    // signed too big into signed
+    EXPECT_FALSE( (conduit::utils::value_fits<int64,int8>(i64v_max) ) );
+    EXPECT_FALSE( (conduit::utils::value_fits<int64,int8>(i64v_min) ) );
+    EXPECT_FALSE( (conduit::utils::value_fits<int64,int8>(i64v_low) ) );
+
+    // unsigned into signed
+    EXPECT_FALSE( (conduit::utils::value_fits<uint64,int8>(ui64v_max) ) );
+    // zero into signed
+    EXPECT_TRUE(  (conduit::utils::value_fits<uint64,int8>(ui64v_min) ) );
+    EXPECT_TRUE( (conduit::utils::value_fits<uint64,int8>(ui64v_low) ) );
+
+    // unsigned too big to unsigned
+    EXPECT_FALSE( (conduit::utils::value_fits<uint64,uint8>(ui64v_max) ) );
+    // unsigned min and lower into unsigned
+    EXPECT_TRUE(  (conduit::utils::value_fits<uint64,uint8>(ui64v_min) ) );
+    EXPECT_TRUE(  (conduit::utils::value_fits<uint64,uint8>(ui64v_low) ) );
+
+    // signed small into unsigned big
+    // pos number ok
+    EXPECT_TRUE( (conduit::utils::value_fits<int8,uint64>(i8_val_pos) ) );
+    // zero -
+    EXPECT_TRUE( (conduit::utils::value_fits<int8,uint64>(ui8_val_zero) ) );
+    // neg number won't work
+    EXPECT_FALSE( (conduit::utils::value_fits<int8,uint64>(i8_val_neg) ) );
+
+    EXPECT_TRUE( (conduit::utils::value_fits<uint8,int64>(ui8_val_pos) ) );
+    EXPECT_TRUE( (conduit::utils::value_fits<uint8,int64>(ui8_val_zero) ) );
+
+}
 
