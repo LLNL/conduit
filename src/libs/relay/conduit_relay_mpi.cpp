@@ -10,6 +10,7 @@
 
 #include "conduit_relay_mpi.hpp"
 #include <iostream>
+#include <limits>
 
 //-----------------------------------------------------------------------------
 /// The CONDUIT_CHECK_MPI_ERROR macro is used to check return values for 
