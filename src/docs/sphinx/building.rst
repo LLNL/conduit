@@ -381,6 +381,16 @@ on Cray systems, so updates to data using ``Node::mmap`` will not be seen betwee
 
 
 
+Notes for using OpenMPI in a container as root
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+By default OpenMPI prevents the root user from launching MPI jobs. If you are running as root in a container you can use the following env vars to turn off this restriction:
+
+.. code:: bash
+
+    OMPI_ALLOW_RUN_AS_ROOT=1
+    OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
+
+
 
 
 
