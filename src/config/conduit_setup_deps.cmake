@@ -8,9 +8,10 @@ include(CMakeFindDependencyMacro)
 # Setup Threads
 ###############################################################################
 if(UNIX AND NOT APPLE)
-    if(CONDUIT_RELAY_WEBSERVER_ENABLED)
-        # we depend on Threads::Threads in our exported targets
-        # so we need to bootstrap that here
+    # if built web server support, we depend on Threads::Threads
+    # in our exported targets so we need to bootstrap that here
+    if(EXISTS  ${_IMPORT_ROOT}/include/conduit/conduit_relay_web.hpp)
+
         if(NOT TARGET Threads::Threads)
             find_package( Threads REQUIRED )
         endif()
