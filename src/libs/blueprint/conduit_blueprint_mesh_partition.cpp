@@ -5505,51 +5505,22 @@ Multiple topology formats
 }
 
 //-----------------------------------------------------------------------------
-template<typename T, typename Func>
-static void iterate_int_data_impl(const conduit::Node &node, Func &&func)
-{
-    conduit::DataArray<T> int_da = node.value();
-    const index_t nele = int_da.number_of_elements();
-    for(index_t i = 0; i < nele; i++)
-    {
-        func((index_t)int_da[i]);
-    }
-}
-
-//-----------------------------------------------------------------------------
 template<typename Func>
 static void iterate_int_data(const conduit::Node &node, Func &&func)
 {
-    const auto id = node.dtype().id();
-    switch(id)
+    const auto dtype = node.dtype();
+    if (dtype.is_integer())
     {
-    case conduit::DataType::INT8_ID:
-        iterate_int_data_impl<int8>(node, func);
-        break;
-    case conduit::DataType::INT16_ID:
-        iterate_int_data_impl<int16>(node, func);
-        break;
-    case conduit::DataType::INT32_ID:
-        iterate_int_data_impl<int32>(node, func);
-        break;
-    case conduit::DataType::INT64_ID:
-        iterate_int_data_impl<int64>(node, func);
-        break;
-    case conduit::DataType::UINT8_ID:
-        iterate_int_data_impl<uint8>(node, func);
-        break;
-    case conduit::DataType::UINT16_ID:
-        iterate_int_data_impl<uint16>(node, func);
-        break;
-    case conduit::DataType::UINT32_ID:
-        iterate_int_data_impl<uint32>(node, func);
-        break;
-    case conduit::DataType::UINT64_ID:
-        iterate_int_data_impl<uint64>(node, func);
-        break;
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        uint64_accessor int_data = node.as_uint64_accessor();
+        const index_t nele = int_data.number_of_elements();
+        for(index_t i = 0; i < nele; i++)
+        {
+            func((index_t)int_data[i]);
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Tried to iterate " << dtype.name() << " as integer data!");
     }
 }
 
