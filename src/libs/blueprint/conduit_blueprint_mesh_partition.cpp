@@ -7763,7 +7763,7 @@ determine_schema(const Node &in,
     }
     else
     {
-        out_ncomps = 1;
+        out_ncomps = 0;
         out_schema.set(DataType(in.dtype().id(), ntuples));
     }
 }
@@ -7796,7 +7796,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // out_node.print();
 
     const index_t npmaps = (index_t)pointmaps.size();
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t fi = 0; fi < npmaps; fi++)
         {
@@ -7859,7 +7859,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // out_schema.print();
     // out_node.print();
 
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t i = 0; i < num_verticies; i++)
         {
@@ -7907,7 +7907,7 @@ map_element_field(const std::vector<const Node*> &in_nodes,
     Schema out_schema;
     determine_schema(in_nodes[0]->child("values"), nelements, ncomps, out_schema);
     out_node.set(out_schema);
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t out_idx = 0; out_idx < nelements; out_idx++)
         {
