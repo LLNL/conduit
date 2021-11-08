@@ -4242,12 +4242,54 @@ copy_node_data(const Node &in, Node &out, index_t offset = 0)
 }
 
 //-----------------------------------------------------------------------------
-template<typename LhsDataArray, typename RhsDataArray>
-static bool
-node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, double epsilon)
+static bool node_value_compare_int(const Node& lhs, const Node& rhs)
 {
-    const index_t nele = lhs.number_of_elements();
-    if(nele != rhs.number_of_elements())
+    int64_accessor lhs_data = lhs.as_int64_accessor();
+    int64_accessor rhs_data = rhs.as_int64_accessor();
+    const index_t nele = lhs_data.number_of_elements();
+    if(nele != rhs_data.number_of_elements())
+    {
+        return false;
+    }
+
+    // If one of lhs/rhs is int64 and the other is uint64, we need to check that
+    // neither of the pairwise-compared values have a sign bit set.
+    auto lhs_typeid = lhs_data.dtype().id();
+    auto rhs_typeid = rhs_data.dtype().id();
+
+    bool diff64 = (lhs_typeid == conduit::DataType::INT64_ID
+                   && rhs_typeid == conduit::DataType::UINT64_ID);
+
+    diff64 = diff64
+            || (lhs_typeid == conduit::DataType::UINT64_ID
+                && rhs_typeid == conduit::DataType::INT64_ID);
+
+    bool retval = true;
+    for(index_t i = 0; i < nele; i++)
+    {
+        if (lhs_data[i] != rhs_data[i])
+        {
+            retval = false;
+            break;
+        }
+        if (diff64 && lhs_data[i] < 0 && rhs_data[i] < 0)
+        {
+            retval = false;
+            break;
+        }
+    }
+    return retval;
+}
+
+
+//-----------------------------------------------------------------------------
+static bool
+node_value_compare_flt(const Node &lhs, const Node &rhs, double epsilon)
+{
+    double_accessor lhs_data = lhs.as_double_accessor();
+    double_accessor rhs_data = rhs.as_double_accessor();
+    const index_t nele = lhs_data.number_of_elements();
+    if(nele != rhs_data.number_of_elements())
     {
         return false;
     }
@@ -4255,9 +4297,7 @@ node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, doubl
     bool retval = true;
     for(index_t i = 0; i < nele; i++)
     {
-        double lhs_double = static_cast<double>(lhs[i]);
-        double rhs_double = static_cast<double>(rhs[i]);
-        const double diff = std::abs(lhs_double - rhs_double);
+        const double diff = std::abs(lhs_data[i] - rhs_data[i]);
         if(!(diff <= epsilon))
         {
             retval = false;
@@ -4268,152 +4308,33 @@ node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, doubl
 }
 
 //-----------------------------------------------------------------------------
-template<typename RhsDataArray>
-static bool
-node_value_compare_impl(const Node &lhs, const RhsDataArray &rhs,  double epsilon)
-{
-    const auto id = lhs.dtype().id();
-    bool retval = true;
-    switch(id)
-    {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT16_ID:
-    {
-        DataArray<int16> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT32_ID:
-    {
-        DataArray<int32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT64_ID:
-    {
-        DataArray<int64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
-    }
-    return retval;
-}
-
-//-----------------------------------------------------------------------------
 static bool
 node_value_compare(const Node &lhs, const Node &rhs, double epsilon = CONDUIT_EPSILON)
 {
-    const auto id = rhs.dtype().id();
+    const auto rid = rhs.dtype();
+    const auto lid = lhs.dtype();
     bool retval = true;
-    switch(id)
+
+    if (rid.is_integer() && lid.is_integer())
     {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
+        // test for integer types by converting to signed int64
+        retval = node_value_compare_int(lhs, rhs);
     }
-    case conduit::DataType::INT16_ID:
+    else if (rid.is_number() && lid.is_number())
     {
-        DataArray<int16> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
+        // default numeric case - convert to double
+        retval = node_value_compare_flt(lhs, rhs, epsilon);
     }
-    case conduit::DataType::INT32_ID:
+    else
     {
-        DataArray<int32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::INT64_ID:
-    {
-        DataArray<int64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        if (!rid.is_number())
+        {
+            CONDUIT_ERROR("Tried to iterate " << rid.name() << " as integer data!");
+        }
+        else if (!lid.is_number())
+        {
+            CONDUIT_ERROR("Tried to iterate " << lid.name() << " as integer data!");
+        }
     }
     return retval;
 }
