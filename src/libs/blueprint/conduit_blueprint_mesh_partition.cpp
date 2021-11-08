@@ -6842,7 +6842,7 @@ private:
                             }
                             else if(mode == CombineImplicitMode::Rectilinear)
                             {
-                                std::cout << "Handling rectilinear combine" << std::endl;
+                                // std::cout << "Handling rectilinear combine" << std::endl;
                                 // We need to further check that the spacing along the matched edge/plane is okay
                                 const Node &n_cseti = n_meshi->fetch_existing(cset_path);
                                 const Node &n_csetj = n_meshj->fetch_existing(cset_path);
