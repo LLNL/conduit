@@ -66,6 +66,8 @@ namespace examples
 //---------------------------------------------------------------------------//
 const float64 PI_VALUE = 3.14159265359;
 
+// controls if we throw an exception when npts_z != 0 for 2D only examples
+const bool STRICT_NPTS_Z_FOR_2D = false;
 
 //---------------------------------------------------------------------------//
 struct point
@@ -117,6 +119,41 @@ void basic_init_example_element_scalar_field(index_t nele_x,
     }
 }
 
+//---------------------------------------------------------------------------//
+bool
+braid_2d_only_shape_type(const std::string& mesh_type)
+{
+    if ( mesh_type == "tris"  ||
+         mesh_type == "quads" ||
+         mesh_type == "quads_poly" ||
+         mesh_type == "quads_and_tris" ||
+         mesh_type == "quads_and_tris_offsets")
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+//---------------------------------------------------------------------------//
+bool
+braid_3d_only_shape_type(const std::string& mesh_type)
+{
+    if( mesh_type == "tets" ||
+        mesh_type == "hexs" ||
+        mesh_type == "hexs_poly" ||
+        mesh_type == "hexs_and_tets")
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+
+}
 
 //---------------------------------------------------------------------------//
 void braid_init_example_state(Node &res)
@@ -2170,16 +2207,30 @@ basic(const std::string &mesh_type,
 
     const bool npts_x_ok = npts_x > 1;
     const bool npts_y_ok = npts_y > 1;
-    const bool npts_z_ok = mesh_types_dims[mesh_type_index] == 2 || npts_z > 1;
+    bool npts_z_ok = mesh_types_dims[mesh_type_index] == 2 || npts_z > 1;
+    
+    
+    if( STRICT_NPTS_Z_FOR_2D &&
+        npts_z != 0 &&
+        braid_2d_only_shape_type(mesh_type) )
+    {
+        npts_z_ok = false;
+    }
 
     // don't let de-morgan get you ...
     if( ! (npts_x_ok && npts_y_ok && npts_z_ok) )
     {
         // error, not enough points to create the topo
-        CONDUIT_ERROR("blueprint::mesh::examples::basic requires "
-                      "npts_x > 1 and npts_y > 1 "
-                      " and for mesh_type={\"tets\", \"hexs\", or \"polyhedra\"} "
-                      " npts_z must be > 1" << std::endl << 
+        CONDUIT_ERROR("blueprint::mesh::examples::basic requires: " << std::endl <<
+                      "For 2D only topologies"
+                      " ( mesh_type={\"tris\", \"quads\", or \"polygons\"} )"
+                      " npts_x > 1 and npts_y > 1 and npts_z == 0" 
+                      << std::endl <<
+                      "For 3D only topologies"
+                      " ( mesh_type={\"tets\", \"hexs\", or \"polyhedra\"} )"
+                      "npts_x > 1 and npts_y > 1 and "
+                      " npts_z > 1"
+                      << std::endl <<
                       "values provided:" << std::endl << 
                       " mesh_type: " << mesh_type << std::endl <<
                       " npts_x: " << npts_x << std::endl <<
@@ -2222,6 +2273,43 @@ grid(const std::string &mesh_type,
                       " ndoms_y: " << ndoms_y << std::endl <<
                       " ndoms_z: " << ndoms_z << std::endl);
     }
+
+    // validate braid input here for nicer exception loc
+    bool npts_ok = (npts_x > 1 && npts_y > 1);
+
+    if( STRICT_NPTS_Z_FOR_2D &&
+        npts_z != 0 &&
+        braid_2d_only_shape_type(mesh_type) )
+    {
+        npts_ok = false;
+    }
+
+    if( braid_3d_only_shape_type(mesh_type) )
+    {
+        // z must be valid for these cases
+        if(npts_z < 2)
+        {
+            npts_ok = false;
+        }
+    }
+
+    if(!npts_ok)
+    {
+        CONDUIT_ERROR("blueprint::mesh::examples::grid requires: " << std::endl <<
+                      "For 2D only topologies"
+                      " npts_x > 1 and npts_y > 1 and npts_z == 0"
+                      << std::endl <<
+                      "For 3D only topologies"
+                      "npts_x > 1 and npts_y > 1 and "
+                      " npts_z > 1"
+                      << std::endl <<
+                      "values provided:" << std::endl <<
+                      " mesh_type: " << mesh_type << std::endl <<
+                      " npts_x: " << npts_x << std::endl <<
+                      " npts_y: " << npts_y << std::endl <<
+                      " npts_z: " << npts_z << std::endl);
+    }
+
 
     for(index_t dz = 0, domain_id = 0; dz < ndoms_z; dz++)
     {
@@ -2300,11 +2388,18 @@ braid(const std::string &mesh_type,
             npts_y_ok = false;
         }
 
+        // check 2d cases which require npts z = 0
+        
+
+        if ( STRICT_NPTS_Z_FOR_2D &&
+             npts_z != 0 &&
+             braid_2d_only_shape_type(mesh_type) )
+        {
+            npts_z_ok = false;
+        }
+
         // check 3d cases which require z
-        if(mesh_type == "tets" ||
-           mesh_type == "hexs" ||
-           mesh_type == "hexs_poly" ||
-           mesh_type == "hexs_and_tets")
+        if( braid_3d_only_shape_type(mesh_type) )
         {
             // z must be valid for these cases
             if(npts_z < 2)
@@ -2324,6 +2419,18 @@ braid(const std::string &mesh_type,
                           "npts_x > 0,  npts_y > 0  and npts_z >= 0 "
                           "values provided:" << std::endl << 
                           " mesh_type: " << mesh_type << std::endl  << 
+                          " npts_x: " << npts_x << std::endl <<
+                          " npts_y: " << npts_y << std::endl <<
+                          " npts_z: " << npts_z << std::endl);
+        }
+        else if( npts_z != 0 && braid_2d_only_shape_type(mesh_type) )
+        {
+            // we won't pass z on, so error if z is non zero.
+            CONDUIT_ERROR("braid with 2D topology requires "
+                          "npts_x > 1 and npts_y > 1 "
+                          " and npts_z == 0 " << std::endl << 
+                          "values provided:" << std::endl << 
+                          " mesh_type: " << mesh_type << std::endl <<
                           " npts_x: " << npts_x << std::endl <<
                           " npts_y: " << npts_y << std::endl <<
                           " npts_z: " << npts_z << std::endl);
