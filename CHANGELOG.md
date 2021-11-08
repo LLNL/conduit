@@ -44,6 +44,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Fixed a bug that was causing the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
 - Fixed a bug with `conduit::relay::io::blueprint::write_mesh` that undermined `truncate=true` option for root-only style output.
+- Fixed options parsing bugs and improved error messages for the `conduit_blueprint_verify` exe.
+
 
 
 #### Relay
