@@ -4095,73 +4095,26 @@ template<typename OutDataArray>
 static index_t
 copy_node_data_impl(const Node &in, OutDataArray &out, index_t offset)
 {
-    const auto id = in.dtype().id();
+    const auto idt = in.dtype();
     index_t retval = offset;
-    switch(id)
+    if (idt.is_integer())
     {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
+        if (idt.id() == conduit::DataType::UINT64_ID)
+        {
+            retval = copy_node_data_impl2(in.as_uint64_accessor(), out, offset);
+        }
+        else
+        {
+            retval = copy_node_data_impl2(in.as_int64_accessor(), out, offset);
+        }
     }
-    case conduit::DataType::INT16_ID:
+    else if (idt.is_number())
     {
-        DataArray<int16> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
+        retval = copy_node_data_impl2(in.as_double_accessor(), out, offset);
     }
-    case conduit::DataType::INT32_ID:
+    else
     {
-        DataArray<int32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::INT64_ID:
-    {
-        DataArray<int64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        CONDUIT_ERROR("Tried to iterate " << idt.name() << " as integer data!");
     }
     return retval;
 }
