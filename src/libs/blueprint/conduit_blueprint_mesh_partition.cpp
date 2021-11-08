@@ -5511,11 +5511,11 @@ static void iterate_int_data(const conduit::Node &node, Func &&func)
     const auto dtype = node.dtype();
     if (dtype.is_integer())
     {
-        uint64_accessor int_data = node.as_uint64_accessor();
+        index_t_accessor int_data = node.as_index_t_accessor();
         const index_t nele = int_data.number_of_elements();
         for(index_t i = 0; i < nele; i++)
         {
-            func((index_t)int_data[i]);
+            func(int_data[i]);
         }
     }
     else

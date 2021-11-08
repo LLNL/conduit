@@ -116,6 +116,9 @@ typedef DataAccessor<uint64>   uint64_accessor;
 typedef DataAccessor<float32>  float32_accessor;
 typedef DataAccessor<float64>  float64_accessor;
 
+/// index type arrays
+typedef DataAccessor<index_t>  index_t_accessor;
+
 /// native c types arrays
 typedef DataAccessor<char>       char_accessor;
 typedef DataAccessor<short>      short_accessor;

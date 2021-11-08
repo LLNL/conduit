@@ -4097,6 +4097,9 @@ public:
     float32_accessor    as_float32_accessor() const;
     float64_accessor    as_float64_accessor() const;
 
+    // index type array accessors
+    index_t_accessor    as_index_t_accessor() const;
+
 
     // char8_str cases
     char            *as_char8_str();
