@@ -66,6 +66,22 @@ const static index_t COMPLEX_GRID[] = {4, 4, 4};
 typedef std::vector<index_t> index_list;
 
 /// Testing Helpers ///
+index_t braid_bound_npts_z(const std::string &mesh_type, index_t npts_z)
+{
+    if(mesh_type == "tris"  ||
+       mesh_type == "quads" ||
+       mesh_type == "quads_poly" ||
+       mesh_type == "quads_and_tris" ||
+       mesh_type == "quads_and_tris_offsets")
+    {
+        return 0;
+    }
+    else
+    {
+        return npts_z;
+    }
+}
+
 
 // NOTE(JRC): This is basically an implementation of the combinatorical concept
 // of "n choose i" with all results being returned as lists over index space.
@@ -164,7 +180,11 @@ struct GridMesh
     GridMesh(index_t type, const index_t *npts, bool poly = false)
     {
         Node info;
-        mesh::examples::braid(ELEM_TYPE_LIST[type], npts[0], npts[1], npts[2], mesh);
+        mesh::examples::braid(ELEM_TYPE_LIST[type],
+                              npts[0],
+                              npts[1],
+                              braid_bound_npts_z(ELEM_TYPE_LIST[type],npts[2]),
+                              mesh);
 
         Node &topo = mesh["topologies"].child(0);
         mesh::topology::unstructured::generate_offsets(topo, topo["elements/offsets"]);
