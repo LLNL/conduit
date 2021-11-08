@@ -6067,15 +6067,9 @@ private:
             for(size_t i = 0; i < cset_axes.size(); i++)
             {
                 const Node &n_value = n_values[cset_axes[i]];
-                if(n_value.dtype().is_float32())
+                if(n_value.dtype().is_floating_point())
                 {
-                    DataArray<float32> da = n_value.value();
-                    offsets.push_back(
-                        mesh::coordset::utils::find_rectilinear_offset(da, exts[i*2], tolerance));
-                }
-                else if(n_value.dtype().is_float64())
-                {
-                    DataArray<float64> da = n_value.value();
+                    float64_accessor da = n_value.as_float64_accessor();
                     offsets.push_back(
                         mesh::coordset::utils::find_rectilinear_offset(da, exts[i*2], tolerance));
                 }
@@ -6115,56 +6109,18 @@ private:
             for(index_t di = 0; di < dimension; di++)
             {
                 std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                const Node &n_value = n_values[axes[di]];
-                const index_t N = n_value.dtype().number_of_elements();
+                const float64_accessor n_value = n_values[axes[di]].as_float64_accessor();
                 index_t local_id = 0;
                 bool found = false;
-                if(n_value.dtype().is_float32())
+                for(index_t vi = 0; vi < n_value.number_of_elements(); vi++)
                 {
-                    DataArray<float32> da = n_value.value();
-                    for(index_t vi = 0; vi < N; vi++)
+                    ijk[di] = vi;
+                    grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
+                    if(std::abs(n_value[vi] - start_values[di]) <= tolerance)
                     {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        if(std::abs(da[vi] - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                else if(n_value.dtype().is_float64())
-                {
-                    DataArray<float64> da = n_value.value();
-                    for(index_t vi = 0; vi < N; vi++)
-                    {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        if(std::abs(da[vi] - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    Node temp;
-                    for(index_t vi = 0; vi < N; vi++)
-                    {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        temp.set_external(DataType(n_value.dtype().id(), 1),
-                            const_cast<void*>(n_value.element_ptr(local_id)));
-                        double val = temp.to_double();
-                        if(std::abs(val - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
+                        offsets.push_back(vi);
+                        found = true;
+                        break;
                     }
                 }
 
