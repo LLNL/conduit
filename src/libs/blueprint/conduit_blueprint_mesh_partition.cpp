@@ -4671,133 +4671,37 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
     if(xnode && ynode && znode)
     {
         // 3D
-        const auto xtype = xnode->dtype();
-        const auto ytype = ynode->dtype();
-        const auto ztype = znode->dtype();
-        if(xtype.is_float32() && ytype.is_float32() && ztype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        auto yarray = ynode->as_float64_accessor();
+        auto zarray = znode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            auto yarray = ynode->as_float32_array();
-            auto zarray = znode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
-                func(p, 3);
-            }
-        }
-        else if(xtype.is_float64() && ytype.is_float64() && ztype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            auto yarray = ynode->as_float64_array();
-            auto zarray = znode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
-                func(p, 3);
-            }
-        }
-        else
-        {
-            Node xtemp, ytemp, ztemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const DataType ydt = DataType(ytype.id(), 1);
-            const DataType zdt = DataType(ztype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
-                ztemp.set_external(zdt, const_cast<void*>(znode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = ytemp.to_float64();
-                p[2] = ztemp.to_float64();
-                func(p, 3);
-            }
+            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
+            func(p, 3);
         }
     }
     else if(xnode && ynode)
     {
         // 2D
-        const auto xtype = xnode->dtype();
-        const auto ytype = ynode->dtype();
-        if(xtype.is_float32() && ytype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        auto yarray = ynode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            auto yarray = ynode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-                func(p, 3);
-            }
-        }
-        else if(xtype.is_float64() && ytype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            auto yarray = ynode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-                func(p, 2);
-            }
-        }
-        else
-        {
-            Node xtemp, ytemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const DataType ydt = DataType(ytype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = ytemp.to_float64();
-                p[2] = 0.;
-                func(p, 2);
-            }
+            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
+            func(p, 2);
         }
     }
     else if(xnode)
     {
         // 1D
-        const auto xtype = xnode->dtype();
-        if(xtype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
-                func(p, 1);
-            }
-        }
-        else if(xtype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
-                func(p, 1);
-            }
-        }
-        else
-        {
-            Node xtemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = 0.;
-                p[2] = 0.;
-                func(p, 1);
-            }
+            p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
+            func(p, 1);
         }
     }
     else
