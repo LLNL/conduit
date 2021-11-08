@@ -5225,20 +5225,16 @@ Multiple topology formats
         const auto ent_size = e.shape.indices;
         e.element_ids.resize(ent_size, 0);
 
-        const Node &conn = eles["connectivity"];
-        const auto &conn_dtype = conn.dtype();
-        const auto &id_dtype = DataType(conn_dtype.id(), 1);
-        const index_t nents = conn_dtype.number_of_elements() / ent_size;
-        Node temp;
+        index_t_accessor conn = eles["connectivity"].as_index_t_accessor();
+        const index_t nents = conn.number_of_elements() / ent_size;
         index_t ei = 0;
         for(index_t i = 0; i < nents; i++)
         {
             e.entity_id = ent_id;
             for(index_t j = 0; j < ent_size; j++)
             {
-                // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
+                // Pull out vertex id at ei
+                e.element_ids[j] = conn[ei];
                 ei++;
             }
 
@@ -5250,25 +5246,18 @@ Multiple topology formats
     const auto traverse_polygonal_elements = [&func](const Node &elements, index_t &ent_id) {
         entity e;
         e.shape = utils::ShapeType((index_t)ShapeId::Polygonal);
-        const Node &conn = elements["connectivity"];
-        const Node &sizes = elements["sizes"];
-        const auto &sizes_dtype = sizes.dtype();
-        const DataType size_dtype(sizes_dtype.id(), 1);
-        const DataType id_dtype(sizes.dtype().id(), 1);
-        const index_t nents = sizes_dtype.number_of_elements();
-        Node temp;
+        const index_t_accessor conn = elements["connectivity"].as_index_t_accessor();
+        const index_t_accessor sizes = elements["sizes"].as_index_t_accessor();
         index_t ei = 0;
-        for(index_t i = 0; i < nents; i++)
+        for(index_t i = 0; i < sizes.number_of_elements(); i++)
         {
             e.entity_id = ent_id;
-            temp.set_external(size_dtype, const_cast<void*>(sizes.element_ptr(i)));
-            const index_t sz = temp.to_index_t();
+            const index_t sz = sizes[i];
             e.element_ids.resize(sz);
             for(index_t j = 0; j < sz; j++)
             {
                 // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
+                e.element_ids[j] = conn[ei];
                 ei++;
             }
 
@@ -5280,31 +5269,21 @@ Multiple topology formats
     const auto traverse_polyhedral_elements = [&func](const Node &elements, const Node &subelements, index_t &ent_id) {
         entity e;
         e.shape = utils::ShapeType((index_t)ShapeId::Polyhedral);
-        const Node &conn = elements["connectivity"];
-        const Node &sizes = elements["sizes"];
-        const Node &subconn = subelements["connectivity"];
-        const Node &subsizes = subelements["sizes"];
-        const Node &suboffsets = subelements["offsets"];
-        const auto &sizes_dtype = sizes.dtype();
-        const DataType size_dtype(sizes_dtype.id(), 1);
-        const DataType id_dtype(sizes.dtype().id(), 1);
-        const DataType subid_dtype(subconn.dtype().id(), 1);
-        const DataType suboff_dtype(suboffsets.dtype().id(), 1);
-        const DataType subsize_dtype(subsizes.dtype().id(), 1);
-        const index_t nents = sizes_dtype.number_of_elements();
-        Node temp;
+        const index_t_accessor conn = elements["connectivity"].as_index_t_accessor();
+        const index_t_accessor sizes = elements["sizes"].as_index_t_accessor();
+        const index_t_accessor subconn = subelements["connectivity"].as_index_t_accessor();
+        const index_t_accessor subsizes = subelements["sizes"].as_index_t_accessor();
+        const index_t_accessor suboffsets = subelements["offsets"].as_index_t_accessor();
         index_t ei = 0;
-        for(index_t i = 0; i < nents; i++)
+        for(index_t i = 0; i < sizes.number_of_elements(); i++)
         {
             e.entity_id = ent_id;
-            temp.set_external(size_dtype, const_cast<void*>(sizes.element_ptr(i)));
-            const index_t sz = temp.to_index_t();
+            const index_t sz = sizes[i];
             e.element_ids.resize(sz);
             for(index_t j = 0; j < sz; j++)
             {
                 // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
+                e.element_ids[j] = conn[ei];
                 ei++;
             }
 
@@ -5313,17 +5292,14 @@ Multiple topology formats
             {
                 // Get the size of the subelement so we can define it in the proper index of subelement_ids
                 auto &subele = e.subelement_ids[j];
-                temp.set_external(subsize_dtype, const_cast<void*>(subsizes.element_ptr(e.element_ids[j])));
-                const index_t subsz = temp.to_index_t();
+                const index_t subsz = subsizes[e.element_ids[j]];
                 subele.resize(subsz);
 
                 // Find the offset of the face definition so we can write the vertex ids
-                temp.set_external(suboff_dtype, const_cast<void*>(suboffsets.element_ptr(e.element_ids[j])));
-                index_t offset = temp.to_index_t();
+                index_t offset = suboffsets[e.element_ids[j]];
                 for(index_t k = 0; k < subsz; k++)
                 {
-                    temp.set_external(subid_dtype, const_cast<void*>(subconn.element_ptr(offset)));
-                    subele[k] = temp.to_index_t();
+                    subele[k] = subconn[offset];
                     offset++;
                 }
             }
@@ -5432,23 +5408,19 @@ Multiple topology formats
         std::vector<id_elem_pair> etypes;
         build_element_vector(elements["element_types"], etypes);
         const Node &eindex = elements["element_index"];
-        const Node &stream = elements["stream"];
-        const Node &stream_ids = eindex["stream_ids"];
-        const Node *stream_offs = eindex.fetch_ptr("offsets");
-        const Node *stream_counts = eindex.fetch_ptr("element_counts");
-        const index_t nstream = stream_ids.dtype().number_of_elements();
-        const DataType sid_dtype(stream_ids.dtype().id(), 1);
-        const DataType stream_dtype(stream.dtype().id(), 1);
+        const index_t_accessor stream = elements["stream"].as_index_t_accessor();
+        const index_t_accessor stream_ids = eindex["stream_ids"].as_index_t_accessor();
+        const Node *p_stream_offs = eindex.fetch_ptr("offsets");
+        const Node *p_stream_counts = eindex.fetch_ptr("element_counts");
+        const index_t nstream = stream_ids.number_of_elements();
         index_t ent_id = 0;
         // For count based this number just keeps rising, for offset based it gets overwritten
         //   by what is stored in the offsets node.
         index_t idx = 0;
-        Node temp;
-        for(index_t i = 0; i < nstream; i++)
+        for(index_t i = 0; i < stream_ids.number_of_elements(); i++)
         {
             // Determine which shape we are working with
-            temp.set_external(sid_dtype, const_cast<void*>(stream_ids.element_ptr(i)));
-            const index_t stream_id = temp.to_index_t();
+            const index_t stream_id = stream_ids[i];
             auto itr = std::find_if(etypes.begin(), etypes.end(), [=](const id_elem_pair &p){
                 return p.first == stream_id;
             });
@@ -5456,27 +5428,24 @@ Multiple topology formats
 
             // Determine how many elements are in this section of the stream
             index_t start = 0, end = 0;
-            if(stream_offs)
+            if(p_stream_offs)
             {
-                const DataType dt(stream_offs->dtype().id(), 1);
-                temp.set_external(dt, const_cast<void*>(stream_offs->element_ptr(i)));
-                start = temp.to_index_t();
+                index_t_accessor stream_offs = p_stream_offs->as_index_t_accessor();
+                start = stream_offs[i];
                 if(i == nstream - 1)
                 {
-                    end = stream_offs->dtype().number_of_elements();
+                    end = stream_offs.number_of_elements();
                 }
                 else
                 {
-                    temp.set_external(dt, const_cast<void*>(stream_offs->element_ptr(i+1)));
-                    end = temp.to_index_t();
+                    end = stream_offs[i+1];
                 }
             }
-            else if(stream_counts)
+            else if(p_stream_counts)
             {
-                const DataType dt(stream_counts->dtype().id(), 1);
-                temp.set_external(dt, const_cast<void*>(stream_counts->element_ptr(i)));
+                index_t_accessor stream_counts = p_stream_counts->as_index_t_accessor();
                 start = idx;
-                end   = start + (temp.to_index_t() * e.shape.indices);
+                end   = start + (stream_counts[i] * e.shape.indices);
             }
 
             // Iterate the elements in this section
@@ -5486,8 +5455,7 @@ Multiple topology formats
                 const index_t sz = e.shape.indices;
                 for(index_t j = 0; j < sz; j++)
                 {
-                    temp.set_external(stream_dtype, const_cast<void*>(stream.element_ptr(idx)));
-                    e.element_ids[j] = temp.to_index_t();
+                    e.element_ids[j] = stream[idx];
                     idx++;
                 }
                 e.entity_id = ent_id;
