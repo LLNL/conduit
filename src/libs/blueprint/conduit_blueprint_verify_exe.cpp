@@ -21,13 +21,31 @@ using namespace conduit::relay;
 void
 usage()
 {
-    std::cout << "usage: conduit_blueprint_verify {blueprint-protocol} "
+    Node n_about_bp, n_about_relay_io;
+    conduit::blueprint::about(n_about_bp);
+    conduit::relay::io::about(n_about_relay_io);
+    std::cout << "usage:" << std::endl
+              << " conduit_blueprint_verify {blueprint-protocol} "
+              << "{data file} " << std::endl 
+              << " conduit_blueprint_verify {blueprint-protocol} "
               << "{data file} "
+              << "--relay-protocol {protocol to use for reading with relay }"
               << std::endl << std::endl 
-              << " optional arguments:"
-              << std::endl
-              << "  --relay-protocol {protocol to use for reading with relay }" 
-              << std::endl << std::endl ;
+              << "examples: " << std::endl
+              << " conduit_blueprint_verify mesh my_mesh.yaml " << std::endl
+              << " conduit_blueprint_verify mesh my_mesh.yaml "
+              << "--relay-protocol yaml "<< std::endl
+              << " conduit_blueprint_verify mesh my_mesh.root " << std::endl
+              << " conduit_blueprint_verify mesh my_mesh.root "
+              << "--relay-protocol hdf5 "<< std::endl
+              << std::endl << std::endl
+              << "[blueprint protocols]" 
+              << n_about_bp["protocols"].to_yaml()
+              << std::endl << std::endl
+              << "[relay protocols]" 
+              << n_about_relay_io["protocols"].to_yaml()
+              << std::endl << std::endl;
+
 
 }
 
@@ -67,7 +85,7 @@ main(int argc, char* argv[])
 {
     try
     {
-        if(argc < 2)
+        if(argc < 3)
         {
             usage();
             return -1;
@@ -88,16 +106,48 @@ main(int argc, char* argv[])
             CONDUIT_ERROR("no data file passed");
         }
 
-        // load data from the file
-        Node data;
-        if(relay_protocol.empty())
+        if(!conduit::utils::is_file(data_file))
         {
+            CONDUIT_ERROR("file: " << data_file << " not found");
+        }
+
+        // load data from the file
+
+        // if the file ends in `.root` assume mesh bp file
+        // and use conduit::relay::io::blueprint::load_mesh()
+
+        std::string data_file_name_base;
+        std::string data_file_name_ext;
+        // find file extension to auto match
+        conduit::utils::rsplit_string(data_file,
+                                      std::string("."),
+                                      data_file_name_ext,
+                                      data_file_name_base);
+
+        Node data;
+        if(data_file_name_ext == "root")
+        {
+            relay::io::blueprint::load_mesh(data_file,
+                                            data);
+        }
+        else if(relay_protocol.empty())
+        {
+            // load guessing protocol
+            std::cout << "loading: " 
+                      << "  file: "<< data_file << std::endl;
             relay::io::load(data_file,data);
         }
         else
         {
+            // load with given protocol
+            std::cout << "loading: " 
+                      << "  file: "<< data_file << std::endl
+                      << "  relay_protocol: " << relay_protocol << std::endl;
             relay::io::load(data_file,relay_protocol,data);
         }
+
+        std::cout << "conduit::blueprint::verify" << std::endl
+                  << "  blueprint protocol:" << bp_protocol << std::endl;
 
         Node info;
         if(conduit::blueprint::verify(bp_protocol,data,info))
@@ -115,7 +165,7 @@ main(int argc, char* argv[])
     }
     catch(const conduit::Error &e)
     {
-        std::cout << "Error launching running conduit::blueprint::verify"
+        std::cout << "ERROR running conduit::blueprint::verify"
                   << std::endl
                   << e.message()
                   << std::endl;
