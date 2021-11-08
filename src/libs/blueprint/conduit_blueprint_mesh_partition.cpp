@@ -4110,7 +4110,7 @@ copy_node_data_impl(const Node &in, OutDataArray &out, index_t offset)
     }
     else if (idt.is_number())
     {
-        retval = copy_node_data_impl2(in.as_double_accessor(), out, offset);
+        retval = copy_node_data_impl2(in.as_float64_accessor(), out, offset);
     }
     else
     {
@@ -4239,8 +4239,8 @@ static bool node_value_compare_int(const Node& lhs, const Node& rhs)
 static bool
 node_value_compare_flt(const Node &lhs, const Node &rhs, double epsilon)
 {
-    double_accessor lhs_data = lhs.as_double_accessor();
-    double_accessor rhs_data = rhs.as_double_accessor();
+    float64_accessor lhs_data = lhs.as_float64_accessor();
+    float64_accessor rhs_data = rhs.as_float64_accessor();
     const index_t nele = lhs_data.number_of_elements();
     if(nele != rhs_data.number_of_elements())
     {
@@ -6007,7 +6007,7 @@ private:
     */
     static double as_double(const Node &n_vals, index_t idx)
     {
-        return n_vals.as_double_accessor()[idx];
+        return n_vals.as_float64_accessor()[idx];
     };
 
     //-------------------------------------------------------------------------
