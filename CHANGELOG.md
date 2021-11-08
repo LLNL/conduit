@@ -25,6 +25,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Updated CMake logic to provide more robust Python detection and better support for HDF5 installs that were built with CMake.
 - Improved Node::diff and Node::diff_compatible to show string values when strings differ.
+- `conduit::Node::print()` and in Python Node `repr` and `str` now use `to_summary_string()`. This reduces the output for large Nodes. Full output is still supported via `to_string()`, `to_yaml()`, etc methods.
 
 #### Blueprint
 - Added support for both `const` and non-`const` inputs to the `conduit::blueprint::mesh::domains` function.
