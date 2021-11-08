@@ -6007,10 +6007,7 @@ private:
     */
     static double as_double(const Node &n_vals, index_t idx)
     {
-        Node temp;
-        temp.set_external(DataType(n_vals.dtype().id(), 1), 
-            const_cast<void*>(n_vals.element_ptr(idx)));
-        return temp.to_double();
+        return n_vals.as_double_accessor()[idx];
     };
 
     //-------------------------------------------------------------------------
