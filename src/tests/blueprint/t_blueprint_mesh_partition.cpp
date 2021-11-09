@@ -558,7 +558,7 @@ TEST(conduit_blueprint_mesh_partition, uniform_explicit_2d)
 //       I could not visually verify the mesh. The files look okay.
 TEST(conduit_blueprint_mesh_partition, quads_poly_explicit_2d)
 {
-    conduit::index_t vdims[] = {11,11,1};
+    conduit::index_t vdims[] = {11,11,0};
     test_explicit_selection("quads_poly", vdims, "quads_poly_explicit_2d", spc);
 }
 
@@ -580,7 +580,7 @@ TEST(conduit_blueprint_mesh_partition, hexs_poly_explicit_3d)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, quads_and_tris_explicit_2d)
 {
-    conduit::index_t vdims[] = {11,11,1};
+    conduit::index_t vdims[] = {11,11,0};
     test_explicit_selection("quads_and_tris", vdims, "quads_end_tris_explicit_2d",
         quads_and_tris_spc);
 }
@@ -604,6 +604,10 @@ test_ranges_selection_2d(const std::string &topo, const std::string &base)
     // Make 10x10x1 cell mesh.
     conduit::Node input, output, options, msg;
     conduit::index_t vdims[] = {11,11,1};
+    if(topo == "quads")
+    {
+        vdims[2] = 0;
+    }
     conduit::blueprint::mesh::examples::braid(topo, vdims[0], vdims[1], vdims[2], input);
     // Override with int64 because YAML loses int/uint information.
     conduit::int64 i100 = 100;
@@ -1038,7 +1042,7 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
         std::cout << "-------- End case " << case_name << "   --------" << std::endl;
     };
 
-    static const conduit::index_t dims2[] = {11,11,1};
+    static const conduit::index_t dims2[] = {11,11,0};
     static const std::array<std::string, 4> cases2 = {
         "tris",
         "quads",
@@ -1129,8 +1133,11 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
         conduit::Node poly_braid;
         if(vdims[2] > 1)
         {
-            conduit::blueprint::mesh::examples::braid("hexs_poly", 2,
-                2, 2, poly_braid);
+            conduit::blueprint::mesh::examples::braid("hexs_poly",
+                                                      2,
+                                                      2,
+                                                      2,
+                                                      poly_braid);
 
             // Move the points to the side
             std::array<std::array<double, 8>, 3> new_coords = {{
@@ -1168,7 +1175,7 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
         else
         {
             conduit::blueprint::mesh::examples::braid("quads_poly", 2,
-                2, 1, poly_braid);
+                2, 0, poly_braid);
 
             // Move the points to the side
             std::array<std::array<double, 4>, 2> new_coords = {{
@@ -1241,7 +1248,7 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
         std::cout << "-------- End case " << case_name << "   --------" << std::endl;
     };
 
-    static const conduit::index_t dims2[] = {11,11,1};
+    static const conduit::index_t dims2[] = {11,11,0};
     static const std::array<std::string, 3> cases2 = {
         "tris",
         "quads",

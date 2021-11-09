@@ -66,7 +66,11 @@ namespace examples
 //---------------------------------------------------------------------------//
 const float64 PI_VALUE = 3.14159265359;
 
-// controls if we throw an exception when npts_z != 0 for 2D only examples
+// NOTE(CYRUSH) 
+// Using npts_z != 0 for 2d only shape types in our examples is deprecated
+// this bool controls if we throw an exception when npts_z != 0 for 2D
+// only examples. In a future release move to throw error and remove
+// this and related CONDUIT_INFO logic
 const bool STRICT_NPTS_Z_FOR_2D = false;
 
 //---------------------------------------------------------------------------//
@@ -2210,11 +2214,19 @@ basic(const std::string &mesh_type,
     bool npts_z_ok = mesh_types_dims[mesh_type_index] == 2 || npts_z > 1;
     
     
-    if( STRICT_NPTS_Z_FOR_2D &&
-        npts_z != 0 &&
+    if( npts_z != 0 &&
         braid_2d_only_shape_type(mesh_type) )
     {
-        npts_z_ok = false;
+        if(STRICT_NPTS_Z_FOR_2D)
+        {
+            npts_z_ok = false;
+        }
+        else
+        {
+            CONDUIT_INFO("DEPRECATED:"
+                     " Detected npts_z != 0 for example with 2D shape type."
+                     " This will throw a conduit::Error in a future release.");
+        }
     }
 
     // don't let de-morgan get you ...
@@ -2277,11 +2289,19 @@ grid(const std::string &mesh_type,
     // validate braid input here for nicer exception loc
     bool npts_ok = (npts_x > 1 && npts_y > 1);
 
-    if( STRICT_NPTS_Z_FOR_2D &&
-        npts_z != 0 &&
+    if( npts_z != 0 &&
         braid_2d_only_shape_type(mesh_type) )
     {
-        npts_ok = false;
+        if(STRICT_NPTS_Z_FOR_2D)
+        {
+            npts_ok = false;
+        }
+        else
+        {
+            CONDUIT_INFO("DEPRECATED:"
+                    " Detected npts_z != 0 for example with 2D shape type."
+                    " This will throw a conduit::Error in a future release.");
+        }
     }
 
     if( braid_3d_only_shape_type(mesh_type) )
@@ -2391,11 +2411,19 @@ braid(const std::string &mesh_type,
         // check 2d cases which require npts z = 0
         
 
-        if ( STRICT_NPTS_Z_FOR_2D &&
-             npts_z != 0 &&
+        if ( npts_z != 0 &&
              braid_2d_only_shape_type(mesh_type) )
         {
-            npts_z_ok = false;
+            if(STRICT_NPTS_Z_FOR_2D)
+            {
+                npts_z_ok = false;
+            }
+            else;
+            {
+                CONDUIT_INFO("DEPRECATED:"
+                    " Detected npts_z != 0 for example with 2D shape type."
+                    " This will throw a conduit::Error in a future release.");
+            }
         }
 
         // check 3d cases which require z
