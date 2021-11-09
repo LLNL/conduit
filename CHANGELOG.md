@@ -30,6 +30,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Added support for both `const` and non-`const` inputs to the `conduit::blueprint::mesh::domains` function.
 - Improved mesh blueprint index generation logic (local and MPI) to support domains with different topos, fields, etc. 
+- Deprecated accepting `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. They issue a `CONDUIT_INFO` message when this detected and future versions will issue a `CONDUIT_ERROR`.
 
 #### Relay
 - Added CMake option (`ENABLE_RELAY_WEBSERVER`, default = `ON`) to control if Conduit's Relay Web Server support is built. Down stream codes can check for support via header ifdef `CONDUIT_RELAY_WEBSERVER_ENABLED` or at runtime in `conduit::relay::about`.

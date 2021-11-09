@@ -123,7 +123,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     // can be overridden via command line
     index_t npts_x = OUTPUT_NUM_AXIS_POINTS;
     index_t npts_y = OUTPUT_NUM_AXIS_POINTS;
-    index_t npts_z = 1; // 2D examples ...
+    index_t npts_z = 0; // 2D examples ...
 
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
