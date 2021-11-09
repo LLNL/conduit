@@ -4097,16 +4097,13 @@ copy_node_data_impl(const Node &in, OutDataArray &out, index_t offset)
 {
     const auto idt = in.dtype();
     index_t retval = offset;
-    if (idt.is_integer())
+    if (idt.is_unsigned_integer())
     {
-        if (idt.id() == conduit::DataType::UINT64_ID)
-        {
-            retval = copy_node_data_impl2(in.as_uint64_accessor(), out, offset);
-        }
-        else
-        {
-            retval = copy_node_data_impl2(in.as_int64_accessor(), out, offset);
-        }
+        retval = copy_node_data_impl2(in.as_uint64_accessor(), out, offset);
+    }
+    else if (idt.is_signed_integer())
+    {
+        retval = copy_node_data_impl2(in.as_int64_accessor(), out, offset);
     }
     else if (idt.is_number())
     {
