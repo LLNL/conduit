@@ -21,6 +21,7 @@
 #include <deque>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <set>
 #include <vector>
