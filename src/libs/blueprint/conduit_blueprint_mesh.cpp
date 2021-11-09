@@ -1588,7 +1588,6 @@ mesh::generate_index(const conduit::Node &mesh,
     // domains can have different fields, etc
     // so we need the union of the index entries
     index_out.reset();
-    index_out["state/number_of_domains"] = number_of_domains;
 
     if(mesh.dtype().is_empty())
     {
@@ -1615,6 +1614,8 @@ mesh::generate_index(const conduit::Node &mesh,
                                          ref_path,
                                          index_out);
     }
+
+    index_out["state/number_of_domains"] = number_of_domains;
 }
 
 
@@ -1625,7 +1626,6 @@ mesh::generate_index_for_single_domain(const Node &mesh,
                                        Node &index_out)
 {
     index_out.reset();
-
     if(!mesh.has_child("coordsets"))
     {
         CONDUIT_ERROR("Cannot generate mesh blueprint index for empty mesh."
