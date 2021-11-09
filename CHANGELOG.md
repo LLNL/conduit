@@ -31,6 +31,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for both `const` and non-`const` inputs to the `conduit::blueprint::mesh::domains` function.
 - Improved mesh blueprint index generation logic (local and MPI) to support domains with different topos, fields, etc. 
 - Deprecated accepting `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. They issue a `CONDUIT_INFO` message when this detected and future versions will issue a `CONDUIT_ERROR`.
+- An empty Conduit Node is now considered a valid multi-domain mesh. This change was made to make serial uses cases better match sparse MPI multi-domain use cases. Existing code that relied `mesh::verify` to exclude empty Nodes will now need an extra check to see if an input mesh has data.
 
 #### Relay
 - Added CMake option (`ENABLE_RELAY_WEBSERVER`, default = `ON`) to control if Conduit's Relay Web Server support is built. Down stream codes can check for support via header ifdef `CONDUIT_RELAY_WEBSERVER_ENABLED` or at runtime in `conduit::relay::about`.
@@ -49,9 +50,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed options parsing bugs and improved error messages for the `conduit_blueprint_verify` exe.
 
 
-
 #### Relay
 - Changed HDF5 offset support to use 64-bit unsigned integers for offsets, strides, and sizes.
+- Fixed a bug with `conduit::relay::mpi::io::blueprint::save_mesh` where `file_style=root_only` could crash or truncate output files.
 
 ## [0.7.2] - Released 2021-05-19
 
