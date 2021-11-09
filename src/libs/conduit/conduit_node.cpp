@@ -15022,6 +15022,13 @@ Node::as_float64_accessor() const
     return float64_accessor(m_data,dtype());
 }
 
+//---------------------------------------------------------------------------//
+index_t_accessor
+Node::as_index_t_accessor() const
+{
+    return index_t_accessor(m_data,dtype());
+}
+
 
 
 //---------------------------------------------------------------------------//

@@ -4095,73 +4095,23 @@ template<typename OutDataArray>
 static index_t
 copy_node_data_impl(const Node &in, OutDataArray &out, index_t offset)
 {
-    const auto id = in.dtype().id();
+    const auto idt = in.dtype();
     index_t retval = offset;
-    switch(id)
+    if (idt.is_unsigned_integer())
     {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
+        retval = copy_node_data_impl2(in.as_uint64_accessor(), out, offset);
     }
-    case conduit::DataType::INT16_ID:
+    else if (idt.is_signed_integer())
     {
-        DataArray<int16> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
+        retval = copy_node_data_impl2(in.as_int64_accessor(), out, offset);
     }
-    case conduit::DataType::INT32_ID:
+    else if (idt.is_number())
     {
-        DataArray<int32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
+        retval = copy_node_data_impl2(in.as_float64_accessor(), out, offset);
     }
-    case conduit::DataType::INT64_ID:
+    else
     {
-        DataArray<int64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        CONDUIT_ERROR("Tried to iterate " << idt.name() << " as integer data!");
     }
     return retval;
 }
@@ -4242,12 +4192,54 @@ copy_node_data(const Node &in, Node &out, index_t offset = 0)
 }
 
 //-----------------------------------------------------------------------------
-template<typename LhsDataArray, typename RhsDataArray>
-static bool
-node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, double epsilon)
+static bool node_value_compare_int(const Node& lhs, const Node& rhs)
 {
-    const index_t nele = lhs.number_of_elements();
-    if(nele != rhs.number_of_elements())
+    int64_accessor lhs_data = lhs.as_int64_accessor();
+    int64_accessor rhs_data = rhs.as_int64_accessor();
+    const index_t nele = lhs_data.number_of_elements();
+    if(nele != rhs_data.number_of_elements())
+    {
+        return false;
+    }
+
+    // If one of lhs/rhs is int64 and the other is uint64, we need to check that
+    // neither of the pairwise-compared values have a sign bit set.
+    auto lhs_typeid = lhs_data.dtype().id();
+    auto rhs_typeid = rhs_data.dtype().id();
+
+    bool diff64 = (lhs_typeid == conduit::DataType::INT64_ID
+                   && rhs_typeid == conduit::DataType::UINT64_ID);
+
+    diff64 = diff64
+            || (lhs_typeid == conduit::DataType::UINT64_ID
+                && rhs_typeid == conduit::DataType::INT64_ID);
+
+    bool retval = true;
+    for(index_t i = 0; i < nele; i++)
+    {
+        if (lhs_data[i] != rhs_data[i])
+        {
+            retval = false;
+            break;
+        }
+        if (diff64 && lhs_data[i] < 0 && rhs_data[i] < 0)
+        {
+            retval = false;
+            break;
+        }
+    }
+    return retval;
+}
+
+
+//-----------------------------------------------------------------------------
+static bool
+node_value_compare_flt(const Node &lhs, const Node &rhs, double epsilon)
+{
+    float64_accessor lhs_data = lhs.as_float64_accessor();
+    float64_accessor rhs_data = rhs.as_float64_accessor();
+    const index_t nele = lhs_data.number_of_elements();
+    if(nele != rhs_data.number_of_elements())
     {
         return false;
     }
@@ -4255,9 +4247,7 @@ node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, doubl
     bool retval = true;
     for(index_t i = 0; i < nele; i++)
     {
-        double lhs_double = static_cast<double>(lhs[i]);
-        double rhs_double = static_cast<double>(rhs[i]);
-        const double diff = std::abs(lhs_double - rhs_double);
+        const double diff = std::abs(lhs_data[i] - rhs_data[i]);
         if(!(diff <= epsilon))
         {
             retval = false;
@@ -4268,152 +4258,33 @@ node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, doubl
 }
 
 //-----------------------------------------------------------------------------
-template<typename RhsDataArray>
-static bool
-node_value_compare_impl(const Node &lhs, const RhsDataArray &rhs,  double epsilon)
-{
-    const auto id = lhs.dtype().id();
-    bool retval = true;
-    switch(id)
-    {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT16_ID:
-    {
-        DataArray<int16> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT32_ID:
-    {
-        DataArray<int32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT64_ID:
-    {
-        DataArray<int64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
-    }
-    return retval;
-}
-
-//-----------------------------------------------------------------------------
 static bool
 node_value_compare(const Node &lhs, const Node &rhs, double epsilon = CONDUIT_EPSILON)
 {
-    const auto id = rhs.dtype().id();
+    const auto rid = rhs.dtype();
+    const auto lid = lhs.dtype();
     bool retval = true;
-    switch(id)
+
+    if (rid.is_integer() && lid.is_integer())
     {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
+        // test for integer types by converting to signed int64
+        retval = node_value_compare_int(lhs, rhs);
     }
-    case conduit::DataType::INT16_ID:
+    else if (rid.is_number() && lid.is_number())
     {
-        DataArray<int16> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
+        // default numeric case - convert to double
+        retval = node_value_compare_flt(lhs, rhs, epsilon);
     }
-    case conduit::DataType::INT32_ID:
+    else
     {
-        DataArray<int32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::INT64_ID:
-    {
-        DataArray<int64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        if (!rid.is_number())
+        {
+            CONDUIT_ERROR("Tried to iterate " << rid.name() << " as integer data!");
+        }
+        else if (!lid.is_number())
+        {
+            CONDUIT_ERROR("Tried to iterate " << lid.name() << " as integer data!");
+        }
     }
     return retval;
 }
@@ -4797,133 +4668,37 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
     if(xnode && ynode && znode)
     {
         // 3D
-        const auto xtype = xnode->dtype();
-        const auto ytype = ynode->dtype();
-        const auto ztype = znode->dtype();
-        if(xtype.is_float32() && ytype.is_float32() && ztype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        auto yarray = ynode->as_float64_accessor();
+        auto zarray = znode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            auto yarray = ynode->as_float32_array();
-            auto zarray = znode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
-                func(p, 3);
-            }
-        }
-        else if(xtype.is_float64() && ytype.is_float64() && ztype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            auto yarray = ynode->as_float64_array();
-            auto zarray = znode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
-                func(p, 3);
-            }
-        }
-        else
-        {
-            Node xtemp, ytemp, ztemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const DataType ydt = DataType(ytype.id(), 1);
-            const DataType zdt = DataType(ztype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
-                ztemp.set_external(zdt, const_cast<void*>(znode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = ytemp.to_float64();
-                p[2] = ztemp.to_float64();
-                func(p, 3);
-            }
+            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
+            func(p, 3);
         }
     }
     else if(xnode && ynode)
     {
         // 2D
-        const auto xtype = xnode->dtype();
-        const auto ytype = ynode->dtype();
-        if(xtype.is_float32() && ytype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        auto yarray = ynode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            auto yarray = ynode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-                func(p, 3);
-            }
-        }
-        else if(xtype.is_float64() && ytype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            auto yarray = ynode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-                func(p, 2);
-            }
-        }
-        else
-        {
-            Node xtemp, ytemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const DataType ydt = DataType(ytype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = ytemp.to_float64();
-                p[2] = 0.;
-                func(p, 2);
-            }
+            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
+            func(p, 2);
         }
     }
     else if(xnode)
     {
         // 1D
-        const auto xtype = xnode->dtype();
-        if(xtype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
-                func(p, 1);
-            }
-        }
-        else if(xtype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
-                func(p, 1);
-            }
-        }
-        else
-        {
-            Node xtemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = 0.;
-                p[2] = 0.;
-                func(p, 1);
-            }
+            p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
+            func(p, 1);
         }
     }
     else
@@ -5447,20 +5222,16 @@ Multiple topology formats
         const auto ent_size = e.shape.indices;
         e.element_ids.resize(ent_size, 0);
 
-        const Node &conn = eles["connectivity"];
-        const auto &conn_dtype = conn.dtype();
-        const auto &id_dtype = DataType(conn_dtype.id(), 1);
-        const index_t nents = conn_dtype.number_of_elements() / ent_size;
-        Node temp;
+        index_t_accessor conn = eles["connectivity"].as_index_t_accessor();
+        const index_t nents = conn.number_of_elements() / ent_size;
         index_t ei = 0;
         for(index_t i = 0; i < nents; i++)
         {
             e.entity_id = ent_id;
             for(index_t j = 0; j < ent_size; j++)
             {
-                // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
+                // Pull out vertex id at ei
+                e.element_ids[j] = conn[ei];
                 ei++;
             }
 
@@ -5472,25 +5243,18 @@ Multiple topology formats
     const auto traverse_polygonal_elements = [&func](const Node &elements, index_t &ent_id) {
         entity e;
         e.shape = utils::ShapeType((index_t)ShapeId::Polygonal);
-        const Node &conn = elements["connectivity"];
-        const Node &sizes = elements["sizes"];
-        const auto &sizes_dtype = sizes.dtype();
-        const DataType size_dtype(sizes_dtype.id(), 1);
-        const DataType id_dtype(sizes.dtype().id(), 1);
-        const index_t nents = sizes_dtype.number_of_elements();
-        Node temp;
+        const index_t_accessor conn = elements["connectivity"].as_index_t_accessor();
+        const index_t_accessor sizes = elements["sizes"].as_index_t_accessor();
         index_t ei = 0;
-        for(index_t i = 0; i < nents; i++)
+        for(index_t i = 0; i < sizes.number_of_elements(); i++)
         {
             e.entity_id = ent_id;
-            temp.set_external(size_dtype, const_cast<void*>(sizes.element_ptr(i)));
-            const index_t sz = temp.to_index_t();
+            const index_t sz = sizes[i];
             e.element_ids.resize(sz);
             for(index_t j = 0; j < sz; j++)
             {
                 // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
+                e.element_ids[j] = conn[ei];
                 ei++;
             }
 
@@ -5502,31 +5266,21 @@ Multiple topology formats
     const auto traverse_polyhedral_elements = [&func](const Node &elements, const Node &subelements, index_t &ent_id) {
         entity e;
         e.shape = utils::ShapeType((index_t)ShapeId::Polyhedral);
-        const Node &conn = elements["connectivity"];
-        const Node &sizes = elements["sizes"];
-        const Node &subconn = subelements["connectivity"];
-        const Node &subsizes = subelements["sizes"];
-        const Node &suboffsets = subelements["offsets"];
-        const auto &sizes_dtype = sizes.dtype();
-        const DataType size_dtype(sizes_dtype.id(), 1);
-        const DataType id_dtype(sizes.dtype().id(), 1);
-        const DataType subid_dtype(subconn.dtype().id(), 1);
-        const DataType suboff_dtype(suboffsets.dtype().id(), 1);
-        const DataType subsize_dtype(subsizes.dtype().id(), 1);
-        const index_t nents = sizes_dtype.number_of_elements();
-        Node temp;
+        const index_t_accessor conn = elements["connectivity"].as_index_t_accessor();
+        const index_t_accessor sizes = elements["sizes"].as_index_t_accessor();
+        const index_t_accessor subconn = subelements["connectivity"].as_index_t_accessor();
+        const index_t_accessor subsizes = subelements["sizes"].as_index_t_accessor();
+        const index_t_accessor suboffsets = subelements["offsets"].as_index_t_accessor();
         index_t ei = 0;
-        for(index_t i = 0; i < nents; i++)
+        for(index_t i = 0; i < sizes.number_of_elements(); i++)
         {
             e.entity_id = ent_id;
-            temp.set_external(size_dtype, const_cast<void*>(sizes.element_ptr(i)));
-            const index_t sz = temp.to_index_t();
+            const index_t sz = sizes[i];
             e.element_ids.resize(sz);
             for(index_t j = 0; j < sz; j++)
             {
                 // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
+                e.element_ids[j] = conn[ei];
                 ei++;
             }
 
@@ -5535,17 +5289,14 @@ Multiple topology formats
             {
                 // Get the size of the subelement so we can define it in the proper index of subelement_ids
                 auto &subele = e.subelement_ids[j];
-                temp.set_external(subsize_dtype, const_cast<void*>(subsizes.element_ptr(e.element_ids[j])));
-                const index_t subsz = temp.to_index_t();
+                const index_t subsz = subsizes[e.element_ids[j]];
                 subele.resize(subsz);
 
                 // Find the offset of the face definition so we can write the vertex ids
-                temp.set_external(suboff_dtype, const_cast<void*>(suboffsets.element_ptr(e.element_ids[j])));
-                index_t offset = temp.to_index_t();
+                index_t offset = suboffsets[e.element_ids[j]];
                 for(index_t k = 0; k < subsz; k++)
                 {
-                    temp.set_external(subid_dtype, const_cast<void*>(subconn.element_ptr(offset)));
-                    subele[k] = temp.to_index_t();
+                    subele[k] = subconn[offset];
                     offset++;
                 }
             }
@@ -5654,23 +5405,19 @@ Multiple topology formats
         std::vector<id_elem_pair> etypes;
         build_element_vector(elements["element_types"], etypes);
         const Node &eindex = elements["element_index"];
-        const Node &stream = elements["stream"];
-        const Node &stream_ids = eindex["stream_ids"];
-        const Node *stream_offs = eindex.fetch_ptr("offsets");
-        const Node *stream_counts = eindex.fetch_ptr("element_counts");
-        const index_t nstream = stream_ids.dtype().number_of_elements();
-        const DataType sid_dtype(stream_ids.dtype().id(), 1);
-        const DataType stream_dtype(stream.dtype().id(), 1);
+        const index_t_accessor stream = elements["stream"].as_index_t_accessor();
+        const index_t_accessor stream_ids = eindex["stream_ids"].as_index_t_accessor();
+        const Node *p_stream_offs = eindex.fetch_ptr("offsets");
+        const Node *p_stream_counts = eindex.fetch_ptr("element_counts");
+        const index_t nstream = stream_ids.number_of_elements();
         index_t ent_id = 0;
         // For count based this number just keeps rising, for offset based it gets overwritten
         //   by what is stored in the offsets node.
         index_t idx = 0;
-        Node temp;
-        for(index_t i = 0; i < nstream; i++)
+        for(index_t i = 0; i < stream_ids.number_of_elements(); i++)
         {
             // Determine which shape we are working with
-            temp.set_external(sid_dtype, const_cast<void*>(stream_ids.element_ptr(i)));
-            const index_t stream_id = temp.to_index_t();
+            const index_t stream_id = stream_ids[i];
             auto itr = std::find_if(etypes.begin(), etypes.end(), [=](const id_elem_pair &p){
                 return p.first == stream_id;
             });
@@ -5678,27 +5425,24 @@ Multiple topology formats
 
             // Determine how many elements are in this section of the stream
             index_t start = 0, end = 0;
-            if(stream_offs)
+            if(p_stream_offs)
             {
-                const DataType dt(stream_offs->dtype().id(), 1);
-                temp.set_external(dt, const_cast<void*>(stream_offs->element_ptr(i)));
-                start = temp.to_index_t();
+                index_t_accessor stream_offs = p_stream_offs->as_index_t_accessor();
+                start = stream_offs[i];
                 if(i == nstream - 1)
                 {
-                    end = stream_offs->dtype().number_of_elements();
+                    end = stream_offs.number_of_elements();
                 }
                 else
                 {
-                    temp.set_external(dt, const_cast<void*>(stream_offs->element_ptr(i+1)));
-                    end = temp.to_index_t();
+                    end = stream_offs[i+1];
                 }
             }
-            else if(stream_counts)
+            else if(p_stream_counts)
             {
-                const DataType dt(stream_counts->dtype().id(), 1);
-                temp.set_external(dt, const_cast<void*>(stream_counts->element_ptr(i)));
+                index_t_accessor stream_counts = p_stream_counts->as_index_t_accessor();
                 start = idx;
-                end   = start + (temp.to_index_t() * e.shape.indices);
+                end   = start + (stream_counts[i] * e.shape.indices);
             }
 
             // Iterate the elements in this section
@@ -5708,8 +5452,7 @@ Multiple topology formats
                 const index_t sz = e.shape.indices;
                 for(index_t j = 0; j < sz; j++)
                 {
-                    temp.set_external(stream_dtype, const_cast<void*>(stream.element_ptr(idx)));
-                    e.element_ids[j] = temp.to_index_t();
+                    e.element_ids[j] = stream[idx];
                     idx++;
                 }
                 e.entity_id = ent_id;
@@ -5727,51 +5470,22 @@ Multiple topology formats
 }
 
 //-----------------------------------------------------------------------------
-template<typename T, typename Func>
-static void iterate_int_data_impl(const conduit::Node &node, Func &&func)
-{
-    conduit::DataArray<T> int_da = node.value();
-    const index_t nele = int_da.number_of_elements();
-    for(index_t i = 0; i < nele; i++)
-    {
-        func((index_t)int_da[i]);
-    }
-}
-
-//-----------------------------------------------------------------------------
 template<typename Func>
 static void iterate_int_data(const conduit::Node &node, Func &&func)
 {
-    const auto id = node.dtype().id();
-    switch(id)
+    const auto dtype = node.dtype();
+    if (dtype.is_integer())
     {
-    case conduit::DataType::INT8_ID:
-        iterate_int_data_impl<int8>(node, func);
-        break;
-    case conduit::DataType::INT16_ID:
-        iterate_int_data_impl<int16>(node, func);
-        break;
-    case conduit::DataType::INT32_ID:
-        iterate_int_data_impl<int32>(node, func);
-        break;
-    case conduit::DataType::INT64_ID:
-        iterate_int_data_impl<int64>(node, func);
-        break;
-    case conduit::DataType::UINT8_ID:
-        iterate_int_data_impl<uint8>(node, func);
-        break;
-    case conduit::DataType::UINT16_ID:
-        iterate_int_data_impl<uint16>(node, func);
-        break;
-    case conduit::DataType::UINT32_ID:
-        iterate_int_data_impl<uint32>(node, func);
-        break;
-    case conduit::DataType::UINT64_ID:
-        iterate_int_data_impl<uint64>(node, func);
-        break;
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        index_t_accessor int_data = node.as_index_t_accessor();
+        const index_t nele = int_data.number_of_elements();
+        for(index_t i = 0; i < nele; i++)
+        {
+            func(int_data[i]);
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Tried to iterate " << dtype.name() << " as integer data!");
     }
 }
 
@@ -6290,10 +6004,7 @@ private:
     */
     static double as_double(const Node &n_vals, index_t idx)
     {
-        Node temp;
-        temp.set_external(DataType(n_vals.dtype().id(), 1), 
-            const_cast<void*>(n_vals.element_ptr(idx)));
-        return temp.to_double();
+        return n_vals.as_float64_accessor()[idx];
     };
 
     //-------------------------------------------------------------------------
@@ -6350,15 +6061,9 @@ private:
             for(size_t i = 0; i < cset_axes.size(); i++)
             {
                 const Node &n_value = n_values[cset_axes[i]];
-                if(n_value.dtype().is_float32())
+                if(n_value.dtype().is_floating_point())
                 {
-                    DataArray<float32> da = n_value.value();
-                    offsets.push_back(
-                        mesh::coordset::utils::find_rectilinear_offset(da, exts[i*2], tolerance));
-                }
-                else if(n_value.dtype().is_float64())
-                {
-                    DataArray<float64> da = n_value.value();
+                    float64_accessor da = n_value.as_float64_accessor();
                     offsets.push_back(
                         mesh::coordset::utils::find_rectilinear_offset(da, exts[i*2], tolerance));
                 }
@@ -6398,56 +6103,18 @@ private:
             for(index_t di = 0; di < dimension; di++)
             {
                 std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                const Node &n_value = n_values[axes[di]];
-                const index_t N = n_value.dtype().number_of_elements();
+                const float64_accessor n_value = n_values[axes[di]].as_float64_accessor();
                 index_t local_id = 0;
                 bool found = false;
-                if(n_value.dtype().is_float32())
+                for(index_t vi = 0; vi < n_value.number_of_elements(); vi++)
                 {
-                    DataArray<float32> da = n_value.value();
-                    for(index_t vi = 0; vi < N; vi++)
+                    ijk[di] = vi;
+                    grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
+                    if(std::abs(n_value[vi] - start_values[di]) <= tolerance)
                     {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        if(std::abs(da[vi] - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                else if(n_value.dtype().is_float64())
-                {
-                    DataArray<float64> da = n_value.value();
-                    for(index_t vi = 0; vi < N; vi++)
-                    {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        if(std::abs(da[vi] - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    Node temp;
-                    for(index_t vi = 0; vi < N; vi++)
-                    {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        temp.set_external(DataType(n_value.dtype().id(), 1),
-                            const_cast<void*>(n_value.element_ptr(local_id)));
-                        double val = temp.to_double();
-                        if(std::abs(val - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
+                        offsets.push_back(vi);
+                        found = true;
+                        break;
                     }
                 }
 
