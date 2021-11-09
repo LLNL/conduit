@@ -32,7 +32,14 @@ Protocol
 
 
 The Blueprint protocol defines a single-domain computational mesh using one or more Coordinate Sets (via child ``coordsets``), one or more Topologies (via child  ``topologies``), zero or more Materials Sets (via child ``matsets``), zero or more Fields (via child ``fields``), optional Adjacency Set information (via child ``adjsets``), and optional State information (via child ``state``).
-The protocol defines multi-domain meshes as *Objects* that contain one or more single-domain mesh entries.
+The protocol defines multi-domain meshes as *Objects* that contain zero or more single-domain mesh entries. 
+
+.. note::
+   Since the multi-domain protocol accepts zero or more single-domain mesh entries, an empty Conduit Node is
+   considered a valid multi-domain mesh. The change to accept an empty Node was introduced in Conduit 0.8.0.
+   To check if you have a mesh with data, you can screen with `dtype().is_empty()`, or by using mesh blueprint property
+   methods (i.e. `number_of_domains()`).
+
 For simplicity, the descriptions below are structured relative to a single-domain mesh *Object* that contains one Coordinate Set named ``coords``, one Topology named ``topo``, and one Material Set named ``matset``.
 
 
