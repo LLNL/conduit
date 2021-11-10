@@ -1744,7 +1744,7 @@ Partitioner::options_get_target(const conduit::Node &options,
         }
     }
 #ifdef CONDUIT_DEBUG_PARTITIONER
-    std::cout << "Partition called with target " << options["target"].to_unsigned_int() << std::endl;
+    std::cout << "Partition called with target " << value << std::endl;
 #endif
     return retval;
 }
@@ -3325,11 +3325,11 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
     dest_ranks.resize(chunks.size());
     for(size_t i = 0; i < chunks.size(); i++)
         dest_ranks[i] = rank;
-#ifdef CONDUIT_DEBUG_PARTITIONER
-    cout << "map_chunks:" << endl;
-    for(size_t i = 0; i < chunks.size(); i++)
-        chunks[i].mesh->print();
-#endif
+// #ifdef CONDUIT_DEBUG_PARTITIONER
+//     cout << "map_chunks:" << endl;
+//     for(size_t i = 0; i < chunks.size(); i++)
+//         chunks[i].mesh->print();
+// #endif
 
     // Determine average chunk size.
     std::vector<index_t> chunk_sizes;
@@ -3343,12 +3343,14 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
         total_len += len;
         chunk_sizes.push_back(len);
     }
-    index_t len_per_target = total_len / std::max(1u,target);
+
 #ifdef CONDUIT_DEBUG_PARTITIONER
     cout << "map_chunks: chunks.size=" << chunks.size()
          << ", total_len = " << total_len
-         << ", target=" << target
-         << ", len_per_target=" << len_per_target << endl;
+         << ", target=" << target << endl;
+    cout << "chunk_sizes={";
+    for(const index_t s : chunk_sizes) cout << s << ", ";
+    cout << "}" << endl;
 #endif
     // Come up with a list of domain ids to avoid in our numbering.
     std::set<int> reserved_dd;
@@ -3376,7 +3378,9 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
     // We have a certain number of chunks but determine how many targets
     // that makes. It ought to be equal to target.
     auto targets_from_chunks = static_cast<unsigned int>(count_targets());
-
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "targets_from_chunks: " << targets_from_chunks << std::endl;
+#endif
     if(targets_from_chunks == target)
     {
         // The number of targets we'd make from the chunks is the same
@@ -3410,24 +3414,44 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
         //       while trying to target a certain number of cells per domain.
         //       We may someday also want to consider the bounding boxes so
         //       we group chunks that are close spatially.
+        // NOTE: I updated the logic for grouping domains with a "free"
+        //       destination domain. Same idea but now the "len_per_target"
+        //       is recomputed based off how many cells are left divided by
+        //       how many more domains need to be created.
 
+        index_t remaining_len  = total_len;
+        index_t len_per_target = total_len / std::max(target, 1u);
+        index_t remaining_target = target - 1;
         index_t running_len = 0;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+        std::cout << "len_per_target={" << len_per_target << ", ";
+#endif
         for(size_t i = 0; i < chunks.size(); i++)
         {
             int dd = chunks[i].destination_domain;
             if(dd == Selection::FREE_DOMAIN_ID)
             {
+                const index_t remaining_chunks = (chunks.size() - 1) - i;
+                dest_domain.push_back(domid);
                 running_len += chunk_sizes[i];
-                if(running_len > len_per_target)
+                remaining_len -= chunk_sizes[i];
+                if(remaining_chunks != 0 &&
+                    (running_len >= len_per_target
+                        || remaining_chunks == remaining_target))
                 {
+                    // Update new len per target
                     running_len = 0;
+                    len_per_target = remaining_len / std::max(remaining_target, (index_t)1);
+                    remaining_target--;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+                    std::cout << len_per_target << ", ";
+#endif
+
                     // Get the next domain id.
                     while(reserved_dd.find(domid) != reserved_dd.end())
                         domid++;
                     reserved_dd.insert(domid);
                 }
-
-                dest_domain.push_back(domid);
             }
             else
             {
@@ -3435,6 +3459,9 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
                 dest_domain.push_back(dd);
             }
         }
+#ifdef CONDUIT_DEBUG_PARTITIONER
+        std::cout << "}" << std::endl;
+#endif
     }
     else
     {
