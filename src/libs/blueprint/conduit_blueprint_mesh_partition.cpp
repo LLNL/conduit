@@ -40,7 +40,7 @@
 #include "conduit_log.hpp"
 
 // Uncomment to enable some debugging output from partitioner.
-//#define CONDUIT_DEBUG_PARTITIONER
+// #define CONDUIT_DEBUG_PARTITIONER
 
 // Toggles debug prints for point merge
 // #define DEBUG_POINT_MERGE
@@ -1743,6 +1743,9 @@ Partitioner::options_get_target(const conduit::Node &options,
             CONDUIT_INFO("Nonnumber passed as selection target.");
         }
     }
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Partition called with target " << options["target"].to_unsigned_int() << std::endl;
+#endif
     return retval;
 }
 
@@ -3224,6 +3227,13 @@ Partitioner::execute(conduit::Node &output)
     for(size_t i = 0; i < chunks_to_assemble_domains.size(); i++)
         unique_doms.insert(chunks_to_assemble_domains[i]);
 
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "unique_doms:\n";
+    for(auto dom = unique_doms.begin(); dom != unique_doms.end(); dom++)
+        std::cout << "  " << (int)*dom << "\n";
+    std::cout << std::endl;
+#endif
+
     if(!chunks_to_assemble.empty())
     {
         output.reset();
@@ -3244,11 +3254,13 @@ Partitioner::execute(conduit::Node &output)
                     // There are multiple domains in the output.
                     conduit::Node &n = output.append();
                     n.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                    n["state/domain_id"].set((int)*dom);
                 }
                 else
                 {
                     // There is one domain in the output.
                     output.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                    output["state/domain_id"].set((int)*dom);
                 }
             }
             else if(this_dom_chunks.size() > 1)
@@ -3274,6 +3286,22 @@ Partitioner::execute(conduit::Node &output)
         chunks[i].free();
     for(size_t i = 0; i < chunks_to_assemble.size(); i++)
         chunks_to_assemble[i].free();
+
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Partition output domains:\n";
+    if(blueprint::mesh::is_multi_domain(output))
+    {
+        for(index_t i = 0; i < output.number_of_children(); i++)
+        {
+            std::cout << "  " << output[i]["state/domain_id"].to_int() << "\n";
+        }
+        std::cout << std::endl;
+    }
+    else
+    {
+        std::cout << "  " << output["state/domain_id"].to_int() << "\n" << std::endl;
+    }
+#endif
 }
 
 //-------------------------------------------------------------------------
@@ -8202,13 +8230,15 @@ Partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
-    // Handle trivial cases
-    // std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Combining domain " << domain << " size " << inputs.size() << std::endl;
     // std::cout << "INPUTS:";
     // for(const Node *in : inputs)
     // {
-    //     in->print();
+    //     in->schema().print();
     // }
+#endif
+    // Handle trivial cases
     output.reset();
     const auto sz = inputs.size();
     if(sz == 0)
