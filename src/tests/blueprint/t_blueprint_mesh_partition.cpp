@@ -93,6 +93,7 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
     // Override with int64 because YAML loses int/uint information.
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
+    input["state/domain_id"].set((int)0);
 
     // With no options (turn mapping off though because otherwise we add 
     // the original vertex and element fields), test that output==input
@@ -100,7 +101,7 @@ test_logical_selection_2d(const std::string &topo, const std::string &base)
 "mapping: 0";
     options.reset(); options.parse(opt0, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
-    EXPECT_EQ(input.diff(output, msg, 0.0), false);
+    EXPECT_EQ(input.diff(output, msg, 0.0, true), false) << msg.to_json();
     std::string b00 = baseline_file(base + "_00");
     save_visit(b00, output);
 
@@ -230,6 +231,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
     // Override with int64 because YAML loses int/uint information.
     conduit::int64 i100 = 100;
     input["state/cycle"].set(i100);
+    input["state/domain_id"].set((int)0);
 
     // With no options (turn mapping off though because otherwise we add 
     // the original vertex and element fields), test that output==input
@@ -237,7 +239,7 @@ test_logical_selection_3d(const std::string &topo, const std::string &base)
 "mapping: 0";
     options.reset(); options.parse(opt0, "yaml");
     conduit::blueprint::mesh::partition(input, options, output);
-    EXPECT_EQ(input.diff(output, msg, 0.0), false);
+    EXPECT_EQ(input.diff(output, msg, 0.0, true), false) << msg.to_json();
     std::string b00 = baseline_file(base + "_00");
     save_visit(b00, output);
 
