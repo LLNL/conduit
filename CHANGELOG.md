@@ -19,6 +19,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a host of `conduit::blueprint::mpi::mesh::generate_*` methods, which are the MPI parallel equivalents of the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions.
 - Added the `conduit::blueprint::mpi::mesh::find_delegate_domain` function, which returns a single delegate domain for the given mesh across MPI ranks (useful when all ranks need mesh information and some ranks can have empty meshes).
 - Added check and transform functions for the newly-designated `pairwise` and `maxshare` variants of `adjsets`. For more information, see the `conduit::blueprint::mesh::adjset` namespace.
+- Added `mesh::topology::unstructured::to_polytopal` as an alias to `mesh::topology::unstructured::to_polygonal`, to reflect that both polygonal and polyhedral are supported.
 
 ### Changed
 
