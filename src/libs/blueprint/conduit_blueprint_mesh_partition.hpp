@@ -15,6 +15,7 @@
 // std includes
 //-----------------------------------------------------------------------------
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <set>
 #include <string>
@@ -415,7 +416,9 @@ protected:
      @return A node containing the extracted chunk. The chunks will need to
              be freed by the caller.
      */
-    conduit::Node *extract(size_t idx, const conduit::Node &n_mesh) const;
+    conduit::Node *extract(size_t idx,
+                           const conduit::Node &n_mesh,
+                           std::vector<index_t>& vertex_ids_out) const;
 
     void create_new_uniform_coordset(const conduit::Node &n_coordset,
              const index_t start[3],
@@ -608,6 +611,16 @@ protected:
     std::vector<std::string>                 selected_fields;
     bool                                     mapping;
     double                                   merge_tolerance;
+
+    using ChunkToVertsMap = std::unordered_map<index_t, std::vector<index_t>>;
+    using DomainToChunkMap = std::unordered_map<const Node*, ChunkToVertsMap>;
+
+    virtual void build_intradomain_adjsets(index_t chunk_offset,
+                                           const DomainToChunkMap& chunks,
+                                           std::vector<conduit::Node>& adjset_data);
+
+    virtual void build_interdomain_adjsets(const DomainToChunkMap& chunks,
+                                           std::vector<conduit::Node>& adjset_data);
 };
 
 }
