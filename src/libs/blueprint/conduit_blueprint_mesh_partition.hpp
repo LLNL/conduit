@@ -307,6 +307,7 @@ public:
      */
     void combine(int domain,
                  const std::vector<const Node *> &inputs,
+                 const std::vector<const Node *> &input_adjsets,
                  Node &output);
 
 protected:

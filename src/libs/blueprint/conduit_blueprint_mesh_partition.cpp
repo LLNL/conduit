@@ -3228,14 +3228,14 @@ Partitioner::build_intradomain_adjsets(index_t chunk_offset,
 
                 // Add the chunk intersections to their corresponding adjsets.
                 {
-                    Node& adjset_groups_i = adjset_data[i_chunk]["groups"];
+                    Node& adjset_groups_i = adjset_data[i_chunk]["adjsets/intradom_tmp/groups"];
                     Node& new_set = adjset_groups_i.append();
                     new_set["neighbors"].set(chunk_offset + j_chunk);
                     new_set["values"].set(i_shared);
                 }
 
                 {
-                    Node& adjset_groups_j = adjset_data[j_chunk]["groups"];
+                    Node& adjset_groups_j = adjset_data[j_chunk]["adjsets/intradom_tmp/groups"];
                     Node& new_set = adjset_groups_j.append();
                     new_set["neighbors"].set(chunk_offset + i_chunk);
                     new_set["values"].set(j_shared);
@@ -3314,6 +3314,7 @@ Partitioner::build_interdomain_adjsets(const DomainToChunkMap& dom_2_chunks,
         {
             continue;
         }
+        const std::string adjset_topo = (*adjset_node)["topology"].as_string();
         // TODO: check adjset for vertex associativity, correct topology
         // also pairwise only
         const Node& groups = (*adjset_node)["groups"];
@@ -3418,7 +3419,13 @@ Partitioner::build_interdomain_adjsets(const DomainToChunkMap& dom_2_chunks,
             {
                 index_t chunk_id = adjset.first.first;
                 index_t chunk_nbr = adjset.first.second;
-                Node& adjset_groups = adjset_data[chunk_id]["groups"];
+                if (!adjset_data[chunk_id].fetch_ptr("adjsets/elem_aset"))
+                {
+                    Node& adjset_new = adjset_data[chunk_id]["adjsets/elem_aset"];
+                    adjset_new["association"].set("vertex");
+                    adjset_new["topology"].set(adjset_topo);
+                }
+                Node& adjset_groups = adjset_data[chunk_id]["adjsets/elem_aset/groups"];
                 Node& new_set = adjset_groups.append();
                 new_set["neighbors"].set(chunk_nbr);
                 new_set["values"].set(adjset.second);
@@ -3463,6 +3470,62 @@ Partitioner::build_interdomain_adjsets(const DomainToChunkMap& dom_2_chunks,
                 {
                     aset_values[i] = old_to_new[aset_values[i]];
                 }
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+static void
+attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node& chunk_adjs)
+{
+    if (chunk_adjs.number_of_children() == 0)
+    {
+        return;
+    }
+    index_t src_chunk = chunk_adjs["chunk_id"].to_index_t();
+    for (const auto& adjsets : chunk_adjs["adjsets"].children())
+    {
+        if (adjsets.name() == "intradom_tmp")
+        {
+            // skip for now - we'll add these to all the other adjsets
+            continue;
+        }
+        if (!dom["adjsets"].fetch_ptr(adjsets.name()))
+        {
+            // Just take the entire first chunk adjset group, which should have
+            // elem/vert association and topology set
+            dom["adjsets"].append().set(adjsets);
+            for (auto& group : dom["adjsets/groups"].children())
+            {
+                group["src_chunk"].set(src_chunk);
+            }
+        }
+        else
+        {
+            Node& output_adjset = dom["adjsets"][adjsets.name()];
+            Node& output_adjset_groups = output_adjset["groups"];
+            // TODO: check that we have same associativity/topology?
+            for (const auto& group : adjsets["groups"].children())
+            {
+                // Add each group to the output adjset
+                Node& new_grp = output_adjset_groups.append();
+                new_grp.set(group);
+                new_grp["src_chunk"].set(src_chunk);
+            }
+        }
+    }
+    if (chunk_adjs.fetch_ptr("intradom_tmp"))
+    {
+        // Intermediate intradomain adjsets should be added to each "real"
+        // adjset
+        for (auto& out_adjset : dom["adjsets"].children())
+        {
+            for (const auto& group : chunk_adjs["intradom_tmp/groups"].children())
+            {
+                Node& new_grp = out_adjset["groups"].append();
+                new_grp.set(group);
+                new_grp["src_chunk"].set(src_chunk);
             }
         }
     }
@@ -3537,12 +3600,17 @@ Partitioner::execute(conduit::Node &output)
     std::vector<int> chunks_to_assemble_domains;
     communicate_chunks(chunks, dest_rank, dest_domain, offsets,
         chunks_to_assemble, chunks_to_assemble_domains);
+    // TODO: communicate adjset Nodes
+    std::vector<Node> chunks_to_assemble_adjsets = std::move(adjset_data);
 
     // Now that we have all the parts we need in chunks_to_assemble, combine
     // the chunks.
     std::set<int> unique_doms;
     for(size_t i = 0; i < chunks_to_assemble_domains.size(); i++)
+    {
         unique_doms.insert(chunks_to_assemble_domains[i]);
+        chunks_to_assemble_adjsets[i]["chunk_id"].set(i);
+    }
 
     if(!chunks_to_assemble.empty())
     {
@@ -3551,40 +3619,28 @@ Partitioner::execute(conduit::Node &output)
         {
             // Get the chunks for this output domain.
             std::vector<const Node *> this_dom_chunks;
+            std::vector<const Node*> this_dom_chunk_adjsets;
+            std::vector<index_t> this_dom_cnkid;
             for(size_t i = 0; i < chunks_to_assemble_domains.size(); i++)
             {
                 if(chunks_to_assemble_domains[i] == *dom)
+                {
                     this_dom_chunks.push_back(chunks_to_assemble[i].mesh);
+                    // TODO: use moves
+                    this_dom_chunk_adjsets.push_back(&chunks_to_assemble_adjsets[i]);
+                }
             }
 
             if(this_dom_chunks.size() == 1)
             {
-                if(unique_doms.size() > 1)
-                {
-                    // There are multiple domains in the output.
-                    conduit::Node &n = output.append();
-                    n.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
-                }
-                else
-                {
-                    // There is one domain in the output.
-                    output.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
-                }
+                conduit::Node &n = output.append();
+                n.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                attach_chunk_adjset_to_single_dom(n, *this_dom_chunk_adjsets[0]);
             }
             else if(this_dom_chunks.size() > 1)
             {
-                // Combine the chunks for this domain and add to output or to
-                // a list in output.
-                if(unique_doms.size() > 1)
-                {
-                    // There are multiple domains in the output.
-                    combine(*dom, this_dom_chunks, output.append());
-                }
-                else
-                {
-                    // There is one domain in the output.
-                    combine(*dom, this_dom_chunks, output);
-                }
+                // Combine the chunks for this domain and add to a list in output.
+                combine(*dom, this_dom_chunks, this_dom_chunk_adjsets, output.append());
             }
         }
     }
@@ -8609,6 +8665,7 @@ group_topologies(const std::vector<const Node *> &inputs)
 void
 Partitioner::combine(int domain,
     const std::vector<const Node *> &inputs,
+    const std::vector<const Node *> &input_adjsets,
     Node &output)
 {
     // NOTE: Some decisions upstream, for the time being, make all the chunks
@@ -8782,6 +8839,25 @@ Partitioner::combine(int domain,
             Node &out_coordset = output_coordsets[assoc_cset_name];
             fields::combine(field_group, out_topo, out_coordset, output_fields[field_name]);
         }
+    }
+
+    bool have_adjsets = false;
+    for(const Node *adj : input_adjsets)
+    {
+        if(adj->number_of_children() > 0)
+        {
+            have_adjsets = true;
+            break;
+        }
+    }
+    if (have_adjsets)
+    {
+        for(const Node *adj : input_adjsets)
+        {
+            attach_chunk_adjset_to_single_dom(output, *adj);
+        }
+        std::cout << "Domain " << domain << " adjset before point remap: " << std::endl;
+        output["adjsets"].print();
     }
 
     // Cleanup the output node, add original cells/verticies in needed

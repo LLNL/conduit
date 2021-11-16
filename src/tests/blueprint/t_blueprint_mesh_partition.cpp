@@ -1007,7 +1007,7 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
             }
 
             conduit::blueprint::mesh::Partitioner p;
-            p.combine(0, chunks, combine);
+            p.combine(0, chunks, {}, combine);
         #ifdef DEBUG_RECOMBINE_BRAID
             save_visit(base_name + "_combined", combine);
         #endif
