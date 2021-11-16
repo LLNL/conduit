@@ -3532,6 +3532,82 @@ attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node& chunk
 }
 
 //---------------------------------------------------------------------------
+static void
+merge_chunked_adjsets(conduit::Node& dom_adjsets, const std::vector<int>& chunks_2_doms)
+{
+    // We'll use this to lexicographically sort our nodes for a given target domain
+    // based on the pair (min(src_cnk, dst_cnk), max(src_cnk, dst_cnk))
+    // This ensures that we get a consistent ordering of chunk-based adjset groups
+    // on corresponding domains if they're on different ranks.
+    using SortedGrpMap = std::map<std::pair<index_t, index_t>, const Node*>;
+    for (auto& adjset : dom_adjsets.children())
+    {
+        std::unordered_map<index_t, SortedGrpMap> new_adjset_doms;
+        for (const auto& grp : adjset["groups"].children())
+        {
+            index_t src_cnk = grp["src_chunk"].to_index_t();
+            index_t dst_cnk = grp["neighbors"].to_index_t();
+            index_t dst_dom = chunks_2_doms[dst_cnk];
+            std::pair<index_t, index_t> adj_ord = { std::min(src_cnk, dst_cnk),
+                                                    std::max(src_cnk, dst_cnk) };
+            new_adjset_doms[dst_dom][adj_ord] = &grp;
+        }
+        Node& new_grps = adjset["new_groups"];
+        for (const auto& domain : new_adjset_doms)
+        {
+            // Add a new group, with a placeholder name.
+            // (this will be rewritten later by utils::adjset::canonicalize)
+            Node& dom_grp = new_grps["dom_" + std::to_string(domain.first)];
+            // We want to add the neighbor as an array of index_t
+            dom_grp["neighbors"].set({domain.first});
+            std::vector<index_t> vals;
+            std::unordered_set<index_t> unique_vals;
+            bool first_set = true;
+            // Iterate over the chunk-based adjsets, taking all unique shared vertices.
+            // This should be equivalent on both domains since duplicated vertices on
+            // this domain should correspond to duplicated vertices on the other domain
+            // as well.
+            for (const auto& grp_it : domain.second)
+            {
+                const Node chunk_grp = *grp_it.second;
+                index_t_array cnk_vals = chunk_grp["values"].as_index_t_array();
+                if (first_set)
+                {
+                    // We'll add the entire first group we encounter, since there
+                    // shouldn't be any duplicates.
+                    vals.resize(cnk_vals.number_of_elements());
+                    for (int idx = 0; idx < cnk_vals.number_of_elements(); idx++)
+                    {
+                        vals[idx] = cnk_vals[idx];
+                    }
+                    unique_vals = std::unordered_set<index_t>(vals.begin(), vals.end());
+                    first_set = false;
+                }
+                else
+                {
+                    for (int idx = 0; idx < cnk_vals.number_of_elements(); idx++)
+                    {
+                        // Filter out any vertices that were already present in previous chunks.
+                        if (unique_vals.find(cnk_vals[idx]) == unique_vals.end())
+                        {
+                            vals.push_back(cnk_vals[idx]);
+                            unique_vals.insert(cnk_vals[idx]);
+                        }
+                    }
+                }
+            }
+            dom_grp["values"].set(vals);
+        }
+        // Drop the old adjset groups.
+        adjset.remove_child("groups");
+        adjset.rename_child("new_groups", "groups");
+        // Canonicalize the names of our new groups, so they correspond with the
+        // other domains' groups.
+        conduit::blueprint::mesh::utils::adjset::canonicalize(adjset);
+    }
+}
+
+//---------------------------------------------------------------------------
 void
 Partitioner::execute(conduit::Node &output)
 {
@@ -3602,6 +3678,8 @@ Partitioner::execute(conduit::Node &output)
         chunks_to_assemble, chunks_to_assemble_domains);
     // TODO: communicate adjset Nodes
     std::vector<Node> chunks_to_assemble_adjsets = std::move(adjset_data);
+    // communicate this as well
+    std::vector<int> global_cnkid_to_dom = chunks_to_assemble_domains;
 
     // Now that we have all the parts we need in chunks_to_assemble, combine
     // the chunks.
@@ -3631,16 +3709,21 @@ Partitioner::execute(conduit::Node &output)
                 }
             }
 
+            conduit::Node &new_dom = output.append();
             if(this_dom_chunks.size() == 1)
             {
-                conduit::Node &n = output.append();
-                n.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
-                attach_chunk_adjset_to_single_dom(n, *this_dom_chunk_adjsets[0]);
+                new_dom.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                attach_chunk_adjset_to_single_dom(new_dom, *this_dom_chunk_adjsets[0]);
             }
             else if(this_dom_chunks.size() > 1)
             {
                 // Combine the chunks for this domain and add to a list in output.
-                combine(*dom, this_dom_chunks, this_dom_chunk_adjsets, output.append());
+                combine(*dom, this_dom_chunks, this_dom_chunk_adjsets, new_dom);
+            }
+
+            if (new_dom.has_child("adjsets"))
+            {
+                merge_chunked_adjsets(new_dom["adjsets"], global_cnkid_to_dom);
             }
         }
     }
