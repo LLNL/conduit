@@ -3541,6 +3541,7 @@ merge_chunked_adjsets(conduit::Node& dom_adjsets, const std::vector<int>& chunks
     // This ensures that we get a consistent ordering of chunk-based adjset groups
     // on corresponding domains if they're on different ranks.
     using SortedGrpMap = std::map<std::pair<index_t, index_t>, const Node*>;
+    index_t domain_id = -1;
     for (auto& adjset : dom_adjsets.children())
     {
         std::unordered_map<index_t, SortedGrpMap> new_adjset_doms;
@@ -3548,7 +3549,18 @@ merge_chunked_adjsets(conduit::Node& dom_adjsets, const std::vector<int>& chunks
         {
             index_t src_cnk = grp["src_chunk"].to_index_t();
             index_t dst_cnk = grp["neighbors"].to_index_t();
+            index_t src_dom = chunks_2_doms[src_cnk];
             index_t dst_dom = chunks_2_doms[dst_cnk];
+            if (dst_dom == src_dom)
+            {
+                // Don't add self-referencing adjsets
+                continue;
+            }
+            if (domain_id == -1)
+            {
+                // Save our current domain id
+                domain_id = src_dom;
+            }
             std::pair<index_t, index_t> adj_ord = { std::min(src_cnk, dst_cnk),
                                                     std::max(src_cnk, dst_cnk) };
             new_adjset_doms[dst_dom][adj_ord] = &grp;
@@ -3556,9 +3568,17 @@ merge_chunked_adjsets(conduit::Node& dom_adjsets, const std::vector<int>& chunks
         Node& new_grps = adjset["new_groups"];
         for (const auto& domain : new_adjset_doms)
         {
-            // Add a new group, with a placeholder name.
-            // (this will be rewritten later by utils::adjset::canonicalize)
-            Node& dom_grp = new_grps["dom_" + std::to_string(domain.first)];
+            // Add a new group, with a defined name.
+            std::string group_name = "group";
+            {
+                index_t min_dom = std::min(domain_id, domain.first);
+                index_t max_dom = std::max(domain_id, domain.first);
+                group_name += "_";
+                group_name += std::to_string(min_dom);
+                group_name += "_";
+                group_name += std::to_string(max_dom);
+            }
+            Node& dom_grp = new_grps[group_name];
             // We want to add the neighbor as an array of index_t
             dom_grp["neighbors"].set({domain.first});
             std::vector<index_t> vals;
@@ -3602,9 +3622,6 @@ merge_chunked_adjsets(conduit::Node& dom_adjsets, const std::vector<int>& chunks
         // Drop the old adjset groups.
         adjset.remove_child("groups");
         adjset.rename_child("new_groups", "groups");
-        // Canonicalize the names of our new groups, so they correspond with the
-        // other domains' groups.
-        conduit::blueprint::mesh::utils::adjset::canonicalize(adjset);
     }
 }
 
