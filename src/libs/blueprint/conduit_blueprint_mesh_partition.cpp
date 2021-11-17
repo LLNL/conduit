@@ -3419,7 +3419,7 @@ Partitioner::build_interdomain_adjsets(const DomainToChunkMap& dom_2_chunks,
             {
                 index_t chunk_id = adjset.first.first;
                 index_t chunk_nbr = adjset.first.second;
-                if (!adjset_data[chunk_id].fetch_ptr("adjsets/elem_aset"))
+                if (!adjset_data[chunk_id].has_child("adjsets/elem_aset"))
                 {
                     Node& adjset_new = adjset_data[chunk_id]["adjsets/elem_aset"];
                     adjset_new["association"].set("vertex");
@@ -3491,12 +3491,13 @@ attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node& chunk
             // skip for now - we'll add these to all the other adjsets
             continue;
         }
-        if (!dom["adjsets"].fetch_ptr(adjsets.name()))
+        if (!dom["adjsets"].has_child(adjsets.name()))
         {
             // Just take the entire first chunk adjset group, which should have
             // elem/vert association and topology set
-            dom["adjsets"].append().set(adjsets);
-            for (auto& group : dom["adjsets/groups"].children())
+            Node& output_adjset = dom["adjsets"][adjsets.name()];
+            output_adjset.set(adjsets);
+            for (auto& group : output_adjset["groups"].children())
             {
                 group["src_chunk"].set(src_chunk);
             }
@@ -3515,7 +3516,7 @@ attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node& chunk
             }
         }
     }
-    if (chunk_adjs.fetch_ptr("intradom_tmp"))
+    if (chunk_adjs.has_child("intradom_tmp"))
     {
         // Intermediate intradomain adjsets should be added to each "real"
         // adjset
