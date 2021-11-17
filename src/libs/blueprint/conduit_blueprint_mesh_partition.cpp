@@ -3516,13 +3516,13 @@ attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node& chunk
             }
         }
     }
-    if (chunk_adjs.has_child("intradom_tmp"))
+    if (chunk_adjs["adjsets"].has_child("intradom_tmp"))
     {
         // Intermediate intradomain adjsets should be added to each "real"
         // adjset
         for (auto& out_adjset : dom["adjsets"].children())
         {
-            for (const auto& group : chunk_adjs["intradom_tmp/groups"].children())
+            for (const auto& group : chunk_adjs["adjsets/intradom_tmp/groups"].children())
             {
                 Node& new_grp = out_adjset["groups"].append();
                 new_grp.set(group);
