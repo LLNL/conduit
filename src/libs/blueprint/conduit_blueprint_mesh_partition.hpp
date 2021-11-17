@@ -621,6 +621,7 @@ protected:
                                            std::vector<conduit::Node>& adjset_data);
 
     virtual void build_interdomain_adjsets(const DomainToChunkMap& chunks,
+                                           const std::map<index_t, const Node*>& domain_map,
                                            std::vector<conduit::Node>& adjset_data);
 };
 

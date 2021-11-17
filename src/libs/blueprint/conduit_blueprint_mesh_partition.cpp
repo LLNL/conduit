@@ -3289,25 +3289,18 @@ compute_adjset_to_chunk_map(const Node& adjset_group,
 //---------------------------------------------------------------------------
 void
 Partitioner::build_interdomain_adjsets(const DomainToChunkMap& dom_2_chunks,
+                                       const std::map<index_t, const Node*>& domain_map,
                                        std::vector<conduit::Node>& adjset_data)
 {
-    // First pass - map domains IDs to domain pointers for convenience.
-    std::map<index_t, const conduit::Node*> dom_id_to_dom;
-    for (const auto& dom_it : dom_2_chunks)
-    {
-        index_t domain_id = (*dom_it.first)["state/domain_id"].to_index_t();
-        dom_id_to_dom[domain_id] = dom_it.first;
-    }
-
     std::unordered_map<const conduit::Node*,
         std::unordered_map<index_t, std::vector<conduit::Node*>>> remap_to_chunk_vid;
     // Iterate over domains, sorted over domain IDs.
     // We build the interdomain chunk adjset where dom1.id < dom2.id
     // (dom1 is the outer loop)
-    for (const auto& dom_it : dom_id_to_dom)
+    for (const auto& dom_it : domain_map)
     {
         const Node& domain = *(dom_it.second);
-        const index_t dom_idx = domain["state/domain_id"].to_index_t();
+        const index_t dom_idx = dom_it.first;
         // TODO: add config for user-specified adjset, or just split all asets?
         const Node* adjset_node = domain.fetch_ptr("adjsets/elem_aset");
         if (!adjset_node)
@@ -3333,11 +3326,12 @@ Partitioner::build_interdomain_adjsets(const DomainToChunkMap& dom_2_chunks,
                 continue;
             }
             // 1. Find the corresponding neighbor's adjset group.
-            const Node* nbr_node = dom_id_to_dom[nbr_idx];
-            if (!nbr_node)
+            auto nbr_it = domain_map.find(nbr_idx);
+            if (nbr_it == domain_map.end())
             {
                 CONDUIT_ERROR("Couldn't find a neighbor domain");
             }
+            const Node* nbr_node = nbr_it->second;
             const Node* nbr_adjset = nullptr;
             const Node& nbr_groups = (*nbr_node)["adjsets/elem_aset/groups"];
             for (const Node& nbr_adj_group: nbr_groups.children())
@@ -3479,7 +3473,12 @@ Partitioner::build_interdomain_adjsets(const DomainToChunkMap& dom_2_chunks,
 static void
 attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node& chunk_adjs)
 {
-    if (chunk_adjs.number_of_children() == 0)
+    // TODO: should we create adjsets in the single-dom case? (ie no pre-existing adjset)
+    if (!chunk_adjs.has_child("adjsets"))
+    {
+        return;
+    }
+    if (chunk_adjs["adjsets"].number_of_children() == 0)
     {
         return;
     }
@@ -3638,6 +3637,7 @@ Partitioner::execute(conduit::Node &output)
     // Maps each pre-load balance mesh domain to a set of vertex lists for each chunk.
     // This is used in constructing the intermediate chunk adjsets within a domain.
     DomainToChunkMap domain_to_chunk_map;
+    std::map<index_t, const conduit::Node*> domain_id_to_node;
 
     for(size_t i = 0; i < selections.size(); i++)
     {
@@ -3646,6 +3646,9 @@ Partitioner::execute(conduit::Node &output)
         int dr = selections[i]->get_destination_rank();
         int dd = selections[i]->get_destination_domain();
 
+        index_t sr = selections[i]->get_domain();
+
+        domain_id_to_node[sr] = meshes[i];
         if(selections[i]->get_whole(*meshes[i]))
         {
             // We had a selection that spanned the entire mesh so we'll take
@@ -3681,7 +3684,7 @@ Partitioner::execute(conduit::Node &output)
     index_t chunk_offset = 0;
 
     build_intradomain_adjsets(chunk_offset, domain_to_chunk_map, adjset_data);
-    build_interdomain_adjsets(domain_to_chunk_map, adjset_data);
+    build_interdomain_adjsets(domain_to_chunk_map, domain_id_to_node, adjset_data);
 
     for (int i = 0; i < adjset_data.size(); i++)
     {
