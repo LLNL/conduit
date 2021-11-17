@@ -3731,6 +3731,10 @@ Partitioner::execute(conduit::Node &output)
             if(this_dom_chunks.size() == 1)
             {
                 new_dom.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+
+                std::cout << "Domain " << *dom << " has only one chunk: " << std::endl;
+                std::cout << new_dom.to_summary_string();
+
                 attach_chunk_adjset_to_single_dom(new_dom, *this_dom_chunk_adjsets[0]);
             }
             else if(this_dom_chunks.size() > 1)
@@ -3743,6 +3747,8 @@ Partitioner::execute(conduit::Node &output)
             {
                 merge_chunked_adjsets(new_dom["adjsets"], global_cnkid_to_dom);
             }
+            std::cout << "Domain " << *dom << " after adjset merge:" << std::endl;
+            std::cout << new_dom["adjsets"].to_summary_string();
         }
     }
 
@@ -8566,6 +8572,126 @@ combine(const std::vector<const Node*> &in_fields,
 // -- end conduit::blueprint::mesh::fields --
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::adjset --
+//-----------------------------------------------------------------------------
+namespace adjset
+{
+
+static void
+map_adjset_group(const Node& adjset,
+                 const std::unordered_map<index_t, index_t>& local_cnk_map,
+                 const std::vector<DataArray<index_t>>& pointmaps,
+                 Node& out_adjset)
+{
+    // Remap the vertex ids of each intermediate chunk group
+    for (const auto& group : adjset["groups"].children())
+    {
+        Node& tgt_group = out_adjset["groups"].append();
+        index_t src_chunk = group["src_chunk"].to_index_t();
+        tgt_group["src_chunk"].set(src_chunk);
+        tgt_group["neighbors"].set(group["neighbors"].to_index_t());
+
+        // Get the chunk-to-domain vertex id map for the given chunk gid
+        auto local_cnk_id = local_cnk_map.find(src_chunk);
+        if (local_cnk_id == local_cnk_map.end())
+        {
+            CONDUIT_ERROR("Could not map source adjset chunk id "
+                         << src_chunk << " to a chunk in this domain.");
+        }
+        const index_t_array& pmap = pointmaps[local_cnk_id->second];
+
+        index_t_array orig_shared_nodes = group["values"].as_index_t_array();
+        std::vector<index_t> new_shared_nodes(orig_shared_nodes.number_of_elements());
+        for (size_t inode = 0; inode < orig_shared_nodes.number_of_elements(); inode++)
+        {
+            index_t new_vert_idx = pmap[orig_shared_nodes[inode]];
+            new_shared_nodes[inode] = new_vert_idx;
+        }
+        tgt_group["values"].set(new_shared_nodes);
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void
+combine(const std::vector<const Node*>& in_adjsets,
+        const Node& topologies,
+        const Node& coordsets,
+        Node& out_adjsets)
+{
+    // Map of global chunk id to their local index on this domain
+    std::unordered_map<index_t, index_t> local_cnk_idx;
+    Node tmp_dom;
+    for(size_t iadj = 0; iadj < in_adjsets.size(); iadj++)
+    {
+        const Node& adjset = *in_adjsets[iadj];
+        local_cnk_idx[adjset["chunk_id"].to_index_t()] = iadj;
+        attach_chunk_adjset_to_single_dom(tmp_dom, adjset);
+    }
+    tmp_dom["adjsets"].print();
+
+    for (const auto& adjset : tmp_dom["adjsets"].children())
+    {
+        const std::string adjset_name = adjset.name();
+        const std::string assoc_topo = adjset["topology"].as_string();
+        const std::string set_assoc = adjset["association"].as_string();
+        if (set_assoc != utils::ASSOCIATIONS[0])
+        {
+            CONDUIT_WARN("Only vertex-associated adjsets are supported");
+            continue;
+        }
+
+        // Make sure we have an output topology for the given adjset
+        if (!topologies.has_child(assoc_topo))
+        {
+            CONDUIT_ERROR("Adjset " << adjset_name << " references topology "
+                         << assoc_topo << " which doesn't exist.");
+        }
+        const Node& topo_for_aset = topologies[assoc_topo];
+
+        // Look up the associated coordset for the topology
+        const std::string assoc_cset = topo_for_aset["coordset"].as_string();
+        if (!coordsets.has_child(assoc_cset))
+        {
+            CONDUIT_ERROR("Topology " << assoc_topo << " for adjset "
+                          << adjset_name << " references coordset "
+                          << assoc_cset << " which doesn't exist.");
+        }
+        const Node& coordset_for_aset = coordsets[assoc_cset];
+
+        // Vertex association
+        // Need to use pointmaps to map this field
+        // Get the point map
+        const Node *pointmaps = coordset_for_aset.fetch_ptr("pointmaps");
+        if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); return; }
+
+        if(!pointmaps->dtype().is_object())
+        {
+            std::vector<DataArray<index_t>> pmaps;
+            if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); return; }
+            for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
+            {
+                pmaps.emplace_back(pointmaps->child(pi).value());
+            }
+            map_adjset_group(adjset, local_cnk_idx, pmaps, out_adjsets[adjset_name]);
+        }
+        else
+        {
+            // Structured combine produces a pointmap with 2 components
+            DataArray<index_t> orig_domains = pointmaps->child("domains").value();
+            DataArray<index_t> orig_ids     = pointmaps->child("ids").value();
+            CONDUIT_ERROR("Adjset merge unimplemented for structured combine case");
+        }
+        out_adjsets[adjset_name]["topology"] = assoc_topo;
+        out_adjsets[adjset_name]["association"] = set_assoc;
+    }
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::adjset --
+//-----------------------------------------------------------------------------
+
 //-------------------------------------------------------------------------
 std::string
 Partitioner::recommended_topology(const std::vector<const Node *> &inputs,
@@ -8953,12 +9079,8 @@ Partitioner::combine(int domain,
     }
     if (have_adjsets)
     {
-        for(const Node *adj : input_adjsets)
-        {
-            attach_chunk_adjset_to_single_dom(output, *adj);
-        }
         std::cout << "Domain " << domain << " adjset before point remap: " << std::endl;
-        output["adjsets"].print();
+        adjset::combine(input_adjsets, output_topologies, output_coordsets, output["adjsets"]);
     }
 
     // Cleanup the output node, add original cells/verticies in needed
