@@ -3730,28 +3730,36 @@ Partitioner::execute(conduit::Node &output)
                 }
             }
 
-            conduit::Node &new_dom = output.append();
+            conduit::Node* new_dom;
+            if (unique_doms.size() > 1)
+            {
+                new_dom = &(output.append());
+            }
+            else
+            {
+                new_dom = &output;
+            }
             if(this_dom_chunks.size() == 1)
             {
-                new_dom.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                new_dom->set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
 
                 std::cout << "Domain " << *dom << " has only one chunk: " << std::endl;
-                std::cout << new_dom.to_summary_string();
+                std::cout << new_dom->to_summary_string();
 
-                attach_chunk_adjset_to_single_dom(new_dom, *this_dom_chunk_adjsets[0]);
+                attach_chunk_adjset_to_single_dom(*new_dom, *this_dom_chunk_adjsets[0]);
             }
             else if(this_dom_chunks.size() > 1)
             {
                 // Combine the chunks for this domain and add to a list in output.
-                combine(*dom, this_dom_chunks, this_dom_chunk_adjsets, new_dom);
+                combine(*dom, this_dom_chunks, this_dom_chunk_adjsets, *new_dom);
             }
 
-            if (new_dom.has_child("adjsets"))
+            if (new_dom->has_child("adjsets"))
             {
-                merge_chunked_adjsets(new_dom["adjsets"], global_cnkid_to_dom);
+                merge_chunked_adjsets((*new_dom)["adjsets"], global_cnkid_to_dom);
             }
             std::cout << "Domain " << *dom << " after adjset merge:" << std::endl;
-            std::cout << new_dom["adjsets"].to_summary_string();
+            std::cout << (*new_dom)["adjsets"].to_summary_string();
         }
     }
 
