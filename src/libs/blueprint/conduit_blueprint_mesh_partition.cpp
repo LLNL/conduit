@@ -28,6 +28,7 @@
 #include <type_traits>
 #include <map>
 #include <unordered_set>
+#include <numeric>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -3175,10 +3176,12 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
 
 //---------------------------------------------------------------------------
 void
-Partitioner::build_intradomain_adjsets(index_t chunk_offset,
+Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
                                        const DomainToChunkMap& dom_2_chunks,
                                        std::vector<conduit::Node>& adjset_data)
 {
+    // serial case: always as zero
+    index_t chunk_offset = chunk_offsets[0];
     for (const auto& it : dom_2_chunks)
     {
         // Get the chunk ids in the current domain.
@@ -3246,194 +3249,225 @@ Partitioner::build_intradomain_adjsets(index_t chunk_offset,
 }
 
 //---------------------------------------------------------------------------
-using ChunkToVertsMap = std::unordered_map<index_t, std::vector<index_t>>;
-static std::vector<std::vector<index_t>>
-compute_adjset_to_chunk_map(const Node& adjset_group,
-                            const ChunkToVertsMap& chunks)
+
+void
+Partitioner::get_prelb_adjset_maps(const DomainToChunkMap& chunks,
+                                   const std::map<index_t, const Node*>& domain_map,
+                                   std::vector<Node>& adjset_chunk_maps)
 {
-    index_t_accessor adj_values = adjset_group["values"].as_index_t_accessor();
+    //TODO: this should be realloced in the MPI case for max(domain_id)
+    adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
 
-    // Maps shared vertices in the current adjset to chunks which have that vertex
-    std::vector<std::vector<index_t>> in_chunk(adj_values.number_of_elements());
-
-    // Loop over all chunks in dom1 to mark parts of the original adjset to
-    // extract for each chunk.
-    for (const auto& cnk : chunks)
+    // Build adjset-to-chunk maps for all of our local domains.
+    for (const auto& dom_it : domain_map)
     {
-        if (cnk.second.size() == 0)
+        const Node& domain = *(dom_it.second);
+        const index_t dom_idx = dom_it.first;
+        if (!domain.has_child("adjsets"))
         {
-            // Chunk is the whole original domain
-            for (auto& pair_flag : in_chunk)
-            {
-                pair_flag.push_back(cnk.first);
-            }
+            continue;
         }
-        else
+        const ChunkToVertsMap& domain_chunks = chunks.find(&domain)->second;
+        Node& dom_out = adjset_chunk_maps[dom_idx];
+        // Create map of old vertex ids to chunk ids
+        std::vector<std::vector<index_t>> vtx_to_cnkid;
+        size_t max_verts = 0;
+        if (domain_chunks.size() != 1)
         {
-            std::vector<int> chunk_indices;
-            std::unordered_set<index_t> chunk_vids(cnk.second.begin(), cnk.second.end());
-            for (index_t adjidx = 0; adjidx < adj_values.number_of_elements(); adjidx++)
+            for (const auto& cnk : domain_chunks)
             {
-                if (chunk_vids.find(adj_values[adjidx]) != chunk_vids.end())
+                // Ensure enough space is in the map this chunks vertices
+                max_verts = std::max<size_t>(max_verts, *(cnk.second.rbegin())+1);
+                vtx_to_cnkid.resize(max_verts);
+                for (index_t idx : cnk.second)
                 {
-                    // Mark all adjset values where an index is present in the
-                    // set of chunk vertex IDs.
-                    in_chunk[adjidx].push_back(cnk.first);
+                    vtx_to_cnkid[idx].push_back(cnk.first);
                 }
             }
         }
+
+        // loop over all adjsets in the current domain
+        for (const Node& adjset : domain["adjsets"].children())
+        {
+            const std::string adjset_topo = adjset["topology"].as_string();
+            const std::string adjset_assoc = adjset["association"].as_string();
+            // TODO: check adjset for vertex associativity, correct topology
+            // also pairwise only
+            Node& out_adjset_map = dom_out[adjset.name()];
+            for (const Node& group : adjset["groups"].children())
+            {
+                index_t_accessor neighbor_vals = group["neighbors"].as_index_t_accessor();
+                if (neighbor_vals.number_of_elements() != 1)
+                {
+                    CONDUIT_ERROR("Expected pairwise adjset: 1 neighbor per group, got "
+                            << neighbor_vals.number_of_elements());
+                }
+                index_t dst_dom = neighbor_vals[0];
+                index_t_accessor adj_vals = group["values"].as_index_t_accessor();
+                size_t nvals = adj_vals.number_of_elements();
+
+                std::vector<index_t> offsets;
+                std::vector<index_t> csr_vtx_map;
+                if (vtx_to_cnkid.size() == 0)
+                {
+                    // single chunk comprises the whole domain
+                    index_t dst_cnk = domain_chunks.begin()->first;
+                    offsets.resize(nvals);
+                    std::iota(offsets.begin(), offsets.end(), 0);
+                    csr_vtx_map = std::vector<index_t>(nvals, dst_cnk);
+                }
+                else
+                {
+                    index_t curr_offset = 0;
+                    for (size_t i = 0; i < nvals; i++)
+                    {
+                        index_t old_vtx = adj_vals[i];
+                        offsets.push_back(curr_offset);
+                        curr_offset += vtx_to_cnkid[old_vtx].size();
+                        csr_vtx_map.insert(csr_vtx_map.end(),
+                                           vtx_to_cnkid[old_vtx].begin(),
+                                           vtx_to_cnkid[old_vtx].end());
+                    }
+                }
+
+                // Index by destination domain to make it a little easier to find.
+                const std::string dst_key = std::to_string(dst_dom);
+                out_adjset_map["to_dom"][dst_key]["group_name"] = group.name();
+                out_adjset_map["to_dom"][dst_key]["cnk_offsets"].set(offsets);
+                out_adjset_map["to_dom"][dst_key]["vtx_map"].set(csr_vtx_map);
+            }
+        }
     }
-    return in_chunk;
 }
 
 //---------------------------------------------------------------------------
 void
-Partitioner::build_interdomain_adjsets(const DomainToChunkMap& dom_2_chunks,
+Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offset,
+                                       const DomainToChunkMap& dom_2_chunks,
                                        const std::map<index_t, const Node*>& domain_map,
                                        std::vector<conduit::Node>& adjset_data)
 {
     std::unordered_map<const conduit::Node*,
         std::unordered_map<index_t, std::vector<conduit::Node*>>> remap_to_chunk_vid;
-    // Iterate over domains, sorted over domain IDs.
-    // We build the interdomain chunk adjset where dom1.id < dom2.id
-    // (dom1 is the outer loop)
+
+    std::vector<Node> dom_adjset_maps;
+    get_prelb_adjset_maps(dom_2_chunks, domain_map, dom_adjset_maps);
+
+    // Iterate over all local domains to generate new chunk-based adjsets.
     for (const auto& dom_it : domain_map)
     {
         const Node& domain = *(dom_it.second);
         const index_t dom_idx = dom_it.first;
-        // TODO: add config for user-specified adjset, or just split all asets?
-        const Node* adjset_node = domain.fetch_ptr("adjsets/elem_aset");
-        if (!adjset_node)
+        if (!domain.has_child("adjsets"))
         {
             continue;
         }
-        const std::string adjset_topo = (*adjset_node)["topology"].as_string();
-        // TODO: check adjset for vertex associativity, correct topology
-        // also pairwise only
-        const Node& groups = (*adjset_node)["groups"];
-        for (const Node& adj_group : groups.children())
+        for (const Node& adjset_node : domain["adjsets"].children())
         {
-            index_t_accessor neighbor_vals = adj_group["neighbors"].as_index_t_accessor();
-            if (neighbor_vals.number_of_elements() != 1)
+            const std::string adjset_name = adjset_node.name();
+            const std::string adjset_topo = adjset_node["topology"].as_string();
+            const std::string adjset_assoc = adjset_node["association"].as_string();
+            const Node& adjset_maps = dom_adjset_maps[dom_idx][adjset_name];
+            // Maps (local_chunk, remote_chunk) -> shared vtx on local chunk
+            std::map<std::pair<index_t, index_t>, std::vector<index_t>> new_adjsets;
+            for (const Node& adj_group : adjset_node["groups"].children())
             {
-                CONDUIT_ERROR("Expected pairwise adjset: 1 neighbor per group, got "
-                        << neighbor_vals.number_of_elements());
-            }
-            index_t nbr_idx = neighbor_vals[0];
-            if (nbr_idx <= dom_idx)
-            {
-                // will be handled by lower-index neighbor
-                continue;
-            }
-            // 1. Find the corresponding neighbor's adjset group.
-            auto nbr_it = domain_map.find(nbr_idx);
-            if (nbr_it == domain_map.end())
-            {
-                CONDUIT_ERROR("Couldn't find a neighbor domain");
-            }
-            const Node* nbr_node = nbr_it->second;
-            const Node* nbr_adjset = nullptr;
-            const Node& nbr_groups = (*nbr_node)["adjsets/elem_aset/groups"];
-            for (const Node& nbr_adj_group: nbr_groups.children())
-            {
-                index_t_accessor nbr_adj_vals = nbr_adj_group["neighbors"].as_index_t_accessor();
-                if (nbr_adj_vals.number_of_elements() != 1)
+                index_t_accessor neighbor_vals = adj_group["neighbors"].as_index_t_accessor();
+                if (neighbor_vals.number_of_elements() != 1)
                 {
                     CONDUIT_ERROR("Expected pairwise adjset: 1 neighbor per group, got "
                             << neighbor_vals.number_of_elements());
                 }
-                index_t nbr_nbr_idx = nbr_adj_vals[0];
-                if (nbr_nbr_idx == dom_idx)
+                index_t nbr_idx = neighbor_vals[0];
+                const std::string nbr_key = std::to_string(nbr_idx);
+
+                // 1. Get map of points in our current adjset group to destination chunks.
+                const Node& group_adj_map = adjset_maps["to_dom"][nbr_key];
+
+                if (group_adj_map["group_name"].as_string() != adj_group.name())
                 {
-                    // We have the corresponding adjset.
-                    nbr_adjset = &nbr_adj_group;
+                    CONDUIT_ERROR("Group name does not match up with adjset map entry.");
                 }
-            }
-            if (!nbr_adjset)
-            {
-                CONDUIT_ERROR("Expected a corresponding adjset group in the neighbor.");
-            }
-            if ((*nbr_adjset)["values"].dtype().number_of_elements()
-                != adj_group["values"].dtype().number_of_elements())
-            {
-                CONDUIT_ERROR("Shared vertex count in corresponding domain adjsets is not equal.");
-            }
-            // At this point, we have a pair of domains which each have corresponding
-            // adjsets, which we will split for the corresponding decomposed chunks.
 
-            // 2. Get the chunk->vertex maps for both domains.
-            const auto local_chunks_it = dom_2_chunks.find(&domain);
-            const auto remote_chunks_it = dom_2_chunks.find(nbr_node);
-            if (local_chunks_it == dom_2_chunks.end())
-            {
-                CONDUIT_ERROR("Couldn't find local chunks array in domain map.");
-            }
-            if (remote_chunks_it == dom_2_chunks.end())
-            {
-                CONDUIT_ERROR("Couldn't find remote chunks array in domain map.");
-            }
+                index_t_array src_cnk_offsets = group_adj_map["cnk_offsets"].as_index_t_array();
+                index_t_array src_cnk_map = group_adj_map["vtx_map"].as_index_t_array();
 
-            const ChunkToVertsMap& local_chunks = local_chunks_it->second;
-            const ChunkToVertsMap& remote_chunks = remote_chunks_it->second;
+                // 2. Get map of points in corresponding adjset group in other domain.
+                const std::string this_key = std::to_string(dom_idx);
+                const Node& other_group_map
+                    = dom_adjset_maps[nbr_idx][adjset_name]["to_dom"][this_key];
 
-            // 3. Map each shared vertex to the set of chunks it will be a part of.
-            std::vector<std::vector<index_t>> inchunk1
-                = compute_adjset_to_chunk_map(adj_group, local_chunks);
-            std::vector<std::vector<index_t>> inchunk2
-                = compute_adjset_to_chunk_map(*nbr_adjset, remote_chunks);
+                index_t_array dst_cnk_offsets = other_group_map["cnk_offsets"].as_index_t_array();
+                index_t_array dst_cnk_map = other_group_map["vtx_map"].as_index_t_array();
 
-            // Maps (local_chunk, remote_chunk) -> shared vtx on local chunk
-            std::map<std::pair<index_t, index_t>, std::vector<index_t>> new_adjsets;
+                // 3. Get our local shared vertex ids in the adjset group.
+                index_t_accessor local_adj_vals = adj_group["values"].as_index_t_accessor();
 
-            // 4. Loop over pairs of shared vertices in the original adjsets,
-            // in order to build new adjsets.
-            index_t_accessor local_adj_vals = adj_group["values"].as_index_t_accessor();
-            index_t_accessor remote_adj_vals = (*nbr_adjset)["values"].as_index_t_accessor();
-            for (int ipair = 0; ipair < local_adj_vals.number_of_elements(); ipair++)
-            {
-                for (index_t cnk1 : inchunk1[ipair])
+                if (local_adj_vals.number_of_elements() != src_cnk_offsets.number_of_elements())
                 {
-                    for (index_t cnk2 : inchunk2[ipair])
+                    CONDUIT_ERROR("Local vertex-to-chunk map does not contain the same number "
+                                  "of vertices as the local adjset.");
+                }
+
+                if (local_adj_vals.number_of_elements() != src_cnk_offsets.number_of_elements())
+                {
+                    CONDUIT_ERROR("Local vertex-to-chunk map does not contain the same number "
+                                  "of vertices as the local adjset.");
+                }
+
+                index_t nvals = local_adj_vals.number_of_elements();
+                // 4. Iterate through values in the adjset group to create new groups
+                // for each chunk.
+                for (index_t ipair = 0; ipair < nvals; ipair++)
+                {
+                    index_t src_cnk_begin = src_cnk_offsets[ipair];
+                    index_t dst_cnk_begin = dst_cnk_offsets[ipair];
+                    index_t src_cnk_end, dst_cnk_end;
+                    if (ipair+1 < nvals)
                     {
-                        // Add a vertex for adjsets (cnk1 -> cnk2) and (cnk2 -> cnk1)
-                        std::pair<index_t, index_t> cnk1to2 {cnk1, cnk2};
-                        std::pair<index_t, index_t> cnk2to1 {cnk2, cnk1};
-                        // NOTE: these are relative to original-domain vert indices!
-                        new_adjsets[cnk1to2].push_back(local_adj_vals[ipair]);
-                        new_adjsets[cnk2to1].push_back(remote_adj_vals[ipair]);
+                        src_cnk_end = src_cnk_offsets[ipair+1];
+                        dst_cnk_end = dst_cnk_offsets[ipair+1];
                     }
+                    else
+                    {
+                        src_cnk_end = src_cnk_offsets.number_of_elements();
+                        dst_cnk_end = dst_cnk_offsets.number_of_elements();
+                    }
+
+                    for (index_t srci = src_cnk_begin; srci < src_cnk_end; srci++)
+                    {
+                        for (index_t dsti = dst_cnk_begin; dsti < dst_cnk_end; dsti++)
+                        {
+                            index_t src_cnk = src_cnk_map[srci];
+                            index_t dst_cnk = dst_cnk_map[dsti];
+                            std::pair<index_t, index_t> src_2_dst {src_cnk, dst_cnk};
+                            new_adjsets[src_2_dst].push_back(local_adj_vals[ipair]);
+                        }
+                    }
+
                 }
             }
-
             // 5. We now have adjsets for each chunk. Insert them into the adjset
             //    nodes for each corresponding chunk.
-            bool local_single_chunk = (local_chunks.size() == 1);
-            bool remote_single_chunk = (remote_chunks.size() == 1);
             for (const auto& adjset : new_adjsets)
             {
                 index_t chunk_id = adjset.first.first;
                 index_t chunk_nbr = adjset.first.second;
-                if (!adjset_data[chunk_id].has_child("adjsets/elem_aset"))
+                if (!adjset_data[chunk_id].has_child("adjsets/" + adjset_name))
                 {
-                    Node& adjset_new = adjset_data[chunk_id]["adjsets/elem_aset"];
+                    Node& adjset_new = adjset_data[chunk_id]["adjsets"][adjset_name];
                     adjset_new["association"].set("vertex");
                     adjset_new["topology"].set(adjset_topo);
                 }
-                Node& adjset_groups = adjset_data[chunk_id]["adjsets/elem_aset/groups"];
+                Node& adjset_groups = adjset_data[chunk_id]["adjsets"][adjset_name]["groups"];
                 Node& new_set = adjset_groups.append();
                 new_set["neighbors"].set(chunk_nbr);
                 new_set["values"].set(adjset.second);
                 // If we are not the only chunk in the local adjset, the values
                 // are relative to the original domain - flag for remap.
-                if (!local_single_chunk
-                    && local_chunks.find(chunk_id) != local_chunks.end())
+                if (dom_2_chunks.find(&domain)->second.size() > 1)
                 {
                     remap_to_chunk_vid[&domain][chunk_id].push_back(&new_set);
-                }
-                if (!remote_single_chunk
-                    && remote_chunks.find(chunk_id) != remote_chunks.end())
-                {
-                    remap_to_chunk_vid[nbr_node][chunk_id].push_back(&new_set);
                 }
             }
         }
@@ -3680,11 +3714,8 @@ Partitioner::execute(conduit::Node &output)
     std::vector<int> dest_rank, dest_domain, offsets;
     map_chunks(chunks, dest_rank, dest_domain, offsets);
 
-    //index_t chunk_offset = offsets[conduit::relay::mpi::rank(MPI_COMM_WORLD)];
-    index_t chunk_offset = 0;
-
-    build_intradomain_adjsets(chunk_offset, domain_to_chunk_map, adjset_data);
-    build_interdomain_adjsets(domain_to_chunk_map, domain_id_to_node, adjset_data);
+    build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
+    build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
 
     for (int i = 0; i < adjset_data.size(); i++)
     {
