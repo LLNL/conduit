@@ -1752,6 +1752,8 @@ bool
 Partitioner::initialize(const conduit::Node &n_mesh,
                         const conduit::Node &options)
 {
+    init_dom_to_rank_map(n_mesh);
+
     auto doms = conduit::blueprint::mesh::domains(n_mesh);
 
     // Iterate over the selections in the options and check them against the
@@ -3175,13 +3177,20 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
 }
 
 //---------------------------------------------------------------------------
+int
+Partitioner::get_rank_offset(const std::vector<int>& chunk_offsets)
+{
+    // serial case: always as rank zero
+    return chunk_offsets[0];
+}
+
+//---------------------------------------------------------------------------
 void
 Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
                                        const DomainToChunkMap& dom_2_chunks,
                                        std::vector<conduit::Node>& adjset_data)
 {
-    // serial case: always as zero
-    index_t chunk_offset = chunk_offsets[0];
+    index_t chunk_offset = get_rank_offset(chunk_offsets);
     for (const auto& it : dom_2_chunks)
     {
         // Get the chunk ids in the current domain.
@@ -3251,10 +3260,12 @@ Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
 //---------------------------------------------------------------------------
 
 void
-Partitioner::get_prelb_adjset_maps(const DomainToChunkMap& chunks,
+Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                   const DomainToChunkMap& chunks,
                                    const std::map<index_t, const Node*>& domain_map,
                                    std::vector<Node>& adjset_chunk_maps)
 {
+    index_t chunk_offset = get_rank_offset(chunk_offsets);
     //TODO: this should be realloced in the MPI case for max(domain_id)
     adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
 
@@ -3281,7 +3292,7 @@ Partitioner::get_prelb_adjset_maps(const DomainToChunkMap& chunks,
                 vtx_to_cnkid.resize(max_verts);
                 for (index_t idx : cnk.second)
                 {
-                    vtx_to_cnkid[idx].push_back(cnk.first);
+                    vtx_to_cnkid[idx].push_back(cnk.first + chunk_offset);
                 }
             }
         }
@@ -3351,7 +3362,7 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offset,
         std::unordered_map<index_t, std::vector<conduit::Node*>>> remap_to_chunk_vid;
 
     std::vector<Node> dom_adjset_maps;
-    get_prelb_adjset_maps(dom_2_chunks, domain_map, dom_adjset_maps);
+    get_prelb_adjset_maps(chunk_offset, dom_2_chunks, domain_map, dom_adjset_maps);
 
     // Iterate over all local domains to generate new chunk-based adjsets.
     for (const auto& dom_it : domain_map)

@@ -61,6 +61,11 @@ public:
     virtual ~ParallelPartitioner();
 
 protected:
+
+    virtual void init_dom_to_rank_map(const conduit::Node& n_mesh);
+
+    virtual int get_rank_offset(const std::vector<int>& chunk_offsets);
+
     virtual long get_total_selections() const override;
 
     /**
@@ -121,6 +126,7 @@ private:
 
     MPI_Comm     comm;
     MPI_Datatype chunk_info_dt;
+    std::vector<int64> domain_to_rank_map;
 };
 
 //-----------------------------------------------------------------------------

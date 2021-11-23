@@ -311,6 +311,9 @@ public:
                  Node &output);
 
 protected:
+
+    virtual void init_dom_to_rank_map(const conduit::Node& n_mesh) { }
+
     /**
      @brief Examines the selections and counts them to determine a number of
             targets that would be produced. Most selections result in a domain
@@ -616,6 +619,8 @@ protected:
     using ChunkToVertsMap = std::unordered_map<index_t, std::vector<index_t>>;
     using DomainToChunkMap = std::unordered_map<const Node*, ChunkToVertsMap>;
 
+    virtual int get_rank_offset(const std::vector<int>& chunk_offsets);
+
     virtual void build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
                                            const DomainToChunkMap& chunks,
                                            std::vector<conduit::Node>& adjset_data);
@@ -625,7 +630,8 @@ protected:
                                            const std::map<index_t, const Node*>& domain_map,
                                            std::vector<conduit::Node>& adjset_data);
 
-    virtual void get_prelb_adjset_maps(const DomainToChunkMap& chunks,
+    virtual void get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                       const DomainToChunkMap& chunks,
                                        const std::map<index_t, const Node*>& domain_map,
                                        std::vector<Node>& adjset_chunk_maps);
 };

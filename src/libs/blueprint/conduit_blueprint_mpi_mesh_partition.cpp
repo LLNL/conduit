@@ -71,6 +71,28 @@ ParallelPartitioner::~ParallelPartitioner()
 }
 
 //---------------------------------------------------------------------------
+void
+ParallelPartitioner::init_dom_to_rank_map(const conduit::Node &n_mesh)
+{
+    Node d2r_node;
+    conduit::blueprint::mpi::mesh
+        ::generate_domain_to_rank_map(n_mesh, d2r_node, comm);
+    int64_array d2r_data = d2r_node.as_int64_array();
+    domain_to_rank_map.resize(d2r_data.number_of_elements());
+    for (int idx = 0; idx < domain_to_rank_map.size(); idx++)
+    {
+        domain_to_rank_map[idx] = d2r_data[idx];
+    }
+}
+
+//---------------------------------------------------------------------------
+int
+ParallelPartitioner::get_rank_offset(const std::vector<int>& chunk_offsets)
+{
+    return chunk_offsets[rank];
+}
+
+//---------------------------------------------------------------------------
 bool
 ParallelPartitioner::options_get_target(const conduit::Node &options,
                                         unsigned int &value) const
