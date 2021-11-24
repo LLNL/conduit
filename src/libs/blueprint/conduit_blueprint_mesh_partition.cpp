@@ -3266,8 +3266,14 @@ Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
                                    std::vector<Node>& adjset_chunk_maps)
 {
     index_t chunk_offset = get_rank_offset(chunk_offsets);
-    //TODO: this should be realloced in the MPI case for max(domain_id)
-    adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
+
+    // This might be alloced by the derived ParallelPartitioner calling into
+    // this function; otherwise, we allocate based on the largest local domain
+    // index
+    if (adjset_chunk_maps.size() < domain_map.rbegin()->first + 1)
+    {
+        adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
+    }
 
     // Build adjset-to-chunk maps for all of our local domains.
     for (const auto& dom_it : domain_map)
@@ -3322,7 +3328,7 @@ Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
                 if (vtx_to_cnkid.size() == 0)
                 {
                     // single chunk comprises the whole domain
-                    index_t dst_cnk = domain_chunks.begin()->first;
+                    index_t dst_cnk = domain_chunks.begin()->first + chunk_offset;
                     offsets.resize(nvals);
                     std::iota(offsets.begin(), offsets.end(), 0);
                     csr_vtx_map = std::vector<index_t>(nvals, dst_cnk);
@@ -3353,16 +3359,17 @@ Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
 
 //---------------------------------------------------------------------------
 void
-Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offset,
+Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
                                        const DomainToChunkMap& dom_2_chunks,
                                        const std::map<index_t, const Node*>& domain_map,
                                        std::vector<conduit::Node>& adjset_data)
 {
+    index_t chunk_offset = get_rank_offset(chunk_offsets);
     std::unordered_map<const conduit::Node*,
         std::unordered_map<index_t, std::vector<conduit::Node*>>> remap_to_chunk_vid;
 
     std::vector<Node> dom_adjset_maps;
-    get_prelb_adjset_maps(chunk_offset, dom_2_chunks, domain_map, dom_adjset_maps);
+    get_prelb_adjset_maps(chunk_offsets, dom_2_chunks, domain_map, dom_adjset_maps);
 
     // Iterate over all local domains to generate new chunk-based adjsets.
     for (const auto& dom_it : domain_map)
@@ -3462,7 +3469,8 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offset,
             //    nodes for each corresponding chunk.
             for (const auto& adjset : new_adjsets)
             {
-                index_t chunk_id = adjset.first.first;
+                // Get local chunk id
+                index_t chunk_id = adjset.first.first - chunk_offset;
                 index_t chunk_nbr = adjset.first.second;
                 if (!adjset_data[chunk_id].has_child("adjsets/" + adjset_name))
                 {
@@ -3493,8 +3501,8 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offset,
         // remapped.
         for (auto& chunk_adjs : domain_coll.second)
         {
-            index_t chunk_id = chunk_adjs.first;
-            const std::vector<index_t>& vert_set = chunk_2_verts.find(chunk_id)->second;
+            index_t local_chunk_id = chunk_adjs.first;
+            const std::vector<index_t>& vert_set = chunk_2_verts.find(local_chunk_id)->second;
             std::unordered_map<index_t, index_t> old_to_new;
             // Build a map of domain-relative vids to chunk vids
             for (size_t new_vid = 0; new_vid < vert_set.size(); new_vid++)

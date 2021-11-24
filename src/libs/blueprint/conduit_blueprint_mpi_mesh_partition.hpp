@@ -113,6 +113,11 @@ protected:
                                     std::vector<Chunk> &chunks_to_assemble,
                                     std::vector<int> &chunks_to_assemble_domains) override;
 
+    virtual void get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                       const DomainToChunkMap& chunks,
+                                       const std::map<index_t, const Node*>& domain_map,
+                                       std::vector<Node>& adjset_chunk_maps);
+
 private:
     /**
      @brief Creates an MPI structure datatype so we can Allgatherv 3 things
