@@ -3239,15 +3239,17 @@ Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
                 }
 
                 // Add the chunk intersections to their corresponding adjsets.
+                for (Node& adjset_i : adjset_data[i_chunk]["adjsets"].children())
                 {
-                    Node& adjset_groups_i = adjset_data[i_chunk]["adjsets/intradom_tmp/groups"];
+                    Node& adjset_groups_i = adjset_i["groups"];
                     Node& new_set = adjset_groups_i.append();
                     new_set["neighbors"].set(chunk_offset + j_chunk);
                     new_set["values"].set(i_shared);
                 }
 
+                for (Node& adjset_j : adjset_data[j_chunk]["adjsets"].children())
                 {
-                    Node& adjset_groups_j = adjset_data[j_chunk]["adjsets/intradom_tmp/groups"];
+                    Node& adjset_groups_j = adjset_j["groups"];
                     Node& new_set = adjset_groups_j.append();
                     new_set["neighbors"].set(chunk_offset + i_chunk);
                     new_set["values"].set(j_shared);
@@ -3538,11 +3540,6 @@ attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node& chunk
     index_t src_chunk = chunk_adjs["chunk_id"].to_index_t();
     for (const auto& adjsets : chunk_adjs["adjsets"].children())
     {
-        if (adjsets.name() == "intradom_tmp")
-        {
-            // skip for now - we'll add these to all the other adjsets
-            continue;
-        }
         if (!dom["adjsets"].has_child(adjsets.name()))
         {
             // Just take the entire first chunk adjset group, which should have
@@ -3563,20 +3560,6 @@ attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node& chunk
             {
                 // Add each group to the output adjset
                 Node& new_grp = output_adjset_groups.append();
-                new_grp.set(group);
-                new_grp["src_chunk"].set(src_chunk);
-            }
-        }
-    }
-    if (chunk_adjs["adjsets"].has_child("intradom_tmp"))
-    {
-        // Intermediate intradomain adjsets should be added to each "real"
-        // adjset
-        for (auto& out_adjset : dom["adjsets"].children())
-        {
-            for (const auto& group : chunk_adjs["adjsets/intradom_tmp/groups"].children())
-            {
-                Node& new_grp = out_adjset["groups"].append();
                 new_grp.set(group);
                 new_grp["src_chunk"].set(src_chunk);
             }
@@ -3733,8 +3716,8 @@ Partitioner::execute(conduit::Node &output)
     std::vector<int> dest_rank, dest_domain, offsets;
     map_chunks(chunks, dest_rank, dest_domain, offsets);
 
-    build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
     build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
+    build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
 
     for (int i = 0; i < adjset_data.size(); i++)
     {
