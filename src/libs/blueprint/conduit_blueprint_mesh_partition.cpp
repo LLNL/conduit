@@ -3450,8 +3450,8 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
                     }
                     else
                     {
-                        src_cnk_end = src_cnk_offsets.number_of_elements();
-                        dst_cnk_end = dst_cnk_offsets.number_of_elements();
+                        src_cnk_end = src_cnk_map.number_of_elements();
+                        dst_cnk_end = dst_cnk_map.number_of_elements();
                     }
 
                     for (index_t srci = src_cnk_begin; srci < src_cnk_end; srci++)
