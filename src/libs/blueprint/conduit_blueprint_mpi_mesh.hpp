@@ -66,6 +66,11 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           Node &index_out,
                                           MPI_Comm comm);
 
+//
+//  note: the to_poly methods require a structured grid 
+//        with an adjset
+//
+
 void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &n,
                                         conduit::Node &dest,
                                         const std::string& name,
@@ -75,6 +80,12 @@ void CONDUIT_BLUEPRINT_API to_polyhedral(const conduit::Node &n,
                                          conduit::Node &dest,
                                          const std::string& name,
                                          MPI_Comm comm);
+
+void CONDUIT_BLUEPRINT_API to_polytopal(const conduit::Node &n,
+                                        conduit::Node &dest,
+                                        const std::string& name,
+                                        MPI_Comm comm);
+
 
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_domain_to_rank_map(

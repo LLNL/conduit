@@ -271,6 +271,102 @@ number_of_domains(const conduit::Node &n,
 }
 
 //-------------------------------------------------------------------------
+void to_polytopal(const Node &n,
+                  Node &dest,
+                  const std::string& name,
+                  MPI_Comm comm)
+{
+
+    const std::vector<const conduit::Node *> doms = ::conduit::blueprint::mesh::domains(n);
+
+    // make sure all topos match
+    index_t ok = 1;
+    index_t num_doms = (index_t) doms.size();
+    index_t dims = -1;
+
+    for (const auto& dom_ptr : doms)
+    {
+        if(dom_ptr->fetch("topologies").has_child(name))
+        {
+            const Node &topo = dom_ptr->fetch("topologies")[name];
+            if(topo["type"].as_string() == "structured")
+            {
+                dims = topo["elements/dims"].number_of_children();
+            }
+            else
+            {
+                ok = 0;
+            }
+        }else
+        {
+            ok = 0;
+        }
+    }
+    
+    // reduce and check for consistency (all ok, and all doms are either 2d or 3d)
+    Node local, gather;
+    local.set(DataType::index_t(3));
+    index_t_array local_vals = local.value();
+    local_vals[0] = ok;
+    local_vals[1] = num_doms;
+    local_vals[2] = dims;
+
+    // Note: this might be more efficient as
+    // a set of flat gathers into separate arrays
+    relay::mpi::all_gather_using_schema(local,
+                                        gather,
+                                        comm);
+
+    NodeConstIterator gitr =  gather.children();
+    index_t gather_dims = -1;
+    while(gitr.has_next() && (ok == 1))
+    {
+        const Node &curr = gitr.next();
+        index_t_array gather_vals = curr.value();
+        if(gather_vals[0] != 1)
+        {
+            ok = 0;
+        }
+        else
+        {
+            // this proc has domains and we haven't inited dims
+            if( gather_vals[1] > 0 && gather_dims == -1)
+            {
+                gather_dims = gather_vals[2];
+            }
+            else if(gather_vals[1] > 0) // this proc has domains
+            {
+                if(gather_dims != gather_vals[2])
+                {
+                    ok = 0;
+                }
+            }
+        }
+    }
+
+    if(ok == 1)
+    {
+        if(dims == 2)
+        {
+            to_polygonal(n,dest,name,comm);
+        }
+        else if(dims == 3)
+        {
+            to_polyhedral(n,dest,name,comm);
+        }
+        else
+        {
+            CONDUIT_ERROR("to_polytopal only supports 2d or 3d structured toplogies"
+                          " (passed mesh has dims = " << dims  << ")");
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("to_polytopal only supports structured toplogies");
+    }
+}
+
+//-------------------------------------------------------------------------
 void to_polygonal(const Node &n,
                   Node &dest,
                   const std::string& name,

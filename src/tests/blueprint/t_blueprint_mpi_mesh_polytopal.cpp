@@ -295,6 +295,55 @@ TEST(conduit_blueprint_mesh_polytopal, amr_2d_transform_parallel)
     }
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_polytopal, to_polytopal_amr_2d_transform_parallel)
+{
+    Node mesh, info;
+    std::string filename;
+
+    int par_rank;
+    int par_size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &par_size);
+
+    if (par_size == 1) return;
+
+    if (par_rank == 0)
+    {
+        filename = "transform_parallel_0.json";
+
+        Node& domain_0 = mesh["domain_000000"];
+        test_polytopal_create_coarse_domain(domain_0);
+    }
+    else if (par_rank == 1)
+    {
+        filename = "transform_parallel_1.json";
+        Node& domain_1 = mesh["domain_000001"];
+        test_polytopal_create_fine_domain(domain_1);
+    }
+
+    EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
+
+    Node poly;
+    conduit::blueprint::mpi::mesh::to_polytopal(mesh, poly, "topo", MPI_COMM_WORLD);
+
+    EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
+
+    if (par_rank == 0)
+    {
+        Node& mesh_topo = mesh["domain_000000/topologies/topo"];
+        Node& poly_topo = poly["domain_000000/topologies/topo"];
+        test_verify_topologies(mesh_topo, poly_topo);
+    }
+    else if (par_rank == 1)
+    {
+        Node& mesh_topo = mesh["domain_000001/topologies/topo"];
+        Node& poly_topo = poly["domain_000001/topologies/topo"];
+        test_verify_topologies(mesh_topo, poly_topo);
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
     int result = 0;
