@@ -32,6 +32,7 @@
 #include "conduit_endianness.hpp"
 #include "conduit_data_type.hpp"
 #include "conduit_data_array.hpp"
+#include "conduit_data_accessor.hpp"
 #include "conduit_schema.hpp"
 #include "conduit_generator.hpp"
 #include "conduit_node_iterator.hpp"
@@ -3353,6 +3354,34 @@ public:
                 operator long_double_array() const;
             #endif
 
+            /// native c types accessors
+            operator char_accessor() const;
+
+            /// signed integer accessors
+            operator signed_char_accessor()  const;
+            operator signed_short_accessor() const;
+            operator signed_int_accessor()   const;
+            operator signed_long_accessor()  const;
+            #ifdef CONDUIT_HAS_LONG_LONG
+                operator  signed_long_long_accessor() const;
+            #endif
+
+            /// unsigned integer accessors
+            operator unsigned_char_accessor()  const;
+            operator unsigned_short_accessor() const;
+            operator unsigned_int_accessor()   const;
+            operator unsigned_long_accessor()  const;
+            #ifdef CONDUIT_HAS_LONG_LONG
+                operator  unsigned_long_long_accessor() const;
+            #endif
+
+            /// floating point accessors
+            operator float_accessor() const;
+            operator double_accessor() const;
+            #ifdef CONDUIT_USE_LONG_DOUBLE
+                operator long_double_accessor() const;
+            #endif
+
 
         private:
             // This is private we only want conduit::Node to create a
@@ -3464,6 +3493,34 @@ public:
             operator const double_array() const;
             #ifdef CONDUIT_USE_LONG_DOUBLE
                 operator const long_double_array() const;
+            #endif
+
+            // -- as accessor -- //
+            operator char_accessor() const;
+
+            /// signed integer arrays
+            operator signed_char_accessor()  const;
+            operator signed_short_accessor() const;
+            operator signed_int_accessor()   const;
+            operator signed_long_accessor()  const;
+            #ifdef CONDUIT_HAS_LONG_LONG
+                operator  signed_long_long_accessor() const;
+            #endif
+
+            /// unsigned integer arrays
+            operator unsigned_char_accessor()  const;
+            operator unsigned_short_accessor() const;
+            operator unsigned_int_accessor()   const;
+            operator unsigned_long_accessor()  const;
+            #ifdef CONDUIT_HAS_LONG_LONG
+                operator  unsigned_long_long_accessor() const;
+            #endif
+
+            /// floating point arrays
+            operator float_accessor() const;
+            operator double_accessor() const;
+            #ifdef CONDUIT_USE_LONG_DOUBLE
+                operator long_double_accessor() const;
             #endif
 
 
@@ -4010,7 +4067,6 @@ public:
     index_t_array    as_index_t_array() const;
 
     // signed integer array types via conduit::DataArray (const variants)
-
     const int8_array       as_int8_array()  const;
     const int16_array      as_int16_array() const;
     const int32_array      as_int32_array() const;
@@ -4025,6 +4081,26 @@ public:
     // floating point array value via conduit::DataArray (const variants)
     const float32_array    as_float32_array() const;
     const float64_array    as_float64_array() const;
+
+    // signed integer accessors
+    int8_accessor       as_int8_accessor()  const;
+    int16_accessor      as_int16_accessor() const;
+    int32_accessor      as_int32_accessor() const;
+    int64_accessor      as_int64_accessor() const;
+
+    // unsigned integer accessors
+    uint8_accessor      as_uint8_accessor()  const;
+    uint16_accessor     as_uint16_accessor() const;
+    uint32_accessor     as_uint32_accessor() const;
+    uint64_accessor     as_uint64_accessor() const;
+
+    // floating point accessors
+    float32_accessor    as_float32_accessor() const;
+    float64_accessor    as_float64_accessor() const;
+
+    // index type array accessors
+    index_t_accessor    as_index_t_accessor() const;
+
 
     // char8_str cases
     char            *as_char8_str();
@@ -4242,6 +4318,47 @@ public:
 
 #ifdef CONDUIT_USE_LONG_DOUBLE
     const long_double_array  as_long_double_array() const;
+#endif
+
+    // accessors
+
+    // c array accessors
+    char_accessor       as_char_accessor()  const;
+    short_accessor      as_short_accessor() const;
+    int_accessor        as_int_accessor()   const;
+    long_accessor       as_long_accessor()  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    long_long_accessor  as_long_long_accessor() const;
+#endif
+
+    // signed integer accessors
+    signed_char_accessor       as_signed_char_accessor()  const;
+    signed_short_accessor      as_signed_short_accessor() const;
+    signed_int_accessor        as_signed_int_accessor()   const;
+    signed_long_accessor       as_signed_long_accessor()  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    signed_long_long_accessor  as_signed_long_long_accessor() const;
+#endif
+
+
+    // unsigned integer accessors
+    unsigned_char_accessor    as_unsigned_char_accessor()  const;
+    unsigned_short_accessor   as_unsigned_short_accessor() const;
+    unsigned_int_accessor     as_unsigned_int_accessor()   const;
+    unsigned_long_accessor    as_unsigned_long_accessor()  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    unsigned_long_long_accessor  as_unsigned_long_long_accessor() const;
+#endif
+
+    // floating point accessors
+    float_accessor     as_float_accessor()  const;
+    double_accessor    as_double_accessor() const;
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    long_double_accessor  as_long_double_accessor() const;
 #endif
 
 
