@@ -20,6 +20,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added the `conduit::blueprint::mpi::mesh::find_delegate_domain` function, which returns a single delegate domain for the given mesh across MPI ranks (useful when all ranks need mesh information and some ranks can have empty meshes).
 - Added check and transform functions for the newly-designated `pairwise` and `maxshare` variants of `adjsets`. For more information, see the `conduit::blueprint::mesh::adjset` namespace.
 - Added `mesh::topology::unstructured::to_polytopal` as an alias to `mesh::topology::unstructured::to_polygonal`, to reflect that both polygonal and polyhedral are supported.
+- Added `conduit::blueprint::mpi::mesh::to_polytopal` as an alias to `conduit::blueprint::mpi::mesh::to_polygonal` and `conduit::blueprint::mpi::mesh::to_polyhedral`.
+
 
 ### Changed
 
@@ -33,6 +35,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Improved mesh blueprint index generation logic (local and MPI) to support domains with different topos, fields, etc. 
 - Deprecated accepting `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. They issue a `CONDUIT_INFO` message when this detected and future versions will issue a `CONDUIT_ERROR`.
 - An empty Conduit Node is now considered a valid multi-domain mesh. This change was made to make serial uses cases better match sparse MPI multi-domain use cases. Existing code that relied `mesh::verify` to exclude empty Nodes will now need an extra check to see if an input mesh has data.
+- Added MPI communicator argument to `conduit::blueprint::mpi::mesh::to_polygonal` and `conduit::blueprint::mpi::mesh::to_polyhedral`.
+
+
 
 #### Relay
 - Added CMake option (`ENABLE_RELAY_WEBSERVER`, default = `ON`) to control if Conduit's Relay Web Server support is built. Down stream codes can check for support via header ifdef `CONDUIT_RELAY_WEBSERVER_ENABLED` or at runtime in `conduit::relay::about`.
