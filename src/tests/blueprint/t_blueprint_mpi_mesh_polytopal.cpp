@@ -230,7 +230,7 @@ TEST(conduit_blueprint_mesh_polytopal, amr_2d_transform_serial)
 
     Node poly;
 
-    conduit::blueprint::mpi::mesh::to_polygonal(mesh, poly, "topo");
+    conduit::blueprint::mpi::mesh::to_polygonal(mesh, poly, "topo", MPI_COMM_WORLD);
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
 
@@ -277,7 +277,7 @@ TEST(conduit_blueprint_mesh_polytopal, amr_2d_transform_parallel)
 
     Node poly;
 
-    conduit::blueprint::mpi::mesh::to_polygonal(mesh, poly, "topo");
+    conduit::blueprint::mpi::mesh::to_polygonal(mesh, poly, "topo", MPI_COMM_WORLD);
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
 

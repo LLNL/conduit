@@ -273,7 +273,8 @@ number_of_domains(const conduit::Node &n,
 //-------------------------------------------------------------------------
 void to_polygonal(const Node &n,
                   Node &dest,
-                  const std::string& name)
+                  const std::string& name,
+                  MPI_Comm comm)
 {
     // Helper Functions //
 
@@ -450,13 +451,13 @@ void to_polygonal(const Node &n,
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                                 MPI_Send(&ybuffer[0],
                                          ybuffer.size(),
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                             }
                             else if (si == 1 && nbr_size > ref_size)
                             {
@@ -482,12 +483,14 @@ void to_polygonal(const Node &n,
                                              MPI_DOUBLE,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     MPI_Recv(&ybuffer[0],
                                              ybuffer.size(),
-                                             MPI_DOUBLE, nbr_rank,
-                                             nbr_id, MPI_COMM_WORLD,
+                                             MPI_DOUBLE,
+                                             nbr_rank,
+                                             nbr_id,
+                                             comm,
                                              MPI_STATUS_IGNORE);
 
                                 }
@@ -1045,11 +1048,12 @@ bputils::connectivity::SubelemMap& allfaces,
 //-------------------------------------------------------------------------
 void to_polyhedral(const Node &n,
                    Node &dest,
-                   const std::string& name)
+                   const std::string& name,
+                   MPI_Comm comm)
 {
     dest.reset();
 
-    index_t par_rank = relay::mpi::rank(MPI_COMM_WORLD);
+    index_t par_rank = relay::mpi::rank(comm);
 
     NodeConstIterator itr = n.children();
 
@@ -1196,7 +1200,7 @@ void to_polyhedral(const Node &n,
                                          MPI_INT64_T,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
 
                                 std::vector<index_t> vertices;
                                 std::vector<double> xbuffer, ybuffer, zbuffer;
@@ -1294,25 +1298,25 @@ void to_polyhedral(const Node &n,
                                          MPI_INT64_T,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                                 MPI_Send(&xbuffer[0],
                                          xbuffer.size(),
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                                 MPI_Send(&ybuffer[0],
                                          ybuffer.size(),
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                                 MPI_Send(&zbuffer[0],
                                          zbuffer.size(),
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
 
 
                             }
@@ -1637,7 +1641,7 @@ void to_polyhedral(const Node &n,
                                              MPI_INT64_T,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
 
                                     index_t nbr_iwidth = buffer[0];
@@ -1685,28 +1689,28 @@ void to_polyhedral(const Node &n,
                                              MPI_INT64_T,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     MPI_Recv(&xbuffer[0],
                                              xbuffer.size(),
                                              MPI_DOUBLE,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     MPI_Recv(&ybuffer[0],
                                              ybuffer.size(),
                                              MPI_DOUBLE,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     MPI_Recv(&zbuffer[0],
                                              zbuffer.size(),
                                              MPI_DOUBLE,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     index_t v = 0;
                                     for (auto vitr = vertices.begin();
