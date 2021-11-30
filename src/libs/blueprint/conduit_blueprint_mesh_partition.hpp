@@ -307,7 +307,6 @@ public:
      */
     void combine(int domain,
                  const std::vector<const Node *> &inputs,
-                 const std::vector<const Node *> &input_adjsets,
                  Node &output);
 
 protected:
@@ -621,14 +620,14 @@ protected:
 
     virtual int get_rank_offset(const std::vector<int>& chunk_offsets);
 
-    virtual void build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
-                                           const DomainToChunkMap& chunks,
-                                           std::vector<conduit::Node>& adjset_data);
+    void build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
+                                   const DomainToChunkMap& chunks,
+                                   std::vector<conduit::Node*>& adjset_data);
 
-    virtual void build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
-                                           const DomainToChunkMap& chunks,
-                                           const std::map<index_t, const Node*>& domain_map,
-                                           std::vector<conduit::Node>& adjset_data);
+    void build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
+                                   const DomainToChunkMap& chunks,
+                                   const std::map<index_t, const Node*>& domain_map,
+                                   std::vector<conduit::Node*>& adjset_data);
 
     virtual void get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
                                        const DomainToChunkMap& chunks,
