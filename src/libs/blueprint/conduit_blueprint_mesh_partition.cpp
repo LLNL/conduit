@@ -3741,11 +3741,6 @@ Partitioner::execute(conduit::Node &output)
             adjset_data[i]->fetch("chunk_id").set(i+chunk_offset);
         }
     }
-    for (int i = 0; i < adjset_data.size(); i++)
-    {
-        std::cout << "Chunk " << i << " adjset: " << std::endl;
-        adjset_data[i].print();
-    }
 
     // Communicate chunks to the right destination ranks
     std::vector<Chunk> chunks_to_assemble;
