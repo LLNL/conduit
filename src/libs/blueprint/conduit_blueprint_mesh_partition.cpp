@@ -3273,9 +3273,12 @@ Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
     // This might be alloced by the derived ParallelPartitioner calling into
     // this function; otherwise, we allocate based on the largest local domain
     // index
-    if (adjset_chunk_maps.size() < domain_map.rbegin()->first + 1)
+    if (domain_map.size() > 0)
     {
-        adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
+        if (adjset_chunk_maps.size() < domain_map.rbegin()->first + 1)
+        {
+            adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
+        }
     }
 
     // Build adjset-to-chunk maps for all of our local domains.
