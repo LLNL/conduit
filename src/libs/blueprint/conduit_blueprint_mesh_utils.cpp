@@ -14,6 +14,7 @@
 #include <cmath>
 #include <deque>
 #include <string>
+#include <limits>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -822,6 +823,523 @@ find_domain_id(const Node &node)
 
     return domain_id;
 }
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::connectivity --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+connectivity::make_element_2d(std::vector<index_t>& elem,
+                              index_t element,
+                              index_t iwidth)
+{
+    index_t ilo = element % iwidth;
+    index_t jlo = element / iwidth;
+    index_t ihi = ilo + 1;
+    index_t jhi = jlo + 1;
+
+    index_t ilo_jlo = (iwidth+1)*jlo + ilo;
+    index_t ihi_jlo = (iwidth+1)*jlo + ihi;
+    index_t ihi_jhi = (iwidth+1)*jhi + ihi;
+    index_t ilo_jhi = (iwidth+1)*jhi + ilo;
+
+    elem.push_back(ilo_jlo);
+    elem.push_back(ihi_jlo);
+    elem.push_back(ihi_jhi);
+    elem.push_back(ilo_jhi);
+}
+
+
+void
+connectivity::make_element_3d(ElemType& connect,
+                              index_t element,
+                              index_t iwidth,
+                              index_t jwidth,
+                              index_t kwidth,
+                              SubelemMap& faces)
+{
+    index_t ilo = element % iwidth;
+    index_t jlo = (element / iwidth) % jwidth;
+    index_t klo = element / (iwidth*jwidth);
+    index_t ihi = ilo + 1;
+    index_t jhi = jlo + 1;
+    index_t khi = klo + 1;
+
+    index_t jlo_offset = (iwidth+1)*jlo;
+    index_t jhi_offset = (iwidth+1)*jhi;
+    index_t klo_offset = (iwidth+1)*(jwidth+1)*klo;
+    index_t khi_offset = (iwidth+1)*(jwidth+1)*khi;
+
+
+    index_t iface_start = 0; 
+    index_t jface_start = (iwidth+1)*jwidth*kwidth;
+    index_t kface_start = jface_start + iwidth*(jwidth+1)*kwidth;
+
+    //ifaces
+    {
+        index_t j_offset = jlo_offset; 
+        index_t k_offset = (iwidth+1)*jwidth*klo;
+
+        index_t lo_face = iface_start + ilo + j_offset + k_offset;
+        index_t hi_face = iface_start + ihi + j_offset + k_offset;
+
+
+        //ilo face
+        if (faces.find(lo_face) == faces.end())
+        {
+            auto& ilo_face = faces[lo_face];
+            ilo_face.push_back(ilo + jlo_offset + klo_offset);
+            ilo_face.push_back(ilo + jhi_offset + klo_offset);
+            ilo_face.push_back(ilo + jhi_offset + khi_offset);
+            ilo_face.push_back(ilo + jlo_offset + khi_offset);
+        }
+        //ihi face
+        if (faces.find(hi_face) == faces.end())
+        {
+            auto& ihi_face = faces[hi_face];
+            ihi_face.push_back(ihi + jlo_offset + klo_offset);
+            ihi_face.push_back(ihi + jhi_offset + klo_offset);
+            ihi_face.push_back(ihi + jhi_offset + khi_offset);
+            ihi_face.push_back(ihi + jlo_offset + khi_offset);
+        }
+        connect.push_back(lo_face);
+        connect.push_back(hi_face);
+    }
+    //jfaces
+    {
+        index_t i_offset = ilo;  
+        index_t jlo_face_offset = iwidth*jlo; 
+        index_t jhi_face_offset = iwidth*jhi; 
+        index_t k_offset = iwidth*(jwidth+1)*klo;
+
+        index_t lo_face = jface_start + i_offset + jlo_face_offset + k_offset;
+        index_t hi_face = jface_start + i_offset + jhi_face_offset + k_offset;
+
+        //jlo face
+        if (faces.find(lo_face) == faces.end())
+        {
+            auto& jlo_face = faces[lo_face];
+            jlo_face.push_back(ilo + jlo_offset + klo_offset);
+            jlo_face.push_back(ihi + jlo_offset + klo_offset);
+            jlo_face.push_back(ihi + jlo_offset + khi_offset);
+            jlo_face.push_back(ilo + jlo_offset + khi_offset);
+        }
+        //jhi face
+        if (faces.find(hi_face) == faces.end())
+        {
+            auto& jhi_face = faces[hi_face];
+            jhi_face.push_back(ilo + jhi_offset + klo_offset);
+            jhi_face.push_back(ihi + jhi_offset + klo_offset);
+            jhi_face.push_back(ihi + jhi_offset + khi_offset);
+            jhi_face.push_back(ilo + jhi_offset + khi_offset);
+        }
+        connect.push_back(lo_face);
+        connect.push_back(hi_face);
+    }
+    //kfaces
+    {
+        index_t i_offset = ilo;  
+        index_t j_offset = iwidth*jlo; 
+        index_t klo_face_offset = iwidth*jwidth*klo;
+        index_t khi_face_offset = iwidth*jwidth*khi;
+
+        index_t lo_face = kface_start + i_offset + j_offset + klo_face_offset;
+        index_t hi_face = kface_start + i_offset + j_offset + khi_face_offset;
+
+        //klo face
+        if (faces.find(lo_face) == faces.end())
+        {
+            auto& klo_face = faces[lo_face];
+            klo_face.push_back(ilo + jlo_offset + klo_offset);
+            klo_face.push_back(ihi + jlo_offset + klo_offset);
+            klo_face.push_back(ihi + jhi_offset + klo_offset);
+            klo_face.push_back(ilo + jhi_offset + klo_offset);
+        }
+        //khi face
+        if (faces.find(hi_face) == faces.end())
+        {
+            auto& khi_face = faces[hi_face];
+            khi_face.push_back(ilo + jlo_offset + khi_offset);
+            khi_face.push_back(ihi + jlo_offset + khi_offset);
+            khi_face.push_back(ihi + jhi_offset + khi_offset);
+            khi_face.push_back(ilo + jhi_offset + khi_offset);
+        }
+        connect.push_back(/*kface_start +*/lo_face);
+        connect.push_back(/*kface_start +*/hi_face);
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+void
+connectivity::create_elements_2d(const Node& ref_win,
+                                 index_t i_lo,
+                                 index_t j_lo,
+                                 index_t iwidth,
+                                 std::map<index_t, std::vector<index_t> >& elems)
+{
+    index_t origin_iref = ref_win["origin/i"].to_index_t();
+    index_t origin_jref = ref_win["origin/j"].to_index_t();
+
+    index_t ref_size_i = ref_win["dims/i"].to_index_t();
+    index_t ref_size_j = ref_win["dims/j"].to_index_t();
+
+    if (ref_size_i == 1)
+    {
+        index_t jstart = origin_jref - j_lo;
+        index_t jend = origin_jref - j_lo + ref_size_j - 1;
+        if (origin_iref == i_lo)
+        {
+            for (index_t jidx = jstart; jidx < jend; ++jidx)
+            {
+                index_t offset = jidx * iwidth;
+                auto& elem_conn = elems[offset];
+                if (elem_conn.empty())
+                {
+                    connectivity::make_element_2d(elem_conn,
+                                                  offset,
+                                                  iwidth);
+                }
+            }
+        }
+        else
+        {
+            for (index_t jidx = jstart; jidx < jend; ++jidx)
+            {
+                index_t offset = jidx * iwidth + (origin_iref - i_lo - 1);
+                auto& elem_conn = elems[offset];
+                if (elem_conn.empty())
+                {
+                    connectivity::make_element_2d(elem_conn,
+                                                  offset,
+                                                  iwidth);
+                }
+            }
+        }
+    }
+    else if (ref_size_j == 1)
+    {
+        index_t istart = origin_iref - i_lo;
+        index_t iend = origin_iref - i_lo + ref_size_i - 1;
+        if (origin_jref == j_lo)
+        {
+            for (index_t iidx = istart; iidx < iend; ++iidx)
+            {
+                auto& elem_conn = elems[iidx];
+                if (elem_conn.empty())
+                {
+                    connectivity::make_element_2d(elem_conn,
+                                                  iidx,
+                                                  iwidth);
+                }
+            }
+        }
+        else
+        {
+            for (index_t iidx = istart; iidx < iend; ++iidx)
+            {
+                index_t offset = iidx + ((origin_jref - j_lo - 1) * iwidth);
+                auto& elem_conn = elems[offset];
+                if (elem_conn.empty())
+                {
+                    connectivity::make_element_2d(elem_conn,
+                                                  offset,
+                                                  iwidth);
+                }
+            }
+        }
+    }
+
+    index_t istart = origin_iref - i_lo;
+    index_t jstart = origin_jref - j_lo;
+    index_t iend = istart + ref_size_i - 1;
+    index_t jend = jstart + ref_size_j - 1;
+
+    if (ref_size_i == 1)
+    {
+        if (origin_iref != i_lo)
+        {
+            --istart;
+        }
+        iend = istart + 1;
+    }
+    if (ref_size_j == 1)
+    {
+        if (origin_jref != j_lo)
+        {
+            --jstart;
+        }
+        jend = jstart + 1;
+    }
+
+    for (index_t jidx = jstart; jidx < jend; ++jidx)
+    {
+        index_t joffset = jidx * iwidth;
+        for (index_t iidx = istart; iidx < iend; ++iidx)
+        {
+            index_t offset = joffset + iidx;
+            auto& elem_conn = elems[offset];
+            if (elem_conn.empty())
+            {
+                 connectivity::make_element_2d(elem_conn,
+                                               offset,
+                                               iwidth);
+            }
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void
+connectivity::create_elements_3d(const Node& ref_win,
+                                       index_t i_lo,
+                                       index_t j_lo,
+                                       index_t k_lo,
+                                       index_t iwidth,
+                                       index_t jwidth,
+                                       index_t kwidth,
+                                       std::map<index_t, ElemType>& elems,
+                                       SubelemMap& faces)
+{
+    index_t origin_iref = ref_win["origin/i"].to_index_t();
+    index_t origin_jref = ref_win["origin/j"].to_index_t();
+    index_t origin_kref = ref_win["origin/k"].to_index_t();
+
+    index_t ref_size_i = ref_win["dims/i"].to_index_t();
+    index_t ref_size_j = ref_win["dims/j"].to_index_t();
+    index_t ref_size_k = ref_win["dims/k"].to_index_t();
+
+    index_t istart = origin_iref - i_lo;
+    index_t jstart = origin_jref - j_lo;
+    index_t kstart = origin_kref - k_lo;
+    index_t iend = istart + ref_size_i - 1;
+    index_t jend = jstart + ref_size_j - 1;
+    index_t kend = kstart + ref_size_k - 1;
+
+    if (ref_size_i == 1)
+    {
+        iend = istart + 1;
+    }
+    if (ref_size_j == 1)
+    {
+        jend = jstart + 1;
+    }
+    if (ref_size_k == 1)
+    {
+        kend = kstart + 1;
+    }
+
+    for (index_t kidx = kstart; kidx < kend; ++kidx)
+    {
+        index_t koffset = kidx * iwidth * jwidth;
+        for (index_t jidx = jstart; jidx < jend; ++jidx)
+        {
+            index_t joffset = jidx * iwidth; 
+            for (index_t iidx = istart; iidx < iend; ++iidx)
+            {
+                index_t offset = koffset + joffset + iidx;
+                auto& elem_conn = elems[offset];
+                if (elem_conn.empty())
+                {
+                     connectivity::make_element_3d(elem_conn,
+                                                   offset,
+                                                   iwidth,
+                                                   jwidth,
+                                                   kwidth,
+                                                   faces);
+                }
+            }
+        }
+    }
+}
+
+void
+connectivity::connect_elements_3d(const Node& ref_win,
+                                        index_t i_lo,
+                                        index_t j_lo,
+                                        index_t k_lo,
+                                        index_t iwidth,
+                                        index_t jwidth,
+                                        index_t& new_vertex,
+                                        std::map<index_t, ElemType>& elems)
+{
+    index_t origin_iref = ref_win["origin/i"].to_index_t();
+    index_t origin_jref = ref_win["origin/j"].to_index_t();
+    index_t origin_kref = ref_win["origin/k"].to_index_t();
+
+    index_t ref_size_i = ref_win["dims/i"].to_index_t();
+    index_t ref_size_j = ref_win["dims/j"].to_index_t();
+    index_t ref_size_k = ref_win["dims/k"].to_index_t();
+
+    index_t kstart = origin_kref - k_lo;
+    index_t kend = origin_kref - k_lo + ref_size_k - 1;
+    if (kstart == kend) kend = kstart + 1;
+    index_t jstart = origin_jref - j_lo;
+    index_t jend = origin_jref - j_lo + ref_size_j - 1;
+    if (jstart == jend) jend = jstart + 1;
+    index_t istart = origin_iref - i_lo;
+    index_t iend = origin_iref - i_lo + ref_size_i - 1;
+    if (istart == iend) iend = istart + 1;
+
+    for (index_t kidx = kstart; kidx < kend; ++kidx)
+    {
+        for (index_t jidx = jstart; jidx < jend; ++jidx)
+        {
+            for (index_t iidx = istart; iidx < iend; ++iidx)
+            {
+                index_t offset = kidx*iwidth*jwidth + jidx*iwidth + iidx;
+                auto& elem_conn = elems[offset];
+                elem_conn.push_back(new_vertex);
+                ++new_vertex;
+            }
+        }
+    }
+}
+
+void
+connectivity::connect_elements_2d(const Node& ref_win,
+                                  index_t i_lo,
+                                  index_t j_lo,
+                                  index_t iwidth,
+                                  index_t ratio,
+                                  index_t& new_vertex,
+                                  std::map<index_t, std::vector<index_t> >& elems)
+{
+    index_t origin_iref = ref_win["origin/i"].to_index_t();
+    index_t origin_jref = ref_win["origin/j"].to_index_t();
+
+    index_t ref_size_i = ref_win["dims/i"].to_index_t();
+    index_t ref_size_j = ref_win["dims/j"].to_index_t();
+
+    if (ref_size_i == 1)
+    {
+        index_t jstart = origin_jref - j_lo;
+        index_t jend = origin_jref - j_lo + ref_size_j - 1;
+        if (origin_iref == i_lo)
+        {
+            for (index_t jidx = jstart; jidx < jend; ++jidx)
+            {
+                index_t offset = jidx * (iwidth);
+                auto& elem_conn = elems[offset];
+                if (ratio > 1)
+                {
+                    for (index_t nr = ratio-1; nr > 0; --nr)
+                    {
+                        elem_conn.push_back(new_vertex+nr-1);
+                    }
+                    new_vertex += ratio - 1;
+                }
+            }
+        }
+        else
+        {
+            for (index_t jidx = jstart; jidx < jend; ++jidx)
+            {
+                index_t offset = jidx * iwidth + (origin_iref - i_lo - 1);
+                auto& elem_conn = elems[offset];
+                if (ratio > 1)
+                {
+                    size_t new_size = elem_conn.size() + ratio - 1;
+                    elem_conn.resize(new_size);
+                    index_t corner = 1;
+                    if (elem_conn[1] - elem_conn[0] != 1)
+                    {
+                        index_t ioff = offset % iwidth;
+                        index_t joff = offset / iwidth;
+                        index_t target = (iwidth+1)*joff + ioff + 1;
+                        for (index_t nr = 1; nr < 1+ratio; ++nr)
+                        {
+                            if (elem_conn[nr] == target)
+                            {
+                                corner = nr;
+                                break;
+                            }
+                        }
+                    }
+                    for (index_t nr = new_size-1; nr > corner+ratio-1; --nr)
+                    {
+                        elem_conn[nr] = elem_conn[nr-ratio+1];
+                    }
+                    for (index_t nr = corner+1; nr < corner+ratio; ++nr)
+                    {
+                        elem_conn[nr] = new_vertex;
+                        ++new_vertex;
+                    }
+                }
+            }
+        }
+    }
+    else if (ref_size_j == 1)
+    {
+        index_t istart = origin_iref - i_lo;
+        index_t iend = origin_iref - i_lo + ref_size_i - 1;
+        if (origin_jref == j_lo)
+        {
+            for (index_t iidx = istart; iidx < iend; ++iidx)
+            {
+                auto& elem_conn = elems[iidx];
+                if (ratio > 1)
+                {
+                    size_t new_size = elem_conn.size() + ratio - 1;
+                    elem_conn.resize(new_size);
+                    for (index_t nr = new_size-1; nr > 1; --nr)
+                    {
+                        elem_conn[nr] = elem_conn[nr-ratio+1];
+                    }
+                    for (index_t nr = 1; nr < ratio; ++nr)
+                    {
+                        elem_conn[nr] = (new_vertex+nr-1);
+                    }
+                    new_vertex += ratio - 1;
+                }
+            }
+        }
+        else
+        {
+            for (index_t iidx = istart; iidx < iend; ++iidx)
+            {
+                index_t offset = iidx + ((origin_jref - j_lo - 1) * iwidth);
+                auto& elem_conn = elems[offset];
+                if (ratio > 1)
+                {
+                    size_t old_size = elem_conn.size();
+                    size_t new_size = old_size + ratio - 1;
+                    elem_conn.resize(new_size);
+                    index_t corner = 2;
+                    if (old_size != 4)
+                    {
+                        index_t ioff = offset % iwidth;
+                        index_t joff = offset / iwidth;
+                        index_t target = (iwidth+1)*(joff+1) + ioff + 1;
+                        for (index_t nr = 3; nr < 3+ratio; ++nr)
+                        {
+                            if (elem_conn[nr] == target) {
+                                corner = nr;
+                                break;
+                            }
+                        }
+                    }
+                    for (index_t nr = new_size-1; nr > corner+ratio-1; --nr)
+                    {
+                        elem_conn[nr] = elem_conn[nr-ratio+1];
+                    }
+                    for (index_t nr = corner+ratio-1; nr > corner; --nr) {
+                        elem_conn[nr] = new_vertex;
+                        ++new_vertex;
+                    }
+                }
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::connectivity --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::coordset --

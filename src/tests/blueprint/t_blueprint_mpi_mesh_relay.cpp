@@ -322,7 +322,7 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
 
     // globally, expect par_size domains
     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),1);
-    
+
 
 }
 
@@ -471,7 +471,7 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
-        
+
         // read the mesh back in diff to make sure we have the same data
         Node n_read, info;
         relay::mpi::io::blueprint::read_mesh(output_base + ".cycle_000000.root",
@@ -489,16 +489,118 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
         EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read, comm), 7);
 
         std::cout << "par_rank " << par_rank << "  read # of children " << n_read.number_of_children();
-        // in all cases we expect 7 domains to match 
+        // in all cases we expect 7 domains to match
         for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
         {
             EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
         }
-        
+
     }
 
     // read this back using read_mesh
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_relay, spiral_root_only)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // only run this test if hdf5 is enabled
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("hdf5 is disabled, skipping hdf5 dependent test");
+        return;
+    }
+
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    CONDUIT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+
+    //
+    // Create an example mesh, spiral , with 7 domains
+    //
+    Node data, verify_info;
+
+    conduit::blueprint::mesh::examples::spiral(7,data);
+
+    // rank 0 gets first 4 domains, rank 1 gets the rest
+    if(par_rank == 0)
+    {
+        data.remove(4);
+        data.remove(4);
+        data.remove(4);
+    }
+    else if(par_rank == 1)
+    {
+        data.remove(0);
+        data.remove(0);
+        data.remove(0);
+        data.remove(0);
+    }
+    else
+    {
+        // cyrus was wrong about 2 mpi ranks.
+        EXPECT_TRUE(false);
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // try root only mode
+    
+    Node opts;
+    opts["suffix"] = "none";
+    opts["file_style"] = "root_only";
+    std::string tout_base = "tout_relay_mpi_spiral_root_only_hdf5";
+
+    remove_path_if_exists(tout_base + ".root");
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                  tout_base,
+                                                  "hdf5",
+                                                  opts,
+                                                  comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".root"));
+
+
+
+    // read the mesh back in diff to make sure we have the same data
+    Node n_read, info;
+    relay::mpi::io::blueprint::read_mesh(tout_base + ".root",
+                                         n_read,
+                                         comm);
+
+    // rank 0 will have 4, rank 1 wil have 3
+    int num_local_domains = 4;
+    if(par_rank != 0)
+    {
+        num_local_domains = 3;
+    }
+
+    // total doms should be 7
+    EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read, comm), 7);
+
+    std::cout << "par_rank " << par_rank << "  read # of children " << n_read.number_of_children();
+    // in all cases we expect 7 domains to match
+    for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
+    {
+        EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
+    }
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(blueprint_mpi_relay, test_write_error_hang)
@@ -519,7 +621,7 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
 
 
     std::string output_base = "tout_relay_mpi_mesh_save_load_truncate";
-    
+
     Node data;
 
     // 6 doms (2 per mpi task)
@@ -612,7 +714,7 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
     // total doms should be 6,
     EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read,comm), 6);
 
-    // each task has 3 local doms, check them 
+    // each task has 3 local doms, check them
     for(int dom_idx=0; dom_idx < 3; dom_idx++)
     {
         EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));

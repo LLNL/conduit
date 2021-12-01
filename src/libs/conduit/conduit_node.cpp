@@ -12505,6 +12505,14 @@ Node::to_summary_string(const conduit::Node &opts)const
 
 //-----------------------------------------------------------------------------
 void
+Node::to_summary_string_stream(std::ostream &os) const
+{
+    Node opts;
+     to_summary_string_stream(os,opts);
+}
+
+//-----------------------------------------------------------------------------
+void
 Node::to_summary_string_stream(std::ostream &os,
                                const conduit::Node &opts) const
 {
@@ -13719,7 +13727,7 @@ Node::info()const
 void
 Node::print() const
 {
-    to_string_stream(std::cout);
+    to_summary_string_stream(std::cout);
     std::cout << std::endl;
 }
 

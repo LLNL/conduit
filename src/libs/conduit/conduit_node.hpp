@@ -3616,6 +3616,7 @@ public:
 
     std::string         to_summary_string() const;
     std::string         to_summary_string(const conduit::Node &opts) const;
+    void                to_summary_string_stream(std::ostream &os) const;
     void                to_summary_string_stream(std::ostream &os,
                                                  const conduit::Node &opts) const;
     void                to_summary_string_stream(const std::string &stream_path,

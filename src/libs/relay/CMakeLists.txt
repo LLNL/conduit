@@ -41,16 +41,8 @@ if(MPI_FOUND)
 endif()
 
 if(ENABLE_RELAY_WEBSERVER)
-  SET(CONDUIT_RELAY_WEBSERVER_ENABLED TRUE CACHE STRING "" FORCE)
-else()
-  SET(CONDUIT_RELAY_WEBSERVER_ENABLED FALSE CACHE STRING "" FORCE)
+    SET(CONDUIT_RELAY_WEBSERVER_ENABLED TRUE)
 endif()
-
-# CONDUIT_RELAY_WEBSERVER_ENABLED is used when we export our
-# cmake config (it's basically an output variable )
-# we mark it as advanced b/c otherwise folks may see it in ccmake or
-# the cmake gui  and think they should be setting it
-mark_as_advanced(CONDUIT_RELAY_WEBSERVER_ENABLED)
 
 
 convert_to_native_escaped_file_path(${CMAKE_CURRENT_SOURCE_DIR}
