@@ -348,6 +348,16 @@ namespace topology
         void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &topo,
                                                 conduit::Node &dest);
 
+        // Note: 
+        // this is an alias to `to_polygonal`
+        // to_polytopal is a better name for our existing to_polygonal
+        // since it supports both polygons and polyhedra
+        // to_polygonal may be deprecated in the future
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API to_polytopal(const conduit::Node &topo,
+                                                conduit::Node &dest);
+
+
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_points(const conduit::Node &topo,
                                                    conduit::Node &dest,

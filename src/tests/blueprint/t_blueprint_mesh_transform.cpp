@@ -549,6 +549,26 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, to_poly_alias_call)
+{
+    
+    Node topo_mesh, info;
+    blueprint::mesh::examples::braid("hexs",
+                                     5,
+                                     5,
+                                     5,
+                                     topo_mesh);
+    const Node &topo_node = topo_mesh["topologies"].child(0);
+
+    Node topo_poly_call1, topo_poly_call2;
+    blueprint::mesh::topology::unstructured::to_polygonal(topo_node,
+                                                          topo_poly_call1);
+    blueprint::mesh::topology::unstructured::to_polytopal(topo_node,
+                                                          topo_poly_call2);
+    EXPECT_FALSE(topo_poly_call1.diff(topo_poly_call2, info));
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_transform, adjset_transforms)
 {
     // run test -> pairwise, then test -> pairwise -> maxshare

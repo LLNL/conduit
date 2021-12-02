@@ -2666,6 +2666,15 @@ mesh::topology::unstructured::verify(const Node &topo,
     return res;
 }
 
+
+//-----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::to_polytopal(const Node &topo,
+                                           Node &dest)
+{
+    to_polygonal(topo,dest);
+}
+
 //-----------------------------------------------------------------------------
 void
 mesh::topology::unstructured::to_polygonal(const Node &topo,

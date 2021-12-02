@@ -15656,7 +15656,7 @@ Node::as_signed_long_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SIGNED_LONG_ID,
-                        "as_signed_ong_ptr() const",
+                        "as_signed_long_ptr() const",
                         NULL);
     return (signed long*)element_ptr(0);
 }
@@ -16150,7 +16150,7 @@ Node::as_signed_long_long_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
-                        "as_signed_ong_long_array() const",
+                        "as_signed_long_long_array() const",
                         signed_long_long_array());
     return signed_long_long_array(m_data,dtype());
 }
