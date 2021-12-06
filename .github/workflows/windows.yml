@@ -9,8 +9,10 @@ jobs:
     name: MSVC Base Release with Python
     runs-on: windows-latest   
     steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
     - name: Setup Python Env
-      run: python3 -m pip install --upgrade pip numpy
+      run: python3 -m pip install --upgrade pip numpy mpi4py
     - uses: actions/checkout@v2
       with: 
         submodules: 'recursive'
@@ -18,15 +20,20 @@ jobs:
       run: |
         cmake -S src -B build            `
               -DCMAKE_BUILD_TYPE=Release `
-              -DENABLE_PYTHON=ON
+              -DENABLE_PYTHON=ON         `
+              -DENABLE_MPI=ON
         cmake --build build --config Release --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
   build_windows_clang:
     name: Clang Base Debug
     runs-on: windows-2019
     steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
     - name: Setup Python Env
-      run: python3 -m pip install --upgrade pip numpy
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
     - uses: actions/checkout@v2
       with: 
         submodules: 'recursive'
@@ -39,6 +46,7 @@ jobs:
                 -G "Ninja"                    ^
                 -DCMAKE_C_COMPILER=clang-cl   ^
                 -DCMAKE_CXX_COMPILER=clang-cl ^
-                -DCMAKE_BUILD_TYPE=Debug
+                -DCMAKE_BUILD_TYPE=Debug      ^
+                -DENABLE_MPI=ON
         cmake --build build --config Debug --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target test
