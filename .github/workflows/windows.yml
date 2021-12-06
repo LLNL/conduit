@@ -28,12 +28,8 @@ jobs:
     name: Clang Base Debug
     runs-on: windows-2019
     steps:
-    - name: Setup MPI
-      uses: mpi4py/setup-mpi@v1
     - name: Setup Python Env
       run: python3 -m pip install --upgrade pip numpy mpi4py
-    - name: Setup MPI
-      uses: mpi4py/setup-mpi@v1
     - uses: actions/checkout@v2
       with: 
         submodules: 'recursive'
@@ -46,7 +42,6 @@ jobs:
                 -G "Ninja"                    ^
                 -DCMAKE_C_COMPILER=clang-cl   ^
                 -DCMAKE_CXX_COMPILER=clang-cl ^
-                -DCMAKE_BUILD_TYPE=Debug      ^
-                -DENABLE_MPI=ON
+                -DCMAKE_BUILD_TYPE=Debug
         cmake --build build --config Debug --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target test
