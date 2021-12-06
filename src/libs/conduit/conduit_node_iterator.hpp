@@ -210,7 +210,7 @@ public:
  */
 //-----------------------------------------------------------------------------
 NodeChildIterator
-operator+(index_t lhs, NodeChildIterator const &rhs);
+CONDUIT_API operator+(index_t lhs, NodeChildIterator const &rhs);
 
 /**
  * A random access const iterator which iterates over the children of a node.
@@ -250,7 +250,7 @@ public:
  */
 //-----------------------------------------------------------------------------
 NodeConstChildIterator
-operator+(index_t lhs, NodeConstChildIterator const &rhs);
+CONDUIT_API operator+(index_t lhs, NodeConstChildIterator const &rhs);
 
 
 // forward declare NodeConstIterator so it can be a used as a friend
