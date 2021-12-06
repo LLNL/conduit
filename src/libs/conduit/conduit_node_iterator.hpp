@@ -179,19 +179,7 @@ private:
     index_t m_index;
 };
 
-/**
- * Add an offset to an iterator when the iterator is on the right-hand side.
- *
- * @tparam NodeIter the type of the iterator
- *
- * @param lhs the offset to add to the iterator
- * @param rhs the iterator to which to add the offset
- * @return the offset iterator
- */
-template<typename NodeIter>
-NodeIter operator+(index_t lhs, NodeIter const &rhs) {
-    return rhs + lhs;
-}
+
 
 /**
  * A random access iterator which iterates over the children of a node.
@@ -209,6 +197,20 @@ public:
     explicit NodeChildIterator(pointer parent, index_t index=0) :
             NodeChildIteratorBase<Node&, Node*, NodeChildIterator>(parent, index) {}
 };
+
+//-----------------------------------------------------------------------------
+/**
+ * Add an offset to an iterator when the iterator is on the right-hand side.
+ *
+ * @tparam NodeIter the type of the iterator
+ *
+ * @param lhs the offset to add to the iterator
+ * @param rhs the iterator to which to add the offset
+ * @return the offset iterator
+ */
+//-----------------------------------------------------------------------------
+NodeChildIterator
+operator+(index_t lhs, NodeChildIterator const &rhs);
 
 /**
  * A random access const iterator which iterates over the children of a node.
@@ -235,6 +237,21 @@ public:
     explicit NodeConstChildIterator(pointer parent, index_t index=0) :
             NodeChildIteratorBase<Node const &, Node const *, NodeConstChildIterator>(parent, index) {}
 };
+
+//-----------------------------------------------------------------------------
+/**
+ * Add an offset to an iterator when the iterator is on the right-hand side.
+ *
+ * @tparam NodeIter the type of the iterator
+ *
+ * @param lhs the offset to add to the iterator
+ * @param rhs the iterator to which to add the offset
+ * @return the offset iterator
+ */
+//-----------------------------------------------------------------------------
+NodeConstChildIterator
+operator+(index_t lhs, NodeConstChildIterator const &rhs);
+
 
 // forward declare NodeConstIterator so it can be a used as a friend
 // to NodeIterator
