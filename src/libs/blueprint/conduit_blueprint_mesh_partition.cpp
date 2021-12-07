@@ -3239,6 +3239,11 @@ Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
                     }
                 }
 
+                if (adjset_data[i_chunk] == nullptr || adjset_data[j_chunk] == nullptr)
+                {
+                    continue;
+                }
+
                 // Add the chunk intersections to their corresponding adjsets.
                 for (Node& adjset_i : adjset_data[i_chunk]->children())
                 {
@@ -3535,6 +3540,10 @@ attach_chunk_adjset_to_single_dom(conduit::Node& dom, index_t src_chunk, const c
     Node tmp_node;
     if (chunk_adjs == nullptr)
     {
+        if (!dom.has_child("adjsets"))
+        {
+            return;
+        }
         tmp_node = dom.fetch("adjsets");
         dom.remove("adjsets");
         chunk_adjs = &tmp_node;
@@ -3694,18 +3703,22 @@ Partitioner::execute(conduit::Node &output)
             // the whole mesh rather than extracting. If we are using "mapping"
             // then we will be wrapping the mesh so we can add vertex and element
             // maps to it without changing the input mesh.
+            conduit::Node* wrapped_adjset = nullptr;
             if(mapping || meshes[i]->has_child("adjsets"))
             {
                 conduit::Node *c = wrap(i, *meshes[i]);
 
                 chunks.push_back(Chunk(c, true, dr, dd));
-                adjset_data.push_back(c->fetch_ptr("adjsets"));
+                if (meshes[i]->has_child("adjsets"))
+                {
+                    wrapped_adjset = c->fetch_ptr("adjsets");
+                }
             }
             else
             {
                 chunks.push_back(Chunk(meshes[i], false, dr, dd));
-                adjset_data.push_back(nullptr);
             }
+            adjset_data.push_back(wrapped_adjset);
             domain_to_chunk_map[meshes[i]][i] = {};
         }
         else
@@ -3713,7 +3726,14 @@ Partitioner::execute(conduit::Node &output)
             std::vector<index_t> vert_ids;
             conduit::Node *c = extract(i, *meshes[i], vert_ids);
             chunks.push_back(Chunk(c, true, dr, dd));
-            adjset_data.push_back(c->fetch_ptr("adjsets"));
+            if (meshes[i]->has_child("adjsets"))
+            {
+                adjset_data.push_back(c->fetch_ptr("adjsets"));
+            }
+            else
+            {
+                adjset_data.push_back(nullptr);
+            }
             domain_to_chunk_map[meshes[i]][i] = std::move(vert_ids);
         }
     }
@@ -3785,8 +3805,6 @@ Partitioner::execute(conduit::Node &output)
             {
                 merge_chunked_adjsets((*new_dom)["adjsets"], dest_domain);
             }
-            std::cout << "Domain " << *dom << " after adjset merge:" << std::endl;
-            std::cout << (*new_dom)["adjsets"].to_summary_string();
         }
     }
 
