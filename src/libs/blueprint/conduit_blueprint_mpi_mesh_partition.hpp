@@ -111,7 +111,8 @@ protected:
                                     const std::vector<int> &dest_domain,
                                     const std::vector<int> &offsets,
                                     std::vector<Chunk> &chunks_to_assemble,
-                                    std::vector<int> &chunks_to_assemble_domains) override;
+                                    std::vector<int> &chunks_to_assemble_domains,
+                                    std::vector<int> &chunks_to_assemble_gids) override;
 
     virtual void get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
                                        const DomainToChunkMap& chunks,

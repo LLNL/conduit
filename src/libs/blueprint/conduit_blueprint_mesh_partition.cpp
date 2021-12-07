@@ -3530,7 +3530,7 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
 
 //---------------------------------------------------------------------------
 static void
-attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node* chunk_adjs = nullptr)
+attach_chunk_adjset_to_single_dom(conduit::Node& dom, index_t src_chunk, const conduit::Node* chunk_adjs = nullptr)
 {
     Node tmp_node;
     if (chunk_adjs == nullptr)
@@ -3541,10 +3541,8 @@ attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node* chunk
     }
 
     // TODO: should we create adjsets in the single-dom case? (ie no pre-existing adjset)
-    index_t src_chunk = chunk_adjs->fetch("chunk_id").to_index_t();
     for (const auto& adjsets : chunk_adjs->children())
     {
-        if (adjsets.name() == "chunk_id") { continue; }
         if (!dom["adjsets"].has_child(adjsets.name()))
         {
             // Just take the entire first chunk adjset group, which should have
@@ -3728,20 +3726,14 @@ Partitioner::execute(conduit::Node &output)
     build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
     build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
 
-    index_t chunk_offset = get_rank_offset(offsets);
-    for (size_t i = 0; i < adjset_data.size(); i++)
-    {
-        if (adjset_data[i])
-        {
-            adjset_data[i]->fetch("chunk_id").set(i+chunk_offset);
-        }
-    }
-
     // Communicate chunks to the right destination ranks
     std::vector<Chunk> chunks_to_assemble;
     std::vector<int> chunks_to_assemble_domains;
+    std::vector<int> chunks_to_assemble_gids;
     communicate_chunks(chunks, dest_rank, dest_domain, offsets,
-        chunks_to_assemble, chunks_to_assemble_domains);
+        chunks_to_assemble,
+        chunks_to_assemble_domains,
+        chunks_to_assemble_gids);
 
     // Now that we have all the parts we need in chunks_to_assemble, combine
     // the chunks.
@@ -3764,6 +3756,7 @@ Partitioner::execute(conduit::Node &output)
                 if(chunks_to_assemble_domains[i] == *dom)
                 {
                     this_dom_chunks.push_back(chunks_to_assemble[i].mesh);
+                    this_dom_cnkid.push_back(chunks_to_assemble_gids[i]);
                 }
             }
 
@@ -3780,15 +3773,12 @@ Partitioner::execute(conduit::Node &output)
             {
                 new_dom->set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
 
-                std::cout << "Domain " << *dom << " has only one chunk: " << std::endl;
-                std::cout << new_dom->to_summary_string();
-
-                attach_chunk_adjset_to_single_dom(*new_dom);
+                attach_chunk_adjset_to_single_dom(*new_dom, this_dom_cnkid[0]);
             }
             else if(this_dom_chunks.size() > 1)
             {
                 // Combine the chunks for this domain and add to a list in output.
-                combine(*dom, this_dom_chunks, *new_dom);
+                combine(*dom, this_dom_chunks, this_dom_cnkid, *new_dom);
             }
 
             if (new_dom->has_child("adjsets"))
@@ -3964,7 +3954,8 @@ Partitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &chunks,
     const std::vector<int> &dest_domain,
     const std::vector<int> &/*offsets*/,
     std::vector<Partitioner::Chunk> &chunks_to_assemble,
-    std::vector<int> &chunks_to_assemble_domains)
+    std::vector<int> &chunks_to_assemble_domains,
+    std::vector<int> &chunks_to_assemble_gids)
 {
     // In serial, communicating the chunks among ranks means passing them
     // back in the output arguments. We mark them as not-owned so we do not
@@ -3973,6 +3964,7 @@ Partitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &chunks,
     {
         chunks_to_assemble.push_back(Chunk(chunks[i].mesh, false));
         chunks_to_assemble_domains.push_back(dest_domain[i]);
+        chunks_to_assemble_gids.push_back(i);
     }
 }
 
@@ -8663,6 +8655,7 @@ map_adjset_group(const Node& adjset,
 //-----------------------------------------------------------------------------
 static void
 combine(const std::vector<const Node*>& in_adjsets,
+        const std::vector<index_t>& in_chunk_ids,
         const Node& topologies,
         const Node& coordsets,
         Node& out_adjsets)
@@ -8673,10 +8666,9 @@ combine(const std::vector<const Node*>& in_adjsets,
     for(size_t iadj = 0; iadj < in_adjsets.size(); iadj++)
     {
         const Node& adjset = *in_adjsets[iadj];
-        local_cnk_idx[adjset["chunk_id"].to_index_t()] = iadj;
-        attach_chunk_adjset_to_single_dom(tmp_dom, &adjset);
+        local_cnk_idx[in_chunk_ids[iadj]] = iadj;
+        attach_chunk_adjset_to_single_dom(tmp_dom, in_chunk_ids[iadj], &adjset);
     }
-    tmp_dom["adjsets"].print();
 
     for (const auto& adjset : tmp_dom["adjsets"].children())
     {
@@ -8940,6 +8932,7 @@ group_topologies(const std::vector<const Node *> &inputs)
 void
 Partitioner::combine(int domain,
     const std::vector<const Node *> &inputs,
+    const std::vector<index_t> &chunk_ids,
     Node &output)
 {
     // NOTE: Some decisions upstream, for the time being, make all the chunks
@@ -9132,8 +9125,7 @@ Partitioner::combine(int domain,
     }
     if (have_adjsets)
     {
-        std::cout << "Domain " << domain << " adjset before point remap: " << std::endl;
-        adjset::combine(adjsets, output_topologies, output_coordsets, output["adjsets"]);
+        adjset::combine(adjsets, chunk_ids, output_topologies, output_coordsets, output["adjsets"]);
     }
 
     // Cleanup the output node, add original cells/verticies in needed

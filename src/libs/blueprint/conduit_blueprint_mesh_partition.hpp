@@ -307,6 +307,7 @@ public:
      */
     void combine(int domain,
                  const std::vector<const Node *> &inputs,
+                 const std::vector<index_t> &chunk_ids,
                  Node &output);
 
 protected:
@@ -605,7 +606,8 @@ protected:
                                     const std::vector<int> &dest_domain,
                                     const std::vector<int> &offsets,
                                     std::vector<Chunk> &chunks_to_assemble,
-                                    std::vector<int> &chunks_to_assemble_domains);
+                                    std::vector<int> &chunks_to_assemble_domains,
+                                    std::vector<int> &chunks_to_assemble_gids);
 
     int rank, size;
     unsigned int target;

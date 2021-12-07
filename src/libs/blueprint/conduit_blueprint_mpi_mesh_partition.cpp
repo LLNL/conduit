@@ -537,7 +537,8 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
     const std::vector<int> &dest_domain,
     const std::vector<int> &offsets,
     std::vector<Partitioner::Chunk> &chunks_to_assemble,
-    std::vector<int> &chunks_to_assemble_domains)
+    std::vector<int> &chunks_to_assemble_domains,
+    std::vector<int> &chunks_to_assemble_gids)
 {
     const int PARTITION_TAG_BASE = 12000;
 
@@ -629,10 +630,12 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
                 // Save the chunk "wrapper" that has its own state.
                 chunks_to_assemble.push_back(Chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
 #else
                 // Pass the chunk through since we already own it on this rank.
                 chunks_to_assemble.push_back(Chunk(chunks[local_i].mesh, false));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
 #endif
             }
             else
@@ -651,6 +654,7 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
                 // Save the received chunk and indicate we own it for later.
                 chunks_to_assemble.push_back(Chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
             }
         }
     }
