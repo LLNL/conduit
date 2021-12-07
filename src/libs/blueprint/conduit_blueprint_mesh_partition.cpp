@@ -3180,20 +3180,12 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
 }
 
 //---------------------------------------------------------------------------
-int
-Partitioner::get_rank_offset(const std::vector<int>& chunk_offsets)
-{
-    // serial case: always as rank zero
-    return chunk_offsets[0];
-}
-
-//---------------------------------------------------------------------------
 void
 Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
                                        const DomainToChunkMap& dom_2_chunks,
                                        std::vector<conduit::Node*>& adjset_data)
 {
-    index_t chunk_offset = get_rank_offset(chunk_offsets);
+    index_t chunk_offset = chunk_offsets[rank];
     for (const auto& it : dom_2_chunks)
     {
         // Get the chunk ids in the current domain.
@@ -3275,7 +3267,7 @@ Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
                                    const std::map<index_t, const Node*>& domain_map,
                                    std::vector<Node>& adjset_chunk_maps)
 {
-    index_t chunk_offset = get_rank_offset(chunk_offsets);
+    index_t chunk_offset = chunk_offsets[rank];
 
     // This might be alloced by the derived ParallelPartitioner calling into
     // this function; otherwise, we allocate based on the largest local domain
@@ -3377,7 +3369,7 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
                                        const std::map<index_t, const Node*>& domain_map,
                                        std::vector<conduit::Node*>& adjset_data)
 {
-    index_t chunk_offset = get_rank_offset(chunk_offsets);
+    index_t chunk_offset = chunk_offsets[rank];
     std::unordered_map<const conduit::Node*,
         std::unordered_map<index_t, std::vector<conduit::Node*>>> remap_to_chunk_vid;
 

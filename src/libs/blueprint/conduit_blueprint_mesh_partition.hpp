@@ -584,8 +584,6 @@ protected:
                             std::vector<int> &dest_domain,
                             std::vector<int> &offsets);
 
-    virtual int get_rank_offset(const std::vector<int>& chunk_offsets);
-
     /**
      @brief Generates a map from adjset vertex ids to their containing chunks.
             This map is generated per-adjset and is stored in CSR format, and

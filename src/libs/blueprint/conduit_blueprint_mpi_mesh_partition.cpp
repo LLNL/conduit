@@ -90,13 +90,6 @@ ParallelPartitioner::init_dom_to_rank_map(const conduit::Node &n_mesh)
 }
 
 //---------------------------------------------------------------------------
-int
-ParallelPartitioner::get_rank_offset(const std::vector<int>& chunk_offsets)
-{
-    return chunk_offsets[rank];
-}
-
-//---------------------------------------------------------------------------
 bool
 ParallelPartitioner::options_get_target(const conduit::Node &options,
                                         unsigned int &value) const
