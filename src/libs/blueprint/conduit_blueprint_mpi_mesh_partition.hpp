@@ -118,8 +118,6 @@ protected:
                                        const std::map<index_t, const Node*>& domain_map,
                                        std::vector<Node>& adjset_chunk_maps);
 
-    virtual std::vector<int> get_global_domain_map(const std::vector<int>& local_map);
-
 private:
     /**
      @brief Creates an MPI structure datatype so we can Allgatherv 3 things

@@ -742,41 +742,6 @@ ParallelPartitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets
     C.execute();
 }
 
-//---------------------------------------------------------------------------
-std::vector<int>
-ParallelPartitioner::get_global_domain_map(const std::vector<int>& local_map)
-{
-    std::vector<int> all_counts(size);
-    all_counts[rank] = local_map.size();
-    // Get counts for each rank
-    MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                  all_counts.data(), 1, MPI_INT,
-                  comm);
-
-    int ctr = 0;
-    std::vector<int> all_offsets(size);
-    // Compute offsets into final array, total size
-    for (int irnk = 0; irnk < size; irnk++)
-    {
-        all_offsets[irnk] = ctr;
-        ctr += all_counts[irnk];
-    }
-    int total_size = ctr;
-
-    std::vector<int> out_cnk_to_dom_map(total_size);
-    // Do final communication for chunk-to-domain map
-    MPI_Allgatherv(local_map.data(),
-                   local_map.size(),
-                   MPI_INT,
-                   out_cnk_to_dom_map.data(),
-                   all_counts.data(),
-                   all_offsets.data(),
-                   MPI_INT,
-                   comm);
-
-    return out_cnk_to_dom_map;
-}
-
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mpi::mesh --

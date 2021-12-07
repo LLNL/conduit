@@ -3529,13 +3529,6 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
 }
 
 //---------------------------------------------------------------------------
-std::vector<int>
-Partitioner::get_global_domain_map(const std::vector<int>& local_map)
-{
-    return local_map;
-}
-
-//---------------------------------------------------------------------------
 static void
 attach_chunk_adjset_to_single_dom(conduit::Node& dom, const conduit::Node* chunk_adjs = nullptr)
 {
@@ -3732,8 +3725,6 @@ Partitioner::execute(conduit::Node &output)
     std::vector<int> dest_rank, dest_domain, offsets;
     map_chunks(chunks, dest_rank, dest_domain, offsets);
 
-    std::vector<int> global_cnkid_to_dom = get_global_domain_map(dest_domain);
-
     build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
     build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
 
@@ -3802,7 +3793,7 @@ Partitioner::execute(conduit::Node &output)
 
             if (new_dom->has_child("adjsets"))
             {
-                merge_chunked_adjsets((*new_dom)["adjsets"], global_cnkid_to_dom);
+                merge_chunked_adjsets((*new_dom)["adjsets"], dest_domain);
             }
             std::cout << "Domain " << *dom << " after adjset merge:" << std::endl;
             std::cout << (*new_dom)["adjsets"].to_summary_string();
