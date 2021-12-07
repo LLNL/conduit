@@ -2045,7 +2045,8 @@ Partitioner::copy_fields(index_t domain, const std::string &topology,
                 if(n_field.has_child("association"))
                 {
                     auto association = n_field["association"].as_string();
-                    if(association == "vertex")
+                    auto assoc_topo = n_field["topology"].as_string();
+                    if(association == "vertex" && topology == assoc_topo)
                     {
                         copy_field(n_field, vertex_ids, n_output_fields);
                     }
@@ -2075,7 +2076,8 @@ Partitioner::copy_fields(index_t domain, const std::string &topology,
                 if(n_field.has_child("association"))
                 {
                     auto association = n_field["association"].as_string();
-                    if(association == "element")
+                    auto assoc_topo = n_field["topology"].as_string();
+                    if(association == "element" && topology == assoc_topo)
                     {
                         copy_field(n_field, element_ids, n_output_fields);
                     }
