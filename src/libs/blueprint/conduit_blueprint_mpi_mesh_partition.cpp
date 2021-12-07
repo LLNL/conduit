@@ -726,8 +726,10 @@ ParallelPartitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets
 
         for (int dst_rank : send_dom.second)
         {
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
             cout << rank << ": add_isend(dest="
                  << dst_rank << ", dom=" << dom_to_send << ")" << endl;
+#endif
             C.add_isend(adjset_chunk_maps[dom_to_send], dst_rank, tag);
         }
     }
@@ -738,8 +740,10 @@ ParallelPartitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets
         index_t dom_to_recv = recv_dom.first;
         int src_rank = recv_dom.second;
         int tag = PARTITION_TAG_BASE + dom_to_recv;
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
             cout << rank << ": add_irecv(src="
                  << src_rank << ", dom=" << dom_to_recv << ")" << endl;
+#endif
         C.add_irecv(adjset_chunk_maps[dom_to_recv], src_rank, tag);
     }
 
