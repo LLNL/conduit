@@ -1,0 +1,20 @@
+name: pip setup
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_pip_basic:
+    name: pip setup ubuntu
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Build 
+      run: |
+        pip install -v .
+
