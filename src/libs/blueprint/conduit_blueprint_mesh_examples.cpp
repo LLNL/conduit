@@ -2418,7 +2418,7 @@ braid(const std::string &mesh_type,
             {
                 npts_z_ok = false;
             }
-            else;
+            else
             {
                 CONDUIT_INFO("DEPRECATED:"
                     " Detected npts_z != 0 for example with 2D shape type."
