@@ -14,10 +14,12 @@
 #  - Windows untested
 #
 # [Example Usage]
+#  pip install .
+#  pip install . --user
 #  pip install  -v . --user
 #  env HDF5_DIR={path/to/hdf5/install} pip install -v . --user
 #
-#  # for those with certificate interception woes
+#  # for those with certificate woes
 #  pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org  -v . --user
 #  env HDF5_DIR={path/to/hdf5/install} pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org  -v . --user
 #
