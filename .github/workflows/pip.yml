@@ -6,10 +6,10 @@ on:
 
 jobs:
   build_pip_basic:
-    name: pip setup.py ubuntu
+    name: Ubuntu pip setup.py
     runs-on: ubuntu-latest
     steps:
-    - name: install deps
+    - name: Install Deps
       run: |
            sudo apt-get update
            sudo apt-get install binutils \
@@ -42,7 +42,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: 'recursive'
-    - name: Build and Test
+    - name: Build & Test
       run: |
         env ENABLE_MPI=ON HDF5_DIR=/usr/ pip install -v .
         python3 -c "import conduit;print(conduit.about());"
