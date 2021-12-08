@@ -6,8 +6,11 @@ on:
 
 jobs:
   build_pip_basic:
+    name: pip setup.py ubuntu
+    runs-on: ubuntu-latest
+    steps:
     - name: install deps
-         run: |
+      run: |
            sudo apt-get update
            sudo apt-get install binutils \
                                 gcc \
@@ -35,9 +38,6 @@ jobs:
                                 libmpich-dev \
                                 hdf5 \ 
                                 ibhdf5-dev
-    name: pip setup.py ubuntu
-    runs-on: ubuntu-latest
-    steps:
     - name: Setup Python Env
       run: python3 -m pip install --upgrade pip numpy mpi4py
     - uses: actions/checkout@v2
