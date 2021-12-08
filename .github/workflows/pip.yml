@@ -6,7 +6,36 @@ on:
 
 jobs:
   build_pip_basic:
-    name: pip setup ubuntu
+    - name: install deps
+         run: |
+           sudo apt-get update
+           sudo apt-get install binutils \
+                                gcc \
+                                g++ \
+                                gfortran \
+                                python \
+                                perl \
+                                git \
+                                git-lfs \
+                                curl \
+                                wget \
+                                tar \
+                                unzip \
+                                build-essential \
+                                libncurses-dev \
+                                libssl-dev \
+                                libblas-dev \
+                                liblapack-dev \
+                                zlib1g-dev \
+                                libgdbm-dev \
+                                libreadline-dev \
+                                libsqlite3-dev \
+                                libbz2-dev \
+                                mpich \
+                                libmpich-dev \
+                                hdf5 \ 
+                                ibhdf5-dev
+    name: pip setup.py ubuntu
     runs-on: ubuntu-latest
     steps:
     - name: Setup Python Env
@@ -17,4 +46,5 @@ jobs:
     - name: Build 
       run: |
         pip install -v .
+
 
