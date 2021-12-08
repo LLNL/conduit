@@ -79,6 +79,7 @@ class CMakeBuild(build_ext):
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DENABLE_PYTHON:BOOL=ON',
                       '-DHDF5_DIR=' + HDF5_DIR,
+                      '-DENABLE_MPI=' + ENABLE_MPI,
                       '-DENABLE_TESTS:BOOL=OFF',
                       '-DENABLE_DOCS:BOOL=OFF']
 
@@ -115,9 +116,8 @@ class CMakeBuild(build_ext):
 #
 # pass options via env vars
 #
-
-# CONDUIT HDF5 Support
 HDF5_DIR = os.environ.get('HDF5_DIR', 'IGNORE')
+ENABLE_MPI = os.environ.get('ENABLE_MPI', 'OFF')
 
 # keyword reference:
 # https://packaging.python.org/guides/distributing-packages-using-setuptools

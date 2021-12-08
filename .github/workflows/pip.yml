@@ -42,8 +42,12 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: 'recursive'
-    - name: Build 
+    - name: Build and Test
       run: |
-        pip install -v .
+        env ENABLE_MPI=ON HDF5_DIR=/usr/ pip install -v .
+        python3 -c "import conduit;print(conduit.about());"
+        python3 -c "import conduit.relay;print(conduit.relay.io.about())"
+        python3 -c "import conduit.relay.mpi;print(conduit.relay.mpi.about())"
+
 
 
