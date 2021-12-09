@@ -1,0 +1,53 @@
+name: pip setup
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_pip_basic:
+    name: Ubuntu pip setup.py
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Deps
+      run: |
+           sudo apt-get update
+           sudo apt-get install binutils \
+                                gcc \
+                                g++ \
+                                gfortran \
+                                python \
+                                perl \
+                                git \
+                                git-lfs \
+                                curl \
+                                wget \
+                                tar \
+                                unzip \
+                                build-essential \
+                                libncurses-dev \
+                                libssl-dev \
+                                libblas-dev \
+                                liblapack-dev \
+                                zlib1g-dev \
+                                libgdbm-dev \
+                                libreadline-dev \
+                                libsqlite3-dev \
+                                libbz2-dev \
+                                mpich \
+                                libmpich-dev \
+                                libhdf5-dev
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Build & Test
+      run: |
+        env ENABLE_MPI=ON HDF5_DIR=/usr/ pip install -v .
+        python3 -c "import conduit;print(conduit.about());"
+        python3 -c "import conduit.relay;print(conduit.relay.io.about())"
+        python3 -c "import conduit.relay.mpi;print(conduit.relay.mpi.about())"
+
+
+
