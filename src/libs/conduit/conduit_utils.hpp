@@ -350,6 +350,14 @@ namespace utils
                                    std::string &curr,
                                    std::string &next);
 
+    //------------------------------------------------------------------------
+    /// Removes the the leading and trailing whitespace from the string 'str'.
+    /// 'chars_to_trim' can be overriden to trim a different set of characters
+    /// from 'str'.
+    //-------------------------------------------------------------------------
+    void CONDUIT_API trim_string(std::string &str,
+                                 const char *chars_to_trim = " \t\n\r\f\v");
+
 //-----------------------------------------------------------------------------
 /// Helpers for splitting and joining conduit paths (which always use "/")
 //-----------------------------------------------------------------------------

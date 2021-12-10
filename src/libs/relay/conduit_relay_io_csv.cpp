@@ -28,9 +28,6 @@ using conduit::utils::log::quote;
 // Child separator used by writer to name columns
 const char child_sep = '/';
 
-// Default argument to trim
-const char *whitespace = " \t\n\r\f\v";
-
 // Prefix used for file names when the given table collection is a list
 const std::string table_list_prefix = "table_list_";
 
@@ -270,17 +267,6 @@ add_columns(Node &values, std::vector<std::string> &col_names,
 }
 
 //-----------------------------------------------------------------------------
-// Q: Should this go in conduit utilities?
-static void
-trim(std::string &str, const char *t = whitespace)
-{
-    // ltrim, rtrim
-    str.erase(0, str.find_first_not_of(t));
-    str.erase(str.find_last_not_of(t) + 1);
-}
-
-
-//-----------------------------------------------------------------------------
 /**
 @brief Reads the first line of the file. Populates "col_names" with the names
     of each column. If there are no column names "col_names" will be empty.
@@ -297,14 +283,14 @@ read_column_names(const std::string &line, std::vector<std::string> &col_names,
     {
         const auto len = end - start;
         col_names.push_back(line.substr(start, len));
-        trim(col_names.back(), whitespace);
+        utils::trim_string(col_names.back());
         // Update positions
         start = end + 1;
         end = line.find(sep, start);
     }
     // Get the last name
     col_names.push_back(line.substr(start));
-    trim(col_names.back(), whitespace);
+    utils::trim_string(col_names.back());
 
     // Check these are column names and not data
     bool all_numbers = true;

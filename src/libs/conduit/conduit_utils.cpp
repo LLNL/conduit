@@ -524,6 +524,16 @@ rsplit_string(const std::string &str,
 
 //-----------------------------------------------------------------------------
 void
+trim_string(std::string &str,
+            const char *chars_to_trim)
+{
+    // ltrim, rtrim
+    str.erase(0, str.find_first_not_of(chars_to_trim));
+    str.erase(str.find_last_not_of(chars_to_trim) + 1);
+}
+
+//-----------------------------------------------------------------------------
+void
 split_path(const std::string &path,
            std::string &curr,
            std::string &next)
