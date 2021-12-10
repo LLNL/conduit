@@ -360,6 +360,43 @@ Building Conduit in a Docker Container
 
 Under ``src/examples/docker/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Conduit. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Conduit repo is cloned into the image's file system at ``/conduit``, the build directory is ``/conduit/build-debug``, and the install directory is ``/conduit/install-debug``.
 
+.. _building_with_pip:
+
+Building Conduit with pip
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Conduit provides a setup.py that allows pip to use CMake to build and install
+Conduit and the Conduit Python module. This script assumes that CMake is in your path.
+
+Example Basic Build:
+
+.. code:: bash
+
+    pip install . --user 
+
+Or for those with certificate woes:
+
+.. code:: bash
+
+    pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org . --user
+
+
+You can enable Conduit features using the following environment variables:
+
+ ================== ========================================= ======================================
+  Option              Description                              Default
+ ================== ========================================= ======================================
+  **HDF5_DIR**        Path to HDF5 install for HDF5 Support    IGNORE
+  **ENABLE_MPI**      Build Conduit with MPI  Support          OFF
+ ================== ========================================= ======================================
+
+
+Example Build with MPI and HDF5 Support:
+
+.. code:: bash
+
+    env ENABLE_MPI=ON HDF5_DIR={path/to/hdf5/install} pip install . --user
+
+
 
 Notes for Cray systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,6 +416,16 @@ You can avoid related linking warnings by adding the ``-dynamic`` compiler flag,
 `Shared Memory Maps are read only <https://pubs.cray.com/content/S-0005/CLE%206.0.UP02/xctm-series-dvs-administration-guide-cle-60up02-s-0005/dvs-caveats>`_
 on Cray systems, so updates to data using ``Node::mmap`` will not be seen between processes.
 
+
+
+Notes for using OpenMPI in a container as root
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+By default OpenMPI prevents the root user from launching MPI jobs. If you are running as root in a container you can use the following env vars to turn off this restriction:
+
+.. code:: bash
+
+    OMPI_ALLOW_RUN_AS_ROOT=1
+    OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 
 

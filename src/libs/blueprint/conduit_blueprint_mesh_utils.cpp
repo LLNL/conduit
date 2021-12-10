@@ -14,6 +14,7 @@
 #include <cmath>
 #include <deque>
 #include <string>
+#include <limits>
 #include <map>
 #include <memory>
 #include <sstream>

@@ -44,6 +44,7 @@ set(conduit_headers
     conduit_core.hpp
     conduit_endianness.hpp
     conduit_data_array.hpp
+    conduit_data_accessor.hpp
     conduit_data_type.hpp
     conduit_node.hpp
     conduit_generator.hpp
@@ -78,6 +79,7 @@ set(conduit_sources
     conduit_endianness.cpp
     conduit_data_type.cpp
     conduit_data_array.cpp
+    conduit_data_accessor.cpp
     conduit_generator.cpp
     conduit_node.cpp
     conduit_node_iterator.cpp

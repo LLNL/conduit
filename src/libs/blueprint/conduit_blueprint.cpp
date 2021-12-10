@@ -47,14 +47,22 @@ void
 about(Node &n)
 {
     n.reset();
+    // mesh bp related
     n["protocols/mesh/coordset"] = "enabled";
     n["protocols/mesh/topology"] = "enabled";
     n["protocols/mesh/field"]    = "enabled";
+    n["protocols/mesh/matset"]   = "enabled";
+    n["protocols/mesh/specset"]  = "enabled";
+    n["protocols/mesh/adjset"]   = "enabled";
+    n["protocols/mesh/nestset"]  = "enabled";
     n["protocols/mesh/index"]    = "enabled";
-    
-    n["protocols/mcarray"]  = "enabled";
-    n["protocols/zfparray"] = "enabled";
-
+    // mcarray
+    n["protocols/mcarray"]       = "enabled";
+    // o2m
+    n["protocols/o2mrelation"]   = "enabled";
+    // zfparray
+    n["protocols/zfparray"]      = "enabled";
+    // table
     n["protocols/table"] = "enabled";
 }
 
@@ -85,6 +93,23 @@ verify(const std::string &protocol,
         {
             res = table::verify(p_next, n, info);
         }
+        else if(p_curr == "o2mrelation")
+        {
+            res = o2mrelation::verify(p_next,n,info);
+        }
+        else if(p_curr == "zfparray")
+        {
+            res = zfparray::verify(p_next,n,info);
+        }
+        else
+        {
+            Node n_about;
+            conduit::blueprint::about(n_about);
+            CONDUIT_ERROR("Unknown blueprint protocol: "
+                          << p_curr << std::endl
+                          << "blueprint protocols:" 
+                          << n_about["protocols"].to_yaml());
+        }
     }
     else
     {
@@ -99,6 +124,23 @@ verify(const std::string &protocol,
         else if(p_curr == "table")
         {
             res = table::verify(n, info);
+        }
+        else if(p_curr == "o2mrelation")
+        {
+            res = o2mrelation::verify(n,info);
+        }
+        else if(p_curr == "zfparray")
+        {
+            res = zfparray::verify(n,info);
+        }
+        else
+        {
+            Node n_about;
+            conduit::blueprint::about(n_about);
+            CONDUIT_ERROR("Unknown blueprint protocol: "
+                          << p_curr << std::endl
+                          << "blueprint protocols:"
+                          << n_about["protocols"].to_yaml());
         }
     }
 

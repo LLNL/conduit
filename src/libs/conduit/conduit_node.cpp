@@ -11760,6 +11760,127 @@ Node::Value::operator long_double_array() const
 #endif
 //---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+// -- accessor casts --
+// (no coercion)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style signed accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator char_accessor() const
+{
+    return m_node->as_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_char_accessor() const
+{
+    return m_node->as_signed_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_short_accessor() const
+{
+    return m_node->as_signed_short_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_int_accessor() const
+{
+    return m_node->as_signed_int_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_long_accessor() const
+{
+    return m_node->as_signed_long_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_long_long_accessor() const
+{
+    return m_node->as_signed_long_long_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_char_accessor() const
+{
+    return m_node->as_unsigned_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_short_accessor() const
+{
+    return m_node->as_unsigned_short_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_int_accessor() const
+{
+    return m_node->as_unsigned_int_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_long_accessor() const
+{
+    return m_node->as_unsigned_long_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_long_long_accessor() const
+{
+    return m_node->as_unsigned_long_long_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style floating point accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator float_accessor() const
+{
+    return m_node->as_float_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator double_accessor() const
+{
+    return m_node->as_double_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::Value::operator long_double_accessor() const
+{
+    return m_node->as_long_double_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
 //-----------------------------------------------------------------------------
 // -- ConstValue Helper class ---
 //-----------------------------------------------------------------------------
@@ -12171,6 +12292,127 @@ Node::ConstValue::operator const long_double_array() const
 #endif
 //---------------------------------------------------------------------------//
 
+
+//---------------------------------------------------------------------------//
+// -- accessor casts --
+// (no coercion)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style signed accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator char_accessor() const
+{
+    return m_node->as_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_char_accessor() const
+{
+    return m_node->as_signed_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_short_accessor() const
+{
+    return m_node->as_signed_short_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_int_accessor() const
+{
+    return m_node->as_signed_int_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_long_accessor() const
+{
+    return m_node->as_signed_long_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_long_long_accessor() const
+{
+    return m_node->as_signed_long_long_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_char_accessor() const
+{
+    return m_node->as_unsigned_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_short_accessor() const
+{
+    return m_node->as_unsigned_short_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_int_accessor() const
+{
+    return m_node->as_unsigned_int_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_long_accessor() const
+{
+    return m_node->as_unsigned_long_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_long_long_accessor() const
+{
+    return m_node->as_unsigned_long_long_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style floating point accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator float_accessor() const
+{
+    return m_node->as_float_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator double_accessor() const
+{
+    return m_node->as_double_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator long_double_accessor() const
+{
+    return m_node->as_long_double_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 //-----------------------------------------------------------------------------
 // End Node::ConstValue
 //-----------------------------------------------------------------------------
@@ -12259,6 +12501,14 @@ Node::to_summary_string(const conduit::Node &opts)const
     std::ostringstream oss;
     to_summary_string_stream(oss,opts);
     return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_summary_string_stream(std::ostream &os) const
+{
+    Node opts;
+     to_summary_string_stream(os,opts);
 }
 
 //-----------------------------------------------------------------------------
@@ -13477,7 +13727,7 @@ Node::info()const
 void
 Node::print() const
 {
-    to_string_stream(std::cout);
+    to_summary_string_stream(std::cout);
     std::cout << std::endl;
 }
 
@@ -14696,6 +14946,99 @@ Node::as_string() const
     return std::string(as_char8_str());
 }
 
+
+
+//---------------------------------------------------------------------------//
+// signed integer accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+int8_accessor
+Node::as_int8_accessor() const
+{
+    return int8_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+int16_accessor
+Node::as_int16_accessor() const
+{
+    return int16_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+int32_accessor
+Node::as_int32_accessor() const
+{
+    return int32_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+int64_accessor
+Node::as_int64_accessor() const
+{
+    return int64_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+// unsigned integer accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+uint8_accessor
+Node::as_uint8_accessor() const
+{
+    return uint8_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+uint16_accessor
+Node::as_uint16_accessor() const
+{
+    return uint16_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+uint32_accessor
+Node::as_uint32_accessor() const
+{
+    return uint32_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+uint64_accessor
+Node::as_uint64_accessor() const
+{
+    return uint64_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+// floating point accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+float32_accessor
+Node::as_float32_accessor() const
+{
+    return float32_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+float64_accessor
+Node::as_float64_accessor() const
+{
+    return float64_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+index_t_accessor
+Node::as_index_t_accessor() const
+{
+    return index_t_accessor(m_data,dtype());
+}
+
+
+
 //---------------------------------------------------------------------------//
 // direct data pointer access
 void *
@@ -15313,7 +15656,7 @@ Node::as_signed_long_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SIGNED_LONG_ID,
-                        "as_signed_ong_ptr() const",
+                        "as_signed_long_ptr() const",
                         NULL);
     return (signed long*)element_ptr(0);
 }
@@ -15807,7 +16150,7 @@ Node::as_signed_long_long_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
-                        "as_signed_ong_long_array() const",
+                        "as_signed_long_long_array() const",
                         signed_long_long_array());
     return signed_long_long_array(m_data,dtype());
 }
@@ -15969,6 +16312,188 @@ Node::allocator()
 //-----------------------------------------------------------------------------
 //
 // -- end definition of Node allocator selection methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Node as accessor methods --
+//
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+// accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+char_accessor
+Node::as_char_accessor() const
+{
+    return char_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+short_accessor
+Node::as_short_accessor() const
+{
+    return short_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+int_accessor
+Node::as_int_accessor() const
+{
+    return int_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+long_accessor
+Node::as_long_accessor() const
+{
+    return long_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+long_long_accessor
+Node::as_long_long_accessor() const
+{
+    return long_long_accessor(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// signed integer accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+signed_char_accessor
+Node::as_signed_char_accessor() const
+{
+    return signed_char_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_short_accessor
+Node::as_signed_short_accessor() const
+{
+    return signed_short_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_int_accessor
+Node::as_signed_int_accessor() const
+{
+    return signed_int_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_long_accessor
+Node::as_signed_long_accessor() const
+{
+    return signed_long_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+signed_long_long_accessor
+Node::as_signed_long_long_accessor() const
+{
+    return signed_long_long_accessor(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// unsigned integer accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+unsigned_char_accessor
+Node::as_unsigned_char_accessor() const
+{
+    return unsigned_char_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+unsigned_short_accessor
+Node::as_unsigned_short_accessor() const
+{
+    return unsigned_short_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+unsigned_int_accessor
+Node::as_unsigned_int_accessor() const
+{
+    return unsigned_int_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+unsigned_long_accessor
+Node::as_unsigned_long_accessor() const
+{
+    return unsigned_long_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+unsigned_long_long_accessor
+Node::as_unsigned_long_long_accessor() const
+{
+    return unsigned_long_long_accessor(m_data,dtype());
+
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// floating point accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+float_accessor
+Node::as_float_accessor() const
+{
+    return float_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+double_accessor
+Node::as_double_accessor() const
+{
+    return double_accessor(m_data,dtype());
+
+}
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+long_double_accessor
+Node::as_long_double_accessor() const
+{
+    return long_double_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Node as accessor methods --
 //
 //-----------------------------------------------------------------------------
 

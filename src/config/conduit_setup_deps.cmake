@@ -4,13 +4,26 @@
 
 include(CMakeFindDependencyMacro)
 
+# calc the proper relative install root
+get_filename_component(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+
+if(_IMPORT_PREFIX STREQUAL "/")
+  set(_IMPORT_PREFIX "")
+endif()
+
+# we want the import root, which is right above the "lib" prefix
+get_filename_component(_IMPORT_ROOT "${_IMPORT_PREFIX}" PATH)
+
 ###############################################################################
 # Setup Threads
 ###############################################################################
 if(UNIX AND NOT APPLE)
-    if(CONDUIT_RELAY_WEBSERVER_ENABLED)
-        # we depend on Threads::Threads in our exported targets
-        # so we need to bootstrap that here
+    # if built web server support, we depend on Threads::Threads
+    # in our exported targets so we need to bootstrap that here
+    if(EXISTS ${_IMPORT_ROOT}/include/conduit/conduit_relay_web.hpp)
+
         if(NOT TARGET Threads::Threads)
             find_package( Threads REQUIRED )
         endif()

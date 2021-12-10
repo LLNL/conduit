@@ -157,50 +157,52 @@ generate_index(const conduit::Node &mesh,
                Node &index_out,
                MPI_Comm comm)
 {
-    int par_rank = relay::mpi::rank(comm);
-    int par_size = relay::mpi::size(comm);
-    // we need to know the mesh structure and the number of domains
-    // we can't assume rank zero has any domains (could be empty)
-    // so we look for the lowest rank with 1 or more domains
+    // we need a list of all possible topos, coordsets, etc
+    // for the blueprint index in the root file. 
+    //
+    // across ranks, domains may be sparse
+    //  for example: a topo may only exist in one domain
+    // so we union all local mesh indices, and then 
+    // se an all gather and union the results together
+    // to create an accurate global index. 
 
-    index_t local_num_domains = ::conduit::blueprint::mesh::number_of_domains(mesh);
-    index_t global_num_domains = number_of_domains(mesh,comm);
+    index_t local_num_domains = blueprint::mesh::number_of_domains(mesh);
+    // note: 
+    // find global # of domains w/o conduit_blueprint_mpi for now
+    // since we aren't yet linking conduit_blueprint_mpi
+    Node n_src, n_reduce;
+    n_src = local_num_domains;
 
-    index_t rank_send = par_size;
-    index_t selected_rank = par_size;
+    relay::mpi::sum_all_reduce(n_src,
+                               n_reduce,
+                               comm);
+
+    index_t global_num_domains = n_reduce.to_int();
+
+    index_out.reset();
+
+    Node local_idx, gather_idx;
+
     if(local_num_domains > 0)
-        rank_send = par_rank;
-
-    Node n_snd, n_reduce;
-    // make sure some MPI task actually had bp data
-    n_snd.set_external(&rank_send,1);
-    n_reduce.set_external(&selected_rank,1);
-
-    relay::mpi::min_all_reduce(n_snd, n_reduce, comm);
-
-    if(par_rank == selected_rank )
     {
-        if(::conduit::blueprint::mesh::is_multi_domain(mesh))
-        {
-            ::conduit::blueprint::mesh::generate_index(mesh.child(0),
-                                                       ref_path,
-                                                       global_num_domains,
-                                                       index_out);
-        }
-        else
-        {
-            ::conduit::blueprint::mesh::generate_index(mesh,
-                                                       ref_path,
-                                                       global_num_domains,
-                                                       index_out);
-        }
-
+        ::conduit::blueprint::mesh::generate_index(mesh,
+                                                   ref_path,
+                                                   global_num_domains,
+                                                   local_idx);
     }
 
-    // broadcast the resulting index to all other ranks
-    relay::mpi::broadcast_using_schema(index_out,
-                                       selected_rank,
-                                       comm);
+    relay::mpi::all_gather_using_schema(local_idx,
+                                        gather_idx,
+                                        comm);
+
+    // union all entries into final index that reps
+    // all domains
+    NodeConstIterator itr = gather_idx.children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        index_out.update(curr);
+    }
 }
 
 
@@ -221,7 +223,7 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
         int64 domain_id = par_rank;
         if(domain.has_child("state") && domain["state"].has_child("domain_id"))
         {
-            domain_id = domain["state/domain_id"].as_int64();
+            domain_id = domain["state/domain_id"].to_int64();
         }
         local_domains.push_back(domain_id);
 
@@ -270,9 +272,106 @@ number_of_domains(const conduit::Node &n,
 }
 
 //-------------------------------------------------------------------------
+void to_polytopal(const Node &n,
+                  Node &dest,
+                  const std::string& name,
+                  MPI_Comm comm)
+{
+
+    const std::vector<const conduit::Node *> doms = ::conduit::blueprint::mesh::domains(n);
+
+    // make sure all topos match
+    index_t ok = 1;
+    index_t num_doms = (index_t) doms.size();
+    index_t dims = -1;
+
+    for (const auto& dom_ptr : doms)
+    {
+        if(dom_ptr->fetch("topologies").has_child(name))
+        {
+            const Node &topo = dom_ptr->fetch("topologies")[name];
+            if(topo["type"].as_string() == "structured")
+            {
+                dims = topo["elements/dims"].number_of_children();
+            }
+            else
+            {
+                ok = 0;
+            }
+        }else
+        {
+            ok = 0;
+        }
+    }
+    
+    // reduce and check for consistency (all ok, and all doms are either 2d or 3d)
+    Node local, gather;
+    local.set(DataType::index_t(3));
+    index_t_array local_vals = local.value();
+    local_vals[0] = ok;
+    local_vals[1] = num_doms;
+    local_vals[2] = dims;
+
+    // Note: this might be more efficient as
+    // a set of flat gathers into separate arrays
+    relay::mpi::all_gather_using_schema(local,
+                                        gather,
+                                        comm);
+
+    NodeConstIterator gitr =  gather.children();
+    index_t gather_dims = -1;
+    while(gitr.has_next() && (ok == 1))
+    {
+        const Node &curr = gitr.next();
+        index_t_array gather_vals = curr.value();
+        if(gather_vals[0] != 1)
+        {
+            ok = 0;
+        }
+        else
+        {
+            // this proc has domains and we haven't inited dims
+            if( gather_vals[1] > 0 && gather_dims == -1)
+            {
+                gather_dims = gather_vals[2];
+            }
+            else if(gather_vals[1] > 0) // this proc has domains
+            {
+                if(gather_dims != gather_vals[2])
+                {
+                    ok = 0;
+                }
+            }
+        }
+    }
+
+    if(ok == 1)
+    {
+        if(dims == 2)
+        {
+            to_polygonal(n,dest,name,comm);
+        }
+        else if(dims == 3)
+        {
+            to_polyhedral(n,dest,name,comm);
+        }
+        else
+        {
+            CONDUIT_ERROR("to_polytopal only supports 2d or 3d structured toplogies"
+                          " (passed mesh has dims = " << dims  << ")");
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("to_polytopal only supports structured toplogies");
+    }
+}
+
+//-------------------------------------------------------------------------
 void to_polygonal(const Node &n,
                   Node &dest,
-                  const std::string& name)
+                  const std::string& name,
+                  MPI_Comm comm)
 {
     // Helper Functions //
 
@@ -449,13 +548,13 @@ void to_polygonal(const Node &n,
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                                 MPI_Send(&ybuffer[0],
                                          ybuffer.size(),
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                             }
                             else if (si == 1 && nbr_size > ref_size)
                             {
@@ -481,12 +580,14 @@ void to_polygonal(const Node &n,
                                              MPI_DOUBLE,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     MPI_Recv(&ybuffer[0],
                                              ybuffer.size(),
-                                             MPI_DOUBLE, nbr_rank,
-                                             nbr_id, MPI_COMM_WORLD,
+                                             MPI_DOUBLE,
+                                             nbr_rank,
+                                             nbr_id,
+                                             comm,
                                              MPI_STATUS_IGNORE);
 
                                 }
@@ -1044,11 +1145,12 @@ bputils::connectivity::SubelemMap& allfaces,
 //-------------------------------------------------------------------------
 void to_polyhedral(const Node &n,
                    Node &dest,
-                   const std::string& name)
+                   const std::string& name,
+                   MPI_Comm comm)
 {
     dest.reset();
 
-    index_t par_rank = relay::mpi::rank(MPI_COMM_WORLD);
+    index_t par_rank = relay::mpi::rank(comm);
 
     NodeConstIterator itr = n.children();
 
@@ -1195,7 +1297,7 @@ void to_polyhedral(const Node &n,
                                          MPI_INT64_T,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
 
                                 std::vector<index_t> vertices;
                                 std::vector<double> xbuffer, ybuffer, zbuffer;
@@ -1293,25 +1395,25 @@ void to_polyhedral(const Node &n,
                                          MPI_INT64_T,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                                 MPI_Send(&xbuffer[0],
                                          xbuffer.size(),
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                                 MPI_Send(&ybuffer[0],
                                          ybuffer.size(),
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
                                 MPI_Send(&zbuffer[0],
                                          zbuffer.size(),
                                          MPI_DOUBLE,
                                          nbr_rank,
                                          domain_id,
-                                         MPI_COMM_WORLD);
+                                         comm);
 
 
                             }
@@ -1636,7 +1738,7 @@ void to_polyhedral(const Node &n,
                                              MPI_INT64_T,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
 
                                     index_t nbr_iwidth = buffer[0];
@@ -1684,28 +1786,28 @@ void to_polyhedral(const Node &n,
                                              MPI_INT64_T,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     MPI_Recv(&xbuffer[0],
                                              xbuffer.size(),
                                              MPI_DOUBLE,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     MPI_Recv(&ybuffer[0],
                                              ybuffer.size(),
                                              MPI_DOUBLE,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     MPI_Recv(&zbuffer[0],
                                              zbuffer.size(),
                                              MPI_DOUBLE,
                                              nbr_rank,
                                              nbr_id,
-                                             MPI_COMM_WORLD,
+                                             comm,
                                              MPI_STATUS_IGNORE);
                                     index_t v = 0;
                                     for (auto vitr = vertices.begin();

@@ -9,8 +9,10 @@ jobs:
     name: MSVC Base Release with Python
     runs-on: windows-latest   
     steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
     - name: Setup Python Env
-      run: python3 -m pip install --upgrade pip numpy
+      run: python3 -m pip install --upgrade pip numpy mpi4py
     - uses: actions/checkout@v2
       with: 
         submodules: 'recursive'
@@ -18,7 +20,8 @@ jobs:
       run: |
         cmake -S src -B build            `
               -DCMAKE_BUILD_TYPE=Release `
-              -DENABLE_PYTHON=ON
+              -DENABLE_PYTHON=ON         `
+              -DENABLE_MPI=ON
         cmake --build build --config Release --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
   build_windows_clang:

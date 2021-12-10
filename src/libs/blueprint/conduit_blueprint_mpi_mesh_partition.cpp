@@ -17,6 +17,10 @@
 
 #include "conduit_relay_mpi.hpp"
 #include <mpi.h>
+
+#include <unordered_set>
+#include <unordered_map>
+
 using Partitioner = conduit::blueprint::mesh::Partitioner;
 using Selection   = conduit::blueprint::mesh::Selection;
 
@@ -68,6 +72,21 @@ ParallelPartitioner::ParallelPartitioner(MPI_Comm c)
 ParallelPartitioner::~ParallelPartitioner()
 {
     free_chunk_info_dt();
+}
+
+//---------------------------------------------------------------------------
+void
+ParallelPartitioner::init_dom_to_rank_map(const conduit::Node &n_mesh)
+{
+    Node d2r_node;
+    conduit::blueprint::mpi::mesh
+        ::generate_domain_to_rank_map(n_mesh, d2r_node, comm);
+    int64_array d2r_data = d2r_node.as_int64_array();
+    domain_to_rank_map.resize(d2r_data.number_of_elements());
+    for (int idx = 0; idx < domain_to_rank_map.size(); idx++)
+    {
+        domain_to_rank_map[idx] = d2r_data[idx];
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -511,7 +530,8 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
     const std::vector<int> &dest_domain,
     const std::vector<int> &offsets,
     std::vector<Partitioner::Chunk> &chunks_to_assemble,
-    std::vector<int> &chunks_to_assemble_domains)
+    std::vector<int> &chunks_to_assemble_domains,
+    std::vector<int> &chunks_to_assemble_gids)
 {
     const int PARTITION_TAG_BASE = 12000;
 
@@ -603,10 +623,12 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
                 // Save the chunk "wrapper" that has its own state.
                 chunks_to_assemble.push_back(Chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
 #else
                 // Pass the chunk through since we already own it on this rank.
                 chunks_to_assemble.push_back(Chunk(chunks[local_i].mesh, false));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
 #endif
             }
             else
@@ -625,6 +647,7 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
                 // Save the received chunk and indicate we own it for later.
                 chunks_to_assemble.push_back(Chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
             }
         }
     }
@@ -643,6 +666,83 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
 }
 
 //-----------------------------------------------------------------------------
+void
+ParallelPartitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                           const DomainToChunkMap& chunks,
+                                           const std::map<index_t, const Node*>& domain_map,
+                                           std::vector<Node>& adjset_chunk_maps)
+{
+    const int PARTITION_TAG_BASE = 14000;
+
+    adjset_chunk_maps.resize(domain_to_rank_map.size());
+
+    Partitioner::get_prelb_adjset_maps(chunk_offsets, chunks, domain_map, adjset_chunk_maps);
+
+    // 1. Compute the ranks to send/receive data from for each domain
+    std::unordered_map<index_t, std::unordered_set<int>> send_rank;
+    std::unordered_map<index_t, int> recv_rank;
+
+    for (const auto& dom_it : domain_map)
+    {
+        const Node& domain = *(dom_it.second);
+        const index_t dom_idx = dom_it.first;
+        if (!domain.has_child("adjsets"))
+        {
+            continue;
+        }
+
+        // loop over all adjsets in the current domain
+        for (const Node& adjset : domain["adjsets"].children())
+        {
+            for (const Node& group : adjset["groups"].children())
+            {
+                index_t_accessor neighbor_vals = group["neighbors"].as_index_t_accessor();
+                index_t dst_dom = neighbor_vals[0];
+                int nbr_rank = domain_to_rank_map[dst_dom];
+
+                // For each corresponding pair of domains linked by adjsets, we
+                // need a matched pair of send/recvs
+                send_rank[dom_idx].insert(nbr_rank);
+                recv_rank[dst_dom] = nbr_rank;
+            }
+        }
+    }
+
+    conduit::relay::mpi::communicate_using_schema C(comm);
+    C.set_logging(true);
+
+    // 2. Setup nonblocking sends.
+    for (const auto& send_dom : send_rank)
+    {
+        index_t dom_to_send = send_dom.first;
+        int tag = PARTITION_TAG_BASE + dom_to_send;
+
+        for (int dst_rank : send_dom.second)
+        {
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
+            cout << rank << ": add_isend(dest="
+                 << dst_rank << ", dom=" << dom_to_send << ")" << endl;
+#endif
+            C.add_isend(adjset_chunk_maps[dom_to_send], dst_rank, tag);
+        }
+    }
+
+    // 3. Setup nonblocking recvs.
+    for (const auto& recv_dom : recv_rank)
+    {
+        index_t dom_to_recv = recv_dom.first;
+        int src_rank = recv_dom.second;
+        int tag = PARTITION_TAG_BASE + dom_to_recv;
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
+            cout << rank << ": add_irecv(src="
+                 << src_rank << ", dom=" << dom_to_recv << ")" << endl;
+#endif
+        C.add_irecv(adjset_chunk_maps[dom_to_recv], src_rank, tag);
+    }
+
+    C.execute();
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mpi::mesh --

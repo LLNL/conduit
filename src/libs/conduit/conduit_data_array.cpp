@@ -391,7 +391,7 @@ template <typename T>
 T
 DataArray<T>::max()  const
 {
-    T res = std::numeric_limits<T>::min();
+    T res = std::numeric_limits<T>::lowest();
     for(index_t i = 0; i < number_of_elements(); i++)
     {
         const T &val = element(i);
@@ -1901,6 +1901,10 @@ template class DataArray<float>;
 
 #ifndef CONDUIT_USE_DOUBLE
 template class DataArray<double>;
+#endif
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    ltemplate class DataArray<long double>;
 #endif
 
 }

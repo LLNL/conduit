@@ -32,13 +32,33 @@ typedef bool (*VerifyFun)(const Node&, Node&);
 
 /// Testing Helpers ///
 
+index_t braid_bound_npts_z(const std::string &mesh_type, index_t npts_z)
+{
+    if(mesh_type == "tris"  ||
+       mesh_type == "quads" ||
+       mesh_type == "quads_poly" ||
+       mesh_type == "quads_and_tris" ||
+       mesh_type == "quads_and_tris_offsets")
+    {
+        return 0;
+    }
+    else
+    {
+        return npts_z;
+    }
+}
+
 std::string get_braid_type(const std::string &mesh_type)
 {
     std::string braid_type;
     try
     {
         Node mesh;
-        blueprint::mesh::examples::braid(mesh_type,2,2,2,mesh);
+        blueprint::mesh::examples::braid(mesh_type,
+                                         2,
+                                         2,
+                                         braid_bound_npts_z(mesh_type,2),
+                                         mesh);
         braid_type = mesh_type;
     }
     catch(conduit::Error &) // actual exception is unused
@@ -48,6 +68,8 @@ std::string get_braid_type(const std::string &mesh_type)
 
     return braid_type;
 }
+
+
 
 // TODO(JRC): It would be useful to eventually have this type of procedure
 // available as an abstracted iteration strategy within Conduit (e.g. leaf iterate).
@@ -127,7 +149,11 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
         const std::string icoordset_braid = get_braid_type(icoordset_type);
 
         Node imesh;
-        blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
+        blueprint::mesh::examples::braid(icoordset_braid,
+                                         2,
+                                         3,
+                                         braid_bound_npts_z(icoordset_braid,4),
+                                         imesh);
         const Node &icoordset = imesh["coordsets"].child(0);
 
         for(size_t xj = xi + 1; xj < bputils::COORD_TYPES.size(); xj++)
@@ -140,7 +166,11 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
                 jcoordset_type << "..." << std::endl;
 
             Node jmesh;
-            blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
+            blueprint::mesh::examples::braid(jcoordset_braid,
+                                             2,
+                                             3,
+                                             braid_bound_npts_z(jcoordset_braid,4),
+                                             jmesh);
             Node &jcoordset = jmesh["coordsets"].child(0);
 
             XformCoordsFun to_new_coordset = xform_funs[xi][xj];
@@ -170,7 +200,11 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
         const std::string icoordset_braid = get_braid_type(icoordset_type);
 
         Node imesh;
-        blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
+        blueprint::mesh::examples::braid(icoordset_braid,
+                                         2,
+                                         3,
+                                         braid_bound_npts_z(icoordset_braid,4),
+                                         imesh);
         const Node &icoordset = imesh["coordsets"].child(0);
 
         for(size_t xj = xi + 1; xj < bputils::COORD_TYPES.size(); xj++)
@@ -235,7 +269,11 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
         const std::string itopology_braid = get_braid_type(itopology_type);
 
         Node imesh;
-        blueprint::mesh::examples::braid(itopology_braid,2,3,4,imesh);
+        blueprint::mesh::examples::braid(itopology_braid,
+                                         2,
+                                         3,
+                                         braid_bound_npts_z(itopology_braid,4),
+                                         imesh);
         const Node &itopology = imesh["topologies"].child(0);
         const Node &icoordset = imesh["coordsets"].child(0);
 
@@ -249,7 +287,11 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
                 jtopology_type << "..." << std::endl;
 
             Node jmesh;
-            blueprint::mesh::examples::braid(jtopology_braid,2,3,4,jmesh);
+            blueprint::mesh::examples::braid(jtopology_braid,
+                                             2,
+                                             3,
+                                             braid_bound_npts_z(jtopology_braid,4),
+                                             jmesh);
             Node &jtopology = jmesh["topologies"].child(0);
             Node &jcoordset = jmesh["coordsets"].child(0);
 
@@ -302,7 +344,11 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
         // NOTE(JRC): For the data type checks, we're only interested in the parts
         // of the subtree that are being transformed; we cull all other data.
         Node ibase;
-        blueprint::mesh::examples::braid(itopology_braid,2,3,4,ibase);
+        blueprint::mesh::examples::braid(itopology_braid,
+                                         2,
+                                         3,
+                                         braid_bound_npts_z(itopology_braid,4),
+                                         ibase);
         {
             Node temp;
             temp["coordsets"].set(ibase["coordsets"]);
@@ -375,7 +421,10 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 
         Node topo_mesh, info;
         blueprint::mesh::examples::braid(topo_type,
-            MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],topo_mesh);
+                                         MESH_DIMS[0],
+                                         MESH_DIMS[1],
+                                         braid_bound_npts_z(topo_type,MESH_DIMS[2]),
+                                         topo_mesh);
         const Node &topo_node = topo_mesh["topologies"].child(0);
 
         Node topo_poly;
@@ -500,6 +549,26 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, to_poly_alias_call)
+{
+    
+    Node topo_mesh, info;
+    blueprint::mesh::examples::braid("hexs",
+                                     5,
+                                     5,
+                                     5,
+                                     topo_mesh);
+    const Node &topo_node = topo_mesh["topologies"].child(0);
+
+    Node topo_poly_call1, topo_poly_call2;
+    blueprint::mesh::topology::unstructured::to_polygonal(topo_node,
+                                                          topo_poly_call1);
+    blueprint::mesh::topology::unstructured::to_polytopal(topo_node,
+                                                          topo_poly_call2);
+    EXPECT_FALSE(topo_poly_call1.diff(topo_poly_call2, info));
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_transform, adjset_transforms)
 {
     // run test -> pairwise, then test -> pairwise -> maxshare
@@ -507,7 +576,7 @@ TEST(conduit_blueprint_mesh_transform, adjset_transforms)
     // {{2, 1, 1}, {2, 2, 1}, {2, 2, 2}}
     const std::string ADJSET_ELEM_TYPES[4]      = {"quads", "quads", "hexs", "hexs"};
     const index_t ADJSET_DOM_DIMS[4][3]         = {{2, 1, 1}, {2, 2, 1}, {2, 2, 1}, {2, 2, 2}};
-    const index_t ADJSET_POINT_DIMS[4][3]       = {{3, 3, 1}, {3, 3, 1}, {3, 3, 3}, {3, 3, 3}};
+    const index_t ADJSET_POINT_DIMS[4][3]       = {{3, 3, 0}, {3, 3, 0}, {3, 3, 3}, {3, 3, 3}};
 
     for(index_t ai = 0; ai < 4; ai++)
     {
@@ -581,7 +650,7 @@ TEST(conduit_blueprint_mesh_transform, adjset_transform_dtypes)
         const std::string &xform_type = xform_types[xi];
 
         Node ibase, info;
-        blueprint::mesh::examples::grid("quads",2,2,1,2,2,1,ibase);
+        blueprint::mesh::examples::grid("quads",2,2,0,2,2,1,ibase);
 
         for(size_t ii = 0; ii < bputils::INT_DTYPES.size(); ii++)
         {
