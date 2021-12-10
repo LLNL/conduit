@@ -42,7 +42,8 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_error
                 t_conduit_log
                 t_conduit_mem_allocator
-                t_conduit_intro_cpp_example)
+                t_conduit_intro_cpp_example
+                t_conduit_utils)
 
 
 ################################
