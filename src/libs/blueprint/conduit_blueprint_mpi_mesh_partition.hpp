@@ -61,6 +61,9 @@ public:
     virtual ~ParallelPartitioner();
 
 protected:
+
+    virtual void init_dom_to_rank_map(const conduit::Node& n_mesh);
+
     virtual long get_total_selections() const override;
 
     /**
@@ -106,7 +109,13 @@ protected:
                                     const std::vector<int> &dest_domain,
                                     const std::vector<int> &offsets,
                                     std::vector<Chunk> &chunks_to_assemble,
-                                    std::vector<int> &chunks_to_assemble_domains) override;
+                                    std::vector<int> &chunks_to_assemble_domains,
+                                    std::vector<int> &chunks_to_assemble_gids) override;
+
+    virtual void get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                       const DomainToChunkMap& chunks,
+                                       const std::map<index_t, const Node*>& domain_map,
+                                       std::vector<Node>& adjset_chunk_maps);
 
 private:
     /**
@@ -121,6 +130,7 @@ private:
 
     MPI_Comm     comm;
     MPI_Datatype chunk_info_dt;
+    std::vector<int64> domain_to_rank_map;
 };
 
 //-----------------------------------------------------------------------------

@@ -15,6 +15,7 @@
 // std includes
 //-----------------------------------------------------------------------------
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <set>
 #include <string>
@@ -296,6 +297,7 @@ public:
      @param domain The domain number being created out of the various inputs.
      @param inputs A vector of Blueprint meshes representing the input
                    meshes that will be combined.
+     @param chunk_ids The global chunk id for each Blueprint mesh.
      @param[out] output The Conduit node to which the combined mesh's properties
                         will be added.
 
@@ -306,9 +308,16 @@ public:
      */
     void combine(int domain,
                  const std::vector<const Node *> &inputs,
+                 const std::vector<index_t> &chunk_ids,
                  Node &output);
 
 protected:
+
+    using ChunkToVertsMap = std::unordered_map<index_t, std::vector<index_t>>;
+    using DomainToChunkMap = std::unordered_map<const Node*, ChunkToVertsMap>;
+
+    virtual void init_dom_to_rank_map(const conduit::Node& n_mesh) { }
+
     /**
      @brief Examines the selections and counts them to determine a number of
             targets that would be produced. Most selections result in a domain
@@ -415,7 +424,9 @@ protected:
      @return A node containing the extracted chunk. The chunks will need to
              be freed by the caller.
      */
-    conduit::Node *extract(size_t idx, const conduit::Node &n_mesh) const;
+    conduit::Node *extract(size_t idx,
+                           const conduit::Node &n_mesh,
+                           std::vector<index_t>& vertex_ids_out) const;
 
     void create_new_uniform_coordset(const conduit::Node &n_coordset,
              const index_t start[3],
@@ -574,6 +585,65 @@ protected:
                             std::vector<int> &offsets);
 
     /**
+     @brief Generates a map from adjset vertex ids to their containing chunks.
+            This map is generated per-adjset and is stored in CSR format, and
+            is called by build_interdomain_adjsets() to construct splits of the
+            original adjsets.
+
+     @param chunk_offsets The vector containing starting chunk indices for each
+                          rank.
+     @param chunks A map of pre-partition domains to the set of chunk ids it is
+                   decomposed into, as well as the associated vertex maps for
+                   each chunk.
+     @param domain_map A map of domain ids to the corresponding Conduit node
+                       containing that domain's data.
+     @param[out] adjset_chunk_maps An array of nodes containing mappings from
+                                   shared vertices in adjsets to output chunks.
+     @note Reimplemented in parallel
+     */
+    virtual void get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                       const DomainToChunkMap& chunks,
+                                       const std::map<index_t, const Node*>& domain_map,
+                                       std::vector<Node>& adjset_chunk_maps);
+
+    /**
+     @brief Splits original adjsets into new adjsets for each constituent chunk
+            of all domains in the problem.
+
+     @param chunk_offsets The vector containing starting chunk indices for each
+                          rank.
+     @param chunks A map of pre-partition domains to the set of chunk ids it is
+                   decomposed into, as well as the associated vertex maps for
+                   each chunk.
+     @param domain_map A map of domain ids to the corresponding Conduit node
+                       containing that domain's data.
+     @param[out] adjset_data An array of nodes containing adjset data for each
+                             chunk local to this rank.
+     */
+    void build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
+                                   const DomainToChunkMap& chunks,
+                                   const std::map<index_t, const Node*>& domain_map,
+                                   std::vector<conduit::Node*>& adjset_data);
+
+    /**
+     @brief Generates shared vertex information for chunks within the same
+            pre-partitioned domain, and adds new adjset groups to all adjsets
+            in any applicable chunk. This should be called after the original
+            adjsets have been split for each chunk.
+
+     @param chunk_offsets The vector containing starting chunk indices for each
+                          rank.
+     @param chunks A map of pre-partition domains to the set of local chunk ids
+                   it is decomposed into, as well as the associated vertex maps
+                   for each chunk.
+     @param[out] adjset_data An array of nodes containing adjset data for each
+                             chunk local to this rank.
+     */
+    void build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
+                                   const DomainToChunkMap& chunks,
+                                   std::vector<conduit::Node*>& adjset_data);
+
+    /**
      @brief Communicates the input chunks to their respective destination ranks
             and passes out the set of chunks that this rank will operate on in
             the chunks_to_assemble vector.
@@ -592,6 +662,8 @@ protected:
                                             chunk in chunks_to_assemble. Like-
                                             numbered chunks will be combined
                                             into a single output domain.
+     @param[out] chunks_to_assemble_gids The global chunk numbering of each
+                                         chunk in chunks_to_assemble.
      @note Reimplemented in parallel
      */
     virtual void communicate_chunks(const std::vector<Chunk> &chunks,
@@ -599,7 +671,8 @@ protected:
                                     const std::vector<int> &dest_domain,
                                     const std::vector<int> &offsets,
                                     std::vector<Chunk> &chunks_to_assemble,
-                                    std::vector<int> &chunks_to_assemble_domains);
+                                    std::vector<int> &chunks_to_assemble_domains,
+                                    std::vector<int> &chunks_to_assemble_gids);
 
     int rank, size;
     unsigned int target;

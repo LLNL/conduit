@@ -222,7 +222,7 @@ void generate_domain_to_rank_map(const conduit::Node &mesh,
         int64 domain_id = par_rank;
         if(domain.has_child("state") && domain["state"].has_child("domain_id"))
         {
-            domain_id = domain["state/domain_id"].as_int64();
+            domain_id = domain["state/domain_id"].to_int64();
         }
         local_domains.push_back(domain_id);
 

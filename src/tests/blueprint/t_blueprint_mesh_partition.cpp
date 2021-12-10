@@ -1005,13 +1005,15 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
             conduit::Node combine_opts; combine_opts.parse(combine_yaml, "yaml");
 
             std::vector<const conduit::Node*> chunks;
+            std::vector<conduit_index_t> chunk_ids;
             for(conduit_index_t i = 0; i < split.number_of_children(); i++)
             {
                 chunks.push_back(&split[i]);
+                chunk_ids.push_back(i);
             }
 
             conduit::blueprint::mesh::Partitioner p;
-            p.combine(0, chunks, combine);
+            p.combine(0, chunks, chunk_ids, combine);
         #ifdef DEBUG_RECOMBINE_BRAID
             save_visit(base_name + "_combined", combine);
         #endif
