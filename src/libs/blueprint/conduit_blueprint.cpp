@@ -62,6 +62,8 @@ about(Node &n)
     n["protocols/o2mrelation"]   = "enabled";
     // zfparray
     n["protocols/zfparray"]      = "enabled";
+    // table
+    n["protocols/table"] = "enabled";
 }
 
 //---------------------------------------------------------------------------//
@@ -86,6 +88,10 @@ verify(const std::string &protocol,
         else if(p_curr == "mcarray")
         {
             res = mcarray::verify(p_next,n,info);
+        }
+        else if(p_curr == "table")
+        {
+            res = table::verify(p_next, n, info);
         }
         else if(p_curr == "o2mrelation")
         {
@@ -114,6 +120,10 @@ verify(const std::string &protocol,
         else if(p_curr == "mcarray")
         {
             res = mcarray::verify(n,info);
+        }
+        else if(p_curr == "table")
+        {
+            res = table::verify(n, info);
         }
         else if(p_curr == "o2mrelation")
         {

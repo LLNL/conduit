@@ -667,7 +667,30 @@ TEST(conduit_utils, split_tests)
 
 }
 
-
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, trim_string)
+{
+    const std::string ans = "trimmed";
+    std::string leading = "  trimmed";
+    std::string leading2 = "\t trimmed";
+    std::string trailing = "trimmed   ";
+    std::string trailing2 = "trimmed\r\n";
+    std::string both =  "  trimmed ";
+    std::string both2 = "\f\ttrimmed\v ";
+    
+    utils::trim_string(leading);
+    EXPECT_EQ(ans, leading);
+    utils::trim_string(leading2);
+    EXPECT_EQ(ans, leading2);
+    utils::trim_string(trailing);
+    EXPECT_EQ(ans, trailing);
+    utils::trim_string(trailing2);
+    EXPECT_EQ(ans, trailing2);
+    utils::trim_string(both);
+    EXPECT_EQ(ans, both);
+    utils::trim_string(both2);
+    EXPECT_EQ(ans, both2);
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_utils, format_args)

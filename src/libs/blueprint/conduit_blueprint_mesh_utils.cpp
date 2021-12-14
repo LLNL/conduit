@@ -1507,32 +1507,37 @@ coordset::_explicit::coords(const Node &n, const index_t i)
 }
 
 //-----------------------------------------------------------------------------
-std::vector<index_t>
-coordset::dim_lengths(const conduit::Node &n)
+void
+coordset::logical_dims(const conduit::Node &n, index_t *d, index_t maxdims)
 {
+    for(index_t i = 0; i < maxdims; i++)
+    {
+        d[i] = 1;
+    }
+
     auto info = get_coordset_info(n);
     const std::string cset_type = n["type"].as_string();
     const std::vector<std::string> &cset_axes = info.second;
-    const index_t dim = (index_t)cset_axes.size();
-
-    std::vector<index_t> retval(dim, 0);
-    for(index_t i = 0; i < dim; i++)
+    if(cset_type == "uniform" || cset_type == "rectilinear")
     {
-        if(cset_type == "uniform")
+        const index_t dim = ((index_t)cset_axes.size() > maxdims) ? maxdims
+            : (index_t)cset_axes.size();
+        for(index_t i = 0; i < dim; i++)
         {
-            retval[i] = n["dims"][LOGICAL_AXES[i]].to_index_t();
-        }
-        else if(cset_type == "rectilinear")
-        {
-            retval[i] = n["values"][cset_axes[i]].dtype().number_of_elements();
-        }
-        else // if(cset_type == "explicit")
-        {
-            retval[i] = n["values"][cset_axes[i]].dtype().number_of_elements();
+            if(cset_type == "uniform")
+            {
+                d[i] = n["dims"][LOGICAL_AXES[i]].to_index_t();
+            }
+            else // if(cset_type == "rectilinear")
+            {
+                d[i] = n["values"][cset_axes[i]].dtype().number_of_elements();
+            }
         }
     }
-
-    return retval;
+    else // if(cset_type == "explicit")
+    {
+        d[0] = n["values"][cset_axes[0]].dtype().number_of_elements();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1739,6 +1744,18 @@ topology::logical_dims(const Node &n, index_t *d, index_t maxdims)
         for(index_t i = 0; i < (index_t)dims.number_of_children(); i++)
         {
             d[i] = dims[LOGICAL_AXES[i]].to_index_t();
+        }
+    }
+    else if(type == "points")
+    {
+        const Node *coordset = find_reference_node(n, "coordset");
+        if(coordset)
+        {
+            coordset::logical_dims(*coordset, d, maxdims);
+        }
+        else
+        {
+            CONDUIT_ERROR("Unable to find reference node 'coordset'.");
         }
     }
     else // if(type == "unstructured")

@@ -89,6 +89,9 @@ set(conduit_relay_sources
     conduit_relay_io_handle_sidre.cpp
     conduit_relay_io_identify_protocol.cpp
     conduit_relay_io_blueprint.cpp
+    conduit_relay_io_csv.cpp
+    conduit_relay_web.cpp
+    conduit_relay_web_node_viewer_server.cpp
 )
 
 #

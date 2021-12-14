@@ -38,11 +38,12 @@
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_mesh_utils_iterate_elements.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
 
 // Uncomment to enable some debugging output from partitioner.
-//#define CONDUIT_DEBUG_PARTITIONER
+// #define CONDUIT_DEBUG_PARTITIONER
 
 // Toggles debug prints for point merge
 // #define DEBUG_POINT_MERGE
@@ -1745,6 +1746,9 @@ Partitioner::options_get_target(const conduit::Node &options,
             CONDUIT_INFO("Nonnumber passed as selection target.");
         }
     }
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Partition called with target " << value << std::endl;
+#endif
     return retval;
 }
 
@@ -3757,6 +3761,13 @@ Partitioner::execute(conduit::Node &output)
         unique_doms.insert(chunks_to_assemble_domains[i]);
     }
 
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "unique_doms:\n";
+    for(auto dom = unique_doms.begin(); dom != unique_doms.end(); dom++)
+        std::cout << "  " << (int)*dom << "\n";
+    std::cout << std::endl;
+#endif
+
     if(!chunks_to_assemble.empty())
     {
         output.reset();
@@ -3786,6 +3797,7 @@ Partitioner::execute(conduit::Node &output)
             if(this_dom_chunks.size() == 1)
             {
                 new_dom->set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                new_dom->set_path("state/domain_id", (int)*dom);
 
                 attach_chunk_adjset_to_single_dom(*new_dom, this_dom_cnkid[0]);
             }
@@ -3807,6 +3819,22 @@ Partitioner::execute(conduit::Node &output)
         chunks[i].free();
     for(size_t i = 0; i < chunks_to_assemble.size(); i++)
         chunks_to_assemble[i].free();
+
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Partition output domains:\n";
+    if(blueprint::mesh::is_multi_domain(output))
+    {
+        for(index_t i = 0; i < output.number_of_children(); i++)
+        {
+            std::cout << "  " << output[i]["state/domain_id"].to_int() << "\n";
+        }
+        std::cout << std::endl;
+    }
+    else
+    {
+        std::cout << "  " << output["state/domain_id"].to_int() << "\n" << std::endl;
+    }
+#endif
 }
 
 //-------------------------------------------------------------------------
@@ -3830,11 +3858,11 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
     dest_ranks.resize(chunks.size());
     for(size_t i = 0; i < chunks.size(); i++)
         dest_ranks[i] = rank;
-#ifdef CONDUIT_DEBUG_PARTITIONER
-    cout << "map_chunks:" << endl;
-    for(size_t i = 0; i < chunks.size(); i++)
-        chunks[i].mesh->print();
-#endif
+// #ifdef CONDUIT_DEBUG_PARTITIONER
+//     cout << "map_chunks:" << endl;
+//     for(size_t i = 0; i < chunks.size(); i++)
+//         chunks[i].mesh->print();
+// #endif
 
     // Determine average chunk size.
     std::vector<index_t> chunk_sizes;
@@ -3848,12 +3876,14 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
         total_len += len;
         chunk_sizes.push_back(len);
     }
-    index_t len_per_target = total_len / std::max(1u,target);
+
 #ifdef CONDUIT_DEBUG_PARTITIONER
     cout << "map_chunks: chunks.size=" << chunks.size()
          << ", total_len = " << total_len
-         << ", target=" << target
-         << ", len_per_target=" << len_per_target << endl;
+         << ", target=" << target << endl;
+    cout << "chunk_sizes={";
+    for(const index_t s : chunk_sizes) cout << s << ", ";
+    cout << "}" << endl;
 #endif
     // Come up with a list of domain ids to avoid in our numbering.
     std::set<int> reserved_dd;
@@ -3881,7 +3911,9 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
     // We have a certain number of chunks but determine how many targets
     // that makes. It ought to be equal to target.
     auto targets_from_chunks = static_cast<unsigned int>(count_targets());
-
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "targets_from_chunks: " << targets_from_chunks << std::endl;
+#endif
     if(targets_from_chunks == target)
     {
         // The number of targets we'd make from the chunks is the same
@@ -3915,24 +3947,44 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
         //       while trying to target a certain number of cells per domain.
         //       We may someday also want to consider the bounding boxes so
         //       we group chunks that are close spatially.
+        // NOTE: I updated the logic for grouping domains with a "free"
+        //       destination domain. Same idea but now the "len_per_target"
+        //       is recomputed based off how many cells are left divided by
+        //       how many more domains need to be created.
 
+        index_t remaining_len  = total_len;
+        index_t len_per_target = total_len / std::max(target, 1u);
+        index_t remaining_target = target - 1;
         index_t running_len = 0;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+        std::cout << "len_per_target={" << len_per_target << ", ";
+#endif
         for(size_t i = 0; i < chunks.size(); i++)
         {
             int dd = chunks[i].destination_domain;
             if(dd == Selection::FREE_DOMAIN_ID)
             {
+                const index_t remaining_chunks = (chunks.size() - 1) - i;
+                dest_domain.push_back(domid);
                 running_len += chunk_sizes[i];
-                if(running_len > len_per_target)
+                remaining_len -= chunk_sizes[i];
+                if(remaining_chunks != 0 &&
+                    (running_len >= len_per_target
+                        || remaining_chunks == remaining_target))
                 {
+                    // Update new len per target
                     running_len = 0;
+                    len_per_target = remaining_len / std::max(remaining_target, (index_t)1);
+                    remaining_target--;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+                    std::cout << len_per_target << ", ";
+#endif
+
                     // Get the next domain id.
                     while(reserved_dd.find(domid) != reserved_dd.end())
                         domid++;
                     reserved_dd.insert(domid);
                 }
-
-                dest_domain.push_back(domid);
             }
             else
             {
@@ -3940,6 +3992,9 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
                 dest_domain.push_back(dd);
             }
         }
+#ifdef CONDUIT_DEBUG_PARTITIONER
+        std::cout << "}" << std::endl;
+#endif
     }
     else
     {
@@ -5606,405 +5661,6 @@ point_merge::get_axes_for_system(coord_system cs)
 namespace topology
 {
 
-struct entity
-{
-    utils::ShapeType                  shape;
-    // utils::ShapeCascade               cascade; // User can make the cascade if they want using the shape
-    std::vector<index_t>              element_ids;
-    std::vector<std::vector<index_t>> subelement_ids;
-    index_t                           entity_id; // Local entity id.
-};
-
-// static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
-// Q: Should this exist in conduit_blueprint_mesh_utils.hpp ?
-enum class ShapeId : index_t
-{
-    Vertex     = 0,
-    Line       = 1,
-    Tri        = 2,
-    Quad       = 3,
-    Tet        = 4,
-    Hex        = 5,
-    Polygonal  = 6,
-    Polyhedral = 7
-};
-
-//-------------------------------------------------------------------------
-template<typename Func>
-static void iterate_elements(const Node &topo, Func &&func)
-{
-/*
-Multiple topology formats
-0. Single shape topology - Fixed celltype, polygonal celltype, polyhedral celltype
-  topo:
-    coordset: (String name of coordset)
-    type: unstructured
-    elements:
-      shape: (String name of shape)
-      connectivity: (Integer array of vertex ids)
-1. Mixed shape topology 1 - Fixed celltype, polygonal celltype, polyhedral celltype
-  topo:
-    coordset: (String name of coordset)
-    type: unstructured
-    elements:
-      -
-        shape: (String name of shape)
-        connectivity: (Integer array of vertex ids)
-2. Mixed shape topology 2 - Fixed celltype, polygonal celltype, polyhedral celltype
-  topo:
-    coordset: (String name of coordset)
-    type: unstructured
-    elements:
-      (String name):
-        shape: (String name of shape)
-        connectivity: (Integer array of vertex ids)
-3. Stream based toplogy 1
-  mesh: 
-    type: "unstructured"
-    coordset: "coords"
-    elements: 
-      element_types: 
-        (String name): (Q: Could this also be a list entry?) 
-          stream_id: (index_t id)
-          shape: (String name of shape)
-      element_index: 
-        stream_ids: (index_t array of stream ids, must be one of the ids listed in element_types)
-        element_counts: (index_t array of element counts at a given index (IE 2 would mean 2 of the associated stream ID))
-      stream: (index_t array of vertex ids)
-4. Stream based topology 2
-  topo: 
-    type: unstructured
-    coordset: (String name of coordset)
-    elements: 
-      element_types: 
-        (String name): (Q: Could this also be a list entry?)
-          stream_id: (index_t id)
-          shape: (String name of shape)
-      element_index: 
-        stream_ids: (index_t array of stream ids, must be one of the ids listed in element_types)
-        offsets: (index_t array of offsets into stream for each element)
-      stream: (index_t array of vertex ids)
-*/
-
-    int case_num = -1;
-    // Determine case number
-    {
-        const Node *shape = topo.fetch_ptr("elements/shape");
-        if(shape)
-        {
-            // This is a single shape topology
-            const utils::ShapeType st(shape->as_string());
-            if(!st.is_valid())
-            {
-                CONDUIT_ERROR("Invalid topology passed to iterate_elements.");
-                return;
-            }
-            else
-            {
-                case_num = 0;
-            }
-        }
-        else
-        {
-            const Node *elements = topo.fetch_ptr("elements");
-            if(!elements)
-            {
-                CONDUIT_ERROR("Invalid topology passed to iterate elements, no \"elements\" node.");
-                return;
-            }
-
-            const Node *etypes = elements->fetch_ptr("element_types");
-            const Node *eindex = elements->fetch_ptr("element_index");
-            const Node *estream = elements->fetch_ptr("stream");
-            if(!etypes && !eindex && !estream)
-            {
-                // Not a stream based toplogy, either a list or object of element buckets
-                if(elements->dtype().is_list())
-                {
-                    case_num = 1;
-                }
-                else if(elements->dtype().is_object())
-                {
-                    case_num = 2;
-                }
-            }
-            else if(etypes && eindex && estream)
-            {
-                // Stream based topology, either offsets or counts
-                const Node *eoffsets = eindex->fetch_ptr("offsets");
-                const Node *ecounts  = eindex->fetch_ptr("element_counts");
-                if(ecounts)
-                {
-                    case_num = 3;
-                }
-                else if(eoffsets)
-                {
-                    case_num = 4;
-                }
-            }
-        }
-    }
-    if(case_num < 0)
-    {
-        CONDUIT_ERROR("Could not figure out the type of toplogy passed to iterate elements.");
-        return;
-    }
-
-    // Define the lambda functions to be invoked for each topology type
-    const auto traverse_fixed_elements = [&func](const Node &eles, const utils::ShapeType &shape, index_t &ent_id) {
-        // Single celltype
-        entity e;
-        e.shape = shape;
-        const auto ent_size = e.shape.indices;
-        e.element_ids.resize(ent_size, 0);
-
-        index_t_accessor conn = eles["connectivity"].as_index_t_accessor();
-        const index_t nents = conn.number_of_elements() / ent_size;
-        index_t ei = 0;
-        for(index_t i = 0; i < nents; i++)
-        {
-            e.entity_id = ent_id;
-            for(index_t j = 0; j < ent_size; j++)
-            {
-                // Pull out vertex id at ei
-                e.element_ids[j] = conn[ei];
-                ei++;
-            }
-
-            func(e);
-            ent_id++;
-        }
-    };
-
-    const auto traverse_polygonal_elements = [&func](const Node &elements, index_t &ent_id) {
-        entity e;
-        e.shape = utils::ShapeType((index_t)ShapeId::Polygonal);
-        const index_t_accessor conn = elements["connectivity"].as_index_t_accessor();
-        const index_t_accessor sizes = elements["sizes"].as_index_t_accessor();
-        index_t ei = 0;
-        for(index_t i = 0; i < sizes.number_of_elements(); i++)
-        {
-            e.entity_id = ent_id;
-            const index_t sz = sizes[i];
-            e.element_ids.resize(sz);
-            for(index_t j = 0; j < sz; j++)
-            {
-                // Pull out vertex id at ei then cast to index_t
-                e.element_ids[j] = conn[ei];
-                ei++;
-            }
-
-            func(e);
-            ent_id++;
-        }
-    };
-
-    const auto traverse_polyhedral_elements = [&func](const Node &elements, const Node &subelements, index_t &ent_id) {
-        entity e;
-        e.shape = utils::ShapeType((index_t)ShapeId::Polyhedral);
-        const index_t_accessor conn = elements["connectivity"].as_index_t_accessor();
-        const index_t_accessor sizes = elements["sizes"].as_index_t_accessor();
-        const index_t_accessor subconn = subelements["connectivity"].as_index_t_accessor();
-        const index_t_accessor subsizes = subelements["sizes"].as_index_t_accessor();
-        const index_t_accessor suboffsets = subelements["offsets"].as_index_t_accessor();
-        index_t ei = 0;
-        for(index_t i = 0; i < sizes.number_of_elements(); i++)
-        {
-            e.entity_id = ent_id;
-            const index_t sz = sizes[i];
-            e.element_ids.resize(sz);
-            for(index_t j = 0; j < sz; j++)
-            {
-                // Pull out vertex id at ei then cast to index_t
-                e.element_ids[j] = conn[ei];
-                ei++;
-            }
-
-            e.subelement_ids.resize(sz);
-            for(index_t j = 0; j < sz; j++)
-            {
-                // Get the size of the subelement so we can define it in the proper index of subelement_ids
-                auto &subele = e.subelement_ids[j];
-                const index_t subsz = subsizes[e.element_ids[j]];
-                subele.resize(subsz);
-
-                // Find the offset of the face definition so we can write the vertex ids
-                index_t offset = suboffsets[e.element_ids[j]];
-                for(index_t k = 0; k < subsz; k++)
-                {
-                    subele[k] = subconn[offset];
-                    offset++;
-                }
-            }
-
-            func(e);
-            ent_id++;
-        }
-    };
-
-    using id_elem_pair =  std::pair<index_t, entity>;
-    const auto build_element_vector = [](const Node &element_types, std::vector<id_elem_pair> &eles)
-    {
-    /*
-      element_types: 
-        (String name): (Q: Could this also be a list entry?) 
-          stream_id: (index_t id)
-          shape: (String name of shape)
-    */
-        eles.clear();
-        auto itr = element_types.children();
-        while(itr.has_next())
-        {
-            const Node &n = itr.next();
-            const index_t id = n["stream_id"].to_index_t();
-            const utils::ShapeType shape(n["shape"].as_string());
-            eles.push_back({{id}, {}});
-            eles.back().second.shape = shape;
-            if(!shape.is_poly())
-            {
-                eles.back().second.element_ids.resize(shape.indices);
-            }
-            else
-            {
-                CONDUIT_ERROR("I cannot handle a stream of polygonal/polyhedral elements!");
-                return;
-            }
-        }
-    };
-
-    index_t ent_id = 0;
-    switch(case_num)
-    {
-    case 0:
-    {
-        utils::ShapeType shape(topo);
-        if(shape.is_polyhedral())
-        {
-            traverse_polyhedral_elements(topo["elements"], topo["subelements"], ent_id);
-        }
-        else if(shape.is_polygonal())
-        {
-            traverse_polygonal_elements(topo["elements"], ent_id);
-        }
-        else // (known celltype case)
-        {
-            traverse_fixed_elements(topo["elements"], shape, ent_id);
-        }
-        break;
-    }
-    case 1: /* Fallthrough */
-    case 2:
-    {
-        // Mixed celltype
-        const Node &elements = topo["elements"];
-        auto ele_itr = elements.children();
-        while(ele_itr.has_next())
-        {
-            const Node &bucket = ele_itr.next();
-            const std::string &shape_name = bucket["shape"].as_string();
-            utils::ShapeType shape(shape_name);
-
-            if(shape.is_polyhedral())
-            {
-                // Need to find corresponding subelements
-                const std::string bucket_name = bucket.name();
-                if(!topo.has_child("subelements"))
-                {
-                    CONDUIT_ERROR("Invalid toplogy, shape == polygonal but no subelements node present.");
-                    return;
-                }
-                const Node &subelements = topo["subelements"];
-                if(!subelements.has_child(bucket_name))
-                {
-                    CONDUIT_ERROR("Invalid toplogy, shape == polygonal but no matching subelements node present.");
-                    return;
-                }
-                const Node &subbucket = subelements[bucket_name];
-                traverse_polyhedral_elements(bucket, subbucket, ent_id);
-            }
-            else if(shape.is_polygonal())
-            {
-                traverse_polygonal_elements(bucket, ent_id);
-            }
-            else
-            {
-                traverse_fixed_elements(bucket, shape, ent_id);
-            }
-        }
-        break;
-    }
-    case 3: /* Fallthrough */
-    case 4:
-    {
-        // Stream with element counts or offsets
-        const Node &elements = topo["elements"];
-        std::vector<id_elem_pair> etypes;
-        build_element_vector(elements["element_types"], etypes);
-        const Node &eindex = elements["element_index"];
-        const index_t_accessor stream = elements["stream"].as_index_t_accessor();
-        const index_t_accessor stream_ids = eindex["stream_ids"].as_index_t_accessor();
-        const Node *p_stream_offs = eindex.fetch_ptr("offsets");
-        const Node *p_stream_counts = eindex.fetch_ptr("element_counts");
-        const index_t nstream = stream_ids.number_of_elements();
-        index_t ent_id = 0;
-        // For count based this number just keeps rising, for offset based it gets overwritten
-        //   by what is stored in the offsets node.
-        index_t idx = 0;
-        for(index_t i = 0; i < stream_ids.number_of_elements(); i++)
-        {
-            // Determine which shape we are working with
-            const index_t stream_id = stream_ids[i];
-            auto itr = std::find_if(etypes.begin(), etypes.end(), [=](const id_elem_pair &p){
-                return p.first == stream_id;
-            });
-            entity &e = itr->second;
-
-            // Determine how many elements are in this section of the stream
-            index_t start = 0, end = 0;
-            if(p_stream_offs)
-            {
-                index_t_accessor stream_offs = p_stream_offs->as_index_t_accessor();
-                start = stream_offs[i];
-                if(i == nstream - 1)
-                {
-                    end = stream_offs.number_of_elements();
-                }
-                else
-                {
-                    end = stream_offs[i+1];
-                }
-            }
-            else if(p_stream_counts)
-            {
-                index_t_accessor stream_counts = p_stream_counts->as_index_t_accessor();
-                start = idx;
-                end   = start + (stream_counts[i] * e.shape.indices);
-            }
-
-            // Iterate the elements in this section
-            idx = start;
-            while(idx < end)
-            {
-                const index_t sz = e.shape.indices;
-                for(index_t j = 0; j < sz; j++)
-                {
-                    e.element_ids[j] = stream[idx];
-                    idx++;
-                }
-                e.entity_id = ent_id;
-                func(e);
-                ent_id++;
-            }
-            idx = end;
-        }
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Unsupported topology passed to iterate_elements")
-        return;
-    }
-}
-
 //-----------------------------------------------------------------------------
 template<typename Func>
 static void iterate_int_data(const conduit::Node &node, Func &&func)
@@ -6033,6 +5689,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
                           Node &output)
 {
     // std::cout << "Building unstructured output!" << std::endl;
+    using namespace utils::topology;
     output.reset();
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
@@ -6118,6 +5775,7 @@ build_polygonal_output(const std::vector<const Node*> &topologies,
                        Node &output)
 {
     // std::cout << "Building polygonal output!" << std::endl;
+    using namespace utils::topology;
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
     output["elements/shape"].set("polygonal");
@@ -6199,6 +5857,7 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
                        Node &output)
 {
     // std::cout << "Building polyhedral output!" << std::endl;
+    using namespace utils::topology;
     output.reset();
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
@@ -6440,10 +6099,12 @@ public:
                     n_new_topo["type"] = "structured";
                     n_new_topo["coordset"] = n_cset.name();
 
-                    auto logical_dims = utils::coordset::dim_lengths(n_cset);
-                    for(size_t ldi = 0; ldi < logical_dims.size(); ldi++)
+                    const index_t dim = utils::topology::dims(n_topo);
+                    std::array<index_t, MAXDIM> logical_dims;
+                    utils::topology::logical_dims(n_topo, logical_dims.data(), dim);
+                    for(index_t ldi = 0; ldi < dim; ldi++)
                     {
-                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims[ldi] - 1;
+                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims[ldi];
                     }
 
                     if(n_topo.has_path("elements/origin"))
@@ -7470,7 +7131,7 @@ private:
                             }
                             else if(mode == CombineImplicitMode::Rectilinear)
                             {
-                                std::cout << "Handling rectilinear combine" << std::endl;
+                                // std::cout << "Handling rectilinear combine" << std::endl;
                                 // We need to further check that the spacing along the matched edge/plane is okay
                                 const Node &n_cseti = n_meshi->fetch_existing(cset_path);
                                 const Node &n_csetj = n_meshj->fetch_existing(cset_path);
@@ -8391,7 +8052,7 @@ determine_schema(const Node &in,
     }
     else
     {
-        out_ncomps = 1;
+        out_ncomps = 0;
         out_schema.set(DataType(in.dtype().id(), ntuples));
     }
 }
@@ -8424,7 +8085,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // out_node.print();
 
     const index_t npmaps = (index_t)pointmaps.size();
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t fi = 0; fi < npmaps; fi++)
         {
@@ -8487,7 +8148,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // out_schema.print();
     // out_node.print();
 
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t i = 0; i < num_verticies; i++)
         {
@@ -8535,7 +8196,7 @@ map_element_field(const std::vector<const Node*> &in_nodes,
     Schema out_schema;
     determine_schema(in_nodes[0]->child("values"), nelements, ncomps, out_schema);
     out_node.set(out_schema);
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t out_idx = 0; out_idx < nelements; out_idx++)
         {
@@ -8951,13 +8612,15 @@ Partitioner::combine(int domain,
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
-    // Handle trivial cases
-    // std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Combining domain " << domain << " size " << inputs.size() << std::endl;
     // std::cout << "INPUTS:";
     // for(const Node *in : inputs)
     // {
-    //     in->print();
+    //     in->schema().print();
     // }
+#endif
+    // Handle trivial cases
     output.reset();
     const auto sz = inputs.size();
     if(sz == 0)

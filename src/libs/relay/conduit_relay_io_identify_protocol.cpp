@@ -107,6 +107,10 @@ identify_protocol(const std::string &path,
     {
         io_type = "adios";
     }
+    else if(file_name_ext == "csv")
+    {
+        io_type = "csv";
+    }
 
     // default to conduit_bin
 

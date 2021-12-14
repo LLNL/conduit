@@ -68,7 +68,7 @@
   state: 
     time: 3.1415
     cycle: 1
-    domain_id: 0
+    domain_id: 1
   fields: 
     braid: 
       association: "vertex"
@@ -119,7 +119,7 @@
   state: 
     time: 3.1415
     cycle: 1
-    domain_id: 1
+    domain_id: 2
   fields: 
     braid: 
       association: "vertex"
@@ -170,7 +170,7 @@
   state: 
     time: 3.1415
     cycle: 1
-    domain_id: 1
+    domain_id: 3
   fields: 
     braid: 
       association: "vertex"
@@ -221,7 +221,7 @@
   state: 
     time: 3.1415
     cycle: 1
-    domain_id: 2
+    domain_id: 4
   fields: 
     braid: 
       association: "vertex"
@@ -272,7 +272,7 @@
   state: 
     time: 3.1415
     cycle: 1
-    domain_id: 2
+    domain_id: 5
   fields: 
     braid: 
       association: "vertex"
@@ -323,7 +323,7 @@
   state: 
     time: 3.1415
     cycle: 1
-    domain_id: 3
+    domain_id: 6
   fields: 
     braid: 
       association: "vertex"
@@ -374,7 +374,7 @@
   state: 
     time: 3.1415
     cycle: 1
-    domain_id: 3
+    domain_id: 7
   fields: 
     braid: 
       association: "vertex"

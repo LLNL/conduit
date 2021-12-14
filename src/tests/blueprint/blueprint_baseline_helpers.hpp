@@ -4,29 +4,41 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_blueprint_partition_helpers.hpp
+/// file: blueprint_baseline_helpers.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef T_BLUEPRINT_PARTITION_HELPERS_HPP
-#define T_BLUEPRINT_PARTITION_HELPERS_HPP
+#ifndef BLUEPRINT_BASELINE_HELPERS_HPP
+#define BLUEPRINT_BASELINE_HELPERS_HPP
+
+#include <conduit.hpp>
+#include <conduit_node.hpp>
+#include <conduit_blueprint.hpp>
+#include <conduit_relay.hpp>
+#include <conduit_relay_io_blueprint.hpp>
+
+//-----------------------------------------------------------------------------
+// -- begin baseline utility functions --
+//-----------------------------------------------------------------------------
+// NOTE: REQUIRES sep, baseline_dir(), test_name(), get_rank(), barrier()
+//  are defined before inclusion.
 
 //-----------------------------------------------------------------------------
 #ifdef GENERATE_BASELINES
   #ifdef _WIN32
     #include <direct.h>
-    void create_path(const std::string &path) { _mkdir(path.c_str()); }
+    inline void create_path(const std::string &path) { _mkdir(path.c_str()); }
   #else
     #include <sys/stat.h>
     #include <sys/types.h>
-    void create_path(const std::string &path) { mkdir(path.c_str(), S_IRWXU); }
+    inline void create_path(const std::string &path) { mkdir(path.c_str(), S_IRWXU); }
   #endif
 #else
-  void create_path(const std::string &) {}
+  inline void create_path(const std::string &) {}
 #endif
 
 //-----------------------------------------------------------------------------
-std::string
+inline std::string
 baseline_file(const std::string &basename)
 {
     std::string path(baseline_dir());
@@ -42,21 +54,21 @@ baseline_file(const std::string &basename)
 }
 
 //-----------------------------------------------------------------------------
-void
+inline void
 make_baseline(const std::string &filename, const conduit::Node &n)
 {
     conduit::relay::io::save(n, filename, "yaml");
 }
 
 //-----------------------------------------------------------------------------
-void
+inline void
 load_baseline(const std::string &filename, conduit::Node &n)
 {
     conduit::relay::io::load(filename, "yaml", n);
 }
 
 //-----------------------------------------------------------------------------
-bool
+inline bool
 compare_baseline(const std::string &filename, const conduit::Node &n)
 {
     const double tolerance = 1.e-6;
@@ -69,15 +81,15 @@ compare_baseline(const std::string &filename, const conduit::Node &n)
     if(!equal)
     {
        const char *line = "*************************************************************";
-       cout << "Difference!" << endl;
-       cout << line << endl;
+       std::cout << "Difference!" << std::endl;
+       std::cout << line << std::endl;
        info.print();
     }
     return equal;
 }
 
 //-----------------------------------------------------------------------------
-bool
+inline bool
 check_if_hdf5_enabled()
 {
     conduit::Node io_protos;
@@ -86,14 +98,14 @@ check_if_hdf5_enabled()
 }
 
 //-----------------------------------------------------------------------------
-void
+inline void
 save_node(const std::string &filename, const conduit::Node &mesh)
 {
     conduit::relay::io::blueprint::save_mesh(mesh, filename + ".yaml", "yaml");
 }
 
 //-----------------------------------------------------------------------------
-void
+inline void
 save_visit(const std::string &filename, const conduit::Node &n)
 {
 #ifdef GENERATE_BASELINES
@@ -160,107 +172,7 @@ save_visit(const std::string &filename, const conduit::Node &n)
 }
 
 //-----------------------------------------------------------------------------
-/**
-Make a field that selects domains like this.
-+----+----+
-| 3  |  5 |
-|  +-|-+  |
-|  +4|4|  |
-+--+-+-+--|
-|  +1|1|  |
-|  +-|-+  |
-| 0  |  2 |
-+----+----+
-
-*/
-void
-add_field_selection_field(int cx, int cy, int cz,
-    int iquad, int jquad, conduit::index_t main_dom, conduit::index_t fill_dom,
-    conduit::Node &output)
-{
-    std::vector<conduit::int64> values(cx*cy*cz, main_dom);
-    int sq = 2*jquad + iquad;
-    int idx = 0;
-    for(int k = 0; k < cz; k++)
-    for(int j = 0; j < cy; j++)
-    for(int i = 0; i < cx; i++)
-    {
-        int ci = (i < cx/2) ? 0 : 1;
-        int cj = (j < cy/2) ? 0 : 1;
-        int csq = 2*cj + ci;
-        if(csq == sq)
-            values[idx] = fill_dom;
-        idx++;
-    }
-    output["fields/selection_field/type"] = "scalar";
-    output["fields/selection_field/association"] = "element";
-    output["fields/selection_field/topology"] = "mesh";
-    output["fields/selection_field/values"].set(values);
-}
-
-void
-make_field_selection_example(conduit::Node &output, int mask)
-{
-    int nx = 11, ny = 11, nz = 3;
-    int m = 1, dc = 0;
-    for(int i = 0; i < 4; i++)
-    {
-        if(m & mask)
-            dc++;
-        m <<= 1;
-    }
-
-    if(mask & 1)
-    {
-        conduit::Node &dom0 = (dc > 1) ? output.append() : output;
-        conduit::blueprint::mesh::examples::braid("uniform", nx, ny, nz, dom0);
-        dom0["state/cycle"] = 1;
-        dom0["state/domain_id"] = 0;
-        dom0["coordsets/coords/origin/x"] = 0.;
-        dom0["coordsets/coords/origin/y"] = 0.;
-        dom0["coordsets/coords/origin/z"] = 0.;
-        add_field_selection_field(nx-1, ny-1, nz-1, 1,1, 0, 11, dom0);
-    }
-
-    if(mask & 2)
-    {
-        conduit::Node &dom1 = (dc > 1) ? output.append() : output;
-        conduit::blueprint::mesh::examples::braid("uniform", nx, ny, nz, dom1);
-        auto dx = dom1["coordsets/coords/spacing/dx"].to_float();
-        dom1["state/cycle"] = 1;
-        dom1["state/domain_id"] = 1;
-        dom1["coordsets/coords/origin/x"] = dx * static_cast<double>(nx-1);
-        dom1["coordsets/coords/origin/y"] = 0.;
-        dom1["coordsets/coords/origin/z"] = 0.;
-        add_field_selection_field(nx-1, ny-1, nz-1, 0,1, 22, 11, dom1);
-    }
-
-    if(mask & 4)
-    {
-        conduit::Node &dom2 = (dc > 1) ? output.append() : output;
-        conduit::blueprint::mesh::examples::braid("uniform", nx, ny, nz, dom2);
-        auto dy = dom2["coordsets/coords/spacing/dy"].to_float();
-        dom2["state/cycle"] = 1;
-        dom2["state/domain_id"] = 2;
-        dom2["coordsets/coords/origin/x"] = 0.;
-        dom2["coordsets/coords/origin/y"] = dy * static_cast<double>(ny-1);
-        dom2["coordsets/coords/origin/z"] = 0.;
-        add_field_selection_field(nx-1, ny-1, nz-1, 1,0, 33, 44, dom2);
-    }
-
-    if(mask & 8)
-    {
-        conduit::Node &dom3 = (dc > 1) ? output.append() : output;
-        conduit::blueprint::mesh::examples::braid("uniform", nx, ny, nz, dom3);
-        auto dx = dom3["coordsets/coords/spacing/dx"].to_float();
-        auto dy = dom3["coordsets/coords/spacing/dy"].to_float();
-        dom3["state/cycle"] = 1;
-        dom3["state/domain_id"] = 3;
-        dom3["coordsets/coords/origin/x"] = dx * static_cast<double>(nx-1);
-        dom3["coordsets/coords/origin/y"] = dy * static_cast<double>(ny-1);
-        dom3["coordsets/coords/origin/z"] = 0.;
-        add_field_selection_field(nx-1, ny-1, nz-1, 0,0, 55, 44, dom3);
-    }
-}
+// -- end baseline utility functions --
+//-----------------------------------------------------------------------------
 
 #endif

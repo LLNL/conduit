@@ -30,10 +30,16 @@ For now, Blueprint is focused on conventions for two important types of data:
     A multi-component array is a collection of fixed-sized numeric tuples.
     They are used in the context computational meshes to represent coordinate data or field data, such as the three directional components of a 3D velocity field. There are a few common in-core data layouts used by several APIs to accept multi-component array data, these include:  row-major vs column-major layouts, or the use of arrays of struct vs struct of arrays in C-style languages. Blueprint provides transforms that convert any multi-component array to these common data layouts.
 
+*  Tabular Data (protocol: ``table``)
+
+    A collection of data represented as columns with the same number of rows.
+    Generally used to serialize data in a flattened form, specifically to and from CSV files.
+
 .. toctree::
     blueprint_mesh
     blueprint_o2mrelation
     blueprint_mcarray
+    blueprint_table
     blueprint_mesh_partition
 
 Top Level Blueprint Interface

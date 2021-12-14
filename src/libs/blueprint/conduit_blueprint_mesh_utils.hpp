@@ -327,10 +327,11 @@ namespace coordset
 
     //-----------------------------------------------------------------------------
     /**
-    @brief Returns the number of verticies in each dimension for the given coordset.
-    @return A vector of index_t in the format {d0_nverts, ... , dNnverts}
+    @brief Updates array d to hold the number of verticies in each dimension
+        for the given coordset. Explicit coordsets will just report their
+        number_of_elements() in d[0].
     */
-    std::vector<index_t> dim_lengths(const conduit::Node &n);
+    void logical_dims(const conduit::Node &n, index_t *d, index_t maxdims);
 
     //-----------------------------------------------------------------------------
     /**

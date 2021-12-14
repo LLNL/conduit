@@ -22,6 +22,7 @@
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mpi_mesh.hpp"
+#include "conduit_blueprint_mpi_mesh_flatten.hpp"
 #include "conduit_blueprint_mpi_mesh_partition.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
@@ -3268,6 +3269,18 @@ generate_corners(conduit::Node& mesh,
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap, comm,
         conduit::blueprint::mesh::topology::unstructured::generate_corners, identify_corner, corner_dims);
+}
+
+//-------------------------------------------------------------------------
+void
+flatten(const conduit::Node &mesh, const conduit::Node &options,
+    conduit::Node &output, MPI_Comm comm)
+{
+    output.reset();
+
+    ParallelMeshFlattener do_flatten(comm);
+    do_flatten.set_options(options);
+    do_flatten.execute(mesh, output);
 }
 
 //-----------------------------------------------------------------------------

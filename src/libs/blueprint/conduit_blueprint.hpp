@@ -32,6 +32,9 @@
 
 #include "conduit_blueprint_zfparray.hpp"
 
+#include "conduit_blueprint_table.hpp"
+#include "conduit_blueprint_table_examples.hpp"
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------

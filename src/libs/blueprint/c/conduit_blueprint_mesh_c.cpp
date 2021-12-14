@@ -82,6 +82,19 @@ conduit_blueprint_mesh_partition(const conduit_node *cmesh,
 }
 
 //-----------------------------------------------------------------------------
+/// Flatten a mesh to a table.
+//-----------------------------------------------------------------------------
+void
+conduit_blueprint_mesh_flatten(const conduit_node *cmesh,
+    const conduit_node *coptions, conduit_node *coutput)
+{
+    const Node &mesh = cpp_node_ref(cmesh);
+    const Node &options = cpp_node_ref(coptions);
+    Node &output  = cpp_node_ref(coutput);
+    blueprint::mesh::flatten(mesh, options, output);
+}
+
+//-----------------------------------------------------------------------------
 /// Interface to generate example data
 //-----------------------------------------------------------------------------
 void

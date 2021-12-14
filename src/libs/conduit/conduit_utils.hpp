@@ -350,6 +350,14 @@ namespace utils
                                    std::string &curr,
                                    std::string &next);
 
+    //------------------------------------------------------------------------
+    /// Removes the the leading and trailing whitespace from the string 'str'.
+    /// 'chars_to_trim' can be overriden to trim a different set of characters
+    /// from 'str'.
+    //-------------------------------------------------------------------------
+    void CONDUIT_API trim_string(std::string &str,
+                                 const char *chars_to_trim = " \t\n\r\f\v");
+
 //-----------------------------------------------------------------------------
 /// Helpers for splitting and joining conduit paths (which always use "/")
 //-----------------------------------------------------------------------------
@@ -405,6 +413,25 @@ namespace utils
 
 //-----------------------------------------------------------------------------
      bool CONDUIT_API is_directory(const std::string &path);
+
+//-----------------------------------------------------------------------------
+/// Lists the items contained in the given directory.
+/// Each entry returned in "contents" will have the directory
+/// included in the path.
+///
+/// Queries the system for the contents of the given directory.
+/// Does not perform any checks on the returned filenames, could be
+/// directories or files (anything a directory may contain).
+///
+/// Param "directory" must be the path to a directory.
+/// Param "ignore_dot" ignores any items starting with '.'
+///   (ie: "." or ".." or ".dotfile"), defaulted to true.
+/// returns false if there was an error opening the provided directory,
+/// true otherwise.
+//-----------------------------------------------------------------------------
+     bool CONDUIT_API list_directory_contents(const std::string &directory,
+                                              std::vector<std::string> &contents,
+                                              bool ignore_dot = true);
 
 //-----------------------------------------------------------------------------
      index_t CONDUIT_API file_size(const std::string &path);
