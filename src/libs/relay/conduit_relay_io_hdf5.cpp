@@ -2011,7 +2011,7 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
 void
 write_conduit_node_to_hdf5_tree(const Node &node,
                                 const std::string &ref_path,
-                                hid_t hdf5_id,
+                                hid_t &hdf5_id,
                                 const Node &opts)
 {
 
