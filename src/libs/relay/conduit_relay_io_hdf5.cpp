@@ -3038,7 +3038,7 @@ hdf5_write(const Node &node,
 //---------------------------------------------------------------------------//
 void
 hdf5_write(const Node &node,
-           hid_t hdf5_id,
+           hid_t &hdf5_id,
            const std::string &hdf5_path,
            const Node &opts)
 {
@@ -3139,7 +3139,7 @@ hdf5_write(const Node &node,
 //---------------------------------------------------------------------------//
 void
 hdf5_write(const Node &node,
-           hid_t hdf5_id,
+           hid_t &hdf5_id,
            const Node &opts)
 {
     // disable hdf5 error stack
