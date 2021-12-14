@@ -31,6 +31,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_json_sanitize
                 t_conduit_yaml
                 t_conduit_generator
+                t_conduit_data_accessor
                 t_conduit_node_update
                 t_conduit_node_compact
                 t_conduit_node_info
@@ -41,6 +42,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_schema
                 t_conduit_error
                 t_conduit_log
+                t_conduit_utils
                 t_conduit_mem_allocator
                 t_conduit_intro_cpp_example)
 

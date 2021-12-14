@@ -1002,7 +1002,7 @@ void write_mesh(const Node &mesh,
         // write to single file in this case, we need baton.
         // the outer loop + par_rank == current_writer implements
         // the baton.
-        relay::io::IOHandle hnd;
+
         
         Node local_root_file_created;
         Node global_root_file_created;
@@ -1013,12 +1013,15 @@ void write_mesh(const Node &mesh,
         {
             if(par_rank == current_writer)
             {
+                relay::io::IOHandle hnd;
+
                 for(int i = 0; i < local_num_domains; ++i)
                 {
                     // if truncate, first rank to touch the file needs
                     // to open at
                     Node open_opts;
-                    if( (global_root_file_created.as_int() == 0) 
+                    if( !hnd.is_open()
+                        && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
                         Node open_opts;
@@ -1051,6 +1054,10 @@ void write_mesh(const Node &mesh,
                     }
                     hnd.write(dom,mesh_path);
                 }
+                
+                // note: local file handle goes out of scope here
+                // and data is committed to file for handles that write
+                // on close
             }
 
         // Reduce to sync up (like a barrier) and solve first writer need
@@ -1387,6 +1394,8 @@ void write_mesh(const Node &mesh,
         Node &bp_idx = root["blueprint_index"];
 
         // TODO: Use MPI ver vs providing the domains?
+        // NOTE: If we make this change, all MPI tasks need to participate 
+        // in index_gen
         ::conduit::blueprint::mesh::generate_index(multi_dom.child(0),
                                                    opts_mesh_name,
                                                    global_num_domains,

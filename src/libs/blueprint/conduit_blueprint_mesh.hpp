@@ -74,14 +74,9 @@ index_t CONDUIT_BLUEPRINT_API number_of_domains(const conduit::Node &mesh);
 
 
 //-----------------------------------------------------------------------------
-std::vector<conduit::Node *> CONDUIT_BLUEPRINT_API domains(Node &mesh);
+std::vector<conduit::Node *>       CONDUIT_BLUEPRINT_API domains(Node &mesh);
 std::vector<const conduit::Node *> CONDUIT_BLUEPRINT_API domains(const Node &mesh);
 
-
-//-----------------------------------------------------------------------------
-//
-// NOTE: These method variants exist b/c we can't overload on return type to
-// create a non const version of the mesh::domains method above
 
 //-----------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API domains(const Node &mesh,
@@ -101,8 +96,14 @@ void CONDUIT_BLUEPRINT_API to_multi_domain(const conduit::Node &mesh,
 //-------------------------------------------------------------------------
 void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
                                           const std::string &ref_path,
-                                          index_t num_domains,
+                                          index_t number_of_domains,
                                           Node &index_out);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_index_for_single_domain(const conduit::Node &mesh,
+                                                            const std::string &ref_path,
+                                                            Node &index_out);
+
 
 //-------------------------------------------------------------------------
 /**
@@ -115,6 +116,33 @@ void CONDUIT_BLUEPRINT_API generate_index(const conduit::Node &mesh,
 void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
                                      const conduit::Node &options,
                                      conduit::Node &output);
+
+/**
+ @brief Convert the given blueprint mesh into a blueprint table.
+ @param mesh    A Conduit node containing a blueprint mesh or set of mesh domains.
+ @param options A Conduit node containing options for the flatten operation.
+ @param[out] output A Conduit node that will contain the blueprint table output.
+    Output will contain the two tables "vertex_data" and "element_data". If one
+    of these tables is empty it will be removed from the output.
+    (example - If no vertex_data then output will contain one child "element_data" table).
+
+ Supported options:
+    "topology": The name of the topology to use for reference. (Defaults to first topology).
+    "field_names": A list of field names to include in the output table.
+        (Defaults to all fields associated with the active "topology")
+    "fill_value": The default value of every element in the table (Default 0)
+    "add_domain_info": Determines whether "domain_id", "vertex_id", and "element_id"
+        are included in the output table. Should be passed as int. (Default 1 (true))
+    "add_element_centers": Determines whether the centers of every element in the mesh
+        should be calculated and added to the output table. Should be passed as int.
+        (Default 1 (true))
+    "add_vertex_locations": Determines whether the coordinate locations of every vertex
+        in the mesh should be included in the output table. Should be passed as int.
+        (Default 1 (true))
+*/
+void CONDUIT_BLUEPRINT_API flatten(const conduit::Node &mesh,
+                                   const conduit::Node &options,
+                                   conduit::Node &output);
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
@@ -346,6 +374,16 @@ namespace topology
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API to_polygonal(const conduit::Node &topo,
                                                 conduit::Node &dest);
+
+        // Note: 
+        // this is an alias to `to_polygonal`
+        // to_polytopal is a better name for our existing to_polygonal
+        // since it supports both polygons and polyhedra
+        // to_polygonal may be deprecated in the future
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API to_polytopal(const conduit::Node &topo,
+                                                conduit::Node &dest);
+
 
         //-------------------------------------------------------------------------
         void CONDUIT_BLUEPRINT_API generate_points(const conduit::Node &topo,

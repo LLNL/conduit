@@ -335,17 +335,7 @@ void generate_partition_field(conduit::Node &mesh,
 
             // for unstrcut poly: 
             // add up all the sizes, don't use offsets?
-            Node sizes_node;
-            if (dom_topo["elements/sizes"].dtype().is_uint64() &&
-                dom_topo["elements/sizes"].dtype().is_compact())
-            {
-                sizes_node.set_external(dom_topo["elements/sizes"]);
-            }
-            else
-            {
-                dom_topo["elements/sizes"].to_uint64_array(sizes_node);
-            }
-            uint64_array sizes_vals = sizes_node.value();
+            uint64_accessor sizes_vals = dom_topo["elements/sizes"].as_uint64_accessor();
             for(index_t i=0; i < sizes_vals.number_of_elements();i++)
             {
                local_total_ele_to_verts_size += sizes_vals[i];
@@ -438,17 +428,7 @@ void generate_partition_field(conduit::Node &mesh,
             const Node &dom_g_vert_ids = dom["fields"][field_prefix + "global_vertex_ids"]["values"];
 
             // for unstruct poly: use sizes
-            Node sizes_node;
-            if (dom_topo["elements/sizes"].dtype().is_uint64() &&
-                dom_topo["elements/sizes"].dtype().is_compact())
-            {
-                sizes_node.set_external(dom_topo["elements/sizes"]);
-            }
-            else
-            {
-                dom_topo["elements/sizes"].to_uint64_array(sizes_node);
-            }
-            uint64_array sizes_vals = sizes_node.value();
+            uint64_accessor sizes_vals = dom_topo["elements/sizes"].as_uint64_accessor();
             for(index_t i=0; i < sizes_vals.number_of_elements(); i++)
             {
                 eptr_vals[eptr_idx] = curr_offset;
@@ -462,17 +442,7 @@ void generate_partition_field(conduit::Node &mesh,
             // for each element:
             //   loop over each local vertex, and use global vert map to add and entry to eind
 
-            Node conn_node;
-            if (dom_topo["elements/connectivity"].dtype().is_uint64() &&
-                dom_topo["elements/connectivity"].dtype().is_compact())
-            {
-                conn_node.set_external(dom_topo["elements/connectivity"]);
-            }
-            else
-            {
-                dom_topo["elements/connectivity"].to_uint64_array(conn_node);
-            }
-            uint64_array conn_vals = conn_node.value();
+            uint64_accessor conn_vals = dom_topo["elements/connectivity"].as_uint64_accessor();
 
             o2mrelation::O2MIterator o2miter(dom_topo["elements"]);
             while(o2miter.has_next(conduit::blueprint::o2mrelation::ONE))

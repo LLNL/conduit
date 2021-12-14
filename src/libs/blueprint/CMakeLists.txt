@@ -29,6 +29,8 @@ set(blueprint_headers
     conduit_blueprint_o2mrelation_utils.hpp
     conduit_blueprint_o2mrelation_iterator.hpp
     conduit_blueprint_o2mrelation_examples.hpp
+    conduit_blueprint_table.hpp
+    conduit_blueprint_table_examples.hpp
     conduit_blueprint_zfparray.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h
 )
@@ -40,6 +42,7 @@ set(blueprint_c_headers
     c/conduit_blueprint.h
     c/conduit_blueprint_mcarray.h
     c/conduit_blueprint_mesh.h
+    c/conduit_blueprint_table.h
     )
 
 
@@ -55,12 +58,15 @@ set(blueprint_sources
     conduit_blueprint_mesh_examples.cpp
     conduit_blueprint_mesh_examples_julia.cpp
     conduit_blueprint_mesh_examples_venn.cpp
+    conduit_blueprint_mesh_flatten.cpp
     conduit_blueprint_mcarray.cpp
     conduit_blueprint_mcarray_examples.cpp
     conduit_blueprint_o2mrelation.cpp
     conduit_blueprint_o2mrelation_utils.cpp
     conduit_blueprint_o2mrelation_iterator.cpp
     conduit_blueprint_o2mrelation_examples.cpp
+    conduit_blueprint_table.cpp
+    conduit_blueprint_table_examples.cpp
     conduit_blueprint_zfparray.cpp
     )
 
@@ -71,6 +77,7 @@ set(blueprint_c_sources
     c/conduit_blueprint_c.cpp
     c/conduit_blueprint_mcarray_c.cpp
     c/conduit_blueprint_mesh_c.cpp
+    c/conduit_blueprint_table_c.cpp
     )
 
 #################################
@@ -85,7 +92,9 @@ if(FORTRAN_FOUND)
     set(blueprint_fortran_sources
         fortran/conduit_blueprint_fortran.f90
         fortran/conduit_blueprint_mcarray_fortran.f90
-        fortran/conduit_blueprint_mesh_fortran.f90)
+        fortran/conduit_blueprint_mesh_fortran.f90
+        fortran/conduit_blueprint_table_fortran.f90
+        )
 
 endif()
 
@@ -109,7 +118,9 @@ if(FORTRAN_FOUND)
     set(conduit_blueprint_fortran_modules
         ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint.mod
         ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mesh.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mcarray.mod)
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mcarray.mod
+        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_table.mod
+        )
 
     # Setup install to copy the fortran modules
     install(FILES
@@ -154,8 +165,10 @@ if(MPI_FOUND)
 set(conduit_blueprint_mpi_sources
     conduit_blueprint_mpi.cpp
     conduit_blueprint_mpi_mesh.cpp
+    conduit_blueprint_mpi_mesh_examples.cpp
+    conduit_blueprint_mpi_mesh_flatten.cpp
     conduit_blueprint_mpi_mesh_partition.cpp
-    conduit_blueprint_mpi_mesh_examples.cpp)
+    )
 
 #
 # Specify blueprint mpi headers

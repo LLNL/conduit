@@ -39,6 +39,21 @@ conduit_blueprint_mpi_mesh_partition(const conduit_node *cmesh,
     conduit::blueprint::mpi::mesh::partition(mesh, options, output, comm);
 }
 
+//-----------------------------------------------------------------------------
+/// Flatten a mesh to a table
+//-----------------------------------------------------------------------------
+void
+conduit_blueprint_mpi_mesh_flatten(const conduit_node *cmesh,
+                                   const conduit_node *coptions,
+                                   conduit_node *coutput,
+                                   MPI_Comm comm)
+{
+    const Node &mesh = cpp_node_ref(cmesh);
+    const Node &options = cpp_node_ref(coptions);
+    Node &output  = cpp_node_ref(coutput);
+    conduit::blueprint::mpi::mesh::flatten(mesh, options, output, comm);
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end extern C

@@ -42,6 +42,23 @@ const std::vector<std::string> COORDINATE_COORDSYSS[] =
 typedef bool (*VerifyFun)(const Node&, Node&);
 
 /// Helper Functions ///
+/// Testing Helpers ///
+index_t braid_bound_npts_z(const std::string &mesh_type, index_t npts_z)
+{
+    if(mesh_type == "tris"  ||
+       mesh_type == "quads" ||
+       mesh_type == "quads_poly" ||
+       mesh_type == "quads_and_tris" ||
+       mesh_type == "quads_and_tris_offsets")
+    {
+        return 0;
+    }
+    else
+    {
+        return npts_z;
+    }
+}
+
 
 bool is_valid_coordsys(bool (*coordsys_valid_fun)(const Node&, Node&),
                        const std::vector<std::string>& coordsys)
@@ -450,7 +467,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_types)
     for(index_t ci = 0; ci < 3; ci++)
     {
         n.reset();
-        blueprint::mesh::examples::braid(coordset_fids[ci],10,10,1,n);
+        blueprint::mesh::examples::braid(coordset_fids[ci],10,10,0,n);
         Node& coordset_node = n["coordsets/coords"];
         CHECK_MESH(verify_coordset,coordset_node,info,true);
 
@@ -875,7 +892,7 @@ TEST(conduit_blueprint_mesh_verify, topology_types)
     for(index_t ti = 0; ti < topo_type_count; ti++)
     {
         n.reset();
-        blueprint::mesh::examples::braid(topology_fids[ti],10,10,1,n);
+        blueprint::mesh::examples::braid(topology_fids[ti],10,10,0,n);
         Node& topology_node = n["topologies/mesh"];
         CHECK_MESH(verify_topology,topology_node,info,true);
 
@@ -916,7 +933,11 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
     for(index_t ti = 0; ti < topo_shape_count; ti++)
     {
         n.reset();
-        blueprint::mesh::examples::braid(topology_fids[ti],10,10,2,n);
+        blueprint::mesh::examples::braid(topology_fids[ti],
+                                         10,
+                                         10,
+                                         braid_bound_npts_z(topology_fids[ti], 2),
+                                         n);
         Node& topology_node = n["topologies/mesh"];
         CHECK_MESH(verify_topology,topology_node,info,true);
 
@@ -945,7 +966,7 @@ TEST(conduit_blueprint_mesh_verify, topology_general)
         Node mesh, info;
         CHECK_MESH(verify_topology,mesh,info,false);
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("quads",10,10,0,mesh);
         Node& n = mesh["topologies"]["mesh"];
 
         { // Type Field Tests //
@@ -1383,7 +1404,7 @@ TEST(conduit_blueprint_mesh_verify, field_general)
         Node mesh, info;
         CHECK_MESH(verify_field,mesh,info,false);
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("quads",10,10,0,mesh);
         Node& n = mesh["fields"]["braid"];
 
         { // Topology Field Tests //
@@ -1456,7 +1477,7 @@ TEST(conduit_blueprint_mesh_verify, adjset_general)
         Node mesh, info;
         CHECK_MESH(verify_adjset,mesh,info,false);
 
-        blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+        blueprint::mesh::examples::grid("quads",10,10,0,2,2,1,mesh);
         Node& n = mesh.child(0)["adjsets"].child(0);
         CHECK_MESH(verify_adjset,n,info,true);
 
@@ -1706,7 +1727,7 @@ TEST(conduit_blueprint_mesh_verify, index_coordset)
         Node mesh, index, info;
         CHECK_MESH(verify_coordset_index,mesh,info,false);
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("quads",10,10,0,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         Node& cindex = index["coordsets"]["coords"];
         CHECK_MESH(verify_coordset_index,cindex,info,true);
@@ -1769,7 +1790,7 @@ TEST(conduit_blueprint_mesh_verify, index_topology)
         Node mesh, index, info;
         CHECK_MESH(verify_topo_index,mesh,info,false);
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("quads",10,10,0,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         Node& tindex = index["topologies"]["mesh"];
         CHECK_MESH(verify_topo_index,tindex,info,true);
@@ -1832,7 +1853,7 @@ TEST(conduit_blueprint_mesh_verify, index_matset)
         Node mesh, index, info;
         CHECK_MESH(verify_matset_index,mesh,info,false);
 
-        blueprint::mesh::examples::misc("matsets",10,10,1,mesh);
+        blueprint::mesh::examples::misc("matsets",10,10,0,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         Node& mindex = index["matsets"]["mesh"];
         CHECK_MESH(verify_matset_index,mindex,info,true);
@@ -1904,7 +1925,7 @@ TEST(conduit_blueprint_mesh_verify, index_specset)
         Node mesh, index, info;
         CHECK_MESH(verify_specset_index,mesh,info,false);
 
-        blueprint::mesh::examples::misc("specsets",10,10,1,mesh);
+        blueprint::mesh::examples::misc("specsets",10,10,0,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         Node& mindex = index["specsets"]["mesh"];
         CHECK_MESH(verify_specset_index,mindex,info,true);
@@ -1961,7 +1982,7 @@ TEST(conduit_blueprint_mesh_verify, index_field)
         Node mesh, index, info;
         CHECK_MESH(verify_field_index,mesh,info,false);
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("quads",10,10,0,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         Node& findex = index["fields"]["braid"];
         CHECK_MESH(verify_field_index,findex,info,true);
@@ -2044,7 +2065,7 @@ TEST(conduit_blueprint_mesh_verify, index_adjset)
         Node mesh, index, info;
         CHECK_MESH(verify_adjset_index,mesh,info,false);
 
-        blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+        blueprint::mesh::examples::grid("quads",10,10,0,2,2,1,mesh);
         blueprint::mesh::generate_index(mesh["domain0"],"quads",1,index);
         Node& aindex = index["adjsets"].child(0);
         CHECK_MESH(verify_adjset_index,aindex,info,true);
@@ -2112,7 +2133,7 @@ TEST(conduit_blueprint_mesh_verify, index_nestset)
         Node mesh, index, info;
         CHECK_MESH(verify_nestset_index,mesh,info,false);
 
-        blueprint::mesh::examples::misc("nestsets",5,5,1,mesh);
+        blueprint::mesh::examples::misc("nestsets",5,5,0,mesh);
         blueprint::mesh::generate_index(mesh["domain0"],"quads",1,index);
         Node& aindex = index["nestsets"].child(0);
         CHECK_MESH(verify_nestset_index,aindex,info,true);
@@ -2180,7 +2201,7 @@ TEST(conduit_blueprint_mesh_verify, index_general)
         Node mesh, index, info;
         CHECK_MESH(verify_index,mesh,info,false);
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+        blueprint::mesh::examples::braid("quads",10,10,0,mesh);
         blueprint::mesh::generate_index(mesh,"quads",1,index);
         CHECK_MESH(verify_index,index,info,true);
 
@@ -2405,11 +2426,11 @@ TEST(conduit_blueprint_mesh_verify, mesh_multi_domain)
     EXPECT_TRUE(has_empty_warning(info));
 
     Node domains[2];
-    blueprint::mesh::examples::braid("quads",10,10,1,domains[0]);
+    blueprint::mesh::examples::braid("quads",10,10,0,domains[0]);
     blueprint::mesh::to_multi_domain(domains[0],mesh);
     EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
-    blueprint::mesh::examples::braid("quads",5,5,1,domains[1]);
+    blueprint::mesh::examples::braid("quads",5,5,0,domains[1]);
     mesh.append().set_external(domains[1]);
     EXPECT_TRUE(blueprint::mesh::is_multi_domain(mesh));
 
@@ -2453,7 +2474,7 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
         CHECK_MESH(verify_mesh,mesh,info,true);
         EXPECT_TRUE(has_empty_warning(info));
 
-        blueprint::mesh::examples::braid("quads",10,10,1,mesh_data);
+        blueprint::mesh::examples::braid("quads",10,10,0,mesh_data);
 
         Node* domain_ptr = NULL;
         if(fi == 0)

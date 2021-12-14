@@ -5090,7 +5090,7 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_str(PyConduit_Node* self)
 {
-   return (Py_BuildValue("s", self->node->to_string().c_str()));
+   return (Py_BuildValue("s", self->node->to_summary_string().c_str()));
 }
 
 //---------------------------------------------------------------------------//

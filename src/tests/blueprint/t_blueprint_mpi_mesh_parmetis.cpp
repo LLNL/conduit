@@ -118,7 +118,7 @@ TEST(blueprint_mpi_parmetis, braid)
     // test with a 2d poly example
     Node mesh, side_mesh, info;
 
-    // create braid
+    // create braid - one domain per rank
     conduit::blueprint::mesh::examples::braid("structured",
                                               npts, npts, 1,
                                               mesh.append());
@@ -128,9 +128,66 @@ TEST(blueprint_mpi_parmetis, braid)
                                                                     unstruct_coords);
     Node unstruct_topo_poly;
     conduit::blueprint::mesh::topology::unstructured::to_polygonal(unstruct_topo, unstruct_topo_poly);
+    mesh[0]["state/domain_id"] = par_rank;
     mesh[0]["topologies/mesh"] = unstruct_topo_poly;
     mesh[0]["topologies/mesh/coordset"] = "coords";
     mesh[0]["coordsets/coords"] = unstruct_coords;
+
+    if (par_size > 1)
+    {
+        // Construct adjsets for multi-domain case
+        const Node& dom_cset = mesh[0]["coordsets/coords"];
+        float64_array coord_array[2];
+        coord_array[0] = dom_cset["values/x"].as_float64_array();
+        coord_array[1] = dom_cset["values/y"].as_float64_array();
+
+        // Points with x = -10 are shared with rank - 1
+        // Points with x = 10 are shared with rank + 1
+        std::vector<index_t> prev_rank_shared;
+        std::vector<index_t> next_rank_shared;
+        for (index_t i = 0; i < coord_array[0].number_of_elements(); i++)
+        {
+            if (coord_array[0][i] == -10.0)
+            {
+                prev_rank_shared.push_back(i);
+            }
+            else if (coord_array[0][i] == 10)
+            {
+                next_rank_shared.push_back(i);
+            }
+        }
+        // Sort by corresponding y-index to ensure common ordering of shared
+        // vertex ids
+        std::sort(prev_rank_shared.begin(), prev_rank_shared.end(),
+                  [&] (index_t a, index_t b)
+                  { return coord_array[1][a] < coord_array[1][b]; });
+        std::sort(next_rank_shared.begin(), next_rank_shared.end(),
+                  [&] (index_t a, index_t b)
+                  { return coord_array[1][a] < coord_array[1][b]; });
+
+        Node& dom_aset = mesh[0]["adjsets/elem_aset"];
+        dom_aset["association"] = "vertex";
+        dom_aset["topology"] = "mesh";
+        Node& aset_grps = dom_aset["groups"];
+        if (par_rank > 0)
+        {
+            // Add prev rank shared node
+            std::string group_name
+                = conduit_fmt::format("group_{}_{}", par_rank-1, par_rank);
+            Node& prev_shared = aset_grps[group_name];
+            prev_shared["neighbors"].set({par_rank-1});
+            prev_shared["values"].set(prev_rank_shared);
+        }
+        if (par_rank + 1 < par_size)
+        {
+            // Add next rank shared node
+            std::string group_name
+                = conduit_fmt::format("group_{}_{}", par_rank, par_rank+1);
+            Node& prev_shared = aset_grps[group_name];
+            prev_shared["neighbors"].set({par_rank+1});
+            prev_shared["values"].set(next_rank_shared);
+        }
+    }
 
     // the example data set has the bounds -10 to 10 in all dims
     // Offset this along x to create mpi 'pencil'
@@ -140,47 +197,130 @@ TEST(blueprint_mpi_parmetis, braid)
 
         for(index_t i=0;i<xvals.number_of_elements();i++)
         {
-            xvals[i] += 21.0 * par_rank;
+            xvals[i] += 20.0 * par_rank;
         }
     }
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node options;
+    options["partitions"] = par_size * 2;
     options["topology"] = "mesh";
-    options["partitions"] = 3;
 
     // paint a field with parmetis result (WIP)
     conduit::blueprint::mpi::mesh::generate_partition_field(mesh,options,MPI_COMM_WORLD);
 
-    Node s2dmap, d2smap;
-    Node &side_coords = side_mesh["coordsets/coords"];
-    Node &side_topo = side_mesh["topologies/mesh"];
-    Node &side_fields = side_mesh["fields"];
+    {
+        Node s2dmap, d2smap;
+        Node &side_coords = side_mesh["coordsets/coords"];
+        Node &side_topo = side_mesh["topologies/mesh"];
+        Node &side_fields = side_mesh["fields"];
 
-    // we can't map vert assoced fields yet
-    Node opts;
-    opts["field_names"].append().set("global_element_ids");
-    opts["field_names"].append().set("parmetis_result");
+        // we can't map vert assoced fields yet
+        Node opts;
+        opts["field_names"].append().set("global_element_ids");
+        opts["field_names"].append().set("parmetis_result");
 
-    // gen sides and save so we can look at this in visit.
-    blueprint::mesh::topology::unstructured::generate_sides(mesh[0]["topologies/mesh"],
-                                                            side_topo,
-                                                            side_coords,
-                                                            side_fields,
-                                                            s2dmap,
-                                                            d2smap,
-                                                            opts);
+        // gen sides and save so we can look at this in visit.
+        blueprint::mesh::topology::unstructured::generate_sides(mesh[0]["topologies/mesh"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                opts);
 
-    std::string output_base = "tout_bp_mpi_mesh_parametis_braid2d_test";
+        std::string output_base = "tout_bp_mpi_mesh_parmetis_braid2d_test";
 
-    // Node opts;
-    // opts["file_style"] = "root_only";
-    conduit::relay::mpi::io::blueprint::save_mesh(side_mesh,
-            output_base,
-            "hdf5",
-            // opts,
-            MPI_COMM_WORLD);
+        // Node opts;
+        // opts["file_style"] = "root_only";
+        conduit::relay::mpi::io::blueprint::save_mesh(side_mesh,
+                                                      output_base,
+                                                      "hdf5",
+                                                      // opts,
+                                                      MPI_COMM_WORLD);
+    }
+
+    {
+        Node partition_options;
+        Node& selection = partition_options["selections"].append();
+        selection["type"] = "field";
+        selection["domain_id"] = "any";
+        selection["field"] = "parmetis_result";
+        selection["topology"] = "mesh";
+
+        Node repart_mesh, side_mesh_repart;
+        Node s2dmap, d2smap, opts;
+        opts["field_names"].append().set("global_element_ids");
+        opts["field_names"].append().set("parmetis_result");
+        opts["field_names"].append().set("braid");
+        opts["field_names"].append().set("radial");
+        //opts["field_names"].append().set("vel");
+        opts["field_names"].append().set("is_shared_node");
+
+        // partition the mesh with our generated result
+        conduit::blueprint::mpi::mesh::partition(mesh,
+                                                 partition_options,
+                                                 repart_mesh,
+                                                 MPI_COMM_WORLD);
+
+        Node repart_mesh_multidom;
+        if (!conduit::blueprint::mesh::is_multi_domain(repart_mesh))
+        {
+            conduit::blueprint::mesh::to_multi_domain(repart_mesh, repart_mesh_multidom);
+        }
+        else
+        {
+            repart_mesh_multidom.set_external(repart_mesh);
+        }
+
+        for (Node& dom : repart_mesh_multidom.children())
+        {
+            Node& shared_nodes = dom["fields/is_shared_node"];
+            shared_nodes["association"] = "vertex";
+            shared_nodes["type"] = "scalar";
+            shared_nodes["topology"] = "mesh";
+            shared_nodes["values"].set(DataType::float64(dom["fields/braid/values"].dtype().number_of_elements()));
+            float64_array shared_nodes_val = shared_nodes["values"].value();
+            shared_nodes_val.fill(-1);
+
+            const Node& groups = dom["adjsets/elem_aset/groups"];
+            for (const Node& group : groups.children())
+            {
+                int64 nbr = group["neighbors"].as_int64();
+                int64_accessor grp_vals = group["values"].as_int64_accessor();
+                for (index_t iv = 0; iv < grp_vals.number_of_elements(); iv++)
+                {
+                    shared_nodes_val[grp_vals[iv]] = double(iv) / grp_vals.number_of_elements();
+                }
+            }
+        }
+
+        for (const Node& dom : repart_mesh_multidom.children())
+        {
+            Node& side_domain = side_mesh_repart.append();
+
+            Node &side_coords = side_domain["coordsets/coords"];
+            Node &side_topo = side_domain["topologies/mesh"];
+            Node &side_fields = side_domain["fields"];
+
+            // gen sides and save so we can look at this in visit.
+            blueprint::mesh::topology::unstructured::generate_sides(dom["topologies/mesh"],
+                                                                    side_topo,
+                                                                    side_coords,
+                                                                    side_fields,
+                                                                    s2dmap,
+                                                                    d2smap,
+                                                                    opts);
+        }
+        std::string output_repart_base = "tout_bp_mpi_mesh_parmetis_repart_braid2d_test";
+
+        conduit::relay::mpi::io::blueprint::save_mesh(side_mesh_repart,
+                                                      output_repart_base,
+                                                      "hdf5",
+                                                      MPI_COMM_WORLD);
+    }
+
     EXPECT_TRUE(true);
 }
 

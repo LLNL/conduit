@@ -22,7 +22,13 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mesh_generate
                     t_blueprint_mesh_generate_map_fields
                     t_blueprint_mesh_examples
-                    t_blueprint_mesh_matset_xforms)
+                    t_blueprint_mesh_flatten
+                    t_blueprint_mesh_matset_xforms
+                    t_blueprint_table_verify
+                    t_blueprint_table_examples
+                    t_blueprint_table_relay
+                    )
+
 
 ################################
 # Add our Main Unit Tests
@@ -56,15 +62,17 @@ else()
     message(STATUS "Fortran disabled: Skipping conduit blueprint fortran interface tests")
 endif()
 
-set(BLUEPRINT_MPI_TESTS_RANKS_2 
+set(BLUEPRINT_MPI_TESTS_RANKS_2
     t_blueprint_mpi_smoke
+    t_blueprint_mpi_mesh_polytopal
     t_blueprint_mpi_mesh_query
     t_blueprint_mpi_mesh_transform
     t_blueprint_mpi_mesh_verify)
 
 set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_mesh_relay)
 
-set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4 
+set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4
+    t_blueprint_mpi_mesh_flatten
     t_blueprint_mpi_mesh_partition)
 
 if(MPI_FOUND)

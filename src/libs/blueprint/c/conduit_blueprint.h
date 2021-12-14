@@ -49,6 +49,7 @@ CONDUIT_BLUEPRINT_API int conduit_blueprint_verify(const char *protocol,
 
 #include "conduit_blueprint_mcarray.h"
 #include "conduit_blueprint_mesh.h"
+#include "conduit_blueprint_table.h"
 
 
 //-----------------------------------------------------------------------------

@@ -34,6 +34,7 @@
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mesh_partition.hpp"
+#include "conduit_blueprint_mesh_flatten.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
 
@@ -1578,24 +1579,59 @@ void mesh::to_multi_domain(const conduit::Node &mesh,
     }
 }
 
-
-//-----------------------------------------------------------------------------
+//-------------------------------------------------------------------------
 void
-mesh::generate_index(const Node &mesh,
+mesh::generate_index(const conduit::Node &mesh,
                      const std::string &ref_path,
                      index_t number_of_domains,
                      Node &index_out)
 {
+    // domains can have different fields, etc
+    // so we need the union of the index entries
     index_out.reset();
 
+    if(mesh.dtype().is_empty())
+    {
+        CONDUIT_ERROR("Cannot generate mesh blueprint index for empty mesh.");
+    }
+    else if(blueprint::mesh::is_multi_domain(mesh))
+    {
+        NodeConstIterator itr = mesh.children();
+
+        while(itr.has_next())
+        {
+            Node curr_idx;
+            const Node &cld = itr.next();
+            generate_index_for_single_domain(cld,
+                                             ref_path,
+                                             curr_idx);
+            // add any new entries to the running index
+            index_out.update(curr_idx);
+        }
+    }
+    else
+    {
+        generate_index_for_single_domain(mesh,
+                                         ref_path,
+                                         index_out);
+    }
+
+    index_out["state/number_of_domains"] = number_of_domains;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+mesh::generate_index_for_single_domain(const Node &mesh,
+                                       const std::string &ref_path,
+                                       Node &index_out)
+{
+    index_out.reset();
     if(!mesh.has_child("coordsets"))
     {
         CONDUIT_ERROR("Cannot generate mesh blueprint index for empty mesh."
                       " (input mesh missing 'coordsets')");
     }
-    
-    index_out["state/number_of_domains"] = number_of_domains;
-
 
     if(mesh.has_child("state"))
     {
@@ -2629,6 +2665,15 @@ mesh::topology::unstructured::verify(const Node &topo,
     log::validation(info,res);
 
     return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::to_polytopal(const Node &topo,
+                                           Node &dest)
+{
+    to_polygonal(topo,dest);
 }
 
 //-----------------------------------------------------------------------------
@@ -5699,6 +5744,19 @@ mesh::partition(const conduit::Node &n_mesh,
         output.reset();
         p.execute(output);
     }
+}
+
+//-------------------------------------------------------------------------
+void
+mesh::flatten(const conduit::Node &mesh,
+              const conduit::Node &options,
+              conduit::Node &output)
+{
+    output.reset();
+
+    MeshFlattener do_flatten;
+    do_flatten.set_options(options);
+    do_flatten.execute(mesh, output);
 }
 
 }

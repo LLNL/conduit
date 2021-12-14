@@ -26,7 +26,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_to_silo_basic)
 {
     Node mesh;
     {
-        blueprint::mesh::examples::basic("quads", 2, 2, 2, mesh);
+        blueprint::mesh::examples::basic("quads", 2, 2, 0, mesh);
 
         float64 mset_a_vfs[] = {1.0, 0.5, 0.5, 0.0};
         float64 mset_b_vfs[] = {0.0, 0.5, 0.5, 1.0};
