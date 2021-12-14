@@ -61,6 +61,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Changed HDF5 offset support to use 64-bit unsigned integers for offsets, strides, and sizes.
 - Fixed a bug with `conduit::relay::mpi::io::blueprint::save_mesh` where `file_style=root_only` could crash or truncate output files.
+- Fixed a bug with inconsistent HDF5 handles being used in some cases when converting existing HDF5 Datasets from fixed to extendable.
+
 
 ## [0.7.2] - Released 2021-05-19
 
