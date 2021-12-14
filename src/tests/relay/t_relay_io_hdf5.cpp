@@ -430,6 +430,11 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_fixed_hdf5_dataset_ha
     opts["stride"] = 1;
 
     io::hdf5_write(n,h5_dset_id,opts);
+    // NOTE: After this call, the dataset id is no longer valid,
+    //       we need to get the new one by name
+    h5_dset_id = H5Dopen(h5_file_id,
+                         "mydata",
+                         H5P_DEFAULT);
 
     Node n_read, opts_read;
     io::hdf5_read_info(h5_dset_id,opts_read,n_read);

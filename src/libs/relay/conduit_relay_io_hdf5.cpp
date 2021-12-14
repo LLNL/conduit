@@ -407,11 +407,13 @@ hid_t create_hdf5_group_for_conduit_node(const Node &node,
                                          const std::string &ref_path,
                                          hid_t hdf5_parent_group_id,
                                          const std::string &hdf5_child_group_name);
-
+//-----------------------------------------------------------------------------
+// Note: Options may cause the dataset to be recreated,
+// this is why the hdf5_dset_id is passed as a reference.
 //-----------------------------------------------------------------------------
 void  write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                          const std::string &ref_path,
-                                         hid_t hdf5_dset_id,
+                                         hid_t &hdf5_dset_id,
                                          const Node &opts);
 
 //-----------------------------------------------------------------------------
@@ -1503,7 +1505,7 @@ create_hdf5_group_for_conduit_node(const Node &node,
 void
 write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                    const std::string &ref_path,
-                                   hid_t hdf5_dset_id,
+                                   hid_t &hdf5_dset_id,
                                    const Node &opts)
 {
     DataType dt = node.dtype();
@@ -1639,6 +1641,7 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
 
             hdf5_dset_id = H5Oopen(hdf5_id,
                 hdf5_dset_path.c_str(), H5P_DEFAULT);
+
             H5Fclose(hdf5_id);
 
             H5Dclose(dataspace);
@@ -1719,13 +1722,20 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
                                  const Node &opts)
 {
     // data set case ...
-
     // check if the dataset exists
     H5O_info_t h5_obj_info;
+
     herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                  hdf5_dset_name.c_str(),
                                                  &h5_obj_info,
                                                  H5P_DEFAULT);
+
+    // NOTE: legacy H5Gget_objinfo might be better to use
+    // https://github.com/PyTables/PyTables/issues/402#issuecomment-75051913
+    // herr_t h5_info_status =  H5Gget_objinfo(hdf5_group_id,
+    //                                         hdf5_dset_name.c_str(),
+    //                                         0,
+    //                                         NULL);
 
     hid_t h5_child_id = -1;
 
