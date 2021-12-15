@@ -43,6 +43,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Added CMake option (`ENABLE_RELAY_WEBSERVER`, default = `ON`) to control if Conduit's Relay Web Server support is built. Down stream codes can check for support via header ifdef `CONDUIT_RELAY_WEBSERVER_ENABLED` or at runtime in `conduit::relay::about`.
+- Added support to compile against HDF5 1.12.
 
 ### Fixed
 
@@ -56,7 +57,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed a bug that was causing the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
 - Fixed a bug with `conduit::relay::io::blueprint::write_mesh` that undermined `truncate=true` option for root-only style output.
 - Fixed options parsing bugs and improved error messages for the `conduit_blueprint_verify` exe.
-
 
 #### Relay
 - Changed HDF5 offset support to use 64-bit unsigned integers for offsets, strides, and sizes.

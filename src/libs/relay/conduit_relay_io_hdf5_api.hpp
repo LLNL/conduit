@@ -195,8 +195,14 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id,
                                   const std::string &hdf5_path);
 
+//
+// hdf5_write support with options may require us to convert datasets
+// from fixed to extendible. This removes and closes the existing dataset.
+// To support this, hdf5_id is passed as a reference and is updated
+// as needed.
+//
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
-                                  hid_t hdf5_id,
+                                  hid_t &hdf5_id,
                                   const std::string &hdf5_path,
                                   const Node &opts);
 
@@ -209,13 +215,14 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id);
 
-// NOTE: If hdf5_id is a dataset and passed opts trigger the dataset
-// to convert from a fixed to extendible dataset, hdf5_id will be closed
-// and invalid after this call.
-// You can obtain the valid id by other means (name ... ).
-// We may change the API to use a reference.
+//
+// hdf5_write support with options may require us to convert datasets
+// from fixed to extendible. This removes and closes the existing dataset.
+// To support this, hdf5_id is passed as a reference and is updated
+// as needed.
+//
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
-                                  hid_t hdf5_id,
+                                  hid_t &hdf5_id,
                                   const Node &opts);
 
 

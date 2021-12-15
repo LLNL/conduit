@@ -233,6 +233,33 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
+        shared_py38_cmake_21_hdf5_1_12:
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: OFF
+          HDF5_SPEC: "hdf5@1.12.0~mpi"
+          # silo requires hdf5 1.10, so for now we can't
+          # test both silo and hdft 1.12 support
+          ENABLE_SILO: OFF
+          ENABLE_ADIOS: OFF
+          ENABLE_PARMETIS: ON
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.8.8
+          CMAKE_VERSION: 3.20.0
+          BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
+
         shared_mpi_compilers_direct:
           COMPILER_CC: mpicc
           COMPILER_CXX: mpic++
