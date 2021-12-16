@@ -342,19 +342,35 @@ private:
 class HDF5ResourceHandle
 {
 public:
+        static int attach_counter;
+        static int detach_counter; 
+        static int release_counter;
+    
         HDF5ResourceHandle()
         : m_id(-1),
           m_active(false)
         {}
 
        ~HDF5ResourceHandle()
-        {}
+        {
+            std::cout << "DESTROY!" << std::endl;
+        }
 
         void attach(hid_t id)
         {
+            std::cout << "ATTACH!" << std::endl;
             release();
             m_id = id;
             m_active = true;
+            attach_counter++;
+            print_info();
+        }
+
+        void print_info()
+        {
+            std::cout << " ac= " << attach_counter << std::endl;
+            std::cout << " dc= " << detach_counter << std::endl;
+            std::cout << " rc= " << release_counter << std::endl;
         }
 
         // return id
@@ -366,27 +382,24 @@ public:
         // stop tracking ... (but don't release)
         void detach()
         {
+            std::cout << "DETACH!" << std::endl;
             m_id = -1;
             m_active = false;
+            detach_counter++;
+            print_info();
         }
 
-        // release id using passed template method
+        // release
         virtual herr_t release() = 0;
-        // {
-        //     herr_t res = 0;
-        //     if(m_active)
-        //     {
-        //         std::cout << "RELEASE!" << std::endl;
-        //         res = T(m_id);
-        //         m_active = false;
-        //     }
-        //     return res;
-        // }
 
 protected:
     hid_t m_id;
     bool  m_active;
 };
+
+int HDF5ResourceHandle::attach_counter  = 0;
+int HDF5ResourceHandle::detach_counter  = 0;
+int HDF5ResourceHandle::release_counter = 0;
 
 template <herr_t (*T)(hid_t)>
 class HDF5ResourceHandleImplBase: public HDF5ResourceHandle
@@ -406,22 +419,24 @@ public:
         herr_t res = 0;
         if(m_active)
         {
+            release_counter++;
             std::cout << "RELEASE!" << std::endl;
             res = T(m_id);
             m_active = false;
+            print_info();
         }
         return res;
     }
 };
 
-typedef HDF5ResourceHandleImplBase<H5Fclose>  HDF5FileHandle;
-typedef HDF5ResourceHandleImplBase<H5Oclose>  HDF5ObjectHandle;
-typedef HDF5ResourceHandleImplBase<H5Gclose>  HDF5GroupHandle;
-typedef HDF5ResourceHandleImplBase<H5Tclose>  HDF5DatatypeHandle;
-typedef HDF5ResourceHandleImplBase<H5Dclose>  HDF5DatasetHandle;
-typedef HDF5ResourceHandleImplBase<H5Sclose>  HDF5DataspaceHandle;
-typedef HDF5ResourceHandleImplBase<H5Aclose>  HDF5AttributeHandle;
-typedef HDF5ResourceHandleImplBase<H5Pclose>  HDF5PropertyListHandle;
+typedef HDF5ResourceHandleImplBase<H5Fclose> HDF5FileHandle;
+typedef HDF5ResourceHandleImplBase<H5Oclose> HDF5ObjectHandle;
+typedef HDF5ResourceHandleImplBase<H5Gclose> HDF5GroupHandle;
+typedef HDF5ResourceHandleImplBase<H5Tclose> HDF5DatatypeHandle;
+typedef HDF5ResourceHandleImplBase<H5Dclose> HDF5DatasetHandle;
+typedef HDF5ResourceHandleImplBase<H5Sclose> HDF5DataspaceHandle;
+typedef HDF5ResourceHandleImplBase<H5Aclose> HDF5AttributeHandle;
+typedef HDF5ResourceHandleImplBase<H5Pclose> HDF5PropertyListHandle;
 
 
 class HDF5ConduitDatatypeHandle: public HDF5ResourceHandle
@@ -450,6 +465,8 @@ public:
             {
                 res = -1;
             }
+            release_counter++;
+            print_info();
             m_active = false;
         }
         return res;
@@ -3717,6 +3734,33 @@ hdf5_open_file_for_read_write(const std::string &file_path)
     // restore hdf5 error stack
 }
 
+//---------------------------------------------------------------------------//
+void
+hdf5_read(HDF5ResourceHandle &hdf5_hnd,
+          const Node &opts,
+          Node &dest)
+{
+    read_hdf5_tree_into_conduit_node(hdf5_hnd,
+                                     "",
+                                     false,
+                                     opts,
+                                     dest);
+}
+
+//---------------------------------------------------------------------------//
+void
+hdf5_read(HDF5ResourceHandle &hdf5_hnd,
+          const std::string &hdf5_path,
+          const Node &opts,
+          Node &dest)
+{
+    read_hdf5_tree_into_conduit_node(hdf5_hnd,
+                                     hdf5_path,
+                                     false,
+                                     opts,
+                                     dest);
+
+}
 
 //---------------------------------------------------------------------------//
 void
@@ -3790,13 +3834,17 @@ hdf5_read(const std::string &file_path,
     // open the hdf5 file for reading
     hid_t h5_file_id = hdf5_open_file_for_read(file_path);
 
-    hdf5_read(h5_file_id,
+    HDF5FileHandle h5_file_hnd;
+    h5_file_hnd.attach(h5_file_id);
+
+    hdf5_read(h5_file_hnd,
               hdf5_path,
               opts,
               node);
 
     // close the hdf5 file
-    CONDUIT_CHECK_HDF5_ERROR(H5Fclose(h5_file_id),
+    CONDUIT_CHECK_HDF5_ERROR(//H5Fclose(h5_file_id),
+                             h5_file_hnd.id(),
                              "Error closing HDF5 file: " << file_path);
 }
 
@@ -3867,6 +3915,9 @@ hdf5_read(hid_t hdf5_id,
 
     // restore hdf5 error stack
 }
+
+
+
 
 
 //---------------------------------------------------------------------------//
