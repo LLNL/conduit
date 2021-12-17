@@ -24,6 +24,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `mesh::topology::unstructured::to_polytopal` as an alias to `mesh::topology::unstructured::to_polygonal`, to reflect that both polygonal and polyhedral are supported.
 - Added `conduit::blueprint::mpi::mesh::to_polytopal` as an alias to `conduit::blueprint::mpi::mesh::to_polygonal` and `conduit::blueprint::mpi::mesh::to_polyhedral`.
 
+#### Relay
+- Added `conduit::relay::io::hdf5_identifier_report` methods, which creates a conduit node that describes active hdf5 resource handles.
+
 
 ### Changed
 

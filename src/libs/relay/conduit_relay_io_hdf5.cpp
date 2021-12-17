@@ -14,6 +14,8 @@
     #include "conduit_relay_io_hdf5.hpp"
 #endif
 
+#include "conduit_fmt/conduit_fmt.h"
+
 //-----------------------------------------------------------------------------
 // standard lib includes
 //-----------------------------------------------------------------------------
@@ -3910,7 +3912,151 @@ void hdf5_group_list_child_names(hid_t hdf5_id,
 
    // restore hdf5 error stack
 }
+//-----------------------------------------------------------------------------
+void
+hdf5_identifier_report(Node &out)
+{
+    hdf5_identifier_report(H5F_OBJ_ALL,out);
+}
 
+//-----------------------------------------------------------------------------
+void
+hdf5_identifier_report(hid_t hdf5_id, Node &out)
+{
+    out.reset();
+    int h5_num_objs = H5Fget_obj_count(hdf5_id, H5F_OBJ_ALL);
+
+    if(h5_num_objs > 0)
+    {
+        // get ids
+        std::vector<hid_t> h5_obj_ids(h5_num_objs);
+        H5Fget_obj_ids(H5F_OBJ_ALL,
+                       H5F_OBJ_ALL,
+                       h5_num_objs,
+                       h5_obj_ids.data());
+
+        // everything should be named
+        int unnamed_counter = 0;
+        // store name to id map in conduit node
+        for (int i = 0; i < h5_num_objs; i++)
+        {
+            hid_t h5_obj_id = h5_obj_ids[i];
+            // get size of the name first
+            std::string name = "";
+            ssize_t obj_name_size = H5Iget_name(h5_obj_id, NULL,4096);
+            if(obj_name_size > 0)
+            {
+                std::vector<char> name_buff(obj_name_size + 1);
+                H5Iget_name(h5_obj_id, name_buff.data(), obj_name_size+1);
+                name = std::string(name_buff.data());
+            }
+
+            if(name == "")
+            {
+                name = conduit_fmt::format("_unnamed_{:d}",unnamed_counter);
+                unnamed_counter++;
+            }
+
+            Node &ent =  out.add_child(name);
+
+            // is valid
+            htri_t h5_is_valid = H5Iis_valid(h5_obj_id);
+            if(h5_is_valid > 0)
+            {
+                ent["valid"] = "true";
+            }
+            else if(h5_is_valid == 0)
+            {
+                ent["valid"] = "false";
+            }
+            else
+            {
+                ent["valid"] = "unknown";
+            }
+
+            // provide ref count
+            ent["ref_count"] = H5Iget_ref(h5_obj_id);
+
+            // provide type info
+            H5I_type_t h5_obj_type = H5Iget_type(h5_obj_id);
+
+            ent["id"] = h5_obj_ids[i];
+            switch(h5_obj_type)
+            {
+                case H5I_UNINIT:
+                    ent["type"] = "uninitialized";
+                    break;
+                case H5I_BADID:
+                    ent["type"] = "invalid";
+                    break;
+                case H5I_FILE:
+                    ent["type"] ="file";
+                    break;
+                case H5I_GROUP:
+                    ent["type"] ="group";
+                    break;
+                case H5I_DATATYPE:
+                    ent["type"] ="datatype";
+                    break;
+                case H5I_DATASPACE:
+                    ent["type"] ="dataspace";
+                    break;
+                case H5I_DATASET:
+                    ent["type"] ="dataset";
+                    break;
+#if H5_VERSION_GE(1, 12, 0)
+                // 1.12 +
+                case H5I_MAP:
+                    ent["type"] ="map";
+                    break;
+#endif
+                case H5I_ATTR:
+                    ent["type"] ="attribute";
+                    break;
+#if H5_VERSION_LE(1, 10, 99)
+                // deprecated -- removed in 1.12
+                case H5I_REFERENCE:
+                    ent["type"] ="reference";
+                    break;
+#endif
+                case H5I_VFL:
+                    ent["type"] ="vfl";
+                    break;
+#if H5_VERSION_GE(1, 12, 0)
+                // 1.12 +
+                case H5I_VOL:
+                    ent["type"] ="vol";
+                    break;
+#endif
+                case H5I_GENPROP_CLS:
+                    ent["type"] ="genprop_class";
+                    break;
+                case H5I_GENPROP_LST:
+                    ent["type"] ="genprop_list";
+                    break;
+                case H5I_ERROR_CLASS:
+                    ent["type"] ="error_class";
+                    break;
+                case H5I_ERROR_MSG:
+                    ent["type"] ="error_message";
+                    break;
+                case H5I_ERROR_STACK:
+                    ent["type"] ="error_stack";
+                    break;
+#if H5_VERSION_GE(1, 12, 0)
+                // 1.12 +
+                case H5I_SPACE_SEL_ITER:
+                    ent["type"] ="dataspace_selection_iterator";
+                    break;
+#endif
+                default:
+                    ent["type"] ="unknown";
+                    break;
+            }
+
+        }
+    }
+}
 
 
 }
