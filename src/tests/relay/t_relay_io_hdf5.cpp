@@ -17,10 +17,28 @@
 using namespace conduit;
 using namespace conduit::relay;
 
+//-----------------------------------------------------------------------------
+// helper to check open hdf5 ids in tests
+int
+check_h5_open_ids()
+{
+    Node n_h5_info;
+    io::hdf5_identifier_report(n_h5_info);
+    int nids = (int) n_h5_info.number_of_children();
+    if( nids> 0)
+    {
+        n_h5_info.print();
+    }
+    return nids;
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_name)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     uint32 a_val = 20;
     uint32 b_val = 8;
     uint32 c_val = 13;
@@ -80,12 +98,16 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_name)
     EXPECT_EQ(n_load_generic["myobj/c"].as_uint32(), c_val);
     EXPECT_EQ(n_load_generic["myobj/d"].as_uint32(), d_val);
 
-
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_special_paths)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     uint32 a_val = 20;
     uint32 b_val = 8;
 
@@ -123,12 +145,18 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_special_paths)
     io::hdf5_read("tout_hdf5_wr_special_paths_2.hdf5:",n_load);
     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     uint32 a_val = 20;
 
     std::string s_val = "{string value!}";
@@ -150,13 +178,17 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string)
     EXPECT_EQ(n_out["a"].as_uint32(), a_val);
     EXPECT_EQ(n_out["s"].as_string(), s_val);
 
-
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n_in(DataType::float64(10));
 
     float64_array val_in = n_in.value();
@@ -181,12 +213,17 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
         EXPECT_EQ(val_in[i],val_out[i]);
     }
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string ofname = "tout_hdf5_wr_conduit_leaf_to_hdf5_dataset_handle.hdf5";
 
     hid_t h5_file_id = H5Fcreate(ofname.c_str(),
@@ -245,12 +282,17 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_hdf5_dataset_handle)
     H5Dclose(h5_dset_id);
     H5Fclose(h5_file_id);
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_extendible_hdf5_dataset_handle_with_offset)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string ofname = "tout_hdf5_wr_conduit_leaf_to_hdf5_extendible_dataset_handle_with_offset.hdf5";
 
     hid_t h5_file_id = H5Fcreate(ofname.c_str(),
@@ -381,13 +423,18 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_extendible_hdf5_datas
     H5Dclose(h5_dset_id);
     H5Fclose(h5_file_id);
 
-
+    // TODO AUDIT
+    // // make sure we aren't leaking
+    //EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_fixed_hdf5_dataset_handle_with_offset)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string ofname = "tout_hdf5_wr_conduit_leaf_to_fixed_hdf5_dataset_handle_with_offset.hdf5";
 
     hid_t h5_file_id = H5Fcreate(ofname.c_str(),
@@ -507,6 +554,9 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_fixed_hdf5_dataset_ha
     H5Dclose(h5_dset_id);
     H5Fclose(h5_file_id);
 
+    // TODO AUDIT!
+    // make sure we aren't leaking
+    // EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
@@ -514,6 +564,9 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_fixed_hdf5_dataset_ha
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle_with_offset)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string ofname = "tout_hdf5_wr_conduit_object_to_hdf5_group_handle_with_offset.hdf5";
 
     hid_t h5_file_id = H5Fcreate(ofname.c_str(),
@@ -659,6 +712,10 @@ TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle_with_offse
 
     H5Gclose(h5_group_id);
     H5Fclose(h5_file_id);
+
+    // TODO AUDIT
+    // make sure we aren't leaking
+    //EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
@@ -666,6 +723,9 @@ TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle_with_offse
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string ofname = "tout_hdf5_wr_conduit_object_to_hdf5_group_handle.hdf5";
 
     hid_t h5_file_id = H5Fcreate(ofname.c_str(),
@@ -711,6 +771,9 @@ TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle)
 
     H5Gclose(h5_group_id);
     H5Fclose(h5_file_id);
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 //-----------------------------------------------------------------------------
@@ -718,6 +781,9 @@ TEST(conduit_relay_io_hdf5, write_conduit_object_to_hdf5_group_handle)
 // and has a handle ready.
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_handle)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     uint32 a_val = 20;
     uint32 b_val = 8;
     uint32 c_val = 13;
@@ -785,12 +851,17 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_handle)
     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_to_existing_dset)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n_in(DataType::uint32(2));
 
 
@@ -855,12 +926,16 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_to_existing_dset)
     EXPECT_EQ(myarray_val[1],4);
     EXPECT_EQ(a_b_c_val,123);
 
-
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n;
 
     n["v_int8"].set(DataType::int8(5));
@@ -953,12 +1028,18 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_leaf_arrays)
     std::string v_string_out = n_load["v_string"].as_string();
 
     EXPECT_EQ(v_string_out,"my_string");
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_empty)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n;
     n["path/to/empty"];
     n.print_detailed();
@@ -971,12 +1052,18 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_empty)
 
     EXPECT_EQ(n["path/to/empty"].dtype().id(),
               n_load["path/to/empty"].dtype().id());
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, hdf5_write_zero_sized_leaf)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     // this tests
     Node n;
     n["a"].set(DataType::float64(0));
@@ -992,12 +1079,18 @@ TEST(conduit_relay_io_hdf5, hdf5_write_zero_sized_leaf)
 
     EXPECT_EQ(n_load["a"].dtype().number_of_elements(),0);
     EXPECT_EQ(n_load["a"].dtype().id(),DataType::FLOAT64_ID);
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_childless_object)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n;
     n["path/to/empty"].set(DataType::object());
     n.print_detailed();
@@ -1010,6 +1103,9 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_childless_object)
 
     EXPECT_EQ(n["path/to/empty"].dtype().id(),
               n_load["path/to/empty"].dtype().id());
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
@@ -1017,6 +1113,8 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_childless_object)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_test_write_incompat)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
 
     Node n;
     n["a/b/leaf"] = DataType::uint32(2);
@@ -1052,12 +1150,17 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_test_write_incompat)
 
     H5Fclose(h5_file_id);
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, auto_endian)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n;
     n["a"].set_int64(12345689);
     n["b"].set_int64(-12345689);
@@ -1079,11 +1182,15 @@ TEST(conduit_relay_io_hdf5, auto_endian)
     EXPECT_EQ(n_load["a"].as_int64(),12345689);
     EXPECT_EQ(n_load["b"].as_int64(),-12345689);
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, hdf5_path_exists)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
 
     std::string test_file_name = "tout_hdf5_wr_hdf5_path_exists.hdf5";
 
@@ -1127,12 +1234,18 @@ TEST(conduit_relay_io_hdf5, hdf5_path_exists)
 
     H5Gclose(h5_grp_a);
     H5Fclose(h5_file_id);
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, hdf5_create_append_methods)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string test_file_name = "tout_hdf5_open_append.hdf5";
     utils::remove_path_if_exists(test_file_name);
 
@@ -1195,6 +1308,8 @@ TEST(conduit_relay_io_hdf5, hdf5_create_append_methods)
     EXPECT_EQ(n_load["a/b/c/d"].to_int32(),10);
     EXPECT_EQ(n_load["a/b/c/e"].to_int32(),20);
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
@@ -1202,6 +1317,9 @@ TEST(conduit_relay_io_hdf5, hdf5_create_append_methods)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, hdf5_create_open_methods)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string test_file_name = "tout_hdf5_open_and_create.hdf5";
 
     Node n;
@@ -1235,12 +1353,17 @@ TEST(conduit_relay_io_hdf5, hdf5_create_open_methods)
 
     io::hdf5_close_file(h5_file_id);
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
-
-
+//
+//
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     // 5k zeros, should compress well, but under default
     // threshold size
 
@@ -1270,6 +1393,9 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
                  << ", cmp ="
                  << tout_cmp_fs);
     EXPECT_TRUE(tout_cmp_fs < tout_std_fs);
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
@@ -1277,6 +1403,9 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n;
 
     n["path/sub1/a"];
@@ -1335,12 +1464,18 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
     // empty string won't work in this case
     EXPECT_THROW(io::hdf5_group_list_child_names(h5_file_id,"",cnames),Error);
 
+    io::hdf5_close_file(h5_file_id);
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
-
+//
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n;
     n["path/mydata"] = 20;
     std::string tout = "tout_hdf5_check_hdf5_file.hdf5";
@@ -1373,12 +1508,17 @@ TEST(conduit_relay_io_hdf5, check_if_file_is_hdf5_file)
     // check totally bad path
     EXPECT_FALSE(io::is_hdf5_file("/path/to/somewhere/that/cant/exist"));
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
-
+//
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, test_remove_path)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n;
     n["path/mydata"] = 20;
     n["path/otherdata/leaf"] = 42;
@@ -1409,12 +1549,17 @@ TEST(conduit_relay_io_hdf5, test_remove_path)
     EXPECT_TRUE(n.has_path("path"));
     n.print();
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
-
-
+//
+//
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, file_name_in_error)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     Node n;
     n["path/mydata"] = 20;
     n["path/otherdata/leaf"] = 42;
@@ -1445,6 +1590,9 @@ TEST(conduit_relay_io_hdf5, file_name_in_error)
     EXPECT_TRUE(had_error);
 
     io::hdf5_close_file(h5_file_id);
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
@@ -1452,6 +1600,8 @@ TEST(conduit_relay_io_hdf5, file_name_in_error)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, test_read_various_string_style)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
 
     std::string tout = "tout_hdf5_wr_various_string_style.hdf5";
     hid_t h5_file_id = H5Fcreate(tout.c_str(),
@@ -1654,11 +1804,16 @@ TEST(conduit_relay_io_hdf5, test_read_various_string_style)
     EXPECT_EQ(n_load["case_4"].as_string(), my_string );
     EXPECT_EQ(n_load["case_5"].as_string(), my_string );
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
-
+//
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string_compress)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     uint32 s_len = 10000;
     std::string tout_std = "tout_hdf5_wr_string_no_compression.hdf5";
     std::string tout_cmp = "tout_hdf5_wr_string_with_compression.hdf5";
@@ -1689,12 +1844,17 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_string_compress)
                  << tout_cmp_fs);
     EXPECT_TRUE(tout_cmp_fs < tout_std_fs);
 
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
-
-
+//
+//
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string tout_std = "tout_hdf5_list.hdf5";
 
     Node n;
@@ -1755,12 +1915,18 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list)
 
     n_load.print();
     EXPECT_FALSE(n_check.diff(n_load,info));
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_list_with_offset)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string tout_std = "tout_hdf5_list_with_offset.hdf5";
 
     Node n, opts;
@@ -1833,12 +1999,17 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_list_with_offset)
     EXPECT_EQ(4,read_vals[1]);
     EXPECT_EQ(2, read_vals.number_of_elements());
 
+   // TODO AUDIT!
+   // make sure we aren't leaking
+   // EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
-
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
 {
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
     std::string tout_std = "tout_hdf5_empty_compat.hdf5";
 
     Node n;
@@ -1855,19 +2026,17 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_compat_with_empty)
     n_load.print();
 
     EXPECT_FALSE(n.diff(n_load,n_diff_info));
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, test_ref_path_error_msg)
 {
-    // check that ref  path only appears in the error message string once
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
 
-    Node n_about;
-    io::about(n_about);
-
-    // skip test if hdf5 isn't enabled
-    if(n_about["protocols/hdf5"].as_string() != "enabled")
-        return;
 
     std::string tfile_out = "tout_hdf5_io_for_ref_path_error_msg.hdf5";
     // remove files if they already exist
@@ -1908,4 +2077,7 @@ TEST(conduit_relay_io_hdf5, test_ref_path_error_msg)
         EXPECT_EQ(count,1);
     }
 
+   // // TODO AUDIT!
+   // //make sure we aren't leaking
+   // EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
 }
