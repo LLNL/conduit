@@ -376,6 +376,7 @@ TEST(conduit_relay_io_hdf5, write_and_read_conduit_leaf_to_extendible_hdf5_datas
     EXPECT_THROW(io::hdf5_write(n,h5_dset_id,opts),Error);
     EXPECT_THROW(io::hdf5_read(h5_dset_id,opts_read,n_read),Error);
 
+    H5Pclose(cparms);
     H5Sclose(h5_dspace_id);
     H5Dclose(h5_dset_id);
     H5Fclose(h5_file_id);
