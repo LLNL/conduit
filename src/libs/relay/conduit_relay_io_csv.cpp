@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 #include <type_traits>
+#include <limits>
 
 #include "conduit_log.hpp"
 #include "conduit_blueprint_table.hpp"
