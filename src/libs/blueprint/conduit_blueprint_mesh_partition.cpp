@@ -35,11 +35,13 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_node.hpp"
+#include "conduit_data_accessor.hpp"
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mesh_utils_iterate_elements.hpp"
 #include "conduit_blueprint_mesh.hpp"
+#include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_log.hpp"
 
 // Uncomment to enable some debugging output from partitioner.
@@ -2030,6 +2032,263 @@ Partitioner::split_selections()
 }
 
 //---------------------------------------------------------------------------
+template<typename FloatType>
+static void
+copy_volume_fractions(
+    const std::vector<index_t> &element_ids,
+    const Node &in_data,
+    Node &out_data)
+{
+    out_data.set_dtype(conduit::DataType(in_data.dtype().id(), element_ids.size()));
+
+    const conduit::DataArray<FloatType> in_values(in_data.element_ptr(0), in_data.dtype());
+    conduit::DataArray<FloatType> out_values(out_data.element_ptr(0), out_data.dtype());
+
+    // Iterate over desired element ids
+    index_t out_idx = 0;
+    for(const auto elem_id : element_ids)
+    {
+        out_values[out_idx++] = in_values[elem_id];
+    }
+}
+
+//---------------------------------------------------------------------------
+template<typename FloatType>
+static void
+copy_volume_fractions_o2m(
+    const std::vector<index_t> &element_ids,
+    const Node &in_data,
+    Node &out_data)
+{
+    // In data is o2m, need to extract "values" to get data
+    conduit::blueprint::o2mrelation::O2MIterator indexer(in_data);
+    const conduit::Node &n_in_values = in_data["values"];
+    out_data.set_dtype(conduit::DataType(in_data["values"].dtype().id(), element_ids.size()));
+
+    const conduit::DataArray<FloatType> in_values(n_in_values.element_ptr(0), n_in_values.dtype());
+    conduit::DataArray<FloatType> out_values(out_data.element_ptr(0), out_data.dtype());
+
+    // Iterate over desired element ids
+    index_t out_idx = 0;
+    for(const auto elem_id : element_ids)
+    {
+        indexer.to(elem_id);
+        const auto index = indexer.index();
+        out_values[out_idx++] = in_values[index];
+    }
+}
+
+//---------------------------------------------------------------------------
+template<typename FloatType>
+static void
+copy_uni_buffer_matset_impl(
+    const std::vector<index_t> &element_ids,
+    const conduit::Node &n_matset,
+    conduit::Node &out_matset)
+{
+    const conduit::Node &n_material_ids = n_matset["material_ids"];
+    const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
+    conduit::blueprint::o2mrelation::O2MIterator indexer(n_matset);
+    DataAccessor<index_t> in_material_ids(n_material_ids.element_ptr(0), n_material_ids.dtype());
+    DataArray<FloatType> in_volume_fractions = n_volume_fractions.value();
+
+    // Output should have been allocated already
+    DataArray<index_t> out_material_ids = out_matset["material_ids"].value();
+    DataArray<FloatType> out_volume_fractions = out_matset["volume_fractions"].value();
+
+    out_matset["sizes"].set_dtype(conduit::DataType::index_t(element_ids.size()));
+    out_matset["offsets"].set_dtype(conduit::DataType::index_t(element_ids.size()));
+    DataArray<index_t> sizes   = out_matset["sizes"].value();
+    DataArray<index_t> offsets = out_matset["offsets"].value();
+    const auto N = sizes.number_of_elements();
+    index_t max_size = 1;
+    index_t offset   = 0;
+
+    for(index_t i = 0; i < N; i++)
+    {
+        // Use o2m iterator to get index into input data and number of "many" items
+        indexer.to(element_ids[i], conduit::blueprint::o2mrelation::ONE);
+        const index_t size = indexer.elements(conduit::blueprint::o2mrelation::MANY);
+        index_t idx  = indexer.index(conduit::blueprint::o2mrelation::DATA);
+
+        std::cout << "elements " << size << std::endl;
+
+        // Track offsets and sizes
+        offsets[i] = offset;
+        sizes[i]   = size;
+        max_size   = (size > max_size) ? size : max_size;
+
+        // Copy each item in the O2M relation
+        for(index_t j = 0; j < size; j++)
+        {
+            out_material_ids[offset]     = in_material_ids[idx];
+            out_volume_fractions[offset] = in_volume_fractions[idx];
+            idx++;
+            offset++;
+        }
+    }
+
+    std::cout << "out_material_ids.number_of_elements() " << out_material_ids.number_of_elements() << std::endl;
+    std::cout << "out_volume_fractions.number_of_elements() " << out_volume_fractions.number_of_elements() << std::endl;
+    std::cout << "offset " << offset << std::endl;
+
+    // If everything was size 1 then we don't need offsets/sizes
+    if(max_size == 1)
+    {
+        out_matset.remove("sizes");
+        out_matset.remove("offsets");
+    }
+}
+
+//---------------------------------------------------------------------------
+static void
+copy_uni_buffer_matset(
+    const std::vector<index_t> &element_ids,
+    const conduit::Node &n_matset,
+    conduit::Node &out_matset)
+{
+    std::cout << "Handling uni buffer matset" << std::endl;
+    out_matset["material_map"].set(n_matset["material_map"]);
+
+    // Determine size of output array
+    index_t out_size = 0;
+    if(n_matset.has_child("sizes"))
+    {
+        // Element based matset will have an entry for each element, can safely index by element id
+        const conduit::Node &n_sizes = n_matset["sizes"];
+        conduit::DataAccessor<index_t> size_access(n_sizes.element_ptr(0), n_sizes.dtype());
+        for(const index_t id : element_ids)
+        {
+            std::cout << "size_access[id] " << size_access[id] << std::endl;
+            out_size += size_access[id];
+        }
+    }
+    else
+    {
+        out_size = (index_t)element_ids.size();
+    }
+    std::cout << "Size is " << out_size << std::endl;
+
+    const auto &dtype = n_matset["volume_fractions"].dtype();
+    out_matset["material_ids"].set_dtype(conduit::DataType::index_t(out_size));
+    out_matset["volume_fractions"].set_dtype(conduit::DataType(dtype.id(), out_size));
+
+    // Determine floating point type
+    if(dtype.is_float())
+    {
+        copy_uni_buffer_matset_impl<float>(element_ids, n_matset, out_matset);
+    }
+    else if(dtype.is_double())
+    {
+        copy_uni_buffer_matset_impl<double>(element_ids, n_matset, out_matset);
+    }
+#if CONDUIT_USE_LONG_DOUBLE
+    else if(dtype.is_long_double())
+    {
+        copy_uni_buffer_matset_impl<long double>(element_ids, n_matset, out_matset);
+    }
+#endif
+
+}
+
+//---------------------------------------------------------------------------
+static void
+copy_multi_buffer_matset(
+    const std::vector<index_t> &element_ids,
+    const conduit::Node &n_matset,
+    conduit::Node &out_matset)
+{
+    const conduit::Node &n_vfracts = n_matset["volume_fractions"];
+    conduit::Node &out_vfracts = out_matset.add_child("volume_fractions");
+    auto vfract_itr = n_vfracts.children();
+    while(vfract_itr.has_next())
+    {
+        const conduit::Node &n_vfract = vfract_itr.next();
+        conduit::Node &out_vfract = out_vfracts.add_child(n_vfract.name());
+        std::cout << n_vfract.name() << " volume_fraction being mapped." << std::endl;
+        bool is_o2m = n_vfract.dtype().is_object();
+        if(is_o2m)
+        {
+            const auto &dtype = n_vfract["values"].dtype();
+            if(dtype.is_float())
+            {
+                copy_volume_fractions_o2m<float>(element_ids, n_vfract, out_vfract);
+            }
+            else if(dtype.is_double())
+            {
+                copy_volume_fractions_o2m<double>(element_ids, n_vfract, out_vfract);
+            }
+#if CONDUIT_USE_LONG_DOUBLE
+            else if(dtype.is_long_double())
+            {
+                copy_volume_fractions_o2m<long double>(element_ids, n_vfract, out_vfract);
+            }
+#endif
+        }
+        else
+        {
+            const auto &dtype = n_vfract.dtype();
+            if(dtype.is_float())
+            {
+                copy_volume_fractions<float>(element_ids, n_vfract, out_vfract);
+            }
+            else if(dtype.is_double())
+            {
+                copy_volume_fractions<double>(element_ids, n_vfract, out_vfract);
+            }
+#if CONDUIT_USE_LONG_DOUBLE
+            else if(dtype.is_long_double())
+            {
+                copy_volume_fractions<long double>(element_ids, n_vfract, out_vfract);
+            }
+#endif
+        }
+        std::cout << "Is there another volume fraction array? " << vfract_itr.has_next() << std::endl;
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+Partitioner::copy_matsets(index_t domain, const std::string &topology,
+    const std::vector<index_t> &element_ids,
+    const conduit::Node &n_mesh,
+    conduit::Node &n_output) const
+{
+    // If there are no matsets then there is nothing to do.
+    if(!n_mesh.has_child("matsets"))
+        return;
+
+    // n_output.schema().print();
+    const conduit::Node &n_matsets = n_mesh["matsets"];
+    conduit::Node &out_matsets = n_output["matsets"];
+    auto matset_itr = n_matsets.children();
+    while(matset_itr.has_next())
+    {
+        // Only transfer matsets on the active topology
+        const conduit::Node &n_matset = matset_itr.next();
+        std::cout << "Mapping " << n_matset.name() << " material set." << std::endl;
+        if(n_matset["topology"].as_string() != topology)
+        {
+            continue;
+        }
+        conduit::Node &out_matset = out_matsets.add_child(n_matset.name());
+        out_matset["topology"].set(topology);
+
+        // For multi-buffer the "volume_fractions" child is an object
+        if(n_matset["volume_fractions"].dtype().is_object())
+        {
+            copy_multi_buffer_matset(element_ids, n_matset, out_matset);
+        }
+        else
+        {
+            copy_uni_buffer_matset(element_ids, n_matset, out_matset);
+        }
+
+        std::cout << "Is there another matset? " << matset_itr.has_next() << std::endl;
+    }
+}
+
+//---------------------------------------------------------------------------
 void
 Partitioner::copy_fields(index_t domain, const std::string &topology,
     const std::vector<index_t> &vertex_ids,
@@ -2582,14 +2841,19 @@ Partitioner::extract(size_t idx, const conduit::Node &n_mesh, std::vector<index_
                 element_ids, vertex_ids, n_new_topos[n_topo.name()]);
         }
 
+        // Create new matsets
+        copy_matsets(selections[idx]->get_domain(), n_topo.name(),
+            element_ids, n_mesh, n_output);
+
         // Create new fields.
         copy_fields(selections[idx]->get_domain(), n_topo.name(),
             vertex_ids, element_ids, n_mesh, n_output);
 
         vertex_ids_out = std::move(vertex_ids);
     }
-    catch(conduit::Error &)
+    catch(conduit::Error &e)
     {
+        e.print();
         delete retval;
         retval = nullptr;
     }

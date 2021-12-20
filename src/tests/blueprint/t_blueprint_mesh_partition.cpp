@@ -69,6 +69,7 @@ void barrier() { }
 // Include some helper function definitions
 #include "blueprint_baseline_helpers.hpp"
 
+#if 0
 //-----------------------------------------------------------------------------
 void
 tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
@@ -2012,4 +2013,122 @@ TEST(conduit_blueprint_mesh_partition, field_selection)
 #else
     EXPECT_EQ(compare_baseline(b02, output), true);
 #endif
+}
+#endif
+
+void
+my_save_visit(const std::string &filename, const conduit::Node &n)
+{
+    // NOTE: My VisIt only wants to read HDF5 root files for some reason.
+    bool hdf5_enabled = check_if_hdf5_enabled();
+    if(!hdf5_enabled) {
+        throw std::runtime_error("No hdf5");
+    }
+
+    auto pos = filename.rfind("/");
+    std::string fn(filename.substr(pos+1,filename.size()-pos-1));
+    pos = fn.rfind(".");
+    std::string fn_noext(fn.substr(0, pos));
+
+    // Save all the domains to individual files.
+    auto ndoms = conduit::blueprint::mesh::number_of_domains(n);
+    if(ndoms < 1)
+        return;
+
+    // All domains go into subdirectory
+    if(!conduit::utils::is_directory(filename))
+    {
+        conduit::utils::create_directory(filename);
+    }
+
+    char dnum[20];
+    if(ndoms == 1)
+    {
+        sprintf(dnum, "%05d", 0);
+        std::stringstream ss;
+        ss << filename << conduit::utils::file_path_separator()
+            << fn_noext << "." << dnum;
+
+        if(hdf5_enabled)
+            conduit::relay::io::save(n, ss.str() + ".hdf5", "hdf5");
+        // VisIt won't read it:
+        conduit::relay::io::save(n, ss.str() + ".yaml", "yaml");
+    }
+    else
+    {
+        for(size_t i = 0; i < ndoms; i++)
+        {
+            sprintf(dnum, "%05d", static_cast<int>(i));
+            std::stringstream ss;
+            ss << filename << conduit::utils::file_path_separator()
+                << fn_noext << "." << dnum;
+
+            if(hdf5_enabled)
+                conduit::relay::io::save(n[i], ss.str() + ".hdf5", "hdf5");
+            // VisIt won't read it:
+            conduit::relay::io::save(n[i], ss.str() + ".yaml", "yaml");
+        }
+    }
+
+    // Add index stuff to it so we can plot it in VisIt.
+    conduit::Node root;
+    if(ndoms == 1)
+        conduit::blueprint::mesh::generate_index(n, "", ndoms, root["blueprint_index/mesh"]);
+    else
+        conduit::blueprint::mesh::generate_index(n[0], "", ndoms, root["blueprint_index/mesh"]);
+    root["protocol/name"] = "hdf5";
+    root["protocol/version"] = CONDUIT_VERSION;
+    root["number_of_files"] = ndoms;
+    root["number_of_trees"] = ndoms;
+    root["file_pattern"] = filename + conduit::utils::file_path_separator() + (fn_noext + ".%05d.hdf5");
+    root["tree_pattern"] = "/";
+    
+    if(hdf5_enabled)
+        conduit::relay::io::save(root, fn_noext + "_hdf5.root", "hdf5");
+
+    // VisIt won't read it: 
+    root["file_pattern"] = (fn_noext + ".%05d.yaml");
+    conduit::relay::io::save(root, fn_noext + "_yaml.root", "yaml");
+}
+
+//-----------------------------------------------------------------------------
+// Multi-buffer, element-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_multi_element)
+{
+    /// matset_type options:
+    ///   full -> non sparse volume fractions and matset values
+    ///   sparse_by_material ->  sparse (material dominant) volume fractions
+    ///                          and matset values
+    ///   sparse_by_element  ->  sparse (element dominant)
+    ///                          volume fractions and matset values
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("full", 4, 4, 0.33f, venn);
+
+    my_save_visit("venn", venn);
+
+    conduit::Node venn_part, opts; opts["target"].set(4);
+    conduit::blueprint::mesh::partition(venn, opts, venn_part);
+
+    my_save_visit("venn_part", venn_part);
+}
+
+//-----------------------------------------------------------------------------
+// Multi-buffer, element-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_uni_element)
+{
+    /// matset_type options:
+    ///   full -> non sparse volume fractions and matset values
+    ///   sparse_by_material ->  sparse (material dominant) volume fractions
+    ///                          and matset values
+    ///   sparse_by_element  ->  sparse (element dominant)
+    ///                          volume fractions and matset values
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("sparse_by_element", 4, 4, 0.33f, venn);
+
+    my_save_visit("venn_sparse_by_element", venn);
+
+    conduit::Node venn_part, opts; opts["target"].set(4);
+    conduit::blueprint::mesh::partition(venn, opts, venn_part);
+
+    my_save_visit("venn_sparse_by_element_part", venn_part);
 }

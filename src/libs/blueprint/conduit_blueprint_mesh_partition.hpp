@@ -382,6 +382,12 @@ protected:
      */
     std::shared_ptr<Selection> create_selection_all_elements(const conduit::Node &n_mesh) const;
 
+    void copy_matsets(index_t domain,
+                      const std::string &topology,
+                      const std::vector<index_t> &element_ids,
+                      const conduit::Node &n_mesh,
+                      conduit::Node &output) const;
+
     /**
      @brief Use the vertex_ids and element_ids to copy from the original
             fields to make new, restricted fields. We also add some mapping
