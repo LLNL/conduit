@@ -316,6 +316,9 @@ stages:
            export APT_PKGS="$APT_PKGS libbz2-dev"
            export APT_PKGS="$APT_PKGS openmpi-bin"
            export APT_PKGS="$APT_PKGS libopenmpi-dev"
+           # display packages
+           echo "Installing APT_PKGS:"
+           echo $APT_PKGS
            # install pkgs we need
            sudo apt-get -y install $APT_PKGS
         displayName: 'Prepare build env'
@@ -355,6 +358,7 @@ stages:
            # silo constraints
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # show final spec
+           echo "Spack Spec:"
            echo $SPACK_SPEC
            # run uber to build tpls
            python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/
