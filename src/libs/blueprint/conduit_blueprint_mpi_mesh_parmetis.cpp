@@ -232,39 +232,39 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     }
 
     // we now have our offsets, we can create output fields on each local domain
-     for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
-     {
-         Node &dom = *domains[local_dom_idx];
-         // we do need to make sure we have the requested topo
-         if(dom["topologies"].has_child(topo_name))
-         {
-             Node &verts_field = dom["fields"][field_prefix + "global_vertex_ids"];
-             verts_field["association"] = "vertex";
-             verts_field["topology"] = topo_name;
-             verts_field["values"].set(DataType::int64(local_num_verts[local_dom_idx]));
+    for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
+    {
+        Node &dom = *domains[local_dom_idx];
+        // we do need to make sure we have the requested topo
+        if(dom["topologies"].has_child(topo_name))
+        {
+            Node &verts_field = dom["fields"][field_prefix + "global_vertex_ids"];
+            verts_field["association"] = "vertex";
+            verts_field["topology"] = topo_name;
+            verts_field["values"].set(DataType::int64(local_num_verts[local_dom_idx]));
 
-             int64 vert_base_idx = global_verts_offset + local_vert_offsets[local_dom_idx];
+            int64 vert_base_idx = global_verts_offset + local_vert_offsets[local_dom_idx];
 
-             int64_array vert_ids_vals = verts_field["values"].value();
-             for(uint64 i=0; i < local_num_verts[local_dom_idx]; i++)
-             {
-                 vert_ids_vals[i] = i + vert_base_idx;
-             }
+            int64_array vert_ids_vals = verts_field["values"].value();
+            for(uint64 i=0; i < local_num_verts[local_dom_idx]; i++)
+            {
+                vert_ids_vals[i] = i + vert_base_idx;
+            }
 
-             // NOTE: VISIT BP DOESNT SUPPORT UINT64!!!!
-             Node &eles_field = dom["fields"][field_prefix + "global_element_ids"];
-             eles_field["association"] = "element";
-             eles_field["topology"] = topo_name;
-             eles_field["values"].set(DataType::int64(local_num_eles[local_dom_idx]));
+            // NOTE: VISIT BP DOESNT SUPPORT UINT64!!!!
+            Node &eles_field = dom["fields"][field_prefix + "global_element_ids"];
+            eles_field["association"] = "element";
+            eles_field["topology"] = topo_name;
+            eles_field["values"].set(DataType::int64(local_num_eles[local_dom_idx]));
 
-             int64 ele_base_idx = global_eles_offset + local_ele_offsets[local_dom_idx];
+            int64 ele_base_idx = global_eles_offset + local_ele_offsets[local_dom_idx];
 
-             int64_array ele_ids_vals = eles_field["values"].value();
-             for(uint64 i=0; i < local_num_eles[local_dom_idx]; i++)
-             {
-                ele_ids_vals[i] = i + ele_base_idx;
-             }
-         }
+            int64_array ele_ids_vals = eles_field["values"].value();
+            for(uint64 i=0; i < local_num_eles[local_dom_idx]; i++)
+            {
+               ele_ids_vals[i] = i + ele_base_idx;
+            }
+        }
     }
 }
 
