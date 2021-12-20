@@ -17,12 +17,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Added `conduit::blueprint::{mpi}::partition` function that provides a general N-to-M partition capability for Blueprint Meshes. This helps with load balancing and other use cases, including fusing multi-domain data to simplifying post processing. This capability supports several options, see (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh_partition.html) for more details.
 - Added a `Table` blueprint used to represent tables of numeric data. See (https://llnl-conduit.readthedocs.io/en/latest/blueprint_table.html) more details.
-- Added `conduit::blueprint::{mpi}::flatten` which transforms Blueprint Meshes into a Blueprint Tables. This transforms Mesh Blueprint data into a form that is more easily digestible in machine learning applications.
+- Added `conduit::blueprint::{mpi}::flatten` which transforms Blueprint Meshes into Blueprint Tables. This transforms Mesh Blueprint data into a form that is more easily digestible in machine learning applications.
 - Added `conduit::blueprint::mpi::generate_partition_field`, which uses Parmetis to create a field that identifies how to load balance an input mesh elements.  This field can be used as a Field selection input to `conduit::blueprint::mpi::partition` function.
 - Added the`blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
-- Added to the `blueprint::mesh::examples::polytess` example. Now `polytess` takes a new argument, called `nz`, which allows it to be extended into 3 dimensions. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess) for more details.
 - Added a new function signature for `blueprint::mesh::topology::unstructured::generate_sides`, which performs the same task as the original and also takes fields from the original topology and maps them onto the new topology.
-- Added `blueprint::mpi::mesh::to_polygonal`, MPI aware conversion of Blueprint Structured AMR mesh to a Blueprint Polyhedral mesh.
+- Added `blueprint::mpi::mesh::to_polygonal`, which provides a MPI aware conversion Blueprint Structured AMR meshes to a Blueprint Polyhedral meshes.
 - Added a host of `conduit::blueprint::mpi::mesh::generate_*` methods, which are the MPI parallel equivalents of the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions.
 - Added the `conduit::blueprint::mpi::mesh::find_delegate_domain` function, which returns a single delegate domain for the given mesh across MPI ranks (useful when all ranks need mesh information and some ranks can have empty meshes).
 - Added check and transform functions for the newly-designated `pairwise` and `maxshare` variants of `adjsets`. For more information, see the `conduit::blueprint::mesh::adjset` namespace.
@@ -31,7 +30,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 
 #### Relay
-- Added `conduit::relay::io::hdf5_identifier_report` methods, which creates a conduit node that describes active hdf5 resource handles.
+- Added `conduit::relay::io::hdf5_identifier_report` methods, which create conduit nodes that describes active hdf5 resource handles.
 
 
 ### Changed
@@ -40,9 +39,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Updated CMake logic to provide more robust Python detection and better support for HDF5 installs that were built with CMake.
 - Improved Node::diff and Node::diff_compatible to show string values when strings differ.
 - `conduit::Node::print()` and in Python Node `repr` and `str` now use `to_summary_string()`. This reduces the output for large Nodes. Full output is still supported via `to_string()`, `to_yaml()`, etc methods.
-- Changed the Conduit C-API to use a type safe alias for conduit_node and conduit_datatype.
 
 #### Blueprint
+- The `blueprint::mesh::examples::polytess` function now takes a new argument, called `nz`, which allows it to be extended into 3 dimensions. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess) for more details.
 - Added support for both `const` and non-`const` inputs to the `conduit::blueprint::mesh::domains` function.
 - Improved mesh blueprint index generation logic (local and MPI) to support domains with different topos, fields, etc. 
 - Deprecated accepting `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. They issue a `CONDUIT_INFO` message when this detected and future versions will issue a `CONDUIT_ERROR`.
@@ -60,7 +59,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Avoid compile issue with using `_Pragma()` with Python 3.8 on Windows
 - `conduit_node` and `conduit_datatype` in the C API are no longer aliases to `void` so that callers cannot pass just any pointer to the APIs.
-- Fixed overread issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
+- Fixed memory over read issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
 - Fixed a subtle bug with Node fetch and Object role initialization.
 
 #### Blueprint
