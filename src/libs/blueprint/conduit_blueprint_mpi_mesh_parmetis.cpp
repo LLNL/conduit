@@ -339,6 +339,63 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             }
         }
     }
+
+    if (adjset_name != "")
+    {
+        const int TAG_SHARED_NODE_SYNC = 175000000;
+        // map of groups -> global vtx ids
+        std::map<std::set<uint64>, std::vector<uint64>> groups_2_vids;
+        for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
+        {
+            Node &dom = *domains[local_dom_idx];
+            int64 global_domid = global_domids[local_dom_idx];
+            Node &verts_field = dom["fields"][field_prefix + "global_vertex_ids"];
+            int64_array vert_ids_vals = verts_field["values"].value();
+            const Node& dom_aset = dom["adjsets"][adjset_name];
+
+            for (const Node& group : dom_aset["groups"].children())
+            {
+                uint64_accessor nbr_doms = group["neighbors"].as_uint64_accessor();
+                uint64 min_domain = global_domid;
+                std::set<uint64> sorted_nbrs;
+                sorted_nbrs.insert(global_domid);
+                for (index_t inbr = 0; inbr < nbr_doms.number_of_elements(); inbr++)
+                {
+                    min_domain = std::min(min_domain, nbr_doms[inbr]);
+                    sorted_nbrs.insert(nbr_doms[inbr]);
+                }
+
+                uint64_accessor group_verts = group["values"].as_uint64_accessor();
+                if (min_domain == global_domid)
+                {
+                    // This domain provides the actual vids
+                    std::vector<uint64> actual_vids(group_verts.number_of_elements());
+                    for (index_t ivert = 0; ivert < group_verts.number_of_elements(); ivert++)
+                    {
+                        actual_vids[ivert] = vert_ids_vals[group_verts[ivert]];
+                    }
+                    if (groups_2_vids.count(sorted_nbrs) > 0)
+                    {
+                        CONDUIT_ERROR("Multiple primary domains?");
+                    }
+                    groups_2_vids[sorted_nbrs] = std::move(actual_vids);
+                }
+                else
+                {
+                    // Global vids have been set by a lower-numbered domain
+                    const std::vector<uint64>& actual_vids = groups_2_vids[sorted_nbrs];
+                    if (actual_vids.size() != group_verts.number_of_elements())
+                    {
+                        CONDUIT_ERROR("mismatch in shared verts");
+                    }
+                    for (index_t ivert = 0; ivert < actual_vids.size(); ivert++)
+                    {
+                        vert_ids_vals[group_verts[ivert]] = actual_vids[ivert];
+                    }
+                }
+            }
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
