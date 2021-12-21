@@ -3281,6 +3281,10 @@ Partitioner::init_chunk_adjsets(const DomainToChunkMap& dom_2_chunks,
             chunks_to_init.push_back(local_chunk_id);
         }
 
+        if (!domain.has_child("adjsets"))
+        {
+            continue;
+        }
         // loop over all adjsets in the current domain
         for (const Node& adjset : domain["adjsets"].children())
         {
