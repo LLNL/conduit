@@ -300,9 +300,28 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             int64 vert_base_idx = global_verts_offset + local_vert_offsets[local_dom_idx];
 
             int64_array vert_ids_vals = verts_field["values"].value();
+            int64 curr_vert_id = 0;
             for(uint64 i=0; i < local_num_verts[local_dom_idx]; i++)
             {
-                vert_ids_vals[i] = i + vert_base_idx;
+                bool is_primary_domain = true;
+                int primary_domid;
+                if (dom_shared_nodes[local_dom_idx].count(i) > 0)
+                {
+                    primary_domid = dom_shared_nodes[local_dom_idx][i];
+                    is_primary_domain = (primary_domid == -1);
+                }
+
+                if (!is_primary_domain)
+                {
+                    // mark the node with the domain we need to fetch vids from
+                    vert_ids_vals[i] = ~primary_domid;
+                }
+                else
+                {
+                    // number a node for which we are the primary domain
+                    vert_ids_vals[i] = curr_vert_id + vert_base_idx;
+                    curr_vert_id++;
+                }
             }
 
             // NOTE: VISIT BP DOESNT SUPPORT UINT64!!!!
