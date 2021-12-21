@@ -22,6 +22,8 @@
 
 #include <parmetis.h>
 
+#include <unordered_map>
+
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -130,6 +132,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     // parse options
     std::string topo_name = "";
     std::string field_prefix = "";
+    std::string adjset_name = "";
     if( options.has_child("topology") )
     {
         topo_name = options["topology"].as_string();
@@ -145,6 +148,11 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     if( options.has_child("field_prefix") )
     {
         field_prefix = options["field_prefix"].as_string();
+    }
+
+    if( options.has_child("adjset") )
+    {
+        adjset_name = options["adjset"].as_string();
     }
 
     // count all local elements + verts and create offsets
@@ -164,6 +172,9 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     uint64_array local_vert_offsets = local_info["verts_offsets"].value();
     uint64_array local_ele_offsets  = local_info["eles_offsets"].value();
 
+    local_info["num_verts_primary"].set(DataType::uint64(local_num_doms));
+    uint64_array local_num_verts_pri = local_info["num_verts_primary"].value();
+    std::vector<std::unordered_map<uint64, int64>> dom_shared_nodes(domains.size());
 
     for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
     {
@@ -185,10 +196,53 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             //local_num_verts[local_dom_idx] = blueprint::mesh::utils::coordset::length(dom_cset);
             // so we are using this: 
             local_num_verts[local_dom_idx] = dom_cset["values/x"].dtype().number_of_elements();
-            local_vert_offsets[local_dom_idx] = local_total_num_verts;
-            local_total_num_verts += local_num_verts[local_dom_idx];
+            local_num_verts_pri[local_dom_idx] = local_num_verts[local_dom_idx];
         }
+        if (adjset_name != "" && dom.has_child("adjsets"))
+        {
+            if (!dom["adjsets"].has_child(adjset_name))
+            {
+                CONDUIT_ERROR("Specified adjset = \"" << adjset_name
+                                << "\" was not found in adjsets node");
+            }
+            uint64 global_domid = dom["state/domain_id"].to_uint64();
+            std::unordered_map<uint64, int64>& shared_nodes = dom_shared_nodes[local_dom_idx];
+            const Node& dom_aset = dom["adjsets"][adjset_name];
+            std::string assoc_type = dom_aset["association"].as_string();
+            std::string assoc_topo = dom_aset["topology"].as_string();
+            // TODO: check association, should be vert-based
+            if (assoc_topo != topo_name)
+            {
+                continue;
+            }
+
+            for (const Node& group : dom_aset["groups"].children())
+            {
+                uint64_accessor nbr_doms = group["neighbors"].as_uint64_accessor();
+                uint64 min_domain = global_domid;
+                for (index_t inbr = 0; inbr < nbr_doms.number_of_elements(); inbr++)
+                {
+                    min_domain = std::min(min_domain, nbr_doms[inbr]);
+                }
+                // Use the lower-indexed domain as the primary domain for these vertices
+                uint64_accessor group_verts = group["values"].as_uint64_accessor();
+                for (index_t ivert = 0; ivert < group_verts.number_of_elements(); ivert++)
+                {
+                    shared_nodes[group_verts[ivert]] = (min_domain == global_domid
+                                                        ? -1
+                                                        : min_domain);
+                }
+            }
+            local_num_verts_pri[local_dom_idx] -= shared_nodes.size();
+        }
+        // Calculate offsets based on primary vertices in each domain
+        local_vert_offsets[local_dom_idx] = local_total_num_verts;
+        local_total_num_verts += local_num_verts_pri[local_dom_idx];
     }
+
+    // Reduce to get locations of all domains.
+    MPI_Allreduce(MPI_IN_PLACE, dom_locs.data(), dom_locs.size(),
+                  MPI_INT64_T, MPI_MIN, comm);
 
     // calc per MPI task offsets using 
     // local_total_num_verts
