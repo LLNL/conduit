@@ -224,10 +224,19 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             const Node& dom_aset = dom["adjsets"][adjset_name];
             std::string assoc_type = dom_aset["association"].as_string();
             std::string assoc_topo = dom_aset["topology"].as_string();
-            // TODO: check association, should be vert-based
+            if (assoc_type != "vertex")
+            {
+                CONDUIT_ERROR("Specified adjset \"" << adjset_name << "\" is "
+                              << "not a vertex-associated adjset. Element-"
+                              << "associated adjsets are not supported at this time.");
+
+            }
             if (assoc_topo != topo_name)
             {
-                continue;
+                CONDUIT_ERROR("Specified adjset \"" << adjset_name
+                                << "\" associated with unexpected topology \"" << assoc_topo
+                                << "\" (per generate_partition_field options: topology = \""
+                                << topo_name << "\")");
             }
 
             for (const Node& group : dom_aset["groups"].children())
