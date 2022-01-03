@@ -2089,7 +2089,7 @@ copy_uni_buffer_matset_impl(
     const conduit::Node &n_material_ids = n_matset["material_ids"];
     const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
     conduit::blueprint::o2mrelation::O2MIterator indexer(n_matset);
-    DataAccessor<index_t> in_material_ids(n_material_ids.element_ptr(0), n_material_ids.dtype());
+    DataAccessor<index_t> in_material_ids = n_material_ids.value();
     DataArray<FloatType> in_volume_fractions = n_volume_fractions.value();
 
     // Output should have been allocated already
@@ -2121,13 +2121,25 @@ copy_uni_buffer_matset_impl(
         // Copy each item in the O2M relation
         for(index_t j = 0; j < size; j++)
         {
+            if(idx >= in_material_ids.number_of_elements())
+            {
+                // std::cout << "INDEX OUT OF BOUNDS !! " << std::endl;
+                throw std::runtime_error("INDEX OUT OF BOUNDS !!");
+            }
+            if(idx == in_material_ids.number_of_elements() - 1)
+            {
+                std::cout << "Insert breakpoint here" << std::endl;
+            }
             out_material_ids[offset]     = in_material_ids[idx];
             out_volume_fractions[offset] = in_volume_fractions[idx];
             idx++;
             offset++;
         }
+        std::cout << "idx " << idx << std::endl;
     }
 
+    std::cout << "in_material_ids.number_of_elements() " << in_material_ids.number_of_elements() << std::endl;
+    std::cout << "in_volume_fractions.number_of_elements() " << in_volume_fractions.number_of_elements() << std::endl;
     std::cout << "out_material_ids.number_of_elements() " << out_material_ids.number_of_elements() << std::endl;
     std::cout << "out_volume_fractions.number_of_elements() " << out_volume_fractions.number_of_elements() << std::endl;
     std::cout << "offset " << offset << std::endl;
