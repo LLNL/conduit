@@ -2093,7 +2093,7 @@ my_save_visit(const std::string &filename, const conduit::Node &n)
 
 //-----------------------------------------------------------------------------
 // Multi-buffer, element-dominant matset
-TEST(conduit_blueprint_mesh_partition, matset_multi_element)
+TEST(conduit_blueprint_mesh_partition, matset_multi_by_element)
 {
     /// matset_type options:
     ///   full -> non sparse volume fractions and matset values
@@ -2104,17 +2104,38 @@ TEST(conduit_blueprint_mesh_partition, matset_multi_element)
     conduit::Node venn;
     conduit::blueprint::mesh::examples::venn("full", 4, 4, 0.33f, venn);
 
-    my_save_visit("venn", venn);
+    my_save_visit("venn_multi_by_element", venn);
 
     conduit::Node venn_part, opts; opts["target"].set(4);
     conduit::blueprint::mesh::partition(venn, opts, venn_part);
 
-    my_save_visit("venn_part", venn_part);
+    my_save_visit("venn_multi_by_element_partitioned", venn_part);
 }
 
 //-----------------------------------------------------------------------------
-// Multi-buffer, element-dominant matset
-TEST(conduit_blueprint_mesh_partition, matset_uni_element)
+// Multi-buffer, material-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_multi_by_material)
+{
+    /// matset_type options:
+    ///   full -> non sparse volume fractions and matset values
+    ///   sparse_by_material ->  sparse (material dominant) volume fractions
+    ///                          and matset values
+    ///   sparse_by_element  ->  sparse (element dominant)
+    ///                          volume fractions and matset values
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("sparse_by_material", 4, 4, 0.33f, venn);
+
+    my_save_visit("venn_multi_by_material", venn);
+
+    conduit::Node venn_part, opts; opts["target"].set(4);
+    conduit::blueprint::mesh::partition(venn, opts, venn_part);
+
+    my_save_visit("venn_multi_by_material_partitioned", venn_part);
+}
+
+//-----------------------------------------------------------------------------
+// Uni-buffer, element-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_uni_by_element)
 {
     /// matset_type options:
     ///   full -> non sparse volume fractions and matset values
@@ -2125,10 +2146,36 @@ TEST(conduit_blueprint_mesh_partition, matset_uni_element)
     conduit::Node venn;
     conduit::blueprint::mesh::examples::venn("sparse_by_element", 4, 4, 0.33f, venn);
 
-    my_save_visit("venn_sparse_by_element", venn);
+    my_save_visit("venn_uni_by_element", venn);
 
     conduit::Node venn_part, opts; opts["target"].set(4);
     conduit::blueprint::mesh::partition(venn, opts, venn_part);
 
-    my_save_visit("venn_sparse_by_element_part", venn_part);
+    my_save_visit("venn_uni_by_element_partitioned", venn_part);
+}
+
+//-----------------------------------------------------------------------------
+// Uni-buffer, material-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_uni_by_material)
+{
+    const int nx = 4;
+    const int ny = 4;
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, venn);
+
+    // Add an element ids field to reverse the matset
+    const int N = conduit::blueprint::mesh::topology::length(venn["topologies"][0]);
+    std::vector<int> ids;
+    for(int i = 0; i < N; i++)
+    {
+        ids.push_back(i);
+    }
+    venn["matsets/matset/element_ids"].set(ids);
+
+    my_save_visit("venn_uni_by_material", venn);
+
+    conduit::Node venn_part, opts; opts["target"].set(4);
+    conduit::blueprint::mesh::partition(venn, opts, venn_part);
+
+    my_save_visit("venn_uni_by_material_partitioned", venn_part);
 }
