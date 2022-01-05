@@ -2125,22 +2125,10 @@ TEST(conduit_blueprint_mesh_partition, matset_uni_element)
     conduit::Node venn;
     conduit::blueprint::mesh::examples::venn("sparse_by_element", 4, 4, 0.33f, venn);
 
-#if 1
-    const conduit::Node &n_material_ids = venn["matsets/matset/material_ids"];
-    std::cout << n_material_ids.dtype().to_yaml() << std::endl;
-    conduit::DataAccessor<conduit::index_t> access_data(n_material_ids.element_ptr(0), n_material_ids.dtype());
-    conduit::DataArray<conduit::int32> real_data = n_material_ids.value();
-
-    for(conduit::index_t i = 0; i < n_material_ids.dtype().number_of_elements(); i++)
-    {
-        std::cout << real_data[i] << " == " << access_data[i] << std::endl;
-    }
-#else
     my_save_visit("venn_sparse_by_element", venn);
 
     conduit::Node venn_part, opts; opts["target"].set(4);
     conduit::blueprint::mesh::partition(venn, opts, venn_part);
 
     my_save_visit("venn_sparse_by_element_part", venn_part);
-#endif
 }

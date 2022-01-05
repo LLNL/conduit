@@ -2086,69 +2086,83 @@ copy_uni_buffer_matset_impl(
     const conduit::Node &n_matset,
     conduit::Node &out_matset)
 {
-    const conduit::Node &n_material_ids = n_matset["material_ids"];
-    const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
-    conduit::blueprint::o2mrelation::O2MIterator indexer(n_matset);
-    DataAccessor<index_t> in_material_ids = n_material_ids.value();
-    DataArray<FloatType> in_volume_fractions = n_volume_fractions.value();
+    const index_t num_elements = (index_t)element_ids.size();
 
-    // Output should have been allocated already
-    DataArray<index_t> out_material_ids = out_matset["material_ids"].value();
-    DataArray<FloatType> out_volume_fractions = out_matset["volume_fractions"].value();
-
-    out_matset["sizes"].set_dtype(conduit::DataType::index_t(element_ids.size()));
-    out_matset["offsets"].set_dtype(conduit::DataType::index_t(element_ids.size()));
-    DataArray<index_t> sizes   = out_matset["sizes"].value();
-    DataArray<index_t> offsets = out_matset["offsets"].value();
-    const auto N = sizes.number_of_elements();
-    index_t max_size = 1;
-    index_t offset   = 0;
-
-    for(index_t i = 0; i < N; i++)
+    // Determine output size and sizes/offsets
+    index_t out_size = 0;
+    if(n_matset.has_child("sizes"))
     {
-        // Use o2m iterator to get index into input data and number of "many" items
-        indexer.to(element_ids[i], conduit::blueprint::o2mrelation::ONE);
+        // Element based matset will have an entry for each element, should be able to safely index by element id
+        const conduit::DataAccessor<index_t> size_access = n_matset.fetch_existing("sizes").value();
+        out_matset["sizes"].set_dtype(conduit::DataType::index_t(num_elements));
+        out_matset["offsets"].set_dtype(conduit::DataType::index_t(num_elements));
+        DataArray<index_t> out_sizes   = out_matset["sizes"].value();
+        DataArray<index_t> out_offsets = out_matset["offsets"].value();
+
+        // Build output sizes / offsets, while computing size of output data array
+        bool need_offsets_sizes = false;
+        for(index_t i = 0; i < num_elements; i++)
+        {
+            const index_t id = element_ids[i];
+            const index_t s  = size_access[id];
+            if(s != 1)
+            {
+                need_offsets_sizes = true;
+            }
+            out_offsets[i] = out_size;
+            out_sizes[i]   = s;
+            out_size      += s;
+        }
+
+        // If each entry in the O2M was 1 then we don't need the auxillary arrays
+        if(!need_offsets_sizes)
+        {
+            out_matset.remove("sizes");
+            out_matset.remove("offsets");
+        }
+    }
+    else
+    {
+        out_size = num_elements;
+    }
+
+    // Allocate output arrays
+    out_matset["material_ids"].set_dtype(conduit::DataType::index_t(out_size));
+    out_matset["volume_fractions"].set_dtype(
+        conduit::DataType(n_matset.fetch_existing("volume_fractions").dtype().id(), out_size));
+    DataArray<index_t> out_material_ids = out_matset.fetch_existing("material_ids").value();
+    DataArray<FloatType> out_volume_fractions = out_matset.fetch_existing("volume_fractions").value();
+
+    const DataAccessor<index_t> in_material_ids = n_matset.fetch_existing("material_ids").value();
+    const DataArray<FloatType> in_volume_fractions = n_matset.fetch_existing("volume_fractions").value();
+    conduit::blueprint::o2mrelation::O2MIterator indexer(n_matset);
+    index_t offset = 0;
+
+    for(index_t i = 0; i < num_elements; i++)
+    {
+        // Point the o2m iterator at (element_id, 0)
+        const auto element_id = element_ids[i];
+        indexer.to(element_id, conduit::blueprint::o2mrelation::ONE);
+        indexer.to(0, conduit::blueprint::o2mrelation::MANY);
+
+        // Get the number of "many" elements for this element_id
         const index_t size = indexer.elements(conduit::blueprint::o2mrelation::MANY);
         index_t idx  = indexer.index(conduit::blueprint::o2mrelation::DATA);
 
-        std::cout << "elements " << size << std::endl;
-
-        // Track offsets and sizes
-        offsets[i] = offset;
-        sizes[i]   = size;
-        max_size   = (size > max_size) ? size : max_size;
+#if 0
+        std::cout << "element_id = " << element_id
+            << "\nsize = " << size
+            << "\nidx = " << idx << std::endl;
+#endif
 
         // Copy each item in the O2M relation
         for(index_t j = 0; j < size; j++)
         {
-            if(idx >= in_material_ids.number_of_elements())
-            {
-                // std::cout << "INDEX OUT OF BOUNDS !! " << std::endl;
-                throw std::runtime_error("INDEX OUT OF BOUNDS !!");
-            }
-            if(idx == in_material_ids.number_of_elements() - 1)
-            {
-                std::cout << "Insert breakpoint here" << std::endl;
-            }
             out_material_ids[offset]     = in_material_ids[idx];
             out_volume_fractions[offset] = in_volume_fractions[idx];
             idx++;
             offset++;
         }
-        std::cout << "idx " << idx << std::endl;
-    }
-
-    std::cout << "in_material_ids.number_of_elements() " << in_material_ids.number_of_elements() << std::endl;
-    std::cout << "in_volume_fractions.number_of_elements() " << in_volume_fractions.number_of_elements() << std::endl;
-    std::cout << "out_material_ids.number_of_elements() " << out_material_ids.number_of_elements() << std::endl;
-    std::cout << "out_volume_fractions.number_of_elements() " << out_volume_fractions.number_of_elements() << std::endl;
-    std::cout << "offset " << offset << std::endl;
-
-    // If everything was size 1 then we don't need offsets/sizes
-    if(max_size == 1)
-    {
-        out_matset.remove("sizes");
-        out_matset.remove("offsets");
     }
 }
 
@@ -2162,30 +2176,8 @@ copy_uni_buffer_matset(
     std::cout << "Handling uni buffer matset" << std::endl;
     out_matset["material_map"].set(n_matset["material_map"]);
 
-    // Determine size of output array
-    index_t out_size = 0;
-    if(n_matset.has_child("sizes"))
-    {
-        // Element based matset will have an entry for each element, can safely index by element id
-        const conduit::Node &n_sizes = n_matset["sizes"];
-        conduit::DataAccessor<index_t> size_access(n_sizes.element_ptr(0), n_sizes.dtype());
-        for(const index_t id : element_ids)
-        {
-            std::cout << "size_access[id] " << size_access[id] << std::endl;
-            out_size += size_access[id];
-        }
-    }
-    else
-    {
-        out_size = (index_t)element_ids.size();
-    }
-    std::cout << "Size is " << out_size << std::endl;
-
-    const auto &dtype = n_matset["volume_fractions"].dtype();
-    out_matset["material_ids"].set_dtype(conduit::DataType::index_t(out_size));
-    out_matset["volume_fractions"].set_dtype(conduit::DataType(dtype.id(), out_size));
-
     // Determine floating point type
+    const auto &dtype = n_matset.fetch_existing("volume_fractions").dtype();
     if(dtype.is_float())
     {
         copy_uni_buffer_matset_impl<float>(element_ids, n_matset, out_matset);
@@ -2278,7 +2270,7 @@ Partitioner::copy_matsets(index_t domain, const std::string &topology,
     {
         // Only transfer matsets on the active topology
         const conduit::Node &n_matset = matset_itr.next();
-        std::cout << "Mapping " << n_matset.name() << " material set." << std::endl;
+        std::cout << "Mapping material set " << conduit::utils::log::quote(n_matset.name()) << std::endl;
         if(n_matset["topology"].as_string() != topology)
         {
             continue;
@@ -2295,8 +2287,6 @@ Partitioner::copy_matsets(index_t domain, const std::string &topology,
         {
             copy_uni_buffer_matset(element_ids, n_matset, out_matset);
         }
-
-        std::cout << "Is there another matset? " << matset_itr.has_next() << std::endl;
     }
 }
 
