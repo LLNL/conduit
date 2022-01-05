@@ -19,6 +19,20 @@
 
 using namespace conduit;
 
+//-----------------------------------------------------------------------------
+// Simply adds an "element_ids" field [0 1 2 ... N-1]
+static void
+convert_to_material_based(const Node &topo, Node &mset)
+{
+    const int nelem = static_cast<int>(blueprint::mesh::topology::length(topo));
+    mset["element_ids"].set_dtype(DataType::c_int(nelem));
+    DataArray<int> eids = mset["element_ids"].value();
+    for(int i = 0; i < nelem; i++)
+    {
+        eids[i] = i;
+    }
+}
+
 /// Test Cases ///
 
 //-----------------------------------------------------------------------------
@@ -124,6 +138,23 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_venn_to_silo)
         EXPECT_FALSE(mset_silo.diff(mset_silo_baseline,info));
     }
 
+    CONDUIT_INFO("venn sparse_by_element (converted to material based) to silo")
+    {
+        Node mesh, info;
+        blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh);
+        Node &mset = mesh["matsets/matset"];
+        convert_to_material_based(mesh["topologies/topo"], mset);
+
+        std::cout << mset.to_yaml() << std::endl;
+
+        Node mset_silo;
+        blueprint::mesh::matset::to_silo(mset, mset_silo);
+        std::cout << mset_silo.to_yaml() << std::endl;
+
+        EXPECT_FALSE(mset_silo.diff(mset_silo_baseline,info));
+        info.print();
+    }
+
 }
 
 
@@ -200,5 +231,25 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_venn_to_silo_matset_values)
         EXPECT_FALSE(mset_silo.diff(mset_silo_baseline,info));
     }
 
-}
+    CONDUIT_INFO("venn sparse_by_element (converted to material based) to silo")
+    {
+        Node mesh, info;
+        blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh);
+        const Node &field = mesh["fields/mat_check"];
+        Node &mset = mesh["matsets/matset"];
+        convert_to_material_based(mesh["topologies/topo"], mset);
 
+        std::cout << mset.to_yaml() << std::endl;
+        std::cout << field.to_yaml() << std::endl;
+
+        Node mset_silo;
+        blueprint::mesh::field::to_silo(field,
+                                        mset,
+                                        mset_silo);
+
+        std::cout << mset_silo.to_yaml() << std::endl;
+
+        EXPECT_FALSE(mset_silo.diff(mset_silo_baseline,info));
+    }
+
+}
