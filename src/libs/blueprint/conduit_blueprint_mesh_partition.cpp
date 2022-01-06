@@ -3112,8 +3112,7 @@ Partitioner::extract(size_t idx, const conduit::Node &n_mesh, std::vector<index_
         }
 
         // Create new matsets
-        copy_matsets(selections[idx]->get_domain(), n_topo.name(),
-            element_ids, n_mesh, n_output);
+        copy_matsets(n_topo.name(), element_ids, n_mesh, n_output);
 
         // Create new fields.
         copy_fields(selections[idx]->get_domain(), n_topo.name(),
@@ -8945,13 +8944,206 @@ combine(const std::vector<const Node*>& in_adjsets,
 namespace matset
 {
 
+typedef std::pair<std::vector<double>, std::vector<index_t>> vf_id_pair_t;
+
 //-----------------------------------------------------------------------------
+template<bool is_elem_based>
 static void
-combine(const std::vector<const Node*> &in_matsets,
-        const Node &n_topo,
+handle_uni_buffer(const Node &n_matset,
+                  const std::vector<index_t> &elem_map,
+                  std::map<index_t, std::string> material_map,
+                  std::map<std::string, vf_id_pair_t> &out_vfracts_eids)
+{
+    // If this is material based then we must read element_ids
+    std::unique_ptr<DataAccessor<index_t>> element_ids{nullptr};
+    if(!is_elem_based)
+    {
+        element_ids.reset(new DataAccessor<index_t>(n_matset["element_ids"].value()));
+    }
+
+    const DataAccessor<index_t> material_ids = n_matset["material_ids"].value();
+    const DataAccessor<double> volume_fractions = n_matset["volume_fractions"].value();
+    index_t local_elem_id = 0;
+    blueprint::o2mrelation::O2MIterator o2m_itr(n_matset);
+    while(o2m_itr.has_next(blueprint::o2mrelation::ONE))
+    {
+        o2m_itr.next(blueprint::o2mrelation::ONE);
+        o2m_itr.to_front(blueprint::o2mrelation::MANY);
+
+        while(o2m_itr.has_next(blueprint::o2mrelation::MANY))
+        {
+            o2m_itr.next(blueprint::o2mrelation::MANY);
+            const index_t o2m_idx = o2m_itr.index();
+            const std::string &mat_name = material_map[material_ids[o2m_idx]];
+            auto &pair = out_vfracts_eids[mat_name];
+            pair.first.push_back(volume_fractions[o2m_idx]);
+            if(!is_elem_based)
+            {
+                pair.second.push_back(elem_map[element_ids->element(local_elem_id)]);
+            }
+            else // if(is_elem_based)
+            {
+                pair.second.push_back(elem_map[local_elem_id]);
+            }
+        }
+        local_elem_id++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template<bool is_elem_based>
+static void
+handle_multi_buffer(const Node &n_matset,
+                    const std::vector<index_t> &elem_map,
+                    std::map<std::string, vf_id_pair_t> &out_vfracts_eids)
+{
+    auto vfract_itr = n_matset["volume_fractions"].children();
+    while(vfract_itr.has_next())
+    {
+        const Node &n_volume_fractions = vfract_itr.next();
+        const std::string mat_name = n_volume_fractions.name();
+
+        // If this is material based then we must read element_ids
+        std::unique_ptr<DataAccessor<index_t>> element_ids{nullptr};
+        if(!is_elem_based)
+        {
+            const Node &n_element_ids = n_matset["element_ids"];
+            if(n_element_ids.has_child(mat_name))
+            {
+                element_ids.reset(new DataAccessor<index_t>(n_element_ids[mat_name].value()));
+            }
+        }
+
+        // NOTE: According the spec, the volume_fractions could be an o2m relation
+        Node temp_vfracts;
+        if(n_volume_fractions.dtype().is_object())
+        {
+            temp_vfracts.set_external(n_volume_fractions);
+        }
+        else // if(!n_volume_fractions.dtype().is_object())
+        {
+            temp_vfracts["values"].set_external(n_volume_fractions);
+        }
+
+        // Temporary node that points to volume fraction data array.
+        Node vfract_data;
+        {
+            const std::string data_path =
+                blueprint::o2mrelation::data_paths(temp_vfracts).front();
+            vfract_data.set_external(temp_vfracts[data_path]);
+        }
+
+        const DataAccessor<double> volume_fractions = vfract_data.value();
+        blueprint::o2mrelation::O2MIterator itr(temp_vfracts);
+        auto &out_pair = out_vfracts_eids[mat_name];
+        // Iterate the volume fraction data, still need i for indexing into element ids
+        for(index_t i = 0; itr.has_next(blueprint::o2mrelation::ONE); i++)
+        {
+            itr.next(blueprint::o2mrelation::ONE);
+            const index_t idx = itr.index();
+            out_pair.first.push_back(volume_fractions[idx]);
+            // Material based will use element_ids array
+            if(!is_elem_based)
+            {
+                out_pair.second.push_back(elem_map[element_ids->element(i)]);
+            }
+            else
+            {
+                out_pair.second.push_back(elem_map[i]);
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Combine input matsets using n_topo as a reference topology.
+        Each matset in the inputs vector must have an additional "domain_id" field.
+*/
+static void
+combine(const std::vector<Node> &inputs,
+        const std::vector<const Node*> &in_topos,
+        const Node &out_topo,
         Node &out_matset)
 {
+    const index_t nin = (index_t)inputs.size();
+    // n_topo.print();
 
+    // Elem map is an array of index_t [domain0 ele0 domain0 ele1 ...]
+    // The structure of this data needs to be changed
+    std::vector<std::vector<index_t>> elem_map;
+    elem_map.resize(in_topos.size());
+    {
+        // Resize vectors to the correct size for each domain
+        for(index_t i = 0; i < (index_t)in_topos.size(); i++)
+        {
+            elem_map[i].resize(blueprint::mesh::topology::length(*in_topos[i]));
+        }
+
+        const DataArray<index_t> orig_elem_map = out_topo["element_map"].value();
+        const index_t N = orig_elem_map.number_of_elements();
+        for(index_t i = 0; i < N; i += 2)
+        {
+            elem_map[orig_elem_map[i]][orig_elem_map[i+1]] = i / 2;
+        }
+    }
+
+    // Output will always be multi-buffer, material dominant
+    std::map<std::string, vf_id_pair_t> out_vfracts_eids;
+    std::map<index_t, std::string> material_map;
+    for(index_t in_idx = 0; in_idx < nin; in_idx++)
+    {
+        const Node &n_matset = inputs[in_idx];
+        const std::string name = n_matset.name();
+        const bool is_uni_buffer = blueprint::mesh::matset::is_uni_buffer(n_matset);
+        const bool is_elem_based = blueprint::mesh::matset::is_element_dominant(n_matset);
+        const index_t dom_idx = n_matset["domain_id"].to_index_t();
+
+        // Build up the material map
+        if(n_matset.has_child("material_map"))
+        {
+            auto itr = n_matset["material_map"].children();
+            while(itr.has_next())
+            {
+                const Node &n = itr.next();
+                material_map[n.to_index_t()] = n.name();
+            }
+        }
+
+        if(is_uni_buffer)
+        {
+            if(is_elem_based)
+            {
+                handle_uni_buffer<true>(n_matset, elem_map[dom_idx], material_map, out_vfracts_eids);
+            }
+            else
+            {
+                handle_uni_buffer<false>(n_matset, elem_map[dom_idx], material_map, out_vfracts_eids);
+            }
+        }
+        else // if(!is_uni_buffer)
+        {
+            if(is_elem_based)
+            {
+                handle_multi_buffer<true>(n_matset, elem_map[dom_idx], out_vfracts_eids);
+            }
+            else
+            {
+                handle_multi_buffer<false>(n_matset, elem_map[dom_idx], out_vfracts_eids);
+            }
+        }
+    }
+
+    out_matset["topology"].set(out_topo.name());
+    for(const auto &pair : out_vfracts_eids)
+    {
+        const std::string &name = pair.first;
+        const std::vector<double> &volume_fractions = pair.second.first;
+        const std::vector<index_t> &element_ids = pair.second.second;
+
+        out_matset["volume_fractions"][name].set(volume_fractions);
+        out_matset["element_ids"][name].set(element_ids);
+    }
 }
 
 }
@@ -9261,17 +9453,22 @@ Partitioner::combine(int domain,
     }
     if(have_matsets)
     {
-        std::map<std::string, std::vector<const Node*>> matsets_to_combine;
-        for(const Node *n : inputs)
+        std::map<std::string, std::vector<Node>> matsets_to_combine;
+        for(index_t i = 0; i < (index_t)inputs.size(); i++)
         {
+            const Node *n = inputs[i];
             const Node *n_matsets = n->fetch_ptr("matsets");
             if(n_matsets)
             {
                 auto itr = n_matsets->children();
                 while(itr.has_next())
                 {
-                    const Node *n_matset = &itr.next();
-                    matsets_to_combine[n_matset->name()].push_back(n_matset);
+                    const Node &n_matset = itr.next();
+                    auto &matset_vec = matsets_to_combine[n_matset.name()];
+                    matset_vec.emplace_back();
+                    matset_vec.back().set_external(n_matset);
+                    // Add domain id along
+                    matset_vec.back()["domain_id"].set((index_t)i);
                 }
             }
         }
@@ -9288,10 +9485,10 @@ Partitioner::combine(int domain,
             }
 
             // Verify that all the matsets reference the same topology
-            const std::string mset_topo_name = pair.second[0]->fetch("topology").as_string();
-            for(const Node *n_matset : pair.second)
+            const std::string mset_topo_name = pair.second[0].fetch("topology").as_string();
+            for(const Node &n_matset : pair.second)
             {
-                if(mset_topo_name == n_matset->fetch("topology").as_string())
+                if(mset_topo_name != n_matset.fetch("topology").as_string())
                 {
                     ok = false;
                     break;
@@ -9313,7 +9510,18 @@ Partitioner::combine(int domain,
                 continue;
             }
 
-            matset::combine(pair.second, output_topologies[mset_topo_name], out_matsets[pair.first]);
+            // We will also need the input topo group to help map original elements
+            auto topo_itr = std::find_if(topo_groups.begin(), topo_groups.end(),
+                    [&mset_topo_name](const topo_group_t &g) {
+                return g.first == mset_topo_name;
+            });
+            if(topo_itr == topo_groups.end())
+            {
+                CONDUIT_ERROR("Unable to combine matset " << conduit::utils::log::quote(pair.first)
+                    << " because it references an unknown topology " << conduit::utils::log::quote(mset_topo_name));
+                continue;
+            }
+            matset::combine(pair.second, topo_itr->second, output_topologies[mset_topo_name], out_matsets[pair.first]);
         }
     }
 

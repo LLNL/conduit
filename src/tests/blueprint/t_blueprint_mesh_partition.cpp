@@ -2110,6 +2110,11 @@ TEST(conduit_blueprint_mesh_partition, matset_multi_by_element)
     conduit::blueprint::mesh::partition(venn, opts, venn_part);
 
     my_save_visit("venn_multi_by_element_partitioned", venn_part);
+
+    conduit::Node venn_combined; opts["target"].set(1);
+    conduit::blueprint::mesh::partition(venn_part, opts, venn_combined);
+
+    my_save_visit("venn_multi_by_element_combined", venn_combined);
 }
 
 //-----------------------------------------------------------------------------
@@ -2131,6 +2136,11 @@ TEST(conduit_blueprint_mesh_partition, matset_multi_by_material)
     conduit::blueprint::mesh::partition(venn, opts, venn_part);
 
     my_save_visit("venn_multi_by_material_partitioned", venn_part);
+
+    conduit::Node venn_combined; opts["target"].set(1);
+    conduit::blueprint::mesh::partition(venn_part, opts, venn_combined);
+
+    my_save_visit("venn_multi_by_material_combined", venn_combined);
 }
 
 //-----------------------------------------------------------------------------
@@ -2152,6 +2162,11 @@ TEST(conduit_blueprint_mesh_partition, matset_uni_by_element)
     conduit::blueprint::mesh::partition(venn, opts, venn_part);
 
     my_save_visit("venn_uni_by_element_partitioned", venn_part);
+
+    conduit::Node venn_combined; opts["target"].set(1);
+    conduit::blueprint::mesh::partition(venn_part, opts, venn_combined);
+
+    my_save_visit("venn_uni_by_element_combined", venn_combined);
 }
 
 //-----------------------------------------------------------------------------
@@ -2178,4 +2193,9 @@ TEST(conduit_blueprint_mesh_partition, matset_uni_by_material)
     conduit::blueprint::mesh::partition(venn, opts, venn_part);
 
     my_save_visit("venn_uni_by_material_partitioned", venn_part);
+
+    conduit::Node venn_combined; opts["target"].set(1);
+    conduit::blueprint::mesh::partition(venn_part, opts, venn_combined);
+
+    my_save_visit("venn_uni_by_material_combined", venn_combined);
 }
