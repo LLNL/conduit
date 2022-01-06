@@ -8939,6 +8939,26 @@ combine(const std::vector<const Node*>& in_adjsets,
 // -- end conduit::blueprint::mesh::adjset --
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::matset --
+//-----------------------------------------------------------------------------
+namespace matset
+{
+
+//-----------------------------------------------------------------------------
+static void
+combine(const std::vector<const Node*> &in_matsets,
+        const Node &n_topo,
+        Node &out_matset)
+{
+
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::matset --
+//-----------------------------------------------------------------------------
+
 //-------------------------------------------------------------------------
 std::string
 Partitioner::recommended_topology(const std::vector<const Node *> &inputs,
@@ -9228,7 +9248,75 @@ Partitioner::combine(int domain,
     Node &output_topologies = output["topologies"];
     Node &output_coordsets  = output["coordsets"];
 
-    // std::cout << "Recommended approach: " << rt << std::endl;
+    // Handle material sets
+    bool have_matsets = true;
+    for(const Node *n : inputs)
+    {
+        // TODO: Force material based if a domain is missing matsets?
+        if(!n->has_child("matsets"))
+        {
+            have_matsets = false;
+            break;
+        }
+    }
+    if(have_matsets)
+    {
+        std::map<std::string, std::vector<const Node*>> matsets_to_combine;
+        for(const Node *n : inputs)
+        {
+            const Node *n_matsets = n->fetch_ptr("matsets");
+            if(n_matsets)
+            {
+                auto itr = n_matsets->children();
+                while(itr.has_next())
+                {
+                    const Node *n_matset = &itr.next();
+                    matsets_to_combine[n_matset->name()].push_back(n_matset);
+                }
+            }
+        }
+
+        Node &out_matsets = output["matsets"];
+        for(const auto &pair : matsets_to_combine)
+        {
+            bool ok = !pair.second.empty();
+            // Should never happen
+            if(!ok)
+            {
+                CONDUIT_ERROR("matsets_to_combine conatins an empty entry!");
+                continue;
+            }
+
+            // Verify that all the matsets reference the same topology
+            const std::string mset_topo_name = pair.second[0]->fetch("topology").as_string();
+            for(const Node *n_matset : pair.second)
+            {
+                if(mset_topo_name == n_matset->fetch("topology").as_string())
+                {
+                    ok = false;
+                    break;
+                }
+            }
+            if(!ok)
+            {
+                CONDUIT_ERROR("Unable to combine matset " << conduit::utils::log::quote(pair.first)
+                    << " because the input domains do not agree upon a topology.");
+                continue;
+            }
+
+            // Fetch the referenced topology
+            ok = output_topologies.has_child(mset_topo_name);
+            if(!ok)
+            {
+                CONDUIT_ERROR("Unable to combine matset " << conduit::utils::log::quote(pair.first)
+                    << " because it references an unknown topology " << conduit::utils::log::quote(mset_topo_name));
+                continue;
+            }
+
+            matset::combine(pair.second, output_topologies[mset_topo_name], out_matsets[pair.first]);
+        }
+    }
+
 
     // All inputs must have a fields object to merge fields
     bool have_fields = true;
