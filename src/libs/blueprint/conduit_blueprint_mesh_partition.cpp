@@ -9034,12 +9034,13 @@ handle_multi_buffer(const Node &n_matset,
         }
 
         const DataAccessor<double> volume_fractions = vfract_data.value();
-        blueprint::o2mrelation::O2MIterator itr(temp_vfracts);
         auto &out_pair = out_vfracts_eids[mat_name];
+        blueprint::o2mrelation::O2MIterator itr(temp_vfracts);
+        itr.to_front();
         // Iterate the volume fraction data, still need i for indexing into element ids
-        for(index_t i = 0; itr.has_next(blueprint::o2mrelation::ONE); i++)
+        for(index_t i = 0; itr.has_next(); i++)
         {
-            itr.next(blueprint::o2mrelation::ONE);
+            itr.next();
             const index_t idx = itr.index();
             out_pair.first.push_back(volume_fractions[idx]);
             // Material based will use element_ids array
