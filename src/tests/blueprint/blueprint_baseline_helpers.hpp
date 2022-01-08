@@ -106,7 +106,7 @@ save_node(const std::string &filename, const conduit::Node &mesh)
 
 //-----------------------------------------------------------------------------
 inline void
-save_visit(const std::string &filename, const conduit::Node &n)
+save_visit(const std::string &filename, const conduit::Node &n, bool use_subdir = false)
 {
 #ifdef GENERATE_BASELINES
     // NOTE: My VisIt only wants to read HDF5 root files for some reason.
@@ -122,12 +122,27 @@ save_visit(const std::string &filename, const conduit::Node &n)
     auto ndoms = conduit::blueprint::mesh::number_of_domains(n);
     if(ndoms < 1)
         return;
+
+    // All domains go into subdirectory
+    if(!conduit::utils::is_directory(fn_noext) && use_subdir)
+    {
+        conduit::utils::create_directory(fn_noext);
+    }
+
     char dnum[20];
     if(ndoms == 1)
     {
         sprintf(dnum, "%05d", 0);
         std::stringstream ss;
-        ss << fn_noext << "." << dnum;
+        if(use_subdir)
+        {
+            ss << fn_noext << conduit::utils::file_path_separator()
+                << fn_noext << "." << dnum;
+        }
+        else
+        {
+            ss << fn_noext << "." << dnum;
+        }
 
         if(hdf5_enabled)
             conduit::relay::io::save(n, ss.str() + ".hdf5", "hdf5");
@@ -140,7 +155,15 @@ save_visit(const std::string &filename, const conduit::Node &n)
         {
             sprintf(dnum, "%05d", static_cast<int>(i));
             std::stringstream ss;
-            ss << fn_noext << "." << dnum;
+            if(use_subdir)
+            {
+                ss << fn_noext << conduit::utils::file_path_separator()
+                    << fn_noext << "." << dnum;
+            }
+            else
+            {
+                ss << fn_noext << "." << dnum;
+            }
 
             if(hdf5_enabled)
                 conduit::relay::io::save(n[i], ss.str() + ".hdf5", "hdf5");
@@ -159,13 +182,27 @@ save_visit(const std::string &filename, const conduit::Node &n)
     root["protocol/version"] = CONDUIT_VERSION;
     root["number_of_files"] = ndoms;
     root["number_of_trees"] = ndoms;
-    root["file_pattern"] = (fn_noext + ".%05d.hdf5");
+    if(use_subdir)
+    {
+        root["file_pattern"] = fn_noext + conduit::utils::file_path_separator() + (fn_noext + ".%05d.hdf5");
+    }
+    else
+    {
+        root["file_pattern"] = (fn_noext + ".%05d.hdf5");
+    }
     root["tree_pattern"] = "/";
 
     if(hdf5_enabled)
         conduit::relay::io::save(root, fn_noext + "_hdf5.root", "hdf5");
 
-    root["file_pattern"] = (fn_noext + ".%05d.yaml");
+    if(use_subdir)
+    {
+       root["file_pattern"] = fn_noext + conduit::utils::file_path_separator() + (fn_noext + ".%05d.yaml");
+    }
+    else
+    {
+        root["file_pattern"] = (fn_noext + ".%05d.yaml");
+    }
     // VisIt won't read it:
     conduit::relay::io::save(root, fn_noext + "_yaml.root", "yaml");
 #endif

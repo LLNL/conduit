@@ -2183,8 +2183,6 @@ copy_uni_buffer_matset(
     const conduit::Node &n_matset,
     conduit::Node &out_matset)
 {
-    std::cout << "Handling uni buffer matset" << std::endl;
-
     // Determine floating point type
     const auto &dtype = n_matset.fetch_existing("volume_fractions").dtype();
     if(dtype.is_float())
@@ -2218,7 +2216,6 @@ copy_multi_buffer_matset(
     {
         const conduit::Node &n_vfract = vfract_itr.next();
         conduit::Node &out_vfract = out_vfracts.add_child(n_vfract.name());
-        std::cout << n_vfract.name() << " volume_fraction being mapped." << std::endl;
         bool is_o2m = n_vfract.dtype().is_object();
         if(is_o2m)
         {
@@ -2257,7 +2254,6 @@ copy_multi_buffer_matset(
             }
 #endif
         }
-        std::cout << "Is there another volume fraction array? " << vfract_itr.has_next() << std::endl;
     }
 }
 
@@ -2332,8 +2328,13 @@ copy_material_based_volume_fractions(const std::vector<index_t> &element_ids,
             }
         }
     }
-    out_mat_vfract.set(out_vfracts);
-    out_mat_elems.set(out_elems);
+
+    // For baseline consistency
+    if(out_vfracts.size() > 0)
+    {
+        out_mat_vfract.set(out_vfracts);
+        out_mat_elems.set(out_elems);
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -2526,7 +2527,6 @@ Partitioner::copy_matsets(const std::string &topology,
     {
         // Only transfer matsets on the active topology
         const conduit::Node &n_matset = matset_itr.next();
-        std::cout << "Mapping material set " << conduit::utils::log::quote(n_matset.name()) << std::endl;
         if(n_matset["topology"].as_string() != topology)
         {
             continue;
@@ -7626,7 +7626,7 @@ private:
 
                             if(mode == CombineImplicitMode::Uniform)
                             {
-                                std::cout << "Handling uniform combine" << std::endl;
+                                // std::cout << "Handling uniform combine" << std::endl;
 
                                 std::vector<double> spacing{1.,1.,1.};
                                 if(output.has_path(cset_path + "/spacing"))
@@ -7687,7 +7687,7 @@ private:
                                         ok = mesh::coordset::utils::node_value_compare(n_vals0, n_vals1);
                                         if(!ok)
                                         {
-                                            std::cout << "Incompatible rectilinear domains" << std::endl;
+                                            // std::cout << "Incompatible rectilinear domains" << std::endl;
                                             break;
                                         }
                                     }
@@ -9003,6 +9003,11 @@ handle_multi_buffer(const Node &n_matset,
         const Node &n_volume_fractions = vfract_itr.next();
         const std::string mat_name = n_volume_fractions.name();
 
+        if(n_volume_fractions.dtype().is_empty())
+        {
+            continue;
+        }
+
         // If this is material based then we must read element_ids
         std::unique_ptr<DataAccessor<index_t>> element_ids{nullptr};
         if(!is_elem_based)
@@ -9032,8 +9037,16 @@ handle_multi_buffer(const Node &n_matset,
                 blueprint::o2mrelation::data_paths(temp_vfracts).front();
             vfract_data.set_external(temp_vfracts[data_path]);
         }
-
         const DataAccessor<double> volume_fractions = vfract_data.value();
+
+        if(!is_elem_based && element_ids
+            && volume_fractions.number_of_elements() != element_ids->number_of_elements())
+        {
+            CONDUIT_ERROR("element_ids and volume_fractions to not contain the same "
+                << "number of elements for matset " << conduit::utils::log::quote(mat_name));
+            continue;
+        }
+
         auto &out_pair = out_vfracts_eids[mat_name];
         blueprint::o2mrelation::O2MIterator itr(temp_vfracts);
         itr.to_front();
@@ -9044,7 +9057,7 @@ handle_multi_buffer(const Node &n_matset,
             const index_t idx = itr.index();
             out_pair.first.push_back(volume_fractions[idx]);
             // Material based will use element_ids array
-            if(!is_elem_based)
+            if(!is_elem_based && element_ids)
             {
                 out_pair.second.push_back(elem_map[element_ids->element(i)]);
             }
@@ -9442,13 +9455,12 @@ Partitioner::combine(int domain,
     Node &output_coordsets  = output["coordsets"];
 
     // Handle material sets
-    bool have_matsets = true;
+    bool have_matsets = false;
     for(const Node *n : inputs)
     {
-        // TODO: Force material based if a domain is missing matsets?
-        if(!n->has_child("matsets"))
+        if(n->has_child("matsets"))
         {
-            have_matsets = false;
+            have_matsets = true;
             break;
         }
     }
@@ -9468,7 +9480,7 @@ Partitioner::combine(int domain,
                     auto &matset_vec = matsets_to_combine[n_matset.name()];
                     matset_vec.emplace_back();
                     matset_vec.back().set_external(n_matset);
-                    // Add domain id along
+                    // Add domain id along to be used for mapping
                     matset_vec.back()["domain_id"].set((index_t)i);
                 }
             }
