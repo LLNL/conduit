@@ -2019,8 +2019,11 @@ static bool
 diff_to_silo(const conduit::Node &baseline, const conduit::Node &matset,
     conduit::Node &info)
 {
+    const conduit::Node &baseline_matset = baseline["matsets/matset"];
+    // std::cout << "Baseline matset:" << baseline_matset.to_yaml() << std::endl;
+
     conduit::Node base_silo;
-    conduit::blueprint::mesh::matset::to_silo(baseline["matsets/matset"], base_silo);
+    conduit::blueprint::mesh::matset::to_silo(baseline_matset, base_silo);
 
     conduit::Node test_silo;
     conduit::blueprint::mesh::matset::to_silo(matset["matsets/matset"], test_silo);
@@ -2206,7 +2209,7 @@ TEST(conduit_blueprint_mesh_partition, matset_uni_by_material)
     conduit::Node venn;
     conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, venn);
 
-    // Add an element ids field to reverse the matset
+    // Add an element ids field
     const int N = conduit::blueprint::mesh::topology::length(venn["topologies"][0]);
     std::vector<int> ids;
     for(int i = 0; i < N; i++)
@@ -2257,3 +2260,104 @@ TEST(conduit_blueprint_mesh_partition, matset_uni_by_material)
     #endif
     }
 }
+
+TEST(conduit_blueprint_mesh_partition, matset_mixed_topology)
+{
+    // Baseline mesh
+    const int nx = 4;
+    const int ny = 4;
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("full", nx, ny, 0.33f, venn);
+
+    conduit::Node venn_silo;
+    conduit::blueprint::mesh::matset::to_silo(venn["matsets/matset"], venn_silo);
+
+    // Input meshes, 1 for each flavor of matset
+    std::array<conduit::Node, 4> meshes;
+    conduit::blueprint::mesh::examples::venn("full", nx, ny, 0.33f, meshes[0]);
+    conduit::blueprint::mesh::examples::venn("sparse_by_material", nx, ny, 0.33f, meshes[1]);
+    conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, meshes[2]);
+    conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, meshes[3]);
+    // Make meshes[3] material dominant by adding element_ids
+    {
+        const int N = conduit::blueprint::mesh::topology::length(meshes[3]["topologies"][0]);
+        std::vector<int> ids;
+        for(int i = 0; i < N; i++)
+        {
+            ids.push_back(i);
+        }
+        meshes[3]["matsets/matset/element_ids"].set(ids);
+    }
+
+    // We've already tested partitioning / combining each of the above meshes in their
+    //  rectilinear form; now we will use to_structured / to_unstructured and ensure
+    //  the same result comes from to_silo
+    const auto test = [](const conduit::Node &in, conduit::Node &out)
+    {
+        conduit::Node partitioned;
+        conduit::Node opts;
+        opts["target"].set(4);
+        conduit::blueprint::mesh::partition(in, opts, partitioned);
+
+        opts["target"].set(1);
+        conduit::blueprint::mesh::partition(partitioned, opts, out);
+    };
+
+    // First test as rectilinear
+    for(auto i = 0u; i < meshes.size(); i++)
+    {
+        conduit::Node result;
+        test(meshes[i], result);
+
+        conduit::Node info;
+        bool diff = diff_to_silo(venn, result, info);
+        EXPECT_FALSE(diff) << "Rectilinear case " << i << ": " << info.to_yaml();
+    }
+
+    // Now test as structured
+    for(auto i = 0u; i < meshes.size(); i++)
+    {
+        // Transform the mesh
+        const conduit::Node &mesh = meshes[i];
+        // std::cout << "Mesh " << i << ":" << mesh.to_yaml() << std::endl;
+
+        conduit::Node structured;
+        conduit::blueprint::mesh::topology::rectilinear::to_structured(mesh["topologies/topo"],
+            structured["topologies/topo"], structured["coordsets/coords"]);
+        structured["fields"].set_external(mesh["fields"]);
+        structured["matsets"].set_external(mesh["matsets"]);
+
+        // Partition / combine
+        conduit::Node result;
+        test(mesh, result);
+
+        // Compare to baseline
+        conduit::Node info;
+        bool diff = diff_to_silo(venn, result, info);
+        EXPECT_FALSE(diff) << "Structured case " << i << ": " << info.to_yaml();
+    }
+
+    // Now test as unstructured
+    for(auto i = 0u; i < meshes.size(); i++)
+    {
+        // Transform the mesh
+        const conduit::Node &mesh = meshes[i];
+        // std::cout << "Mesh " << i << ":" << mesh.to_yaml() << std::endl;
+
+        conduit::Node unstructured;
+        conduit::blueprint::mesh::topology::rectilinear::to_unstructured(mesh["topologies/topo"],
+            unstructured["topologies/topo"], unstructured["coordsets/coords"]);
+        unstructured["fields"].set_external(mesh["fields"]);
+        unstructured["matsets"].set_external(mesh["matsets"]);
+
+        // Partition / combine
+        conduit::Node result;
+        test(mesh, result);
+
+        // Compare to baseline
+        conduit::Node info;
+        bool diff = diff_to_silo(venn, result, info);
+        EXPECT_FALSE(diff) << "Unstructured case " << i << ": " << info.to_yaml();
+    }
+}
+
