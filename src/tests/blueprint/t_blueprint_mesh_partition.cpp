@@ -2261,6 +2261,7 @@ TEST(conduit_blueprint_mesh_partition, matset_uni_by_material)
     }
 }
 
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, matset_mixed_topology)
 {
     // Baseline mesh
@@ -2361,3 +2362,163 @@ TEST(conduit_blueprint_mesh_partition, matset_mixed_topology)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Creates a matset for a spiral domain with the given number of elements.
+        Flavors: 0 = multi-elem, 1 = multi-mat, 2 = uni-elem, 3 = uni-mat
+*/
+static void
+make_spiral_matset(const conduit::index_t num_elements, const conduit::index_t flavor,
+                   const conduit::index_t domain_id, const conduit::index_t total_domains,
+                   conduit::Node &out_matset)
+{
+    out_matset["topology"].set("topo");
+
+    // Uni buffer requires material map
+    if(flavor > 1)
+    {
+        for(conduit::index_t i = 0; i < total_domains; i++)
+        {
+            const std::string mat_name("mat" + std::to_string(i));
+            out_matset["material_map"][mat_name].set(i);
+        }
+    }
+
+    const std::string mat_name("mat" + std::to_string(domain_id));
+    switch(flavor)
+    {
+    case 1:
+    {
+        conduit::Node &mat_elem_ids = out_matset["element_ids"].add_child(mat_name);
+        mat_elem_ids.set_dtype(conduit::DataType::index_t(num_elements));
+        conduit::DataArray<conduit::index_t> data = mat_elem_ids.value();
+        for(conduit::index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = i;
+        }
+        // Fallthrough
+    }
+    case 0:
+    {
+        conduit::Node &mat_vfs = out_matset["volume_fractions"].add_child(mat_name);
+        mat_vfs.set_dtype(conduit::DataType::c_float(num_elements));
+        conduit::DataArray<float> data = mat_vfs.value();
+        for(conduit::index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = 1.f;
+        }
+        break;
+    }
+    default: //case 3
+    {
+        conduit::Node &mat_elem_ids = out_matset["element_ids"];
+        mat_elem_ids.set_dtype(conduit::DataType::index_t(num_elements));
+        conduit::DataArray<conduit::index_t> data = mat_elem_ids.value();
+        for(conduit::index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = i;
+        }
+        // Fallthrough
+    }
+    case 2:
+    {
+        conduit::Node &mat_ids = out_matset["material_ids"];
+        mat_ids.set_dtype(conduit::DataType::index_t(num_elements));
+        conduit::DataArray<conduit::index_t> ids = mat_ids.value();
+        for(conduit::index_t i = 0; i < ids.number_of_elements(); i++)
+        {
+            ids[i] = domain_id;
+        }
+
+        conduit::Node &mat_vfs = out_matset["volume_fractions"];
+        mat_vfs.set_dtype(conduit::DataType::c_float(num_elements));
+        conduit::DataArray<float> data = mat_vfs.value();
+        for(conduit::index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = 1.f;
+        }
+
+        // conduit::Node &sizes = out_matset["sizes"];
+        // sizes.set_dtype(conduit::DataType::index_t(num_elements));
+        // conduit::DataArray<conduit::index_t> szs = sizes.value();
+        // conduit::Node &offsets = out_matset["offsets"];
+        // offsets.set_dtype(conduit::DataType::index_t(num_elements));
+        // conduit::DataArray<conduit::index_t> offs = offsets.value();
+        // conduit::index_t sum = 0;
+        // for(conduit::index_t i = 0; i < szs.number_of_elements(); i++)
+        // {
+        //     szs[i] = 1;
+        //     offs[i] = sum;
+        //     sum++;
+        // }
+        break;
+    }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, matset_spiral)
+{
+    std::array<conduit::Node, 4> spirals;
+    {
+        conduit::Node spiral;
+        conduit::blueprint::mesh::examples::spiral(5, spiral);
+
+        for(auto i = 0u; i < spirals.size(); i++)
+        {
+            spirals[i].set(spiral);
+        }
+    }
+
+    // Add a matset to each domain
+    for(conduit::index_t flavor = 0; flavor < (conduit::index_t)spirals.size(); flavor++)
+    {
+        conduit::Node &spiral = spirals[flavor];
+        for(conduit::index_t i = 0; i < spiral.number_of_children(); i++)
+        {
+            conduit::Node &domain = spiral[i];
+            const auto num_elements = conduit::blueprint::mesh::topology::length(domain["topologies/topo"]);
+            conduit::Node &matset = domain["matsets/matset"];
+            make_spiral_matset(num_elements, flavor, i, spiral.number_of_children(), matset);
+            conduit::Node info;
+            ASSERT_TRUE(conduit::blueprint::mesh::matset::verify(matset, info))
+                << "Flavor " << flavor << ", domain " << i << ":" << info.to_yaml() << matset.to_yaml();
+        }
+    }
+
+    // Test combining the spiral mesh with a matset down to 1 domain
+    {
+        // Use the first spiral mesh to create the baseline file
+        const std::string baseline_fname = baseline_file("spiral_with_matset");
+#ifdef GENERATE_BASELINES
+        {
+            conduit::Node opts, spiral_combined;
+            opts["target"].set(1);
+            conduit::blueprint::mesh::partition(spirals[0], opts, spiral_combined);
+            make_baseline(baseline_fname, spiral_combined);
+        }
+#endif
+
+        // Load the baseline mesh into a node, we will call diff_to_silo on this for each mesh
+        conduit::Node baseline;
+        load_baseline(baseline_fname, baseline);
+
+        // Combine the spiral down to 1 domain and compare to baseline
+        for(conduit::index_t flavor = 0; flavor < (conduit::index_t)spirals.size(); flavor++)
+        {
+            const std::string mesh_name("spiral_with_matset_" + std::to_string(flavor));
+            conduit::Node &spiral = spirals[flavor];
+            save_visit(mesh_name, spiral, true);
+            conduit::Node opts, spiral_combined;
+            opts["target"].set(1);
+            conduit::blueprint::mesh::partition(spiral, opts, spiral_combined);
+            const std::string combined_mesh_name = mesh_name + "_combined";
+            save_visit(combined_mesh_name, spiral_combined, true);
+
+            conduit::Node info;
+            EXPECT_FALSE(diff_to_silo(baseline, spiral_combined, info))
+                << "Flavor " << flavor << ":" << info.to_yaml();
+        }
+    }
+}
