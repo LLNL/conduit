@@ -8965,7 +8965,11 @@ handle_uni_buffer(const Node &n_matset,
     const DataAccessor<double> volume_fractions = n_matset["volume_fractions"].value();
     index_t local_elem_id = 0;
     blueprint::o2mrelation::O2MIterator o2m_itr(n_matset);
-    while(o2m_itr.has_next(blueprint::o2mrelation::ONE))
+    // Question: Why does o2m_itr.has_next(o2mrelaton::ONE) contain different logic
+    //  than the implementation of o2m_itr.next(o2mrelation::ONE)?
+    //  For instance, if we have an o2m relation with 1 item has_next(ONE) will always
+    //  return false - even if we called o2m_itr.to_front() first.
+    while(o2m_itr.has_next())
     {
         o2m_itr.next(blueprint::o2mrelation::ONE);
         o2m_itr.to_front(blueprint::o2mrelation::MANY);
