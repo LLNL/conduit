@@ -2209,8 +2209,15 @@ copy_multi_buffer_matset(
         bool is_o2m = n_vfract.dtype().is_object();
         if(is_o2m)
         {
-            // Q: What is the name of the data? May have to write a get_o2m_data function or something
-            const auto &dtype = n_vfract["values"].dtype();
+            const auto data_paths = blueprint::o2mrelation::data_paths(n_vfract);
+            if(data_paths.empty())
+            {
+                CONDUIT_ERROR("volume_fractions appears to be an o2m relation but has no data_paths.");
+                return;
+            }
+            std::string data_name = data_paths[0];
+
+            const auto &dtype = n_vfract[data_name].dtype();
             if(dtype.is_float())
             {
                 copy_volume_fractions_o2m<float>(element_ids, n_vfract, out_vfract);
@@ -2276,8 +2283,18 @@ copy_material_based_volume_fractions(const std::vector<index_t> &element_ids,
     // Figure out if vfract is o2m, create iterator if it is
     const bool is_o2m = n_vfract.dtype().is_object();
 
-    // Q: What is the name of the data? May have to write a get_o2m_data function or something
-    const conduit::DataArray<FloatType> vfracts = (is_o2m) ? n_vfract["values"].value() : n_vfract.value();
+    std::string o2m_data_name;
+    if(is_o2m)
+    {
+        auto paths = blueprint::o2mrelation::data_paths(n_vfract);
+        if(paths.empty())
+        {
+            CONDUIT_ERROR("volume_fraction appears to be an o2m relation but it contains no data paths.");
+            return;
+        }
+        o2m_data_name = paths[0];
+    }
+    const conduit::DataArray<FloatType> vfracts = (is_o2m) ? n_vfract[o2m_data_name].value() : n_vfract.value();
 
     const std::string &mat_name = n_vfract.name();
     conduit::Node &out_mat_vfract = out_matset["volume_fractions"].add_child(mat_name);
