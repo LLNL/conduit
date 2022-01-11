@@ -2032,16 +2032,6 @@ Partitioner::split_selections()
 }
 
 //---------------------------------------------------------------------------
-/**
- @brief Checks if the given matset node is a multi-buffer matset.
-*/
-static bool
-is_multi_buffer(const conduit::Node &n_matset)
-{
-    return n_matset["volume_fractions"].dtype().is_object();
-}
-
-//---------------------------------------------------------------------------
 template<typename FloatType>
 static void
 copy_volume_fractions(
@@ -2452,7 +2442,7 @@ copy_material_based_matset(const std::vector<index_t> &element_ids,
     const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
     std::unordered_map<index_t, index_t> elem_map;
     // Material based matsets can also be multi or uni buffer
-    if(is_multi_buffer(n_matset))
+    if(blueprint::mesh::matset::is_multi_buffer(n_matset))
     {
         auto itr = n_volume_fractions.children();
         while(itr.has_next())
@@ -2545,7 +2535,7 @@ Partitioner::copy_matsets(const std::string &topology,
         {
             copy_material_based_matset(element_ids, n_matset, out_matset);
         }
-        else if(is_multi_buffer(n_matset))
+        else if(blueprint::mesh::matset::is_multi_buffer(n_matset))
         {
             // Element based
             copy_multi_buffer_matset(element_ids, n_matset, out_matset);
