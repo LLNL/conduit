@@ -12,6 +12,93 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.8.0
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.0/conduit-v0.8.0-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Added
+~~~~~
+
+
+* **General**
+
+ * Added ``setup.py`` for building and installing Conduit and its Python module via pip
+ * Added DataAccessor class that helps write generic algorithms that consume data arrays using expected types.
+ * Added support to register custom memory allocators and a custom data movement handler. This allows conduit to move trees of data between heterogenous memory spaces (e.g. CPU and GPU memory). See conduit_utils.hpp for API details.
+
+* **Blueprint**
+
+ * Added ``conduit::blueprint::{mpi}::partition`` function that provides a general N-to-M partition capability for Blueprint Meshes. This helps with load balancing and other use cases, including fusing multi-domain data to simplifying post processing. This capability supports several options, see (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh_partition.html) for more details.
+ * Added a ``Table`` blueprint used to represent tables of numeric data. See (https://llnl-conduit.readthedocs.io/en/latest/blueprint_table.html) more details.
+ * Added ``conduit::blueprint::{mpi}::flatten`` which transforms Blueprint Meshes into Blueprint Tables. This transforms Mesh Blueprint data into a form that is more easily digestible in machine learning applications.
+ * Added ``conduit::blueprint::mpi::generate_partition_field``, which uses Parmetis to create a field that identifies how to load balance an input mesh elements.  This field can be used as a Field selection input to ``conduit::blueprint::mpi::partition`` function.
+ * Added the``blueprint::mesh::examples::polychain`` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
+ * Added a new function signature for ``blueprint::mesh::topology::unstructured::generate_sides``, which performs the same task as the original and also takes fields from the original topology and maps them onto the new topology.
+ * Added ``blueprint::mpi::mesh::to_polygonal``, which provides a MPI aware conversion Blueprint Structured AMR meshes to a Blueprint Polyhedral meshes.
+ * Added a host of ``conduit::blueprint::mpi::mesh::generate_*`` methods, which are the MPI parallel equivalents of the ``conduit::blueprint::mesh::topology::unstructured::generate_*`` functions.
+ * Added the ``conduit::blueprint::mpi::mesh::find_delegate_domain`` function, which returns a single delegate domain for the given mesh across MPI ranks (useful when all ranks need mesh information and some ranks can have empty meshes).
+ * Added check and transform functions for the newly-designated ``pairwise`` and ``maxshare`` variants of ``adjsets``. For more information, see the ``conduit::blueprint::mesh::adjset`` namespace.
+ * Added ``mesh::topology::unstructured::to_polytopal`` as an alias to ``mesh::topology::unstructured::to_polygonal``, to reflect that both polygonal and polyhedral are supported.
+ * Added ``conduit::blueprint::mpi::mesh::to_polytopal`` as an alias to ``conduit::blueprint::mpi::mesh::to_polygonal`` and ``conduit::blueprint::mpi::mesh::to_polyhedral``.
+
+* **Relay**
+
+ * Added ``conduit::relay::io::hdf5_identifier_report`` methods, which create conduit nodes that describes active hdf5 resource handles.
+
+Changed
+~~~~~~~
+
+
+* **General**
+
+ * Updated CMake logic to provide more robust Python detection and better support for HDF5 installs that were built with CMake.
+ * Improved Node::diff and Node::diff_compatible to show string values when strings differ.
+ * ``conduit::Node::print()`` and in Python Node ``repr`` and ``str`` now use ``to_summary_string()``. This reduces the output for large Nodes. Full output is still supported via ``to_string()``, ``to_yaml()``, etc methods.
+
+* **Blueprint**
+
+ * The ``blueprint::mesh::examples::polytess`` function now takes a new argument, called ``nz``, which allows it to be extended into 3 dimensions. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess) for more details.
+ * Added support for both ``const`` and non-``const`` inputs to the ``conduit::blueprint::mesh::domains`` function.
+ * Improved mesh blueprint index generation logic (local and MPI) to support domains with different topos, fields, etc.
+ * Deprecated accepting ``npts_z !=0`` for 2D shape types in ``conduit::blueprint::mesh::examples::{braid,basic,grid}``. They issue a ``CONDUIT_INFO`` message when this detected and future versions will issue a ``CONDUIT_ERROR``.
+ * An empty Conduit Node is now considered a valid multi-domain mesh. This change was made to make serial uses cases better match sparse MPI multi-domain use cases. Existing code that relied ``mesh::verify`` to exclude empty Nodes will now need an extra check to see if an input mesh has data.
+ * Added MPI communicator argument to ``conduit::blueprint::mpi::mesh::to_polygonal`` and ``conduit::blueprint::mpi::mesh::to_polyhedral``.
+
+* **Relay**
+
+ * Added CMake option (``ENABLE_RELAY_WEBSERVER``, default = ``ON``) to control if Conduit's Relay Web Server support is built. Down stream codes can check for support via header ifdef ``CONDUIT_RELAY_WEBSERVER_ENABLED`` or at runtime in ``conduit::relay::about``.
+ * Added support to compile against HDF5 1.12.
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * Avoid compile issue with using ``_Pragma()`` with Python 3.8 on Windows
+ * ``conduit_node`` and ``conduit_datatype`` in the C API are no longer aliases to ``void`` so that callers cannot pass just any pointer to the APIs.
+ * Fixed memory over read issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
+ * Fixed a subtle bug with Node fetch and Object role initialization.
+
+* **Blueprint**
+
+ * Fixed a bug that was causing the ``conduit::blueprint::mesh::topology::unstructured::generate_*`` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
+ * Fixed a bug with ``conduit::relay::io::blueprint::write_mesh`` that undermined ``truncate=true`` option for root-only style output.
+ * Fixed options parsing bugs and improved error messages for the ``conduit_blueprint_verify`` exe.
+
+* **Relay**
+
+ * Changed HDF5 offset support to use 64-bit unsigned integers for offsets, strides, and sizes.
+ * Fixed a bug with ``conduit::relay::mpi::io::blueprint::save_mesh`` where ``file_style=root_only`` could crash or truncate output files.
+ * Fixed a bug with inconsistent HDF5 handles being used in some cases when converting existing HDF5 Datasets from fixed to extendable.
+
 
 v0.7.2
 ---------------------------------

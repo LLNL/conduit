@@ -48,6 +48,57 @@ namespace mesh
 {
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-- Map Parmetis Types (idx_t and real_t) to conduit dtype ids 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// check our assumptions
+static_assert(IDXTYPEWIDTH != 32 || IDXTYPEWIDTH != 64,
+              "Metis idx_t is not 32 or 64 bits");
+
+static_assert(REALTYPEWIDTH != 32 || REALTYPEWIDTH != 64,
+              "Metis real_t is not 32 or 64 bits");
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// IDXTYPEWIDTH and REALTYPEWIDTH are metis type defs
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+index_t
+metis_idx_t_to_conduit_dtype_id()
+{
+#if IDXTYPEWIDTH == 64
+// 64 bits
+// int64
+    return conduit::DataType::INT64_ID;
+#else
+// 32 bits
+// int32
+    return conduit::DataType::INT32_ID;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+index_t
+metis_real_t_t_to_conduit_dtype_id()
+{
+#if REALTYPEWIDTH == 64
+// 64 bits
+// float64
+    return conduit::DataType::FLOAT64_ID;
+#else
+// 32 bits
+// float32
+    return conduit::DataType::FLOAT32_ID;
+#endif
+}
+
 
 //-----------------------------------------------------------------------------
 // NOTE: this is generally useful, it should be added to mpi::mesh
@@ -59,7 +110,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
                                             const Node &options,
                                             MPI_Comm comm)
 {
-    // TODO: Check of dest fiels already exist, if they do error
+    // TODO: Check of dest fields already exist, if they do error
     
     
     int par_rank = conduit::relay::mpi::rank(comm);
@@ -116,7 +167,6 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
     for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
     {
-        // TODO: do we need to check for empty here? (i don't think so but check)
         Node &dom = *domains[local_dom_idx];
         // we do need to make sure we have the requested topo
         if(dom["topologies"].has_child(topo_name))
@@ -139,11 +189,6 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             local_total_num_verts += local_num_verts[local_dom_idx];
         }
     }
-    
-    if(par_rank == 0)
-    {
-        local_info.print();
-    }
 
     // calc per MPI task offsets using 
     // local_total_num_verts
@@ -161,9 +206,6 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
     relay::mpi::max_all_reduce(max_local, max_global, comm);
 
-
-    // from max_global, our local offset is the sum of all lower ranks
-    max_global.print();
 
     index_t global_verts_offset = 0;
     for(index_t i=0; i< par_rank; i++ )
@@ -183,8 +225,6 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
     relay::mpi::max_all_reduce(max_local, max_global, comm);
 
-    max_global.print();
-
     index_t global_eles_offset = 0;
     for(index_t i=0; i< par_rank; i++ )
     {
@@ -194,7 +234,6 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     // we now have our offsets, we can create output fields on each local domain
      for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
      {
-         // TODO: do we need to check for empty here? (i don't think so but check)
          Node &dom = *domains[local_dom_idx];
          // we do need to make sure we have the requested topo
          if(dom["topologies"].has_child(topo_name))
@@ -207,7 +246,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
              int64 vert_base_idx = global_verts_offset + local_vert_offsets[local_dom_idx];
 
              int64_array vert_ids_vals = verts_field["values"].value();
-             for(int64 i=0;i< local_num_verts[local_dom_idx];i++)
+             for(uint64 i=0; i < local_num_verts[local_dom_idx]; i++)
              {
                  vert_ids_vals[i] = i + vert_base_idx;
              }
@@ -221,7 +260,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
              int64 ele_base_idx = global_eles_offset + local_ele_offsets[local_dom_idx];
 
              int64_array ele_ids_vals = eles_field["values"].value();
-             for(int64 i=0;i< local_num_eles[local_dom_idx];i++)
+             for(uint64 i=0; i < local_num_eles[local_dom_idx]; i++)
              {
                 ele_ids_vals[i] = i + ele_base_idx;
              }
@@ -299,7 +338,7 @@ void generate_partition_field(conduit::Node &mesh,
     {
         nparts = (idx_t) options["partitions"].to_int64();
     }
-    // TODO: Should this be an error or use default (discuss more)
+    // TODO: Should this be an error or use default (discuss more)?
     // else
     // {
     //     CONDUIT_ERROR("Missing required option in generate_partition_field(): "
@@ -330,10 +369,11 @@ void generate_partition_field(conduit::Node &mesh,
             Node topo_offsets;
             blueprint::mesh::topology::unstructured::generate_offsets(dom_topo, topo_offsets);
 
-            // for unstrcut we need to do shape math, for unif/rect/struct
+            // TODO:
+            // for unstructured we need to do shape math, for unif/rect/struct
             //  we need to do implicit math
 
-            // for unstrcut poly: 
+            // for unstructured poly: 
             // add up all the sizes, don't use offsets?
             uint64_accessor sizes_vals = dom_topo["elements/sizes"].as_uint64_accessor();
             for(index_t i=0; i < sizes_vals.number_of_elements();i++)
@@ -342,15 +382,6 @@ void generate_partition_field(conduit::Node &mesh,
             }
 
         }
-        
-
-        // if(par_rank==1)
-        // {
-        //     dom.print();
-        // }
-
-        
-        
     }
 
     // reminder:
@@ -362,24 +393,24 @@ void generate_partition_field(conduit::Node &mesh,
     //                        1,2,4,5,
     //                        3,4,6,7};
 
-    // NOTE: WE WANT PARMETIS idx_t to be 64-bit
-
     Node parmetis_params;
-    // TODO: parmetis likes int64s (i hope .... )
-
     // eldist tells how many elements there are per mpi task,
     // it will be size par_size + 1
-    parmetis_params["eldist"].set(DataType::int32(par_size+1));
+    parmetis_params["eldist"].set(DataType(metis_idx_t_to_conduit_dtype_id(),
+                                           par_size+1));
     // eptr holds the offsets to the start of each element's
     // vertex list
     // size == total number of local elements (we counted this above)
-    parmetis_params["eptr"].set(DataType::int32(local_total_num_eles+1));
+    parmetis_params["eptr"].set(DataType(metis_idx_t_to_conduit_dtype_id(),
+                                         local_total_num_eles+1));
     // eind holds, for each element, a list of vertex ids
     // (we also counted this above)
-    parmetis_params["eind"].set(DataType::int32(local_total_ele_to_verts_size));
+    parmetis_params["eind"].set(DataType(metis_idx_t_to_conduit_dtype_id(),
+                                         local_total_ele_to_verts_size));
 
     // output array, size of local num elements
-    parmetis_params["part"].set(DataType::int32(local_total_num_eles));
+    parmetis_params["part"].set(DataType(metis_idx_t_to_conduit_dtype_id(),
+                                         local_total_num_eles));
 
 
     // first lets get eldist setup:
@@ -390,8 +421,10 @@ void generate_partition_field(conduit::Node &mesh,
     // eldist[n] == # of total elements
     //
     Node el_counts;
-    el_counts["local"]  = DataType::int32(par_size);
-    el_counts["global"] = DataType::int32(par_size);
+    el_counts["local"]  = DataType(metis_idx_t_to_conduit_dtype_id(),
+                                   par_size);
+    el_counts["global"] = DataType(metis_idx_t_to_conduit_dtype_id(),
+                                   par_size);
 
     idx_t *el_counts_local_vals  = el_counts["local"].value();
     idx_t *el_counts_global_vals = el_counts["global"].value();
@@ -438,7 +471,7 @@ void generate_partition_field(conduit::Node &mesh,
             // add last offset
             eptr_vals[eptr_idx] = curr_offset;
 
-            int64_array global_vert_ids = dom_g_vert_ids.value();
+            int64_accessor global_vert_ids = dom_g_vert_ids.as_int64_accessor();
             // for each element:
             //   loop over each local vertex, and use global vert map to add and entry to eind
 
@@ -454,26 +487,12 @@ void generate_partition_field(conduit::Node &mesh,
                     o2miter.next(conduit::blueprint::o2mrelation::MANY);
                     const index_t local_vert_id = o2miter.index(conduit::blueprint::o2mrelation::DATA);
                     // get the conn
-                    eind_vals[eind_idx] = global_vert_ids[conn_vals[local_vert_id]];
+                    eind_vals[eind_idx] = (idx_t) global_vert_ids[conn_vals[local_vert_id]];
                     eind_idx++;
                 }
             }
         }
     }
-
-    MPI_Barrier(comm);
-    
-    if(par_rank == 0)
-    {
-        parmetis_params.print();
-    }
-    MPI_Barrier(comm);
-
-    if(par_rank == 1)
-    {
-        parmetis_params.print();
-    }
-
 
     idx_t wgtflag = 0; // weights are NULL
     idx_t numflag = 0; // C-style numbering
@@ -496,7 +515,8 @@ void generate_partition_field(conduit::Node &mesh,
     idx_t edgecut = 0; // will hold # of cut edges
 
     // output array, size of local num elements
-    parmetis_params["part"].set(DataType::int32(local_total_num_eles));
+    parmetis_params["part"].set(DataType(metis_idx_t_to_conduit_dtype_id(),
+                                         local_total_num_eles));
     idx_t *part_vals = parmetis_params["part"].value();
 
     int parmetis_res = ParMETIS_V3_PartMeshKway(eldist_vals,

@@ -408,4 +408,12 @@ void CONDUIT_RELAY_API hdf5_set_options(const Node &opts);
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_options(Node &opts);
 
+//-----------------------------------------------------------------------------
+/// Get a node that describes open hdf5 handles
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_identifier_report(Node &out);
+
+void CONDUIT_RELAY_API hdf5_identifier_report(hid_t hdf5_id, Node &out);
+
+
 #endif

@@ -9,6 +9,7 @@
 #####
 variables:
   ubuntu18_tag: alpinedav/ascent-ci:ubuntu-18-devel
+  ubuntu21_10_tag: alpinedav/ascent-ci:ubuntu-21.10-devel
 
 # only build merge target pr to develop
 trigger: none
@@ -50,14 +51,15 @@ stages:
   #  using the standard Ubuntu 18 container.
   #
   ###############################################################################
-  - job: Ubuntu_18
+  - job: Ubuntu
     pool:
       vmImage: 'ubuntu-latest'
     container: ${{ variables.ubuntu18_tag }}
     timeoutInMinutes: 0
     strategy:
       matrix:
-        shared_minimal:
+        ub_18_shared_minimal:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -81,7 +83,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py27:
+        ub_18_shared_py27:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -107,7 +110,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        static_py27:
+        ub_18_static_py27:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -133,7 +137,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py37:
+        ub_18_shared_py37:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -158,7 +163,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py38_cmake20:
+        ub_18_shared_py38_cmake20:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -183,7 +189,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py38_cmake21:
+        ub_18_shared_py38_cmake21:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -208,7 +215,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py38_cmake_21_hdf5_1_10:
+        ub_18_shared_py38_cmake_21_hdf5_1_10:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -233,7 +241,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py38_cmake_21_hdf5_1_12:
+        ub_18_shared_py38_cmake_21_hdf5_1_12:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -260,7 +269,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_mpi_compilers_direct:
+        ub_18_shared_mpi_compilers_direct:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: mpicc
           COMPILER_CXX: mpic++
           COMPILER_FC: mpif90
@@ -281,6 +291,32 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: OFF
 
+        ub_21_10_shared_py38_cmake21:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
+          ENABLE_SILO: ON
+          ENABLE_ADIOS: OFF
+          ENABLE_PARMETIS: ON
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.8.8
+          CMAKE_VERSION: 3.21.1
+          BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
+
     steps:
       - checkout: self
         clean: boolean
@@ -293,31 +329,6 @@ stages:
            # output env
            cat etc/*rel*
            env
-           sudo apt-get update
-           # list pkgs we need
-           export APT_PKGS=binutils
-           export APT_PKGS="$APT_PKGS gcc"
-           export APT_PKGS="$APT_PKGS g++"
-           export APT_PKGS="$APT_PKGS gfortran"
-           export APT_PKGS="$APT_PKGS python"
-           export APT_PKGS="$APT_PKGS git"
-           export APT_PKGS="$APT_PKGS curl"
-           export APT_PKGS="$APT_PKGS unzip"
-           export APT_PKGS="$APT_PKGS wget"
-           export APT_PKGS="$APT_PKGS build-essential"
-           export APT_PKGS="$APT_PKGS libncurses-dev"
-           export APT_PKGS="$APT_PKGS libssl-dev"
-           export APT_PKGS="$APT_PKGS libblas-dev"
-           export APT_PKGS="$APT_PKGS liblapack-dev"
-           export APT_PKGS="$APT_PKGS zlib1g-dev"
-           export APT_PKGS="$APT_PKGS libgdbm-dev"
-           export APT_PKGS="$APT_PKGS libreadline-dev"
-           export APT_PKGS="$APT_PKGS libsqlite3-dev"
-           export APT_PKGS="$APT_PKGS libbz2-dev"
-           export APT_PKGS="$APT_PKGS openmpi-bin"
-           export APT_PKGS="$APT_PKGS libopenmpi-dev"
-           # install pkgs we need
-           sudo apt-get -y install $APT_PKGS
         displayName: 'Prepare build env'
 
       - script: |
