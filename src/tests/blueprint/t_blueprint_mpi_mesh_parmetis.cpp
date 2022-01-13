@@ -204,8 +204,9 @@ TEST(blueprint_mpi_parmetis, braid)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node options;
-    options["partitions"] = par_size * 2;
+    options["partitions"] = par_size;
     options["topology"] = "mesh";
+    options["adjset"] = "elem_aset";
 
     // paint a field with parmetis result (WIP)
     conduit::blueprint::mpi::mesh::generate_partition_field(mesh,options,MPI_COMM_WORLD);

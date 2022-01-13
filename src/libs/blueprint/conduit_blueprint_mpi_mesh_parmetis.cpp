@@ -22,6 +22,8 @@
 
 #include <parmetis.h>
 
+#include <unordered_map>
+
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -130,6 +132,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     // parse options
     std::string topo_name = "";
     std::string field_prefix = "";
+    std::string adjset_name = "";
     if( options.has_child("topology") )
     {
         topo_name = options["topology"].as_string();
@@ -145,6 +148,11 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     if( options.has_child("field_prefix") )
     {
         field_prefix = options["field_prefix"].as_string();
+    }
+
+    if( options.has_child("adjset") )
+    {
+        adjset_name = options["adjset"].as_string();
     }
 
     // count all local elements + verts and create offsets
@@ -164,6 +172,19 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     uint64_array local_vert_offsets = local_info["verts_offsets"].value();
     uint64_array local_ele_offsets  = local_info["eles_offsets"].value();
 
+    local_info["num_verts_primary"].set(DataType::uint64(local_num_doms));
+    uint64_array local_num_verts_pri = local_info["num_verts_primary"].value();
+    std::vector<std::unordered_map<uint64, int64>> dom_shared_nodes(domains.size());
+
+    const int64 local_ndomains = domains.size();
+    int64 global_ndomains;
+    MPI_Allreduce(&local_ndomains, &global_ndomains, 1,
+                  MPI_INT64_T, MPI_SUM, comm);
+
+    // A map of global domain IDs to their rank.
+    std::vector<int64> dom_locs(global_ndomains, INT64_MAX);
+    // A map of local domain IDs to global domain IDs.
+    std::vector<int64> global_domids(domains.size(), -1);
 
     for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
     {
@@ -185,10 +206,66 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             //local_num_verts[local_dom_idx] = blueprint::mesh::utils::coordset::length(dom_cset);
             // so we are using this: 
             local_num_verts[local_dom_idx] = dom_cset["values/x"].dtype().number_of_elements();
-            local_vert_offsets[local_dom_idx] = local_total_num_verts;
-            local_total_num_verts += local_num_verts[local_dom_idx];
+            local_num_verts_pri[local_dom_idx] = local_num_verts[local_dom_idx];
         }
+        if (adjset_name != "" && dom.has_child("adjsets"))
+        {
+            if (!dom["adjsets"].has_child(adjset_name))
+            {
+                CONDUIT_ERROR("Specified adjset = \"" << adjset_name
+                                << "\" was not found in adjsets node");
+            }
+            // Set up global domain ID maps
+            uint64 global_domid = dom["state/domain_id"].to_uint64();
+            dom_locs[global_domid] = par_rank;
+            global_domids[local_dom_idx] = global_domid;
+
+            std::unordered_map<uint64, int64>& shared_nodes = dom_shared_nodes[local_dom_idx];
+            const Node& dom_aset = dom["adjsets"][adjset_name];
+            std::string assoc_type = dom_aset["association"].as_string();
+            std::string assoc_topo = dom_aset["topology"].as_string();
+            if (assoc_type != "vertex")
+            {
+                CONDUIT_ERROR("Specified adjset \"" << adjset_name << "\" is "
+                              << "not a vertex-associated adjset. Element-"
+                              << "associated adjsets are not supported at this time.");
+
+            }
+            if (assoc_topo != topo_name)
+            {
+                CONDUIT_ERROR("Specified adjset \"" << adjset_name
+                                << "\" associated with unexpected topology \"" << assoc_topo
+                                << "\" (per generate_partition_field options: topology = \""
+                                << topo_name << "\")");
+            }
+
+            for (const Node& group : dom_aset["groups"].children())
+            {
+                uint64_accessor nbr_doms = group["neighbors"].as_uint64_accessor();
+                uint64 min_domain = global_domid;
+                for (index_t inbr = 0; inbr < nbr_doms.number_of_elements(); inbr++)
+                {
+                    min_domain = std::min(min_domain, nbr_doms[inbr]);
+                }
+                // Use the lower-indexed domain as the primary domain for these vertices
+                uint64_accessor group_verts = group["values"].as_uint64_accessor();
+                for (index_t ivert = 0; ivert < group_verts.number_of_elements(); ivert++)
+                {
+                    shared_nodes[group_verts[ivert]] = (min_domain == global_domid
+                                                        ? -1
+                                                        : min_domain);
+                }
+            }
+            local_num_verts_pri[local_dom_idx] -= shared_nodes.size();
+        }
+        // Calculate offsets based on primary vertices in each domain
+        local_vert_offsets[local_dom_idx] = local_total_num_verts;
+        local_total_num_verts += local_num_verts_pri[local_dom_idx];
     }
+
+    // Reduce to get locations of all domains.
+    MPI_Allreduce(MPI_IN_PLACE, dom_locs.data(), dom_locs.size(),
+                  MPI_INT64_T, MPI_MIN, comm);
 
     // calc per MPI task offsets using 
     // local_total_num_verts
@@ -232,39 +309,225 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     }
 
     // we now have our offsets, we can create output fields on each local domain
-     for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
-     {
-         Node &dom = *domains[local_dom_idx];
-         // we do need to make sure we have the requested topo
-         if(dom["topologies"].has_child(topo_name))
-         {
-             Node &verts_field = dom["fields"][field_prefix + "global_vertex_ids"];
-             verts_field["association"] = "vertex";
-             verts_field["topology"] = topo_name;
-             verts_field["values"].set(DataType::int64(local_num_verts[local_dom_idx]));
+    for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
+    {
+        Node &dom = *domains[local_dom_idx];
+        // we do need to make sure we have the requested topo
+        if(dom["topologies"].has_child(topo_name))
+        {
+            Node &verts_field = dom["fields"][field_prefix + "global_vertex_ids"];
+            verts_field["association"] = "vertex";
+            verts_field["topology"] = topo_name;
+            verts_field["values"].set(DataType::int64(local_num_verts[local_dom_idx]));
 
-             int64 vert_base_idx = global_verts_offset + local_vert_offsets[local_dom_idx];
+            int64 vert_base_idx = global_verts_offset + local_vert_offsets[local_dom_idx];
 
-             int64_array vert_ids_vals = verts_field["values"].value();
-             for(uint64 i=0; i < local_num_verts[local_dom_idx]; i++)
-             {
-                 vert_ids_vals[i] = i + vert_base_idx;
-             }
+            int64_array vert_ids_vals = verts_field["values"].value();
+            int64 curr_vert_id = 0;
+            for(uint64 i=0; i < local_num_verts[local_dom_idx]; i++)
+            {
+                bool is_primary_domain = true;
+                int primary_domid;
+                if (dom_shared_nodes[local_dom_idx].count(i) > 0)
+                {
+                    primary_domid = dom_shared_nodes[local_dom_idx][i];
+                    is_primary_domain = (primary_domid == -1);
+                }
 
-             // NOTE: VISIT BP DOESNT SUPPORT UINT64!!!!
-             Node &eles_field = dom["fields"][field_prefix + "global_element_ids"];
-             eles_field["association"] = "element";
-             eles_field["topology"] = topo_name;
-             eles_field["values"].set(DataType::int64(local_num_eles[local_dom_idx]));
+                if (!is_primary_domain)
+                {
+                    // mark the node with the domain we need to fetch vids from
+                    vert_ids_vals[i] = ~primary_domid;
+                }
+                else
+                {
+                    // number a node for which we are the primary domain
+                    vert_ids_vals[i] = curr_vert_id + vert_base_idx;
+                    curr_vert_id++;
+                }
+            }
 
-             int64 ele_base_idx = global_eles_offset + local_ele_offsets[local_dom_idx];
+            // NOTE: VISIT BP DOESNT SUPPORT UINT64!!!!
+            Node &eles_field = dom["fields"][field_prefix + "global_element_ids"];
+            eles_field["association"] = "element";
+            eles_field["topology"] = topo_name;
+            eles_field["values"].set(DataType::int64(local_num_eles[local_dom_idx]));
 
-             int64_array ele_ids_vals = eles_field["values"].value();
-             for(uint64 i=0; i < local_num_eles[local_dom_idx]; i++)
-             {
-                ele_ids_vals[i] = i + ele_base_idx;
-             }
-         }
+            int64 ele_base_idx = global_eles_offset + local_ele_offsets[local_dom_idx];
+
+            int64_array ele_ids_vals = eles_field["values"].value();
+            for(uint64 i=0; i < local_num_eles[local_dom_idx]; i++)
+            {
+               ele_ids_vals[i] = i + ele_base_idx;
+            }
+        }
+    }
+
+    if (adjset_name != "")
+    {
+        const int TAG_SHARED_NODE_SYNC = 175000000;
+        // map of groups -> global vtx ids
+        std::map<std::set<uint64>, std::vector<uint64>> groups_2_vids;
+        // map of rank -> sends to/recvs from that rank of global vtx ids for
+        // an adjset group
+        std::unordered_map<uint64, std::vector<std::set<uint64>>> pending_sends, pending_recvs;
+
+        // 1. First iterate through our local domains to prepare global vtx id
+        //    lists that we control
+        for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
+        {
+            Node &dom = *domains[local_dom_idx];
+            int64 global_domid = global_domids[local_dom_idx];
+            Node &verts_field = dom["fields"][field_prefix + "global_vertex_ids"];
+            int64_array vert_ids_vals = verts_field["values"].value();
+            const Node& dom_aset = dom["adjsets"][adjset_name];
+
+            for (const Node& group : dom_aset["groups"].children())
+            {
+                uint64_accessor nbr_doms = group["neighbors"].as_uint64_accessor();
+                uint64 min_domain = global_domid;
+                std::set<uint64> sorted_nbrs;
+                sorted_nbrs.insert(global_domid);
+                for (index_t inbr = 0; inbr < nbr_doms.number_of_elements(); inbr++)
+                {
+                    min_domain = std::min(min_domain, nbr_doms[inbr]);
+                    sorted_nbrs.insert(nbr_doms[inbr]);
+                }
+
+                uint64_accessor group_verts = group["values"].as_uint64_accessor();
+                if (min_domain == global_domid)
+                {
+                    // This domain provides the actual vids
+                    std::vector<uint64> actual_vids(group_verts.number_of_elements());
+                    for (index_t ivert = 0; ivert < group_verts.number_of_elements(); ivert++)
+                    {
+                        actual_vids[ivert] = vert_ids_vals[group_verts[ivert]];
+                    }
+                    if (groups_2_vids.count(sorted_nbrs) > 0)
+                    {
+                        CONDUIT_ERROR("Multiple primary domains?");
+                    }
+                    groups_2_vids[sorted_nbrs] = std::move(actual_vids);
+
+                    // If any neighbor domains are off-rank, we need to send
+                    // our global vids to those ranks.
+                    for (uint64 nbr_dom : sorted_nbrs)
+                    {
+                        if (nbr_dom == global_domid)
+                        {
+                            // skip source domain
+                            continue;
+                        }
+                        const uint64 dst_rank = dom_locs[nbr_dom];
+                        if (par_rank != dst_rank)
+                        {
+                            pending_sends[dst_rank].push_back(sorted_nbrs);
+                        }
+                    }
+                }
+                else
+                {
+                    // We need primary domain data, which might not yet exist
+                    // on this rank. Prepare irecv if necessary.
+                    const uint64 src_rank = dom_locs[min_domain];
+
+                    if (par_rank != src_rank)
+                    {
+                        pending_recvs[src_rank].push_back(sorted_nbrs);
+                        groups_2_vids[sorted_nbrs].resize(group_verts.number_of_elements());
+                    }
+                }
+            }
+        }
+
+        // 2. Do required communication asynchronously.
+        std::vector<MPI_Request> async_sends, async_recvs;
+        for (auto& it : pending_recvs)
+        {
+            const uint64 rank_from = it.first;
+            std::vector<std::set<uint64>>& recv_groups = it.second;
+            // Sort the groups to receive first. This gives us a consistent
+            // ordering of isends/irecvs
+            std::sort(recv_groups.begin(), recv_groups.end());
+
+            int group_idx = 0;
+            for (const std::set<uint64>& group : recv_groups)
+            {
+                index_t domid = *(group.begin());
+                const int tag = TAG_SHARED_NODE_SYNC + domid * 100 + group_idx;
+                async_recvs.push_back(MPI_Request{});
+                group_idx++;
+                std::vector<uint64>& recvbuf = groups_2_vids[group];
+                MPI_Irecv(recvbuf.data(), recvbuf.size(), MPI_UINT64_T,
+                          rank_from, tag, comm, &(*async_recvs.rbegin()));
+            }
+        }
+        for (auto& it : pending_sends)
+        {
+            const uint64 rank_to = it.first;
+            std::vector<std::set<uint64>>& send_groups = it.second;
+            // Sort the groups to send first. This gives us a consistent
+            // ordering of isends/irecvs
+            std::sort(send_groups.begin(), send_groups.end());
+
+            int group_idx = 0;
+            for (const std::set<uint64>& group : send_groups)
+            {
+                index_t domid = *(group.begin());
+                const int tag = TAG_SHARED_NODE_SYNC + domid * 100 + group_idx;
+                async_sends.push_back(MPI_Request{});
+                group_idx++;
+                const std::vector<uint64>& sendbuf = groups_2_vids[group];
+                MPI_Isend(sendbuf.data(), sendbuf.size(), MPI_UINT64_T,
+                          rank_to, tag, comm, &(*async_sends.rbegin()));
+            }
+        }
+        std::vector<MPI_Status> async_recv_statuses(async_recvs.size());
+        // Make sure all our irecvs have completed
+        MPI_Waitall(async_recvs.size(), async_recvs.data(), async_recv_statuses.data());
+
+        // 3. Finally, iterate through our local domains to remap any vertices
+        //    that have been numbered by another domain.
+        for(size_t local_dom_idx=0; local_dom_idx < domains.size(); local_dom_idx++)
+        {
+            Node &dom = *domains[local_dom_idx];
+            int64 global_domid = global_domids[local_dom_idx];
+            Node &verts_field = dom["fields"][field_prefix + "global_vertex_ids"];
+            int64_array vert_ids_vals = verts_field["values"].value();
+            const Node& dom_aset = dom["adjsets"][adjset_name];
+
+            for (const Node& group : dom_aset["groups"].children())
+            {
+                uint64_accessor nbr_doms = group["neighbors"].as_uint64_accessor();
+                uint64 min_domain = global_domid;
+                std::set<uint64> sorted_nbrs;
+                sorted_nbrs.insert(global_domid);
+                for (index_t inbr = 0; inbr < nbr_doms.number_of_elements(); inbr++)
+                {
+                    min_domain = std::min(min_domain, nbr_doms[inbr]);
+                    sorted_nbrs.insert(nbr_doms[inbr]);
+                }
+
+                uint64_accessor group_verts = group["values"].as_uint64_accessor();
+                if (min_domain != global_domid)
+                {
+                    // Remap higher-numbered domains with primary domain's
+                    // assigned global vtx ids
+                    const std::vector<uint64>& actual_vids = groups_2_vids[sorted_nbrs];
+                    if (actual_vids.size() != group_verts.number_of_elements())
+                    {
+                        CONDUIT_ERROR("mismatch in shared verts");
+                    }
+                    for (index_t ivert = 0; ivert < actual_vids.size(); ivert++)
+                    {
+                        vert_ids_vals[group_verts[ivert]] = actual_vids[ivert];
+                    }
+                }
+            }
+        }
+        std::vector<MPI_Status> async_send_statuses(async_sends.size());
+        // Make sure all our isends have completed
+        MPI_Waitall(async_sends.size(), async_sends.data(), async_send_statuses.data());
     }
 }
 

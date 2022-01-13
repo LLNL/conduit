@@ -585,6 +585,19 @@ protected:
                             std::vector<int> &offsets);
 
     /**
+     @brief Generates initial intermediate adjsets for each chunk, based on the
+            adjsets in the original domains.
+
+     @param chunks A map of pre-partition domains to the set of local chunk ids
+                   it is decomposed into, as well as the associated vertex maps
+                   for each chunk.
+     @param[out] adjset_data An array of nodes containing adjset data for each
+                             chunk local to this rank.
+     */
+    void init_chunk_adjsets(const DomainToChunkMap& chunks,
+                            std::vector<conduit::Node*>& adjset_data);
+
+    /**
      @brief Generates a map from adjset vertex ids to their containing chunks.
             This map is generated per-adjset and is stored in CSR format, and
             is called by build_interdomain_adjsets() to construct splits of the
