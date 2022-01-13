@@ -125,16 +125,28 @@ to_silo(const conduit::Node &field,
     index_t matset_num_elems = 0;
     if(mset_is_matdom)
     {
-        NodeConstIterator eids_iter = matset["element_ids"].children();
-        while(eids_iter.has_next())
+        if(mset_is_unibuffer)
         {
-            const Node &eids_node = eids_iter.next();
-            const DataType eids_dtype(eids_node.dtype().id(), 1);
-            for(index_t ei = 0; ei < eids_node.dtype().number_of_elements(); ei++)
+            const DataAccessor<index_t> eids = matset["element_ids"].value();
+            const index_t N = eids.number_of_elements();
+            for(index_t i = 0; i < N; i++)
             {
-                temp.set_external(eids_dtype, (void*)eids_node.element_ptr(ei));
-                const index_t elem_index = temp.to_int();
-                matset_num_elems = std::max(matset_num_elems, elem_index + 1);
+                matset_num_elems = std::max(matset_num_elems, eids[i] + 1);
+            }
+        }
+        else
+        {
+            NodeConstIterator eids_iter = matset["element_ids"].children();
+            while(eids_iter.has_next())
+            {
+                const Node &eids_node = eids_iter.next();
+                const DataType eids_dtype(eids_node.dtype().id(), 1);
+                for(index_t ei = 0; ei < eids_node.dtype().number_of_elements(); ei++)
+                {
+                    temp.set_external(eids_dtype, (void*)eids_node.element_ptr(ei));
+                    const index_t elem_index = temp.to_int();
+                    matset_num_elems = std::max(matset_num_elems, elem_index + 1);
+                }
             }
         }
     }

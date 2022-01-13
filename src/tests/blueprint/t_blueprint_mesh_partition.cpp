@@ -2013,3 +2013,579 @@ TEST(conduit_blueprint_mesh_partition, field_selection)
     EXPECT_EQ(compare_baseline(b02, output), true);
 #endif
 }
+
+//-----------------------------------------------------------------------------
+static bool
+diff_to_silo(const conduit::Node &baseline, const conduit::Node &matset,
+    conduit::Node &info)
+{
+    const conduit::Node &baseline_matset = baseline["matsets/matset"];
+    // std::cout << "Baseline matset:" << baseline_matset.to_yaml() << std::endl;
+
+    conduit::Node base_silo;
+    conduit::blueprint::mesh::matset::to_silo(baseline_matset, base_silo);
+
+    conduit::Node test_silo;
+    conduit::blueprint::mesh::matset::to_silo(matset["matsets/matset"], test_silo);
+
+    info.reset();
+    return base_silo.diff(test_silo, info, CONDUIT_EPSILON, true);
+}
+
+//-----------------------------------------------------------------------------
+// Multi-buffer, element-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_multi_by_element)
+{
+    /// matset_type options:
+    ///   full -> non sparse volume fractions and matset values
+    ///   sparse_by_material ->  sparse (material dominant) volume fractions
+    ///                          and matset values
+    ///   sparse_by_element  ->  sparse (element dominant)
+    ///                          volume fractions and matset values
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("full", 4, 4, 0.33f, venn);
+
+    save_visit("venn_multi_by_element", venn, true);
+
+    conduit::Node venn_part, opts; opts["target"].set(4);
+    conduit::blueprint::mesh::partition(venn, opts, venn_part);
+
+    // Check partitioned result against baseline
+    {
+        const std::string name = "venn_multi_by_element_partitioned";
+        const std::string baseline_fname = baseline_file(name);
+        save_visit(name, venn_part, true);
+    #ifdef GENERATE_BASELINES
+        make_baseline(baseline_fname, venn_part);
+    #else
+        conduit::Node baseline, info;
+        load_baseline(baseline_fname, baseline);
+        EXPECT_FALSE(baseline.diff(venn_part, info, CONDUIT_EPSILON, true)) << info.to_yaml();
+    #endif
+    }
+
+    conduit::Node venn_combined; opts["target"].set(1);
+    conduit::blueprint::mesh::partition(venn_part, opts, venn_combined);
+
+    // Test combined vs original "to_silo" results
+    {
+        conduit::Node info;
+        EXPECT_FALSE(diff_to_silo(venn, venn_combined, info)) << info.to_yaml();
+    }
+
+    // Check combined result against baseline
+    {
+        const std::string name = "venn_multi_by_element_combined";
+        const std::string baseline_fname = baseline_file(name);
+        save_visit(name, venn_combined, true);
+    #ifdef GENERATE_BASELINES
+        make_baseline(baseline_fname, venn_combined);
+    #else
+        conduit::Node baseline, info;
+        load_baseline(baseline_fname, baseline);
+        EXPECT_FALSE(baseline.diff(venn_combined, info, CONDUIT_EPSILON, true)) << info.to_yaml();
+    #endif
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Multi-buffer, material-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_multi_by_material)
+{
+    /// matset_type options:
+    ///   full -> non sparse volume fractions and matset values
+    ///   sparse_by_material ->  sparse (material dominant) volume fractions
+    ///                          and matset values
+    ///   sparse_by_element  ->  sparse (element dominant)
+    ///                          volume fractions and matset values
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("sparse_by_material", 4, 4, 0.33f, venn);
+
+    save_visit("venn_multi_by_material", venn, true);
+
+    conduit::Node venn_part, opts; opts["target"].set(4);
+    conduit::blueprint::mesh::partition(venn, opts, venn_part);
+
+    // Check partitioned result against baseline
+    {
+        const std::string name = "venn_multi_by_material_partitioned";
+        const std::string baseline_fname = baseline_file(name);
+        save_visit(name, venn_part, true);
+    #ifdef GENERATE_BASELINES
+        make_baseline(baseline_fname, venn_part);
+    #else
+        conduit::Node baseline, info;
+        load_baseline(baseline_fname, baseline);
+        EXPECT_FALSE(baseline.diff(venn_part, info, CONDUIT_EPSILON, true)) << info.to_yaml();
+    #endif
+    }
+
+    conduit::Node venn_combined; opts["target"].set(1);
+    conduit::blueprint::mesh::partition(venn_part, opts, venn_combined);
+
+    // Test combined vs original "to_silo" results
+    {
+        conduit::Node info;
+        EXPECT_FALSE(diff_to_silo(venn, venn_combined, info)) << info.to_yaml();
+    }
+
+    // Check combined result against baseline
+    {
+        const std::string name = "venn_multi_by_material_combined";
+        const std::string baseline_fname = baseline_file(name);
+        save_visit(name, venn_combined, true);
+    #ifdef GENERATE_BASELINES
+        make_baseline(baseline_fname, venn_combined);
+    #else
+        conduit::Node baseline, info;
+        load_baseline(baseline_fname, baseline);
+        EXPECT_FALSE(baseline.diff(venn_combined, info, CONDUIT_EPSILON, true)) << info.to_yaml();
+    #endif
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Uni-buffer, element-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_uni_by_element)
+{
+    /// matset_type options:
+    ///   full -> non sparse volume fractions and matset values
+    ///   sparse_by_material ->  sparse (material dominant) volume fractions
+    ///                          and matset values
+    ///   sparse_by_element  ->  sparse (element dominant)
+    ///                          volume fractions and matset values
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("sparse_by_element", 4, 4, 0.33f, venn);
+
+    save_visit("venn_uni_by_element", venn, true);
+
+    conduit::Node venn_part, opts; opts["target"].set(4);
+    conduit::blueprint::mesh::partition(venn, opts, venn_part);
+
+    // Check partitioned result against baseline
+    {
+        const std::string name = "venn_uni_by_element_partitioned";
+        const std::string baseline_fname = baseline_file(name);
+        save_visit(name, venn_part, true);
+    #ifdef GENERATE_BASELINES
+        make_baseline(baseline_fname, venn_part);
+    #else
+        conduit::Node baseline, info;
+        load_baseline(baseline_fname, baseline);
+        EXPECT_FALSE(baseline.diff(venn_part, info, CONDUIT_EPSILON, true)) << info.to_yaml();
+    #endif
+    }
+
+    conduit::Node venn_combined; opts["target"].set(1);
+    conduit::blueprint::mesh::partition(venn_part, opts, venn_combined);
+
+    // Test combined vs original "to_silo" results
+    {
+        conduit::Node info;
+        EXPECT_FALSE(diff_to_silo(venn, venn_combined, info)) << info.to_yaml();
+    }
+
+    // Check combined result against baseline
+    {
+        const std::string name = "venn_uni_by_element_combined";
+        const std::string baseline_fname = baseline_file(name);
+        save_visit(name, venn_combined, true);
+    #ifdef GENERATE_BASELINES
+        make_baseline(baseline_fname, venn_combined);
+    #else
+        conduit::Node baseline, info;
+        load_baseline(baseline_fname, baseline);
+        EXPECT_FALSE(baseline.diff(venn_combined, info, CONDUIT_EPSILON, true)) << info.to_yaml();
+    #endif
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Uni-buffer, material-dominant matset
+TEST(conduit_blueprint_mesh_partition, matset_uni_by_material)
+{
+    const int nx = 4;
+    const int ny = 4;
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, venn);
+
+    // Add an element ids field
+    const int N = conduit::blueprint::mesh::topology::length(venn["topologies"][0]);
+    std::vector<int> ids;
+    for(int i = 0; i < N; i++)
+    {
+        ids.push_back(i);
+    }
+    venn["matsets/matset/element_ids"].set(ids);
+
+    save_visit("venn_uni_by_material", venn, true);
+
+    conduit::Node venn_part, opts; opts["target"].set(4);
+    conduit::blueprint::mesh::partition(venn, opts, venn_part);
+
+    // Check partitioned result against baseline
+    {
+        const std::string name = "venn_uni_by_material_partitioned";
+        const std::string baseline_fname = baseline_file(name);
+        save_visit(name, venn_part, true);
+    #ifdef GENERATE_BASELINES
+        make_baseline(baseline_fname, venn_part);
+    #else
+        conduit::Node baseline, info;
+        load_baseline(baseline_fname, baseline);
+        EXPECT_FALSE(baseline.diff(venn_part, info, CONDUIT_EPSILON, true)) << info.to_yaml();
+    #endif
+    }
+
+    conduit::Node venn_combined; opts["target"].set(1);
+    conduit::blueprint::mesh::partition(venn_part, opts, venn_combined);
+
+    // Test combined vs original "to_silo" results
+    {
+        conduit::Node info;
+        EXPECT_FALSE(diff_to_silo(venn, venn_combined, info)) << info.to_yaml();
+    }
+
+    // Check combined result against baseline
+    {
+        const std::string name = "venn_uni_by_material_combined";
+        const std::string baseline_fname = baseline_file(name);
+        save_visit(name, venn_combined, true);
+    #ifdef GENERATE_BASELINES
+        make_baseline(baseline_fname, venn_combined);
+    #else
+        conduit::Node baseline, info;
+        load_baseline(baseline_fname, baseline);
+        EXPECT_FALSE(baseline.diff(venn_combined, info, CONDUIT_EPSILON, true)) << info.to_yaml();
+    #endif
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, matset_mixed_topology)
+{
+    // Baseline mesh
+    const int nx = 4;
+    const int ny = 4;
+    conduit::Node venn;
+    conduit::blueprint::mesh::examples::venn("full", nx, ny, 0.33f, venn);
+
+    conduit::Node venn_silo;
+    conduit::blueprint::mesh::matset::to_silo(venn["matsets/matset"], venn_silo);
+
+    // Input meshes, 1 for each flavor of matset
+    std::array<conduit::Node, 4> meshes;
+    conduit::blueprint::mesh::examples::venn("full", nx, ny, 0.33f, meshes[0]);
+    conduit::blueprint::mesh::examples::venn("sparse_by_material", nx, ny, 0.33f, meshes[1]);
+    conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, meshes[2]);
+    conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, meshes[3]);
+    // Make meshes[3] material dominant by adding element_ids
+    {
+        const int N = conduit::blueprint::mesh::topology::length(meshes[3]["topologies"][0]);
+        std::vector<int> ids;
+        for(int i = 0; i < N; i++)
+        {
+            ids.push_back(i);
+        }
+        meshes[3]["matsets/matset/element_ids"].set(ids);
+    }
+
+    // We've already tested partitioning / combining each of the above meshes in their
+    //  rectilinear form; now we will use to_structured / to_unstructured and ensure
+    //  the same result comes from to_silo
+    const auto test = [](const conduit::Node &in, conduit::Node &out)
+    {
+        conduit::Node partitioned;
+        conduit::Node opts;
+        opts["target"].set(4);
+        conduit::blueprint::mesh::partition(in, opts, partitioned);
+
+        opts["target"].set(1);
+        conduit::blueprint::mesh::partition(partitioned, opts, out);
+    };
+
+    // First test as rectilinear
+    for(auto i = 0u; i < meshes.size(); i++)
+    {
+        conduit::Node result;
+        test(meshes[i], result);
+
+        conduit::Node info;
+        bool diff = diff_to_silo(venn, result, info);
+        EXPECT_FALSE(diff) << "Rectilinear case " << i << ": " << info.to_yaml();
+    }
+
+    // Now test as structured
+    for(auto i = 0u; i < meshes.size(); i++)
+    {
+        // Transform the mesh
+        const conduit::Node &mesh = meshes[i];
+        // std::cout << "Mesh " << i << ":" << mesh.to_yaml() << std::endl;
+
+        conduit::Node structured;
+        conduit::blueprint::mesh::topology::rectilinear::to_structured(mesh["topologies/topo"],
+            structured["topologies/topo"], structured["coordsets/coords"]);
+        structured["fields"].set_external(mesh["fields"]);
+        structured["matsets"].set_external(mesh["matsets"]);
+
+        // Partition / combine
+        conduit::Node result;
+        test(mesh, result);
+
+        // Compare to baseline
+        conduit::Node info;
+        bool diff = diff_to_silo(venn, result, info);
+        EXPECT_FALSE(diff) << "Structured case " << i << ": " << info.to_yaml();
+    }
+
+    // Now test as unstructured
+    for(auto i = 0u; i < meshes.size(); i++)
+    {
+        // Transform the mesh
+        const conduit::Node &mesh = meshes[i];
+        // std::cout << "Mesh " << i << ":" << mesh.to_yaml() << std::endl;
+
+        conduit::Node unstructured;
+        conduit::blueprint::mesh::topology::rectilinear::to_unstructured(mesh["topologies/topo"],
+            unstructured["topologies/topo"], unstructured["coordsets/coords"]);
+        unstructured["fields"].set_external(mesh["fields"]);
+        unstructured["matsets"].set_external(mesh["matsets"]);
+
+        // Partition / combine
+        conduit::Node result;
+        test(mesh, result);
+
+        // Compare to baseline
+        conduit::Node info;
+        bool diff = diff_to_silo(venn, result, info);
+        EXPECT_FALSE(diff) << "Unstructured case " << i << ": " << info.to_yaml();
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Creates a matset for a spiral domain with the given number of elements.
+        Flavors: 0 = multi-elem, 1 = multi-mat, 2 = uni-elem, 3 = uni-mat
+*/
+static void
+make_spiral_matset(const conduit::index_t num_elements, const conduit::index_t flavor,
+                   const conduit::index_t domain_id, const conduit::index_t total_domains,
+                   conduit::Node &out_matset)
+{
+    out_matset["topology"].set("topo");
+
+    // Uni buffer requires material map
+    if(flavor > 1)
+    {
+        for(conduit::index_t i = 0; i < total_domains; i++)
+        {
+            const std::string mat_name("mat" + std::to_string(i));
+            out_matset["material_map"][mat_name].set(i);
+        }
+    }
+
+    const std::string mat_name("mat" + std::to_string(domain_id));
+    switch(flavor)
+    {
+    case 1:
+    {
+        conduit::Node &mat_elem_ids = out_matset["element_ids"].add_child(mat_name);
+        mat_elem_ids.set_dtype(conduit::DataType::index_t(num_elements));
+        conduit::DataArray<conduit::index_t> data = mat_elem_ids.value();
+        for(conduit::index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = i;
+        }
+        // Fallthrough
+    }
+    case 0:
+    {
+        conduit::Node &mat_vfs = out_matset["volume_fractions"].add_child(mat_name);
+        mat_vfs.set_dtype(conduit::DataType::c_float(num_elements));
+        conduit::DataArray<float> data = mat_vfs.value();
+        for(conduit::index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = 1.f;
+        }
+        break;
+    }
+    default: //case 3
+    {
+        conduit::Node &mat_elem_ids = out_matset["element_ids"];
+        mat_elem_ids.set_dtype(conduit::DataType::index_t(num_elements));
+        conduit::DataArray<conduit::index_t> data = mat_elem_ids.value();
+        for(conduit::index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = i;
+        }
+        // Fallthrough
+    }
+    case 2:
+    {
+        conduit::Node &mat_ids = out_matset["material_ids"];
+        mat_ids.set_dtype(conduit::DataType::index_t(num_elements));
+        conduit::DataArray<conduit::index_t> ids = mat_ids.value();
+        for(conduit::index_t i = 0; i < ids.number_of_elements(); i++)
+        {
+            ids[i] = domain_id;
+        }
+
+        conduit::Node &mat_vfs = out_matset["volume_fractions"];
+        mat_vfs.set_dtype(conduit::DataType::c_float(num_elements));
+        conduit::DataArray<float> data = mat_vfs.value();
+        for(conduit::index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = 1.f;
+        }
+
+        // conduit::Node &sizes = out_matset["sizes"];
+        // sizes.set_dtype(conduit::DataType::index_t(num_elements));
+        // conduit::DataArray<conduit::index_t> szs = sizes.value();
+        // conduit::Node &offsets = out_matset["offsets"];
+        // offsets.set_dtype(conduit::DataType::index_t(num_elements));
+        // conduit::DataArray<conduit::index_t> offs = offsets.value();
+        // conduit::index_t sum = 0;
+        // for(conduit::index_t i = 0; i < szs.number_of_elements(); i++)
+        // {
+        //     szs[i] = 1;
+        //     offs[i] = sum;
+        //     sum++;
+        // }
+        break;
+    }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, matset_spiral)
+{
+    std::array<conduit::Node, 4> spirals;
+    {
+        conduit::Node spiral;
+        conduit::blueprint::mesh::examples::spiral(5, spiral);
+
+        for(auto i = 0u; i < spirals.size(); i++)
+        {
+            spirals[i].set(spiral);
+        }
+    }
+
+    // Add a matset to each domain
+    for(conduit::index_t flavor = 0; flavor < (conduit::index_t)spirals.size(); flavor++)
+    {
+        conduit::Node &spiral = spirals[flavor];
+        for(conduit::index_t i = 0; i < spiral.number_of_children(); i++)
+        {
+            conduit::Node &domain = spiral[i];
+            const auto num_elements = conduit::blueprint::mesh::topology::length(domain["topologies/topo"]);
+            conduit::Node &matset = domain["matsets/matset"];
+            make_spiral_matset(num_elements, flavor, i, spiral.number_of_children(), matset);
+            conduit::Node info;
+            ASSERT_TRUE(conduit::blueprint::mesh::matset::verify(matset, info))
+                << "Flavor " << flavor << ", domain " << i << ":" << info.to_yaml() << matset.to_yaml();
+        }
+    }
+
+    // Test combining the spiral mesh with a matset down to 1 domain
+    {
+        // Use the first spiral mesh to create the baseline file
+        const std::string baseline_fname = baseline_file("spiral_with_matset");
+#ifdef GENERATE_BASELINES
+        {
+            conduit::Node opts, spiral_combined;
+            opts["target"].set(1);
+            conduit::blueprint::mesh::partition(spirals[0], opts, spiral_combined);
+            make_baseline(baseline_fname, spiral_combined);
+        }
+#endif
+
+        // Load the baseline mesh into a node, we will call diff_to_silo on this for each mesh
+        conduit::Node baseline;
+        load_baseline(baseline_fname, baseline);
+
+        // Combine the spiral down to 1 domain and compare to baseline
+        for(conduit::index_t flavor = 0; flavor < (conduit::index_t)spirals.size(); flavor++)
+        {
+            const std::string mesh_name("spiral_with_matset_" + std::to_string(flavor));
+            conduit::Node &spiral = spirals[flavor];
+            save_visit(mesh_name, spiral, true);
+            conduit::Node opts, spiral_combined;
+            opts["target"].set(1);
+            conduit::blueprint::mesh::partition(spiral, opts, spiral_combined);
+            const std::string combined_mesh_name = mesh_name + "_combined";
+            save_visit(combined_mesh_name, spiral_combined, true);
+
+            conduit::Node info;
+            EXPECT_FALSE(diff_to_silo(baseline, spiral_combined, info))
+                << "Flavor " << flavor << ":" << info.to_yaml();
+        }
+    }
+
+    // Another test, remove domain 5's contribution to the final matset
+    {
+        for(conduit::index_t flavor = 0; flavor < (conduit::index_t)spirals.size(); flavor++)
+        {
+            conduit::Node &spiral = spirals[flavor];
+            for(conduit::index_t i = 0; i < spiral.number_of_children(); i++)
+            {
+                conduit::Node &domain = spiral[i];
+                if(i == 4)
+                {
+                    domain.remove_child("matsets");
+                }
+                else
+                {
+                    conduit::Node &matset = domain["matsets/matset"];
+                    if(matset.has_child("material_map"))
+                    {
+                        matset["material_map"].remove_child("mat4");
+                    }
+                    conduit::Node info;
+                    ASSERT_TRUE(conduit::blueprint::mesh::matset::verify(matset, info))
+                        << "Flavor " << flavor << ", domain " << i << ":" << info.to_yaml() << matset.to_yaml();
+                }
+            }
+        }
+
+        // Use the first spiral mesh to create the baseline file
+        const std::string baseline_fname = baseline_file("spiral_with_matset_no_mat4");
+#ifdef GENERATE_BASELINES
+        {
+            conduit::Node opts, spiral_combined;
+            opts["target"].set(1);
+            conduit::blueprint::mesh::partition(spirals[0], opts, spiral_combined);
+            make_baseline(baseline_fname, spiral_combined);
+        }
+#endif
+
+        // Load the baseline mesh into a node, we will call diff_to_silo on this for each mesh
+        conduit::Node baseline;
+        load_baseline(baseline_fname, baseline);
+
+        {
+            conduit::Node silo;
+            conduit::blueprint::mesh::matset::to_silo(baseline["matsets/matset"], silo);
+            // std::cout << silo.to_yaml() << std::endl;
+        }
+
+        // Combine the spiral down to 1 domain and compare to baseline
+        for(conduit::index_t flavor = 0; flavor < (conduit::index_t)spirals.size(); flavor++)
+        {
+            const std::string mesh_name("spiral_with_matset_no_mat4_" + std::to_string(flavor));
+            conduit::Node &spiral = spirals[flavor];
+            save_visit(mesh_name, spiral, true);
+            conduit::Node opts, spiral_combined;
+            opts["target"].set(1);
+            conduit::blueprint::mesh::partition(spiral, opts, spiral_combined);
+            const std::string combined_mesh_name = mesh_name + "_combined";
+            save_visit(combined_mesh_name, spiral_combined, true);
+
+            // NOTE: to_silo fills with 0's on each cell without a material
+            //   so there are a lot more cells with mat0 than expected.
+            conduit::Node info;
+            EXPECT_FALSE(diff_to_silo(baseline, spiral_combined, info))
+                << "Flavor " << flavor << ":" << info.to_yaml();
+        }
+    }
+}
