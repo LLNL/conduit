@@ -8,7 +8,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 #### Blueprint
-- Allow adjsets to be used in Mesh Blueprint partitioner to determine vertex node ids.
+- Allow adjsets to be used in `blueprint::mesh::partition` to determine global vertex ids.
+- Added partial matset support to `blueprint::mesh::partition` and `blueprint::mesh::combine`.
 
 ### Fixed
 
@@ -16,8 +17,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed CMake bug with `ENABLE_RELAY_WEBSERVER` option.
 
 #### Blueprint
-- Fixed a bug in Mesh Blueprint partitioner where adjsets could be missing in new domains.
-
+- Fixed a bug in `blueprint::mesh::partition` where adjsets could be missing in new domains.
+- Fixed a bug with `blueprint::mesh::matset::to_silo` and uni-buffer matsets.
 
 ## [0.8.0] - Released 2021-12-20
 
