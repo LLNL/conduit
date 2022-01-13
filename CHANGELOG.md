@@ -4,6 +4,21 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+#### Blueprint
+- Allow adjsets to be used in Mesh Blueprint partitioner to determine vertex node ids.
+
+### Fixed
+
+#### General
+- Fixed CMake bug with `ENABLE_RELAY_WEBSERVER` option.
+
+#### Blueprint
+- Fixed a bug in Mesh Blueprint partitioner where adjsets could be missing in new domains.
+
+
 ## [0.8.0] - Released 2021-12-20
 
 
