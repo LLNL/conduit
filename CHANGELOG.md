@@ -4,6 +4,22 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+#### Blueprint
+- Allow adjsets to be used in `blueprint::mesh::partition` to determine global vertex ids.
+- Added partial matset support to `blueprint::mesh::partition` and `blueprint::mesh::combine`.
+
+### Fixed
+
+#### General
+- Fixed CMake bug with `ENABLE_RELAY_WEBSERVER` option.
+
+#### Blueprint
+- Fixed a bug in `blueprint::mesh::partition` where adjsets could be missing in new domains.
+- Fixed a bug with `blueprint::mesh::matset::to_silo` and uni-buffer matsets.
+
 ## [0.8.0] - Released 2021-12-20
 
 
