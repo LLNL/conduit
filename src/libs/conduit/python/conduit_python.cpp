@@ -3156,7 +3156,6 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -3211,7 +3210,6 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *
@@ -3431,7 +3429,6 @@ static PyMethodDef PyConduit_Generator_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_Generator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -3486,7 +3483,6 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static int
@@ -4458,7 +4454,6 @@ static PyMappingMethods PyConduit_Schema_as_mapping = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -4513,7 +4508,6 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -4822,7 +4816,6 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -4877,7 +4870,6 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyConduit_NodeIterator *
@@ -6967,7 +6959,6 @@ static PyMappingMethods node_as_mapping = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_Node_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -7022,7 +7013,6 @@ static PyTypeObject PyConduit_Node_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 // conduit:::about
@@ -7904,7 +7894,6 @@ static PyMethodDef PyConduit_Endianness_METHODS[] =
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_Endianness_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -7959,7 +7948,6 @@ static PyTypeObject PyConduit_Endianness_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
