@@ -5,10 +5,14 @@ on:
     branches: [ develop ]
 
 jobs:
-  build_windows_msvc:
-    name: MSVC Base Release with Python
+  build_windows_msvc_py_3_7:
+    name: MSVC Base Release with Python 3.7
     runs-on: windows-latest   
     steps:
+    - name: Setup Python 3.7
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
     - name: Setup MPI
       uses: mpi4py/setup-mpi@v1
     - name: Setup Python Env
@@ -24,6 +28,54 @@ jobs:
               -DENABLE_MPI=ON
         cmake --build build --config Release --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+  build_windows_msvc_py_3_8:
+    name: MSVC Base Release with Python 3.8
+    runs-on: windows-latest   
+    steps:
+    - name: Setup Python 3.8
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build & Test
+      run: |
+        cmake -S src -B build            `
+              -DCMAKE_BUILD_TYPE=Release `
+              -DENABLE_PYTHON=ON         `
+              -DENABLE_MPI=ON
+        cmake --build build --config Release --parallel 2
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+
+  build_windows_msvc_py_3_9:
+    name: MSVC Base Release with Python 3.9
+    runs-on: windows-latest   
+    steps:
+    - name: Setup Python 3.9
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build & Test
+      run: |
+        cmake -S src -B build            `
+              -DCMAKE_BUILD_TYPE=Release `
+              -DENABLE_PYTHON=ON         `
+              -DENABLE_MPI=ON
+        cmake --build build --config Release --parallel 2
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+
   build_windows_clang:
     name: Clang Base Debug
     runs-on: windows-2019
