@@ -8889,7 +8889,7 @@ map_adjset_group(const Node& adjset,
 
         index_t_array orig_shared_nodes = group["values"].as_index_t_array();
         std::vector<index_t> new_shared_nodes(orig_shared_nodes.number_of_elements());
-        for (size_t inode = 0; inode < orig_shared_nodes.number_of_elements(); inode++)
+        for (index_t inode = 0; inode < orig_shared_nodes.number_of_elements(); inode++)
         {
             index_t new_vert_idx = pmap[orig_shared_nodes[inode]];
             new_shared_nodes[inode] = new_vert_idx;
