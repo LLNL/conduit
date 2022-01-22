@@ -5,8 +5,28 @@ on:
     branches: [ develop ]
 
 jobs:
-  build_windows_msvc:
-    name: MSVC Base Release 
+  build_windows_msvc_base:
+    name: MSVC Base Release
+    runs-on: windows-latest
+    steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build & Test
+      run: |
+        cmake -S src -B build            `
+              -DCMAKE_BUILD_TYPE=Release `
+              -DENABLE_PYTHON=ON         `
+              -DENABLE_MPI=ON
+        cmake --build build --config Release --parallel 2
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+
+  build_windows_msvc_py_ver:
+    name: MSVC Release Py Verison
     runs-on: windows-latest
     strategy:
       matrix:
