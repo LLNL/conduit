@@ -83,7 +83,7 @@ ParallelPartitioner::init_dom_to_rank_map(const conduit::Node &n_mesh)
         ::generate_domain_to_rank_map(n_mesh, d2r_node, comm);
     int64_array d2r_data = d2r_node.as_int64_array();
     domain_to_rank_map.resize(d2r_data.number_of_elements());
-    for (int idx = 0; idx < domain_to_rank_map.size(); idx++)
+    for (size_t idx = 0; idx < domain_to_rank_map.size(); idx++)
     {
         domain_to_rank_map[idx] = d2r_data[idx];
     }

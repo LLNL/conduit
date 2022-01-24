@@ -3515,7 +3515,7 @@ namespace detail
         bool vol_dep = false; // true if the current field is volume dependent
         bool vert_assoc = false; // true if the current field is vertex associated
         int dimensions = 0; // are we in 2D or 3D?
-        int new_num_shapes; // the number of new triangles or tetrahedrons
+        int new_num_shapes = 0; // the number of new triangles or tetrahedrons
         int num_orig_shapes = topo_src["elements/sizes"].dtype().number_of_elements(); // the number of original polygons or polyhedra
         Node volumes_info; // a container for the volumes of old shapes and the ratio between new and old volumes for each new shape
         bool volumes_calculated = false; // so we only calculate the volumes once as we go through the while loop

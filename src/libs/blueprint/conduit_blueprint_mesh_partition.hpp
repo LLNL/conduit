@@ -316,7 +316,7 @@ protected:
     using ChunkToVertsMap = std::unordered_map<index_t, std::vector<index_t>>;
     using DomainToChunkMap = std::unordered_map<const Node*, ChunkToVertsMap>;
 
-    virtual void init_dom_to_rank_map(const conduit::Node& n_mesh) { }
+    virtual void init_dom_to_rank_map(const conduit::Node& /* n_mesh */) { }
 
     /**
      @brief Examines the selections and counts them to determine a number of
