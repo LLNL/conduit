@@ -4,9 +4,12 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.8.1] - Released 2022-01-25
 
 ### Added
+#### General
+- Added `CONDUIT_DLL_DIR` env var support on windows, for cases where Conduit DLLs are not installed directly inside the Python Module.
+
 #### Blueprint
 - Allow adjsets to be used in `blueprint::mesh::partition` to determine global vertex ids.
 - Added partial matset support to `blueprint::mesh::partition` and `blueprint::mesh::combine`.
@@ -15,10 +18,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### General
 - Fixed CMake bug with `ENABLE_RELAY_WEBSERVER` option.
+- Fixed build and test issues with Python >= 3.8  on Windows.
 
 #### Blueprint
 - Fixed a bug in `blueprint::mesh::partition` where adjsets could be missing in new domains.
 - Fixed a bug with `blueprint::mesh::matset::to_silo` and uni-buffer matsets.
+
 
 ## [0.8.0] - Released 2021-12-20
 
