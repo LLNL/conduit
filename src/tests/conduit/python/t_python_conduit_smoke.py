@@ -2,7 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Conduit.
 """
- file: python_conduit_smoke.py
+ file: t_python_conduit_smoke.py
  description: Simple unit test for the basic conduit python module interface.
 
 """
