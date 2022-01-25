@@ -116,6 +116,13 @@ function(add_python_test )
                  ENVIRONMENT "PYTHONPATH=${py_path}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
     if(WIN32)
         # proper path to dlls for vstudio and proper path for non config based gen (nmake, etc)
+        #
+        # NOTE: python 3.8 and newer ignore PATH when loading DLLs
+        #   https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew
+        #   https://docs.python.org/3/library/os.html#os.add_dll_directory
+        #
+        # our test scripts explciity look for PATH via os.environ and add it via os.add_dll_directory()
+        #
         set_property(TEST ${args_TEST}
                      APPEND
                      PROPERTY
@@ -170,21 +177,17 @@ function(add_python_mpi_test)
                  ENVIRONMENT "PYTHONPATH=${py_path}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
     if(WIN32)
         # proper path to dlls for vstudio and proper path for non config based gen (nmake, etc)
+        #
+        # NOTE: python 3.8 and newer ignore PATH when loading DLLs
+        #   https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew
+        #   https://docs.python.org/3/library/os.html#os.add_dll_directory
+        #
+        # our test scripts explciity look for PATH via os.environ and add it via os.add_dll_directory()
+        #
         set_property(TEST ${args_TEST}
                      APPEND
                      PROPERTY
                      ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
-        # python 3.8 and newer ignore PATH when loading DLLs
-        #   https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew
-        #   https://docs.python.org/3/library/os.html#os.add_dll_directory
-        #
-        # To adapt to this change and allow us to still test, we set:
-        #  CONDUIT_DLL_PATH and then use this along with os.add_dll_directory() to avoid DLL import errors
-        set_property(TEST ${args_TEST}
-                     APPEND
-                     PROPERTY
-                     ENVIRONMENT "CONDUIT_DLL_PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
-
     endif()
 
     ###########################################################################

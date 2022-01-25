@@ -7,6 +7,13 @@
 
 """
 
+##############################################################
+# make sure windows can pick up dlls for python 3.8 and newer
+import os
+if "PATH" in os.environ:
+    for dll_path in os.environ["PATH"].split(";"):
+        os.add_dll_directory(dll_path)
+##############################################################
 
 import sys
 import os
