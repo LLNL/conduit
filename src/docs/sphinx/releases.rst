@@ -12,6 +12,47 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.8.1
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.1/conduit-v0.8.1-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Added
+~~~~~
+
+
+* **General**
+
+ * Added ``CONDUIT_DLL_DIR`` env var support on windows, for cases where Conduit DLLs are not installed directly inside the Python Module.
+
+* **Blueprint**
+
+ * Allow adjsets to be used in ``blueprint::mesh::partition`` to determine global vertex ids.
+ * Added partial matset support to ``blueprint::mesh::partition`` and ``blueprint::mesh::combine``.
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * Fixed CMake bug with ``ENABLE_RELAY_WEBSERVER`` option.
+ * Fixed build and test issues with Python >= 3.8  on Windows.
+
+* **Blueprint**
+
+ * Fixed a bug in ``blueprint::mesh::partition`` where adjsets could be missing in new domains.
+ * Fixed a bug with ``blueprint::mesh::matset::to_silo`` and uni-buffer matsets.
+
+
+
+
 v0.8.0
 ---------------------------------
 
