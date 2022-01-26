@@ -22,6 +22,7 @@
 
 #include <parmetis.h>
 
+#include <algorithm>
 #include <unordered_map>
 
 //-----------------------------------------------------------------------------
