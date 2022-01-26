@@ -51,7 +51,7 @@ namespace examples
         |            |            |
         |  domain 0  |            |
         |            |            |
-        |------------|  domain 2..|
+        |------------|  domain 2  |
         |            |            |
         |  domain 1  |            |
         |            |            |
