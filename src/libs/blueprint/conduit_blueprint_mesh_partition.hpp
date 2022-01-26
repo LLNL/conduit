@@ -318,6 +318,8 @@ protected:
 
     virtual void init_dom_to_rank_map(const conduit::Node& /* n_mesh */) { }
 
+    virtual std::vector<index_t> get_global_domids(const std::vector<const conduit::Node*>& doms) const;
+
     /**
      @brief Examines the selections and counts them to determine a number of
             targets that would be produced. Most selections result in a domain

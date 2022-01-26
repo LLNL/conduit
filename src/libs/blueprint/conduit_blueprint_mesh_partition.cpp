@@ -1762,6 +1762,7 @@ Partitioner::initialize(const conduit::Node &n_mesh,
     init_dom_to_rank_map(n_mesh);
 
     auto doms = conduit::blueprint::mesh::domains(n_mesh);
+    auto global_domids = get_global_domids(doms);
 
     // Iterate over the selections in the options and check them against the
     // domains that were passed in to make a vector of meshes and selections
@@ -1787,16 +1788,8 @@ Partitioner::initialize(const conduit::Node &n_mesh,
                     auto n = static_cast<index_t>(doms.size());
                     for(index_t di = 0; di < n; di++)
                     {
-                        // Get the overall index for this domain if it exists.
-                        // Otherwise, we use the position in the list.
-                        index_t domid = di;
-                        if(doms[di]->has_path("state/domain_id"))
-                        {
-                            bool ok = false;
-                            index_t tmp = get_index_t(doms[di]->operator[]("state/domain_id"), ok);
-                            if(ok)
-                                domid = tmp;
-                        }
+                        // Get the global id for this domain.
+                        index_t domid = global_domids[di];
 
                         // NOTE: A selection is tied to a single domain at present.
                         //       The field selection could apply to multiple domains
@@ -1858,15 +1851,7 @@ Partitioner::initialize(const conduit::Node &n_mesh,
         for(size_t i = 0; i < doms.size(); i++)
         {
             auto sel = create_selection_all_elements(*doms[i]);
-            // If the mesh has a domain_id then use that as the domain number.
-            index_t domid = i;
-            if(doms[i]->has_path("state/domain_id"))
-            {
-                bool ok = false;
-                index_t tmp = get_index_t(doms[i]->operator[]("state/domain_id"), ok);
-                if(ok)
-                    domid = tmp;
-            }
+            index_t domid = global_domids[i];
             sel->set_domain(domid);
             selections.push_back(sel);
             meshes.push_back(doms[i]);
@@ -1922,6 +1907,27 @@ Partitioner::initialize(const conduit::Node &n_mesh,
     // If we made it to the end then we will have created any applicable
     // selections. Some ranks may have created no selections. That is ok.
     return true; //!selections.empty();
+}
+
+//---------------------------------------------------------------------------
+std::vector<index_t>
+Partitioner::get_global_domids(
+  const std::vector<const conduit::Node*>& doms) const
+{
+    std::vector<index_t> domids(doms.size(), -1);
+    for(size_t i = 0; i < doms.size(); i++)
+    {
+        domids[i] = i;
+        // If the mesh has a domain_id then use that as the domain number.
+        if(doms[i]->has_path("state/domain_id"))
+        {
+            bool ok = false;
+            index_t tmp = get_index_t(doms[i]->operator[]("state/domain_id"), ok);
+            if(ok)
+                domids[i] = tmp;
+        }
+    }
+    return domids;
 }
 
 //---------------------------------------------------------------------------

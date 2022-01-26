@@ -64,6 +64,8 @@ protected:
 
     virtual void init_dom_to_rank_map(const conduit::Node& n_mesh);
 
+    virtual std::vector<index_t> get_global_domids(const std::vector<const conduit::Node*>& doms) const;
+
     virtual long get_total_selections() const override;
 
     /**

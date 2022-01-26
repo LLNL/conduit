@@ -88,6 +88,46 @@ ParallelPartitioner::init_dom_to_rank_map(const conduit::Node &n_mesh)
         domain_to_rank_map[idx] = d2r_data[idx];
     }
 }
+//---------------------------------------------------------------------------
+std::vector<index_t>
+ParallelPartitioner::get_global_domids(
+  const std::vector<const conduit::Node*>& doms) const
+{
+    std::vector<index_t> domids(doms.size(), -1);
+    bool have_domids = false;
+    for(size_t i = 0; i < doms.size(); i++)
+    {
+        domids[i] = i;
+        // If the mesh has a domain_id then use that as the domain number.
+        if(doms[i]->has_path("state/domain_id"))
+        {
+            have_domids = true;
+            domids[i] = doms[i]->operator[]("state/domain_id").to_index_t();
+        }
+    }
+
+    if (!have_domids)
+    {
+        // We had to generate local domain IDs in the range [0, ndoms)
+        // Offset these for global IDs
+        int64_t ndoms_local = doms.size();
+        std::vector<int64_t> ndoms_all(size);
+        ndoms_all[rank] = ndoms_local;
+        // Gather all domain counts across ranks
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                      ndoms_all.data(), 1, MPI_INT64_T, comm);
+        index_t offset = 0;
+        for (size_t irnk = 0; irnk < rank; irnk++)
+        {
+            offset += ndoms_all[irnk];
+        }
+        for (size_t idom = 0; idom < doms.size(); idom++)
+        {
+            domids[idom] += offset;
+        }
+    }
+    return domids;
+}
 
 //---------------------------------------------------------------------------
 bool
