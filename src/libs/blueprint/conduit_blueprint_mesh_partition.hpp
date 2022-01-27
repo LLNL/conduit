@@ -311,6 +311,10 @@ public:
                  const std::vector<index_t> &chunk_ids,
                  Node &output);
 
+    void map_back_fields(const conduit::Node& repart_mesh,
+                         Node& orig_mesh,
+                         const std::vector<std::string>& field);
+
 protected:
 
     using ChunkToVertsMap = std::unordered_map<index_t, std::vector<index_t>>;

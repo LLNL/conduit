@@ -9822,6 +9822,140 @@ Partitioner::combine(int domain,
 }
 
 //-------------------------------------------------------------------------
+void
+Partitioner::map_back_fields(const conduit::Node& repart_mesh,
+                             Node& orig_mesh,
+                             const std::vector<std::string>& field_names)
+{
+    using namespace std;
+    auto repart_doms = mesh::domains(repart_mesh);
+    auto orig_doms = mesh::domains(orig_mesh);
+    auto orig_dom_ids = get_global_domids({orig_doms.begin(), orig_doms.end()});
+
+    unordered_map<index_t, Node*> gid_to_orig_dom;
+    for (size_t idom = 0; idom < orig_doms.size(); idom++)
+    {
+        gid_to_orig_dom[orig_dom_ids[idom]] = orig_doms[idom];
+    }
+
+    // map repart domid -> orig domid -> original vertex ids
+    vector<unordered_map<index_t, vector<index_t>>>
+        map_tgt_elems(repart_doms.size());
+    // map repart domid -> orig domid -> repart vertex ids
+    vector<unordered_map<index_t, vector<index_t>>>
+        map_sel_elems(repart_doms.size());
+    for (size_t idom = 0; idom < repart_doms.size(); idom++)
+    {
+        const conduit::Node& dom = *repart_doms[idom];
+
+        if (dom["fields"].has_child("original_element_ids"))
+        {
+            const Node& orig_v_node = dom["fields/original_element_ids/values"];
+            const index_t_accessor orig_elems = orig_v_node["ids"].value();
+            const index_t_accessor orig_doms = orig_v_node["domains"].value();
+            for (index_t ielem = 0; ielem < orig_elems.number_of_elements(); ielem++)
+            {
+                map_tgt_elems[idom][orig_doms[ielem]].push_back(orig_elems[ielem]);
+                map_sel_elems[idom][orig_doms[ielem]].push_back(ielem);
+            }
+        }
+    }
+
+    // map of original domid -> sliced data
+    unordered_map<index_t, std::vector<Node>> packed_fields;
+    // schema of each node
+    // [dom0]:
+    //  - elem_map: [orig_elem_ids0]
+    //  - fields:
+    //    - field0: [sliced field]
+    //    - field1: [sliced field]
+    //    ...
+    // [dom1]:
+    //  - elem_map: [orig_elem_ids1]
+    //  - fields:
+    //     - field0: [sliced field]
+    //     - field1: [sliced field]
+    //     ...
+    for (size_t idom = 0; idom < repart_doms.size(); idom++)
+    {
+        const Node& dom = *repart_doms[idom];
+        for (const auto& slice_map : map_sel_elems[idom])
+        {
+            index_t orig_dom = slice_map.first;
+            packed_fields[orig_dom].push_back(Node{});
+            Node& remap_dom_ent = *(packed_fields[orig_dom].rbegin());
+            // Copy field with source element indices
+            const vector<index_t>& sel_elems = slice_map.second;
+            for (const std::string& field_name : field_names)
+            {
+                const Node& field = dom["fields"][field_name];
+                if (field["association"].as_string() == "vertex")
+                {
+                    CONDUIT_ERROR("Map-back of vertex-associated fields currently unsupported."
+                               << " (field: " << field_name << ")");
+                }
+                copy_field(field, sel_elems, remap_dom_ent["fields"]);
+            }
+            // Add target element indices to the node
+            remap_dom_ent["elem_map"].set_external(map_tgt_elems[idom][orig_dom]);
+        }
+    }
+
+    // TODO: in the mpi case we would send these nodes to the correct domain homes
+    for (const auto& orig_dom : packed_fields)
+    {
+        // Precompute final element count
+        index_t nelems = 0;
+        for (const Node& src_chunk : orig_dom.second)
+        {
+            DataArray<index_t> cnk_map = src_chunk["elem_map"].value();
+            nelems += cnk_map.number_of_elements();
+        }
+
+        int cnk_id = 0;
+        vector<index_t> tgt_elem_map(nelems * 2);
+        unordered_map<string, vector<const Node*>> field_groups;
+        for (const Node& src_chunk : orig_dom.second)
+        {
+            // Group common field nodes together by name
+            for (const Node& field : src_chunk["fields"].children())
+            {
+                field_groups[field.name()].push_back(&field);
+            }
+            DataArray<index_t> cnk_map = src_chunk["elem_map"].value();
+            for (index_t i = 0; i < cnk_map.number_of_elements(); i++)
+            {
+                index_t out_idx = cnk_map[i];
+                tgt_elem_map[2*out_idx] = cnk_id;
+                tgt_elem_map[2*out_idx + 1] = i;
+            }
+            cnk_id++;
+        }
+        // map_element_field expects a DataArray
+        DataArray<index_t> elem_map_arr;
+        {
+            Node tmp;
+            tmp.set_external(tgt_elem_map);
+            elem_map_arr = tmp.value();
+        }
+        Node& tgt_dom = *gid_to_orig_dom[orig_dom.first];
+        for (const auto& fg : field_groups)
+        {
+            const vector<const Node*>& src_fields = fg.second;
+            const string& field_name = fg.first;
+            const string& assoc = src_fields[0]->child("association").as_string();
+            const string& assoc_topo = src_fields[0]->child("topology").as_string();
+
+            Node& output = tgt_dom["fields"][field_name];
+            output["association"] = assoc;
+            output["topology"] = assoc_topo;
+
+            fields::map_element_field(src_fields, elem_map_arr, output["values"]);
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
 bool
 Partitioner::combine_as_structured(const std::string &topo_name,
     const std::string &rt,

@@ -5746,6 +5746,14 @@ mesh::partition(const conduit::Node &n_mesh,
     }
 }
 
+void mesh::partition_map_back(const Node& repart_mesh,
+                              Node& orig_mesh,
+                              const std::vector<std::string>& fields)
+{
+    mesh::Partitioner p;
+    p.map_back_fields(repart_mesh, orig_mesh, fields);
+}
+
 //-------------------------------------------------------------------------
 void
 mesh::flatten(const conduit::Node &mesh,

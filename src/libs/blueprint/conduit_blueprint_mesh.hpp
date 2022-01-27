@@ -117,6 +117,12 @@ void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
                                      const conduit::Node &options,
                                      conduit::Node &output);
 
+//-------------------------------------------------------------------------
+// Map fields from a repartitioned mesh back onto the original mesh.
+void CONDUIT_BLUEPRINT_API partition_map_back(const Node& repart_mesh,
+                                              Node& orig_mesh,
+                                              const std::vector<std::string>& fields);
+
 /**
  @brief Convert the given blueprint mesh into a blueprint table.
  @param mesh    A Conduit node containing a blueprint mesh or set of mesh domains.
