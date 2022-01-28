@@ -311,6 +311,12 @@ public:
                  const std::vector<index_t> &chunk_ids,
                  Node &output);
 
+    /**
+     @brief Maps back fields from a repartitioned mesho onto the original mesh.
+
+     @note This method is a standalone method and does not require calling
+           Partitioner::initialize().
+     */
     void map_back_fields(const conduit::Node& repart_mesh,
                          Node& orig_mesh,
                          const std::vector<std::string>& field);
@@ -322,6 +328,16 @@ protected:
 
     virtual void init_dom_to_rank_map(const conduit::Node& /* n_mesh */) { }
 
+    /**
+     @brief Gets a set of global domain IDs. If the field "state/domain_id"
+            exists, the IDs are used from there; otherwise sequentially-ordered
+            domain IDs are generated that are unique to each domain on each
+            processor.
+     @param doms The array of domain pointers local to this processor.
+     @return The corresponding global domain IDs for each domain.
+
+     @note This method is not dependent on Partitioner::initialize()
+     */
     virtual std::vector<index_t> get_global_domids(const std::vector<const conduit::Node*>& doms) const;
 
     /**
@@ -698,6 +714,17 @@ protected:
                                     std::vector<int> &chunks_to_assemble_domains,
                                     std::vector<int> &chunks_to_assemble_gids);
 
+    /**
+     @brief During the field back map, ommunicates packed field data to the
+            correct domain homes for the original mesh.
+     @param local_orig_domids   The original mesh domain IDs present on this
+                                processor.
+     @param packed_fields   A map of original domain IDs to Conduit nodes
+                            containing sliced field data belonging to that
+                            domain.
+     @note Reimplemented in parallel
+     @note This method is not dependent on Partitioner::initialize()
+     */
     virtual void communicate_mapback(const std::vector<index_t>& local_orig_domids,
                                      std::unordered_map<index_t, Node>& packed_fields) {}
 
