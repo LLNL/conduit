@@ -119,6 +119,9 @@ protected:
                                        const std::map<index_t, const Node*>& domain_map,
                                        std::vector<Node>& adjset_chunk_maps);
 
+    virtual void communicate_mapback(const std::vector<index_t>& local_orig_domids,
+                                     std::unordered_map<index_t, Node>& packed_fields) override;
+
 private:
     /**
      @brief Creates an MPI structure datatype so we can Allgatherv 3 things

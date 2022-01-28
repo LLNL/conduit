@@ -763,6 +763,16 @@ partition(const conduit::Node &n_mesh,
     }
 }
 
+void
+partition_map_back(const conduit::Node& repart_mesh,
+                   conduit::Node& orig_mesh,
+                   const std::vector<std::string>& fields,
+                   MPI_Comm comm)
+{
+    ParallelPartitioner p(comm);
+    p.map_back_fields(repart_mesh, orig_mesh, fields);
+}
+
 //-----------------------------------------------------------------------------
 void
 find_delegate_domain(const conduit::Node &n,

@@ -18,6 +18,10 @@
 #include "conduit_relay_mpi.hpp"
 #include <mpi.h>
 
+#include "conduit_fmt/conduit_fmt.h"
+
+#include <algorithm>
+#include <numeric>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -781,6 +785,153 @@ ParallelPartitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets
     }
 
     C.execute();
+}
+
+//-----------------------------------------------------------------------------
+void
+ParallelPartitioner::communicate_mapback(const std::vector<index_t>& local_orig_domids,
+                                         std::unordered_map<index_t, Node>& packed_fields)
+{
+    int64 max_domid = *std::max_element(local_orig_domids.begin(),
+                                        local_orig_domids.end());
+
+    // Get maximum global domain id of the original domains
+    MPI_Allreduce(MPI_IN_PLACE, &max_domid, 1, MPI_INT64_T, MPI_MAX, comm);
+
+    // Construct domain homes array across all ranks
+    std::vector<int64> orig_domain_homes(max_domid + 1, -1);
+    for (index_t dom_id : local_orig_domids)
+    {
+        orig_domain_homes[dom_id] = rank;
+    }
+    MPI_Allreduce(MPI_IN_PLACE,
+                  orig_domain_homes.data(),
+                  orig_domain_homes.size(),
+                  MPI_INT64_T, MPI_MAX, comm);
+
+    // Get source ranks for domains homed on this processor
+    std::unordered_map<index_t, std::vector<index_t>> dom_to_recv_rnk;
+    {
+        // Get number of outgoing chunks
+        int64 nchunks = packed_fields.size();
+        std::vector<int> cnks_per_proc(size, 0);
+        cnks_per_proc[rank] = nchunks;
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                      cnks_per_proc.data(), 1, MPI_INT, comm);
+
+        int64 ncnks = std::accumulate(cnks_per_proc.begin(),
+                                      cnks_per_proc.end(), 0);
+        std::vector<int> displs(size, 0);
+        for (int irnk = 1; irnk < size; irnk++)
+        {
+            displs[irnk] = displs[irnk - 1] + cnks_per_proc[irnk - 1];
+        }
+
+        std::vector<int64> all_doms(ncnks, -1), all_src_rnks(ncnks, -1);
+        // We'll allgather corresponding domain ids and source ranks from each
+        // processor
+        size_t offset = displs[rank];
+        for (const auto& dom_field : packed_fields)
+        {
+            index_t tgt_domain = dom_field.first;
+            all_doms[offset] = tgt_domain;
+            all_src_rnks[offset] = rank;
+            offset++;
+        }
+        size_t expected_max = (rank + 1 == size) ? ncnks : displs[rank + 1];
+        if (offset != expected_max)
+        {
+            CONDUIT_ERROR(
+              conduit_fmt::format("Displacement error: (rank = {} offset = {} "
+                                  "bound = {}", rank, offset, expected_max));
+        }
+
+        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                       all_doms.data(), cnks_per_proc.data(), displs.data(),
+                       MPI_INT64_T, comm);
+
+        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                       all_src_rnks.data(), cnks_per_proc.data(), displs.data(),
+                       MPI_INT64_T, comm);
+
+        // Put everything we own in dom_to_recv_rnk
+        for (int64 icnk = 0; icnk < ncnks; icnk++)
+        {
+            int64 dom_id = all_doms[icnk];
+            int64 src_rnk = all_src_rnks[icnk];
+            if (orig_domain_homes[dom_id] == rank && src_rnk != rank)
+            {
+                dom_to_recv_rnk[dom_id].push_back(src_rnk);
+            }
+        }
+    }
+
+    conduit::relay::mpi::communicate_using_schema C(comm);
+    C.set_logging(true);
+
+    constexpr int MAPBACK_TAG_BASE = 16000;
+
+    // Setup nonblocking sends.
+    for (const auto& dom_field : packed_fields)
+    {
+        index_t tgt_domain = dom_field.first;
+        index_t tgt_rank = orig_domain_homes[tgt_domain];
+        if (tgt_rank != rank)
+        {
+            const int tag = MAPBACK_TAG_BASE + tgt_domain;
+            C.add_isend(dom_field.second, tgt_rank, tag);
+        }
+    }
+
+    // Compute the total number of receive nodes to allocate.
+    // This avoids vector resizes invalidating any stored references to nodes
+    // in the communication object.
+    index_t ntotal_recvs = 0;
+    for (const auto& dom_recv_pair : dom_to_recv_rnk)
+    {
+        ntotal_recvs += dom_recv_pair.second.size();
+    }
+
+    // Setup nonblocking receives.
+    std::vector<std::pair<index_t, Node>> pending_recvs(ntotal_recvs);
+    for (const auto& dom_recv_pair : dom_to_recv_rnk)
+    {
+        index_t tgt_domain = dom_recv_pair.first;
+        const int tag = MAPBACK_TAG_BASE + tgt_domain;
+        for (index_t src_rank : dom_recv_pair.second)
+        {
+            pending_recvs.emplace_back(tgt_domain, Node{});
+            Node& recv_node = pending_recvs.rbegin()->second;
+            C.add_irecv(recv_node, src_rank, tag);
+        }
+    }
+
+    C.execute();
+
+    // Append received chunks to original domain chunk map
+    for (const auto& recv_result : pending_recvs)
+    {
+        index_t tgt_domain = recv_result.first;
+        for (const Node& cnk : recv_result.second.children())
+        {
+            packed_fields[tgt_domain].append().set(cnk);
+        }
+    }
+
+    // Remove domains not homed on this rank
+    std::vector<index_t> to_remove;
+    for (const auto& dom_nodes : packed_fields)
+    {
+        index_t tgt_domain = dom_nodes.first;
+        if (orig_domain_homes[tgt_domain] != rank)
+        {
+            to_remove.push_back(tgt_domain);
+        }
+    }
+    for (index_t domid : to_remove)
+    {
+        packed_fields.erase(domid);
+    }
 }
 
 }

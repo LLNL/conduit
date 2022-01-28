@@ -698,6 +698,9 @@ protected:
                                     std::vector<int> &chunks_to_assemble_domains,
                                     std::vector<int> &chunks_to_assemble_gids);
 
+    virtual void communicate_mapback(const std::vector<index_t>& local_orig_domids,
+                                     std::unordered_map<index_t, Node>& packed_fields) {}
+
     int rank, size;
     unsigned int target;
     std::vector<const Node *>                meshes;

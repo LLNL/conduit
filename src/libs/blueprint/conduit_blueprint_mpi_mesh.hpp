@@ -102,6 +102,13 @@ void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
                                      const conduit::Node &options,
                                      conduit::Node &output,
                                      MPI_Comm comm);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API partition_map_back(const conduit::Node& repart_mesh,
+                                              conduit::Node& orig_mesh,
+                                              const std::vector<std::string>& fields,
+                                              MPI_Comm comm);
+
 ///@name blueprint::mpi::mesh::find_delegate_domain(...)
 ///@{
 //-----------------------------------------------------------------------------

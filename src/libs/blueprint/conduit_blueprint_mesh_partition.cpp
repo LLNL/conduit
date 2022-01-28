@@ -9862,15 +9862,15 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     }
 
     // map of original domid -> sliced data
-    unordered_map<index_t, std::vector<Node>> packed_fields;
+    unordered_map<index_t, Node> packed_fields;
     // schema of each node
-    // [dom0]:
+    // [remap_dom0]:
     //  - elem_map: [orig_elem_ids0]
     //  - fields:
     //    - field0: [sliced field]
     //    - field1: [sliced field]
     //    ...
-    // [dom1]:
+    // [remap_dom1]:
     //  - elem_map: [orig_elem_ids1]
     //  - fields:
     //     - field0: [sliced field]
@@ -9882,8 +9882,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         for (const auto& slice_map : map_sel_elems[idom])
         {
             index_t orig_dom = slice_map.first;
-            packed_fields[orig_dom].push_back(Node{});
-            Node& remap_dom_ent = *(packed_fields[orig_dom].rbegin());
+            Node& remap_dom_ent = packed_fields[orig_dom].append();
             // Copy field with source element indices
             const vector<index_t>& sel_elems = slice_map.second;
             for (const std::string& field_name : field_names)
@@ -9897,16 +9896,19 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 copy_field(field, sel_elems, remap_dom_ent["fields"]);
             }
             // Add target element indices to the node
-            remap_dom_ent["elem_map"].set_external(map_tgt_elems[idom][orig_dom]);
+            remap_dom_ent["elem_map"].set(map_tgt_elems[idom][orig_dom]);
         }
     }
 
-    // TODO: in the mpi case we would send these nodes to the correct domain homes
+    // If we're multi-process, redistribute target field chunks to original
+    // domain homes
+    communicate_mapback(orig_dom_ids, packed_fields);
+
     for (const auto& orig_dom : packed_fields)
     {
         // Precompute final element count
         index_t nelems = 0;
-        for (const Node& src_chunk : orig_dom.second)
+        for (const Node& src_chunk : orig_dom.second.children())
         {
             DataArray<index_t> cnk_map = src_chunk["elem_map"].value();
             nelems += cnk_map.number_of_elements();
@@ -9915,7 +9917,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         int cnk_id = 0;
         vector<index_t> tgt_elem_map(nelems * 2);
         unordered_map<string, vector<const Node*>> field_groups;
-        for (const Node& src_chunk : orig_dom.second)
+        for (const Node& src_chunk : orig_dom.second.children())
         {
             // Group common field nodes together by name
             for (const Node& field : src_chunk["fields"].children())
