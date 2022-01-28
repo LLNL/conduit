@@ -44,6 +44,8 @@
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_log.hpp"
 
+#include "conduit_fmt/conduit_fmt.h"
+
 // Uncomment to enable some debugging output from partitioner.
 // #define CONDUIT_DEBUG_PARTITIONER
 
@@ -9838,12 +9840,14 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         gid_to_orig_dom[orig_dom_ids[idom]] = orig_doms[idom];
     }
 
-    // map repart domid -> orig domid -> original vertex ids
+    // map repart domid -> orig domids
+    vector<unordered_set<index_t>> map_tgt_domains(repart_doms.size());
+    // map repart domid -> orig domid -> original elem/vertex ids
     vector<unordered_map<index_t, vector<index_t>>>
-        map_tgt_elems(repart_doms.size());
-    // map repart domid -> orig domid -> repart vertex ids
+        map_tgt_elems(repart_doms.size()), map_tgt_verts(repart_doms.size());
+    // map repart domid -> orig domid -> repart elem/vertex ids
     vector<unordered_map<index_t, vector<index_t>>>
-        map_sel_elems(repart_doms.size());
+        map_sel_elems(repart_doms.size()), map_sel_verts(repart_doms.size());
     for (size_t idom = 0; idom < repart_doms.size(); idom++)
     {
         const conduit::Node& dom = *repart_doms[idom];
@@ -9858,6 +9862,40 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 map_tgt_elems[idom][orig_doms[ielem]].push_back(orig_elems[ielem]);
                 map_sel_elems[idom][orig_doms[ielem]].push_back(ielem);
             }
+            for (const auto& slice_map : map_tgt_elems[idom])
+            {
+                // Keep a set of all source domains
+                map_tgt_domains[idom].emplace(slice_map.first);
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR(
+                "Map-back requires that mesh repartitioning is performed with "
+                "the mapping option enabled. (missing original_element_ids)");
+        }
+
+        if (dom["fields"].has_child("original_vertex_ids"))
+        {
+            const Node& orig_v_node = dom["fields/original_vertex_ids/values"];
+            const index_t_accessor orig_vids = orig_v_node["ids"].value();
+            const index_t_accessor orig_doms = orig_v_node["domains"].value();
+            for (index_t ivert = 0; ivert < orig_vids.number_of_elements(); ivert++)
+            {
+                map_tgt_verts[idom][orig_doms[ivert]].push_back(orig_vids[ivert]);
+                map_sel_verts[idom][orig_doms[ivert]].push_back(ivert);
+            }
+            for (const auto& slice_map : map_tgt_verts[idom])
+            {
+                // Keep a set of all source domains
+                map_tgt_domains[idom].emplace(slice_map.first);
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR(
+                "Map-back requires that mesh repartitioning is performed with "
+                "the mapping option enabled. (missing original_vertex_ids)");
         }
     }
 
@@ -9865,12 +9903,14 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     unordered_map<index_t, Node> packed_fields;
     // schema of each node
     // [remap_dom0]:
+    //  - vert_map: [orig_vert_ids0]
     //  - elem_map: [orig_elem_ids0]
     //  - fields:
     //    - field0: [sliced field]
     //    - field1: [sliced field]
     //    ...
     // [remap_dom1]:
+    //  - vert_map: [orig_vert_ids1]
     //  - elem_map: [orig_elem_ids1]
     //  - fields:
     //     - field0: [sliced field]
@@ -9879,24 +9919,34 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     for (size_t idom = 0; idom < repart_doms.size(); idom++)
     {
         const Node& dom = *repart_doms[idom];
-        for (const auto& slice_map : map_sel_elems[idom])
+        for (const index_t tgt_dom : map_tgt_domains[idom])
         {
-            index_t orig_dom = slice_map.first;
-            Node& remap_dom_ent = packed_fields[orig_dom].append();
+            Node& remap_dom_ent = packed_fields[tgt_dom].append();
             // Copy field with source element indices
-            const vector<index_t>& sel_elems = slice_map.second;
+            const vector<index_t>& sel_elems = map_sel_elems[idom][tgt_dom];
+            const vector<index_t>& sel_verts = map_sel_verts[idom][tgt_dom];
             for (const std::string& field_name : field_names)
             {
                 const Node& field = dom["fields"][field_name];
-                if (field["association"].as_string() == "vertex")
+                const std::string& assoc = field["association"].as_string();
+                if (assoc == "vertex")
                 {
-                    CONDUIT_ERROR("Map-back of vertex-associated fields currently unsupported."
-                               << " (field: " << field_name << ")");
+                    copy_field(field, sel_verts, remap_dom_ent["fields"]);
                 }
-                copy_field(field, sel_elems, remap_dom_ent["fields"]);
+                else if (assoc == "element")
+                {
+                    copy_field(field, sel_elems, remap_dom_ent["fields"]);
+                }
+                else
+                {
+                    CONDUIT_ERROR(
+                        conduit_fmt::format("Encountered field with unsupported association."
+                                            " (field: {} association: {}", field_name, assoc));
+                }
             }
             // Add target element indices to the node
-            remap_dom_ent["elem_map"].set(map_tgt_elems[idom][orig_dom]);
+            remap_dom_ent["elem_map"].set(map_tgt_elems[idom][tgt_dom]);
+            remap_dom_ent["vert_map"].set(map_tgt_verts[idom][tgt_dom]);
         }
     }
 
@@ -9916,6 +9966,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
 
         int cnk_id = 0;
         vector<index_t> tgt_elem_map(nelems * 2);
+        vector<DataArray<index_t>> tgt_vert_maps(orig_dom.second.number_of_children());
         unordered_map<string, vector<const Node*>> field_groups;
         for (const Node& src_chunk : orig_dom.second.children())
         {
@@ -9924,6 +9975,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
             {
                 field_groups[field.name()].push_back(&field);
             }
+            // Build element map
             DataArray<index_t> cnk_map = src_chunk["elem_map"].value();
             for (index_t i = 0; i < cnk_map.number_of_elements(); i++)
             {
@@ -9931,6 +9983,9 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 tgt_elem_map[2*out_idx] = cnk_id;
                 tgt_elem_map[2*out_idx + 1] = i;
             }
+            // map_vertex_field expects a collection of vertex maps for each
+            // chunk, instead of a single unified map
+            tgt_vert_maps[cnk_id] = src_chunk["vert_map"].value();
             cnk_id++;
         }
         // map_element_field expects a DataArray
@@ -9951,8 +10006,17 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
             Node& output = tgt_dom["fields"][field_name];
             output["association"] = assoc;
             output["topology"] = assoc_topo;
-
-            fields::map_element_field(src_fields, elem_map_arr, output["values"]);
+            if (assoc == "vertex")
+            {
+                const std::string& assoc_cset = tgt_dom["topologies"][assoc_topo]["coordset"].as_string();
+                const Node& assoc_coordset = tgt_dom["coordsets"][assoc_cset];
+                index_t nverts = coordset::length(assoc_coordset);
+                fields::map_vertex_field(src_fields, tgt_vert_maps, nverts, output["values"]);
+            }
+            else if (assoc == "element")
+            {
+                fields::map_element_field(src_fields, elem_map_arr, output["values"]);
+            }
         }
     }
 }

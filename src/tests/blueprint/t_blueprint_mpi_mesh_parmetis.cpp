@@ -300,13 +300,14 @@ TEST(blueprint_mpi_parmetis, braid)
         for (conduit::Node* pdom : orig_doms)
         {
             // Delete field we're mapping back from repartitioned mesh
+            pdom->child("fields").remove("braid");
             pdom->child("fields").remove("radial");
         }
     }
     // Perform a map-back of some zone-centered variables
     conduit::blueprint::mpi::mesh::partition_map_back(repart_mesh,
                                                       mesh,
-                                                      {"radial"},
+                                                      {"braid", "radial"},
                                                       MPI_COMM_WORLD);
 
     {
