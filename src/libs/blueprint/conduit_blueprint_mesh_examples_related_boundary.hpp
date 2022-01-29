@@ -81,7 +81,7 @@ namespace examples
         elements on an internal mesh boundary.
 
         The field `bndry_id` provides globally unique ids for elements
-        of the `bndry` topology.
+        of the `boundary` topology.
 
         #######
         TODO
