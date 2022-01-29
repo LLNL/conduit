@@ -64,7 +64,7 @@ namespace examples
 
         The `main` topology is a structured mesh of quads.
         The `boundary` topology is an unstructured mesh of lines,
-        the line elements correspond to the boundary faces of main`.
+        the line elements correspond to the boundary faces of `main`.
 
         The `main` and `boundary` topologies are defined using the same
         explicit coordset. Because if this we can relate the elements
