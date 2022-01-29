@@ -67,7 +67,7 @@ namespace examples
         the line elements correspond to the boundary faces of `main`.
 
         The `main` and `boundary` topologies are defined using the same
-        explicit coordset. Because if this we can relate the elements
+        explicit coordset. Because of this we can relate the elements
         between them.
 
         The field `ele_id` provides globally unique ids for elements
