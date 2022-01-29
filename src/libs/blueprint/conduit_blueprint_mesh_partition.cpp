@@ -9954,6 +9954,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // domain homes
     communicate_mapback(orig_dom_ids, packed_fields);
 
+    bool first_warn = true;
     for (const auto& orig_dom : packed_fields)
     {
         // Precompute final element count
@@ -10008,6 +10009,15 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
             output["topology"] = assoc_topo;
             if (assoc == "vertex")
             {
+                if (first_warn)
+                {
+                    CONDUIT_INFO(
+                        conduit_fmt::format(
+                            "Support for backmapping vertex-associated fields "
+                            "is only partially implemented. Values on original "
+                            "domain boundaries may be incorrect. (field: {})",
+                            field_name));
+                }
                 const std::string& assoc_cset = tgt_dom["topologies"][assoc_topo]["coordset"].as_string();
                 const Node& assoc_coordset = tgt_dom["coordsets"][assoc_cset];
                 index_t nverts = coordset::length(assoc_coordset);
@@ -10018,6 +10028,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 fields::map_element_field(src_fields, elem_map_arr, output["values"]);
             }
         }
+        first_warn = false;
     }
 }
 
