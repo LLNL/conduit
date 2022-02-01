@@ -4,6 +4,13 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - Released 2022-02-01
+
+### Fixed
+
+#### Blueprint
+- Fixed missing C++ include used by Blueprint Parmetis support.
+
 ## [0.8.1] - Released 2022-01-25
 
 ### Added
