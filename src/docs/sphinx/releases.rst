@@ -12,6 +12,26 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+
+v0.8.2
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.2/conduit-v0.8.2-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Fixed
+~~~~~
+
+* **Blueprint**
+
+ * Fixed missing C++ include used by Blueprint Parmetis support.
+
+
 v0.8.1
 ---------------------------------
 
