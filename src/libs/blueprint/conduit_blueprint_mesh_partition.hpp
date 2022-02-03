@@ -326,8 +326,6 @@ protected:
     using ChunkToVertsMap = std::unordered_map<index_t, std::vector<index_t>>;
     using DomainToChunkMap = std::unordered_map<const Node*, ChunkToVertsMap>;
 
-    virtual void init_dom_to_rank_map(const conduit::Node& /* n_mesh */) { }
-
     /**
      @brief Gets a set of global domain IDs. If the field "state/domain_id"
             exists, the IDs are used from there; otherwise sequentially-ordered
@@ -338,7 +336,7 @@ protected:
 
      @note This method is not dependent on Partitioner::initialize()
      */
-    virtual std::vector<index_t> get_global_domids(const std::vector<const conduit::Node*>& doms) const;
+    virtual std::vector<index_t> get_global_domids(const conduit::Node& n_mesh);
 
     /**
      @brief Examines the selections and counts them to determine a number of
@@ -717,16 +715,13 @@ protected:
     /**
      @brief During the field back map, ommunicates packed field data to the
             correct domain homes for the original mesh.
-     @param local_orig_domids   The original mesh domain IDs present on this
-                                processor.
      @param packed_fields   A map of original domain IDs to Conduit nodes
                             containing sliced field data belonging to that
                             domain.
      @note Reimplemented in parallel
      @note This method is not dependent on Partitioner::initialize()
      */
-    virtual void communicate_mapback(const std::vector<index_t>& local_orig_domids,
-                                     std::unordered_map<index_t, Node>& packed_fields) {}
+    virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields) {}
 
     int rank, size;
     unsigned int target;

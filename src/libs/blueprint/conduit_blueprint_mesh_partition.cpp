@@ -1761,10 +1761,9 @@ bool
 Partitioner::initialize(const conduit::Node &n_mesh,
                         const conduit::Node &options)
 {
-    init_dom_to_rank_map(n_mesh);
+    auto global_domids = get_global_domids(n_mesh);
 
     auto doms = conduit::blueprint::mesh::domains(n_mesh);
-    auto global_domids = get_global_domids(doms);
 
     // Iterate over the selections in the options and check them against the
     // domains that were passed in to make a vector of meshes and selections
@@ -1913,9 +1912,9 @@ Partitioner::initialize(const conduit::Node &n_mesh,
 
 //---------------------------------------------------------------------------
 std::vector<index_t>
-Partitioner::get_global_domids(
-  const std::vector<const conduit::Node*>& doms) const
+Partitioner::get_global_domids(const conduit::Node& n_mesh)
 {
+    const auto doms = conduit::blueprint::mesh::domains(n_mesh);
     std::vector<index_t> domids(doms.size(), -1);
     for(size_t i = 0; i < doms.size(); i++)
     {
@@ -9832,7 +9831,8 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     using namespace std;
     auto repart_doms = mesh::domains(repart_mesh);
     auto orig_doms = mesh::domains(orig_mesh);
-    auto orig_dom_ids = get_global_domids({orig_doms.begin(), orig_doms.end()});
+    // the below should also init dom_to_rank_map in mpi partitioner
+    auto orig_dom_ids = get_global_domids(orig_mesh);
 
     unordered_map<index_t, Node*> gid_to_orig_dom;
     for (size_t idom = 0; idom < orig_doms.size(); idom++)
@@ -9952,7 +9952,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
 
     // If we're multi-process, redistribute target field chunks to original
     // domain homes
-    communicate_mapback(orig_dom_ids, packed_fields);
+    communicate_mapback(packed_fields);
 
     bool first_warn = true;
     for (const auto& orig_dom : packed_fields)

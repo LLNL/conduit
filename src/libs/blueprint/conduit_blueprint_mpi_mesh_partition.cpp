@@ -79,24 +79,10 @@ ParallelPartitioner::~ParallelPartitioner()
 }
 
 //---------------------------------------------------------------------------
-void
-ParallelPartitioner::init_dom_to_rank_map(const conduit::Node &n_mesh)
-{
-    Node d2r_node;
-    conduit::blueprint::mpi::mesh
-        ::generate_domain_to_rank_map(n_mesh, d2r_node, comm);
-    int64_array d2r_data = d2r_node.as_int64_array();
-    domain_to_rank_map.resize(d2r_data.number_of_elements());
-    for (size_t idx = 0; idx < domain_to_rank_map.size(); idx++)
-    {
-        domain_to_rank_map[idx] = d2r_data[idx];
-    }
-}
-//---------------------------------------------------------------------------
 std::vector<index_t>
-ParallelPartitioner::get_global_domids(
-  const std::vector<const conduit::Node*>& doms) const
+ParallelPartitioner::get_global_domids(const conduit::Node& n_mesh)
 {
+    const auto doms = conduit::blueprint::mesh::domains(n_mesh);
     std::vector<index_t> domids(doms.size(), -1);
     bool have_domids = true;
     for(size_t i = 0; i < doms.size(); i++)
@@ -113,6 +99,7 @@ ParallelPartitioner::get_global_domids(
         }
     }
 
+    int64 prob_ndoms;
     if (!have_domids)
     {
         // We had to generate local domain IDs in the range [0, ndoms)
@@ -132,7 +119,26 @@ ParallelPartitioner::get_global_domids(
         {
             domids[idom] += offset;
         }
+        prob_ndoms = std::accumulate(ndoms_all.begin(), ndoms_all.end(), 0);
     }
+    else
+    {
+        prob_ndoms = *std::max_element(domids.begin(), domids.end());
+        MPI_Allreduce(MPI_IN_PLACE, &prob_ndoms, 1, MPI_INT64_T,
+                      MPI_MAX, comm);
+        // increment max domid to get number of domains in problem
+        prob_ndoms++;
+    }
+    // Generate domain-to-rank map here
+    domain_to_rank_map.resize(prob_ndoms, -1);
+    for (index_t domid : domids)
+    {
+        domain_to_rank_map[domid] = rank;
+    }
+    MPI_Allreduce(MPI_IN_PLACE,
+                  domain_to_rank_map.data(),
+                  domain_to_rank_map.size(),
+                  MPI_INT64_T, MPI_MAX, comm);
     return domids;
 }
 
@@ -792,26 +798,8 @@ ParallelPartitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets
 
 //-----------------------------------------------------------------------------
 void
-ParallelPartitioner::communicate_mapback(const std::vector<index_t>& local_orig_domids,
-                                         std::unordered_map<index_t, Node>& packed_fields)
+ParallelPartitioner::communicate_mapback(std::unordered_map<index_t, Node>& packed_fields)
 {
-    int64 max_domid = *std::max_element(local_orig_domids.begin(),
-                                        local_orig_domids.end());
-
-    // Get maximum global domain id of the original domains
-    MPI_Allreduce(MPI_IN_PLACE, &max_domid, 1, MPI_INT64_T, MPI_MAX, comm);
-
-    // Construct domain homes array across all ranks
-    std::vector<int64> orig_domain_homes(max_domid + 1, -1);
-    for (index_t dom_id : local_orig_domids)
-    {
-        orig_domain_homes[dom_id] = rank;
-    }
-    MPI_Allreduce(MPI_IN_PLACE,
-                  orig_domain_homes.data(),
-                  orig_domain_homes.size(),
-                  MPI_INT64_T, MPI_MAX, comm);
-
     // Get source ranks for domains homed on this processor
     std::unordered_map<index_t, std::vector<index_t>> dom_to_recv_rnk;
     {
@@ -862,7 +850,7 @@ ParallelPartitioner::communicate_mapback(const std::vector<index_t>& local_orig_
         {
             int64 dom_id = all_doms[icnk];
             int64 src_rnk = all_src_rnks[icnk];
-            if (orig_domain_homes[dom_id] == rank && src_rnk != rank)
+            if (domain_to_rank_map[dom_id] == rank && src_rnk != rank)
             {
                 dom_to_recv_rnk[dom_id].push_back(src_rnk);
             }
@@ -878,7 +866,7 @@ ParallelPartitioner::communicate_mapback(const std::vector<index_t>& local_orig_
     for (const auto& dom_field : packed_fields)
     {
         index_t tgt_domain = dom_field.first;
-        index_t tgt_rank = orig_domain_homes[tgt_domain];
+        index_t tgt_rank = domain_to_rank_map[tgt_domain];
         if (tgt_rank != rank)
         {
             const int tag = MAPBACK_TAG_BASE + tgt_domain;
@@ -926,7 +914,7 @@ ParallelPartitioner::communicate_mapback(const std::vector<index_t>& local_orig_
     for (const auto& dom_nodes : packed_fields)
     {
         index_t tgt_domain = dom_nodes.first;
-        if (orig_domain_homes[tgt_domain] != rank)
+        if (domain_to_rank_map[tgt_domain] != rank)
         {
             to_remove.push_back(tgt_domain);
         }
