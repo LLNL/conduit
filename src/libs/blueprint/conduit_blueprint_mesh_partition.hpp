@@ -15,7 +15,6 @@
 // std includes
 //-----------------------------------------------------------------------------
 #include <map>
-#include <unordered_set>
 #include <unordered_map>
 #include <memory>
 #include <set>
@@ -737,7 +736,7 @@ protected:
      @note This method is not dependent on Partitioner::initialize()
      */
     virtual void synchronize_gvids(
-        const std::vector<std::unordered_set<index_t>>& remap_to_local_doms,
+        const std::vector<std::vector<index_t>>& remap_to_local_doms,
         std::map<index_t, std::vector<index_t>>& orig_dom_gvids) {}
 
     int rank, size;

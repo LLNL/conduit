@@ -927,7 +927,7 @@ ParallelPartitioner::communicate_mapback(std::unordered_map<index_t, Node>& pack
 
 void
 ParallelPartitioner::synchronize_gvids(
-    const std::vector<std::unordered_set<index_t>>& remap_to_local_doms,
+    const std::vector<std::vector<index_t>>& remap_to_local_doms,
     std::map<index_t, std::vector<index_t>>& orig_dom_gvids)
 {
     std::vector<int64> orig_domain_nverts(domain_to_rank_map.size(), 0);

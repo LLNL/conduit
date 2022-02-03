@@ -9841,7 +9841,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     }
 
     // map repart domid -> orig domids
-    vector<unordered_set<index_t>> map_tgt_domains(repart_doms.size());
+    vector<vector<index_t>> map_tgt_domains(repart_doms.size());
     // map repart domid -> orig domid -> original elem/vertex ids
     vector<unordered_map<index_t, vector<index_t>>>
         map_tgt_elems(repart_doms.size()), map_tgt_verts(repart_doms.size());
@@ -9865,7 +9865,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
             for (const auto& slice_map : map_tgt_elems[idom])
             {
                 // Keep a set of all source domains
-                map_tgt_domains[idom].emplace(slice_map.first);
+                map_tgt_domains[idom].emplace_back(slice_map.first);
             }
         }
         else
