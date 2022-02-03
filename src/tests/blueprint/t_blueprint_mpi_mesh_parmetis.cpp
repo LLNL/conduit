@@ -266,24 +266,18 @@ TEST(blueprint_mpi_parmetis, braid)
         Node side_mesh_repart;
         Node s2dmap, d2smap, opts;
         opts["field_names"].append().set("global_element_ids");
+        opts["field_names"].append().set("global_vertex_ids");
         opts["field_names"].append().set("parmetis_result");
         opts["field_names"].append().set("braid");
         opts["field_names"].append().set("radial");
         //opts["field_names"].append().set("vel");
         opts["field_names"].append().set("is_shared_node");
 
-        Node repart_mesh_multidom;
-        if (!conduit::blueprint::mesh::is_multi_domain(repart_mesh))
-        {
-            conduit::blueprint::mesh::to_multi_domain(repart_mesh, repart_mesh_multidom);
-        }
-        else
-        {
-            repart_mesh_multidom.set_external(repart_mesh);
-        }
+        auto repart_mesh_doms = conduit::blueprint::mesh::domains(repart_mesh);
 
-        for (Node& dom : repart_mesh_multidom.children())
+        for (Node* pdom : repart_mesh_doms)
         {
+            Node& dom = *pdom;
             Node& shared_nodes = dom["fields/is_shared_node"];
             shared_nodes["association"] = "vertex";
             shared_nodes["type"] = "scalar";
@@ -302,10 +296,15 @@ TEST(blueprint_mpi_parmetis, braid)
                     shared_nodes_val[grp_vals[iv]] = double(iv) / grp_vals.number_of_elements();
                 }
             }
+
+            dom["fields"]["mapback_global_vids"].set(dom["fields/global_vertex_ids"]);
+            dom["fields"]["mapback_braid"].set(dom["fields/braid"]);
+            dom["fields"]["mapback_radial"].set(dom["fields/radial"]);
         }
 
-        for (const Node& dom : repart_mesh_multidom.children())
+        for (const Node* pdom : repart_mesh_doms)
         {
+            const Node& dom = *pdom;
             Node& side_domain = side_mesh_repart.append();
 
             Node &side_coords = side_domain["coordsets/coords"];
@@ -329,19 +328,10 @@ TEST(blueprint_mpi_parmetis, braid)
                                                       MPI_COMM_WORLD);
     }
 
-    {
-        auto orig_doms = conduit::blueprint::mesh::domains(mesh);
-        for (conduit::Node* pdom : orig_doms)
-        {
-            // Delete field we're mapping back from repartitioned mesh
-            pdom->child("fields").remove("braid");
-            pdom->child("fields").remove("radial");
-        }
-    }
     // Perform a map-back of some zone-centered variables
     conduit::blueprint::mpi::mesh::partition_map_back(repart_mesh,
                                                       mesh,
-                                                      {"braid", "radial"},
+                                                      {"mapback_braid", "mapback_radial", "mapback_global_vids"},
                                                       MPI_COMM_WORLD);
 
     {
@@ -354,9 +344,13 @@ TEST(blueprint_mpi_parmetis, braid)
         // we can't map vert assoced fields yet
         Node opts;
         opts["field_names"].append().set("global_element_ids");
+        opts["field_names"].append().set("global_vertex_ids");
+        opts["field_names"].append().set("mapback_global_vids");
         opts["field_names"].append().set("parmetis_result");
         opts["field_names"].append().set("braid");
         opts["field_names"].append().set("radial");
+        opts["field_names"].append().set("mapback_braid");
+        opts["field_names"].append().set("mapback_radial");
 
         // gen sides and save so we can look at this in visit.
         blueprint::mesh::topology::unstructured::generate_sides(mesh[0]["topologies/mesh"],
