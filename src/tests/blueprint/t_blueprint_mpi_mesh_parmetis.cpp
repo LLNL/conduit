@@ -165,6 +165,40 @@ TEST(blueprint_mpi_parmetis, braid)
                   [&] (index_t a, index_t b)
                   { return coord_array[1][a] < coord_array[1][b]; });
 
+        // Since we have the same domains for each rank, synchronize
+        // vertex-centered fields on the boundaries to avoid discontinuities.
+        for (Node& field : mesh[0]["fields"].children())
+        {
+            auto sync_edges =
+                [&prev_rank_shared, &next_rank_shared](float64_array values)
+                {
+                    for (int ibdr = 0; ibdr < prev_rank_shared.size(); ibdr++)
+                    {
+                        index_t left_edge = prev_rank_shared[ibdr];
+                        index_t right_edge = next_rank_shared[ibdr];
+                        float64 max_val = std::max(values[left_edge], values[right_edge]);
+                        values[left_edge] = max_val;
+                        values[right_edge] = max_val;
+                    }
+                };
+            if (field["association"].as_string() == "vertex")
+            {
+                if (field["values"].number_of_children() == 0)
+                {
+                    float64_array values = field["values"].value();
+                    sync_edges(values);
+                }
+                else
+                {
+                    for (Node& comp : field["values"].children())
+                    {
+                        float64_array values = comp.value();
+                        sync_edges(values);
+                    }
+                }
+            }
+        }
+
         Node& dom_aset = mesh[0]["adjsets/elem_aset"];
         dom_aset["association"] = "vertex";
         dom_aset["topology"] = "mesh";
