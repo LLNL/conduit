@@ -9885,14 +9885,14 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     {
         index_t orig_idx = dom_ent.first;
         const Node& orig_dom = *dom_ent.second;
-        vector<index_t>& orig_dom_gvids = orig_dom_gvids[orig_idx];
+        vector<index_t>& orig_gvids = orig_dom_gvids[orig_idx];
         if (orig_dom["fields"].has_child("global_vertex_ids"))
         {
             const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
-            orig_dom_gvids.resize(gvids.number_of_elements());
+            orig_gvids.resize(gvids.number_of_elements());
             for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
             {
-                orig_dom_gvids[ivert] = gvids[ivert];
+                orig_gvids[ivert] = gvids[ivert];
             }
         }
     }
