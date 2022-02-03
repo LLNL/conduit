@@ -713,7 +713,7 @@ protected:
                                     std::vector<int> &chunks_to_assemble_gids);
 
     /**
-     @brief During the field back map, ommunicates packed field data to the
+     @brief During the field back-map, communicates packed field data to the
             correct domain homes for the original mesh.
      @param packed_fields   A map of original domain IDs to Conduit nodes
                             containing sliced field data belonging to that
@@ -722,6 +722,22 @@ protected:
      @note This method is not dependent on Partitioner::initialize()
      */
     virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields) {}
+
+    /**
+     @brief During the field back-map, communicates global vertex id information
+            to any ranks that need it for constructing the map-back vertex
+            correspondence.
+     @param remap_to_local_doms For each remapped domain on this rank, the set
+                                of original domains constituting it.
+     @param orig_dom_gvids  The map of global vertex IDs for each original
+                            domain on this processor. Extra global vertex IDs
+                            will be inserted into this map.
+     @note Reimplemented in parallel
+     @note This method is not dependent on Partitioner::initialize()
+     */
+    virtual void synchronize_gvids(
+        const std::vector<std::unordered_set<index_t>>& remap_to_local_doms,
+        std::map<index_t, std::vector<index_t>>& orig_dom_gvids) {}
 
     int rank, size;
     unsigned int target;

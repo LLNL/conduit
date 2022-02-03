@@ -9874,28 +9874,67 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 "Map-back requires that mesh repartitioning is performed with "
                 "the mapping option enabled. (missing original_element_ids)");
         }
+    }
 
-        if (dom["fields"].has_child("original_vertex_ids"))
+    // TODO: this is a lot of bookkeeping to do if we aren't mapping back a
+    // vertex-centered field. we should probably check if we have vertex fields
+    // first.
+    // map of orig domid -> global vert ids
+    map<index_t, vector<index_t>> orig_dom_gvids;
+    for (const auto& dom_ent : gid_to_orig_dom)
+    {
+        index_t orig_idx = dom_ent.first;
+        const Node& orig_dom = *dom_ent.second;
+        vector<index_t>& orig_dom_gvids = orig_dom_gvids[orig_idx];
+        if (orig_dom["fields"].has_child("global_vertex_ids"))
         {
-            const Node& orig_v_node = dom["fields/original_vertex_ids/values"];
-            const index_t_accessor orig_vids = orig_v_node["ids"].value();
-            const index_t_accessor orig_doms = orig_v_node["domains"].value();
-            for (index_t ivert = 0; ivert < orig_vids.number_of_elements(); ivert++)
+            const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
+            orig_dom_gvids.resize(gvids.number_of_elements());
+            for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
             {
-                map_tgt_verts[idom][orig_doms[ivert]].push_back(orig_vids[ivert]);
-                map_sel_verts[idom][orig_doms[ivert]].push_back(ivert);
-            }
-            for (const auto& slice_map : map_tgt_verts[idom])
-            {
-                // Keep a set of all source domains
-                map_tgt_domains[idom].emplace(slice_map.first);
+                orig_dom_gvids[ivert] = gvids[ivert];
             }
         }
-        else
+    }
+
+    // communicate domain gvids to ranks that need them
+    synchronize_gvids(map_tgt_domains, orig_dom_gvids);
+
+    for (index_t repart_idx = 0; repart_idx < repart_doms.size(); repart_idx++)
+    {
+        const conduit::Node& dom = *repart_doms[repart_idx];
+
+        std::unordered_map<index_t, index_t> gvid_to_repart_vid;
+        if (dom["fields"].has_child("global_vertex_ids"))
         {
-            CONDUIT_ERROR(
-                "Map-back requires that mesh repartitioning is performed with "
-                "the mapping option enabled. (missing original_vertex_ids)");
+            const Node& global_vid_node = dom["fields/global_vertex_ids/values"];
+            const index_t_accessor gvids = global_vid_node.value();
+            for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
+            {
+                gvid_to_repart_vid[gvids[ivert]] = ivert;
+            }
+        }
+        for (const index_t orig_idx : map_tgt_domains[repart_idx])
+        {
+            if (orig_dom_gvids.count(orig_idx) == 0)
+            {
+                CONDUIT_ERROR(
+                    conduit_fmt::format("No vertex gid data (rank: {}, domid: {})",
+                                        rank, orig_idx));
+            }
+            // Get current slice of orig dom
+            auto& orig_gvids = orig_dom_gvids[orig_idx];
+            // Loop over all vertices in the original domain
+            for (size_t ivert = 0; ivert < orig_gvids.size(); ivert++)
+            {
+                index_t global_vid = orig_gvids[ivert];
+                if (gvid_to_repart_vid.count(global_vid) != 0)
+                {
+                    index_t repart_vid = gvid_to_repart_vid.find(global_vid)->second;
+                    map_tgt_verts[repart_idx][orig_idx].push_back(ivert);
+                    map_sel_verts[repart_idx][orig_idx].push_back(repart_vid);
+                }
+            }
         }
     }
 
@@ -10009,15 +10048,6 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
             output["topology"] = assoc_topo;
             if (assoc == "vertex")
             {
-                if (first_warn)
-                {
-                    CONDUIT_INFO(
-                        conduit_fmt::format(
-                            "Support for backmapping vertex-associated fields "
-                            "is only partially implemented. Values on original "
-                            "domain boundaries may be incorrect. (field: {})",
-                            field_name));
-                }
                 const std::string& assoc_cset = tgt_dom["topologies"][assoc_topo]["coordset"].as_string();
                 const Node& assoc_coordset = tgt_dom["coordsets"][assoc_cset];
                 index_t nverts = coordset::length(assoc_coordset);
