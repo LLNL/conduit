@@ -119,6 +119,9 @@ protected:
 
     virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields) override;
 
+    virtual void synchronize_gvids(const std::vector<std::unordered_set<index_t>>& remap_to_local_doms,
+                                   std::map<index_t, std::vector<index_t>>& orig_dom_gvids) override;
+
 private:
     /**
      @brief Creates an MPI structure datatype so we can Allgatherv 3 things

@@ -925,6 +925,119 @@ ParallelPartitioner::communicate_mapback(std::unordered_map<index_t, Node>& pack
     }
 }
 
+void
+ParallelPartitioner::synchronize_gvids(
+    const std::vector<std::unordered_set<index_t>>& remap_to_local_doms,
+    std::map<index_t, std::vector<index_t>>& orig_dom_gvids)
+{
+    std::vector<int64> orig_domain_nverts(domain_to_rank_map.size(), 0);
+    for (const auto& orig_dom_verts : orig_dom_gvids)
+    {
+        index_t domid = orig_dom_verts.first;
+        orig_domain_nverts[domid] = orig_dom_verts.second.size();
+    }
+    // Get the number of verts in each domain
+    MPI_Allreduce(MPI_IN_PLACE,
+                  orig_domain_nverts.data(),
+                  orig_domain_nverts.size(),
+                  MPI_INT64_T, MPI_MAX, comm);
+
+    // First, figure out the unique domains that we need to receive on this rank
+    std::unordered_set<index_t> orig_doms_required;
+    for (const auto& orig_domset : remap_to_local_doms)
+    {
+        for (index_t domid : orig_domset)
+        {
+            if (domain_to_rank_map[domid] != rank)
+            {
+                orig_doms_required.insert(domid);
+            }
+        }
+    }
+
+    MPI_Datatype index_mpi_dtype
+        = relay::mpi::conduit_dtype_to_mpi_dtype(conduit::DataType::index_t());
+    std::vector<std::pair<int, index_t>> domain_sends;
+    // Determine ranks that we need to send domains to
+    {
+        std::vector<int> counts(size, 0);
+        counts[rank] = orig_doms_required.size();
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                      counts.data(), 1, MPI_INT,
+                      comm);
+
+        std::vector<int> offsets(size, 0);
+        for (int irnk = 1; irnk < size; irnk++)
+        {
+            offsets[irnk] = offsets[irnk-1] + counts[irnk-1];
+        }
+        int64 total_counts = offsets[size-1] + counts[size-1];
+        std::vector<int64> all_doms(total_counts);
+        std::copy(orig_doms_required.begin(), orig_doms_required.end(),
+                  all_doms.begin() + offsets[rank]);
+        MPI_Allgatherv(MPI_IN_PLACE,
+                       0,
+                       MPI_DATATYPE_NULL,
+                       all_doms.data(),
+                       counts.data(),
+                       offsets.data(),
+                       index_mpi_dtype, comm);
+        // Add domains which other ranks will need to receive from us
+        for (int irnk = 0; irnk < size; irnk++)
+        {
+            for (int ireq = 0; ireq < counts[irnk]; ireq++)
+            {
+                size_t realIdx = offsets[irnk] + ireq;
+                index_t domid = all_doms[realIdx];
+                if (domain_to_rank_map[domid] == rank)
+                {
+                    domain_sends.emplace_back(irnk, domid);
+                }
+            }
+        }
+    }
+
+    std::vector<MPI_Request> pending_reqs(orig_doms_required.size()
+                                          + domain_sends.size());
+    const int GVID_TAG = 227000;
+    int req_id = 0;
+    // Start any receives of required domains
+    for (index_t domid : orig_doms_required)
+    {
+        int src_rnk = domain_to_rank_map[domid];
+        CONDUIT_ASSERT((src_rnk != rank),
+            conduit_fmt::format("Rank {}: Unnecessary recv of original domain {}",
+                                rank, domid));
+        orig_dom_gvids[domid].resize(orig_domain_nverts[domid]);
+        MPI_Irecv(orig_dom_gvids[domid].data(),
+                  orig_dom_gvids[domid].size(),
+                  index_mpi_dtype,
+                  src_rnk,
+                  GVID_TAG + domid,
+                  comm,
+                  &pending_reqs[req_id]);
+        req_id++;
+    }
+    for (const auto& incoming_req : domain_sends)
+    {
+        int dst_rank = incoming_req.first;
+        int64 domid = incoming_req.second;
+        CONDUIT_ASSERT((domain_to_rank_map[domid] == rank),
+            conduit_fmt::format("Rank {}: domain id {} doesn't exist on this rank",
+                                rank, domid));
+        MPI_Isend(orig_dom_gvids[domid].data(),
+                  orig_dom_gvids[domid].size(),
+                  index_mpi_dtype,
+                  dst_rank,
+                  GVID_TAG + domid,
+                  comm,
+                  &pending_reqs[req_id]);
+        req_id++;
+    }
+
+    MPI_Waitall(pending_reqs.size(), pending_reqs.data(), MPI_STATUSES_IGNORE);
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mpi::mesh --

@@ -15,6 +15,7 @@
 // std includes
 //-----------------------------------------------------------------------------
 #include <map>
+#include <unordered_set>
 #include <unordered_map>
 #include <memory>
 #include <set>
