@@ -99,7 +99,7 @@ ParallelPartitioner::get_global_domids(const conduit::Node& n_mesh)
         }
     }
 
-    int64 prob_ndoms;
+    int64 prob_ndoms = 0;
     if (!have_domids)
     {
         // We had to generate local domain IDs in the range [0, ndoms)
@@ -123,7 +123,10 @@ ParallelPartitioner::get_global_domids(const conduit::Node& n_mesh)
     }
     else
     {
-        prob_ndoms = *std::max_element(domids.begin(), domids.end());
+        if (domids.size() > 0)
+        {
+            prob_ndoms = *std::max_element(domids.begin(), domids.end());
+        }
         MPI_Allreduce(MPI_IN_PLACE, &prob_ndoms, 1, MPI_INT64_T,
                       MPI_MAX, comm);
         // increment max domid to get number of domains in problem
