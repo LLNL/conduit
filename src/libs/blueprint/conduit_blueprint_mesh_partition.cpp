@@ -9845,6 +9845,26 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     {
         field_names.emplace_back(field.as_string());
     }
+    bool has_vert_fields = false;
+    if (!repart_doms.empty())
+    {
+        const conduit::Node& dom = *repart_doms[0];
+        // check domain fields from the first domain we encounter
+        for (const Node& field : dom["fields"].children())
+        {
+            if (std::find(field_names.begin(),
+                          field_names.end(),
+                          field.name()) == field_names.end())
+            {
+                continue;
+            }
+            if (field["association"].as_string() == "vertex")
+            {
+                has_vert_fields = true;
+            }
+        }
+    }
+
     // map repart domid -> orig domids
     vector<vector<index_t>> map_tgt_domains(repart_doms.size());
     // map repart domid -> orig domid -> original elem/vertex ids
@@ -9884,60 +9904,69 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // TODO: this is a lot of bookkeeping to do if we aren't mapping back a
     // vertex-centered field. we should probably check if we have vertex fields
     // first.
-    // map of orig domid -> global vert ids
-    map<index_t, vector<index_t>> orig_dom_gvids;
-    for (const auto& dom_ent : gid_to_orig_dom)
+    if (has_vert_fields)
     {
-        index_t orig_idx = dom_ent.first;
-        const Node& orig_dom = *dom_ent.second;
-        vector<index_t>& orig_gvids = orig_dom_gvids[orig_idx];
-        if (orig_dom["fields"].has_child("global_vertex_ids"))
+        // map of orig domid -> global vert ids
+        map<index_t, vector<index_t>> orig_dom_gvids;
+        for (const auto& dom_ent : gid_to_orig_dom)
         {
-            const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
-            orig_gvids.resize(gvids.number_of_elements());
-            for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
+            index_t orig_idx = dom_ent.first;
+            const Node& orig_dom = *dom_ent.second;
+            vector<index_t>& orig_gvids = orig_dom_gvids[orig_idx];
+            if (orig_dom["fields"].has_child("global_vertex_ids"))
             {
-                orig_gvids[ivert] = gvids[ivert];
+                const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
+                orig_gvids.resize(gvids.number_of_elements());
+                for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
+                {
+                    orig_gvids[ivert] = gvids[ivert];
+                }
             }
-        }
-    }
-
-    // communicate domain gvids to ranks that need them
-    synchronize_gvids(map_tgt_domains, orig_dom_gvids);
-
-    for (index_t repart_idx = 0; repart_idx < repart_doms.size(); repart_idx++)
-    {
-        const conduit::Node& dom = *repart_doms[repart_idx];
-
-        std::unordered_map<index_t, index_t> gvid_to_repart_vid;
-        if (dom["fields"].has_child("global_vertex_ids"))
-        {
-            const Node& global_vid_node = dom["fields/global_vertex_ids/values"];
-            const index_t_accessor gvids = global_vid_node.value();
-            for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
-            {
-                gvid_to_repart_vid[gvids[ivert]] = ivert;
-            }
-        }
-        for (const index_t orig_idx : map_tgt_domains[repart_idx])
-        {
-            if (orig_dom_gvids.count(orig_idx) == 0)
+            else
             {
                 CONDUIT_ERROR(
-                    conduit_fmt::format("No vertex gid data (rank: {}, domid: {})",
-                                        rank, orig_idx));
+                    "Map-back of a vertex-centered field requires that a global "
+                    "vertex numbering is generated. (missing global_vertex_ids)");
             }
-            // Get current slice of orig dom
-            auto& orig_gvids = orig_dom_gvids[orig_idx];
-            // Loop over all vertices in the original domain
-            for (size_t ivert = 0; ivert < orig_gvids.size(); ivert++)
+        }
+
+        // communicate domain gvids to ranks that need them
+        synchronize_gvids(map_tgt_domains, orig_dom_gvids);
+
+        for (index_t repart_idx = 0; repart_idx < repart_doms.size(); repart_idx++)
+        {
+            const conduit::Node& dom = *repart_doms[repart_idx];
+
+            std::unordered_map<index_t, index_t> gvid_to_repart_vid;
+            if (dom["fields"].has_child("global_vertex_ids"))
             {
-                index_t global_vid = orig_gvids[ivert];
-                if (gvid_to_repart_vid.count(global_vid) != 0)
+                const Node& global_vid_node = dom["fields/global_vertex_ids/values"];
+                const index_t_accessor gvids = global_vid_node.value();
+                for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
                 {
-                    index_t repart_vid = gvid_to_repart_vid.find(global_vid)->second;
-                    map_tgt_verts[repart_idx][orig_idx].push_back(ivert);
-                    map_sel_verts[repart_idx][orig_idx].push_back(repart_vid);
+                    gvid_to_repart_vid[gvids[ivert]] = ivert;
+                }
+            }
+            for (const index_t orig_idx : map_tgt_domains[repart_idx])
+            {
+                if (orig_dom_gvids.count(orig_idx) == 0)
+                {
+                    CONDUIT_ERROR(
+                        conduit_fmt::format("No vertex gid data (rank: {}, domid: {})",
+                                            rank, orig_idx));
+                }
+                // Get current slice of orig dom
+                auto& orig_gvids = orig_dom_gvids[orig_idx];
+                // Loop over all vertices in the original domain
+                for (size_t ivert = 0; ivert < orig_gvids.size(); ivert++)
+                {
+                    index_t global_vid = orig_gvids[ivert];
+                    if (gvid_to_repart_vid.count(global_vid) != 0)
+                    {
+                        index_t repart_vid = gvid_to_repart_vid.find(global_vid)->second;
+                        map_tgt_verts[repart_idx][orig_idx].push_back(ivert);
+                        map_sel_verts[repart_idx][orig_idx].push_back(repart_vid);
+                    }
                 }
             }
         }
