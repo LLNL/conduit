@@ -318,8 +318,8 @@ public:
            Partitioner::initialize().
      */
     void map_back_fields(const conduit::Node& repart_mesh,
-                         Node& orig_mesh,
-                         const std::vector<std::string>& field);
+                         const conduit::Node& options,
+                         Node& orig_mesh);
 
 protected:
 

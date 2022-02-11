@@ -9825,8 +9825,8 @@ Partitioner::combine(int domain,
 //-------------------------------------------------------------------------
 void
 Partitioner::map_back_fields(const conduit::Node& repart_mesh,
-                             Node& orig_mesh,
-                             const std::vector<std::string>& field_names)
+                             const conduit::Node& options,
+                             Node& orig_mesh)
 {
     using namespace std;
     auto repart_doms = mesh::domains(repart_mesh);
@@ -9840,6 +9840,11 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         gid_to_orig_dom[orig_dom_ids[idom]] = orig_doms[idom];
     }
 
+    vector<string> field_names;
+    for (const Node& field : options["fields"].children())
+    {
+        field_names.emplace_back(field.as_string());
+    }
     // map repart domid -> orig domids
     vector<vector<index_t>> map_tgt_domains(repart_doms.size());
     // map repart domid -> orig domid -> original elem/vertex ids

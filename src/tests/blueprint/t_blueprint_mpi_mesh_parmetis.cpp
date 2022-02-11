@@ -328,10 +328,15 @@ TEST(blueprint_mpi_parmetis, braid)
                                                       MPI_COMM_WORLD);
     }
 
+    Node mapback_opts;
+    mapback_opts["fields"].append().set("mapback_braid");
+    mapback_opts["fields"].append().set("mapback_radial");
+    mapback_opts["fields"].append().set("mapback_global_vids");
+
     // Perform a map-back of some zone-centered variables
     conduit::blueprint::mpi::mesh::partition_map_back(repart_mesh,
+                                                      mapback_opts,
                                                       mesh,
-                                                      {"mapback_braid", "mapback_radial", "mapback_global_vids"},
                                                       MPI_COMM_WORLD);
 
     {
