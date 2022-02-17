@@ -144,7 +144,7 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
 
        Figure of ``spherical`` coordinate conventions (courtesy of `Wikipedia <https://en.wikipedia.org/wiki/Spherical_coordinate_system>`_)
 
-Toplogies
+Topologies
 ++++++++++++++++++++
 The next entry required to describe a computational mesh is its topology. To conform to the protocol, each entry under *topologies* must be an *Object* that contains one of the topology descriptions outlined below.
 
