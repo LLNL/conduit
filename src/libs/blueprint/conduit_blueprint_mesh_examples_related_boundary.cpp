@@ -47,6 +47,12 @@ void related_boundary(index_t base_grid_ele_i,
                       index_t base_grid_ele_j,
                       Node &mesh)
 {
+    // --------------------
+    // --------------------
+    // domain 0
+    // --------------------
+    // --------------------
+
     mesh["domain0/coordsets/coords/type"] = "explicit";
     index_t num_coords = (base_grid_ele_i +1) * (base_grid_ele_j+1);
     mesh["domain0/coordsets/coords/values/x"].set( DataType::float64(num_coords) );
@@ -189,8 +195,53 @@ void related_boundary(index_t base_grid_ele_i,
         bndry_id_global+=1;
     }
 
+    // boundary to main relationship
+    // each boundary element is related to one of the main elements
+    mesh["domain0/fields/bndry_to_main/association"] = "element";
+    mesh["domain0/fields/bndry_to_main/topology"] = "boundary";
+    mesh["domain0/fields/bndry_to_main/values"].set( DataType::int64(num_edges) );
 
-    // domain 1:
+    int64_array bndry_to_main_vals = mesh["domain0/fields/bndry_to_main/values"].value();
+    
+    
+    // bottom
+    idx = 0;
+    for(int i=0;i<base_grid_ele_i;i++)
+    {
+        bndry_to_main_vals[idx] =  i;
+        idx+=1;
+    }
+
+    // top
+    for(int i=0;i<base_grid_ele_i;i++)
+    {
+        bndry_to_main_vals[idx] =  i +  (base_grid_ele_i) * (base_grid_ele_j-1);
+        idx+=1;
+    }
+
+    // left
+    for(int j=0;j<base_grid_ele_j;j++)
+    {
+        bndry_to_main_vals[idx] =  j * (base_grid_ele_i);
+        idx+=1;
+    }
+
+    // right
+    for(int j=0;j<base_grid_ele_j;j++)
+    {
+        bndry_to_main_vals[idx] =  (j+1) * (base_grid_ele_i) -1;;
+        idx+=1;
+    }
+
+
+    // --------------------
+    // --------------------
+    // domain 1
+    // --------------------
+    // --------------------
+
+    index_t domain1_ele_id_offset = main_id_global;
+
     mesh["domain1/coordsets/coords/type"] = "explicit";
     num_coords = (base_grid_ele_i +1) * (base_grid_ele_j+1);
     mesh["domain1/coordsets/coords/values/x"].set( DataType::float64(num_coords) );
@@ -327,7 +378,50 @@ void related_boundary(index_t base_grid_ele_i,
         bndry_id_global+=1;
     }
 
-    // domain 1
+    // boundary to main relationship
+    // each boundary element is related to one of the main elements
+    mesh["domain1/fields/bndry_to_main/association"] = "element";
+    mesh["domain1/fields/bndry_to_main/topology"] = "boundary";
+    mesh["domain1/fields/bndry_to_main/values"].set( DataType::int64(num_edges) );
+
+    bndry_to_main_vals = mesh["domain1/fields/bndry_to_main/values"].value();
+
+    // bottom
+    idx = 0;
+    for(int i=0;i<base_grid_ele_i;i++)
+    {
+        bndry_to_main_vals[idx] = domain1_ele_id_offset + i;
+        idx+=1;
+    }
+
+    // top
+    for(int i=0;i<base_grid_ele_i;i++)
+    {
+        bndry_to_main_vals[idx] =  domain1_ele_id_offset + i +  (base_grid_ele_i) * (base_grid_ele_j-1);
+        idx+=1;
+    }
+
+    // left
+    for(int j=0;j<base_grid_ele_j;j++)
+    {
+        bndry_to_main_vals[idx] =  domain1_ele_id_offset + j * (base_grid_ele_i);
+        idx+=1;
+    }
+
+    // right
+    for(int j=0;j<base_grid_ele_j;j++)
+    {
+        bndry_to_main_vals[idx] = domain1_ele_id_offset+  (j+1) * (base_grid_ele_i) -1;;
+        idx+=1;
+    }
+
+    // --------------------
+    // --------------------
+    // domain 2
+    // --------------------
+    // --------------------
+
+    index_t domain2_ele_id_offset = main_id_global;
     mesh["domain2/coordsets/coords/type"] = "explicit";
     num_coords = (base_grid_ele_i +1) * ((base_grid_ele_j *2 )+1);
     mesh["domain2/coordsets/coords/values/x"].set( DataType::float64(num_coords) );
@@ -461,6 +555,42 @@ void related_boundary(index_t base_grid_ele_i,
     {
         bndry_id_vals[i] =  bndry_id_global;
         bndry_id_global+=1;
+    }
+    
+    // boundary to main relationship
+    // each boundary element is related to one of the main elements
+    mesh["domain2/fields/bndry_to_main/association"] = "element";
+    mesh["domain2/fields/bndry_to_main/topology"] = "boundary";
+    mesh["domain2/fields/bndry_to_main/values"].set( DataType::int64(num_edges) );
+
+    bndry_to_main_vals = mesh["domain2/fields/bndry_to_main/values"].value();
+    
+    idx = 0;
+    for(index_t i = 0; i < base_grid_ele_i; i++)
+    {   
+        bndry_to_main_vals[idx]   = domain2_ele_id_offset + i;
+        idx++;
+    }
+    
+    // top
+    for(index_t i = 0; i < base_grid_ele_i; i++)
+    {   
+        bndry_to_main_vals[idx]   = domain2_ele_id_offset + i + (base_grid_ele_i-1) * (base_grid_ele_j)*2;
+        idx++;
+    }
+    
+    // left
+    for(index_t j = 0; j < base_grid_ele_j * 2; j++)
+    {   
+        bndry_to_main_vals[idx]   = domain2_ele_id_offset + j * (base_grid_ele_i);
+        idx++;
+    }
+    
+    // right
+    for(index_t j = 0; j < base_grid_ele_j * 2; j++)
+    {   
+        bndry_to_main_vals[idx]   = domain2_ele_id_offset + (j+1) * (base_grid_ele_i)-1;
+        idx++;
     }
 }
 

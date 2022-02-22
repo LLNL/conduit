@@ -808,6 +808,19 @@ TEST(conduit_blueprint_mesh_examples, related_boundary)
     conduit::relay::io::blueprint::save_mesh(mesh,
                                              "related_boundary_base_i_10_j_5",
                                              "hdf5");
+
+    mesh.reset();
+    base_grid_ele_i = 9;
+    base_grid_ele_j = 7;
+
+    conduit::blueprint::mesh::examples::related_boundary(base_grid_ele_i,
+                                                         base_grid_ele_j,
+                                                         mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,
+                                             "related_boundary_base_i_9_j_7",
+                                             "hdf5");
+
 }
 
 //-----------------------------------------------------------------------------
