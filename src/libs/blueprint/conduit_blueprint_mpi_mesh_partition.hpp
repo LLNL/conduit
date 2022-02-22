@@ -62,7 +62,7 @@ public:
 
 protected:
 
-    virtual void init_dom_to_rank_map(const conduit::Node& n_mesh);
+    virtual std::vector<index_t> get_global_domids(const conduit::Node& n_mesh) override;
 
     virtual long get_total_selections() const override;
 
@@ -116,6 +116,11 @@ protected:
                                        const DomainToChunkMap& chunks,
                                        const std::map<index_t, const Node*>& domain_map,
                                        std::vector<Node>& adjset_chunk_maps);
+
+    virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields) override;
+
+    virtual void synchronize_gvids(const std::vector<std::vector<index_t>>& remap_to_local_doms,
+                                   std::map<index_t, std::vector<index_t>>& orig_dom_gvids) override;
 
 private:
     /**

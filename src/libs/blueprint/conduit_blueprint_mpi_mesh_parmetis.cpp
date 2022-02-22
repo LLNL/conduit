@@ -257,7 +257,13 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
                                                         : min_domain);
                 }
             }
-            local_num_verts_pri[local_dom_idx] -= shared_nodes.size();
+            // Count the number of nodes that are shared and non-primary
+            uint64 n_shared_nodes = 0;
+            for (const auto& shared_node_ent : shared_nodes)
+            {
+                if (shared_node_ent.second != -1) { n_shared_nodes++; }
+            }
+            local_num_verts_pri[local_dom_idx] -= n_shared_nodes;
         }
         // Calculate offsets based on primary vertices in each domain
         local_vert_offsets[local_dom_idx] = local_total_num_verts;
