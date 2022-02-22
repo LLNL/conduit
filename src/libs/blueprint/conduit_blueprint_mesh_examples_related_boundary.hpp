@@ -64,10 +64,10 @@ namespace examples
 
         The `main` topology is a structured mesh of quads.
         The `boundary` topology is an unstructured mesh of lines,
-        the line elements correspond to the boundary faces of main`.
+        the line elements correspond to the boundary faces of `main`.
 
         The `main` and `boundary` topologies are defined using the same
-        explicit coordset. Because if this we can relate the elements
+        explicit coordset. Because of this we can relate the elements
         between them.
 
         The field `ele_id` provides globally unique ids for elements
@@ -81,7 +81,7 @@ namespace examples
         elements on an internal mesh boundary.
 
         The field `bndry_id` provides globally unique ids for elements
-        of the `bndry` topology.
+        of the `boundary` topology.
 
         #######
         TODO
