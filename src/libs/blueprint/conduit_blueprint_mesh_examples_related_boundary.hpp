@@ -70,7 +70,10 @@ namespace examples
         explicit coordset. Because of this we can relate the elements
         between them.
 
-        The field `ele_id` provides globally unique ids for elements
+        The field `ele_local_id` provides local ids (unique within a domain)
+        for elements of the `main` topology.
+
+        The field `ele_global_id` provides globally unique ids for elements
         of the `main` topology.
 
         The field `domain_id` provides the domain number for elements
@@ -80,15 +83,24 @@ namespace examples
         as 1 for elements on the external mesh boundary, and 0 for
         elements on an internal mesh boundary.
 
-        The field `bndry_id` provides globally unique ids for elements
+        The field `bndry_local_id` provides local ids (unique within a domain)
+        for elements of the `boundary` topology.
+
+        The field `bndry_global_id` provides globally unique ids for elements
         of the `boundary` topology.
+
+        The field `bndry_to_main_local` provides a map from each `boundary`
+        topology element to the local element id of the `main` topology it
+        is connected to.
+
+        The field `bndry_to_main_global` provides a map from each `boundary`
+        topology element to the global element id of the `main` topology it
+        is connected to.
 
         #######
         TODO
         #######
-        - Add field `bndry_to_main` shows the relationship between the 
-          topologies.
-        - Add an adj set?
+        - Add an adj set
     */
     void CONDUIT_BLUEPRINT_API related_boundary(conduit::index_t base_ele_dims_i,
                                                 conduit::index_t base_ele_dims_j,
