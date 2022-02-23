@@ -97,10 +97,9 @@ namespace examples
         topology element to the global element id of the `main` topology it
         is connected to.
 
-        #######
-        TODO
-        #######
-        - Add an adj set
+        It also provides an adjacency set `main_adjset` that describes
+        how the domains of the `main` topology abut.
+
     */
     void CONDUIT_BLUEPRINT_API related_boundary(conduit::index_t base_ele_dims_i,
                                                 conduit::index_t base_ele_dims_j,

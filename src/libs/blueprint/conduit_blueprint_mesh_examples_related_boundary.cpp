@@ -342,7 +342,6 @@ void related_boundary(index_t base_grid_ele_i,
     mesh["domain1/fields/ele_global_id/topology"] = "main";
     mesh["domain1/fields/ele_global_id/values"].set( DataType::float64(num_eles) );
 
-
     mesh["domain1/fields/domain_id/association"] = "element";
     mesh["domain1/fields/domain_id/topology"] = "main";
     mesh["domain1/fields/domain_id/values"].set( DataType::float64(num_eles) );
@@ -667,6 +666,104 @@ void related_boundary(index_t base_grid_ele_i,
         bndry_to_main_global_vals[idx] = domain2_ele_id_offset + bndry_to_main_local_vals[idx];
         idx++;
     }
+
+    // add an adjset for the main mesh
+
+    //
+    // domain 0
+    //
+    mesh["domain0/adjsets/main_adjset/association"] = "vertex";
+    mesh["domain0/adjsets/main_adjset/topology"] = "main";
+    Node &d0_adj_groups = mesh["domain0/adjsets/main_adjset/groups"];
+    
+    d0_adj_groups["group_0_1_2/neighbors"].set({1,2});
+    // one point is shared between all three
+    d0_adj_groups["group_0_1_2/values"] = base_grid_ele_i;
+
+    // domain 0's entire bottom face (sans center point) is shared
+    // by domains 0 and 1
+    d0_adj_groups["group_0_1/neighbors"].set({1});
+    d0_adj_groups["group_0_1/values"].set(DataType::int64(base_grid_ele_i));
+    int64_array adj_vals = d0_adj_groups["group_0_1/values"].value();
+    for(int i=0;i<base_grid_ele_i;i++)
+    {
+        adj_vals[i] = i;
+    }
+
+    // the entire right face (sans center point) is shared
+    // by domains 0 and 2
+    d0_adj_groups["group_0_2/neighbors"].set({2});
+    d0_adj_groups["group_0_2/values"].set(DataType::int64(base_grid_ele_j));
+    adj_vals = d0_adj_groups["group_0_2/values"].value();
+    for(int j=0;j<base_grid_ele_j;j++)
+    {
+        adj_vals[j] = (j+2) * (base_grid_ele_i+1) -1;
+    }
+
+    //
+    // domain 1
+    //
+    mesh["domain1/adjsets/main_adjset/association"] = "vertex";
+    mesh["domain1/adjsets/main_adjset/topology"] = "main";
+    Node &d1_adj_groups = mesh["domain1/adjsets/main_adjset/groups"];
+
+    d1_adj_groups["group_0_1_2/neighbors"].set({1,2});
+    // one point is shared between all three
+    d1_adj_groups["group_0_1_2/values"] = (base_grid_ele_i+1) * (base_grid_ele_j+1)-1;
+
+    // domain 1's entire top face (sans center point) is shared
+    // by domains 0 and 1
+    d1_adj_groups["group_0_1/neighbors"].set({0});
+    d1_adj_groups["group_0_1/values"].set(DataType::int64(base_grid_ele_i));
+    adj_vals = d1_adj_groups["group_0_1/values"].value();
+    for(int i=0;i<base_grid_ele_i;i++)
+    {
+        adj_vals[i] = i + (base_grid_ele_i +1) * base_grid_ele_j;
+    }
+
+    // domain 1's entire right face (sans center point) is shared
+    // by domains 1 and 2
+    std::cout << base_grid_ele_j << std::endl;
+    d1_adj_groups["group_1_2/neighbors"].set({2});
+    d1_adj_groups["group_1_2/values"].set(DataType::int64(base_grid_ele_j));
+    adj_vals = d1_adj_groups["group_1_2/values"].value();
+    for(int j=0;j<base_grid_ele_j;j++)
+    {
+        adj_vals[j] = (j+1) * (base_grid_ele_i+1) -1;
+    }
+
+    //
+    // domain 2
+    //
+    mesh["domain2/adjsets/main_adjset/association"] = "vertex";
+    mesh["domain2/adjsets/main_adjset/topology"] = "main";
+    Node &d2_adj_groups = mesh["domain2/adjsets/main_adjset/groups"];
+
+    d2_adj_groups["group_0_1_2/neighbors"].set({0,1});
+    // one point is shared between all three
+    d2_adj_groups["group_0_1_2/values"] = (base_grid_ele_j) * (base_grid_ele_i+1);
+
+    // 1/2 of domain 2's left face (sans center point) is shared
+    // by domains 0 and 2
+    d2_adj_groups["group_0_2/neighbors"].set({0});
+    d2_adj_groups["group_0_2/values"].set(DataType::int64(base_grid_ele_j));
+    adj_vals = d2_adj_groups["group_0_2/values"].value();
+    for(int j=0;j<base_grid_ele_j;j++)
+    {
+        adj_vals[j] = (j) * (base_grid_ele_i+1);
+    }
+
+    // 1/2 of domain 2's left face (sans center point) is shared
+    // by domains 1 and 2
+    std::cout << base_grid_ele_j << std::endl;
+    d2_adj_groups["group_1_2/neighbors"].set({1});
+    d2_adj_groups["group_1_2/values"].set(DataType::int64(base_grid_ele_j));
+    adj_vals = d2_adj_groups["group_1_2/values"].value();
+    for(int j=0;j<base_grid_ele_j;j++)
+    {
+        adj_vals[j] = (base_grid_ele_j + j+1) * (base_grid_ele_i+1);
+    }
+
 }
 
 
