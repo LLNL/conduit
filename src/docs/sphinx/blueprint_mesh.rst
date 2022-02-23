@@ -806,7 +806,7 @@ Max-Share Adjacency Sets
 A **max-share** adjacency set is one with groups that "maximally share" index data.
 In other words, these adjacency sets present index data so that it isn't duplicated between groups.
 
-The following diagram illustrates a simple **pairwise** material set example:
+The following diagram illustrates a simple **max-share** material set example:
 
   .. code:: yaml
 
