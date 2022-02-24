@@ -350,6 +350,9 @@ stages:
            # silo
            if [ $ENABLE_SILO  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+silo"; fi
            if [ $ENABLE_SILO  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~silo"; fi
+           # parmetis
+           if [ $ENABLE_PARMETIS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+parmetis"; fi
+           if [ $ENABLE_PARMETIS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~parmetis"; fi
            # adios
            if [ $ENABLE_ADIOS  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios~zfp"; fi
            if [ $ENABLE_ADIOS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi

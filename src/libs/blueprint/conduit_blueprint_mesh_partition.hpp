@@ -311,12 +311,32 @@ public:
                  const std::vector<index_t> &chunk_ids,
                  Node &output);
 
+    /**
+     @brief Maps back fields from a repartitioned mesho onto the original mesh.
+
+     @note This method is a standalone method and does not require calling
+           Partitioner::initialize().
+     */
+    void map_back_fields(const conduit::Node& repart_mesh,
+                         const conduit::Node& options,
+                         Node& orig_mesh);
+
 protected:
 
     using ChunkToVertsMap = std::unordered_map<index_t, std::vector<index_t>>;
     using DomainToChunkMap = std::unordered_map<const Node*, ChunkToVertsMap>;
 
-    virtual void init_dom_to_rank_map(const conduit::Node& /* n_mesh */) { }
+    /**
+     @brief Gets a set of global domain IDs. If the field "state/domain_id"
+            exists, the IDs are used from there; otherwise sequentially-ordered
+            domain IDs are generated that are unique to each domain on each
+            processor.
+     @param doms The array of domain pointers local to this processor.
+     @return The corresponding global domain IDs for each domain.
+
+     @note This method is not dependent on Partitioner::initialize()
+     */
+    virtual std::vector<index_t> get_global_domids(const conduit::Node& n_mesh);
 
     /**
      @brief Examines the selections and counts them to determine a number of
@@ -691,6 +711,33 @@ protected:
                                     std::vector<Chunk> &chunks_to_assemble,
                                     std::vector<int> &chunks_to_assemble_domains,
                                     std::vector<int> &chunks_to_assemble_gids);
+
+    /**
+     @brief During the field back-map, communicates packed field data to the
+            correct domain homes for the original mesh.
+     @param packed_fields   A map of original domain IDs to Conduit nodes
+                            containing sliced field data belonging to that
+                            domain.
+     @note Reimplemented in parallel
+     @note This method is not dependent on Partitioner::initialize()
+     */
+    virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields) {}
+
+    /**
+     @brief During the field back-map, communicates global vertex id information
+            to any ranks that need it for constructing the map-back vertex
+            correspondence.
+     @param remap_to_local_doms For each remapped domain on this rank, the set
+                                of original domains constituting it.
+     @param orig_dom_gvids  The map of global vertex IDs for each original
+                            domain on this processor. Extra global vertex IDs
+                            will be inserted into this map.
+     @note Reimplemented in parallel
+     @note This method is not dependent on Partitioner::initialize()
+     */
+    virtual void synchronize_gvids(
+        const std::vector<std::vector<index_t>>& remap_to_local_doms,
+        std::map<index_t, std::vector<index_t>>& orig_dom_gvids) {}
 
     int rank, size;
     unsigned int target;

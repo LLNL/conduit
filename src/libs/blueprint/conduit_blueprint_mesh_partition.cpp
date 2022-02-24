@@ -44,6 +44,8 @@
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_log.hpp"
 
+#include "conduit_fmt/conduit_fmt.h"
+
 // Uncomment to enable some debugging output from partitioner.
 // #define CONDUIT_DEBUG_PARTITIONER
 
@@ -1759,7 +1761,7 @@ bool
 Partitioner::initialize(const conduit::Node &n_mesh,
                         const conduit::Node &options)
 {
-    init_dom_to_rank_map(n_mesh);
+    auto global_domids = get_global_domids(n_mesh);
 
     auto doms = conduit::blueprint::mesh::domains(n_mesh);
 
@@ -1787,16 +1789,8 @@ Partitioner::initialize(const conduit::Node &n_mesh,
                     auto n = static_cast<index_t>(doms.size());
                     for(index_t di = 0; di < n; di++)
                     {
-                        // Get the overall index for this domain if it exists.
-                        // Otherwise, we use the position in the list.
-                        index_t domid = di;
-                        if(doms[di]->has_path("state/domain_id"))
-                        {
-                            bool ok = false;
-                            index_t tmp = get_index_t(doms[di]->operator[]("state/domain_id"), ok);
-                            if(ok)
-                                domid = tmp;
-                        }
+                        // Get the global id for this domain.
+                        index_t domid = global_domids[di];
 
                         // NOTE: A selection is tied to a single domain at present.
                         //       The field selection could apply to multiple domains
@@ -1858,15 +1852,7 @@ Partitioner::initialize(const conduit::Node &n_mesh,
         for(size_t i = 0; i < doms.size(); i++)
         {
             auto sel = create_selection_all_elements(*doms[i]);
-            // If the mesh has a domain_id then use that as the domain number.
-            index_t domid = i;
-            if(doms[i]->has_path("state/domain_id"))
-            {
-                bool ok = false;
-                index_t tmp = get_index_t(doms[i]->operator[]("state/domain_id"), ok);
-                if(ok)
-                    domid = tmp;
-            }
+            index_t domid = global_domids[i];
             sel->set_domain(domid);
             selections.push_back(sel);
             meshes.push_back(doms[i]);
@@ -1922,6 +1908,27 @@ Partitioner::initialize(const conduit::Node &n_mesh,
     // If we made it to the end then we will have created any applicable
     // selections. Some ranks may have created no selections. That is ok.
     return true; //!selections.empty();
+}
+
+//---------------------------------------------------------------------------
+std::vector<index_t>
+Partitioner::get_global_domids(const conduit::Node& n_mesh)
+{
+    const auto doms = conduit::blueprint::mesh::domains(n_mesh);
+    std::vector<index_t> domids(doms.size(), -1);
+    for(size_t i = 0; i < doms.size(); i++)
+    {
+        domids[i] = i;
+        // If the mesh has a domain_id then use that as the domain number.
+        if(doms[i]->has_path("state/domain_id"))
+        {
+            bool ok = false;
+            index_t tmp = get_index_t(doms[i]->operator[]("state/domain_id"), ok);
+            if(ok)
+                domids[i] = tmp;
+        }
+    }
+    return domids;
 }
 
 //---------------------------------------------------------------------------
@@ -9812,6 +9819,280 @@ Partitioner::combine(int domain,
     for(index_t i = 0; i < output_coordsets.number_of_children(); i++)
     {
         output_coordsets[i].remove("pointmaps");
+    }
+}
+
+//-------------------------------------------------------------------------
+void
+Partitioner::map_back_fields(const conduit::Node& repart_mesh,
+                             const conduit::Node& options,
+                             Node& orig_mesh)
+{
+    using namespace std;
+    auto repart_doms = mesh::domains(repart_mesh);
+    auto orig_doms = mesh::domains(orig_mesh);
+    // the below should also init dom_to_rank_map in mpi partitioner
+    auto orig_dom_ids = get_global_domids(orig_mesh);
+
+    unordered_map<index_t, Node*> gid_to_orig_dom;
+    for (size_t idom = 0; idom < orig_doms.size(); idom++)
+    {
+        gid_to_orig_dom[orig_dom_ids[idom]] = orig_doms[idom];
+    }
+
+    vector<string> field_names;
+    for (const Node& field : options["fields"].children())
+    {
+        field_names.emplace_back(field.as_string());
+    }
+    bool has_vert_fields = false;
+    if (!repart_doms.empty())
+    {
+        const conduit::Node& dom = *repart_doms[0];
+        // check domain fields from the first domain we encounter
+        for (const Node& field : dom["fields"].children())
+        {
+            if (std::find(field_names.begin(),
+                          field_names.end(),
+                          field.name()) == field_names.end())
+            {
+                continue;
+            }
+            if (field["association"].as_string() == "vertex")
+            {
+                has_vert_fields = true;
+            }
+        }
+    }
+
+    // map repart domid -> orig domids
+    vector<vector<index_t>> map_tgt_domains(repart_doms.size());
+    // map repart domid -> orig domid -> original elem/vertex ids
+    vector<unordered_map<index_t, vector<index_t>>>
+        map_tgt_elems(repart_doms.size()), map_tgt_verts(repart_doms.size());
+    // map repart domid -> orig domid -> repart elem/vertex ids
+    vector<unordered_map<index_t, vector<index_t>>>
+        map_sel_elems(repart_doms.size()), map_sel_verts(repart_doms.size());
+    for (size_t idom = 0; idom < repart_doms.size(); idom++)
+    {
+        const conduit::Node& dom = *repart_doms[idom];
+
+        if (dom["fields"].has_child("original_element_ids"))
+        {
+            const Node& orig_v_node = dom["fields/original_element_ids/values"];
+            const index_t_accessor orig_elems = orig_v_node["ids"].value();
+            const index_t_accessor orig_doms = orig_v_node["domains"].value();
+            for (index_t ielem = 0; ielem < orig_elems.number_of_elements(); ielem++)
+            {
+                map_tgt_elems[idom][orig_doms[ielem]].push_back(orig_elems[ielem]);
+                map_sel_elems[idom][orig_doms[ielem]].push_back(ielem);
+            }
+            for (const auto& slice_map : map_tgt_elems[idom])
+            {
+                // Keep a set of all source domains
+                map_tgt_domains[idom].emplace_back(slice_map.first);
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR(
+                "Map-back requires that mesh repartitioning is performed with "
+                "the mapping option enabled. (missing original_element_ids)");
+        }
+    }
+
+    // TODO: this is a lot of bookkeeping to do if we aren't mapping back a
+    // vertex-centered field. we should probably check if we have vertex fields
+    // first.
+    if (has_vert_fields)
+    {
+        // map of orig domid -> global vert ids
+        map<index_t, vector<index_t>> orig_dom_gvids;
+        for (const auto& dom_ent : gid_to_orig_dom)
+        {
+            index_t orig_idx = dom_ent.first;
+            const Node& orig_dom = *dom_ent.second;
+            vector<index_t>& orig_gvids = orig_dom_gvids[orig_idx];
+            if (orig_dom["fields"].has_child("global_vertex_ids"))
+            {
+                const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
+                orig_gvids.resize(gvids.number_of_elements());
+                for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
+                {
+                    orig_gvids[ivert] = gvids[ivert];
+                }
+            }
+            else
+            {
+                CONDUIT_ERROR(
+                    "Map-back of a vertex-centered field requires that a global "
+                    "vertex numbering is generated. (missing global_vertex_ids)");
+            }
+        }
+
+        // communicate domain gvids to ranks that need them
+        synchronize_gvids(map_tgt_domains, orig_dom_gvids);
+
+        for (index_t repart_idx = 0; repart_idx < repart_doms.size(); repart_idx++)
+        {
+            const conduit::Node& dom = *repart_doms[repart_idx];
+
+            std::unordered_map<index_t, index_t> gvid_to_repart_vid;
+            if (dom["fields"].has_child("global_vertex_ids"))
+            {
+                const Node& global_vid_node = dom["fields/global_vertex_ids/values"];
+                const index_t_accessor gvids = global_vid_node.value();
+                for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
+                {
+                    gvid_to_repart_vid[gvids[ivert]] = ivert;
+                }
+            }
+            for (const index_t orig_idx : map_tgt_domains[repart_idx])
+            {
+                if (orig_dom_gvids.count(orig_idx) == 0)
+                {
+                    CONDUIT_ERROR(
+                        conduit_fmt::format("No vertex gid data (rank: {}, domid: {})",
+                                            rank, orig_idx));
+                }
+                // Get current slice of orig dom
+                auto& orig_gvids = orig_dom_gvids[orig_idx];
+                // Loop over all vertices in the original domain
+                for (size_t ivert = 0; ivert < orig_gvids.size(); ivert++)
+                {
+                    index_t global_vid = orig_gvids[ivert];
+                    if (gvid_to_repart_vid.count(global_vid) != 0)
+                    {
+                        index_t repart_vid = gvid_to_repart_vid.find(global_vid)->second;
+                        map_tgt_verts[repart_idx][orig_idx].push_back(ivert);
+                        map_sel_verts[repart_idx][orig_idx].push_back(repart_vid);
+                    }
+                }
+            }
+        }
+    }
+
+    // map of original domid -> sliced data
+    unordered_map<index_t, Node> packed_fields;
+    // schema of each node
+    // [remap_dom0]:
+    //  - vert_map: [orig_vert_ids0]
+    //  - elem_map: [orig_elem_ids0]
+    //  - fields:
+    //    - field0: [sliced field]
+    //    - field1: [sliced field]
+    //    ...
+    // [remap_dom1]:
+    //  - vert_map: [orig_vert_ids1]
+    //  - elem_map: [orig_elem_ids1]
+    //  - fields:
+    //     - field0: [sliced field]
+    //     - field1: [sliced field]
+    //     ...
+    for (size_t idom = 0; idom < repart_doms.size(); idom++)
+    {
+        const Node& dom = *repart_doms[idom];
+        for (const index_t tgt_dom : map_tgt_domains[idom])
+        {
+            Node& remap_dom_ent = packed_fields[tgt_dom].append();
+            // Copy field with source element indices
+            const vector<index_t>& sel_elems = map_sel_elems[idom][tgt_dom];
+            const vector<index_t>& sel_verts = map_sel_verts[idom][tgt_dom];
+            for (const std::string& field_name : field_names)
+            {
+                const Node& field = dom["fields"][field_name];
+                const std::string& assoc = field["association"].as_string();
+                if (assoc == "vertex")
+                {
+                    copy_field(field, sel_verts, remap_dom_ent["fields"]);
+                }
+                else if (assoc == "element")
+                {
+                    copy_field(field, sel_elems, remap_dom_ent["fields"]);
+                }
+                else
+                {
+                    CONDUIT_ERROR(
+                        conduit_fmt::format("Encountered field with unsupported association."
+                                            " (field: {} association: {}", field_name, assoc));
+                }
+            }
+            // Add target element indices to the node
+            remap_dom_ent["elem_map"].set(map_tgt_elems[idom][tgt_dom]);
+            remap_dom_ent["vert_map"].set(map_tgt_verts[idom][tgt_dom]);
+        }
+    }
+
+    // If we're multi-process, redistribute target field chunks to original
+    // domain homes
+    communicate_mapback(packed_fields);
+
+    bool first_warn = true;
+    for (const auto& orig_dom : packed_fields)
+    {
+        // Precompute final element count
+        index_t nelems = 0;
+        for (const Node& src_chunk : orig_dom.second.children())
+        {
+            DataArray<index_t> cnk_map = src_chunk["elem_map"].value();
+            nelems += cnk_map.number_of_elements();
+        }
+
+        int cnk_id = 0;
+        vector<index_t> tgt_elem_map(nelems * 2);
+        vector<DataArray<index_t>> tgt_vert_maps(orig_dom.second.number_of_children());
+        unordered_map<string, vector<const Node*>> field_groups;
+        for (const Node& src_chunk : orig_dom.second.children())
+        {
+            // Group common field nodes together by name
+            for (const Node& field : src_chunk["fields"].children())
+            {
+                field_groups[field.name()].push_back(&field);
+            }
+            // Build element map
+            DataArray<index_t> cnk_map = src_chunk["elem_map"].value();
+            for (index_t i = 0; i < cnk_map.number_of_elements(); i++)
+            {
+                index_t out_idx = cnk_map[i];
+                tgt_elem_map[2*out_idx] = cnk_id;
+                tgt_elem_map[2*out_idx + 1] = i;
+            }
+            // map_vertex_field expects a collection of vertex maps for each
+            // chunk, instead of a single unified map
+            tgt_vert_maps[cnk_id] = src_chunk["vert_map"].value();
+            cnk_id++;
+        }
+        // map_element_field expects a DataArray
+        DataArray<index_t> elem_map_arr;
+        {
+            Node tmp;
+            tmp.set_external(tgt_elem_map);
+            elem_map_arr = tmp.value();
+        }
+        Node& tgt_dom = *gid_to_orig_dom[orig_dom.first];
+        for (const auto& fg : field_groups)
+        {
+            const vector<const Node*>& src_fields = fg.second;
+            const string& field_name = fg.first;
+            const string& assoc = src_fields[0]->child("association").as_string();
+            const string& assoc_topo = src_fields[0]->child("topology").as_string();
+
+            Node& output = tgt_dom["fields"][field_name];
+            output["association"] = assoc;
+            output["topology"] = assoc_topo;
+            if (assoc == "vertex")
+            {
+                const std::string& assoc_cset = tgt_dom["topologies"][assoc_topo]["coordset"].as_string();
+                const Node& assoc_coordset = tgt_dom["coordsets"][assoc_cset];
+                index_t nverts = coordset::length(assoc_coordset);
+                fields::map_vertex_field(src_fields, tgt_vert_maps, nverts, output["values"]);
+            }
+            else if (assoc == "element")
+            {
+                fields::map_element_field(src_fields, elem_map_arr, output["values"]);
+            }
+        }
+        first_warn = false;
     }
 }
 

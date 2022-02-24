@@ -116,7 +116,7 @@ TEST(blueprint_mpi_parmetis, braid)
     const int npts = 10;
 
     // test with a 2d poly example
-    Node mesh, side_mesh, info;
+    Node mesh, info;
 
     // create braid - one domain per rank
     conduit::blueprint::mesh::examples::braid("structured",
@@ -165,6 +165,40 @@ TEST(blueprint_mpi_parmetis, braid)
                   [&] (index_t a, index_t b)
                   { return coord_array[1][a] < coord_array[1][b]; });
 
+        // Since we have the same domains for each rank, synchronize
+        // vertex-centered fields on the boundaries to avoid discontinuities.
+        for (Node& field : mesh[0]["fields"].children())
+        {
+            auto sync_edges =
+                [&prev_rank_shared, &next_rank_shared](float64_array values)
+                {
+                    for (int ibdr = 0; ibdr < prev_rank_shared.size(); ibdr++)
+                    {
+                        index_t left_edge = prev_rank_shared[ibdr];
+                        index_t right_edge = next_rank_shared[ibdr];
+                        float64 max_val = std::max(values[left_edge], values[right_edge]);
+                        values[left_edge] = max_val;
+                        values[right_edge] = max_val;
+                    }
+                };
+            if (field["association"].as_string() == "vertex")
+            {
+                if (field["values"].number_of_children() == 0)
+                {
+                    float64_array values = field["values"].value();
+                    sync_edges(values);
+                }
+                else
+                {
+                    for (Node& comp : field["values"].children())
+                    {
+                        float64_array values = comp.value();
+                        sync_edges(values);
+                    }
+                }
+            }
+        }
+
         Node& dom_aset = mesh[0]["adjsets/elem_aset"];
         dom_aset["association"] = "vertex";
         dom_aset["topology"] = "mesh";
@@ -204,79 +238,46 @@ TEST(blueprint_mpi_parmetis, braid)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, info));
 
     Node options;
-    options["partitions"] = par_size;
+    options["partitions"] = par_size + 1;
     options["topology"] = "mesh";
-    options["adjset"] = "elem_aset";
+    if (par_size > 1)
+    {
+        options["adjset"] = "elem_aset";
+    }
 
     // paint a field with parmetis result (WIP)
     conduit::blueprint::mpi::mesh::generate_partition_field(mesh,options,MPI_COMM_WORLD);
 
-    {
-        Node s2dmap, d2smap;
-        Node &side_coords = side_mesh["coordsets/coords"];
-        Node &side_topo = side_mesh["topologies/mesh"];
-        Node &side_fields = side_mesh["fields"];
+    Node repart_mesh;
+    Node partition_options;
+    Node& selection = partition_options["selections"].append();
+    selection["type"] = "field";
+    selection["domain_id"] = "any";
+    selection["field"] = "parmetis_result";
+    selection["topology"] = "mesh";
 
-        // we can't map vert assoced fields yet
-        Node opts;
-        opts["field_names"].append().set("global_element_ids");
-        opts["field_names"].append().set("parmetis_result");
-
-        // gen sides and save so we can look at this in visit.
-        blueprint::mesh::topology::unstructured::generate_sides(mesh[0]["topologies/mesh"],
-                                                                side_topo,
-                                                                side_coords,
-                                                                side_fields,
-                                                                s2dmap,
-                                                                d2smap,
-                                                                opts);
-
-        std::string output_base = "tout_bp_mpi_mesh_parmetis_braid2d_test";
-
-        // Node opts;
-        // opts["file_style"] = "root_only";
-        conduit::relay::mpi::io::blueprint::save_mesh(side_mesh,
-                                                      output_base,
-                                                      "hdf5",
-                                                      // opts,
-                                                      MPI_COMM_WORLD);
-    }
+    // partition the mesh with our generated result
+    conduit::blueprint::mpi::mesh::partition(mesh,
+                                             partition_options,
+                                             repart_mesh,
+                                             MPI_COMM_WORLD);
 
     {
-        Node partition_options;
-        Node& selection = partition_options["selections"].append();
-        selection["type"] = "field";
-        selection["domain_id"] = "any";
-        selection["field"] = "parmetis_result";
-        selection["topology"] = "mesh";
-
-        Node repart_mesh, side_mesh_repart;
+        Node side_mesh_repart;
         Node s2dmap, d2smap, opts;
         opts["field_names"].append().set("global_element_ids");
+        opts["field_names"].append().set("global_vertex_ids");
         opts["field_names"].append().set("parmetis_result");
         opts["field_names"].append().set("braid");
         opts["field_names"].append().set("radial");
         //opts["field_names"].append().set("vel");
         opts["field_names"].append().set("is_shared_node");
 
-        // partition the mesh with our generated result
-        conduit::blueprint::mpi::mesh::partition(mesh,
-                                                 partition_options,
-                                                 repart_mesh,
-                                                 MPI_COMM_WORLD);
+        auto repart_mesh_doms = conduit::blueprint::mesh::domains(repart_mesh);
 
-        Node repart_mesh_multidom;
-        if (!conduit::blueprint::mesh::is_multi_domain(repart_mesh))
+        for (Node* pdom : repart_mesh_doms)
         {
-            conduit::blueprint::mesh::to_multi_domain(repart_mesh, repart_mesh_multidom);
-        }
-        else
-        {
-            repart_mesh_multidom.set_external(repart_mesh);
-        }
-
-        for (Node& dom : repart_mesh_multidom.children())
-        {
+            Node& dom = *pdom;
             Node& shared_nodes = dom["fields/is_shared_node"];
             shared_nodes["association"] = "vertex";
             shared_nodes["type"] = "scalar";
@@ -295,10 +296,15 @@ TEST(blueprint_mpi_parmetis, braid)
                     shared_nodes_val[grp_vals[iv]] = double(iv) / grp_vals.number_of_elements();
                 }
             }
+
+            dom["fields"]["mapback_global_vids"].set(dom["fields/global_vertex_ids"]);
+            dom["fields"]["mapback_braid"].set(dom["fields/braid"]);
+            dom["fields"]["mapback_radial"].set(dom["fields/radial"]);
         }
 
-        for (const Node& dom : repart_mesh_multidom.children())
+        for (const Node* pdom : repart_mesh_doms)
         {
+            const Node& dom = *pdom;
             Node& side_domain = side_mesh_repart.append();
 
             Node &side_coords = side_domain["coordsets/coords"];
@@ -319,6 +325,55 @@ TEST(blueprint_mpi_parmetis, braid)
         conduit::relay::mpi::io::blueprint::save_mesh(side_mesh_repart,
                                                       output_repart_base,
                                                       "hdf5",
+                                                      MPI_COMM_WORLD);
+    }
+
+    Node mapback_opts;
+    mapback_opts["fields"].append().set("mapback_braid");
+    mapback_opts["fields"].append().set("mapback_radial");
+    mapback_opts["fields"].append().set("mapback_global_vids");
+
+    // Perform a map-back of some zone-centered variables
+    conduit::blueprint::mpi::mesh::partition_map_back(repart_mesh,
+                                                      mapback_opts,
+                                                      mesh,
+                                                      MPI_COMM_WORLD);
+
+    {
+        Node side_mesh;
+        Node s2dmap, d2smap;
+        Node &side_coords = side_mesh["coordsets/coords"];
+        Node &side_topo = side_mesh["topologies/mesh"];
+        Node &side_fields = side_mesh["fields"];
+
+        // we can't map vert assoced fields yet
+        Node opts;
+        opts["field_names"].append().set("global_element_ids");
+        opts["field_names"].append().set("global_vertex_ids");
+        opts["field_names"].append().set("mapback_global_vids");
+        opts["field_names"].append().set("parmetis_result");
+        opts["field_names"].append().set("braid");
+        opts["field_names"].append().set("radial");
+        opts["field_names"].append().set("mapback_braid");
+        opts["field_names"].append().set("mapback_radial");
+
+        // gen sides and save so we can look at this in visit.
+        blueprint::mesh::topology::unstructured::generate_sides(mesh[0]["topologies/mesh"],
+                                                                side_topo,
+                                                                side_coords,
+                                                                side_fields,
+                                                                s2dmap,
+                                                                d2smap,
+                                                                opts);
+
+        std::string output_base = "tout_bp_mpi_mesh_parmetis_braid2d_test_prepart";
+
+        // Node opts;
+        // opts["file_style"] = "root_only";
+        conduit::relay::mpi::io::blueprint::save_mesh(side_mesh,
+                                                      output_base,
+                                                      "hdf5",
+                                                      // opts,
                                                       MPI_COMM_WORLD);
     }
 
