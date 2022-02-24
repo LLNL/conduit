@@ -45,7 +45,7 @@ namespace examples
     /*
         conduit::blueprint::mesh::examples::related_boundary
     
-        Creates an example mesh that using the following pattern:
+        Creates an example mesh that uses the following pattern:
 
         |------------|------------|
         |            |            |
@@ -57,10 +57,11 @@ namespace examples
         |            |            |
         |------------|------------|
 
-        The base grid i and j dims are used to size domains 0 and 1,
-        domain 2 uses grid i, and j*2 as dims.
+        The base grid i and j are used to size domains 0 and 1, domain 2
+         uses grid i and j*2 as dims. The logical dimensions 
+        `base_ele_dims_i` and `base_ele_dims_j` are in terms of elements.
 
-        There are two topologies:
+        There are two topologies: `main` and `boundary`.
 
         The `main` topology is a structured mesh of quads.
         The `boundary` topology is an unstructured mesh of lines,
