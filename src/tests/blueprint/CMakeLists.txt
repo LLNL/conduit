@@ -69,7 +69,9 @@ set(BLUEPRINT_MPI_TESTS_RANKS_2
     t_blueprint_mpi_mesh_transform
     t_blueprint_mpi_mesh_verify)
 
-set(BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_mesh_relay)
+set(BLUEPRINT_RELAY_MPI_TESTS
+    t_blueprint_mpi_mesh_relay
+    t_blueprint_mpi_mesh_load_balance_related_boundary)
 
 set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4
     t_blueprint_mpi_mesh_flatten

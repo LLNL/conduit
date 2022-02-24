@@ -785,6 +785,43 @@ TEST(conduit_blueprint_mesh_examples, save_adjset_uniform)
     relay::io::save(mesh,"adj_uniform_example.blueprint_root","json");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, related_boundary)
+{
+
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled =io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // skip if we don't have hdf5 since this example has several domains
+    if(!hdf5_enabled)
+        return;
+
+    Node mesh;
+    index_t base_grid_ele_i = 10;
+    index_t base_grid_ele_j = 5;
+
+    conduit::blueprint::mesh::examples::related_boundary(base_grid_ele_i,
+                                                         base_grid_ele_j,
+                                                         mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,
+                                             "related_boundary_base_i_10_j_5",
+                                             "hdf5");
+
+    mesh.reset();
+    base_grid_ele_i = 9;
+    base_grid_ele_j = 7;
+
+    conduit::blueprint::mesh::examples::related_boundary(base_grid_ele_i,
+                                                         base_grid_ele_j,
+                                                         mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,
+                                             "related_boundary_base_i_9_j_7",
+                                             "hdf5");
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
