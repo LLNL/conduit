@@ -50,6 +50,27 @@ namespace examples
                                      conduit::index_t nz,
                                      conduit::Node &res);
 
+    /// Generates a structured grid with a scalar field that assigns a unique,
+    /// monotonically increasing value to each element.  Calling code can
+    /// specify the dimension of the storage array of the elements and
+    /// vertices, which can differ.  Pass the extra specifications with
+    /// a conduit::Node:
+    ///
+    /// vertex_data:
+    ///   shape: [vx, vy, vz]
+    ///   origin: [wx, wy, wz]
+    /// element_data:
+    ///   shape: [ex, ey, ez]
+    ///   origin: [fx, fy, fz]
+    ///
+    /// It is an error if the vertex or element data array shapes are too
+    /// small to contain the requested mesh.
+    void CONDUIT_BLUEPRINT_API arbitrary(conduit::Node &desc,
+                                         conduit::index_t nx,
+                                         conduit::index_t ny,
+                                         conduit::index_t nz,
+                                         conduit::Node &res);
+
     /// Generates a multidomain uniform grid of 'basic' examples for each
     /// domain/grid element.
     void CONDUIT_BLUEPRINT_API grid(const std::string &mesh_type,

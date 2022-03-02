@@ -377,6 +377,179 @@ void braid_init_example_element_scalar_field(index_t nele_x,
 
 
 //---------------------------------------------------------------------------//
+void arbitrary_size_element_scalar_field(index_t nele_x,
+                                         index_t nele_y,
+                                         index_t nele_z,
+                                         index_t origin_x,
+                                         index_t origin_y,
+                                         index_t origin_z,
+                                         index_t stride_x,
+                                         index_t stride_y,
+                                         index_t stride_z,
+                                         Node &res,
+                                         index_t prims_per_ele=1)
+{
+    index_t nele = stride_x * stride_y;
+
+    if(stride_z > 0)
+    {
+        nele = nele * stride_z;
+    }
+
+    res["association"] = "element";
+    res["type"] = "scalar";
+    res["topology"] = "mesh";
+
+    index_t vals_size = nele * prims_per_ele;
+
+    res["values"].set(DataType::float64(vals_size));
+
+    float64 *vals = res["values"].value();
+
+    float64 dx = 20.0 / float64(nele_x);
+    float64 dy = 20.0 / float64(nele_y);
+    float64 dz = 0.0f;
+
+    if(nele_z > 0 )
+    {
+        dz = 20.0 / float64(nele_z);
+    }
+
+    std::fill(vals, vals + vals_size, 0.);
+
+    index_t stride_i_elts = prims_per_ele;
+    index_t stride_j_elts = stride_x * stride_i_elts;
+    index_t stride_k_elts = stride_y * stride_j_elts;
+
+    for(index_t k = 0, k_pos = origin_z * stride_k_elts;
+        k < nele_z;
+        k++, k_pos += stride_k_elts)
+    {
+        float64 cz =  (k * dz) + -10.0;
+        index_t j_pos = k_pos + origin_y * stride_k_elts;
+
+        for(index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
+            j < nele_y;
+            j++, j_pos += stride_j_elts)
+        {
+            float64 cy =  (j * dy) + -10.0;
+
+            for(index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
+                i < nele_x;
+                i++, i_pos += stride_i_elts)
+            {
+                float64 cx =  (i * dx) + -10.0;
+
+                float64 cv = 10.0 * sqrt( cx*cx + cy*cy );
+
+                if(nele_z != 0)
+                {
+                    cv = 10.0 * sqrt( cx*cx + cy*cy +cz*cz );
+                }
+
+                for(index_t ppe = 0; ppe < prims_per_ele; ppe++ )
+                {
+                    vals[i_pos + ppe] = cv;
+                }
+            }
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void arbitrary_size_point_scalar_field(index_t npts_x,
+                                       index_t npts_y,
+                                       index_t npts_z,
+                                       index_t origin_x,
+                                       index_t origin_y,
+                                       index_t origin_z,
+                                       index_t stride_x,
+                                       index_t stride_y,
+                                       index_t stride_z,
+                                       Node &res,
+                                       index_t prims_per_pt=1)
+{
+    index_t npts = stride_x * stride_y;
+
+    if(stride_z > 0)
+    {
+        npts = npts * stride_z;
+    }
+
+    res["association"] = "vertex";
+    res["type"] = "scalar";
+    res["topology"] = "mesh";
+
+    index_t dimensions = 2;
+    if(npts_z > 0)
+    {
+        dimensions += 1;
+    }
+    res["offsets"].set(DataType::int32(dimensions));
+    res["strides"].set(DataType::int32(dimensions));
+    int32 *offsets = res["offsets"].value();
+    int32 *strides = res["strides"].value();
+    // fill offsets and strides
+
+    index_t vals_size = npts * prims_per_pt;
+
+    res["values"].set(DataType::float64(vals_size));
+
+    float64 *vals = res["values"].value();
+
+    float64 dx = 20.0 / float64(npts_x);
+    float64 dy = 20.0 / float64(npts_y);
+    float64 dz = 0.0f;
+
+    if(npts_z > 0 )
+    {
+        dz = 20.0 / float64(npts_z);
+    }
+
+    std::fill(vals, vals + vals_size, 0.);
+
+    index_t stride_i_elts = prims_per_pt;
+    index_t stride_j_elts = stride_x * stride_i_elts;
+    index_t stride_k_elts = stride_y * stride_j_elts;
+
+    for(index_t k = 0, k_pos = origin_z * stride_k_elts;
+        k < npts_z;
+        k++, k_pos += stride_k_elts)
+    {
+        float64 cz =  (k * dz) + -10.0;
+        index_t j_pos = k_pos + origin_y * stride_k_elts;
+
+        for(index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
+            j < npts_y;
+            j++, j_pos += stride_j_elts)
+        {
+            float64 cy =  (j * dy) + -10.0;
+
+            for(index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
+                i < npts_x;
+                i++, i_pos += stride_i_elts)
+            {
+                float64 cx =  (i * dx) + -10.0;
+
+                float64 cv = 10.0 * sqrt( cx*cx + cy*cy );
+
+                if(npts_z != 0)
+                {
+                    cv = 10.0 * sqrt( cx*cx + cy*cy +cz*cz );
+                }
+
+                for(index_t ppe = 0; ppe < prims_per_pt; ppe++ )
+                {
+                    vals[i_pos + ppe] = cv;
+                }
+            }
+        }
+    }
+}
+
+
+//---------------------------------------------------------------------------//
 void braid_init_example_matset(index_t nele_x,
                                index_t nele_y,
                                index_t nele_z,
@@ -2256,6 +2429,149 @@ basic(const std::string &mesh_type,
 
     basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
         res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
+}
+
+void
+fill_if_array_exists(Node &desc, const std::string &path, bool threeD, index_t parm[3])
+{
+    if (desc.has_path(path))
+    {
+        index_t_array pvals = desc[path].value();
+        parm[0] = pvals[0];
+        parm[1] = pvals[1];
+        if (threeD)
+        {
+            parm[2] = pvals[2];
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+arbitrary(Node &desc, // shape of requested data arrays 
+          index_t npts_x, // number of points in x
+          index_t npts_y, // number of points in y
+          index_t npts_z, // number of points in z
+          Node &res)
+{
+    // =================================================================
+    // default shapes and origins of vertex and element arrays
+    index_t pts_extent[] = {npts_x + 3, npts_y + 3, npts_z + 3};
+    index_t pts_origin[] = {2, 2, 2};
+    index_t ele_extent[] = {npts_x + 3, npts_y + 3, npts_z + 3};
+    index_t ele_origin[] = {2, 2, 2};
+
+	index_t nele_x = npts_x - 1;
+	index_t nele_y = npts_y - 1;
+	index_t nele_z = npts_z - 1;
+
+    fill_if_array_exists(desc, "vertex_data/shape", (npts_z > 0), pts_extent);
+    fill_if_array_exists(desc, "vertex_data/origin", (npts_z > 0), pts_origin);
+    fill_if_array_exists(desc, "element_data/shape", (npts_z > 0), ele_extent);
+    fill_if_array_exists(desc, "element_data/origin", (npts_z > 0), ele_origin);
+
+    const bool npts_x_ok = npts_x > 1;
+    const bool npts_y_ok = npts_y > 1;
+    bool npts_z_ok = npts_z > 1;
+
+    bool ele_ext_orig_ok = true;
+    ele_ext_orig_ok = ele_ext_orig_ok && ele_extent[0] - ele_origin[0] >= npts_x - 1;
+    ele_ext_orig_ok = ele_ext_orig_ok && ele_extent[1] - ele_origin[1] >= npts_y - 1;
+    if (npts_z > 0)
+    {
+        ele_ext_orig_ok = ele_ext_orig_ok && ele_extent[2] - ele_origin[2] >= npts_z - 1;
+    }
+
+    bool pts_ext_orig_ok = true;
+    pts_ext_orig_ok = pts_ext_orig_ok && pts_extent[0] - pts_origin[0] >= npts_x;
+    pts_ext_orig_ok = pts_ext_orig_ok && pts_extent[1] - pts_origin[1] >= npts_y;
+    if (npts_z > 0)
+    {
+        pts_ext_orig_ok = pts_ext_orig_ok && pts_extent[2] - pts_origin[2] >= npts_z;
+    }
+    
+    // don't let de-morgan get you ...
+    if( ! (npts_x_ok && npts_y_ok && npts_z_ok && ele_ext_orig_ok && pts_ext_orig_ok) )
+    {
+        // error, not enough points or storage to create the topo
+        CONDUIT_ERROR("blueprint::mesh::examples::arbitrary requires: " << std::endl <<
+                      "For 2D, npts_x > 1 and npts_y > 1 and npts_z == 0" 
+                      << std::endl <<
+                      "For 3D, npts_x > 1 and npts_y > 1 and npts_z > 1"
+                      << std::endl <<
+                      "For all dimensions, elements extent - elements origin >= npts - 1"
+                      << std::endl <<
+                      "For all dimensions, points extent - points origin >= npts"
+                      << std::endl <<
+                      "values provided:" << std::endl << 
+                      " npts_x: " << npts_x << std::endl <<
+                      " npts_y: " << npts_y << std::endl <<
+                      " npts_z: " << npts_z << std::endl <<
+                      " elements extent: (" << ele_extent[0] << ", " <<
+                      ele_extent[1] << ", " << ele_extent[2] << ")"
+                      << std::endl <<
+                      " elements origin: (" << ele_origin[0] << ", " <<
+                      ele_origin[1] << ", " << ele_origin[2] << ")"
+                      << std::endl <<
+                      " points extent: (" << pts_extent[0] << ", " <<
+                      pts_extent[1] << ", " << pts_extent[2] << ")"
+                      << std::endl <<
+                      " points origin: (" << pts_origin[0] << ", " <<
+                      pts_origin[1] << ", " << pts_origin[2] << ")"
+                      << std::endl
+            );
+    }
+
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 npts_z,
+                                 res["coordsets/coords"]);
+
+    res["topologies/mesh/type"] = "structured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
+    res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
+
+    if(nele_z > 0)
+    {
+        res["topologies/mesh/elements/dims/k"] = (int32)nele_z;
+    }
+
+    Node &fields = res["fields"];
+
+    arbitrary_size_point_scalar_field(npts_x,
+                                      npts_y,
+                                      npts_z,
+                                      pts_origin[0],
+		pts_origin[1],
+		pts_origin[2],
+		pts_extent[0],
+		pts_extent[1],
+		pts_extent[2],
+                                      fields["radial"]);
+
+    arbitrary_size_element_scalar_field(nele_x,
+                                        nele_y,
+                                        nele_z,
+		ele_origin[0],
+		ele_origin[1],
+		ele_origin[2],
+		ele_extent[0],
+		ele_extent[1],
+		ele_extent[2],
+                                        fields["field"]);
+
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["braid"]);
+
+    braid_init_example_element_scalar_field(nele_x,
+                                            nele_y,
+                                            nele_z,
+                                            fields["radial"]);
+
 }
 
 

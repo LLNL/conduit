@@ -402,6 +402,34 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, arbitrary_2d)
+{
+	Node res;
+	Node desc;
+	blueprint::mesh::examples::arbitrary(desc, 45, 45, 0, res);
+
+	Node info;
+	EXPECT_TRUE(blueprint::mesh::verify(res, info));
+	CONDUIT_INFO(info.to_yaml());
+
+	test_save_mesh_helper(res, "arbitrary_2d");
+}
+
+TEST(conduit_blueprint_mesh_examples, arbitrary_3d)
+{
+	Node res;
+	Node desc;
+	blueprint::mesh::examples::arbitrary(desc, 45, 45, 45, res);
+
+	Node info;
+	EXPECT_TRUE(blueprint::mesh::verify(res, info));
+	CONDUIT_INFO(info.to_yaml());
+
+	test_save_mesh_helper(res, "arbitrary_3d");
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, julia)
 {
     Node res;
