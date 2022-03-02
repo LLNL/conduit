@@ -406,7 +406,7 @@ TEST(conduit_blueprint_mesh_examples, arbitrary_2d)
 {
 	Node res;
 	Node desc;
-	blueprint::mesh::examples::arbitrary(desc, 45, 45, 0, res);
+	blueprint::mesh::examples::arbitrary(desc, 4, 3, 0, res);
 
 	Node info;
 	EXPECT_TRUE(blueprint::mesh::verify(res, info));
@@ -419,7 +419,7 @@ TEST(conduit_blueprint_mesh_examples, arbitrary_3d)
 {
 	Node res;
 	Node desc;
-	blueprint::mesh::examples::arbitrary(desc, 45, 45, 45, res);
+	blueprint::mesh::examples::arbitrary(desc, 6, 5, 3, res);
 
 	Node info;
 	EXPECT_TRUE(blueprint::mesh::verify(res, info));

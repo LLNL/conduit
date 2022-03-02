@@ -2448,7 +2448,7 @@ fill_if_array_exists(Node &desc, const std::string &path, bool threeD, index_t p
 
 //---------------------------------------------------------------------------//
 void
-arbitrary(Node &desc, // shape of requested data arrays 
+arbitrary(Node &desc, // shape of requested data arrays
           index_t npts_x, // number of points in x
           index_t npts_y, // number of points in y
           index_t npts_z, // number of points in z
@@ -2461,9 +2461,9 @@ arbitrary(Node &desc, // shape of requested data arrays
     index_t ele_extent[] = {npts_x + 3, npts_y + 3, npts_z + 3};
     index_t ele_origin[] = {2, 2, 2};
 
-	index_t nele_x = npts_x - 1;
-	index_t nele_y = npts_y - 1;
-	index_t nele_z = npts_z - 1;
+    index_t nele_x = npts_x - 1;
+    index_t nele_y = npts_y - 1;
+    index_t nele_z = npts_z - 1;
 
     fill_if_array_exists(desc, "vertex_data/shape", (npts_z > 0), pts_extent);
     fill_if_array_exists(desc, "vertex_data/origin", (npts_z > 0), pts_origin);
@@ -2472,7 +2472,7 @@ arbitrary(Node &desc, // shape of requested data arrays
 
     const bool npts_x_ok = npts_x > 1;
     const bool npts_y_ok = npts_y > 1;
-    bool npts_z_ok = npts_z > 1;
+    const bool npts_z_ok = npts_z > 0;
 
     bool ele_ext_orig_ok = true;
     ele_ext_orig_ok = ele_ext_orig_ok && ele_extent[0] - ele_origin[0] >= npts_x - 1;
@@ -2495,7 +2495,7 @@ arbitrary(Node &desc, // shape of requested data arrays
     {
         // error, not enough points or storage to create the topo
         CONDUIT_ERROR("blueprint::mesh::examples::arbitrary requires: " << std::endl <<
-                      "For 2D, npts_x > 1 and npts_y > 1 and npts_z == 0" 
+                      "For 2D, npts_x > 1 and npts_y > 1 and npts_z == 0"
                       << std::endl <<
                       "For 3D, npts_x > 1 and npts_y > 1 and npts_z > 1"
                       << std::endl <<
@@ -2503,7 +2503,7 @@ arbitrary(Node &desc, // shape of requested data arrays
                       << std::endl <<
                       "For all dimensions, points extent - points origin >= npts"
                       << std::endl <<
-                      "values provided:" << std::endl << 
+                      "values provided:" << std::endl <<
                       " npts_x: " << npts_x << std::endl <<
                       " npts_y: " << npts_y << std::endl <<
                       " npts_z: " << npts_z << std::endl <<
@@ -2544,22 +2544,22 @@ arbitrary(Node &desc, // shape of requested data arrays
                                       npts_y,
                                       npts_z,
                                       pts_origin[0],
-		pts_origin[1],
-		pts_origin[2],
-		pts_extent[0],
-		pts_extent[1],
-		pts_extent[2],
+                                      pts_origin[1],
+                                      pts_origin[2],
+                                      pts_extent[0],
+                                      pts_extent[1],
+                                      pts_extent[2],
                                       fields["radial"]);
 
     arbitrary_size_element_scalar_field(nele_x,
                                         nele_y,
                                         nele_z,
-		ele_origin[0],
-		ele_origin[1],
-		ele_origin[2],
-		ele_extent[0],
-		ele_extent[1],
-		ele_extent[2],
+                                        ele_origin[0],
+                                        ele_origin[1],
+                                        ele_origin[2],
+                                        ele_extent[0],
+                                        ele_extent[1],
+                                        ele_extent[2],
                                         fields["field"]);
 
     braid_init_example_point_scalar_field(npts_x,
