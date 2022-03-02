@@ -2472,7 +2472,7 @@ arbitrary(Node &desc, // shape of requested data arrays
 
     const bool npts_x_ok = npts_x > 1;
     const bool npts_y_ok = npts_y > 1;
-    const bool npts_z_ok = npts_z > 0;
+    const bool npts_z_ok = npts_z >= 0;
 
     bool ele_ext_orig_ok = true;
     ele_ext_orig_ok = ele_ext_orig_ok && ele_extent[0] - ele_origin[0] >= npts_x - 1;
