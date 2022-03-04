@@ -198,7 +198,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     // meshes so they don't have to be removed before outputting mesh data.
     dsets.remove("quads_and_tris");
     dsets.remove("quads_and_tris_offsets");
-    dsets.remove("points_implicit");
 
     braid_save_helper(dsets,"braid_2d_examples");
 
@@ -315,7 +314,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     // TODO: Add VisIt support for rendering mixed element and implicit point
     // meshes so they don't have to be removed before outputting mesh data.
     dsets.remove("hexs_and_tets");
-    dsets.remove("points_implicit");
 
     braid_save_helper(dsets,"braid_3d_examples");
 
