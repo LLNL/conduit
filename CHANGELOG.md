@@ -13,6 +13,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `blueprint::mesh::examples::related_boundary`, which creates a mulit-domain mesh with a related boundary topology and several fileds that encode relationships between the main topology and the boundary.
 
 
+### Fixed
+
+#### Blueprint
+
+- Fixed a bug with `conduit::blueprint::mesh::examples::braid`, where 2D cases for points and structured examples would create coordsets with all entries being zero.
+
+
 ## [0.8.2] - Released 2022-02-01
 
 ### Fixed

@@ -584,7 +584,15 @@ braid_init_explicit_coordset(index_t npts_x,
     }
 
     index_t idx = 0;
-    for(index_t k = 0; k < npts_z ; k++)
+    // default to one loop iteration (2d case)
+    index_t outer = 1;
+    // expand loop iteration for 3d case
+    if(npts_z > 1)
+    {
+        outer = npts_z;
+    }
+
+    for(index_t k = 0; k < outer; k++)
     {
         float64 cz = -10.0 + k * dz;
 
@@ -607,6 +615,7 @@ braid_init_explicit_coordset(index_t npts_x,
 
         }
     }
+
 }
 
 
@@ -1142,6 +1151,7 @@ braid_points_explicit(index_t npts_x,
     res.reset();
 
     braid_init_example_state(res);
+
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
@@ -1196,6 +1206,7 @@ braid_points_implicit(index_t npts_x,
     res.reset();
 
     braid_init_example_state(res);
+
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
