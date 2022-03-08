@@ -11,6 +11,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 - Added `blueprint::mesh::examples::related_boundary`, which creates a mulit-domain mesh with a related boundary topology and several fileds that encode relationships between the main topology and the boundary.
+- Expanded `blueprint::mpi::mesh::generate_partition_field` to support all topology types.
+
 
 
 ### Fixed
