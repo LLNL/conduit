@@ -18,8 +18,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 
 #### Blueprint
-
 - Fixed a bug with `conduit::blueprint::mesh::examples::braid`, where 2D cases for points and structured examples would create coordsets with all entries being zero.
+
+### Changed
+
+#### Relay
+- Added szip and zlib linking fix for older version of HDF5 (1.8.14)
 
 
 ## [0.8.2] - Released 2022-02-01
