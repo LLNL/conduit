@@ -275,6 +275,7 @@ foreach(lib ${hdf5_tpl_lnk_libs_list})
     list(APPEND HDF5_LIBRARIES ${lib})
 endforeach()
 
+
 #
 # Display main hdf5 cmake vars
 #
@@ -297,7 +298,7 @@ if(HDF5_IS_PARALLEL)
 endif()
 
 #############
-# Note: MPI libraries and include dirs are not propgated for the config.mk case
+# Note: MPI libraries and include dirs are not propagated for the config.mk case
 #############
 
 message(STATUS "HDF5 Thirdparty Include Flags: ${hdf5_tpl_inc_flags}")
@@ -323,8 +324,11 @@ else()
     message(STATUS "HDF5_DEFINITIONS:  ${HDF5_DEFINITIONS}")
     message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
     message(STATUS "HDF5_LIBRARIES:    ${HDF5_LIBRARIES}")
+    message(STATUS "HDF5_LINK_FLAGS:   ${hdf5_tpl_lnk_flags}")
+
     blt_register_library(NAME hdf5
                          DEFINES   ${HDF5_DEFINITIONS}
                          INCLUDES  ${HDF5_INCLUDE_DIRS}
-                         LIBRARIES ${HDF5_LIBRARIES})
+                         LIBRARIES ${HDF5_LIBRARIES}
+                         LINK_FLAGS ${hdf5_tpl_lnk_flags})
 endif()
