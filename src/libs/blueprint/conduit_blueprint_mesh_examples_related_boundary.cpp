@@ -699,6 +699,10 @@ void related_boundary(index_t base_grid_ele_i,
     {
         adj_vals[j] = (j+2) * (base_grid_ele_i+1) -1;
     }
+    Node tmp;
+    // convert to pairwise
+    adjset::to_pairwise(mesh["domain0/adjsets/main_adjset"],tmp);
+    mesh["domain0/adjsets/main_adjset"] = tmp;
 
     //
     // domain 1
@@ -731,6 +735,11 @@ void related_boundary(index_t base_grid_ele_i,
     {
         adj_vals[j] = (j+1) * (base_grid_ele_i+1) -1;
     }
+    
+    // convert to pairwise
+    adjset::to_pairwise(mesh["domain1/adjsets/main_adjset"],tmp);
+    mesh["domain1/adjsets/main_adjset"] = tmp;
+
 
     //
     // domain 2
@@ -753,6 +762,7 @@ void related_boundary(index_t base_grid_ele_i,
         adj_vals[j] = (j) * (base_grid_ele_i+1);
     }
 
+
     // 1/2 of domain 2's left face (sans center point) is shared
     // by domains 1 and 2
     std::cout << base_grid_ele_j << std::endl;
@@ -763,7 +773,10 @@ void related_boundary(index_t base_grid_ele_i,
     {
         adj_vals[j] = (base_grid_ele_j + j+1) * (base_grid_ele_i+1);
     }
-
+    
+    // convert to pairwise
+    adjset::to_pairwise(mesh["domain2/adjsets/main_adjset"],tmp);
+    mesh["domain2/adjsets/main_adjset"] = tmp;
 }
 
 
