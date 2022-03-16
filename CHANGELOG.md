@@ -20,6 +20,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Changed
 
+#### General
+- Improved pip install logic
+
 #### Relay
 - Added szip and zlib linking fix for older version of HDF5 (1.8.14)
 
