@@ -55,6 +55,7 @@ setup (name = 'conduit',
        package_dir = {'conduit':'py_src'},
        packages=['conduit',
                  'conduit.utils'],
-       cmdclass={'install_egg_info': SkipEggInfo})
+       cmdclass={'install_egg_info': SkipEggInfo},
+       zip_safe=False)
 
 

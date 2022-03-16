@@ -75,9 +75,8 @@ class CMakeBuild(build_ext):
         # required for auto-detection of auxiliary "native" libs
         if not extdir.endswith(os.path.sep):
             extdir += os.path.sep
-
         cmake_args = ['-DPYTHON_MODULE_INSTALL_PREFIX=' + pjoin(extdir),
-                      '-DCMAKE_INSTALL_PREFIX=' + pjoin(extdir, "conduit_cxx"),
+                      '-DCMAKE_INSTALL_PREFIX=' + pjoin(extdir, "conduit","conduit_cxx"),
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DENABLE_PYTHON:BOOL=ON',
                       '-DHDF5_DIR=' + HDF5_DIR,
@@ -109,11 +108,9 @@ class CMakeBuild(build_ext):
                                cwd=self.build_temp,
                                env=env)
 
-        subprocess.check_call(['cmake', '--build', '.'] + build_args,
-                              cwd=self.build_temp)
-
-        subprocess.check_call(['cmake', '--install', '.'],
-                              cwd=self.build_temp)
+        subprocess.check_call(['cmake', '--build', '.', '--target','install'] + build_args,
+                              cwd=self.build_temp,
+                              env=env)
 
 #
 # pass options via env vars
@@ -125,7 +122,7 @@ ENABLE_MPI = os.environ.get('ENABLE_MPI', 'OFF')
 # https://packaging.python.org/guides/distributing-packages-using-setuptools
 setup(
     name='conduit',
-    version='0.8.0.dev',
+    version='0.8.0',
     author='Cyrus Harrison',
     author_email='cyrush@llnl.gov',
     maintainer='Cyrus Harrison',
