@@ -41,8 +41,9 @@
 ###############################################################################
 
 import sys
-from distutils.core import setup
-from distutils.command.install_egg_info import install_egg_info
+from setuptools import setup
+#from distutils.core import setup
+#from distutils.command.install_egg_info import install_egg_info
 
 # disable install_egg_info
 class SkipEggInfo(install_egg_info):

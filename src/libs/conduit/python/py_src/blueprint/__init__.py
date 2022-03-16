@@ -4,7 +4,7 @@
 
 ###############################################################################
 # file: __init__.py
-# Purpose: Main init for the conduit module.
+# Purpose: Main init for the conduit blueprint module.
 ###############################################################################
 
 ###############################################################################
@@ -25,11 +25,12 @@ if "CONDUIT_DLL_DIR" in os.environ:
                 os.add_dll_directory(dll_path)
 ###############################################################################
 
-from .conduit_python import *
-from .conduit_python import _C_API
 
-from . import utils
-from . import blueprint
-from . import relay
+from .conduit_blueprint_python import *
+
+from . import mcarray
+from . import mesh
+from . import table
+
 
 

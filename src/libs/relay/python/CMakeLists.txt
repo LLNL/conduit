@@ -7,18 +7,26 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_python_exports.h.in"
 
 
 # add conduit.relay + conduit_relay_python modules
-PYTHON_ADD_HYBRID_MODULE(NAME          conduit_relay_python
-                         DEST_DIR      python-modules
-                         PY_MODULE_DIR conduit/relay
-                         PY_SETUP_FILE setup.py
-                         PY_SOURCES    py_src/__init__.py
-                                       py_src/io/__init__.py
-                                       py_src/io/blueprint/__init__.py
-                                       py_src/mpi/__init__.py
-                                       py_src/web/__init__.py
-                         SOURCES       conduit_relay_python.cpp
-                                       ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
-                         FOLDER        libs/python)
+# PYTHON_ADD_HYBRID_MODULE(NAME          conduit_relay_python
+#                          DEST_DIR      python-modules
+#                          PY_MODULE_DIR conduit/relay
+#                          PY_SETUP_FILE setup.py
+#                          PY_SOURCES    py_src/__init__.py
+#                                        py_src/io/__init__.py
+#                                        py_src/io/blueprint/__init__.py
+#                                        py_src/mpi/__init__.py
+#                                        py_src/web/__init__.py
+#                          SOURCES       conduit_relay_python.cpp
+#                                        ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
+#                          FOLDER        libs/python)
+
+# add relay submodule
+PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_python
+                           DEST_DIR      python-modules
+                           PY_MODULE_DIR conduit/relay
+                           SOURCES       conduit_relay_python.cpp
+                                         ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
+                           FOLDER        libs/python)
 
 # link with the proper libs
 target_link_libraries(conduit_relay_python conduit conduit_relay)

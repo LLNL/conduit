@@ -4,7 +4,7 @@
 
 ###############################################################################
 # file: __init__.py
-# Purpose: Main init for the conduit module.
+# Purpose: Main init for the conduit relay module.
 ###############################################################################
 
 ###############################################################################
@@ -25,11 +25,19 @@ if "CONDUIT_DLL_DIR" in os.environ:
                 os.add_dll_directory(dll_path)
 ###############################################################################
 
-from .conduit_python import *
-from .conduit_python import _C_API
+from .conduit_relay_python import *
 
-from . import utils
-from . import blueprint
-from . import relay
+from . import io
 
+# web support is optional, so drive on if we can't import
+try:
+    from . import web
+except:
+    pass
+
+# mpi support is optional, so drive on if we can't import
+try:
+    from . import mpi
+except:
+    pass
 
