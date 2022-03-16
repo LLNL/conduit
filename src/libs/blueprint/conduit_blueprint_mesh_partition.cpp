@@ -4067,6 +4067,10 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
                 // Get local chunk id
                 index_t chunk_id = adjset.first.first - chunk_offset;
                 index_t chunk_nbr = adjset.first.second;
+                if (!adjset_data[chunk_id] || !adjset_data[chunk_id]->has_child(adjset_name))
+                {
+                    continue;
+                }
                 Node& adjset_groups = adjset_data[chunk_id]->fetch(adjset_name + "/groups");
                 Node& new_set = adjset_groups.append();
                 new_set["neighbors"].set(chunk_nbr);
