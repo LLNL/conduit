@@ -3731,6 +3731,26 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
 }
 
 //---------------------------------------------------------------------------
+static const conduit::Node* get_associated_topo_adjset(const conduit::Node& domain,
+                                                       const std::string& topo)
+{
+    if (!domain.has_child("adjsets"))
+    {
+        return nullptr;
+    }
+    for (const conduit::Node& adjset : domain["adjsets"].children())
+    {
+        const std::string& adjset_topo = adjset["topology"].as_string();
+        const std::string& adjset_assoc = adjset["association"].as_string();
+        if (topo == adjset_topo && adjset_assoc == "vertex")
+        {
+            return &adjset;
+        }
+    }
+    return nullptr;
+}
+
+//---------------------------------------------------------------------------
 void
 Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
                                        const DomainToChunkMap& dom_2_chunks,
@@ -4258,6 +4278,7 @@ Partitioner::execute(conduit::Node &output)
     // make chunks.
     std::vector<Chunk> chunks;
     std::vector<conduit::Node*> adjset_data;
+    std::vector<const conduit::Node*> chunk_assoc_aset;
 
     // Maps each pre-load balance mesh domain to a set of vertex lists for each chunk.
     // This is used in constructing the intermediate chunk adjsets within a domain.
@@ -4280,13 +4301,14 @@ Partitioner::execute(conduit::Node &output)
             // the whole mesh rather than extracting. If we are using "mapping"
             // then we will be wrapping the mesh so we can add vertex and element
             // maps to it without changing the input mesh.
+            const conduit::Node* assoc_aset = nullptr;
             conduit::Node* wrapped_adjset = nullptr;
             if(mapping || meshes[i]->has_child("adjsets"))
             {
                 conduit::Node *c = wrap(i, *meshes[i]);
-
                 chunks.push_back(Chunk(c, true, dr, dd));
-                if (meshes[i]->has_child("adjsets"))
+                assoc_aset = get_associated_topo_adjset(*meshes[i], selections[i]->get_topology());
+                if (assoc_aset)
                 {
                     wrapped_adjset = c->fetch_ptr("adjsets");
                 }
@@ -4295,6 +4317,7 @@ Partitioner::execute(conduit::Node &output)
             {
                 chunks.push_back(Chunk(meshes[i], false, dr, dd));
             }
+            chunk_assoc_aset.push_back(assoc_aset);
             adjset_data.push_back(wrapped_adjset);
             domain_to_chunk_map[meshes[i]][i] = {};
         }
@@ -4303,7 +4326,10 @@ Partitioner::execute(conduit::Node &output)
             std::vector<index_t> vert_ids;
             conduit::Node *c = extract(i, *meshes[i], vert_ids);
             chunks.push_back(Chunk(c, true, dr, dd));
-            if (meshes[i]->has_child("adjsets"))
+            const conduit::Node* assoc_aset
+                = get_associated_topo_adjset(*meshes[i], selections[i]->get_topology());
+            chunk_assoc_aset.push_back(assoc_aset);
+            if (assoc_aset)
             {
                 adjset_data.push_back(c->fetch_ptr("adjsets"));
             }
