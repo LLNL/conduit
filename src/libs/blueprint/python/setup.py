@@ -60,6 +60,7 @@ setup (name = 'conduit blueprint',
                  'conduit.blueprint.mesh.examples',
                  'conduit.blueprint.table',
                  'conduit.blueprint.table.examples'],
-       cmdclass={'install_egg_info': SkipEggInfo})
+       cmdclass={'install_egg_info': SkipEggInfo},
+       zip_safe=False)
 
 

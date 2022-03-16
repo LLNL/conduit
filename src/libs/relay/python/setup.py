@@ -58,6 +58,7 @@ setup (name = 'conduit relay',
                  'conduit.relay.io.blueprint',
                  'conduit.relay.mpi',
                  'conduit.relay.web'],
-       cmdclass={'install_egg_info': SkipEggInfo})
+       cmdclass={'install_egg_info': SkipEggInfo},
+       zip_safe=False)
 
 
