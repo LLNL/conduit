@@ -3832,39 +3832,20 @@ Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
 
 //---------------------------------------------------------------------------
 void
-Partitioner::init_chunk_adjsets(const DomainToChunkMap& dom_2_chunks,
+Partitioner::init_chunk_adjsets(const std::vector<const Node*>& chunk_assoc_adjset,
                                 std::vector<Node*>& adjset_data)
 {
-    for (const auto& dom_map : dom_2_chunks)
+    for (size_t icnk = 0; icnk < chunk_assoc_adjset.size(); icnk++)
     {
-        const Node& domain = *(dom_map.first);
-        const ChunkToVertsMap& chunks = dom_map.second;
-        // Gather the set of chunks that will split this pre-load balance
-        // domain
-        std::vector<index_t> chunks_to_init;
-        for (const auto& chunk : chunks)
-        {
-            index_t local_chunk_id = chunk.first;
-            chunks_to_init.push_back(local_chunk_id);
-        }
+        if (!chunk_assoc_adjset[icnk]) { continue; }
+        const Node& adjset = *chunk_assoc_adjset[icnk];
+        const std::string adjset_name = adjset.name();
+        const std::string adjset_topo = adjset["topology"].as_string();
+        const std::string adjset_assoc = adjset["association"].as_string();
 
-        if (!domain.has_child("adjsets"))
-        {
-            continue;
-        }
-        // loop over all adjsets in the current domain
-        for (const Node& adjset : domain["adjsets"].children())
-        {
-            const std::string adjset_name = adjset.name();
-            const std::string adjset_topo = adjset["topology"].as_string();
-            const std::string adjset_assoc = adjset["association"].as_string();
-            for (index_t chunk_id : chunks_to_init)
-            {
-                Node& adjset_new = adjset_data[chunk_id]->fetch(adjset_name);
-                adjset_new["association"].set("vertex");
-                adjset_new["topology"].set(adjset_topo);
-            }
-        }
+        Node& new_adjset = adjset_data[icnk]->fetch(adjset_name);
+        new_adjset["association"].set("vertex");
+        new_adjset["topology"].set(adjset_topo);
     }
 }
 
@@ -4346,7 +4327,7 @@ Partitioner::execute(conduit::Node &output)
     std::vector<int> dest_rank, dest_domain, offsets;
     map_chunks(chunks, dest_rank, dest_domain, offsets);
 
-    init_chunk_adjsets(domain_to_chunk_map, adjset_data);
+    init_chunk_adjsets(chunk_assoc_aset, adjset_data);
     build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
     build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
 
