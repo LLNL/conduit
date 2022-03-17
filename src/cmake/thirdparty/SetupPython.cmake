@@ -193,27 +193,27 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
     # check req'd args
     if(NOT DEFINED args_NAME)
        message(FATAL_ERROR
-               "PYTHON_ADD_HYBRID_MODULE: Missing required argument NAME")
+               "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument NAME")
     endif()
 
     if(NOT DEFINED args_DEST_DIR)
        message(FATAL_ERROR
-               "PYTHON_ADD_HYBRID_MODULE: Missing required argument DEST_DIR")
+               "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument DEST_DIR")
     endif()
 
     if(NOT DEFINED args_PY_MODULE_DIR)
        message(FATAL_ERROR
-       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_MODULE_DIR")
+       "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument PY_MODULE_DIR")
     endif()
 
     if(NOT DEFINED args_PY_SETUP_FILE)
        message(FATAL_ERROR
-       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SETUP_FILE")
+       "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument PY_SETUP_FILE")
     endif()
 
     if(NOT DEFINED args_PY_SOURCES)
        message(FATAL_ERROR
-       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SOURCES")
+       "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument PY_SOURCES")
     endif()
 
     MESSAGE(STATUS "Configuring python distutils setup: ${args_NAME}")
