@@ -45,10 +45,10 @@ import sys
 from distutils.core import setup
 from distutils.command.install_egg_info import install_egg_info
 
-# # disable install_egg_info
-# class SkipEggInfo(install_egg_info):
-#     def run(self):
-#         pass
+# disable install_egg_info
+class SkipEggInfo(install_egg_info):
+    def run(self):
+        pass
 
 setup (name = 'conduit',
        description = 'conduit',
@@ -66,6 +66,8 @@ setup (name = 'conduit',
                  'conduit.relay.io',
                  'conduit.relay.io.blueprint',
                  'conduit.relay.mpi',
-                 'conduit.relay.web'])
+                 'conduit.relay.web'],
+        cmdclass={'install_egg_info': SkipEggInfo},
+        zip_safe=False)
 
 
