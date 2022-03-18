@@ -35,6 +35,7 @@ import re
 import sys
 import platform
 import subprocess
+import shutil
 
 from os.path import join as pjoin
 
@@ -42,6 +43,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
+CONDUIT_VERSION = '0.8.0'
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -72,13 +74,18 @@ class CMakeBuild(build_ext):
         extdir =self.get_ext_fullpath(ext.name)
         extdir = os.path.abspath(os.path.dirname(extdir))
 
+
         # required for auto-detection of auxiliary "native" libs
         if not extdir.endswith(os.path.sep):
             extdir += os.path.sep
         cmake_args = ['-DPYTHON_MODULE_INSTALL_PREFIX=' + pjoin(extdir),
-                      '-DCMAKE_INSTALL_PREFIX=' + pjoin(extdir, "conduit","conduit_cxx"),
+                      '-DCMAKE_INSTALL_PREFIX=' + pjoin(ext.sourcedir,"_install"),
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DENABLE_PYTHON:BOOL=ON',
+                      # this will build the main conduit libs as shared
+                      # and they will be linked into the python modules
+                      # dynamic libs
+                      '-DBUILD_SHARED_LIBS:BOOL=OFF',
                       '-DHDF5_DIR=' + HDF5_DIR,
                       '-DENABLE_MPI=' + ENABLE_MPI,
                       '-DENABLE_TESTS:BOOL=OFF',
@@ -111,6 +118,15 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.', '--target','install'] + build_args,
                               cwd=self.build_temp,
                               env=env)
+        # check for different pip python module folder name
+        dest_dir = "conduit-{0}-py{1}.{2}.egg".format(CONDUIT_VERSION,sys.version_info[0],sys.version_info[1])
+
+        if os.path.isdir(pjoin(extdir,dest_dir)):
+            # move all of the compiled libs into this folder
+            cmp_assets  = os.listdir(pjoin(extdir, "conduit"))
+            for fname in cmp_assets:
+                shutil.move(pjoin(extdir, "conduit", fname), pjoin(extdir, dest_dir))
+            shutil.rmtree(pjoin(extdir, "conduit"))
 
 #
 # pass options via env vars
@@ -122,7 +138,7 @@ ENABLE_MPI = os.environ.get('ENABLE_MPI', 'OFF')
 # https://packaging.python.org/guides/distributing-packages-using-setuptools
 setup(
     name='conduit',
-    version='0.8.0',
+    version=CONDUIT_VERSION,
     author='Cyrus Harrison',
     author_email='cyrush@llnl.gov',
     maintainer='Cyrus Harrison',
