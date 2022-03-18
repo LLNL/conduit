@@ -613,13 +613,12 @@ protected:
      @brief Generates initial intermediate adjsets for each chunk, based on the
             adjsets in the original domains.
 
-     @param chunks A map of pre-partition domains to the set of local chunk ids
-                   it is decomposed into, as well as the associated vertex maps
-                   for each chunk.
+     @param chunk_assoc_adjset An array of nodes pointing to corresponding
+                               pre-load balance domain adjsets for each chunk.
      @param[out] adjset_data An array of nodes containing adjset data for each
                              chunk local to this rank.
      */
-    void init_chunk_adjsets(const DomainToChunkMap& chunks,
+    void init_chunk_adjsets(const std::vector<const conduit::Node*>& chunk_assoc_adjset,
                             std::vector<conduit::Node*>& adjset_data);
 
     /**
