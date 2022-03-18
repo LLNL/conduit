@@ -226,7 +226,8 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
     endif()
 
     add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
-            COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+            COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
+            ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
             build
             --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
             install
@@ -248,7 +249,8 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
+                    ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
                     build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
                     install --install-purelib=${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
@@ -259,7 +261,8 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
+                    ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
                     build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
                     install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)

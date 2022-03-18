@@ -74,17 +74,17 @@ class CMakeBuild(build_ext):
         extdir =self.get_ext_fullpath(ext.name)
         extdir = os.path.abspath(os.path.dirname(extdir))
 
-
+        # when off,  will build the main conduit libs as shared
+        # and they will be linked into the python modules dynamic libs
+        build_shared_libs = "OFF"
+        
         # required for auto-detection of auxiliary "native" libs
         if not extdir.endswith(os.path.sep):
             extdir += os.path.sep
         cmake_args = ['-DPYTHON_MODULE_INSTALL_PREFIX=' + pjoin(extdir),
                       '-DCMAKE_INSTALL_PREFIX=' + pjoin(ext.sourcedir,"_install"),
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DENABLE_PYTHON:BOOL=ON',
-                      # this will build the main conduit libs as shared
-                      # and they will be linked into the python modules
-                      # dynamic libs
+                      '-DENABLE_PYTHON:BOOL=' + build_shared_libs,
                       '-DBUILD_SHARED_LIBS:BOOL=OFF',
                       '-DHDF5_DIR=' + HDF5_DIR,
                       '-DENABLE_MPI=' + ENABLE_MPI,
@@ -118,15 +118,6 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.', '--target','install'] + build_args,
                               cwd=self.build_temp,
                               env=env)
-        # check for different pip python module folder name
-        dest_dir = "conduit-{0}-py{1}.{2}.egg".format(CONDUIT_VERSION,sys.version_info[0],sys.version_info[1])
-
-        if os.path.isdir(pjoin(extdir,dest_dir)):
-            # move all of the compiled libs into this folder
-            cmp_assets  = os.listdir(pjoin(extdir, "conduit"))
-            for fname in cmp_assets:
-                shutil.move(pjoin(extdir, "conduit", fname), pjoin(extdir, dest_dir))
-            shutil.rmtree(pjoin(extdir, "conduit"))
 
 #
 # pass options via env vars

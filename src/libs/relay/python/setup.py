@@ -41,15 +41,14 @@
 ###############################################################################
 
 import sys
-from setuptools import setup
-#from distutils.core import setup
-#from distutils.command.install_egg_info import install_egg_info
+
+from distutils.core import setup
+from distutils.command.install_egg_info import install_egg_info
 
 # disable install_egg_info
 class SkipEggInfo(install_egg_info):
     def run(self):
         pass
-
 
 setup (name = 'conduit relay',
        description = 'conduit relay',
@@ -59,7 +58,6 @@ setup (name = 'conduit relay',
                  'conduit.relay.io.blueprint',
                  'conduit.relay.mpi',
                  'conduit.relay.web'],
-       cmdclass={'install_egg_info': SkipEggInfo},
-       zip_safe=False)
+       cmdclass={'install_egg_info': SkipEggInfo})
 
 
