@@ -8,7 +8,6 @@
 ###############################################################################
 
 import sys
-#from setuptools import setup
 from distutils.core import setup
 from distutils.command.install_egg_info import install_egg_info
 
@@ -34,7 +33,6 @@ setup (name = 'conduit',
                  'conduit.relay.io.blueprint',
                  'conduit.relay.mpi',
                  'conduit.relay.web'],
-        cmdclass={'install_egg_info': SkipEggInfo},
-        zip_safe=False)
+        cmdclass={'install_egg_info': SkipEggInfo})
 
 

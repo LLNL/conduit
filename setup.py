@@ -35,7 +35,6 @@ import re
 import sys
 import platform
 import subprocess
-import shutil
 
 from os.path import join as pjoin
 
