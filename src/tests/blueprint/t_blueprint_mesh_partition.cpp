@@ -2589,3 +2589,81 @@ TEST(conduit_blueprint_mesh_partition, matset_spiral)
         }
     }
 }
+
+
+using namespace conduit;
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, threshold_example)
+{
+
+    Node mesh;
+    index_t base_grid_ele_i = 3;
+    index_t base_grid_ele_j = 3;
+
+    conduit::blueprint::mesh::examples::related_boundary(base_grid_ele_i,
+                                                         base_grid_ele_j,
+                                                         mesh);
+
+    std::string output_base = "tout_bp_part_threshold_";
+
+    // prefer hdf5, fall back to yaml
+    std::string protocol = "yaml";
+
+    if(check_if_hdf5_enabled())
+    {
+        protocol = "hdf5";
+    }
+
+    conduit::relay::io::blueprint::save_mesh(mesh,
+                                             output_base + "input",
+                                             protocol);
+
+    // lets threshold the boundary mesh, remove any interior to the problem
+    // elements
+    
+    // step 1: create a selection description of the zones we want to keep
+
+    // loop over all domains
+    Node opts;
+    NodeConstIterator doms_itr = mesh.children();
+    while(doms_itr.has_next())
+    {
+        const Node &dom = doms_itr.next();
+        // fetch the field that we want to use to check
+        // if the boundary ele are valid
+        int64_accessor bndry_vals = dom["fields/bndry_val/values"].value();
+
+        index_t domain_id = dom["state/domain_id"].to_value();
+
+        std::vector<int64> ele_ids_to_keep;
+        for(index_t i=0; i< bndry_vals.number_of_elements(); i++)
+        {
+            // this is our criteria to "keep" and element 
+            if(bndry_vals[i] == 1)
+            {
+                ele_ids_to_keep.push_back(i);
+            }
+        }
+
+        // add selection description 
+        Node &d_sel = opts["selections"].append();
+        d_sel["type"] = "explicit";
+        d_sel["domain_id"] = domain_id;
+        d_sel["elements"] = ele_ids_to_keep;
+        d_sel["topology"] = "boundary";
+    }
+
+    opts["target"] = 3;
+    // show our options
+    opts.print();
+
+    // use the partition function to select this subset
+    Node res_thresh;
+    conduit::blueprint::mesh::partition(mesh, opts, res_thresh);
+    conduit::relay::io::blueprint::save_mesh(res_thresh,
+                                             output_base + "result",
+                                             protocol);
+}
+
+
