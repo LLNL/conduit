@@ -225,49 +225,96 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         string(REGEX REPLACE "/" "\\\\" abs_dest_path  ${abs_dest_path})
     endif()
 
-    add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
-            COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
-            ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-            build
-            --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
-            install
-            --install-purelib="${abs_dest_path}"
-            DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-    add_custom_target(${args_NAME} ALL DEPENDS
-                      ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build)
+    if("${PYTHON_CONFIG_VERSION}" VERSION_GREATER_EQUAL "3.0.0")
+        # python 3 cases:
+        add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
+                COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
+                ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                build
+                --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
+                install
+                --install-purelib="${abs_dest_path}"
+                DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-    # also use distutils for the install ...
-    # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
-    if(PYTHON_MODULE_INSTALL_PREFIX)
-        set(py_mod_inst_prefix ${PYTHON_MODULE_INSTALL_PREFIX})
-        # make sure windows style paths don't ruin our day (or night)
-        if(WIN32)
-            string(REGEX REPLACE "/" "\\\\" py_mod_inst_prefix  ${PYTHON_MODULE_INSTALL_PREFIX})
+        add_custom_target(${args_NAME} ALL DEPENDS
+                          ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build)
+
+        # also use distutils for the install ...
+        # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
+        if(PYTHON_MODULE_INSTALL_PREFIX)
+            set(py_mod_inst_prefix ${PYTHON_MODULE_INSTALL_PREFIX})
+            # make sure windows style paths don't ruin our day (or night)
+            if(WIN32)
+                string(REGEX REPLACE "/" "\\\\" py_mod_inst_prefix  ${PYTHON_MODULE_INSTALL_PREFIX})
+            endif()
+            INSTALL(CODE
+                "
+                EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
+                        ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                        build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
+                        install --install-purelib=${py_mod_inst_prefix}
+                    OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
+                MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+                ")
+        else()
+            # else install to the dest dir under CMAKE_INSTALL_PREFIX
+            INSTALL(CODE
+                "
+                EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
+                        ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                        build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
+                        install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
+                    OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
+                MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+                ")
         endif()
-        INSTALL(CODE
-            "
-            EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
-                    ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
-                    install --install-purelib=${py_mod_inst_prefix}
-                OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
-            MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
-            ")
     else()
-        # else install to the dest dir under CMAKE_INSTALL_PREFIX
-        INSTALL(CODE
-            "
-            EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
-                    ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
-                    install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
-                OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
-            MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
-            ")
+        # python 2 cases:
+        add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
+                COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                build
+                --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
+                install
+                --install-purelib="${abs_dest_path}"
+                DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+        add_custom_target(${args_NAME} ALL DEPENDS
+                          ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build)
+
+        # also use distutils for the install ...
+        # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
+        if(PYTHON_MODULE_INSTALL_PREFIX)
+            set(py_mod_inst_prefix ${PYTHON_MODULE_INSTALL_PREFIX})
+            # make sure windows style paths don't ruin our day (or night)
+            if(WIN32)
+                string(REGEX REPLACE "/" "\\\\" py_mod_inst_prefix  ${PYTHON_MODULE_INSTALL_PREFIX})
+            endif()
+            INSTALL(CODE
+                "
+                EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                        build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
+                        install --install-purelib=${py_mod_inst_prefix}
+                    OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
+                MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+                ")
+        else()
+            # else install to the dest dir under CMAKE_INSTALL_PREFIX
+            INSTALL(CODE
+                "
+                EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
+                        build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
+                        install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
+                    OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
+                MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+                ")
+        endif()
     endif()
 
     # set folder if passed
