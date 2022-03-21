@@ -53,6 +53,7 @@ void related_boundary(index_t base_grid_ele_i,
     // domain 0
     // --------------------
     // --------------------
+    mesh["domain0/state/domain_id"] = 0;
 
     mesh["domain0/coordsets/coords/type"] = "explicit";
     index_t num_coords = (base_grid_ele_i +1) * (base_grid_ele_j+1);
@@ -264,7 +265,7 @@ void related_boundary(index_t base_grid_ele_i,
     // --------------------
 
     index_t domain1_ele_id_offset = main_id_global;
-
+    mesh["domain1/state/domain_id"] = 1;
     mesh["domain1/coordsets/coords/type"] = "explicit";
     num_coords = (base_grid_ele_i +1) * (base_grid_ele_j+1);
     mesh["domain1/coordsets/coords/values/x"].set( DataType::float64(num_coords) );
@@ -470,6 +471,7 @@ void related_boundary(index_t base_grid_ele_i,
     // --------------------
 
     index_t domain2_ele_id_offset = main_id_global;
+    mesh["domain2/state/domain_id"] = 2;
     mesh["domain2/coordsets/coords/type"] = "explicit";
     num_coords = (base_grid_ele_i +1) * ((base_grid_ele_j *2 )+1);
     mesh["domain2/coordsets/coords/values/x"].set( DataType::float64(num_coords) );
