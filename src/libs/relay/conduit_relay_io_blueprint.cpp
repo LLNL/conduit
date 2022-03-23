@@ -1080,19 +1080,23 @@ void write_mesh(const Node &mesh,
             uint64 domain = dom["state/domain_id"].to_uint64();
 
             std::string output_file  = conduit::utils::join_file_path(output_dir,
-                                                conduit_fmt::format("domain_{:06d}.{}:{}",
+                                                conduit_fmt::format("domain_{:06d}.{}",
                                                                     domain,
-                                                                    file_protocol,
-                                                                    opts_mesh_name));
+                                                                    file_protocol));
             // properly support truncate vs non truncate
+
+            relay::io::IOHandle hnd;
+            Node open_opts;
+            open_opts["mode"] = "w";
             if(opts_truncate)
             {
-                relay::io::save(dom, output_file);
+               open_opts["mode"] = "wt";
             }
-            else
-            {
-                relay::io::save_merged(dom, output_file);
-            }
+
+            // open our handle
+            hnd.open(output_file, open_opts);
+            // write to  mesh name subpath
+            hnd.write(dom, opts_mesh_name);
         }
     }
     else // more complex case, N domains to M files

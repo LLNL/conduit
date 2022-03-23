@@ -22,7 +22,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Added szip and zlib linking fix for older version of HDF5 (1.8.14)
-
+- Fixed a bug with `relay::io::blueprint::write_mesh` and `relay::io::blueprint::save_mesh` for the multi domain case, removing unintended `:mesh` file name suffix for json and yaml domain files.
 
 ## [0.8.2] - Released 2022-02-01
 
