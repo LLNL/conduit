@@ -65,11 +65,11 @@ namespace examples
     ///
     /// It is an error if the vertex or element data array shapes are too
     /// small to contain the requested mesh.
-    void CONDUIT_BLUEPRINT_API arbitrary(conduit::Node &desc,
-                                         conduit::index_t nx,
-                                         conduit::index_t ny,
-                                         conduit::index_t nz,
-                                         conduit::Node &res);
+    void CONDUIT_BLUEPRINT_API strided_structured(conduit::Node &desc,
+                                                  conduit::index_t nx,
+                                                  conduit::index_t ny,
+                                                  conduit::index_t nz,
+                                                  conduit::Node &res);
 
     /// Generates a multidomain uniform grid of 'basic' examples for each
     /// domain/grid element.

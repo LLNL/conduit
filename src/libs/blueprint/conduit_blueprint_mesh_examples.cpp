@@ -377,7 +377,7 @@ void braid_init_example_element_scalar_field(index_t nele_x,
 
 
 //---------------------------------------------------------------------------//
-void arbitrary_size_element_scalar_field(index_t nele_x,
+void strided_structured_size_element_scalar_field(index_t nele_x,
                                          index_t nele_y,
                                          index_t nele_z,
                                          index_t origin_x,
@@ -458,17 +458,17 @@ void arbitrary_size_element_scalar_field(index_t nele_x,
 
 
 //---------------------------------------------------------------------------//
-void arbitrary_size_point_scalar_field(index_t npts_x,
-                                       index_t npts_y,
-                                       index_t npts_z,
-                                       index_t origin_x,
-                                       index_t origin_y,
-                                       index_t origin_z,
-                                       index_t stride_x,
-                                       index_t stride_y,
-                                       index_t stride_z,
-                                       Node &res,
-                                       index_t prims_per_pt=1)
+void strided_structured_size_point_scalar_field(index_t npts_x,
+                                                index_t npts_y,
+                                                index_t npts_z,
+                                                index_t origin_x,
+                                                index_t origin_y,
+                                                index_t origin_z,
+                                                index_t stride_x,
+                                                index_t stride_y,
+                                                index_t stride_z,
+                                                Node &res,
+                                                index_t prims_per_pt=1)
 {
     index_t npts = stride_x * stride_y;
 
@@ -2448,11 +2448,11 @@ fill_if_array_exists(Node &desc, const std::string &path, bool threeD, index_t p
 
 //---------------------------------------------------------------------------//
 void
-arbitrary(Node &desc, // shape of requested data arrays
-          index_t npts_x, // number of points in x
-          index_t npts_y, // number of points in y
-          index_t npts_z, // number of points in z
-          Node &res)
+strided_structured(Node &desc, // shape of requested data arrays
+                   index_t npts_x, // number of points in x
+                   index_t npts_y, // number of points in y
+                   index_t npts_z, // number of points in z
+                   Node &res)
 {
     // =================================================================
     // default shapes and origins of vertex and element arrays
@@ -2494,7 +2494,7 @@ arbitrary(Node &desc, // shape of requested data arrays
     if( ! (npts_x_ok && npts_y_ok && npts_z_ok && ele_ext_orig_ok && pts_ext_orig_ok) )
     {
         // error, not enough points or storage to create the topo
-        CONDUIT_ERROR("blueprint::mesh::examples::arbitrary requires: " << std::endl <<
+        CONDUIT_ERROR("blueprint::mesh::examples::strided_structured requires: " << std::endl <<
                       "For 2D, npts_x > 1 and npts_y > 1 and npts_z == 0"
                       << std::endl <<
                       "For 3D, npts_x > 1 and npts_y > 1 and npts_z > 1"
@@ -2540,27 +2540,27 @@ arbitrary(Node &desc, // shape of requested data arrays
 
     Node &fields = res["fields"];
 
-    arbitrary_size_point_scalar_field(npts_x,
-                                      npts_y,
-                                      npts_z,
-                                      pts_origin[0],
-                                      pts_origin[1],
-                                      pts_origin[2],
-                                      pts_extent[0],
-                                      pts_extent[1],
-                                      pts_extent[2],
-                                      fields["radial"]);
+    strided_structured_size_point_scalar_field(npts_x,
+                                               npts_y,
+                                               npts_z,
+                                               pts_origin[0],
+                                               pts_origin[1],
+                                               pts_origin[2],
+                                               pts_extent[0],
+                                               pts_extent[1],
+                                               pts_extent[2],
+                                               fields["radial"]);
 
-    arbitrary_size_element_scalar_field(nele_x,
-                                        nele_y,
-                                        nele_z,
-                                        ele_origin[0],
-                                        ele_origin[1],
-                                        ele_origin[2],
-                                        ele_extent[0],
-                                        ele_extent[1],
-                                        ele_extent[2],
-                                        fields["field"]);
+    strided_structured_size_element_scalar_field(nele_x,
+                                                 nele_y,
+                                                 nele_z,
+                                                 ele_origin[0],
+                                                 ele_origin[1],
+                                                 ele_origin[2],
+                                                 ele_extent[0],
+                                                 ele_extent[1],
+                                                 ele_extent[2],
+                                                 fields["field"]);
 
     braid_init_example_point_scalar_field(npts_x,
                                           npts_y,
