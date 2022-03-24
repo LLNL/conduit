@@ -60,12 +60,24 @@ TEST(blueprint_mpi_load_bal, basic)
     index_t base_grid_ele_i = 3;
     index_t base_grid_ele_j = 3;
 
-    if(par_rank == 0)
+    // gen on all ranks, sub select domains for mpi use
+    conduit::blueprint::mesh::examples::related_boundary(base_grid_ele_i,
+                                                         base_grid_ele_j,
+                                                         mesh);
+    if(par_size > 1)
     {
-        conduit::blueprint::mesh::examples::related_boundary(base_grid_ele_i,
-                                                             base_grid_ele_j,
-                                                             mesh);
-    }// end par_rank - 0
+        if(par_rank == 0)
+        {
+            // keep domains 0 and 1, remove domain 2
+            mesh.remove("domain2");
+        }
+        else // rank == 1;
+        {
+            // keep domain 2, remove domains 0 and 1
+            mesh.remove("domain0");
+            mesh.remove("domain1");
+        }
+    }
 
     std::string output_base = "tout_bp_mpi_load_bal_basic_input";
 
@@ -93,27 +105,34 @@ TEST(blueprint_mpi_load_bal, basic)
 
     // paint the parmetis result on the boundary mesh, using the parmetis field 
     // and the relationships between the boundary and main topo
-                                                  
+
+    std::cout  << "paint parmetis field on boundary topology" << std::endl;
+
     // loop over domains
     NodeIterator itr = mesh.children();
     while(itr.has_next())
     {
         Node &curr_dom = itr.next();
-        // get main / parmetis_result
-        int64_accessor main_parmetis_result = curr_dom["fields/parmetis_result/values"].value();
 
-        // get boundary / bndry_to_main_local
-        int64_accessor bndry_to_main_local_vals = curr_dom["fields/bndry_to_main_local/values"].value();
-        index_t num_bndry_ele = bndry_to_main_local_vals.number_of_elements();
-
-        // create bndry_parmetis_result
-        curr_dom["fields/bndry_parmetis_result/association"] = "element";
-        curr_dom["fields/bndry_parmetis_result/topology"] = "boundary";
-        curr_dom["fields/bndry_parmetis_result/values"].set(DataType::int64(num_bndry_ele));
-        int64_array bndry_parmetis_result_vals = curr_dom["fields/bndry_parmetis_result/values"].value();
-        for(index_t i=0;i<num_bndry_ele;i++)
+        // mesh could be empty on some ranks
+        if(curr_dom.has_child("fields"))
         {
-            bndry_parmetis_result_vals[i] = main_parmetis_result[bndry_to_main_local_vals[i]];
+            // get main / parmetis_result
+            int64_accessor main_parmetis_result = curr_dom["fields/parmetis_result/values"].value();
+
+            // get boundary / bndry_to_main_local
+            int64_accessor bndry_to_main_local_vals = curr_dom["fields/bndry_to_main_local/values"].value();
+            index_t num_bndry_ele = bndry_to_main_local_vals.number_of_elements();
+
+            // create bndry_parmetis_result
+            curr_dom["fields/bndry_parmetis_result/association"] = "element";
+            curr_dom["fields/bndry_parmetis_result/topology"] = "boundary";
+            curr_dom["fields/bndry_parmetis_result/values"].set(DataType::int64(num_bndry_ele));
+            int64_array bndry_parmetis_result_vals = curr_dom["fields/bndry_parmetis_result/values"].value();
+            for(index_t i=0;i<num_bndry_ele;i++)
+            {
+                bndry_parmetis_result_vals[i] = main_parmetis_result[bndry_to_main_local_vals[i]];
+            }
         }
     }
 

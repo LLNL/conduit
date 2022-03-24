@@ -132,7 +132,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
     std::vector<Node*> domains;
     ::conduit::blueprint::mesh::domains(mesh,domains);
-
+    
     // parse options
     std::string topo_name = "";
     std::string field_prefix = "";
@@ -141,7 +141,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     {
         topo_name = options["topology"].as_string();
     }
-    else
+    else if(local_num_doms > 0)
     {
         // TOOD: IMP find the first topo name on a rank with data
         // for now, just grab first topo
@@ -563,6 +563,7 @@ void generate_partition_field(conduit::Node &mesh,
 
     index_t global_num_doms = number_of_domains(mesh,comm);
 
+
     if(global_num_doms == 0)
     {
         return;
@@ -580,7 +581,7 @@ void generate_partition_field(conduit::Node &mesh,
     {
         topo_name = options["topology"].as_string();
     }
-    else
+    else if(domains.size() > 0 )
     {
         // TOOD: IMP find the first topo name on a rank with data
         // for now, just grab first topo
@@ -592,7 +593,7 @@ void generate_partition_field(conduit::Node &mesh,
     {
         ncommonnodes = options["parmetis_ncommonnodes"].as_int();
     }
-    else
+    else if(domains.size() > 0 )
     {
         // in 2D, zones adjacent if they share 2 nodes (edge)
         // in 3D, zones adjacent if they share 3 nodes (plane)
@@ -624,6 +625,7 @@ void generate_partition_field(conduit::Node &mesh,
 
     // we need the total number of local eles
     // the total number of element to vers entries
+
 
     index_t local_total_num_eles =0;
     index_t local_total_ele_to_verts_size = 0;
