@@ -153,6 +153,9 @@ TEST(blueprint_mpi_load_bal, basic)
         selection["domain_id"] = "any";
         selection["field"] = "parmetis_result";
         selection["topology"] = "main";
+
+        std::cout  << "partitioning the main topology" << std::endl;
+        
         conduit::blueprint::mpi::mesh::partition(mesh, options, res_main, MPI_COMM_WORLD);
     }
     res_main.print();
@@ -171,26 +174,34 @@ TEST(blueprint_mpi_load_bal, basic)
             curr_dom.remove("adjsets");
         }
 
+
+
         Node &selection = options["selections"].append();
         selection["type"] = "field";
         selection["domain_id"] = "any";
         selection["field"] = "bndry_parmetis_result";
         selection["topology"] = "boundary";
 
+        std::cout  << "partitioning the boundary topology" << std::endl;
+        
         conduit::blueprint::mpi::mesh::partition(bndry, options, res_bndry, MPI_COMM_WORLD);
     }
 
-    std::cout  << "saving partition result meshes" << std::endl;
+    std::cout  << "saving partition result main mesh" << std::endl;
     conduit::relay::mpi::io::blueprint::save_mesh(res_main,
                                                   "tout_bp_mpi_load_bal_basic_part_result_main",
                                                   protocol,
                                                   MPI_COMM_WORLD);
 
+    std::cout  << "saving partition result boundary mesh" << std::endl;
     // TODO: This is twisted.
     conduit::relay::mpi::io::blueprint::save_mesh(res_bndry,
                                                   "tout_bp_mpi_load_bal_basic_part_result_bndry",
                                                   protocol,
                                                   MPI_COMM_WORLD);
+
+
+    std::cout  << "creating new field on main topology to map back" << std::endl;
 
     // add a BRAND NEW field!
     itr = res_main.children();
@@ -210,7 +221,7 @@ TEST(blueprint_mpi_load_bal, basic)
         }
     }
 
-    std::cout  << "saving partition result mesh" << std::endl;
+    std::cout  << "saving partition result mesh with new field" << std::endl;
     conduit::relay::mpi::io::blueprint::save_mesh(res_main,
                                                   "tout_bp_mpi_load_bal_basic_part_result",
                                                   protocol,
@@ -219,6 +230,8 @@ TEST(blueprint_mpi_load_bal, basic)
 
     Node mapback_opts;
     mapback_opts["fields"].append().set("main_new_and_improved");
+
+    std::cout  << "mapping back new field to orignal main topology" << std::endl;
     // Perform a map-back of some zone-centered variables
     conduit::blueprint::mpi::mesh::partition_map_back(res_main,
                                                       mapback_opts,
