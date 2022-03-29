@@ -106,7 +106,7 @@ if(MPI_FOUND)
     if(PARMETIS_FOUND)
         message(STATUS "Parmetis enabled: Adding parmetis dependent unit tests")
         foreach(TEST ${BLUEPRINT_RELAY_PARMETIS_MPI_TESTS})
-            add_cpp_mpi_test(TEST t_blueprint_mpi_mesh_parmetis
+            add_cpp_mpi_test(TEST ${TEST}
                              NUM_MPI_TASKS 2
                              DEPENDS_ON conduit
                                         conduit_blueprint_mpi
