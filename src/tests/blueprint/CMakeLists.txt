@@ -113,8 +113,7 @@ if(MPI_FOUND)
                                         conduit_relay
                                         conduit_relay_mpi
                                         conduit_relay_mpi_io)
-        endif()
-
+        endforeach()
     else()
         message(STATUS "Parmetis disabled: Skipping parmetis dependent unit tests")
     endif()
