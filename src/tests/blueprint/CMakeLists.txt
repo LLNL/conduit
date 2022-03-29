@@ -75,13 +75,6 @@ set(BLUEPRINT_RELAY_PARMETIS_MPI_TESTS
     t_blueprint_mpi_mesh_parmetis
     t_blueprint_mpi_mesh_load_balance_related_boundary)
 
-if(PARMETIS_FOUND)
-    message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
-    list(APPEND BLUEPRINT_RELAY_MPI_TESTS t_blueprint_mpi_mesh_load_balance_related_boundary)
-elseif()
-    
-endif()
-
 set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4
     t_blueprint_mpi_mesh_flatten
     t_blueprint_mpi_mesh_partition)
