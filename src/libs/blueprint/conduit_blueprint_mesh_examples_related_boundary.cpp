@@ -713,7 +713,7 @@ void related_boundary(index_t base_grid_ele_i,
     mesh["domain1/adjsets/main_adjset/topology"] = "main";
     Node &d1_adj_groups = mesh["domain1/adjsets/main_adjset/groups"];
 
-    d1_adj_groups["group_0_1_2/neighbors"].set({1,2});
+    d1_adj_groups["group_0_1_2/neighbors"].set({0,2});
     // one point is shared between all three
     d1_adj_groups["group_0_1_2/values"] = (base_grid_ele_i+1) * (base_grid_ele_j+1)-1;
 

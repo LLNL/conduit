@@ -10,6 +10,7 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mpi.hpp"
 #include "conduit_blueprint_mpi_mesh_parmetis.hpp"
 #include "conduit_relay.hpp"
@@ -170,7 +171,8 @@ TEST(blueprint_mpi_load_bal, basic)
             Node &curr_dom = itr.next();
             // remove any orig fields added by the partition 
             curr_dom["fields"].remove("global_element_ids");
-            curr_dom["fields"].remove("global_vertex_ids");
+            curr_dom["fields"].rename_child("global_vertex_ids", "bndry_gvids");
+            curr_dom["fields/bndry_gvids/topology"] = "boundary";
             curr_dom.remove("adjsets");
         }
 
@@ -185,6 +187,39 @@ TEST(blueprint_mpi_load_bal, basic)
         std::cout  << "partitioning the boundary topology" << std::endl;
         
         conduit::blueprint::mpi::mesh::partition(bndry, options, res_bndry, MPI_COMM_WORLD);
+    }
+
+    {
+        namespace bputils = conduit::blueprint::mesh::utils::topology;
+        // reindex boundary topology onto main topology's coordset
+        auto main_doms = conduit::blueprint::mesh::domains(res_main);
+        auto bndry_doms = conduit::blueprint::mesh::domains(res_bndry);
+
+        for (size_t idom = 0; idom < main_doms.size(); idom++)
+        {
+            conduit::Node& main_dom = *main_doms[idom];
+            const conduit::Node& bndry_dom = *bndry_doms[idom];
+            const std::string& new_cset = main_dom["topologies/main/coordset"].as_string();
+
+            // Create a new topology indexed onto the main coordset
+            bputils::reindex_coords(bndry_dom["topologies/boundary"],
+                                    main_dom["coordsets"][new_cset],
+                                    bndry_dom["fields/bndry_gvids"],
+                                    main_dom["fields/global_vertex_ids"],
+                                    main_dom["topologies/boundary"]);
+
+            // Move some fields over as well
+            std::vector<std::string> fields_to_move = {
+                "bndry_parmetis_result",
+                "bndry_to_main_global",
+                "bndry_val",
+            };
+
+            for (const std::string& field : fields_to_move)
+            {
+                main_dom["fields"][field].set_external(bndry_dom["fields"][field]);
+            }
+        }
     }
 
     std::cout  << "saving partition result main mesh" << std::endl;
