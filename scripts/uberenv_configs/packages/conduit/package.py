@@ -75,7 +75,7 @@ class Conduit(CMakePackage):
             description="Build Conduit with HDF5 1.8.x (compatibility mode)")
     variant("silo", default=False, description="Build Conduit Silo support")
     variant("adios", default=False, description="Build Conduit ADIOS support")
-    variant("parmetis", default=False, description="Build Conduit Parmetis support")
+    variant("parmetis", default=True, description="Build Conduit Parmetis support")
 
     # zfp compression
     variant("zfp", default=False, description="Build Conduit ZFP support")
@@ -151,8 +151,8 @@ class Conduit(CMakePackage):
     #######################
     # Parmetis
     #######################
-    depends_on("parmetis", when="+parmetis")
-    depends_on("metis", when="+parmetis")
+    depends_on("parmetis", when="+mpi+parmetis")
+    depends_on("metis", when="+mpi+parmetis")
 
     #######################
     # MPI
