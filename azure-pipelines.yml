@@ -540,6 +540,9 @@ stages:
           # only run this when python is enabled
           # (there might be a better way to do this with an azure `condition:` stmt)
           if [ $ENABLE_PYTHON = 'OFF' ]; then exit 0; fi
+          export CC=${COMPILER_CC}
+          export CXX=${COMPILER_CXX}
+          export FC=${COMPILER_FC}
           pwd
           ls -l
           # find spack installed cmake
