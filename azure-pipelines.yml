@@ -372,6 +372,7 @@ stages:
            # silo constraints
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # show final spec
+           echo "SPACK SPEC:"
            echo $SPACK_SPEC
            # run uber to build tpls
            python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/
@@ -413,6 +414,8 @@ stages:
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${COMPILER_FC}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMPIEXEC_NUMPROC_FLAG=-n"; fi
            # configure
+           echo "CMAKE OPTIONS:"
+           echo ${CMAKE_OPTS}
            cmake ${CMAKE_OPTS} ../src
         displayName: 'Configure with CMake'
 
