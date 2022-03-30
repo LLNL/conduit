@@ -1160,6 +1160,8 @@ void to_polyhedral(const Node &n,
 {
     dest.reset();
 
+    Node temp;
+
     index_t par_rank = relay::mpi::rank(comm);
 
     NodeConstIterator itr = n.children();
@@ -1252,9 +1254,10 @@ void to_polyhedral(const Node &n,
                 const Node& group = grp_itr.next();
                 if (group.has_child("neighbors") && group.has_child("windows"))
                 {
-                    int64_array neighbors = group["neighbors"].as_int64_array();
-
-                    index_t nbr_id = neighbors[1];
+                    temp.reset();
+                    temp.set_external(DataType(group["neighbors"].dtype().id(), 1),
+                                      (void*)group["neighbors"].element_ptr(1));
+                    const index_t nbr_id = temp.to_index_t();
                     const Node& in_windows = group["windows"];
                     std::ostringstream nw_oss;
                     nw_oss << "window_" << std::setw(6)
@@ -1474,9 +1477,10 @@ void to_polyhedral(const Node &n,
 
                 if (group.has_child("neighbors") && group.has_child("windows"))
                 {
-                    int64_array neighbors = group["neighbors"].as_int64_array();
-
-                    index_t nbr_id = neighbors[1];
+                    temp.reset();
+                    temp.set_external(DataType(group["neighbors"].dtype().id(), 1),
+                                      (void*)group["neighbors"].element_ptr(1));
+                    const index_t nbr_id = temp.to_index_t();
                     const Node& in_windows = group["windows"];
                     std::ostringstream nw_oss;
                     nw_oss << "window_" << std::setw(6)
@@ -1694,9 +1698,10 @@ void to_polyhedral(const Node &n,
 
                 if (group.has_child("neighbors") && group.has_child("windows"))
                 {
-                    int64_array neighbors = group["neighbors"].as_int64_array();
-
-                    index_t nbr_id = neighbors[1];
+                    temp.reset();
+                    temp.set_external(DataType(group["neighbors"].dtype().id(), 1),
+                                      (void*)group["neighbors"].element_ptr(1));
+                    const index_t nbr_id = temp.to_index_t();
                     const Node& in_windows = group["windows"];
                     std::ostringstream nw_oss;
                     nw_oss << "window_" << std::setw(6)
