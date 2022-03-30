@@ -561,7 +561,7 @@ stages:
           #  Since the issue is related to hdf5 (not python!) we should investigate further.
           #
           export HDF5_ROOT_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*/`
-          export LD_LIBRARY_PATH="$HDF5_ROOT_DIR/lib"
+          export LD_LIBRARY_PATH="${HDF5_ROOT_DIR}/lib"
           #
           # make sure we can import conduit from python before we try our compiled example
           $PYTHON_EXE -c "import conduit;print(conduit.about());"
