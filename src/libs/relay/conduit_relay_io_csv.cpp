@@ -79,7 +79,7 @@ write_header(const Node &values, std::ofstream &fout)
         const Node &value = values[col];
         const std::string base_name = value.name();
         const index_t nc = value.number_of_children();
-        if(nc > 0)
+        if(nc > 1)
         {
             // Each column is "base_name/comp_name"
             for(index_t c = 0; c < nc; c++)
