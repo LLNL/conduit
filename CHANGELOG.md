@@ -9,6 +9,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### General 
+- Added C/C++ version macros `CONDUIT_VERSION_MAJOR`, `CONDUIT_VERSION_MINOR`, `CONDUIT_VERSION_PATCH` and these values as separate entries in `conduit::about()` to provide more support for compile time and runtime conduit version detection.
+
+
 #### Blueprint
 - Added `blueprint::mesh::examples::related_boundary`, which creates a mulit-domain mesh with a related boundary topology and several fileds that encode relationships between the main topology and the boundary.
 - Expanded `blueprint::mpi::mesh::generate_partition_field` to support all topology types.
@@ -22,9 +26,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Changed
 
+#### General
+- Improved pip install logic
+
 #### Relay
 - Added szip and zlib linking fix for older version of HDF5 (1.8.14)
-
+- Fixed a bug with `relay::io::blueprint::write_mesh` and `relay::io::blueprint::save_mesh` for the multi domain case, removing unintended `:mesh` file name suffix for json and yaml domain files.
 
 ## [0.8.2] - Released 2022-02-01
 

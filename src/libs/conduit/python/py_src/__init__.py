@@ -28,6 +28,8 @@ if "CONDUIT_DLL_DIR" in os.environ:
 from .conduit_python import *
 from .conduit_python import _C_API
 
-
+from . import utils
+from . import blueprint
+from . import relay
 
 

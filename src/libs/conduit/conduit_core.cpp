@@ -40,6 +40,9 @@ about(Node &n)
 {
     n.reset();
     n["version"] = CONDUIT_VERSION;
+    n["version_major"].set_int64(CONDUIT_VERSION_MAJOR);
+    n["version_minor"].set_int64(CONDUIT_VERSION_MINOR);
+    n["version_patch"].set_int64(CONDUIT_VERSION_PATCH);
 
 #ifdef CONDUIT_GIT_SHA1
     n["git_sha1"] = CONDUIT_GIT_SHA1;

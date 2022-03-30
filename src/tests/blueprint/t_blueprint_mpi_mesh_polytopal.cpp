@@ -9,9 +9,10 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
+#include "conduit_relay_io.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_mpi.hpp"
-
+#include "conduit_relay_mpi_io_blueprint.hpp"
 #include <vector>
 #include <string>
 #include "gtest/gtest.h"
@@ -194,6 +195,16 @@ void test_polytopal_create_fine_domain(Node& domain)
     group["windows/window_000000/ratio/j"] = 2;
 }
 
+//-----------------------------------------------------------------------------
+bool
+check_if_hdf5_enabled()
+{
+    Node io_protos;
+    conduit::relay::io::about(io_protos["io"]);
+    return io_protos["io/protocols/hdf5"].as_string() == "enabled";
+}
+
+
 void test_verify_topologies(Node& struct_topo, Node& poly_topo)
 {
     Node info;
@@ -216,9 +227,17 @@ TEST(conduit_blueprint_mesh_polytopal, amr_2d_transform_serial)
     int par_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
 
+    // for file output prefer hdf5, fall back to yaml
+    std::string protocol = "yaml";
+
+    if(check_if_hdf5_enabled())
+    {
+        protocol = "hdf5";
+    }
+
     Node mesh, info;
 
-    if (par_rank > 0)
+    if (par_rank == 0)
     {
         Node& domain_0 = mesh["domain_000000"];
         Node& domain_1 = mesh["domain_000001"];
@@ -228,13 +247,25 @@ TEST(conduit_blueprint_mesh_polytopal, amr_2d_transform_serial)
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
 
-    Node poly;
+    std::string output_base = "tout_to_to_polygonal_amr_2d_transform_serial_";
 
+    conduit::relay::mpi::io::blueprint::save_mesh(mesh,
+                                                  output_base + "input",
+                                                  protocol,
+                                                  MPI_COMM_WORLD);
+
+
+    Node poly;
     conduit::blueprint::mpi::mesh::to_polygonal(mesh, poly, "topo", MPI_COMM_WORLD);
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
 
-    if (par_rank > 0)
+    conduit::relay::mpi::io::blueprint::save_mesh(poly,
+                                                  output_base + "result",
+                                                  protocol,
+                                                  MPI_COMM_WORLD);
+
+    if (par_rank == 0)
     {
         Node& mesh_topo = mesh["domain_000000/topologies/topo"];
         Node& poly_topo = poly["domain_000000/topologies/topo"];
@@ -250,36 +281,53 @@ TEST(conduit_blueprint_mesh_polytopal, amr_2d_transform_serial)
 TEST(conduit_blueprint_mesh_polytopal, amr_2d_transform_parallel)
 {
     Node mesh, info;
-    std::string filename;
 
     int par_rank;
     int par_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &par_size);
 
+    // for file output prefer hdf5, fall back to yaml
+    std::string protocol = "yaml";
+
+    if(check_if_hdf5_enabled())
+    {
+        protocol = "hdf5";
+    }
+
+
     if (par_size == 1) return;
 
     if (par_rank == 0)
     {
-        filename = "transform_parallel_0.json";
-
         Node& domain_0 = mesh["domain_000000"];
         test_polytopal_create_coarse_domain(domain_0);
     }
     else if (par_rank == 1)
     {
-        filename = "transform_parallel_1.json";
         Node& domain_1 = mesh["domain_000001"];
         test_polytopal_create_fine_domain(domain_1);
     }
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
 
+    std::string output_base = "tout_to_to_polygonal_amr_2d_transform_parallel_";
+
+    conduit::relay::mpi::io::blueprint::save_mesh(mesh,
+                                                  output_base + "input",
+                                                  protocol,
+                                                  MPI_COMM_WORLD);
+
     Node poly;
 
     conduit::blueprint::mpi::mesh::to_polygonal(mesh, poly, "topo", MPI_COMM_WORLD);
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
+
+    conduit::relay::mpi::io::blueprint::save_mesh(poly,
+                                                  output_base + "result",
+                                                  protocol,
+                                                  MPI_COMM_WORLD);
 
     if (par_rank == 0)
     {
@@ -299,36 +347,51 @@ TEST(conduit_blueprint_mesh_polytopal, amr_2d_transform_parallel)
 TEST(conduit_blueprint_mesh_polytopal, to_polytopal_amr_2d_transform_parallel)
 {
     Node mesh, info;
-    std::string filename;
 
     int par_rank;
     int par_size;
     MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &par_size);
 
+    // for file output prefer hdf5, fall back to yaml
+    std::string protocol = "yaml";
+
+    if(check_if_hdf5_enabled())
+    {
+        protocol = "hdf5";
+    }
+
     if (par_size == 1) return;
 
     if (par_rank == 0)
     {
-        filename = "transform_parallel_0.json";
-
         Node& domain_0 = mesh["domain_000000"];
         test_polytopal_create_coarse_domain(domain_0);
     }
     else if (par_rank == 1)
     {
-        filename = "transform_parallel_1.json";
         Node& domain_1 = mesh["domain_000001"];
         test_polytopal_create_fine_domain(domain_1);
     }
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",mesh,info, MPI_COMM_WORLD));
 
+    std::string output_base = "tout_to_polytopal_amr_2d_transform_parallel_";
+
+    conduit::relay::mpi::io::blueprint::save_mesh(mesh,
+                                                  output_base + "input",
+                                                  protocol,
+                                                  MPI_COMM_WORLD);
+
     Node poly;
     conduit::blueprint::mpi::mesh::to_polytopal(mesh, poly, "topo", MPI_COMM_WORLD);
 
     EXPECT_TRUE( conduit::blueprint::mpi::verify("mesh",poly,info, MPI_COMM_WORLD));
 
+    conduit::relay::mpi::io::blueprint::save_mesh(poly,
+                                                  output_base + "result",
+                                                  protocol,
+                                                  MPI_COMM_WORLD);
     if (par_rank == 0)
     {
         Node& mesh_topo = mesh["domain_000000/topologies/topo"];

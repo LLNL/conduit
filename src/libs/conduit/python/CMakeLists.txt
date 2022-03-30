@@ -7,7 +7,23 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_python_exports.h.in"
 
 # Specify the sources of the pure python and compiled portions of our module.
 SET(conduit_py_python_sources  py_src/__init__.py
-                                py_src/utils/__init__.py)
+                               py_src/utils/__init__.py
+                               # relay 
+                               py_src/relay/__init__.py
+                               py_src/relay/io/__init__.py
+                               py_src/relay/io/blueprint/__init__.py
+                               py_src/relay/mpi/__init__.py
+                               py_src/relay/web/__init__.py
+                               # blueprint
+                               py_src/blueprint/__init__.py
+                               py_src/blueprint/mcarray/__init__.py
+                               py_src/blueprint/mcarray/examples/__init__.py
+                               py_src/blueprint/mesh/__init__.py
+                               py_src/blueprint/mesh/examples/__init__.py
+                               py_src/blueprint/table/__init__.py
+                               py_src/blueprint/table/examples/__init__.py)
+
+
 
 SET(conduit_py_headers         conduit_python.hpp
                                ${CMAKE_CURRENT_BINARY_DIR}/conduit_python_exports.h)

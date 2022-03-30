@@ -555,19 +555,6 @@ stages:
           # add conduit module to python path
           export PYTHONPATH=${ROOT_DIR}/install/python-modules/
           echo $PYTHONPATH
-          # CI LD_LIB FIX
-          # NOTE: 
-          #  THIS LD+_LIB FIX FOR AN ISSUE THAT OCCURED IN A CI PYTHON 2.7 STATIC LIBS TEST CASE
-          #  Since the issue is related to hdf5 (not python!) we should investigate further.
-          #
-          export HDF5_ROOT_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*/`
-          export LD_LIBRARY_PATH="${HDF5_ROOT_DIR}/lib"
-          if [ $ENABLE_SILO = 'ON' ]; then export SILO_ROOT_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/silo*/`; fi
-          if [ $ENABLE_SILO = 'ON' ]; then export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${SILO_ROOT_DIR}/lib"; fi
-          #
-          # make sure we can import conduit from python before we try our compiled example
-          $PYTHON_EXE -c "import conduit;print(conduit.about());"
-          #
           which cmake
           # lets build
           cd install/examples/conduit/cpp_fort_and_py
@@ -585,9 +572,6 @@ stages:
           ################################################
           # using with cmake example vs reloc-ed install
           ################################################
-          export CC=${COMPILER_CC}
-          export CXX=${COMPILER_CXX}
-          export FC=${COMPILER_FC}
           pwd
           ls -l
           # find spack installed cmake

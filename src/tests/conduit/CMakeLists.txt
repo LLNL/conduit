@@ -10,6 +10,7 @@
 # Core (conduit lib) Unit Tests
 ################################
 set(BASIC_TESTS t_conduit_smoke
+                t_conduit_version
                 t_conduit_endianness
                 t_conduit_char8_str
                 t_conduit_datatype_tests

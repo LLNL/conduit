@@ -499,3 +499,31 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, save_multi_domain_json_yaml)
+{
+    Node data;
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(3,data);
+    
+    std::string tout_base = "tout_relay_bp_mesh_fname_test_";
+    
+    // turn off cycle for these files
+    Node opts;
+    opts["suffix"] = "none";
+
+    relay::io::blueprint::save_mesh(data,tout_base + "json","json", opts);
+    relay::io::blueprint::save_mesh(data,tout_base + "yaml","yaml", opts);
+
+    EXPECT_TRUE(is_file( tout_base + "json.root"));
+    EXPECT_TRUE(is_file( tout_base + "json/domain_000000.json"));
+    EXPECT_TRUE(is_file( tout_base + "json/domain_000001.json"));
+    EXPECT_TRUE(is_file( tout_base + "json/domain_000002.json"));
+
+    EXPECT_TRUE(is_file( tout_base + "yaml.root"));
+    EXPECT_TRUE(is_file( tout_base + "yaml/domain_000000.yaml"));
+    EXPECT_TRUE(is_file( tout_base + "yaml/domain_000001.yaml"));
+    EXPECT_TRUE(is_file( tout_base + "yaml/domain_000002.yaml"));
+}
+
