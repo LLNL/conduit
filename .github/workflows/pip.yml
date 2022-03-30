@@ -45,6 +45,7 @@ jobs:
     - name: Build & Test
       run: |
         env ENABLE_MPI=ON HDF5_DIR=/usr/ pip install -v .
+        rm -rf build
         python3 -c "import conduit;print(conduit.about());"
         python3 -c "import conduit.relay;print(conduit.relay.io.about())"
         python3 -c "import conduit.relay.mpi;print(conduit.relay.mpi.about())"

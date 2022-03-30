@@ -14,3 +14,5 @@ Testing/
 .idea
 .vscode/settings.json
 .vscode/launch.json
+scripts/azemu/AZEMU-LAUNCH*.sh
+scripts/azemu/AZEMU-SCRIPT*.sh

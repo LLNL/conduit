@@ -1,0 +1,4 @@
+name: conduit
+repo_url: https://github.com/LLNL/conduit.git
+repo_branch: task/2022_03_pip_defense
+default_container:  alpinedav/ascent-ci:ubuntu-18-devel
