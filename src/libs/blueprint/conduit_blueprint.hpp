@@ -20,9 +20,6 @@
 
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mesh_examples.hpp"
-#include "conduit_blueprint_mesh_examples_julia.hpp"
-#include "conduit_blueprint_mesh_examples_venn.hpp"
-#include "conduit_blueprint_mesh_examples_related_boundary.hpp"
 
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_examples.hpp"
