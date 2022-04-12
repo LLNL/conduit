@@ -173,6 +173,12 @@ class Test_Blueprint_Mesh(unittest.TestCase):
         self.assertTrue(blueprint.mesh.verify(n,info))
         self.assertFalse(self.has_empty_warning(info))
 
+    def test_polystar(self):
+        n = Node()
+        info = Node()
+        blueprint.mesh.examples.polystar(n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
 
     def test_partition(self):
         def same(a, b):

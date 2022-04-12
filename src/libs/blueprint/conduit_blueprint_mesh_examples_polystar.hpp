@@ -4,41 +4,26 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint.hpp
+/// file: conduit_blueprint_mesh_examples_poly_star.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_HPP
-#define CONDUIT_BLUEPRINT_HPP
+#ifndef CONDUIT_BLUEPRINT_MESH_EXAMPLES_POLY_STAR_HPP
+#define CONDUIT_BLUEPRINT_MESH_EXAMPLES_POLY_STAR_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-
+#include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
-#include "conduit_blueprint_config.h"
-
-#include "conduit_blueprint_mesh.hpp"
-#include "conduit_blueprint_mesh_examples.hpp"
-
-#include "conduit_blueprint_o2mrelation.hpp"
-#include "conduit_blueprint_o2mrelation_examples.hpp"
-#include "conduit_blueprint_o2mrelation_iterator.hpp"
-
-#include "conduit_blueprint_mcarray.hpp"
-#include "conduit_blueprint_mcarray_examples.hpp"
-
-#include "conduit_blueprint_zfparray.hpp"
-
-#include "conduit_blueprint_table.hpp"
-#include "conduit_blueprint_table_examples.hpp"
 
 //-----------------------------------------------------------------------------
-// -- begin conduit:: --
+// -- begin conduit::--
 //-----------------------------------------------------------------------------
 namespace conduit
 {
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint --
@@ -47,34 +32,42 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-/// The about methods construct human readable info about how blueprint was
-/// configured.
+// -- begin conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
-std::string CONDUIT_BLUEPRINT_API about();
-void        CONDUIT_BLUEPRINT_API about(conduit::Node &n);
+namespace mesh
+{
 
 //-----------------------------------------------------------------------------
-/// blueprint verify interface
+/// Methods that generate example meshes.
+//-----------------------------------------------------------------------------
+namespace examples
+{
+    /// Generates a mesh with a polyhedral star pattern that demonstrates
+    /// hanging vertices in a topology. Includes various fields that 
+    /// count element to vertex and vertex to element relationships.
+    /// Also generates corner and side meshes from the main topology.
+    void CONDUIT_BLUEPRINT_API polystar(conduit::Node &res);
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::examples --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-/// Verify passed node confirms to given blueprint protocol.
-/// Messages related to the verification are be placed in the "info" node.
-//-----------------------------------------------------------------------------
-bool CONDUIT_BLUEPRINT_API verify(const std::string &protocol,
-                                  const conduit::Node &n,
-                                  conduit::Node &info);
 
 //-----------------------------------------------------------------------------
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh --
+//-----------------------------------------------------------------------------
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint --
 //-----------------------------------------------------------------------------
 
-
 }
 //-----------------------------------------------------------------------------
-// -- end conduit:: --
+// -- end conduit --
 //-----------------------------------------------------------------------------
 
 

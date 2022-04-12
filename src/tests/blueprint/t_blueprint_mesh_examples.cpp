@@ -1110,6 +1110,19 @@ TEST(conduit_blueprint_mesh_examples, polychain)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polystar)
+{
+    Node res;
+    blueprint::mesh::examples::polystar(res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res,"polystar_example");
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

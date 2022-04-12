@@ -17,6 +17,10 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_mesh_examples_julia.hpp"
+#include "conduit_blueprint_mesh_examples_venn.hpp"
+#include "conduit_blueprint_mesh_examples_related_boundary.hpp"
+#include "conduit_blueprint_mesh_examples_polystar.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--
