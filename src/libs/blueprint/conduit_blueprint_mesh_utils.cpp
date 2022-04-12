@@ -19,6 +19,7 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <unordered_map>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -1775,6 +1776,53 @@ topology::length(const Node &n)
     index_t d[3]={1,1,1};
     logical_dims(n, d, 3);
     return d[0] * d[1] * d[2];
+}
+
+//-----------------------------------------------------------------------------
+void
+topology::reindex_coords(const Node& topo,
+                         const Node& new_coordset,
+                         const Node& old_gvids,
+                         const Node& new_gvids,
+                         Node& out_topo)
+{
+    if (&out_topo != &topo)
+    {
+        out_topo.reset();
+        out_topo.set(topo);
+    }
+
+    // Build a mapping of global vids -> new coordset indices
+    // TODO: if we assume clustering of gvids, maybe a vector would be faster?
+    std::unordered_map<index_t, index_t> remap_vids;
+
+    index_t_accessor new_gvid_vals = new_gvids["values"].as_index_t_accessor();
+    for (index_t idx = 0; idx < new_gvid_vals.number_of_elements(); idx++)
+    {
+        remap_vids[new_gvid_vals[idx]] = idx;
+    }
+
+    std::string node_path = "elements/connectivity";
+    if (out_topo["elements/shape"].as_string() == "polyhedral")
+    {
+        node_path = "subelements/connectivity";
+    }
+
+    index_t_accessor old_vids = out_topo[node_path].as_index_t_accessor();
+    index_t_accessor old_to_gvids = old_gvids["values"].as_index_t_accessor();
+    std::vector<index_t> new_vids(old_vids.number_of_elements());
+    for (index_t idx = 0; idx < new_vids.size(); idx++)
+    {
+        index_t old_vid = old_vids[idx];
+        index_t gvid = old_to_gvids[old_vid];
+        new_vids[idx] = remap_vids[gvid];
+    }
+
+    // Set the new vertex connectivity
+    out_topo[node_path].set(new_vids);
+
+    // Set the new associated coordset name
+    out_topo["coordset"] = new_coordset.name();
 }
 
 //-----------------------------------------------------------------------------

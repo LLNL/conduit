@@ -478,6 +478,52 @@ TEST(blueprint_mpi_parmetis, uniform_adjset)
 }
 
 //-----------------------------------------------------------------------------
+TEST(blueprint_mpi_parmetis, empty_mesh)
+{
+    Node mesh;
+    Node part_opts;
+    part_opts["partition"] = 3;
+    conduit::blueprint::mpi::mesh::generate_partition_field(mesh,
+                                                            part_opts,
+                                                            MPI_COMM_WORLD);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_parmetis, empty_mesh_on_non_root_rank)
+{
+    //
+    // note: parmetis will give up in this case
+    //
+
+    int par_size, par_rank;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &par_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
+    
+    Node mesh;
+    if(par_rank == 0)
+    {
+        conduit::blueprint::mesh::examples::braid("quads",10,10,0,mesh);
+    }
+    Node part_opts;
+    part_opts["partition"] = 3;
+    conduit::blueprint::mpi::mesh::generate_partition_field(mesh,
+                                                            part_opts,
+                                                            MPI_COMM_WORLD);
+                                                            
+
+    std::string output_base = "tout_bp_mpi_mesh_parametis_empty_mesh_on_non_root_rank";
+
+    conduit::relay::mpi::io::blueprint::save_mesh(mesh,
+            output_base,
+            "hdf5",
+            // opts,
+            MPI_COMM_WORLD);
+}
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
