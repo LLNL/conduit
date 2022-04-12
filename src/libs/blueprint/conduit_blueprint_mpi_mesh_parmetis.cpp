@@ -17,6 +17,7 @@
 #include "conduit_blueprint_mpi_mesh_parmetis.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
+#include "conduit_blueprint_mesh_utils_iterate_elements.hpp"
 
 #include "conduit_relay_mpi.hpp"
 
@@ -24,6 +25,8 @@
 
 #include <algorithm>
 #include <unordered_map>
+
+using namespace conduit::blueprint::mesh::utils;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -129,7 +132,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
     std::vector<Node*> domains;
     ::conduit::blueprint::mesh::domains(mesh,domains);
-
+    
     // parse options
     std::string topo_name = "";
     std::string field_prefix = "";
@@ -138,7 +141,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     {
         topo_name = options["topology"].as_string();
     }
-    else
+    else if(local_num_doms > 0)
     {
         // TOOD: IMP find the first topo name on a rank with data
         // for now, just grab first topo
@@ -560,6 +563,7 @@ void generate_partition_field(conduit::Node &mesh,
 
     index_t global_num_doms = number_of_domains(mesh,comm);
 
+
     if(global_num_doms == 0)
     {
         return;
@@ -577,7 +581,7 @@ void generate_partition_field(conduit::Node &mesh,
     {
         topo_name = options["topology"].as_string();
     }
-    else
+    else if(domains.size() > 0 )
     {
         // TOOD: IMP find the first topo name on a rank with data
         // for now, just grab first topo
@@ -589,7 +593,7 @@ void generate_partition_field(conduit::Node &mesh,
     {
         ncommonnodes = options["parmetis_ncommonnodes"].as_int();
     }
-    else
+    else if(domains.size() > 0 )
     {
         // in 2D, zones adjacent if they share 2 nodes (edge)
         // in 3D, zones adjacent if they share 3 nodes (plane)
@@ -622,6 +626,7 @@ void generate_partition_field(conduit::Node &mesh,
     // we need the total number of local eles
     // the total number of element to vers entries
 
+
     index_t local_total_num_eles =0;
     index_t local_total_ele_to_verts_size = 0;
     
@@ -636,20 +641,10 @@ void generate_partition_field(conduit::Node &mesh,
             // get the number of elements in the topo
             local_total_num_eles += blueprint::mesh::utils::topology::length(dom_topo);
 
-            Node topo_offsets;
-            blueprint::mesh::topology::unstructured::generate_offsets(dom_topo, topo_offsets);
-
-            // TODO:
-            // for unstructured we need to do shape math, for unif/rect/struct
-            //  we need to do implicit math
-
-            // for unstructured poly: 
-            // add up all the sizes, don't use offsets?
-            uint64_accessor sizes_vals = dom_topo["elements/sizes"].as_uint64_accessor();
-            for(index_t i=0; i < sizes_vals.number_of_elements();i++)
+            topology::iterate_elements(dom_topo, [&](const topology::entity &e)
             {
-               local_total_ele_to_verts_size += sizes_vals[i];
-            }
+                local_total_ele_to_verts_size += e.element_ids.size();
+            });
 
         }
     }
@@ -728,39 +723,28 @@ void generate_partition_field(conduit::Node &mesh,
         {
             // get the topo node
             Node &dom_topo = dom["topologies"][topo_name];
-            const Node &dom_g_vert_ids = dom["fields"][field_prefix + "global_vertex_ids"]["values"];
 
-            // for unstruct poly: use sizes
-            uint64_accessor sizes_vals = dom_topo["elements/sizes"].as_uint64_accessor();
-            for(index_t i=0; i < sizes_vals.number_of_elements(); i++)
+            topology::iterate_elements(dom_topo, [&](const topology::entity &e)
             {
                 eptr_vals[eptr_idx] = curr_offset;
-                curr_offset += sizes_vals[i];
+                curr_offset += e.element_ids.size();
                 eptr_idx++;
-            }
+            });
+
             // add last offset
             eptr_vals[eptr_idx] = curr_offset;
 
+            const Node &dom_g_vert_ids = dom["fields"][field_prefix + "global_vertex_ids"]["values"];
             int64_accessor global_vert_ids = dom_g_vert_ids.as_int64_accessor();
-            // for each element:
-            //   loop over each local vertex, and use global vert map to add and entry to eind
 
-            uint64_accessor conn_vals = dom_topo["elements/connectivity"].as_uint64_accessor();
-
-            o2mrelation::O2MIterator o2miter(dom_topo["elements"]);
-            while(o2miter.has_next(conduit::blueprint::o2mrelation::ONE))
+            blueprint::mesh::utils::topology::iterate_elements(dom_topo, [&](const blueprint::mesh::utils::topology::entity &e)
             {
-                o2miter.next(conduit::blueprint::o2mrelation::ONE);
-                o2miter.to_front(conduit::blueprint::o2mrelation::MANY);
-                while(o2miter.has_next(conduit::blueprint::o2mrelation::MANY))
+                for(size_t i=0;i< e.element_ids.size();i++)
                 {
-                    o2miter.next(conduit::blueprint::o2mrelation::MANY);
-                    const index_t local_vert_id = o2miter.index(conduit::blueprint::o2mrelation::DATA);
-                    // get the conn
-                    eind_vals[eind_idx] = (idx_t) global_vert_ids[conn_vals[local_vert_id]];
+                    eind_vals[eind_idx] = (idx_t) global_vert_ids[e.element_ids[i]];
                     eind_idx++;
                 }
-            }
+            });
         }
     }
 

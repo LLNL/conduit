@@ -8,6 +8,17 @@
 
 ENABLE_WARNINGS()
 
+####
+# enable optional features if deps exists
+####
+
+if(PARMETIS_FOUND)
+  SET(CONDUIT_BLUEPRINT_MPI_PARMETIS_ENABLED TRUE)
+endif()
+
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_blueprint_config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_config.h")
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_blueprint_exports.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h")
@@ -34,6 +45,7 @@ set(blueprint_headers
     conduit_blueprint_table.hpp
     conduit_blueprint_table_examples.hpp
     conduit_blueprint_zfparray.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_config.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h
 )
 

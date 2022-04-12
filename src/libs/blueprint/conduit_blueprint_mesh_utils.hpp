@@ -387,6 +387,18 @@ namespace topology
     index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &topo);
 
     //-------------------------------------------------------------------------
+    /**
+     * @brief Reindexes the vertices in a topology to be associated with a new
+     * coordset, based on a global vertex ID numbering.
+     * The old coordset must be a subset of the new coordset.
+     */
+    void CONDUIT_BLUEPRINT_API reindex_coords(const conduit::Node& topo,
+                                              const conduit::Node& new_coordset,
+                                              const conduit::Node& old_gvids,
+                                              const conduit::Node& new_gvids,
+                                              conduit::Node& out_topo);
+
+    //-------------------------------------------------------------------------
     // -- begin conduit::blueprint::mesh::utils::topology::unstructured --
     //-------------------------------------------------------------------------
     namespace unstructured
