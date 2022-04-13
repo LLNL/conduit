@@ -114,15 +114,44 @@ namespace examples
     ///     topology: "mesh"
     ///     offsets: [2, 2]
     ///     strides: [1, 7]
-    ///     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0
+    ///     values: [0.0, 1.0, 2.0, 3.0, 4.0,  5.0,  6.0,
+    ///              1.0, 2.0, 3.0, 4.0, 5.0,  6.0,  7.0,
+    ///              2.0, 3.0, 4.0, 5.0, 6.0,  7.0,  8.0,
+    ///              3.0, 4.0, 5.0, 6.0, 7.0,  8.0,  9.0,
+    ///              4.0, 5.0, 6.0, 7.0, 8.0,  9.0, 10.0,
+    ///              5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
     ///   ele_vals:
     ///     association: "element"
     ///     type: "scalar"
     ///     topology: "mesh"
     ///     offsets: [2, 2]
     ///     strides: [1, 7]
-    ///     values: [0.0, 0.0, 0.0, ..., 0.0, 0.0]
+    ///     values: [0.0, 1.0, 2.0, 3.0, 4.0,  5.0,  6.0,
+    ///              1.0, 2.0, 3.0, 4.0, 5.0,  6.0,  7.0,
+    ///              2.0, 3.0, 4.0, 5.0, 6.0,  7.0,  8.0,
+    ///              3.0, 4.0, 5.0, 6.0, 7.0,  8.0,  9.0,
+    ///              4.0, 5.0, 6.0, 7.0, 8.0,  9.0, 10.0,
+    ///              5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
     /// \endverbatim
+    ///
+    /// The values for the `vert_vals` field start at [2, 2] and
+    /// apply to the vertices of coordset `coord`.  They are
+    /// \verbatim
+    /// 4.0 5.0 6.0 7.0
+    /// 5.0 6.0 7.0 8.0
+    /// 6.0 7.0 8.0 9.0
+    /// \endverbatim
+    /// Similarly, the values for the `ele_vals` field start at
+    /// [2, 2] and apply to the elements of `coord`.  They are
+    /// \verbatim
+    /// 4.0 5.0 6.0
+    /// 5.0 6.0 7.0
+    /// \endverbatim
+    /// Everything outside those central array locations is disregarded.
+    /// In this way, a code that allocates arrays with sizes that don't
+    /// match the assumptions of the Mesh Blueprint can specify `offsets`
+    /// and `strides` in order to connect those unusually-shaped arrays
+    /// to the Mesh Blueprint without copying the data.
     void CONDUIT_BLUEPRINT_API strided_structured(conduit::Node &desc,
                                                   conduit::index_t nx,
                                                   conduit::index_t ny,
