@@ -50,21 +50,79 @@ namespace examples
                                      conduit::index_t nz,
                                      conduit::Node &res);
 
-    /// Generates a structured grid with a scalar field that assigns a unique,
-    /// monotonically increasing value to each element.  Calling code can
+    /// Generates a structured grid with two fields that increase with the
+    /// distance from the origin, one on the vertices and and another on
+    /// the elements.  Calling code can
     /// specify the dimension of the storage array of the elements and
     /// vertices, which can differ.  Pass the extra specifications with
     /// a conduit::Node:
     ///
+    /// \code{.yaml} 
     /// vertex_data:
     ///   shape: [vx, vy, vz]
     ///   origin: [wx, wy, wz]
     /// element_data:
     ///   shape: [ex, ey, ez]
     ///   origin: [fx, fy, fz]
+    /// \endcode
     ///
     /// It is an error if the vertex or element data array shapes are too
     /// small to contain the requested mesh.
+    ///
+    /// For example, if the function were called like this:
+    /// \code
+    /// conduit::Node desc;  // empty description node: use default
+    /// conduit::Node res;   // result node will be filled in
+    /// strided_structured(desc, 3, 2, 0, res);
+    /// \endcode
+    ///
+    /// the node `res` would contain the following structure:
+    /// \verbatim
+    /// state:
+    ///   time: 3.1415
+    ///   cycle: 100
+    /// coordsets:
+    ///   coords:
+    ///     type: "explicit"
+    ///     values:
+    ///       x: [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0]
+    ///       y: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+    ///            0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,
+    ///            1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,
+    ///            2.0,  2.0,  2.0,  2.0,  2.0,  2.0,  2.0,
+    ///            3.0,  3.0,  3.0,  3.0,  3.0,  3.0,  3.0,
+    ///            4.0,  4.0,  4.0,  4.0,  4.0,  4.0,  4.0]
+    /// topologies:
+    ///   mesh:
+    ///     type: "structured"
+    ///     coordset: "coords"
+    ///     elements:
+    ///       dims:
+    ///         i: 3
+    ///         j: 2
+    ///         offsets: [2, 2]
+    ///         strides: [1, 7]
+    /// fields:
+    ///   vert_vals:
+    ///     association: "vertex"
+    ///     type: "scalar"
+    ///     topology: "mesh"
+    ///     offsets: [2, 2]
+    ///     strides: [1, 7]
+    ///     values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0
+    ///   ele_vals:
+    ///     association: "element"
+    ///     type: "scalar"
+    ///     topology: "mesh"
+    ///     offsets: [2, 2]
+    ///     strides: [1, 7]
+    ///     values: [0.0, 0.0, 0.0, ..., 0.0, 0.0]
+    /// \endverbatim
     void CONDUIT_BLUEPRINT_API strided_structured(conduit::Node &desc,
                                                   conduit::index_t nx,
                                                   conduit::index_t ny,

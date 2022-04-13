@@ -377,17 +377,17 @@ void braid_init_example_element_scalar_field(index_t nele_x,
 
 
 //---------------------------------------------------------------------------//
-void strided_structured_size_element_scalar_field(index_t nele_x,
-                                         index_t nele_y,
-                                         index_t nele_z,
-                                         index_t origin_x,
-                                         index_t origin_y,
-                                         index_t origin_z,
-                                         index_t stride_x,
-                                         index_t stride_y,
-                                         index_t stride_z,
-                                         Node &res,
-                                         index_t prims_per_ele=1)
+void strided_structured_element_scalar_field(index_t nele_x,
+                                             index_t nele_y,
+                                             index_t nele_z,
+                                             index_t origin_x,
+                                             index_t origin_y,
+                                             index_t origin_z,
+                                             index_t stride_x,
+                                             index_t stride_y,
+                                             index_t stride_z,
+                                             Node &res,
+                                             index_t prims_per_ele=1)
 {
     index_t nele = stride_x * stride_y;
 
@@ -400,20 +400,31 @@ void strided_structured_size_element_scalar_field(index_t nele_x,
     res["type"] = "scalar";
     res["topology"] = "mesh";
 
+	index_t dimensions = 2;
+	if (nele_z > 0)
+	{
+		dimensions += 1;
+	}
+	res["offsets"].set(DataType::int32(dimensions));
+	res["strides"].set(DataType::int32(dimensions));
+	int32 *offsets = res["offsets"].value();
+	int32 *strides = res["strides"].value();
+	// fill offsets and strides
+	offsets[0] = origin_x;
+	offsets[1] = origin_y;
+	strides[0] = prims_per_ele;
+	strides[1] = stride_x * prims_per_ele;
+	if (nele_z > 0)
+	{
+		offsets[2] = origin_z;
+		strides[2] = stride_y * stride_x * prims_per_ele;
+	}
+
     index_t vals_size = nele * prims_per_ele;
 
     res["values"].set(DataType::float64(vals_size));
 
     float64 *vals = res["values"].value();
-
-    float64 dx = 20.0 / float64(nele_x);
-    float64 dy = 20.0 / float64(nele_y);
-    float64 dz = 0.0f;
-
-    if(nele_z > 0 )
-    {
-        dz = 20.0 / float64(nele_z);
-    }
 
     std::fill(vals, vals + vals_size, 0.);
 
@@ -425,26 +436,21 @@ void strided_structured_size_element_scalar_field(index_t nele_x,
         k < nele_z;
         k++, k_pos += stride_k_elts)
     {
-        float64 cz =  (k * dz) + -10.0;
         index_t j_pos = k_pos + origin_y * stride_k_elts;
 
         for(index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
             j < nele_y;
             j++, j_pos += stride_j_elts)
         {
-            float64 cy =  (j * dy) + -10.0;
-
             for(index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
                 i < nele_x;
                 i++, i_pos += stride_i_elts)
             {
-                float64 cx =  (i * dx) + -10.0;
-
-                float64 cv = 10.0 * sqrt( cx*cx + cy*cy );
+				float64 cv = i + j;
 
                 if(nele_z != 0)
                 {
-                    cv = 10.0 * sqrt( cx*cx + cy*cy +cz*cz );
+					cv = i * j * k;
                 }
 
                 for(index_t ppe = 0; ppe < prims_per_ele; ppe++ )
@@ -458,17 +464,17 @@ void strided_structured_size_element_scalar_field(index_t nele_x,
 
 
 //---------------------------------------------------------------------------//
-void strided_structured_size_point_scalar_field(index_t npts_x,
-                                                index_t npts_y,
-                                                index_t npts_z,
-                                                index_t origin_x,
-                                                index_t origin_y,
-                                                index_t origin_z,
-                                                index_t stride_x,
-                                                index_t stride_y,
-                                                index_t stride_z,
-                                                Node &res,
-                                                index_t prims_per_pt=1)
+void strided_structured_point_scalar_field(index_t npts_x,
+                                           index_t npts_y,
+                                           index_t npts_z,
+                                           index_t origin_x,
+                                           index_t origin_y,
+                                           index_t origin_z,
+                                           index_t stride_x,
+                                           index_t stride_y,
+                                           index_t stride_z,
+                                           Node &res,
+                                           index_t prims_per_pt=1)
 {
     index_t npts = stride_x * stride_y;
 
@@ -491,21 +497,21 @@ void strided_structured_size_point_scalar_field(index_t npts_x,
     int32 *offsets = res["offsets"].value();
     int32 *strides = res["strides"].value();
     // fill offsets and strides
+    offsets[0] = origin_x;
+    offsets[1] = origin_y;
+    strides[0] = prims_per_pt;
+    strides[1] = stride_x * prims_per_pt;
+    if (npts_z > 0)
+    {
+        offsets[2] = origin_z;
+        strides[2] = stride_y * stride_x * prims_per_pt;
+    }
 
     index_t vals_size = npts * prims_per_pt;
 
     res["values"].set(DataType::float64(vals_size));
 
     float64 *vals = res["values"].value();
-
-    float64 dx = 20.0 / float64(npts_x);
-    float64 dy = 20.0 / float64(npts_y);
-    float64 dz = 0.0f;
-
-    if(npts_z > 0 )
-    {
-        dz = 20.0 / float64(npts_z);
-    }
 
     std::fill(vals, vals + vals_size, 0.);
 
@@ -517,26 +523,21 @@ void strided_structured_size_point_scalar_field(index_t npts_x,
         k < npts_z;
         k++, k_pos += stride_k_elts)
     {
-        float64 cz =  (k * dz) + -10.0;
         index_t j_pos = k_pos + origin_y * stride_k_elts;
 
         for(index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
             j < npts_y;
             j++, j_pos += stride_j_elts)
         {
-            float64 cy =  (j * dy) + -10.0;
-
             for(index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
                 i < npts_x;
                 i++, i_pos += stride_i_elts)
             {
-                float64 cx =  (i * dx) + -10.0;
-
-                float64 cv = 10.0 * sqrt( cx*cx + cy*cy );
+				float64 cv = abs(i) + abs(j);
 
                 if(npts_z != 0)
                 {
-                    cv = 10.0 * sqrt( cx*cx + cy*cy +cz*cz );
+                    cv = abs(i) + abs(j) + abs(k);
                 }
 
                 for(index_t ppe = 0; ppe < prims_per_pt; ppe++ )
@@ -2530,47 +2531,63 @@ strided_structured(Node &desc, // shape of requested data arrays
 
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
-    res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
 
+	Node &dims = res["topologies/mesh/elements/dims"];
+
+    dims["i"] = (int32)nele_x;
+	dims["j"] = (int32)nele_y;
     if(nele_z > 0)
     {
-        res["topologies/mesh/elements/dims/k"] = (int32)nele_z;
+		dims["k"] = (int32)nele_z;
     }
+
+	index_t dimensions = 2;
+	if (npts_z > 0)
+	{
+		dimensions += 1;
+	}
+	dims["offsets"].set(DataType::int32(dimensions));
+	dims["strides"].set(DataType::int32(dimensions));
+	int32 *offsets = dims["offsets"].value();
+	int32 *strides = dims["strides"].value();
+	// fill offsets
+	offsets[0] = ele_origin[0];
+	offsets[1] = ele_origin[1];
+	if (npts_z > 0)
+	{
+		offsets[2] = ele_origin[2];
+	}
+	// fill strides
+	strides[0] = 1;
+	strides[1] = strides[0] * ele_extent[0];
+	if (npts_z > 0)
+	{
+		strides[2] = strides[1] * ele_extent[1];
+	}
 
     Node &fields = res["fields"];
 
-    strided_structured_size_point_scalar_field(npts_x,
-                                               npts_y,
-                                               npts_z,
-                                               pts_origin[0],
-                                               pts_origin[1],
-                                               pts_origin[2],
-                                               pts_extent[0],
-                                               pts_extent[1],
-                                               pts_extent[2],
-                                               fields["radial"]);
-
-    strided_structured_size_element_scalar_field(nele_x,
-                                                 nele_y,
-                                                 nele_z,
-                                                 ele_origin[0],
-                                                 ele_origin[1],
-                                                 ele_origin[2],
-                                                 ele_extent[0],
-                                                 ele_extent[1],
-                                                 ele_extent[2],
-                                                 fields["field"]);
-
-    braid_init_example_point_scalar_field(npts_x,
+    strided_structured_point_scalar_field(npts_x,
                                           npts_y,
                                           npts_z,
-                                          fields["braid"]);
+                                          pts_origin[0],
+                                          pts_origin[1],
+                                          pts_origin[2],
+                                          pts_extent[0],
+                                          pts_extent[1],
+                                          pts_extent[2],
+                                          fields["vert_vals"]);
 
-    braid_init_example_element_scalar_field(nele_x,
+    strided_structured_element_scalar_field(nele_x,
                                             nele_y,
                                             nele_z,
-                                            fields["radial"]);
+                                            ele_origin[0],
+                                            ele_origin[1],
+                                            ele_origin[2],
+                                            ele_extent[0],
+                                            ele_extent[1],
+                                            ele_extent[2],
+                                            fields["ele_vals"]);
 
 }
 
