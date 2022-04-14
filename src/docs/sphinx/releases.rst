@@ -12,6 +12,52 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.8.3
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.3/conduit-v0.8.3-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Added
+~~~~~
+
+
+* **General**
+
+ * Added C/C++ version macros ``CONDUIT_VERSION_MAJOR``, ``CONDUIT_VERSION_MINOR``, ``CONDUIT_VERSION_PATCH`` and these values as separate entries in ``conduit::about()`` to provide more support for compile time and runtime conduit version detection.
+
+* **Blueprint**
+
+ * Added ``blueprint::mesh::examples::polystar``, which creates a mesh with a polyhedral star pattern that demonstrates hanging vertices in a topology, along with its representations from ``generate_sides`` and ``generate_corners``.
+ * Added ``blueprint::mesh::examples::related_boundary``, which creates a multi-domain mesh with a related boundary topology and several fileds that encode relationships between the main topology and the boundary.
+ * Expanded ``blueprint::mpi::mesh::generate_partition_field`` to support all topology types.
+
+Fixed
+~~~~~
+
+
+* **Blueprint**
+
+ * Fixed a bug with ``conduit::blueprint::mesh::examples::braid``, where 2D cases for points and structured examples would create coordsets with all entries being zero.
+
+Changed
+~~~~~~~
+
+
+* **General**
+
+ * Improved pip install logic
+
+* **Relay**
+
+ * Added szip and zlib linking fix for older version of HDF5 (1.8.14)
+ * Fixed a bug with ``relay::io::blueprint::write_mesh`` and ``relay::io::blueprint::save_mesh`` for the multi domain case, removing unintended ``:mesh`` file name suffix for json and yaml domain files.
+
 
 v0.8.2
 ---------------------------------

@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
+## [0.8.3] - Released 2022-04-14
 
 ### Added
 
@@ -15,7 +15,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 - Added `blueprint::mesh::examples::polystar`, which creates a mesh with a polyhedral star pattern that demonstrates hanging vertices in a topology, along with its representations from `generate_sides` and `generate_corners`.
-- Added `blueprint::mesh::examples::related_boundary`, which creates a mulit-domain mesh with a related boundary topology and several fileds that encode relationships between the main topology and the boundary.
+- Added `blueprint::mesh::examples::related_boundary`, which creates a multi-domain mesh with a related boundary topology and several fileds that encode relationships between the main topology and the boundary.
 - Expanded `blueprint::mpi::mesh::generate_partition_field` to support all topology types.
 
 
@@ -619,7 +619,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/llnl/conduit/compare/v0.8.2...v0.8.3
+[0.8.2]: https://github.com/llnl/conduit/compare/v0.8.1...v0.8.2
+[0.8.1]: https://github.com/llnl/conduit/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/llnl/conduit/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/llnl/conduit/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/llnl/conduit/compare/v0.7.0...v0.7.1
