@@ -377,31 +377,67 @@ void braid_init_example_element_scalar_field(index_t nele_x,
 
 
 //---------------------------------------------------------------------------//
-void strided_structured_element_scalar_field(index_t nele_x,
-                                             index_t nele_y,
-                                             index_t nele_z,
-                                             index_t origin_x,
-                                             index_t origin_y,
-                                             index_t origin_z,
-                                             index_t stride_x,
-                                             index_t stride_y,
-                                             index_t stride_z,
-                                             Node &res,
-                                             index_t prims_per_ele = 1)
+void debug_print_array(index_t ext_x, index_t ext_y, index_t ext_z, 
+    index_t prims_per_ele, float64 *vals)
 {
-    index_t nele = stride_x * stride_y;
+    int k = 0;
+    do {
+        for (int j = 0; j < ext_y; ++j) {
+            for (int i = 0; i < ext_x; ++i) {
+                for (int pidx = 0; pidx < prims_per_ele; ++pidx) {
+                    if (pidx > 0) { std::cout << ","; }
+                    int idx = 
+                        k * prims_per_ele * ext_x * ext_y +
+                        j * prims_per_ele * ext_x +
+                        i * prims_per_ele + 
+                        pidx;
+                    std::cout << vals[idx];
+                }
+                std::cout << "  ";
+            }
+            std::cout << "\n";
+        }
+        std::cout << "\n";
+        k += 1;
+    } while (k < ext_z);
+}
 
-    if (stride_z > 0)
+void strided_structured_field(index_t nval_x,
+    index_t nval_y,
+    index_t nval_z,
+    index_t origin_x,
+    index_t origin_y,
+    index_t origin_z,
+    index_t ext_x,
+    index_t ext_y,
+    index_t ext_z,
+    const char * association,
+    const char * toponame,
+    Node &res,
+    index_t prims_per_val = 1)
+{
+    index_t nvals = ext_x * ext_y;
+
+    if (ext_z > 0)
     {
-        nele = nele * stride_z;
+        nvals = nvals * ext_z;
     }
 
-    res["association"] = "element";
-    res["type"] = "scalar";
-    res["topology"] = "mesh";
+    res["association"] = association; // vertex or element
+    std::string resulttype;
+    if (prims_per_val > 1)
+    {
+        resulttype = "vector";
+    }
+    else
+    {
+        resulttype = "scalar";
+    }
+    res["type"] = resulttype;
+    res["topology"] = toponame; // often something like "mesh"
 
     index_t dimensions = 2;
-    if (nele_z > 0)
+    if (nval_z > 0)
     {
         dimensions += 1;
     }
@@ -412,15 +448,15 @@ void strided_structured_element_scalar_field(index_t nele_x,
     // fill offsets and strides
     offsets[0] = origin_x;
     offsets[1] = origin_y;
-    strides[0] = prims_per_ele;
-    strides[1] = stride_x * prims_per_ele;
-    if (nele_z > 0)
+    strides[0] = prims_per_val;
+    strides[1] = ext_x * prims_per_val;
+    if (nval_z > 0)
     {
         offsets[2] = origin_z;
-        strides[2] = stride_y * stride_x * prims_per_ele;
+        strides[2] = ext_y * ext_x * prims_per_val;
     }
 
-    index_t vals_size = nele * prims_per_ele;
+    index_t vals_size = nvals * prims_per_val;
 
     res["values"].set(DataType::float64(vals_size));
 
@@ -428,42 +464,59 @@ void strided_structured_element_scalar_field(index_t nele_x,
 
     std::fill(vals, vals + vals_size, 0.);
 
-    index_t stride_i_elts = prims_per_ele;
-    index_t stride_j_elts = stride_x * stride_i_elts;
-    index_t stride_k_elts = stride_y * stride_j_elts;
+    index_t stride_i_elts = prims_per_val;
+    index_t stride_j_elts = ext_x * stride_i_elts;
+    index_t stride_k_elts = ext_y * stride_j_elts;
 
     // 2D data sets need at least one element in the z-direction
-    if (nele_z == 0)
+    if (nval_z == 0)
     {
-        nele_z = 1;
+        nval_z = 1;
     }
 
+    float64 seqval = 0.;
     for (index_t k = 0, k_pos = origin_z * stride_k_elts;
-        k < nele_z;
+        k < nval_z;
         k++, k_pos += stride_k_elts)
     {
         for (index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
-            j < nele_y;
+            j < nval_y;
             j++, j_pos += stride_j_elts)
         {
             for (index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
-                i < nele_x;
+                i < nval_x;
                 i++, i_pos += stride_i_elts)
             {
-                float64 cv = i + j;
+                seqval += 1;
 
-                if (nele_z != 0)
+                for (index_t ppe = 0; ppe < prims_per_val; ppe++)
                 {
-                    cv = i * j * k;
-                }
-
-                for (index_t ppe = 0; ppe < prims_per_ele; ppe++)
-                {
-                    vals[i_pos + ppe] = cv;
+                    vals[i_pos + ppe] = seqval;
                 }
             }
         }
     }
+
+    //std::cout << resulttype << " field for " << association << " on \"" << 
+    //    toponame << "\":" << std::endl;
+    //debug_print_array(ext_x, ext_y, ext_z, prims_per_val, vals);
+}
+
+
+void strided_structured_element_scalar_field(index_t nele_x,
+                                             index_t nele_y,
+                                             index_t nele_z,
+                                             index_t origin_x,
+                                             index_t origin_y,
+                                             index_t origin_z,
+                                             index_t ext_x,
+                                             index_t ext_y,
+                                             index_t ext_z,
+                                             Node &res,
+                                             index_t prims_per_ele = 1)
+{
+    strided_structured_field(nele_x, nele_y, nele_z, origin_x, origin_y, origin_z, 
+        ext_x, ext_y, ext_z, "element", "mesh", res, prims_per_ele);
 }
 
 
@@ -474,87 +527,14 @@ void strided_structured_point_scalar_field(index_t npts_x,
                                            index_t origin_x,
                                            index_t origin_y,
                                            index_t origin_z,
-                                           index_t stride_x,
-                                           index_t stride_y,
-                                           index_t stride_z,
+                                           index_t ext_x,
+                                           index_t ext_y,
+                                           index_t ext_z,
                                            Node &res,
                                            index_t prims_per_pt = 1)
 {
-    index_t npts = stride_x * stride_y;
-
-    if (stride_z > 0)
-    {
-        npts = npts * stride_z;
-    }
-
-    res["association"] = "vertex";
-    res["type"] = "scalar";
-    res["topology"] = "mesh";
-
-    index_t dimensions = 2;
-    if (npts_z > 0)
-    {
-        dimensions += 1;
-    }
-    res["offsets"].set(DataType::index_t(dimensions));
-    res["strides"].set(DataType::index_t(dimensions));
-    index_t *offsets = res["offsets"].value();
-    index_t *strides = res["strides"].value();
-    // fill offsets and strides
-    offsets[0] = origin_x;
-    offsets[1] = origin_y;
-    strides[0] = prims_per_pt;
-    strides[1] = stride_x * prims_per_pt;
-    if (npts_z > 0)
-    {
-        offsets[2] = origin_z;
-        strides[2] = stride_y * stride_x * prims_per_pt;
-    }
-
-    index_t vals_size = npts * prims_per_pt;
-
-    res["values"].set(DataType::float64(vals_size));
-
-    float64 *vals = res["values"].value();
-
-    std::fill(vals, vals + vals_size, 0.);
-
-    index_t stride_i_elts = prims_per_pt;
-    index_t stride_j_elts = stride_x * stride_i_elts;
-    index_t stride_k_elts = stride_y * stride_j_elts;
-
-    // 2D data sets need at least one point in the z-direction
-    if (npts_z == 0)
-    {
-        npts_z = 1;
-    }
-
-    for (index_t k = 0, k_pos = origin_z * stride_k_elts;
-        k < npts_z;
-        k++, k_pos += stride_k_elts)
-    {
-        for (index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
-            j < npts_y;
-            j++, j_pos += stride_j_elts)
-        {
-            for (index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
-                i < npts_x;
-                i++, i_pos += stride_i_elts)
-            {
-                float64 cv = abs(i) + abs(j);
-
-                if (npts_z != 0)
-                {
-                    cv = abs(i) + abs(j) + abs(k);
-                }
-
-                for (index_t ppe = 0; ppe < prims_per_pt; ppe++)
-                {
-                    vals[i_pos + ppe] = cv;
-                }
-            }
-        }
-    }
+    strided_structured_field(npts_x, npts_y, npts_z, origin_x, origin_y, origin_z,
+        ext_x, ext_y, ext_z, "vertex", "mesh", res, prims_per_pt);
 }
 
 

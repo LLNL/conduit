@@ -430,12 +430,12 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_2d)
     vertex_origin[2] = 0;
     desc["element_data/shape"].set(DataType::index_t(3));
     index_t_array element_shape = desc["element_data/shape"].as_index_t_array();
-    element_shape[0] = 7;
+    element_shape[0] = 6;
     element_shape[1] = 4;
     element_shape[2] = 0;
     desc["element_data/origin"].set(DataType::index_t(3));
     index_t_array element_origin = desc["element_data/origin"].as_index_t_array();
-    element_origin[0] = 0;
+    element_origin[0] = 1;
     element_origin[1] = 1;
     element_origin[2] = 0;
 
@@ -466,7 +466,7 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_3d)
     index_t_array vertex_shape = desc["vertex_data/shape"].as_index_t_array();
     vertex_shape[0] = 10;
     vertex_shape[1] = 8;
-    vertex_shape[2] = 0;
+    vertex_shape[2] = 3;
     desc["vertex_data/origin"].set(DataType::index_t(3));
     index_t_array vertex_origin = desc["vertex_data/origin"].as_index_t_array();
     vertex_origin[0] = 2;
@@ -474,16 +474,16 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_3d)
     vertex_origin[2] = 0;
     desc["element_data/shape"].set(DataType::index_t(3));
     index_t_array element_shape = desc["element_data/shape"].as_index_t_array();
-    element_shape[0] = 7;
+    element_shape[0] = 6;
     element_shape[1] = 4;
-    element_shape[2] = 0;
+    element_shape[2] = 2;
     desc["element_data/origin"].set(DataType::index_t(3));
     index_t_array element_origin = desc["element_data/origin"].as_index_t_array();
-    element_origin[0] = 0;
+    element_origin[0] = 1;
     element_origin[1] = 1;
     element_origin[2] = 0;
 
-    blueprint::mesh::examples::strided_structured(desc, 4, 3, 0, res);
+    blueprint::mesh::examples::strided_structured(desc, 4, 3, 2, res);
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
     CONDUIT_INFO(info.to_yaml());
 
