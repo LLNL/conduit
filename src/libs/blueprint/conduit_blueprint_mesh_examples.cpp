@@ -387,11 +387,11 @@ void strided_structured_element_scalar_field(index_t nele_x,
                                              index_t stride_y,
                                              index_t stride_z,
                                              Node &res,
-                                             index_t prims_per_ele=1)
+                                             index_t prims_per_ele = 1)
 {
     index_t nele = stride_x * stride_y;
 
-    if(stride_z > 0)
+    if (stride_z > 0)
     {
         nele = nele * stride_z;
     }
@@ -400,25 +400,25 @@ void strided_structured_element_scalar_field(index_t nele_x,
     res["type"] = "scalar";
     res["topology"] = "mesh";
 
-	index_t dimensions = 2;
-	if (nele_z > 0)
-	{
-		dimensions += 1;
-	}
-	res["offsets"].set(DataType::int32(dimensions));
-	res["strides"].set(DataType::int32(dimensions));
-	int32 *offsets = res["offsets"].value();
-	int32 *strides = res["strides"].value();
-	// fill offsets and strides
-	offsets[0] = origin_x;
-	offsets[1] = origin_y;
-	strides[0] = prims_per_ele;
-	strides[1] = stride_x * prims_per_ele;
-	if (nele_z > 0)
-	{
-		offsets[2] = origin_z;
-		strides[2] = stride_y * stride_x * prims_per_ele;
-	}
+    index_t dimensions = 2;
+    if (nele_z > 0)
+    {
+        dimensions += 1;
+    }
+    res["offsets"].set(DataType::index_t(dimensions));
+    res["strides"].set(DataType::index_t(dimensions));
+    index_t *offsets = res["offsets"].value();
+    index_t *strides = res["strides"].value();
+    // fill offsets and strides
+    offsets[0] = origin_x;
+    offsets[1] = origin_y;
+    strides[0] = prims_per_ele;
+    strides[1] = stride_x * prims_per_ele;
+    if (nele_z > 0)
+    {
+        offsets[2] = origin_z;
+        strides[2] = stride_y * stride_x * prims_per_ele;
+    }
 
     index_t vals_size = nele * prims_per_ele;
 
@@ -432,28 +432,32 @@ void strided_structured_element_scalar_field(index_t nele_x,
     index_t stride_j_elts = stride_x * stride_i_elts;
     index_t stride_k_elts = stride_y * stride_j_elts;
 
-    for(index_t k = 0, k_pos = origin_z * stride_k_elts;
+    // 2D data sets need at least one element in the z-direction
+    if (nele_z == 0)
+    {
+        nele_z = 1;
+    }
+
+    for (index_t k = 0, k_pos = origin_z * stride_k_elts;
         k < nele_z;
         k++, k_pos += stride_k_elts)
     {
-        index_t j_pos = k_pos + origin_y * stride_k_elts;
-
-        for(index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
+        for (index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
             j < nele_y;
             j++, j_pos += stride_j_elts)
         {
-            for(index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
+            for (index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
                 i < nele_x;
                 i++, i_pos += stride_i_elts)
             {
-				float64 cv = i + j;
+                float64 cv = i + j;
 
-                if(nele_z != 0)
+                if (nele_z != 0)
                 {
-					cv = i * j * k;
+                    cv = i * j * k;
                 }
 
-                for(index_t ppe = 0; ppe < prims_per_ele; ppe++ )
+                for (index_t ppe = 0; ppe < prims_per_ele; ppe++)
                 {
                     vals[i_pos + ppe] = cv;
                 }
@@ -474,11 +478,11 @@ void strided_structured_point_scalar_field(index_t npts_x,
                                            index_t stride_y,
                                            index_t stride_z,
                                            Node &res,
-                                           index_t prims_per_pt=1)
+                                           index_t prims_per_pt = 1)
 {
     index_t npts = stride_x * stride_y;
 
-    if(stride_z > 0)
+    if (stride_z > 0)
     {
         npts = npts * stride_z;
     }
@@ -488,14 +492,14 @@ void strided_structured_point_scalar_field(index_t npts_x,
     res["topology"] = "mesh";
 
     index_t dimensions = 2;
-    if(npts_z > 0)
+    if (npts_z > 0)
     {
         dimensions += 1;
     }
-    res["offsets"].set(DataType::int32(dimensions));
-    res["strides"].set(DataType::int32(dimensions));
-    int32 *offsets = res["offsets"].value();
-    int32 *strides = res["strides"].value();
+    res["offsets"].set(DataType::index_t(dimensions));
+    res["strides"].set(DataType::index_t(dimensions));
+    index_t *offsets = res["offsets"].value();
+    index_t *strides = res["strides"].value();
     // fill offsets and strides
     offsets[0] = origin_x;
     offsets[1] = origin_y;
@@ -519,28 +523,32 @@ void strided_structured_point_scalar_field(index_t npts_x,
     index_t stride_j_elts = stride_x * stride_i_elts;
     index_t stride_k_elts = stride_y * stride_j_elts;
 
-    for(index_t k = 0, k_pos = origin_z * stride_k_elts;
+    // 2D data sets need at least one point in the z-direction
+    if (npts_z == 0)
+    {
+        npts_z = 1;
+    }
+
+    for (index_t k = 0, k_pos = origin_z * stride_k_elts;
         k < npts_z;
         k++, k_pos += stride_k_elts)
     {
-        index_t j_pos = k_pos + origin_y * stride_k_elts;
-
-        for(index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
+        for (index_t j = 0, j_pos = k_pos + origin_y * stride_j_elts;
             j < npts_y;
             j++, j_pos += stride_j_elts)
         {
-            for(index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
+            for (index_t i = 0, i_pos = j_pos + origin_x * stride_i_elts;
                 i < npts_x;
                 i++, i_pos += stride_i_elts)
             {
-				float64 cv = abs(i) + abs(j);
+                float64 cv = abs(i) + abs(j);
 
-                if(npts_z != 0)
+                if (npts_z != 0)
                 {
                     cv = abs(i) + abs(j) + abs(k);
                 }
 
-                for(index_t ppe = 0; ppe < prims_per_pt; ppe++ )
+                for (index_t ppe = 0; ppe < prims_per_pt; ppe++)
                 {
                     vals[i_pos + ppe] = cv;
                 }
@@ -2457,14 +2465,25 @@ strided_structured(Node &desc, // shape of requested data arrays
 {
     // =================================================================
     // default shapes and origins of vertex and element arrays
-    index_t pts_extent[] = {npts_x + 3, npts_y + 3, npts_z + 3};
-    index_t pts_origin[] = {2, 2, 2};
-    index_t ele_extent[] = {npts_x + 3, npts_y + 3, npts_z + 3};
-    index_t ele_origin[] = {2, 2, 2};
+    index_t pts_extent[] = {npts_x + 3, npts_y + 3, 0};
+    index_t pts_origin[] = {2, 2, 0};
+    index_t ele_extent[] = {npts_x + 3, npts_y + 3, 0};
+    index_t ele_origin[] = {2, 2, 0};
+    if (npts_z > 0)
+    {
+        pts_extent[2] = npts_z + 3;
+        pts_origin[2] = 2;
+        ele_extent[2] = npts_z + 3;
+        ele_origin[2] = 2;
+    }
 
     index_t nele_x = npts_x - 1;
     index_t nele_y = npts_y - 1;
-    index_t nele_z = npts_z - 1;
+    index_t nele_z = 0;
+    if (npts_z > 0)
+    {
+        nele_z = npts_z - 1;
+    }
 
     fill_if_array_exists(desc, "vertex_data/shape", (npts_z > 0), pts_extent);
     fill_if_array_exists(desc, "vertex_data/origin", (npts_z > 0), pts_origin);
