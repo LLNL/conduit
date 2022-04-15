@@ -377,7 +377,7 @@ void braid_init_example_element_scalar_field(index_t nele_x,
 
 
 //---------------------------------------------------------------------------//
-void debug_print_array(index_t ext_x, index_t ext_y, index_t ext_z, 
+void debug_print_array(index_t ext_x, index_t ext_y, index_t ext_z,
     index_t prims_per_ele, float64 *vals)
 {
     int k = 0;
@@ -386,10 +386,10 @@ void debug_print_array(index_t ext_x, index_t ext_y, index_t ext_z,
             for (int i = 0; i < ext_x; ++i) {
                 for (int pidx = 0; pidx < prims_per_ele; ++pidx) {
                     if (pidx > 0) { std::cout << ","; }
-                    int idx = 
+                    int idx =
                         k * prims_per_ele * ext_x * ext_y +
                         j * prims_per_ele * ext_x +
-                        i * prims_per_ele + 
+                        i * prims_per_ele +
                         pidx;
                     std::cout << vals[idx];
                 }
@@ -497,7 +497,7 @@ void strided_structured_field(index_t nval_x,
         }
     }
 
-    //std::cout << resulttype << " field for " << association << " on \"" << 
+    //std::cout << resulttype << " field for " << association << " on \"" <<
     //    toponame << "\":" << std::endl;
     //debug_print_array(ext_x, ext_y, ext_z, prims_per_val, vals);
 }
@@ -515,7 +515,7 @@ void strided_structured_element_scalar_field(index_t nele_x,
                                              Node &res,
                                              index_t prims_per_ele = 1)
 {
-    strided_structured_field(nele_x, nele_y, nele_z, origin_x, origin_y, origin_z, 
+    strided_structured_field(nele_x, nele_y, nele_z, origin_x, origin_y, origin_z,
         ext_x, ext_y, ext_z, "element", "mesh", res, prims_per_ele);
 }
 
