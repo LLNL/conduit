@@ -2686,6 +2686,43 @@ TEST(conduit_blueprint_mesh_verify, mesh_general)
     }
 }
 
+// `logical` is not currently a valid coordinate system type 
+// (cartesian, spherical, etc), however if uniform mesh is presented
+// w/o an origin, the blueprint index gen code is selecting `logical`
+// which results in the generated index to fail verify
+// we resolved this by 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_verify, simple_uniform_check_index)
+{
+    Node mesh;
+std::string mesh_yaml="\n"
+"coordsets:\n"
+"  coords:\n"
+"    type: \"uniform\"\n"
+"    dims:\n"
+"      i: 513\n"
+"      j: 513\n"
+// "    origin:\n"
+// "      x: 0.0\n"
+// "      y: 0.0\n"
+"topologies:\n"
+"  topo:\n"
+"    coordset: \"coords\"\n"
+"    type: \"uniform\"\n";
+    mesh.parse(mesh_yaml,"yaml");
+
+    Node info;
+    bool res = blueprint::mesh::verify(mesh,info);
+    EXPECT_TRUE(res);
+    Node bp_index;
+    blueprint::mesh::generate_index(mesh,"",1,bp_index);
+
+    res = blueprint::mesh::index::verify(bp_index,info);
+    EXPECT_TRUE(res);
+    std::cout << info.to_yaml() << std::endl;
+
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_verify, mesh_bad_spacing_name)
 {

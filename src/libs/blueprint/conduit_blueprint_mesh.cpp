@@ -1731,7 +1731,15 @@ mesh::generate_index_for_single_domain(const Node &mesh,
                 }
             }
 
-            idx_coordset["coord_system/type"] = bputils::coordset::coordsys(coordset);
+            std::string coord_sys_type = bputils::coordset::coordsys(coordset);
+            // logical is not supported in the blueprint index.
+            if(coord_sys_type == "logical")
+            {
+                coord_sys_type = "cartesian";
+            }
+            idx_coordset["coord_system/type"] = coord_sys_type;
+
+            //idx_coordset["coord_system/type"] = bputils::coordset::coordsys(coordset);
 
             std::string cs_ref_path = join_path(ref_path, "coordsets");
             cs_ref_path = join_path(cs_ref_path, coordset_name);
