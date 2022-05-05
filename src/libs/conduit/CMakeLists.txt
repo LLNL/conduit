@@ -140,6 +140,12 @@ add_compiled_library(NAME   conduit
                      FOLDER libs)
 
 
+target_include_directories(conduit
+                           PUBLIC
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+
+
 #################################
 # Fortran related target options
 #################################

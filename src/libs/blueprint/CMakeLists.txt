@@ -126,6 +126,12 @@ add_compiled_library(NAME conduit_blueprint
                      FOLDER libs)
 
 
+target_include_directories(conduit_blueprint
+                           PUBLIC
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+
+
 if(FORTRAN_FOUND)
     ###############################################################################
     # Special install targets for conduit fortran modules
