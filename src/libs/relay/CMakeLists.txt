@@ -219,6 +219,11 @@ add_compiled_library(NAME conduit_relay
                      HEADERS_DEST_DIR include/conduit
                      FOLDER libs)
 
+target_include_directories(conduit_relay
+                           PUBLIC
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+
 # add civetweb if web server support is enabled
 if(ENABLE_RELAY_WEBSERVER)
     target_sources(conduit_relay PRIVATE $<TARGET_OBJECTS:conduit_civetweb>)
