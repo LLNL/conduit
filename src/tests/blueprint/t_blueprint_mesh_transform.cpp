@@ -677,3 +677,18 @@ TEST(conduit_blueprint_mesh_transform, adjset_transform_dtypes)
         }
     }
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, paint_adjset)
+{
+    conduit::Node mesh;
+    blueprint::mesh::examples::grid("quads",10,10,0,3,3,1,mesh);
+    blueprint::mesh::paint_adjset("mesh_adj",
+                                  "adjset_vals",
+                                  mesh);
+    
+    conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple","hdf5");
+
+}
+

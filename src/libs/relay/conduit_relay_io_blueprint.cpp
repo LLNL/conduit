@@ -1356,6 +1356,37 @@ void write_mesh(const Node &mesh,
         CONDUIT_WARN("Relay: there are no domains to write out");
     }
 
+    // generate the bp index
+    Node local_bp_idx, bp_idx;
+    if(local_num_domains > 0)
+    {
+        ::conduit::blueprint::mesh::generate_index(multi_dom,
+                                                   opts_mesh_name,
+                                                   global_num_domains,
+                                                   local_bp_idx);
+    }
+    // handle mpi case. 
+    // this logic is from the mpi ver of mesh index gen
+    // it is duplicated here b/c we dont want a circular dep
+    // between conduit_blueprint_mpi and conduit_relay_io_mpi
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    Node gather_bp_idx;
+    relay::mpi::all_gather_using_schema(local_bp_idx,
+                                        gather_bp_idx,
+                                        mpi_comm);
+
+    // union all entries into final index that reps
+    // all domains
+    NodeConstIterator itr = gather_bp_idx.children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        bp_idx[opts_mesh_name].update(curr);
+    }
+#else
+    bp_idx[opts_mesh_name] = local_bp_idx;
+#endif
+
     // root_file_writer will now write out the root file
     if(par_rank == root_file_writer)
     {
@@ -1395,15 +1426,8 @@ void write_mesh(const Node &mesh,
         }
 
         Node root;
-        Node &bp_idx = root["blueprint_index"];
+        root["blueprint_index"].set(bp_idx);
 
-        // TODO: Use MPI ver vs providing the domains?
-        // NOTE: If we make this change, all MPI tasks need to participate 
-        // in index_gen
-        ::conduit::blueprint::mesh::generate_index(multi_dom.child(0),
-                                                   opts_mesh_name,
-                                                   global_num_domains,
-                                                   bp_idx[opts_mesh_name]);
 
         // work around conduit and manually add state fields
         if(multi_dom.child(0).has_path("state/cycle"))
