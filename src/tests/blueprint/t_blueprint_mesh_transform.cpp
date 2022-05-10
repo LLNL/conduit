@@ -702,8 +702,16 @@ TEST(conduit_blueprint_mesh_transform, paint_adjset)
     blueprint::mesh::paint_adjset("mesh_adj",
                                   "adjset_vals",
                                   mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple_2d",protocol);
+
+    mesh.reset();
+    blueprint::mesh::examples::grid("hexs",5,5,5,2,2,2,mesh);
+    blueprint::mesh::paint_adjset("mesh_adj",
+                                  "adjset_vals",
+                                  mesh);
     
-    conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple",protocol);
+    conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple_3d",protocol);
 
 }
 
