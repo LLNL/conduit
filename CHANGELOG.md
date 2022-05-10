@@ -9,7 +9,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### Blueprint
-- Added `blueprint::mesh::paint_adjsets`, which paints fields that encode adjacency set counts and ordering details. 
+- Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details. 
 
 ### Fixed
 
