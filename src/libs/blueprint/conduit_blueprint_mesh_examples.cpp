@@ -104,7 +104,12 @@ void basic_init_example_element_scalar_field(index_t nele_x,
                                              Node &res,
                                              index_t prims_per_ele=1)
 {
-    index_t nele = nele_x*nele_y;
+    index_t nele = nele_x;
+
+    if(nele_y > 0)
+    {
+        nele = nele * nele_y;
+    }
 
     if(nele_z > 0)
     {
@@ -174,6 +179,11 @@ void braid_init_example_point_scalar_field(index_t npts_x,
                                            Node &res)
 {
 
+    if(npts_y < 1)
+    {
+        npts_y = 1;
+    }
+
     if(npts_z < 1)
     {
         npts_z = 1;
@@ -230,7 +240,13 @@ void braid_init_example_point_vector_field(index_t npts_x,
                                            index_t npts_z,
                                            Node &res)
 {
-    index_t npts = npts_x * npts_y;
+   index_t npts = npts_x;
+
+    if(npts_y > 0)
+    {
+        npts *= npts_y;
+    }
+
     if(npts_z > 0)
     {
         npts *= npts_z;
@@ -239,13 +255,18 @@ void braid_init_example_point_vector_field(index_t npts_x,
     res["association"] = "vertex";
     res["type"] = "vector";
     res["topology"] = "mesh";
+
     res["values/u"].set(DataType::float64(npts));
-    res["values/v"].set(DataType::float64(npts));
-
     float64 *u_vals = res["values/u"].value();
-    float64 *v_vals = res["values/v"].value();
-    float64 *w_vals = NULL;
 
+    float64 * v_vals = NULL;
+    if (npts_y > 1)
+    {
+        res["values/v"].set(DataType::float64(npts));
+        v_vals = res["values/v"].value();
+    }
+
+    float64 *w_vals = NULL;
     if(npts_z > 1)
     {
         res["values/w"].set(DataType::float64(npts));
@@ -264,9 +285,11 @@ void braid_init_example_point_vector_field(index_t npts_x,
         dx = 20.0  / float64(npts_x - 1);
     }
 
-    if(npts_x > 1)
+    // AGC is this right?  Note change to variable being tested
+    // and used in divisor.
+    if(npts_y > 1)
     {
-        dy = 20.0  / float64(npts_x - 1);
+        dy = 20.0  / float64(npts_y - 1);
     }
 
     
@@ -278,6 +301,11 @@ void braid_init_example_point_vector_field(index_t npts_x,
     }
 
     // make sure outerloop exex
+    if(npts_y < 1)
+    {
+        npts_y = 1;
+    }
+
     if(npts_z < 1)
     {
         npts_z = 1;
@@ -297,7 +325,11 @@ void braid_init_example_point_vector_field(index_t npts_x,
                 float64 cx =  -10.0 + i * dx;
 
                 u_vals[idx] = cx;
-                v_vals[idx] = cy;
+
+                if(dy > 0.0)
+                {
+                    v_vals[idx] = cy;
+                }
 
                 if(dz > 0.0)
                 {
@@ -319,7 +351,12 @@ void braid_init_example_element_scalar_field(index_t nele_x,
                                              Node &res,
                                              index_t prims_per_ele=1)
 {
-    index_t nele = nele_x * nele_y;
+    index_t nele = nele_x;
+
+    if(nele_y > 0)
+    {
+        nele = nele * nele_y;
+    }
 
     if(nele_z > 0)
     {
@@ -337,9 +374,14 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     float64 *vals = res["values"].value();
 
     float64 dx = 20.0 / float64(nele_x);
-    float64 dy = 20.0 / float64(nele_y);
-    float64 dz = 0.0f;
 
+    float64 dy = 0.0f;
+    if(nele_y > 0 )
+    {
+        dy = 20.0 / float64(nele_y);
+    }
+
+    float64 dz = 0.0f;
     if(nele_z > 0 )
     {
         dz = 20.0 / float64(nele_z);
@@ -356,9 +398,14 @@ void braid_init_example_element_scalar_field(index_t nele_x,
 
             for(index_t i = 0; (idx == 0 || i < nele_x) ; i++)
             {
-                float64 cx =  (i * dx) + -10.0;
+                float64 cx = (i * dx) + -10.0;
 
-                float64 cv = 10.0 * sqrt( cx*cx + cy*cy );
+                float64 cv = 10.0 * sqrt( cx*cx );
+
+                if(nele_y != 0)
+                {
+                    cv = 10.0 * sqrt( cx*cx + cy*cy );
+                }
 
                 if(nele_z != 0)
                 {
@@ -456,7 +503,10 @@ void braid_init_uniform_coordset(index_t npts_x,
     coords["type"] = "uniform";
     Node &dims = coords["dims"];
     dims["i"] = npts_x;
-    dims["j"] = npts_y;
+    if(npts_y > 1)
+    {
+        dims["j"] = npts_y;
+    }
 
     if(npts_z > 1)
     {
@@ -466,7 +516,11 @@ void braid_init_uniform_coordset(index_t npts_x,
     // -10 to 10 in each dim,
     Node &origin = coords["origin"];
     origin["x"] = -10.0;
-    origin["y"] = -10.0;
+
+    if(npts_y > 1)
+    {
+        origin["y"] = -10.0;
+    }
 
     if(npts_z > 1)
     {
@@ -475,7 +529,10 @@ void braid_init_uniform_coordset(index_t npts_x,
 
     Node &spacing = coords["spacing"];
     spacing["dx"] = 20.0 / (float64)(npts_x-1);
-    spacing["dy"] = 20.0 / (float64)(npts_y-1);
+    if(npts_y > 1)
+    {
+        spacing["dy"] = 20.0 / (float64)(npts_y-1);
+    }
 
     if(npts_z > 1 )
     {
@@ -2266,6 +2323,61 @@ basic(const std::string &mesh_type,
     res.remove("state");
 
     basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
+        res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+basic1D(const std::string &mesh_type,
+        index_t npts_x, // number of points in x
+        Node &res)
+{
+    // NOTE(JRC): The basic mesh example only supports simple, homogenous
+    // element types that can be spanned by zone-centered fields.
+    const std::string mesh_types[] = {
+        "uniform", "structured"};
+    const std::string braid_types[] = {
+        "uniform", "structured"};
+    const index_t mesh_types_dims[] = {
+        1, 1};
+    const index_t mesh_types_subelems_per_elem[] = {
+        1, 1};
+
+    const index_t num_mesh_types = sizeof(mesh_types) / sizeof(std::string);
+
+    index_t mesh_type_index = -1;
+    for(index_t i = 0; i < num_mesh_types; i++)
+    {
+        if(mesh_type == mesh_types[i])
+        {
+            mesh_type_index = i;
+        }
+    }
+    if(mesh_type_index < 0 || mesh_type_index >= num_mesh_types)
+    {
+        CONDUIT_ERROR("blueprint::mesh::examples::basic1D unknown mesh_type = "
+                      << mesh_type);
+    }
+
+    const bool npts_x_ok = npts_x > 1;
+
+    // don't let de-morgan get you ...
+    if( ! (npts_x_ok) )
+    {
+        // error, not enough points to create the topo
+        CONDUIT_ERROR("blueprint::mesh::examples::basic1D requires npts_x > 1" << std::endl <<
+                      << std::endl <<
+                      "values provided:" << std::endl <<
+                      " mesh_type: " << mesh_type << std::endl <<
+                      " npts_x: " << npts_x << std::endl);
+    }
+
+    braid(braid_types[mesh_type_index], npts_x, 0, 0, res);
+    res.remove("fields");
+    res.remove("state");
+
+    basic_init_example_element_scalar_field(npts_x-1, 0, 0,
         res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
 }
 
