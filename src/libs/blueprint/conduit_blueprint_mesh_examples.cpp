@@ -2367,7 +2367,7 @@ basic1D(const std::string &mesh_type,
     {
         // error, not enough points to create the topo
         CONDUIT_ERROR("blueprint::mesh::examples::basic1D requires npts_x > 1" << std::endl <<
-                      << std::endl <<
+                      std::endl <<
                       "values provided:" << std::endl <<
                       " mesh_type: " << mesh_type << std::endl <<
                       " npts_x: " << npts_x << std::endl);
