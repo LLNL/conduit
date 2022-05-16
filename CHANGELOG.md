@@ -6,11 +6,16 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Added
+
+#### Blueprint
+- Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details. 
+
 ### Fixed
 
 #### Blueprint
 - Fixed a bug with `blueprint::mesh::index::generate`, where a uniform grid with no origin would lead to invalid coordinate system name `logical` in the resulting index. This case now defaults to `cartesian`.
-
+- Improved `relay::io::blueprint::{save_mesh|write_mesh}` blueprint index generation for cases where fields do not exist on all domains.
 
 ## [0.8.3] - Released 2022-04-14
 

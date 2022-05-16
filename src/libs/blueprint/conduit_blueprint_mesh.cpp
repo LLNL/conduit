@@ -5739,6 +5739,82 @@ mesh::index::verify(const Node &n,
     return res;
 }
 
+
+//-------------------------------------------------------------------------
+void
+mesh::paint_adjset(const std::string &adjset_name,
+                   const std::string &field_prefix,
+                   conduit::Node &mesh)
+{
+    // {field_prefix}_group_count -- total number of groups the vertex or element is in
+    // {field_prefix}_order_{group_name} -- the vertex or element's order in group {group_name}
+    
+    // recipe adapted from Max Yang's checks in t_blueprint_mpi_mesh_parmetis
+    
+    auto mesh_doms = conduit::blueprint::mesh::domains(mesh);
+    
+    for(Node *dom : mesh_doms)
+    {
+        // if we don't have an adjset, skip this domain
+        if(!dom->has_path("adjsets/" + adjset_name))
+        {
+            continue;
+        }
+
+        // check adjset assoc
+        const Node &adjset = dom->fetch_existing("adjsets/" + adjset_name);
+        const std::string assoc = adjset["association"].as_string();
+
+        if (assoc != "vertex")
+        {
+            // non vertex is not supported yet!
+            CONDUIT_ERROR("paint_adjsets only supports vertex-associated"
+                          " adjacency sets. Adjacency set named "
+                          << "'" << adjset_name << "' has association="
+                          << "'" << assoc << "'");
+        }
+
+        // get the coordset for our topo, so we can find out the
+        // number of verts
+        std::string topo_name = adjset["topology"].as_string();
+        const Node &topo = dom->fetch_existing("topologies/" + topo_name);
+        const Node &coordset = bputils::topology::coordset(topo);
+        
+        index_t num_verts = mesh::coordset::length(coordset);
+        index_t num_entries = num_verts;
+
+        // we want a field that counts the number of groups a vertex is in
+        Node &res_cnt_field = dom->fetch("fields/" + field_prefix + "_group_count");
+        res_cnt_field["association"] = assoc;
+        res_cnt_field["topology"] = topo_name;
+        res_cnt_field["values"].set(DataType::int64(num_entries));
+        int64_array res_cnt_vals = res_cnt_field["values"].value();
+
+        // loop over groups
+        for (const Node& group : adjset["groups"].children())
+        {
+            // we also want a field that shows the order for each group
+            // init this field
+            Node &res_order_field = dom->fetch("fields/" + field_prefix + "_order_" + group.name());
+            res_order_field["association"] = assoc;
+            res_order_field["topology"] = topo_name;
+            res_order_field["values"].set(DataType::int64(num_entries));
+            int64_array res_order_vals = res_order_field["values"].value();
+            res_order_vals.fill(-1);
+            // get entires
+            int64_accessor grp_vals = group["values"].as_int64_accessor();
+            for (index_t iv = 0; iv < grp_vals.number_of_elements(); iv++)
+            {
+                // update count
+                res_cnt_vals[grp_vals[iv]] += 1;
+                // record order
+                res_order_vals[grp_vals[iv]] = iv;
+            }
+        }
+    }
+}
+
+
 //-------------------------------------------------------------------------
 void
 mesh::partition(const conduit::Node &n_mesh,

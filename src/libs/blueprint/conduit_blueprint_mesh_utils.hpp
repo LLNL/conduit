@@ -386,6 +386,9 @@ namespace topology
     //-------------------------------------------------------------------------
     index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &topo);
 
+    // return the coordset for this topology
+    const Node & coordset(const conduit::Node &topo);
+
     //-------------------------------------------------------------------------
     /**
      * @brief Reindexes the vertices in a topology to be associated with a new

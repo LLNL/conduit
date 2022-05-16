@@ -1779,6 +1779,14 @@ topology::length(const Node &n)
 }
 
 //-----------------------------------------------------------------------------
+const Node &
+topology::coordset(const Node &n)
+{
+    const Node *res = find_reference_node(n,"coordset");
+    return *res;
+}
+
+//-----------------------------------------------------------------------------
 void
 topology::reindex_coords(const Node& topo,
                          const Node& new_coordset,
