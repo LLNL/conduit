@@ -1810,7 +1810,7 @@ mesh::generate_index_for_single_domain(const Node &mesh,
                 while(mats_itr.has_next())
                 {
                     mats_itr.next();
-                    idx_matset["material_map"][mats_itr.name()] = mats_itr.index();
+                    idx_matset["materials"][mats_itr.name()] = mats_itr.index();
                 }
             }
             else // surprise!
