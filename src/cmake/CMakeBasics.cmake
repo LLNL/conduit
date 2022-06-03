@@ -157,7 +157,7 @@ if(GIT_FOUND)
     message(STATUS "git executable: ${GIT_EXECUTABLE}")
     # try to get sha1
     execute_process(COMMAND
-        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
+        "${GIT_EXECUTABLE}" rev-parse HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         OUTPUT_VARIABLE CONDUIT_GIT_SHA1
         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -165,10 +165,18 @@ if(GIT_FOUND)
     if("${CONDUIT_GIT_SHA1}" STREQUAL "")
        set(CONDUIT_GIT_SHA1 "unknown")
     endif()
+    execute_process(COMMAND
+        "${GIT_EXECUTABLE}" diff --quiet HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        RESULT_VARIABLE res
+        OUTPUT_QUIET ERROR_QUIET)
+    if (res)
+       string(APPEND CONDUIT_GIT_SHA1 "-dirty")
+    endif ()
     message(STATUS "git SHA1: " ${CONDUIT_GIT_SHA1})
 
     execute_process(COMMAND
-        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=5 --dirty
+        "${GIT_EXECUTABLE}" rev-parse --short HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         OUTPUT_VARIABLE CONDUIT_GIT_SHA1_ABBREV
         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
