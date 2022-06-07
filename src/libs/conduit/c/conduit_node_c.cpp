@@ -514,6 +514,17 @@ conduit_node_set_external_char8_str(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
+// string set_path_external
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_char8_str(conduit_node *cnode,
+                                         const char *path,
+                                         char *value)
+{
+    cpp_node(cnode)->set_path_external_char8_str(path, value);
+}
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // -- set for scalar bitwidth style types ---
 //-----------------------------------------------------------------------------
