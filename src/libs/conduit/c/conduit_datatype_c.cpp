@@ -59,7 +59,7 @@ conduit_index_t conduit_datatype_element_bytes(const conduit_datatype *cdatatype
     return cpp_datatype_ref(cdatatype).element_bytes();
 }
 
-conduit_index_t conduit_datatype_endianess(const conduit_datatype *cdatatype)
+conduit_index_t conduit_datatype_endianness(const conduit_datatype *cdatatype)
 {
     return cpp_datatype_ref(cdatatype).endianness();
 }

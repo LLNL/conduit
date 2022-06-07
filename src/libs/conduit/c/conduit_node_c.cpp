@@ -3910,8 +3910,8 @@ conduit_node_element_ptr(conduit_node *cnode,
 // fetch direct data pointer access 
 //-----------------------------------------------------------------------------
 void *
-conduit_fetch_node_data_ptr(conduit_node *cnode,
-                            const char* path)
+conduit_node_fetch_path_data_ptr(conduit_node *cnode,
+                                 const char* path)
 {
     return cpp_node(cnode)->fetch(path).data_ptr();
 }
@@ -3920,9 +3920,9 @@ conduit_fetch_node_data_ptr(conduit_node *cnode,
 // fetch element pointer access 
 //-----------------------------------------------------------------------------
 void *
-conduit_fetch_node_element_ptr(conduit_node *cnode,
-                               const char *path,
-                               conduit_index_t idx)
+conduit_node_fetch_path_element_ptr(conduit_node *cnode,
+                                    const char *path,
+                                    conduit_index_t idx)
 {
     return cpp_node(cnode)->fetch(path).element_ptr(idx);
 }
