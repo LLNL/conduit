@@ -24,3 +24,12 @@ TEST(c_conduit_blueprint, about)
     conduit_node_destroy(n);
 }
 
+TEST(c_conduit_datatype, endianness)
+{
+    conduit_node *n = conduit_node_create();
+    const conduit_datatype* dt = conduit_node_dtype(n);
+
+    (void)conduit_datatype_endianness(dt);
+
+    conduit_node_destroy(n);
+}

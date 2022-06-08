@@ -514,6 +514,17 @@ conduit_node_set_external_char8_str(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
+// string set_path_external
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_char8_str(conduit_node *cnode,
+                                         const char *path,
+                                         char *value)
+{
+    cpp_node(cnode)->set_path_external_char8_str(path, value);
+}
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // -- set for scalar bitwidth style types ---
 //-----------------------------------------------------------------------------
@@ -3910,8 +3921,8 @@ conduit_node_element_ptr(conduit_node *cnode,
 // fetch direct data pointer access 
 //-----------------------------------------------------------------------------
 void *
-conduit_fetch_node_data_ptr(conduit_node *cnode,
-                            const char* path)
+conduit_node_fetch_path_data_ptr(conduit_node *cnode,
+                                 const char* path)
 {
     return cpp_node(cnode)->fetch(path).data_ptr();
 }
@@ -3920,9 +3931,9 @@ conduit_fetch_node_data_ptr(conduit_node *cnode,
 // fetch element pointer access 
 //-----------------------------------------------------------------------------
 void *
-conduit_fetch_node_element_ptr(conduit_node *cnode,
-                               const char *path,
-                               conduit_index_t idx)
+conduit_node_fetch_path_element_ptr(conduit_node *cnode,
+                                    const char *path,
+                                    conduit_index_t idx)
 {
     return cpp_node(cnode)->fetch(path).element_ptr(idx);
 }

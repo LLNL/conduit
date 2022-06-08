@@ -994,6 +994,26 @@ TEST(conduit_node_set, set_path_bitwidth_float_ptr)
     conduit_node_destroy(n);
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node_set, set_path_cstr)
+{
+    char ext_str[] = {'c', 'o', 'n', 'd', 'u', 'i', 't', '\0'};
+
+    conduit_node *n = conduit_node_create();
+
+    //--------------
+    // set_external
+    //--------------
+
+    conduit_node_set_path_external_char8_str(n, "cstr", ext_str);
+    conduit_node_print(n);
+
+    char *chr_ptr = conduit_node_fetch_path_as_char8_str(n,"cstr");
+    EXPECT_EQ(std::string("conduit"), chr_ptr);
+
+    conduit_node_destroy(n);
+}
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
