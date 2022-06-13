@@ -464,6 +464,83 @@ bool verify_reference_field(const std::string &protocol,
     return res;
 }
 
+bool verify_shapes_node(const Node &node, const Node &shape_map, Node &info)
+{
+  const std::string protocol = "mesh::topology::unstructured";
+  bool res = true;
+  res &= verify_integer_field(protocol, node, info);
+  
+  DataAccessor<int32> shapes(node.data_ptr(), node.dtype());
+
+  std::vector<int32> range;
+  for(auto &child : shape_map.children())
+  {
+    range.emplace_back(child.as_int32());
+  }
+
+  for(index_t i = 0; i < shapes.number_of_elements(); ++i)
+  {
+    const int32 shape = shapes[i];
+    const bool expectedShape = std::find(range.begin(), range.end(), shape) != range.end();
+    if (!expectedShape)
+    {
+      log::error(info, protocol, "shape not in shape_map");
+    }
+    res &= expectedShape;    
+  }
+
+  if (res)
+  {
+    for(auto &child : shape_map.children())
+    {
+
+      log::info(info, protocol, "cells found for shape "
+        + child.name() + " ("
+        + std::to_string(child.as_int32())
+        + ").");
+
+    }
+  }
+
+  return res;
+}
+
+bool verify_mixed_elements_node(const Node& topo_elems, Node &info_elems, bool& elems_res)
+{
+  const std::string protocol = "mesh::topology::unstructured";
+  elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
+      conduit::blueprint::mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
+
+  elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape_map") &&
+      conduit::blueprint::mesh::topology::shape_map::verify(topo_elems["shape_map"], info_elems["shape_map"]);
+
+  elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shapes") &&
+      verify_shapes_node(topo_elems["shapes"], topo_elems["shape_map"], info_elems["shapes"]);
+
+  return elems_res;
+}
+
+bool verify_mixed_node(const Node &topo, Node &info, bool& elems_res, bool& subelems_res)
+{
+    const std::string protocol = "mesh::topology::unstructured";
+    const Node& topo_elems = topo["elements"];
+    Node& info_elems = info["elements"];
+    
+    elems_res &= verify_mixed_elements_node(topo_elems, info_elems, elems_res);
+    elems_res &= verify_o2mrelation_field(protocol, topo, info, "elements");
+
+    // if polyhedra in mixed definition, the polyhedra have their faces in subelements
+    if (topo.has_child("subelements"))
+    {
+        const Node& topo_subelems = topo["subelements"];
+        Node& info_subelems = info["subelements"];
+
+        subelems_res &= verify_mixed_elements_node(topo_subelems, info_subelems, subelems_res);
+        subelems_res &= verify_o2mrelation_field(protocol, topo, info, "subelements");
+    }
+    return elems_res && subelems_res;
+}
+
 //-----------------------------------------------------------------------------
 bool verify_poly_node(bool is_mixed_topo,
                       std::string name,
@@ -2619,15 +2696,23 @@ mesh::topology::unstructured::verify(const Node &topo,
         bool elems_res = true;
         bool subelems_res = true;
 
-        // single shape case
+        // single shape or mixed definition case
         if(topo_elems.has_child("shape"))
         {
             elems_res &= verify_field_exists(protocol, topo_elems, info_elems, "shape") &&
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
             elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
 
-            // Verify if node is polygonal or polyhedral
-            elems_res &= verify_poly_node (false, "", topo_elems, info_elems, topo, info, elems_res);
+            const auto &shape = topo_elems["shape"].as_string();
+            if (shape == "mixed")
+            {
+              elems_res &= verify_mixed_node(topo, info, elems_res, subelems_res);
+            }
+            else 
+            {
+              // Verify if node is polygonal or polyhedral
+              elems_res &= verify_poly_node(false, "", topo_elems, info_elems, topo, info, elems_res);
+            }
         }
         // shape stream case
         else if(topo_elems.has_child("element_types"))
@@ -4543,6 +4628,47 @@ mesh::topology::shape::verify(const Node &shape,
 
     return res;
 }
+
+//-----------------------------------------------------------------------------
+// blueprint::mesh::topology::shape_map protocol interface
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::topology::shape_map::verify(const Node& shape_map,
+  Node& info)
+{
+  const std::string protocol = "mesh::topology::shape_map";
+  bool res = true;
+  info.reset();
+
+  res &= verify_object_field(protocol, shape_map, info);
+  
+  for (const Node &child : shape_map.children())
+  {
+    bool isEnum = false;
+    for(const auto &enum_value : bputils::TOPO_SHAPES)
+    {
+      isEnum |= (enum_value == child.name());
+    }
+    if (isEnum)
+    {
+      log::info(info, protocol, "has valid value "+ log::quote(child.name()) + 
+      "(" + std::to_string(child.as_int32()) + ")");
+    }
+    else
+    {
+      log::error(info, protocol, "has invalid value " + log::quote(child.name()) +
+        "(" + std::to_string(child.as_int32()) + ")");
+    }
+    res &= isEnum;
+  }
+
+  log::validation(info, res);
+
+  return res;
+}
+
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::matset protocol interface

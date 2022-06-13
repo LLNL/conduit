@@ -131,7 +131,8 @@ braid_2d_only_shape_type(const std::string& mesh_type)
          mesh_type == "quads" ||
          mesh_type == "quads_poly" ||
          mesh_type == "quads_and_tris" ||
-         mesh_type == "quads_and_tris_offsets")
+         mesh_type == "quads_and_tris_offsets" ||
+         mesh_type == "mixed_2d")
     {
         return true;
     }
@@ -148,7 +149,8 @@ braid_3d_only_shape_type(const std::string& mesh_type)
     if( mesh_type == "tets" ||
         mesh_type == "hexs" ||
         mesh_type == "hexs_poly" ||
-        mesh_type == "hexs_and_tets")
+        mesh_type == "hexs_and_tets" || 
+        mesh_type == "mixed")
     {
         return true;
     }
@@ -1845,6 +1847,281 @@ braid_tris(index_t npts_x,
 
 }
 
+//---------------------------------------------------------------------------//
+void
+braid_mixed_2d(const int32 npts_x,
+               const int32 npts_y,
+               Node& res)
+{
+  res.reset();
+
+  braid_init_example_state(res);
+  braid_init_explicit_coordset(npts_x,
+    npts_y,
+    1,
+    res["coordsets/coords"]);
+
+  const int32 nele_x = npts_x - 1;
+  const int32 nele_y = npts_y - 1;
+
+  res["topologies/mesh/type"] = "unstructured";
+  res["topologies/mesh/coordset"] = "coords";
+
+  res["topologies/mesh/elements/shape"] = "mixed";
+  res["topologies/mesh/elements/shape_map/quad"] = 9; // VTK_QUAD
+  res["topologies/mesh/elements/shape_map/tri"] = 5; // VTK_TRIANGLE
+
+  /* 
+   *   ^^^^^^^^^^^^^^^^^^^^^^^^
+   *   |--/|---|--/|---|--/|>>>
+   *   | / |   | / |   | / |>>>
+   *   |/--|---|/--|---|/--|>>>
+   */
+
+  const int32 nele_x2 = nele_x / 2;
+  const int32 nquads = nele_y * nele_x2;
+  const int32 ntris = nele_y * 2 * (nele_x2 + nele_x % 2);
+  const int32 nele = nquads + ntris;
+
+  Node &elements = res["topologies/mesh/elements"];
+  elements["shapes"].set(DataType::int32(nele));
+  elements["sizes"].set(DataType::int32(nele));
+  elements["offsets"].set(DataType::int32(nele));
+  elements["connectivity"].set(DataType::int32(nquads * 4 + ntris * 3));
+
+  int32* shapes = elements["shapes"].value();
+  int32 *sizes = elements["sizes"].value();
+  int32 *offsets = elements["offsets"].value();
+  int32 *connectivity = elements["connectivity"].value();
+
+  size_t idx_elem(0);
+  size_t idx(0);
+  for(int32 j = 0; j < nele_y ; ++j)
+  {
+    for(int32 i = 0; i < nele_x; ++i)
+    {
+      if (i%2==0)
+      {
+        shapes[idx_elem+0] = 5; // VTK_TRIANGLE;
+        shapes[idx_elem+1] = 5; // VTK_TRIANGLE;
+        sizes[idx_elem + 0] = 3;
+        sizes[idx_elem + 1] = 3;
+
+        offsets[idx_elem + 0] = (idx_elem == 0 ? 0 : offsets[idx_elem - 1]) + 3;
+        offsets[idx_elem + 1] = offsets[idx_elem + 0] + 3;
+
+        connectivity[idx + 0] = 0 + i + j * (0 + npts_y);
+        connectivity[idx + 1] = 1 + i + j * (0 + npts_y);
+        connectivity[idx + 2] = 1 + i + j * (1 + npts_y);
+
+        connectivity[idx + 3] = 0 + i + j * (0 + npts_y);
+        connectivity[idx + 4] = 1 + i + j * (1 + npts_y);
+        connectivity[idx + 5] = 0 + i + j * (1 + npts_y);
+
+        idx_elem += 2;
+        idx += 6;
+      }
+      else
+      {
+        shapes[idx_elem] = 9; // VTK_QUAD;
+        sizes[idx_elem] = 4;
+        offsets[idx_elem] = (idx_elem == 0 ? 0 : offsets[idx_elem - 1]) + 4;
+
+        connectivity[idx + 0] = 0 + i + j * (0 + npts_y);
+        connectivity[idx + 1] = 1 + i + j * (0 + npts_y);
+        connectivity[idx + 2] = 1 + i + j * (1 + npts_y);
+        connectivity[idx + 3] = 0 + i + j * (1 + npts_y);
+
+        idx_elem += 1;
+        idx += 4;
+      }
+    }
+  }
+}
+
+//---------------------------------------------------------------------------//
+void
+braid_mixed(int32 npts_x,
+            int32 npts_y,
+            int32 npts_z,
+            Node& res)
+{
+  res.reset();
+
+  braid_init_example_state(res);
+  braid_init_explicit_coordset(npts_x,
+    npts_y,
+    npts_z,
+    res["coordsets/coords"]);
+
+  res["topologies/mesh/type"] = "unstructured";
+  res["topologies/mesh/coordset"] = "coords";
+  
+  const int32 nele_x = npts_x - 1;
+  const int32 nele_y = npts_y - 1;
+  const int32 nele_z = npts_z - 1;
+
+
+  const int32 nele_x2 = nele_x / 2;
+
+  // one hexa subdivided into 3 tetras and polyhedron (prism)
+  const int32 ntet = 3 * nele_z * nele_y * (nele_x2 + nele_x % 2);
+  const int32 npolyhedra = nele_z * nele_y * (nele_x2 + nele_x % 2);
+  // one hexa as hexahedron.
+  const int32 nhex = nele_z * nele_y * nele_x2;
+
+  const int32 nfaces = 5 * npolyhedra; 
+  const int32 nele = ntet + nhex + npolyhedra;
+
+  res["topologies/mesh/elements/shape"] = "mixed";
+  res["topologies/mesh/elements/shape_map/polyhedral"] = 42; // VTK_POLYHEDRON
+  res["topologies/mesh/elements/shape_map/tet"] = 10; // VTK_TETRA
+  res["topologies/mesh/elements/shape_map/hex"] = 12; // VTK_HEXAHEDRON
+
+  Node& elements = res["topologies/mesh/elements"];
+
+  elements["shapes"].set(DataType::int32(nele));
+  elements["sizes"].set(DataType::int32(nele));
+  elements["offsets"].set(DataType::int32(nele));
+  elements["connectivity"].set(DataType::int32(ntet * 4  + npolyhedra * 5 + nhex * 8));
+
+  int32* elem_shapes = elements["shapes"].value();
+  int32* elem_sizes = elements["sizes"].value();
+  int32* elem_offsets = elements["offsets"].value();
+  int32* elem_connectivity = elements["connectivity"].value();
+
+  res["topologies/mesh/subelements/shape"] = "mixed";
+  res["topologies/mesh/subelements/shape_map/quad"] = 9; // VTK_QUAD
+  res["topologies/mesh/subelements/shape_map/tri"] = 5; // VTK_TRIANGLE
+
+  Node& subelements = res["topologies/mesh/subelements/"];
+  
+  subelements["shapes"].set(DataType::int32(nfaces));
+  subelements["sizes"].set(DataType::int32(nfaces));
+  subelements["offsets"].set(DataType::int32(nfaces));
+  subelements["connectivity"].set(DataType::int32(npolyhedra * 18));
+
+  int32* subelem_shapes = subelements["shapes"].value();
+  int32* subelem_sizes   = subelements["sizes"].value();
+  int32* subelem_offsets = subelements["offsets"].value();
+  int32* subelem_connectivity = subelements["connectivity"].value();
+
+  int32 idx_elem(0);
+  int32 idx(0);
+  int32 idx_elem2(0);
+  int32 idx2(0);
+  int32 polyhedronCounter(0);
+
+  for (int32 k = 0; k < nele_z; ++k)
+  {
+    for (int32 j = 0; j < nele_y; ++j)
+    {
+      for(int32 i = 0; i < nele_x; ++i)
+      {
+        if (i%2 == 1) // hexahedron
+        {
+          elem_shapes[idx_elem] = 12; // VTK_HEXAHEDRON
+          elem_sizes[idx_elem] = 8;   
+          elem_offsets[idx_elem] = (idx_elem == 0 ? 0 : elem_offsets[idx_elem - 1])  + 8;
+
+          for (int32 n = 0; n < 8; ++n) 
+          {
+            elem_connectivity[idx + n] = n + (i + j * nele_y * k * nele_z)*8;
+          }
+
+          idx_elem += 1;
+          idx += 8;
+        }
+        else // 3 tets, one polyhedron
+        {
+          elem_shapes[idx_elem + 0] = 10; // VTK_TETRA
+          elem_shapes[idx_elem + 1] = 10; // VTK_TETRA
+          elem_shapes[idx_elem + 2] = 10; // VTK_TETRA
+          elem_shapes[idx_elem + 3] = 42; // VTK_POLYHEDRON
+
+          elem_sizes[idx_elem + 0] = 4;
+          elem_sizes[idx_elem + 1] = 4;
+          elem_sizes[idx_elem + 2] = 4;
+          elem_sizes[idx_elem + 3] = 6;
+
+          elem_offsets[idx_elem + 0] = (idx_elem == 0 ? 0 : elem_offsets[idx_elem - 1]) + 4;
+          elem_offsets[idx_elem + 1] = elem_offsets[idx_elem + 0] + 4;
+          elem_offsets[idx_elem + 2] = elem_offsets[idx_elem + 1] + 4;
+          elem_offsets[idx_elem + 3] = elem_offsets[idx_elem + 2] + 6;
+
+          elem_connectivity[idx + 0]  = 0 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 1]  = 1 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 2]  = 3 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 3]  = 5 + (i + j * nele_y * k * nele_z)*8;
+                                                                        
+          elem_connectivity[idx + 4]  = 0 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 5]  = 5 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 6]  = 4 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 7]  = 7 + (i + j * nele_y * k * nele_z)*8;
+                                                                        
+          elem_connectivity[idx + 8]  = 0 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 9]  = 3 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 10] = 5 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 11] = 7 + (i + j * nele_y * k * nele_z)*8;
+
+          elem_connectivity[idx + 12] = 0 + 5 * polyhedronCounter;
+          elem_connectivity[idx + 12] = 1 + 5 * polyhedronCounter;
+          elem_connectivity[idx + 12] = 2 + 5 * polyhedronCounter;
+          elem_connectivity[idx + 12] = 3 + 5 * polyhedronCounter;
+          elem_connectivity[idx + 12] = 4 + 5 * polyhedronCounter;
+
+          subelem_shapes[idx_elem2 + 0] = 9; // VTK_QUAD
+          subelem_shapes[idx_elem2 + 1] = 9; // VTK_QUAD
+          subelem_shapes[idx_elem2 + 2] = 9; // VTK_QUAD
+          subelem_shapes[idx_elem2 + 3] = 5; // VTK_TRIANGLE
+          subelem_shapes[idx_elem2 + 4] = 5; // VTK_TRIANGLE
+
+          subelem_sizes[idx_elem2 + 0] = 4;
+          subelem_sizes[idx_elem2 + 1] = 4;
+          subelem_sizes[idx_elem2 + 2] = 4;
+          subelem_sizes[idx_elem2 + 3] = 3;
+          subelem_sizes[idx_elem2 + 4] = 3;
+
+          subelem_offsets[idx_elem2 + 0] = (idx_elem == 0 ? 0 : subelem_offsets[idx_elem - 1]) + 4;
+          subelem_offsets[idx_elem2 + 1] = subelem_offsets[idx_elem - 1] + 4;
+          subelem_offsets[idx_elem2 + 2] = subelem_offsets[idx_elem - 1] + 4;
+          subelem_offsets[idx_elem2 + 3] = subelem_offsets[idx_elem - 1] + 3;
+          subelem_offsets[idx_elem2 + 4] = subelem_offsets[idx_elem - 1] + 3;
+
+          subelem_connectivity[idx2 + 0] = 1 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 1] = 5 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 2] = 7 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 3] = 3 + 18 * polyhedronCounter;
+
+          subelem_connectivity[idx2 + 4] = 1 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 5] = 2 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 6] = 6 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 7] = 5 + 18 * polyhedronCounter;
+
+          subelem_connectivity[idx2 + 8] = 2 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 9] = 3 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 +10] = 7 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 +11] = 6 + 18 * polyhedronCounter;
+
+          subelem_connectivity[idx2 +12] = 3 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 +13] = 2 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 +14] = 1 + 18 * polyhedronCounter;
+          
+          subelem_connectivity[idx2 +15] = 5 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 +16] = 6 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 +17] = 7 + 18 * polyhedronCounter;
+
+          idx_elem += 4; // three tets, 1 polyhedron
+          idx += 17; // 3 tets (=4) + 1 polyhedron (5 faces)
+          polyhedronCounter += 1;
+          idx_elem2 += 5; // five faces on the polyhedron
+          idx2 += 18; 
+        }
+      }
+    }
+  }
+
+}
 
 //---------------------------------------------------------------------------//
 void
@@ -2812,7 +3089,7 @@ braid(const std::string &mesh_type,
             CONDUIT_ERROR("braid with non-points topology requires "
                           "npts_x > 1 and npts_y > 1 "
                           " and for mesh_type={\"tets\", \"hexs\", "
-                          " \"hexs_poly\", or \"hexs_and_tets\"} "
+                          " \"hexs_poly\", \"hexs_and_tets\" or \"mixed\""
                           " npts_z must be > 1" << std::endl << 
                           "values provided:" << std::endl << 
                           " mesh_type: " << mesh_type << std::endl <<
@@ -2886,6 +3163,14 @@ braid(const std::string &mesh_type,
     else if(mesh_type == "points_implicit")
     {
         braid_points_implicit(npts_x,npts_y,npts_z,res);
+    }
+    else if (mesh_type == "mixed")
+    {
+        braid_mixed(npts_x, npts_y, npts_z, res);
+    }
+    else if (mesh_type == "mixed_2d")
+    {
+        braid_mixed_2d(npts_x, npts_y, res);
     }
     else
     {
