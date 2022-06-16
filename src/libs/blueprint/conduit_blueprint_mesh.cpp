@@ -2703,8 +2703,8 @@ mesh::topology::unstructured::verify(const Node &topo,
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
             elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
 
-            const auto &shape = topo_elems["shape"].as_string();
-            if (shape == "mixed")
+            if (topo_elems["shape"].dtype().is_string() &&  
+                topo_elems["shape"].as_string() == "mixed")
             {
               elems_res &= verify_mixed_node(topo, info, elems_res, subelems_res);
             }
