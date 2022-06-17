@@ -66,7 +66,7 @@ namespace examples
 //---------------------------------------------------------------------------//
 const float64 PI_VALUE = 3.14159265359;
 
-// NOTE(CYRUSH) 
+// NOTE(CYRUSH)
 // Using npts_z != 0 for 2d only shape types in our examples is deprecated
 // this bool controls if we throw an exception when npts_z != 0 for 2D
 // only examples. In a future release move to throw error and remove
@@ -149,7 +149,7 @@ braid_3d_only_shape_type(const std::string& mesh_type)
     if( mesh_type == "tets" ||
         mesh_type == "hexs" ||
         mesh_type == "hexs_poly" ||
-        mesh_type == "hexs_and_tets" || 
+        mesh_type == "hexs_and_tets" ||
         mesh_type == "mixed")
     {
         return true;
@@ -260,7 +260,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
 
     float64 dx = 0.0;
     float64 dy = 0.0;
-    
+
     if(npts_x > 1)
     {
         dx = 20.0  / float64(npts_x - 1);
@@ -271,7 +271,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
         dy = 20.0  / float64(npts_x - 1);
     }
 
-    
+
     float64 dz = 0.0;
 
     if(npts_z > 1)
@@ -1871,7 +1871,7 @@ braid_mixed_2d(const int32 npts_x,
   res["topologies/mesh/elements/shape_map/quad"] = 9; // VTK_QUAD
   res["topologies/mesh/elements/shape_map/tri"] = 5; // VTK_TRIANGLE
 
-  /* 
+  /*
    *   ^^^^^^^^^^^^^^^^^^^^^^^^
    *   |--/|---|--/|---|--/|>>>
    *   | / |   | / |   | / |>>>
@@ -1937,6 +1937,18 @@ braid_mixed_2d(const int32 npts_x,
       }
     }
   }
+
+  Node& fields = res["fields"];
+
+  braid_init_example_point_scalar_field(npts_x,
+    npts_y,
+    1,
+    fields["braid"]);
+
+  braid_init_example_point_vector_field(npts_x,
+    npts_y,
+    1,
+    fields["vel"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -1956,7 +1968,7 @@ braid_mixed(int32 npts_x,
 
   res["topologies/mesh/type"] = "unstructured";
   res["topologies/mesh/coordset"] = "coords";
-  
+
   const int32 nele_x = npts_x - 1;
   const int32 nele_y = npts_y - 1;
   const int32 nele_z = npts_z - 1;
@@ -1970,7 +1982,7 @@ braid_mixed(int32 npts_x,
   // one hexa as hexahedron.
   const int32 nhex = nele_z * nele_y * nele_x2;
 
-  const int32 nfaces = 5 * npolyhedra; 
+  const int32 nfaces = 5 * npolyhedra;
   const int32 nele = ntet + nhex + npolyhedra;
 
   res["topologies/mesh/elements/shape"] = "mixed";
@@ -1995,7 +2007,7 @@ braid_mixed(int32 npts_x,
   res["topologies/mesh/subelements/shape_map/tri"] = 5; // VTK_TRIANGLE
 
   Node& subelements = res["topologies/mesh/subelements/"];
-  
+
   subelements["shapes"].set(DataType::int32(nfaces));
   subelements["sizes"].set(DataType::int32(nfaces));
   subelements["offsets"].set(DataType::int32(nfaces));
@@ -2021,10 +2033,10 @@ braid_mixed(int32 npts_x,
         if (i%2 == 1) // hexahedron
         {
           elem_shapes[idx_elem] = 12; // VTK_HEXAHEDRON
-          elem_sizes[idx_elem] = 8;   
+          elem_sizes[idx_elem] = 8;
           elem_offsets[idx_elem] = (idx_elem == 0 ? 0 : elem_offsets[idx_elem - 1])  + 8;
 
-          for (int32 n = 0; n < 8; ++n) 
+          for (int32 n = 0; n < 8; ++n)
           {
             elem_connectivity[idx + n] = n + (i + j * nele_y * k * nele_z)*8;
           }
@@ -2053,12 +2065,12 @@ braid_mixed(int32 npts_x,
           elem_connectivity[idx + 1]  = 1 + (i + j * nele_y * k * nele_z)*8;
           elem_connectivity[idx + 2]  = 3 + (i + j * nele_y * k * nele_z)*8;
           elem_connectivity[idx + 3]  = 5 + (i + j * nele_y * k * nele_z)*8;
-                                                                        
+
           elem_connectivity[idx + 4]  = 0 + (i + j * nele_y * k * nele_z)*8;
           elem_connectivity[idx + 5]  = 5 + (i + j * nele_y * k * nele_z)*8;
           elem_connectivity[idx + 6]  = 4 + (i + j * nele_y * k * nele_z)*8;
           elem_connectivity[idx + 7]  = 7 + (i + j * nele_y * k * nele_z)*8;
-                                                                        
+
           elem_connectivity[idx + 8]  = 0 + (i + j * nele_y * k * nele_z)*8;
           elem_connectivity[idx + 9]  = 3 + (i + j * nele_y * k * nele_z)*8;
           elem_connectivity[idx + 10] = 5 + (i + j * nele_y * k * nele_z)*8;
@@ -2106,7 +2118,7 @@ braid_mixed(int32 npts_x,
           subelem_connectivity[idx2 +12] = 3 + 18 * polyhedronCounter;
           subelem_connectivity[idx2 +13] = 2 + 18 * polyhedronCounter;
           subelem_connectivity[idx2 +14] = 1 + 18 * polyhedronCounter;
-          
+
           subelem_connectivity[idx2 +15] = 5 + 18 * polyhedronCounter;
           subelem_connectivity[idx2 +16] = 6 + 18 * polyhedronCounter;
           subelem_connectivity[idx2 +17] = 7 + 18 * polyhedronCounter;
@@ -2115,12 +2127,23 @@ braid_mixed(int32 npts_x,
           idx += 17; // 3 tets (=4) + 1 polyhedron (5 faces)
           polyhedronCounter += 1;
           idx_elem2 += 5; // five faces on the polyhedron
-          idx2 += 18; 
+          idx2 += 18;
         }
       }
     }
   }
 
+  Node& fields = res["fields"];
+
+  braid_init_example_point_scalar_field(npts_x,
+    npts_y,
+    npts_z,
+    fields["braid"]);
+
+  braid_init_example_point_vector_field(npts_x,
+    npts_y,
+    npts_z,
+    fields["vel"]);
 }
 
 //---------------------------------------------------------------------------//
@@ -2662,8 +2685,8 @@ basic(const std::string &mesh_type,
     const bool npts_x_ok = npts_x > 1;
     const bool npts_y_ok = npts_y > 1;
     bool npts_z_ok = mesh_types_dims[mesh_type_index] == 2 || npts_z > 1;
-    
-    
+
+
     if( npts_z != 0 &&
         braid_2d_only_shape_type(mesh_type) )
     {
@@ -2686,14 +2709,14 @@ basic(const std::string &mesh_type,
         CONDUIT_ERROR("blueprint::mesh::examples::basic requires: " << std::endl <<
                       "For 2D only topologies"
                       " ( mesh_type={\"tris\", \"quads\", or \"polygons\"} )"
-                      " npts_x > 1 and npts_y > 1 and npts_z == 0" 
+                      " npts_x > 1 and npts_y > 1 and npts_z == 0"
                       << std::endl <<
                       "For 3D only topologies"
                       " ( mesh_type={\"tets\", \"hexs\", or \"polyhedra\"} )"
                       "npts_x > 1 and npts_y > 1 and "
                       " npts_z > 1"
                       << std::endl <<
-                      "values provided:" << std::endl << 
+                      "values provided:" << std::endl <<
                       " mesh_type: " << mesh_type << std::endl <<
                       " npts_x: " << npts_x << std::endl <<
                       " npts_y: " << npts_y << std::endl <<
@@ -2777,7 +2800,7 @@ strided_structured(Node &desc, // shape of requested data arrays
     {
         pts_ext_orig_ok = pts_ext_orig_ok && pts_extent[2] - pts_origin[2] >= npts_z;
     }
-    
+
     // don't let de-morgan get you ...
     if( ! (npts_x_ok && npts_y_ok && npts_z_ok && ele_ext_orig_ok && pts_ext_orig_ok) )
     {
@@ -3029,7 +3052,7 @@ braid(const std::string &mesh_type,
         }
 
         // check 2d cases which require npts z = 0
-        
+
 
         if ( npts_z != 0 &&
              braid_2d_only_shape_type(mesh_type) )
@@ -3065,8 +3088,8 @@ braid(const std::string &mesh_type,
             // error, not enough points to create the topo
             CONDUIT_ERROR("braid with points-based topology requires"
                           "npts_x > 0,  npts_y > 0  and npts_z >= 0 "
-                          "values provided:" << std::endl << 
-                          " mesh_type: " << mesh_type << std::endl  << 
+                          "values provided:" << std::endl <<
+                          " mesh_type: " << mesh_type << std::endl  <<
                           " npts_x: " << npts_x << std::endl <<
                           " npts_y: " << npts_y << std::endl <<
                           " npts_z: " << npts_z << std::endl);
@@ -3076,8 +3099,8 @@ braid(const std::string &mesh_type,
             // we won't pass z on, so error if z is non zero.
             CONDUIT_ERROR("braid with 2D topology requires "
                           "npts_x > 1 and npts_y > 1 "
-                          " and npts_z == 0 " << std::endl << 
-                          "values provided:" << std::endl << 
+                          " and npts_z == 0 " << std::endl <<
+                          "values provided:" << std::endl <<
                           " mesh_type: " << mesh_type << std::endl <<
                           " npts_x: " << npts_x << std::endl <<
                           " npts_y: " << npts_y << std::endl <<
@@ -3090,8 +3113,8 @@ braid(const std::string &mesh_type,
                           "npts_x > 1 and npts_y > 1 "
                           " and for mesh_type={\"tets\", \"hexs\", "
                           " \"hexs_poly\", \"hexs_and_tets\" or \"mixed\""
-                          " npts_z must be > 1" << std::endl << 
-                          "values provided:" << std::endl << 
+                          " npts_z must be > 1" << std::endl <<
+                          "values provided:" << std::endl <<
                           " mesh_type: " << mesh_type << std::endl <<
                           " npts_x: " << npts_x << std::endl <<
                           " npts_y: " << npts_y << std::endl <<
@@ -3512,7 +3535,7 @@ void polytess(index_t nlevels,
         topology["elements/sizes"].set(DataType::uint64(polygons.size()));
 
         uint64_array conn_array = topology["elements/connectivity"].value();
-        uint64_array size_array = topology["elements/sizes"].value();  
+        uint64_array size_array = topology["elements/sizes"].value();
         for(index_t pi = 0, ci = 0; pi < (index_t)polygons.size(); pi++)
         {
             const std::vector<index_t> &p = polygons[pi];
@@ -3546,8 +3569,8 @@ void polytess(index_t nlevels,
     {
         // Our goal here is to take the original polytess and extend it
         // into 3 dimensions. The way we will accomplish this is by
-        // placing the original polytess into the z = 0 plane, placing a 
-        // copy of it into the z = 1 plane, another into the z = 2 plane, 
+        // placing the original polytess into the z = 0 plane, placing a
+        // copy of it into the z = 1 plane, another into the z = 2 plane,
         // etc., and constructing "walls" between the top and bottom edges
         // of each polytessalation. Then we will specify polyhedra that use
         // all the faces at our disposal.
@@ -3591,13 +3614,13 @@ void polytess(index_t nlevels,
 
         // SUBELEMENTS
 
-            // In the nz = 2 case, 
+            // In the nz = 2 case,
             // if we take our polytess and reflect it, we have two polytessalations on top of one another,
-            // with a distance of 1 unit in between. If we go through each polygon, and for each one, 
+            // with a distance of 1 unit in between. If we go through each polygon, and for each one,
             // select every pair of adjacent points and add a new polygon that uses the points from that pair
             // as well as the points directly above in the reflected polytess, then we will have duplicate
             // polygons, simply because the polygons share vertices with one another, so multiple polygons
-            // will have the same "walls". This section accounts for that. The nz > 2 cases are similar, 
+            // will have the same "walls". This section accounts for that. The nz > 2 cases are similar,
             // except this situation is repeated for each level of the stacked polytess layers.
 
             res_topo["subelements/shape"] = poly["topologies/topo/elements/shape"];
@@ -3608,11 +3631,11 @@ void polytess(index_t nlevels,
             {
                 // this formula is the sum of two other formulas:
                 // 1) the number of outward edges for an (n - 1) polytess, and
-                // 2) the number of edges that squares in the polytess share with 
+                // 2) the number of edges that squares in the polytess share with
                 //    neighboring octagons in their level.
-                // This sum is again summed for each level, which will produce the 
-                // number of duplicates we would have gotten had we simply made a 
-                // polygon for each pair of adjacent points in each polygon, 
+                // This sum is again summed for each level, which will produce the
+                // number of duplicates we would have gotten had we simply made a
+                // polygon for each pair of adjacent points in each polygon,
                 // as described above.
                 num_duplicate_polygons += 8 * (3 * n - 1);
             }
@@ -3628,7 +3651,7 @@ void polytess(index_t nlevels,
 
             // SET UP SIZES
             const int points_per_quad = 4;
-            // the sizes must have space for the original sizes array, nz copies of it extending upwards, 
+            // the sizes must have space for the original sizes array, nz copies of it extending upwards,
             // and all the walls; hence the addition of the num_new_polygons.
             int length_of_new_sizes = sizeof_poly_sizes * nz + num_new_polygons;
             res_topo["subelements/sizes"].set(conduit::DataType::uint64(length_of_new_sizes));
@@ -3670,9 +3693,9 @@ void polytess(index_t nlevels,
                 connec[i] = poly_connec[i % sizeof_poly_connec] + (i / sizeof_poly_connec) * num_orig_points;
             }
 
-            // now the tricky part, where we want to add new faces for the quads that make 
+            // now the tricky part, where we want to add new faces for the quads that make
             // up the walls, and, most importantly, keep track of them.
-            // To do this, we use a map. Put simply, it maps quad faces to polyhedra that 
+            // To do this, we use a map. Put simply, it maps quad faces to polyhedra that
             // will use them.
 
             // map a quad (a set of 4 ints) to a pair,
@@ -3770,7 +3793,7 @@ void polytess(index_t nlevels,
             int l = 0;
             for (int i = 0; i < num_polyhedra; i ++)
             {
-                // to the polyhedral connectivity array, for each polyhedron, we first add 
+                // to the polyhedral connectivity array, for each polyhedron, we first add
                 // the polygon from the original polytess, then the polygon directly above,
                 // then each of the vertical faces, thanks to the maps we set up earlier
                 elements_connec[l] = i;
@@ -3796,8 +3819,8 @@ void polytess(index_t nlevels,
         uint32 *values = res_fields["level/values"].value();
         uint32 *poly_values = poly["fields/level/values"].value();
 
-        // because for each original polygon we have made nz new polyhedra, 
-        // setting up the field is a simple matter of just copying over our 
+        // because for each original polygon we have made nz new polyhedra,
+        // setting up the field is a simple matter of just copying over our
         // original field data a few times.
         for (int i = 0; i < num_polyhedra; i ++)
         {
@@ -3812,7 +3835,7 @@ void polytess(index_t nlevels,
 
 
 //-----------------------------------------------------------------------------
-void 
+void
 polychain(const index_t length, // how long the chain ought to be
           Node &res)
 {
@@ -3914,13 +3937,13 @@ polychain(const index_t length, // how long the chain ought to be
         sub_connec[i * sizeof_chainpair_connec + 1] = 1 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 5] = 5 + i * 20;
         sub_connec[i * sizeof_chainpair_connec + 2] = 2 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 6] = 6 + i * 20;
         sub_connec[i * sizeof_chainpair_connec + 3] = 3 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 7] = 7 + i * 20;
-        
+
         // side where x = 1                                             // side where x = -1
         sub_connec[i * sizeof_chainpair_connec + 8] = 0 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 12] = 2 + i * 20;
         sub_connec[i * sizeof_chainpair_connec + 9] = 1 + i * 20;    sub_connec[i * sizeof_chainpair_connec + 13] = 3 + i * 20;
         sub_connec[i * sizeof_chainpair_connec + 10] = 5 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 14] = 7 + i * 20;
         sub_connec[i * sizeof_chainpair_connec + 11] = 4 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 15] = 6 + i * 20;
-        
+
         // side where z = 1                                             // side where z = -1
         sub_connec[i * sizeof_chainpair_connec + 16] = 0 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 20] = 1 + i * 20;
         sub_connec[i * sizeof_chainpair_connec + 17] = 3 + i * 20;   sub_connec[i * sizeof_chainpair_connec + 21] = 2 + i * 20;
@@ -3961,7 +3984,7 @@ polychain(const index_t length, // how long the chain ought to be
 
     blueprint::mesh::topology::unstructured::generate_offsets(chain_topo,
                                                               chain_topo["elements/offsets"]);
-    
+
     chain_fields["chain/topology"] = "topo";
     chain_fields["chain/association"] = "element";
     chain_fields["chain/volume_dependent"] = "false";

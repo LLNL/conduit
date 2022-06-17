@@ -469,13 +469,13 @@ bool verify_shapes_node(const Node &node, const Node &shape_map, Node &info)
   const std::string protocol = "mesh::topology::unstructured";
   bool res = true;
   res &= verify_integer_field(protocol, node, info);
-  
-  DataAccessor<int32> shapes(node.data_ptr(), node.dtype());
+
+  const int32_accessor shapes = node.value();
 
   std::vector<int32> range;
   for(auto &child : shape_map.children())
   {
-    range.emplace_back(child.as_int32());
+    range.emplace_back(child.to_int32());
   }
 
   for(index_t i = 0; i < shapes.number_of_elements(); ++i)
@@ -486,19 +486,17 @@ bool verify_shapes_node(const Node &node, const Node &shape_map, Node &info)
     {
       log::error(info, protocol, "shape not in shape_map");
     }
-    res &= expectedShape;    
+    res &= expectedShape;
   }
 
   if (res)
   {
     for(auto &child : shape_map.children())
     {
-
       log::info(info, protocol, "cells found for shape "
         + child.name() + " ("
-        + std::to_string(child.as_int32())
+        + std::to_string(child.to_int32())
         + ").");
-
     }
   }
 
@@ -525,7 +523,7 @@ bool verify_mixed_node(const Node &topo, Node &info, bool& elems_res, bool& sube
     const std::string protocol = "mesh::topology::unstructured";
     const Node& topo_elems = topo["elements"];
     Node& info_elems = info["elements"];
-    
+
     elems_res &= verify_mixed_elements_node(topo_elems, info_elems, elems_res);
     elems_res &= verify_o2mrelation_field(protocol, topo, info, "elements");
 
@@ -1870,7 +1868,7 @@ mesh::generate_index_for_single_domain(const Node &mesh,
             }
             else if(matset.has_child("materials"))
             {
-                // NOTE: I believe path is deprecated ... 
+                // NOTE: I believe path is deprecated ...
                 NodeConstIterator mats_itr = matset["materials"].children();
                 while(mats_itr.has_next())
                 {
@@ -2703,12 +2701,12 @@ mesh::topology::unstructured::verify(const Node &topo,
                    mesh::topology::shape::verify(topo_elems["shape"], info_elems["shape"]);
             elems_res &= verify_integer_field(protocol, topo_elems, info_elems, "connectivity");
 
-            if (topo_elems["shape"].dtype().is_string() &&  
+            if (topo_elems["shape"].dtype().is_string() &&
                 topo_elems["shape"].as_string() == "mixed")
             {
               elems_res &= verify_mixed_node(topo, info, elems_res, subelems_res);
             }
-            else 
+            else
             {
               // Verify if node is polygonal or polyhedral
               elems_res &= verify_poly_node(false, "", topo_elems, info_elems, topo, info, elems_res);
@@ -3196,17 +3194,17 @@ namespace detail
         float64 x, y, z;
         vec3(float64 i, float64 j, float64 k) : x(i), y(j), z(k) {}
 
-        vec3 operator+(const vec3 &v) const 
+        vec3 operator+(const vec3 &v) const
         {
             return vec3(x + v.x, y + v.y, z + v.z);
         }
 
-        vec3 operator-(const vec3 &v) const 
+        vec3 operator-(const vec3 &v) const
         {
             return vec3(x - v.x, y - v.y, z - v.z);
         }
 
-        float64 dot(const vec3 &v) const 
+        float64 dot(const vec3 &v) const
         {
             return x * v.x + y * v.y + z * v.z;
         }
@@ -3222,8 +3220,8 @@ namespace detail
     };
 
     // given three points in 2D, calculates the area of the triangle formed by those points
-    float64 triangle_area(float64 x1, float64 y1, 
-                          float64 x2, float64 y2, 
+    float64 triangle_area(float64 x1, float64 y1,
+                          float64 x2, float64 y2,
                           float64 x3, float64 y3)
     {
         return 0.5f * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
@@ -3248,7 +3246,7 @@ namespace detail
                             const int num_orig_shapes, // number of original polygons or polyhedra
                             const T *tri_to_poly,
                             Node &volumes_info,
-                            Node &volumes_field_values) 
+                            Node &volumes_field_values)
     {
         // first we calculate the volume of each triangle
         volumes_field_values.set(conduit::DataType::float64(new_num_shapes));
@@ -3289,7 +3287,7 @@ namespace detail
                               coords_z[connec[i * 4 + 2]]);
                 vec3 d = vec3(coords_x[connec[i * 4 + 3]],
                               coords_y[connec[i * 4 + 3]],
-                              coords_z[connec[i * 4 + 3]]);                
+                              coords_z[connec[i * 4 + 3]]);
                 tri_volumes[i] = tetrahedron_volume(a,b,c,d);
             }
         }
@@ -3324,7 +3322,7 @@ namespace detail
     // T is the type of 'tri_to_poly' values
     // U is the type of connectivity values
     template<typename T, typename U>
-    // determines the type of the coordinate values and calls 
+    // determines the type of the coordinate values and calls
     // volume_dependent_helper to do the work
     void
     volume_dependent(const Node &topo_dest,
@@ -3419,14 +3417,14 @@ namespace detail
                             int dimensions,
                             U *values_array)
     {
-        // copy field values from the original field over to the 
+        // copy field values from the original field over to the
         // points that are in both the old and new topologies
         for (int i = 0; i < orig_num_points; i ++)
         {
             values_array[i] = poly_field_data[i];
         }
 
-        // this map will record for each new point (represented by 
+        // this map will record for each new point (represented by
         // an integer that indexes into the points array) the list
         // of other points that it is connected to (a set of integers)
         std::map<int, std::set<int>> info;
@@ -3437,7 +3435,7 @@ namespace detail
 
         W typesafe_orig_num_points = (W) orig_num_points;
 
-        // iterate thru the connectivity array, going in groups of 3 or 4, 
+        // iterate thru the connectivity array, going in groups of 3 or 4,
         // depending on the dimension
         for (int i = 0; i < length_of_connec; i += iter)
         {
@@ -3451,7 +3449,7 @@ namespace detail
                     // recording the points it is connected to
                     for (int k = i; k < i + iter; k ++)
                     {
-                        // make sure we do not mark down that our point is 
+                        // make sure we do not mark down that our point is
                         // connected to itself
                         if (k != j)
                         {
@@ -3486,8 +3484,8 @@ namespace detail
                     }
                 }
                 // then we divide by the number of incident points,
-                // giving us an average. We do not want to divide by 
-                // the size of the set, since there are neighbors which 
+                // giving us an average. We do not want to divide by
+                // the size of the set, since there are neighbors which
                 // may go unused, since they are not from the original
                 // coordset
                 values_array[i] = sum / num_neighbors;
@@ -3503,10 +3501,10 @@ namespace detail
     template<typename T, // T is the type of 'tri_to_poly' values
              typename U, // U is the type of the new field values (should typically be the same as V)
              typename V> // V is the type of the old field values (should typically be the same as U)
-    void 
-    map_field_to_generated_sides(Node &field_out, 
-                                 const Node &field_src, 
-                                 int new_num_shapes, 
+    void
+    map_field_to_generated_sides(Node &field_out,
+                                 const Node &field_src,
+                                 int new_num_shapes,
                                  const T *tri_to_poly,
                                  float64 *volume_ratio,
                                  bool vol_dep,
@@ -3570,7 +3568,7 @@ namespace detail
         {
             for (int i = 0; i < new_num_shapes; i ++)
             {
-                // tri_to_poly[i] is the index of the original polygon 
+                // tri_to_poly[i] is the index of the original polygon
                 // that triangle 'i' is associated with.
                 // If we use that to index into poly_field_data we
                 // get the field value of the original polygon,
@@ -3591,7 +3589,7 @@ namespace detail
 
     // T is the type of 'tri_to_poly' values
     template<typename T>
-    void 
+    void
     map_fields_to_generated_sides(const Node &topo_src,
                                   const Node &coordset_src,
                                   const Node &fields_src,
@@ -3628,7 +3626,7 @@ namespace detail
         {
             CONDUIT_ERROR(((std::string) "Bad shape in ").append(topo_dest["elements/shape"].as_string()));
         }
-        
+
         const T *tri_to_poly = d2smap["values"].value();
 
         // set up original elements id field
@@ -3801,10 +3799,10 @@ namespace detail
                     if (vol_dep || vert_assoc)
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<T, float64, uint64>(field_out, 
-                                                                         field, 
-                                                                         new_num_shapes, 
-                                                                         tri_to_poly, 
+                        map_field_to_generated_sides<T, float64, uint64>(field_out,
+                                                                         field,
+                                                                         new_num_shapes,
+                                                                         tri_to_poly,
                                                                          volume_ratio,
                                                                          vol_dep,
                                                                          vert_assoc,
@@ -3816,10 +3814,10 @@ namespace detail
                     else
                     {
                         field_out["values"].set(conduit::DataType::uint64(field_out_size));
-                        map_field_to_generated_sides<T, uint64, uint64>(field_out, 
-                                                                        field, 
-                                                                        new_num_shapes, 
-                                                                        tri_to_poly, 
+                        map_field_to_generated_sides<T, uint64, uint64>(field_out,
+                                                                        field,
+                                                                        new_num_shapes,
+                                                                        tri_to_poly,
                                                                         volume_ratio,
                                                                         vol_dep,
                                                                         vert_assoc,
@@ -3834,10 +3832,10 @@ namespace detail
                     if (vol_dep || vert_assoc)
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<T, float64, uint32>(field_out, 
-                                                                         field, 
-                                                                         new_num_shapes, 
-                                                                         tri_to_poly, 
+                        map_field_to_generated_sides<T, float64, uint32>(field_out,
+                                                                         field,
+                                                                         new_num_shapes,
+                                                                         tri_to_poly,
                                                                          volume_ratio,
                                                                          vol_dep,
                                                                          vert_assoc,
@@ -3849,10 +3847,10 @@ namespace detail
                     else
                     {
                         field_out["values"].set(conduit::DataType::uint32(field_out_size));
-                        map_field_to_generated_sides<T, uint32, uint32>(field_out, 
-                                                                        field, 
-                                                                        new_num_shapes, 
-                                                                        tri_to_poly, 
+                        map_field_to_generated_sides<T, uint32, uint32>(field_out,
+                                                                        field,
+                                                                        new_num_shapes,
+                                                                        tri_to_poly,
                                                                         volume_ratio,
                                                                         vol_dep,
                                                                         vert_assoc,
@@ -3867,10 +3865,10 @@ namespace detail
                     if (vol_dep || vert_assoc)
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<T, float64, int64>(field_out, 
-                                                                        field, 
-                                                                        new_num_shapes, 
-                                                                        tri_to_poly, 
+                        map_field_to_generated_sides<T, float64, int64>(field_out,
+                                                                        field,
+                                                                        new_num_shapes,
+                                                                        tri_to_poly,
                                                                         volume_ratio,
                                                                         vol_dep,
                                                                         vert_assoc,
@@ -3882,10 +3880,10 @@ namespace detail
                     else
                     {
                         field_out["values"].set(conduit::DataType::int64(field_out_size));
-                        map_field_to_generated_sides<T, int64, int64>(field_out, 
-                                                                      field, 
-                                                                      new_num_shapes, 
-                                                                      tri_to_poly, 
+                        map_field_to_generated_sides<T, int64, int64>(field_out,
+                                                                      field,
+                                                                      new_num_shapes,
+                                                                      tri_to_poly,
                                                                       volume_ratio,
                                                                       vol_dep,
                                                                       vert_assoc,
@@ -3900,10 +3898,10 @@ namespace detail
                     if (vol_dep || vert_assoc)
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<T, float64, int32>(field_out, 
-                                                                        field, 
-                                                                        new_num_shapes, 
-                                                                        tri_to_poly, 
+                        map_field_to_generated_sides<T, float64, int32>(field_out,
+                                                                        field,
+                                                                        new_num_shapes,
+                                                                        tri_to_poly,
                                                                         volume_ratio,
                                                                         vol_dep,
                                                                         vert_assoc,
@@ -3915,10 +3913,10 @@ namespace detail
                     else
                     {
                         field_out["values"].set(conduit::DataType::int32(field_out_size));
-                        map_field_to_generated_sides<T, int32, int32>(field_out, 
-                                                                      field, 
-                                                                      new_num_shapes, 
-                                                                      tri_to_poly, 
+                        map_field_to_generated_sides<T, int32, int32>(field_out,
+                                                                      field,
+                                                                      new_num_shapes,
+                                                                      tri_to_poly,
                                                                       volume_ratio,
                                                                       vol_dep,
                                                                       vert_assoc,
@@ -3933,10 +3931,10 @@ namespace detail
                     if (vol_dep || vert_assoc)
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<T, float64, float64>(field_out, 
-                                                                          field, 
-                                                                          new_num_shapes, 
-                                                                          tri_to_poly, 
+                        map_field_to_generated_sides<T, float64, float64>(field_out,
+                                                                          field,
+                                                                          new_num_shapes,
+                                                                          tri_to_poly,
                                                                           volume_ratio,
                                                                           vol_dep,
                                                                           vert_assoc,
@@ -3948,10 +3946,10 @@ namespace detail
                     else
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<T, float64, float64>(field_out, 
-                                                                          field, 
-                                                                          new_num_shapes, 
-                                                                          tri_to_poly, 
+                        map_field_to_generated_sides<T, float64, float64>(field_out,
+                                                                          field,
+                                                                          new_num_shapes,
+                                                                          tri_to_poly,
                                                                           volume_ratio,
                                                                           vol_dep,
                                                                           vert_assoc,
@@ -3966,10 +3964,10 @@ namespace detail
                     if (vol_dep || vert_assoc)
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<T, float64, float32>(field_out, 
-                                                                          field, 
-                                                                          new_num_shapes, 
-                                                                          tri_to_poly, 
+                        map_field_to_generated_sides<T, float64, float32>(field_out,
+                                                                          field,
+                                                                          new_num_shapes,
+                                                                          tri_to_poly,
                                                                           volume_ratio,
                                                                           vol_dep,
                                                                           vert_assoc,
@@ -3981,10 +3979,10 @@ namespace detail
                     else
                     {
                         field_out["values"].set(conduit::DataType::float32(field_out_size));
-                        map_field_to_generated_sides<T, float32, float32>(field_out, 
-                                                                          field, 
-                                                                          new_num_shapes, 
-                                                                          tri_to_poly, 
+                        map_field_to_generated_sides<T, float32, float32>(field_out,
+                                                                          field,
+                                                                          new_num_shapes,
+                                                                          tri_to_poly,
                                                                           volume_ratio,
                                                                           vol_dep,
                                                                           vert_assoc,
@@ -4095,48 +4093,48 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
     {
         detail::map_fields_to_generated_sides<uint64>(topo_src,
                                                       coordset_src,
-                                                      fields_src, 
-                                                      d2smap, 
+                                                      fields_src,
+                                                      d2smap,
                                                       topo_dest,
-                                                      coordset_dest, 
-                                                      fields_dest, 
-                                                      field_names, 
+                                                      coordset_dest,
+                                                      fields_dest,
+                                                      field_names,
                                                       field_prefix);
     }
     else if (d2smap["values"].dtype().is_uint32())
     {
         detail::map_fields_to_generated_sides<uint32>(topo_src,
                                                       coordset_src,
-                                                      fields_src, 
-                                                      d2smap, 
+                                                      fields_src,
+                                                      d2smap,
                                                       topo_dest,
-                                                      coordset_dest, 
-                                                      fields_dest, 
-                                                      field_names, 
+                                                      coordset_dest,
+                                                      fields_dest,
+                                                      field_names,
                                                       field_prefix);
     }
     else if (d2smap["values"].dtype().is_int64())
     {
         detail::map_fields_to_generated_sides<int64>(topo_src,
                                                      coordset_src,
-                                                     fields_src, 
-                                                     d2smap, 
+                                                     fields_src,
+                                                     d2smap,
                                                      topo_dest,
-                                                     coordset_dest, 
-                                                     fields_dest, 
-                                                     field_names, 
+                                                     coordset_dest,
+                                                     fields_dest,
+                                                     field_names,
                                                      field_prefix);
     }
     else if (d2smap["values"].dtype().is_int32())
     {
         detail::map_fields_to_generated_sides<int32>(topo_src,
                                                      coordset_src,
-                                                     fields_src, 
-                                                     d2smap, 
+                                                     fields_src,
+                                                     d2smap,
                                                      topo_dest,
-                                                     coordset_dest, 
-                                                     fields_dest, 
-                                                     field_names, 
+                                                     coordset_dest,
+                                                     fields_dest,
+                                                     field_names,
                                                      field_prefix);
     }
     else
@@ -4643,7 +4641,7 @@ mesh::topology::shape_map::verify(const Node& shape_map,
   info.reset();
 
   res &= verify_object_field(protocol, shape_map, info);
-  
+
   for (const Node &child : shape_map.children())
   {
     bool isEnum = false;
@@ -4653,7 +4651,7 @@ mesh::topology::shape_map::verify(const Node& shape_map,
     }
     if (isEnum)
     {
-      log::info(info, protocol, "has valid value "+ log::quote(child.name()) + 
+      log::info(info, protocol, "has valid value "+ log::quote(child.name()) +
       "(" + std::to_string(child.as_int32()) + ")");
     }
     else
@@ -4685,7 +4683,7 @@ bool verify_matset_material_map(const std::string &protocol,
 
     if(res)
     {
-        // we already know we have an object, children should be 
+        // we already know we have an object, children should be
         // integer scalars
         NodeConstIterator itr = matset["material_map"].children();
         while(itr.has_next())
@@ -4788,7 +4786,7 @@ mesh::matset::verify(const Node &matset,
 
         res &= verify_matset_material_map(protocol,matset,info);
 
-        // for cases where vfs are an object, we expect the material_map child 
+        // for cases where vfs are an object, we expect the material_map child
         // names to be a subset of the volume_fractions child names
         if(matset.has_child("volume_fractions") &&
            matset["volume_fractions"].dtype().is_object())
@@ -4802,9 +4800,9 @@ mesh::matset::verify(const Node &matset,
                 {
                     std::ostringstream oss;
                     oss << "'material_map' hierarchy must be a subset of "
-                           "'volume_fractions'. " 
+                           "'volume_fractions'. "
                            " 'volume_fractions' is missing child '"
-                           << curr_name 
+                           << curr_name
                            <<"' which exists in 'material_map`" ;
                     log::error(info, protocol,oss.str());
                     res &= false;
@@ -5874,11 +5872,11 @@ mesh::paint_adjset(const std::string &adjset_name,
 {
     // {field_prefix}_group_count -- total number of groups the vertex or element is in
     // {field_prefix}_order_{group_name} -- the vertex or element's order in group {group_name}
-    
+
     // recipe adapted from Max Yang's checks in t_blueprint_mpi_mesh_parmetis
-    
+
     auto mesh_doms = conduit::blueprint::mesh::domains(mesh);
-    
+
     for(Node *dom : mesh_doms)
     {
         // if we don't have an adjset, skip this domain
@@ -5905,7 +5903,7 @@ mesh::paint_adjset(const std::string &adjset_name,
         std::string topo_name = adjset["topology"].as_string();
         const Node &topo = dom->fetch_existing("topologies/" + topo_name);
         const Node &coordset = bputils::topology::coordset(topo);
-        
+
         index_t num_verts = mesh::coordset::length(coordset);
         index_t num_entries = num_verts;
 
