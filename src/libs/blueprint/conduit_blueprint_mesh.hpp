@@ -525,6 +525,15 @@ namespace topology
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &shape,
                                           conduit::Node &info);
     }
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::shape_map protocol interface
+    //-------------------------------------------------------------------------
+    namespace shape_map
+    {
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node& shape_map,
+          conduit::Node& info);
+    }
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::topology --

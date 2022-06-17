@@ -76,7 +76,7 @@ static const std::vector<std::string> COORD_TYPES = {"uniform", "rectilinear", "
 static const std::vector<std::string> COORD_SYSTEMS = {"cartesian", "cylindrical", "spherical"};
 
 static const std::vector<std::string> TOPO_TYPES = {"points", "uniform", "rectilinear", "structured", "unstructured"};
-static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
+static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral", "mixed"};
 static const std::vector<std::string> TOPO_SHAPE_IDS = {"p", "l", "f", "f", "c", "c", "f", "c"};
 static const std::vector<index_t> TOPO_SHAPE_DIMS = {0, 1, 2, 2, 3, 3, 2, 3};
 static const std::vector<index_t> TOPO_SHAPE_INDEX_COUNTS = {1, 2, 3, 4, 4, 8, -1, -1};
