@@ -1848,6 +1848,13 @@ braid_tris(index_t npts_x,
 }
 
 //---------------------------------------------------------------------------//
+inline int32
+calc(int32 i, int32 j, int32 k, int32 I, int32 J, int32 K, int32 nx, int32 ny)
+{
+  return (i + I) + (j + J) * nx + (k + K) * (nx * ny);
+}
+
+//---------------------------------------------------------------------------//
 void
 braid_mixed_2d(const int32 npts_x,
                const int32 npts_y,
@@ -1910,13 +1917,13 @@ braid_mixed_2d(const int32 npts_x,
         offsets[idx_elem + 0] = (idx_elem == 0 ? 0 : offsets[idx_elem - 1]) + 3;
         offsets[idx_elem + 1] = offsets[idx_elem + 0] + 3;
 
-        connectivity[idx + 0] = 0 + i + j * (0 + npts_y);
-        connectivity[idx + 1] = 1 + i + j * (0 + npts_y);
-        connectivity[idx + 2] = 1 + i + j * (1 + npts_y);
+        connectivity[idx + 0] = calc(0, 0, 0, i, j, 0, npts_x, npts_y);
+        connectivity[idx + 1] = calc(1, 0, 0, i, j, 0, npts_x, npts_y);
+        connectivity[idx + 2] = calc(1, 1, 0, i, j, 0, npts_x, npts_y);
 
-        connectivity[idx + 3] = 0 + i + j * (0 + npts_y);
-        connectivity[idx + 4] = 1 + i + j * (1 + npts_y);
-        connectivity[idx + 5] = 0 + i + j * (1 + npts_y);
+        connectivity[idx + 3] = calc(0, 0, 0, i, j, 0, npts_x, npts_y);
+        connectivity[idx + 4] = calc(1, 1, 0, i, j, 0, npts_x, npts_y);
+        connectivity[idx + 5] = calc(0, 1, 0, i, j, 0, npts_x, npts_y);
 
         idx_elem += 2;
         idx += 6;
@@ -1927,10 +1934,10 @@ braid_mixed_2d(const int32 npts_x,
         sizes[idx_elem] = 4;
         offsets[idx_elem] = (idx_elem == 0 ? 0 : offsets[idx_elem - 1]) + 4;
 
-        connectivity[idx + 0] = 0 + i + j * (0 + npts_y);
-        connectivity[idx + 1] = 1 + i + j * (0 + npts_y);
-        connectivity[idx + 2] = 1 + i + j * (1 + npts_y);
-        connectivity[idx + 3] = 0 + i + j * (1 + npts_y);
+        connectivity[idx + 0] = 0 + i + (j + 0) * npts_y;
+        connectivity[idx + 1] = 1 + i + (j + 0) * npts_y;
+        connectivity[idx + 2] = 1 + i + (j + 1) * npts_y;
+        connectivity[idx + 3] = 0 + i + (j + 1) * npts_y;
 
         idx_elem += 1;
         idx += 4;
@@ -2036,10 +2043,14 @@ braid_mixed(int32 npts_x,
           elem_sizes[idx_elem] = 8;
           elem_offsets[idx_elem] = (idx_elem == 0 ? 0 : elem_offsets[idx_elem - 1])  + 8;
 
-          for (int32 n = 0; n < 8; ++n)
-          {
-            elem_connectivity[idx + n] = n + (i + j * nele_y * k * nele_z)*8;
-          }
+          elem_connectivity[idx + 0] = calc(0, 0, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 1] = calc(1, 0, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 2] = calc(1, 1, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 3] = calc(0, 1, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 4] = calc(0, 0, 1, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 5] = calc(1, 0, 1, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 6] = calc(1, 1, 1, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 7] = calc(0, 1, 1, i, j, k, npts_x, npts_y);
 
           idx_elem += 1;
           idx += 8;
@@ -2061,26 +2072,26 @@ braid_mixed(int32 npts_x,
           elem_offsets[idx_elem + 2] = elem_offsets[idx_elem + 1] + 4;
           elem_offsets[idx_elem + 3] = elem_offsets[idx_elem + 2] + 6;
 
-          elem_connectivity[idx + 0]  = 0 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 1]  = 1 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 2]  = 3 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 3]  = 5 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 0] = calc(0, 0, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 1] = calc(1, 0, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 2] = calc(0, 1, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 3] = calc(0, 1, 1, i, j, k, npts_x, npts_y);
 
-          elem_connectivity[idx + 4]  = 0 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 5]  = 5 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 6]  = 4 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 7]  = 7 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 4] = calc(0, 0, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 5] = calc(0, 0, 1, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 6] = calc(0, 1, 1, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 7] = calc(1, 0, 1, i, j, k, npts_x, npts_y);
 
-          elem_connectivity[idx + 8]  = 0 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 9]  = 3 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 10] = 5 + (i + j * nele_y * k * nele_z)*8;
-          elem_connectivity[idx + 11] = 7 + (i + j * nele_y * k * nele_z)*8;
+          elem_connectivity[idx + 8]  = calc(0, 0, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 9]  = calc(0, 1, 0, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 10] = calc(0, 1, 1, i, j, k, npts_x, npts_y);
+          elem_connectivity[idx + 11] = calc(1, 0, 1, i, j, k, npts_x, npts_y);
 
           elem_connectivity[idx + 12] = 0 + 5 * polyhedronCounter;
-          elem_connectivity[idx + 12] = 1 + 5 * polyhedronCounter;
-          elem_connectivity[idx + 12] = 2 + 5 * polyhedronCounter;
-          elem_connectivity[idx + 12] = 3 + 5 * polyhedronCounter;
-          elem_connectivity[idx + 12] = 4 + 5 * polyhedronCounter;
+          elem_connectivity[idx + 13] = 1 + 5 * polyhedronCounter;
+          elem_connectivity[idx + 14] = 2 + 5 * polyhedronCounter;
+          elem_connectivity[idx + 15] = 3 + 5 * polyhedronCounter;
+          elem_connectivity[idx + 16] = 4 + 5 * polyhedronCounter;
 
           subelem_shapes[idx_elem2 + 0] = 9; // VTK_QUAD
           subelem_shapes[idx_elem2 + 1] = 9; // VTK_QUAD
@@ -2094,34 +2105,34 @@ braid_mixed(int32 npts_x,
           subelem_sizes[idx_elem2 + 3] = 3;
           subelem_sizes[idx_elem2 + 4] = 3;
 
-          subelem_offsets[idx_elem2 + 0] = (idx_elem == 0 ? 0 : subelem_offsets[idx_elem - 1]) + 4;
-          subelem_offsets[idx_elem2 + 1] = subelem_offsets[idx_elem - 1] + 4;
-          subelem_offsets[idx_elem2 + 2] = subelem_offsets[idx_elem - 1] + 4;
-          subelem_offsets[idx_elem2 + 3] = subelem_offsets[idx_elem - 1] + 3;
-          subelem_offsets[idx_elem2 + 4] = subelem_offsets[idx_elem - 1] + 3;
+          subelem_offsets[idx_elem2 + 0] = (idx_elem2 == 0 ? 0 : subelem_offsets[idx_elem2 - 1]) + 4;
+          subelem_offsets[idx_elem2 + 1] = subelem_offsets[idx_elem2 + 0] + 4;
+          subelem_offsets[idx_elem2 + 2] = subelem_offsets[idx_elem2 + 1] + 4;
+          subelem_offsets[idx_elem2 + 3] = subelem_offsets[idx_elem2 + 2] + 3;
+          subelem_offsets[idx_elem2 + 4] = subelem_offsets[idx_elem2 + 3] + 3;
 
-          subelem_connectivity[idx2 + 0] = 1 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 + 1] = 5 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 + 2] = 7 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 + 3] = 3 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 0] = calc(1, 0, 0, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 + 1] = calc(1, 0, 1, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 + 2] = calc(0, 1, 1, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 + 3] = calc(0, 1, 0, i, j, k, npts_x, npts_y);
 
-          subelem_connectivity[idx2 + 4] = 1 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 + 5] = 2 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 + 6] = 6 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 + 7] = 5 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 4] = calc(1, 0, 0, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 + 5] = calc(1, 1, 0, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 + 6] = calc(1, 1, 1, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 + 7] = calc(1, 0, 1, i, j, k, npts_x, npts_y);
 
-          subelem_connectivity[idx2 + 8] = 2 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 + 9] = 3 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 +10] = 7 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 +11] = 6 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 + 8] = calc(1, 1, 0, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 + 9] = calc(0, 1, 0, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 +10] = calc(0, 1, 1, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 +11] = calc(1, 1, 1, i, j, k, npts_x, npts_y);
 
-          subelem_connectivity[idx2 +12] = 3 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 +13] = 2 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 +14] = 1 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 +12] = calc(1, 0, 0, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 +13] = calc(0, 1, 0, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 +14] = calc(1, 1, 0, i, j, k, npts_x, npts_y);
 
-          subelem_connectivity[idx2 +15] = 5 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 +16] = 6 + 18 * polyhedronCounter;
-          subelem_connectivity[idx2 +17] = 7 + 18 * polyhedronCounter;
+          subelem_connectivity[idx2 +15] = calc(1, 1, 1, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 +16] = calc(0, 1, 1, i, j, k, npts_x, npts_y);
+          subelem_connectivity[idx2 +17] = calc(1, 0, 1, i, j, k, npts_x, npts_y);
 
           idx_elem += 4; // three tets, 1 polyhedron
           idx += 17; // 3 tets (=4) + 1 polyhedron (5 faces)
