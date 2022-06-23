@@ -1934,10 +1934,10 @@ braid_mixed_2d(const int32 npts_x,
         sizes[idx_elem] = 4;
         offsets[idx_elem] = (idx_elem == 0 ? 0 : offsets[idx_elem - 1]) + 4;
 
-        connectivity[idx + 0] = 0 + i + (j + 0) * npts_y;
-        connectivity[idx + 1] = 1 + i + (j + 0) * npts_y;
-        connectivity[idx + 2] = 1 + i + (j + 1) * npts_y;
-        connectivity[idx + 3] = 0 + i + (j + 1) * npts_y;
+        connectivity[idx + 0] = calc(0, 0, 0, i, j, 0, npts_x, npts_y);
+        connectivity[idx + 1] = calc(1, 0, 0, i, j, 0, npts_x, npts_y);
+        connectivity[idx + 2] = calc(1, 1, 0, i, j, 0, npts_x, npts_y);
+        connectivity[idx + 3] = calc(0, 1, 0, i, j, 0, npts_x, npts_y);
 
         idx_elem += 1;
         idx += 4;
