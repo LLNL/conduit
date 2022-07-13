@@ -24,6 +24,15 @@ using namespace conduit;
 using namespace conduit::utils;
 namespace bputils = conduit::blueprint::mesh::utils;
 
+//-----------------------------------------------------------------------------
+bool
+check_if_hdf5_enabled()
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    return io_protos["io/protocols/hdf5"].as_string() == "enabled";
+}
+
 /// Testing Constants ///
 
 typedef void (*XformCoordsFun)(const Node&, Node&);
@@ -677,3 +686,32 @@ TEST(conduit_blueprint_mesh_transform, adjset_transform_dtypes)
         }
     }
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, paint_adjset)
+{
+    std::string protocol = "hdf5";
+    if(!check_if_hdf5_enabled())
+    {
+        protocol = "yaml";
+    }
+    
+    conduit::Node mesh;
+    blueprint::mesh::examples::grid("quads",10,10,0,3,3,1,mesh);
+    blueprint::mesh::paint_adjset("mesh_adj",
+                                  "adjset_vals",
+                                  mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple_2d",protocol);
+
+    mesh.reset();
+    blueprint::mesh::examples::grid("hexs",5,5,5,2,2,2,mesh);
+    blueprint::mesh::paint_adjset("mesh_adj",
+                                  "adjset_vals",
+                                  mesh);
+    
+    conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple_3d",protocol);
+
+}
+

@@ -104,6 +104,27 @@ void CONDUIT_BLUEPRINT_API generate_index_for_single_domain(const conduit::Node 
                                                             const std::string &ref_path,
                                                             Node &index_out);
 
+//-------------------------------------------------------------------------
+// Creates fields to help view and debug adjset relationships.
+//
+// Domains without adjset are simply skipped.
+//
+// Creates fields with the following names:
+//
+// An overall group count field:
+//
+//   {field_prefix}_group_count -- total number of groups the vertex or element is in
+//
+// And for each adjset group:
+//  Group Ordering fields:
+//   {field_prefix}_order_{group_name} -- the vertex or element's order in group {group_name}
+//
+// (note: The group order fields will only be defined on the domains involved with the group )
+//
+void CONDUIT_BLUEPRINT_API paint_adjset(const std::string &adjset_name,
+                                        const std::string &field_prefix,
+                                        conduit::Node &mesh);
+
 
 //-------------------------------------------------------------------------
 /**
@@ -503,6 +524,15 @@ namespace topology
         //---------------------------------------------------------------------
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &shape,
                                           conduit::Node &info);
+    }
+    //-------------------------------------------------------------------------
+    // blueprint::mesh::topology::shape_map protocol interface
+    //-------------------------------------------------------------------------
+    namespace shape_map
+    {
+        //---------------------------------------------------------------------
+        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node& shape_map,
+          conduit::Node& info);
     }
 }
 //-----------------------------------------------------------------------------

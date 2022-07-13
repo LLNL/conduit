@@ -1476,6 +1476,40 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
 }
 
 //-----------------------------------------------------------------------------
+void
+test_save_mesh_helper(const conduit::Node &dsets,
+                      const std::string &base_name)
+{
+    Node opts;
+    opts["file_style"] = "root_only";
+    opts["suffix"] = "none";
+
+    relay::io::blueprint::save_mesh(dsets, base_name + "_yaml", "yaml", opts);
+}
+
+TEST(conduit_blueprint_generate_structured, gen_corners)
+{
+    Node mesh;
+    const index_t nx = 2;
+    const index_t ny = 3;
+    const index_t nz = 2;
+
+    mesh::examples::basic("quads", nx, ny, nz, mesh);
+
+    test_save_mesh_helper(mesh, "before_corners");
+
+    Node corner_mesh, t2c_map, c2t_map;
+    Node & topo = mesh["topologies/mesh"];
+    Node & corner_coords = corner_mesh["coordsets/ccoords"];
+    Node & corner_topo = corner_mesh["topologies/ctopo"];
+
+    mesh::topology::unstructured::generate_corners(
+        topo, corner_topo, corner_coords, t2c_map, c2t_map);
+
+    test_save_mesh_helper(corner_mesh, "after_corners");
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_corners)
 {
     const std::string CORNER_COORDSET_NAME = "ccoords";
@@ -1503,11 +1537,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         const index_t grid_corners = grid_elems * corners_per_elem;
         const float64 corner_volume = grid_mesh.elem_volume() / corners_per_elem;
 
+        test_save_mesh_helper(grid_mesh.mesh, "mesh_before_corners");
+
         Node corner_mesh, t2c_map, c2t_map;
         Node &corner_coords = corner_mesh["coordsets"][CORNER_COORDSET_NAME];
         Node &corner_topo = corner_mesh["topologies"][CORNER_TOPOLOGY_NAME];
         mesh::topology::unstructured::generate_corners(
             grid_topo, corner_topo, corner_coords, t2c_map, c2t_map);
+
+        test_save_mesh_helper(grid_mesh.mesh, "mesh_with_corners");
 
         Node info;
         EXPECT_TRUE(mesh::coordset::_explicit::verify(corner_coords, info));

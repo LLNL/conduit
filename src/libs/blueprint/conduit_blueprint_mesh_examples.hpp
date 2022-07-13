@@ -54,6 +54,116 @@ namespace examples
                                      conduit::index_t nz,
                                      conduit::Node &res);
 
+    /// Generates a structured grid with an element field and a vertex field,
+    /// each element of which contains a sequentially increasing value.
+    /// Calling code can specify the shape of the storage array for the fields.
+    /// Pass the extra specifications with a conduit::Node:
+    ///
+    /// \code{.yaml} 
+    /// vertex_data:
+    ///   shape: [vx, vy, vz]
+    ///   origin: [wx, wy, wz]
+    /// element_data:
+    ///   shape: [ex, ey, ez]
+    ///   origin: [fx, fy, fz]
+    /// \endcode
+    ///
+    /// \warning It is an error if the vertex or element data array shapes are
+    ///          too small to contain the requested mesh data at the specified
+    ///          origin.
+    ///
+    /// For example, if the function were called like this:
+    /// \code
+    /// conduit::Node desc;  // empty description node: use default shape and origin
+    /// conduit::Node res;   // result node will contain mesh
+    /// strided_structured(desc, 3, 2, 0, res);
+    /// \endcode
+    ///
+    /// the node `res` would contain the following structure:
+    /// \verbatim
+    /// state:
+    ///   time: 3.1415
+    ///   cycle: 100
+    /// coordsets:
+    ///   coords:
+    ///     type: "explicit"
+    ///     values:
+    ///       x: [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
+    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0]
+    ///       y: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+    ///            0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,
+    ///            1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,
+    ///            2.0,  2.0,  2.0,  2.0,  2.0,  2.0,  2.0,
+    ///            3.0,  3.0,  3.0,  3.0,  3.0,  3.0,  3.0,
+    ///            4.0,  4.0,  4.0,  4.0,  4.0,  4.0,  4.0]
+    /// topologies:
+    ///   mesh:
+    ///     type: "structured"
+    ///     coordset: "coords"
+    ///     elements:
+    ///       dims:
+    ///         i: 3
+    ///         j: 2
+    ///         offsets: [2, 2]
+    ///         strides: [1, 7]
+    /// fields:
+    ///   vert_vals:
+    ///     association: "vertex"
+    ///     type: "scalar"
+    ///     topology: "mesh"
+    ///     offsets: [2, 2]
+    ///     strides: [1, 7]
+    ///     values: [0.0, 0.0, 0.0,  0.0,  0.0,  0.0, 0.0,
+    ///              0.0, 0.0, 0.0,  0.0,  0.0,  0.0, 0.0,
+    ///              0.0, 0.0, 1.0,  2.0,  3.0,  4.0, 0.0,
+    ///              0.0, 0.0, 5.0,  6.0,  7.0,  8.0, 0.0,
+    ///              0.0, 0.0, 9.0, 10.0, 11.0, 12.0, 0.0,
+    ///              0.0, 0.0, 0.0,  0.0,  0.0,  0.0, 0.0]
+    ///   ele_vals:
+    ///     association: "element"
+    ///     type: "scalar"
+    ///     topology: "mesh"
+    ///     offsets: [2, 2]
+    ///     strides: [1, 7]
+    ///     values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ///              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ///              0.0, 0.0, 1.0, 2.0, 3.0, 0.0, 0.0,
+    ///              0.0, 0.0, 4.0, 5.0, 6.0, 0.0, 0.0,
+    ///              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ///              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    /// \endverbatim
+    ///
+    /// The values for the `ele_vals` field start at [2, 2], with a stride of
+    /// 1 in the first dimension and a stride of 7 in the second dimension.
+    /// These values apply to the elements of `mesh`, so there are two rows
+    /// with three values in each row.  This example sets all the values to
+    /// sequentially increasing values.  Any element that isn't used for the
+    /// elements of `mesh` is set to zero.
+    ///
+    /// Similar to `ele_vals`, the values for the `vert_vals` field start at
+    /// [2, 2] with a stride of [1, 7].  The vertices of `mesh` require three
+    /// rows of four elements, which are set to increasing non-zero values.
+    /// Elements outside that region are ignored.  To emphasize this, the
+    /// example sets those unused elements to zero.
+    ///
+    /// In summary, the result mesh fields can be bigger than Mesh Blueprint
+    /// requires.
+    /// - The `values` array of each field supplies values for the elements
+    ///   or vertices of the mesh named by `topology`.
+    /// - `strides` tells how big the `values` array is.
+    /// - `offsets` tells where to start looking within `values`.
+    /// - The size of the mesh named by `topology` tells what elements to use
+    ///   from `array`.  Anything outside that is ignored.
+    void CONDUIT_BLUEPRINT_API strided_structured(conduit::Node &desc,
+                                                  conduit::index_t nx,
+                                                  conduit::index_t ny,
+                                                  conduit::index_t nz,
+                                                  conduit::Node &res);
+
     /// Generates a multidomain uniform grid of 'basic' examples for each
     /// domain/grid element.
     void CONDUIT_BLUEPRINT_API grid(const std::string &mesh_type,

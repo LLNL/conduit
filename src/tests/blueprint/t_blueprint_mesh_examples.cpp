@@ -185,6 +185,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["points_implicit"]);
 
+    blueprint::mesh::examples::braid("mixed_2d",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["mixed_2d"]);
+
     Node info;
     NodeConstIterator itr = dsets.children();
     while(itr.has_next())
@@ -198,6 +204,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     // meshes so they don't have to be removed before outputting mesh data.
     dsets.remove("quads_and_tris");
     dsets.remove("quads_and_tris_offsets");
+    dsets.remove("mixed_2d");
 
     braid_save_helper(dsets,"braid_2d_examples");
 
@@ -217,7 +224,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
             //   std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-            if( name == "quads_and_tris" || name == "quads_and_tris_offsets" )
+            if( name == "quads_and_tris" || name == "quads_and_tris_offsets" || name == "mixed_2d")
             {
                 CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
                 CONDUIT_INFO("feature is unavailable for mixed element meshes")
@@ -302,6 +309,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["hexs_and_tets"]);
 
+    blueprint::mesh::examples::braid("mixed",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["mixed"]);
+
     Node info;
     NodeConstIterator itr = dsets.children();
     while(itr.has_next())
@@ -314,6 +327,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     // TODO: Add VisIt support for rendering mixed element and implicit point
     // meshes so they don't have to be removed before outputting mesh data.
     dsets.remove("hexs_and_tets");
+    dsets.remove("mixed");
 
     braid_save_helper(dsets,"braid_3d_examples");
 
@@ -333,7 +347,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
             //              std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-            if(name == "hexs_and_tets")
+            if(name == "hexs_and_tets" || name == "mixed")
             {
                 CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
                 CONDUIT_INFO("feature is unavailable for mixed element meshes")
@@ -396,6 +410,96 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
         Node info;
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
     }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, strided_structured_2d)
+{
+    Node res;
+    Node desc;
+    blueprint::mesh::examples::strided_structured(desc, 4, 3, 0, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res, "strided_structured_2d");
+
+    res.reset();
+    desc.reset();
+    info.reset();
+
+    desc["vertex_data/shape"].set(DataType::index_t(3));
+    index_t_array vertex_shape = desc["vertex_data/shape"].as_index_t_array();
+    vertex_shape[0] = 7;
+    vertex_shape[1] = 8;
+    vertex_shape[2] = 0;
+    desc["vertex_data/origin"].set(DataType::index_t(3));
+    index_t_array vertex_origin = desc["vertex_data/origin"].as_index_t_array();
+    vertex_origin[0] = 2;
+    vertex_origin[1] = 1;
+    vertex_origin[2] = 0;
+    desc["element_data/shape"].set(DataType::index_t(3));
+    index_t_array element_shape = desc["element_data/shape"].as_index_t_array();
+    element_shape[0] = 6;
+    element_shape[1] = 4;
+    element_shape[2] = 0;
+    desc["element_data/origin"].set(DataType::index_t(3));
+    index_t_array element_origin = desc["element_data/origin"].as_index_t_array();
+    element_origin[0] = 1;
+    element_origin[1] = 1;
+    element_origin[2] = 0;
+
+    blueprint::mesh::examples::strided_structured(desc, 4, 3, 0, res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res, "strided_structured_2d_pad");
+}
+
+TEST(conduit_blueprint_mesh_examples, strided_structured_3d)
+{
+    Node res;
+    Node desc;
+    blueprint::mesh::examples::strided_structured(desc, 6, 5, 3, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res, "strided_structured_3d");
+
+    res.reset();
+    desc.reset();
+    info.reset();
+
+    desc["vertex_data/shape"].set(DataType::index_t(3));
+    index_t_array vertex_shape = desc["vertex_data/shape"].as_index_t_array();
+    vertex_shape[0] = 10;
+    vertex_shape[1] = 8;
+    vertex_shape[2] = 3;
+    desc["vertex_data/origin"].set(DataType::index_t(3));
+    index_t_array vertex_origin = desc["vertex_data/origin"].as_index_t_array();
+    vertex_origin[0] = 2;
+    vertex_origin[1] = 1;
+    vertex_origin[2] = 0;
+    desc["element_data/shape"].set(DataType::index_t(3));
+    index_t_array element_shape = desc["element_data/shape"].as_index_t_array();
+    element_shape[0] = 6;
+    element_shape[1] = 4;
+    element_shape[2] = 2;
+    desc["element_data/origin"].set(DataType::index_t(3));
+    index_t_array element_origin = desc["element_data/origin"].as_index_t_array();
+    element_origin[0] = 1;
+    element_origin[1] = 1;
+    element_origin[2] = 0;
+
+    blueprint::mesh::examples::strided_structured(desc, 4, 3, 2, res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res, "strided_structured_3d_pad");
 }
 
 
