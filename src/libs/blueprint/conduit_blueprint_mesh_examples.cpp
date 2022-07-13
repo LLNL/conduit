@@ -130,6 +130,21 @@ void basic_init_example_element_scalar_field(index_t nele_x,
 
 //---------------------------------------------------------------------------//
 bool
+braid_1d_allowed_shape_type(const std::string& mesh_type)
+{
+    if ( mesh_type == "structured"  ||
+         mesh_type == "uniform")
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+//---------------------------------------------------------------------------//
+bool
 braid_2d_only_shape_type(const std::string& mesh_type)
 {
     if ( mesh_type == "tris"  ||
@@ -2245,18 +2260,22 @@ basic(const std::string &mesh_type,
     // NOTE(JRC): The basic mesh example only supports simple, homogenous
     // element types that can be spanned by zone-centered fields.
     const std::string mesh_types[] = {
+        "1Duniform", "1Dstructured",
         "uniform", "rectilinear", "structured",
         "tris", "quads", "polygons",
         "tets", "hexs", "polyhedra"};
     const std::string braid_types[] = {
+        "uniform", "structured",
         "uniform", "rectilinear", "structured",
         "tris", "quads", "quads_poly",
         "tets", "hexs", "hexs_poly"};
     const index_t mesh_types_dims[] = {
+        1, 1,
         2, 2, 2,
         2, 2, 2,
         3, 3, 3};
     const index_t mesh_types_subelems_per_elem[] = {
+        1, 1,
         1, 1, 1,
         2, 1, 1,
         6, 1, 1};
@@ -2277,10 +2296,18 @@ basic(const std::string &mesh_type,
                       << mesh_type);
     }
 
+    if (mesh_types_dims[mesh_type_index] == 1)
+    {
+        npts_y = 0;
+        npts_z = 0;
+    }
+
     const bool npts_x_ok = npts_x > 1;
-    const bool npts_y_ok = npts_y > 1;
-    bool npts_z_ok = mesh_types_dims[mesh_type_index] == 2 || npts_z > 1;
-    
+    const bool npts_y_ok = mesh_types_dims[mesh_type_index] == 1 || npts_y > 1;
+    bool npts_z_ok =
+       mesh_types_dims[mesh_type_index] == 1 ||
+       mesh_types_dims[mesh_type_index] == 2 || npts_z > 1;
+
     
     if( npts_z != 0 &&
         braid_2d_only_shape_type(mesh_type) )
@@ -2302,6 +2329,10 @@ basic(const std::string &mesh_type,
     {
         // error, not enough points to create the topo
         CONDUIT_ERROR("blueprint::mesh::examples::basic requires: " << std::endl <<
+                      "For 1D only topologies"
+                      " ( mesh_type={\"1Duniform\" or \"1Dstructured\"} )"
+                      " npts_x > 1 and npts_y == 0 and npts_z == 0"
+                      << std::endl <<
                       "For 2D only topologies"
                       " ( mesh_type={\"tris\", \"quads\", or \"polygons\"} )"
                       " npts_x > 1 and npts_y > 1 and npts_z == 0" 
@@ -2323,61 +2354,6 @@ basic(const std::string &mesh_type,
     res.remove("state");
 
     basic_init_example_element_scalar_field(npts_x-1, npts_y-1, npts_z-1,
-        res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
-}
-
-
-//---------------------------------------------------------------------------//
-void
-basic1D(const std::string &mesh_type,
-        index_t npts_x, // number of points in x
-        Node &res)
-{
-    // NOTE(JRC): The basic mesh example only supports simple, homogenous
-    // element types that can be spanned by zone-centered fields.
-    const std::string mesh_types[] = {
-        "uniform", "structured"};
-    const std::string braid_types[] = {
-        "uniform", "structured"};
-    const index_t mesh_types_dims[] = {
-        1, 1};
-    const index_t mesh_types_subelems_per_elem[] = {
-        1, 1};
-
-    const index_t num_mesh_types = sizeof(mesh_types) / sizeof(std::string);
-
-    index_t mesh_type_index = -1;
-    for(index_t i = 0; i < num_mesh_types; i++)
-    {
-        if(mesh_type == mesh_types[i])
-        {
-            mesh_type_index = i;
-        }
-    }
-    if(mesh_type_index < 0 || mesh_type_index >= num_mesh_types)
-    {
-        CONDUIT_ERROR("blueprint::mesh::examples::basic1D unknown mesh_type = "
-                      << mesh_type);
-    }
-
-    const bool npts_x_ok = npts_x > 1;
-
-    // don't let de-morgan get you ...
-    if( ! (npts_x_ok) )
-    {
-        // error, not enough points to create the topo
-        CONDUIT_ERROR("blueprint::mesh::examples::basic1D requires npts_x > 1" << std::endl <<
-                      std::endl <<
-                      "values provided:" << std::endl <<
-                      " mesh_type: " << mesh_type << std::endl <<
-                      " npts_x: " << npts_x << std::endl);
-    }
-
-    braid(braid_types[mesh_type_index], npts_x, 0, 0, res);
-    res.remove("fields");
-    res.remove("state");
-
-    basic_init_example_element_scalar_field(npts_x-1, 0, 0,
         res["fields/field"], mesh_types_subelems_per_elem[mesh_type_index]);
 }
 
@@ -2528,7 +2504,14 @@ braid(const std::string &mesh_type,
 
         if( npts_y < 2 )
         {
-            npts_y_ok = false;
+            if (braid_1d_allowed_shape_type(mesh_type) && npts_y == 0)
+            {
+                npts_y_ok = true;
+            }
+            else
+            {
+                npts_y_ok = false;
+            }
         }
 
         // check 2d cases which require npts z = 0
@@ -2590,7 +2573,8 @@ braid(const std::string &mesh_type,
         {
             // error, not enough points to create the topo
             CONDUIT_ERROR("braid with non-points topology requires "
-                          "npts_x > 1 and npts_y > 1 "
+                          "npts_x > 1 for 1D, "
+                          "npts_x > 1 and npts_y > 1 for 2D"
                           " and for mesh_type={\"tets\", \"hexs\", "
                           " \"hexs_poly\", or \"hexs_and_tets\"} "
                           " npts_z must be > 1" << std::endl << 

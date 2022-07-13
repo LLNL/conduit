@@ -827,6 +827,18 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
     Node res;
 
     // several with bad inputs
+    EXPECT_THROW(blueprint::mesh::examples::basic("1Duniform",
+                                                  -1,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("1Dstructured",
+                                                  1,
+                                                  2,
+                                                  -1,
+                                                  res),conduit::Error);
+
     EXPECT_THROW(blueprint::mesh::examples::basic("uniform",
                                                   -1,
                                                   2,
@@ -864,6 +876,12 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
                                                   res),conduit::Error);
 
     // a few ok
+    blueprint::mesh::examples::basic("1Dstructured",
+                                     5,
+                                     0,
+                                     0,
+                                     res);
+
     blueprint::mesh::examples::basic("uniform",
                                      2,
                                      2,

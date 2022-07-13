@@ -48,12 +48,6 @@ namespace examples
 {
     /// Generates a uniform grid with a scalar field that assigns a unique,
     /// monotonically increasing value to each element.
-    void CONDUIT_BLUEPRINT_API basic1D(const std::string &mesh_type,
-                                       conduit::index_t nx,
-                                       conduit::Node &res);
-
-    /// Generates a uniform grid with a scalar field that assigns a unique,
-    /// monotonically increasing value to each element.
     void CONDUIT_BLUEPRINT_API basic(const std::string &mesh_type,
                                      conduit::index_t nx,
                                      conduit::index_t ny,
