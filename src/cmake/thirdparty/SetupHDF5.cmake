@@ -104,7 +104,7 @@ foreach(IDIR ${HDF5_INCLUDE_DIRS})
 endforeach()
 
 if(NOT check_hdf5_inc_dir_ok)
-    message(WARNING " ${HDF5_INCLUDE_DIRS} does not include HDF5_DIR")
+    message(WARNING "HDF5_INCLUDE_DIRS (${HDF5_INCLUDE_DIRS}) does not include HDF5_DIR")
 endif()
 
 #

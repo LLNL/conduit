@@ -117,7 +117,9 @@ if(CONDUIT_HDF5_DIR)
         if(HDF5_INCLUDE_DIR)
             set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
         else()
-            message(WARNING "FindHDF5 did not provide HDF5_INCLUDE_DIRS or HDF5_INCLUDE_DIR.")
+            if(NOT Conduit_FIND_QUIETLY)
+                message(WARNING "FindHDF5 did not provide HDF5_INCLUDE_DIRS or HDF5_INCLUDE_DIR.")
+            endif()
         endif()
     endif()
 
@@ -150,7 +152,9 @@ if(CONDUIT_HDF5_DIR)
     endforeach()
 
     if(NOT check_hdf5_inc_dir_ok)
-        message(WARNING " ${HDF5_INCLUDE_DIRS} does not include HDF5_DIR")
+        if(NOT Conduit_FIND_QUIETLY)
+            message(WARNING "HDF5_INCLUDE_DIRS (${HDF5_INCLUDE_DIRS}) does not include HDF5_DIR")
+        endif()
     endif()
 
     #
