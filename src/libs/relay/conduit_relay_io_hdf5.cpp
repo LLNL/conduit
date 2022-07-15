@@ -849,7 +849,7 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
     bool res = true;
     H5O_info_t h5_obj_info;
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
 #else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
@@ -994,7 +994,7 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
 
     H5O_info_t h5_obj_info;
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
 #else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
@@ -1069,7 +1069,7 @@ check_if_conduit_list_is_compatible_with_hdf5_tree(const Node &node,
 
     H5O_info_t h5_obj_info;
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
 #else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
@@ -1741,7 +1741,7 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
     // check if the dataset exists
     H5O_info_t h5_obj_info;
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                  hdf5_dset_name.c_str(),
                                                  &h5_obj_info,
@@ -1831,7 +1831,7 @@ write_conduit_empty_to_hdf5_group(hid_t hdf5_group_id,
     // check if the dataset exists
     H5O_info_t h5_obj_info;
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                  hdf5_dset_name.c_str(),
                                                  &h5_obj_info,
@@ -1945,7 +1945,7 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
             // as the node's child
             H5O_info_t h5_obj_info;
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
             herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                          child_name.c_str(),
                                                          &h5_obj_info,
@@ -2177,7 +2177,7 @@ struct h5_read_opdata
     unsigned                recurs;      /* Recursion level.  0=root */
     struct h5_read_opdata   *prev;       /* Pointer to previous opdata */
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     H5O_token_t            *token;       /* Group token */
 #else
     haddr_t                 addr;        /* Group address */
@@ -2206,7 +2206,7 @@ struct h5_read_opdata
 //---------------------------------------------------------------------------//
 // -- hdf5 1.12 implementation
 //---------------------------------------------------------------------------//
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
 int
 h5_group_check(h5_read_opdata *od,
                hid_t h5_id,
@@ -2334,7 +2334,7 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
      * the Library.
      */
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     h5_status = H5Oget_info_by_name(hdf5_id,
                                     hdf5_path,
                                     &h5_info_buf,
@@ -2365,7 +2365,7 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
     {
         case H5O_TYPE_GROUP:
         {
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
             /*
              * With 1.12, we compare tokens, with the hope this provides
              * the same cycle avoidance.
@@ -2478,7 +2478,7 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 {
     // get info, we need to get the obj addr for cycle tracking
     H5O_info_t h5_info_buf;
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     herr_t h5_status = H5Oget_info(hdf5_group_id,
                                    &h5_info_buf,
                                    H5O_INFO_ALL);
@@ -2505,7 +2505,7 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
     // setup linked list tracking that allows us to detect cycles
     h5_od.recurs = 0;
     h5_od.prev = NULL;
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     h5_od.token = &h5_info_buf.token;
 #else
     h5_od.addr = h5_info_buf.addr;
@@ -2823,7 +2823,7 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 {
     H5O_info_t h5_info_buf;
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf,H5O_INFO_ALL);
 #else
     herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf);
@@ -3792,7 +3792,7 @@ void hdf5_group_list_child_names(hid_t hdf5_id,
     H5O_info_t h5_info_buf;
 
 
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
     herr_t h5_status = H5Oget_info_by_name(hdf5_id,
                                            hdf5_path.c_str(),
                                            &h5_info_buf,
@@ -4004,7 +4004,7 @@ hdf5_identifier_report(hid_t hdf5_id, Node &out)
                 case H5I_DATASET:
                     ent["type"] ="dataset";
                     break;
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
                 // 1.12 +
                 case H5I_MAP:
                     ent["type"] ="map";
@@ -4022,7 +4022,7 @@ hdf5_identifier_report(hid_t hdf5_id, Node &out)
                 case H5I_VFL:
                     ent["type"] ="vfl";
                     break;
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
                 // 1.12 +
                 case H5I_VOL:
                     ent["type"] ="vol";
@@ -4043,7 +4043,7 @@ hdf5_identifier_report(hid_t hdf5_id, Node &out)
                 case H5I_ERROR_STACK:
                     ent["type"] ="error_stack";
                     break;
-#if H5_VERSION_GE(1, 12, 0)
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
                 // 1.12 +
                 case H5I_SPACE_SEL_ITER:
                     ent["type"] ="dataspace_selection_iterator";
