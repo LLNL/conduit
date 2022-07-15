@@ -15,6 +15,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Changed HDF5 CMake sanity checks to issue `WARNING` instead of `FATAL_ERROR`, since Cray system HDF5 installs do not always present the info we use for sanity checks.
+- Changed HDF5 version guards to also check requested HDF5 API.
 
 ### Fixed
 
