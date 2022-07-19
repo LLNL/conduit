@@ -1004,7 +1004,7 @@ all_gather(Node &send_node,
     
     int mpi_size = mpi::size(mpi_comm);
     
-    recv_node.list_of(s_snd_compact.schema(),
+    recv_node.list_of(s_snd_compact,
                       mpi_size);
 
     if(!conduit::utils::value_fits<index_t,int>(snd_size))
