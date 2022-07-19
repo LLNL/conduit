@@ -1001,14 +1001,14 @@ all_gather(Node &send_node,
         // TODO: what about common case of scatter w/ leaf types?
         //       instead of list_of, we would have a leaf of
         //       of a given type w/ # of elements == # of ranks. 
+    }
+//    else
+//    {
+//        recv_node.list_of(s_snd_compact,
+//                          mpi_size);
+//    }
         recv_node.list_of(n_snd_compact.schema(),
                           mpi_size);
-    }
-    else
-    {
-        recv_node.list_of(s_snd_compact,
-                          mpi_size);
-    }
 
     if(!conduit::utils::value_fits<index_t,int>(snd_size))
     {
