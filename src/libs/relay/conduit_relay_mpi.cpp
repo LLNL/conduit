@@ -990,25 +990,27 @@ all_gather(Node &send_node,
     const void *snd_ptr  = send_node.contiguous_data_ptr();
     index_t     snd_size = send_node.total_bytes_compact();
 
-    int mpi_size = mpi::size(mpi_comm);
     
     if( snd_ptr == NULL ||
        !send_node.is_compact() )
     {
         send_node.compact_to(n_snd_compact);
         snd_ptr  = n_snd_compact.data_ptr();
+    }
         // TODO: copy out support w/o always reallocing?
         // TODO: what about common case of scatter w/ leaf types?
         //       instead of list_of, we would have a leaf of
         //       of a given type w/ # of elements == # of ranks. 
-    }
 //    else
 //    {
 //        recv_node.list_of(s_snd_compact,
 //                          mpi_size);
 //    }
-        recv_node.list_of(n_snd_compact.schema(),
-                          mpi_size);
+    
+    int mpi_size = mpi::size(mpi_comm);
+    
+    recv_node.list_of(n_snd_compact.schema(),
+                      mpi_size);
 
     if(!conduit::utils::value_fits<index_t,int>(snd_size))
     {
