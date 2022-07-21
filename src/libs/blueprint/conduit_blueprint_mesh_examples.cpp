@@ -2733,22 +2733,18 @@ basic(const std::string &mesh_type,
     // NOTE(JRC): The basic mesh example only supports simple, homogenous
     // element types that can be spanned by zone-centered fields.
     const std::string mesh_types[] = {
-        "1Duniform", "1Dstructured",
         "uniform", "rectilinear", "structured",
         "tris", "quads", "polygons",
         "tets", "hexs", "polyhedra"};
     const std::string braid_types[] = {
-        "uniform", "structured",
         "uniform", "rectilinear", "structured",
         "tris", "quads", "quads_poly",
         "tets", "hexs", "hexs_poly"};
     const index_t mesh_types_dims[] = {
-        1, 1,
         2, 2, 2,
         2, 2, 2,
         3, 3, 3};
     const index_t mesh_types_subelems_per_elem[] = {
-        1, 1,
         1, 1, 1,
         2, 1, 1,
         6, 1, 1};
@@ -2769,17 +2765,15 @@ basic(const std::string &mesh_type,
                       << mesh_type);
     }
 
-    if (mesh_types_dims[mesh_type_index] == 1)
+    int mesh_type_dim = mesh_types_dims[mesh_type_index];
+    if (npts_y == 0 && npts_z == 0)
     {
-        npts_y = 0;
-        npts_z = 0;
+        mesh_type_dim = 1;
     }
 
     const bool npts_x_ok = npts_x > 1;
-    const bool npts_y_ok = mesh_types_dims[mesh_type_index] == 1 || npts_y > 1;
-    bool npts_z_ok =
-       mesh_types_dims[mesh_type_index] == 1 ||
-       mesh_types_dims[mesh_type_index] == 2 || npts_z > 1;
+    const bool npts_y_ok = mesh_type_dim == 1 || npts_y > 1;
+    bool npts_z_ok = mesh_type_dim == 1 || mesh_type_dim == 2 || npts_z > 1;
 
     
     if( npts_z != 0 &&
@@ -2802,8 +2796,8 @@ basic(const std::string &mesh_type,
     {
         // error, not enough points to create the topo
         CONDUIT_ERROR("blueprint::mesh::examples::basic requires: " << std::endl <<
-                      "For 1D only topologies"
-                      " ( mesh_type={\"1Duniform\" or \"1Dstructured\"} )"
+                      "For 1D only topologies,"
+                      " mesh_type={\"uniform\" or \"structured\"} and "
                       " npts_x > 1 and npts_y == 0 and npts_z == 0"
                       << std::endl <<
                       "For 2D only topologies"
@@ -3145,9 +3139,9 @@ braid(const std::string &mesh_type,
             npts_x_ok = false;
         }
 
-        if( npts_y < 2 )
+        if( npts_y < 1 )
         {
-            if (braid_1d_allowed_shape_type(mesh_type) && npts_y == 0)
+            if (braid_1d_allowed_shape_type(mesh_type))
             {
                 npts_y_ok = true;
             }
@@ -3158,8 +3152,6 @@ braid(const std::string &mesh_type,
         }
 
         // check 2d cases which require npts z = 0
-
-
         if ( npts_z != 0 &&
              braid_2d_only_shape_type(mesh_type) )
         {
