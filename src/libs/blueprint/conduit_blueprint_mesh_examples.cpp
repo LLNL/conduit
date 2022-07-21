@@ -3139,15 +3139,12 @@ braid(const std::string &mesh_type,
             npts_x_ok = false;
         }
 
-        if( npts_y < 1 )
+        if( npts_y < 2 )
         {
-            if (braid_1d_allowed_shape_type(mesh_type))
+            npts_y_ok = false;
+            if (npts_y == 0 && braid_1d_allowed_shape_type(mesh_type))
             {
                 npts_y_ok = true;
-            }
-            else
-            {
-                npts_y_ok = false;
             }
         }
 
