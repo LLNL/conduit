@@ -783,7 +783,11 @@ braid_init_explicit_coordset(index_t npts_x,
 {
     coords["type"] = "explicit";
 
-    index_t npts = npts_x * npts_y;
+    index_t npts = npts_x;
+    if (npts_y > 0)
+    {
+        npts *= npts_y;
+    }
 
     if(npts_z > 1)
     {
@@ -793,7 +797,10 @@ braid_init_explicit_coordset(index_t npts_x,
     // also support interleaved
     Node &coord_vals = coords["values"];
     coord_vals["x"].set(DataType::float64(npts));
-    coord_vals["y"].set(DataType::float64(npts));
+    if (npts_y > 0)
+    {
+        coord_vals["y"].set(DataType::float64(npts));
+    }
 
     if(npts_z > 1)
     {
@@ -801,7 +808,12 @@ braid_init_explicit_coordset(index_t npts_x,
     }
 
     float64 *x_vals = coord_vals["x"].value();
-    float64 *y_vals = coord_vals["y"].value();
+    float64 *y_vals = NULL;
+    if (npts_y > 0)
+    {
+        y_vals = coord_vals["y"].value();
+    }
+
     float64 *z_vals = NULL;
 
     if(npts_z > 1)
@@ -811,6 +823,10 @@ braid_init_explicit_coordset(index_t npts_x,
 
     float64 dx = 20.0 / float64(npts_x-1);
     float64 dy = 20.0 / float64(npts_y-1);
+    if (npts_y > 0)
+    {
+        dy = 20.0 / float64(npts_y-1);
+    }
 
     float64 dz = 0.0;
 
@@ -827,19 +843,30 @@ braid_init_explicit_coordset(index_t npts_x,
     {
         outer = npts_z;
     }
+    // default to one loop iteration (1d case)
+    index_t middle = 1;
+    // expand loop iteration for 2d and 3d case
+    if(npts_y > 1)
+    {
+        middle = npts_y;
+    }
 
     for(index_t k = 0; k < outer; k++)
     {
         float64 cz = -10.0 + k * dz;
 
-        for(index_t j = 0; j < npts_y ; j++)
+        for(index_t j = 0; j < middle ; j++)
         {
             float64 cy =  -10.0 + j * dy;
 
             for(index_t i = 0; i < npts_x ; i++)
             {
                 x_vals[idx] = -10.0 + i * dx;
-                y_vals[idx] = cy;
+
+                if(npts_y > 1)
+                {
+                    y_vals[idx] = cy;
+                }
 
                 if(npts_z > 1)
                 {
@@ -1350,7 +1377,11 @@ braid_structured(index_t npts_x,
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
-    res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
+
+    if(nele_y > 0)
+    {
+        res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
+    }
 
     if(nele_z > 0)
     {
