@@ -937,6 +937,12 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
                                                   -1,
                                                   res),conduit::Error);
 
+    EXPECT_THROW(blueprint::mesh::examples::basic("structured",
+                                                  2,
+                                                  1,
+                                                  -1,
+                                                  res),conduit::Error);
+
     EXPECT_THROW(blueprint::mesh::examples::basic("uniform",
                                                   1,
                                                   1,
@@ -968,6 +974,18 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
                                                   res),conduit::Error);
 
     // a few ok
+    blueprint::mesh::examples::basic("uniform",
+                                     5,
+                                     0,
+                                     0,
+                                     res);
+
+    blueprint::mesh::examples::basic("structured",
+                                     5,
+                                     0,
+                                     0,
+                                     res);
+
     blueprint::mesh::examples::basic("uniform",
                                      2,
                                      2,
