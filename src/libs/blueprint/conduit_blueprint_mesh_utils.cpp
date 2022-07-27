@@ -2066,23 +2066,18 @@ topology::unstructured::points(const Node &n,
     ntemp.set_external(n);
     generate_offsets(ntemp, ntemp["elements/offsets"]);
 
-    Node temp;
     const ShapeType topo_shape(ntemp);
 
     std::set<index_t> pidxs;
     if(!topo_shape.is_poly())
     {
         const Node &poffs_node = ntemp["elements/offsets"];
-        temp.set_external(DataType(poffs_node.dtype().id(), 1),
-            (void*)poffs_node.element_ptr(ei));
-        const index_t eoff = temp.to_index_t();
+        const index_t eoff = poffs_node[ei];
 
         const Node &pidxs_node = ntemp["elements/connectivity"];
         for(index_t pi = 0; pi < topo_shape.indices; pi++)
         {
-            temp.set_external(DataType(pidxs_node.dtype().id(), 1),
-                (void*)pidxs_node.element_ptr(eoff + pi));
-            pidxs.insert(temp.to_index_t());
+            pidxs.insert(pidxs_node[eoff + pi]);
         }
     }
     else // if(topo_shape.is_poly())
@@ -2092,7 +2087,6 @@ topology::unstructured::points(const Node &n,
         if(topo_shape.is_polygonal())
         {
             enode.set_external(ntemp["elements"]);
-
             eidxs.insert(ei);
         }
         else // if(topo_shape.is_polyhedral())
@@ -2106,10 +2100,8 @@ topology::unstructured::points(const Node &n,
             while(eiter.has_next(O2MIndex::MANY))
             {
                 eiter.next(O2MIndex::MANY);
-                const index_t ii = eiter.index(O2MIndex::DATA);
-                temp.set_external(DataType(eidxs_node.dtype().id(), 1),
-                    (void*)eidxs_node.element_ptr(ii));
-                eidxs.insert(temp.to_index_t());
+                const index_t tmp = eidxs_node[eiter.index(O2MIndex::DATA)];
+                eidxs.insert(tmp);
             }
         }
 
@@ -2122,10 +2114,8 @@ topology::unstructured::points(const Node &n,
             while(piter.has_next(O2MIndex::MANY))
             {
                 piter.next(O2MIndex::MANY);
-                const index_t pi = piter.index(O2MIndex::DATA);
-                temp.set_external(DataType(pidxs_node.dtype().id(), 1),
-                    (void*)pidxs_node.element_ptr(pi));
-                pidxs.insert(temp.to_index_t());
+                const index_t tmp = pidxs_node[piter.index(O2MIndex::DATA)];
+                pidxs.insert(tmp);
             }
         }
     }
