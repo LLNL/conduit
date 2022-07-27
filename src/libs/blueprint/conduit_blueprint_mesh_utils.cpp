@@ -2072,12 +2072,12 @@ topology::unstructured::points(const Node &n,
     if(!topo_shape.is_poly())
     {
         const Node &poffs_node = ntemp["elements/offsets"];
-        const index_t eoff = poffs_node[ei];
+        const index_t eoff = poffs_node[ei].value();
 
         const Node &pidxs_node = ntemp["elements/connectivity"];
         for(index_t pi = 0; pi < topo_shape.indices; pi++)
         {
-            pidxs.insert(pidxs_node[eoff + pi]);
+            pidxs.insert(pidxs_node[eoff + pi].value());
         }
     }
     else // if(topo_shape.is_poly())
@@ -2100,7 +2100,7 @@ topology::unstructured::points(const Node &n,
             while(eiter.has_next(O2MIndex::MANY))
             {
                 eiter.next(O2MIndex::MANY);
-                const index_t tmp = eidxs_node[eiter.index(O2MIndex::DATA)];
+                const index_t tmp = eidxs_node[eiter.index(O2MIndex::DATA)].value();
                 eidxs.insert(tmp);
             }
         }
@@ -2114,7 +2114,7 @@ topology::unstructured::points(const Node &n,
             while(piter.has_next(O2MIndex::MANY))
             {
                 piter.next(O2MIndex::MANY);
-                const index_t tmp = pidxs_node[piter.index(O2MIndex::DATA)];
+                const index_t tmp = pidxs_node[piter.index(O2MIndex::DATA)].value();
                 pidxs.insert(tmp);
             }
         }
