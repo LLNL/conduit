@@ -211,6 +211,10 @@ CONDUIT_API void conduit_node_load(conduit_node *cnode,
                                    const char* protocol);
 
 //-----------------------------------------------------------------------------
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_json(const conduit_node *cnode);
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Conduit Node "Set" Methods
 //-----------------------------------------------------------------------------

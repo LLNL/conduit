@@ -376,6 +376,18 @@ TEST(c_conduit_node, c_save_load)
     conduit_node_destroy(n2);
 }
 
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_to_json)
+{
+    conduit_node *n = conduit_node_create();
+    conduit_node_parse(n,"{\"a\": 42.0}","json");
+
+    char* json = conduit_node_to_json(n);
+    EXPECT_EQ(std::string(json), "\n{\n  \"a\": 42.0\n}");
+
+    free(json);
+    conduit_node_destroy(n);
+}
 
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node, c_child_with_embedded_slashes)

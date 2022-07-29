@@ -424,6 +424,19 @@ conduit_node_load(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
+char*
+conduit_node_to_json(const conduit_node *cnode)
+{
+    std::string str = cpp_node(cnode)->to_json();
+    std::size_t len = str.length() + 1;
+
+    char* output = (char*)malloc(len);
+    strcpy(output, str.c_str());
+
+    return output;
+}
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // -- set variants -- 
