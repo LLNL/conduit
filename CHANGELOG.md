@@ -23,6 +23,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed a bug with `blueprint::mesh::index::generate`, where a uniform grid with no origin would lead to invalid coordinate system name `logical` in the resulting index. This case now defaults to `cartesian`.
 - Improved `relay::io::blueprint::{save_mesh|write_mesh}` blueprint index generation for cases where fields do not exist on all domains.
 
+#### Relay
+- Fixed a bug with blueprint root file creation, where the `file_pattern` was not relative to the root file location.
+
+
 ## [0.8.3] - Released 2022-04-14
 
 ### Added

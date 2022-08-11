@@ -504,7 +504,7 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
 TEST(conduit_blueprint_mesh_relay, save_multi_domain_json_yaml)
 {
     Node data;
-    // use spiral , with 7 domains
+    // use spiral , with 3 domains
     conduit::blueprint::mesh::examples::spiral(3,data);
     
     std::string tout_base = "tout_relay_bp_mesh_fname_test_";
@@ -526,4 +526,69 @@ TEST(conduit_blueprint_mesh_relay, save_multi_domain_json_yaml)
     EXPECT_TRUE(is_file( tout_base + "yaml/domain_000001.yaml"));
     EXPECT_TRUE(is_file( tout_base + "yaml/domain_000002.yaml"));
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, save_with_subdir)
+{
+    // reqs hdf5
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping save_read_mesh_truncate test");
+        return;
+    }
+
+    Node data;
+    conduit::blueprint::mesh::examples::spiral(3,data);
+    
+    blueprint::mesh::examples::braid("uniform",
+                                     2,
+                                     2,
+                                     2,
+                                     data);
+    data["state/domain_id"] = 0;
+
+    std::string output_dir = "tout_subdir";
+    std::string tout_base = "tout_subdir/tout_relay_subdir_test_hdf5";
+    std::string tout_file = "tout_subdir/tout_relay_subdir_test_hdf5.root";
+    Node opts;
+    opts["suffix"] = "none";
+
+    remove_path_if_exists(output_dir);
+    create_directory(output_dir);
+    relay::io::blueprint::save_mesh(data,tout_base,"hdf5",opts);
+    EXPECT_TRUE(is_file(tout_file));
+
+    // load back
+    Node n_load, info;
+    relay::io::blueprint::load_mesh(tout_file,n_load);
+
+    // we should have round-trip clean diff
+    data.print();
+    n_load[0].print();
+    info.print();
+
+    EXPECT_FALSE(data.diff(n_load[0],info));
+
+    // add round trip multi domain tests as well
+    conduit::blueprint::mesh::examples::spiral(3,data);
+
+    tout_base = "tout_subdir/tout_relay_subdir_test_hdf5_multi_dom";
+    tout_file = "tout_subdir/tout_relay_subdir_test_hdf5_multi_dom.root";
+    relay::io::blueprint::save_mesh(data,tout_base,"hdf5",opts);
+    relay::io::blueprint::load_mesh(tout_file,n_load);
+    EXPECT_FALSE(data[0].diff(n_load[0],info));
+    
+    tout_base = "tout_subdir/tout_relay_subdir_test_hdf5_multi_dom_multi_file";
+    tout_file = "tout_subdir/tout_relay_subdir_test_hdf5_multi_dom_multi_file.root";
+    opts["number_of_files"] = 2;
+    relay::io::blueprint::save_mesh(data,tout_base,"hdf5",opts);
+    relay::io::blueprint::load_mesh(tout_file,n_load);
+    EXPECT_FALSE(data[0].diff(n_load[0],info));
+
+}
+
+
 
