@@ -911,6 +911,12 @@ Generator::Parser::JSON::parse_inline_value(const conduit_rapidjson::Value &jval
         {
             parse_json_float64_array(jvalue,node);
         }
+        else if(hval_type == DataType::EMPTY_ID)
+        {
+            // we need to allow this case but do nothing.
+            // for conduit_json cases, the node will
+            // have the right data type
+        }
         else
         {
             // Parsing Error, not homogenous

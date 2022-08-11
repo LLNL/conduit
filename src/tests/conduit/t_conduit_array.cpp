@@ -826,11 +826,11 @@ TEST(conduit_array, summary_print)
 
     v = va_int64_empty.to_summary_string();
     std::cout << v << std::endl;
-    EXPECT_EQ(v,"");
+    EXPECT_EQ(v,"[]");
 
     v = va_int64_empty.to_summary_string(64);
     std::cout << v << std::endl;
-    EXPECT_EQ(v,"");
+    EXPECT_EQ(v,"[]");
 
     v = va_int64_empty.to_summary_string(-1);
     std::cout << v << std::endl;

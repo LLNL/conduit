@@ -19,6 +19,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 
+#### General
+- Fixed bug with `to_json()` where leaf arrays of size 0 lead to malformed json.
+- Fixed parsing issue with `conduit_json` protocol for leaf arrays of size 0.
+
 #### Blueprint
 - Fixed a bug with `blueprint::mesh::index::generate`, where a uniform grid with no origin would lead to invalid coordinate system name `logical` in the resulting index. This case now defaults to `cartesian`.
 - Improved `relay::io::blueprint::{save_mesh|write_mesh}` blueprint index generation for cases where fields do not exist on all domains.
