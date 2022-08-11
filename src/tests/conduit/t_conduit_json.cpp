@@ -797,3 +797,37 @@ TEST(conduit_json, dup_object_name_error)
     
 
 }
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, empty_leaves)
+{
+    Node n;
+    n["values/a"].set(DataType::int64(0));
+    std::string r_json = n.to_json();
+    std::cout << r_json << std::endl;
+
+    Node n_parse;
+    n_parse.parse(r_json,"json");
+
+    std::cout << n_parse.to_json() << std::endl;
+
+    std::cout << n.to_string("conduit_json") << std::endl;
+
+    // round trip will differ
+    // "values/a" will be a list instead of an array
+    Node info;
+    EXPECT_TRUE(n.diff(n_parse,info));
+    info.print();
+
+    std::string r_conduit_json = n.to_string("conduit_json");
+    std::cout << r_conduit_json << std::endl;
+
+    n_parse.parse(r_conduit_json,"conduit_json");
+
+    std::cout << n_parse.to_json() << std::endl;
+    EXPECT_FALSE(n.diff(n_parse,info));
+    info.print();
+}
+

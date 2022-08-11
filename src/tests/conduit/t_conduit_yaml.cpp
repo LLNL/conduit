@@ -606,3 +606,23 @@ TEST(conduit_yaml, to_yaml_leaf_nl)
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, empty_leaves)
+{
+    Node n;
+    n["values/a"].set(DataType::int64(0));
+    std::string  r_yaml = n.to_yaml();
+    std::cout << r_yaml << std::endl;
+
+    Node n_parse;
+    n_parse.parse(r_yaml,"yaml");
+
+    std::cout << n_parse.to_yaml() << std::endl;
+    // round trip will differ
+    // "values/a" will be a list instead of an array
+    Node info;
+    EXPECT_TRUE(n.diff(n_parse,info));
+    info.print();
+}
+

@@ -503,7 +503,10 @@ void
 DataArray<T>::to_json_stream(std::ostream &os) const 
 { 
     index_t nele = number_of_elements();
-    if(nele > 1)
+    // note: nele == 0 case: 
+    // https://github.com/LLNL/conduit/issues/992
+    // we want empty arrays to display as [] not empty string
+    if(nele == 0 || nele > 1)
         os << "[";
 
     bool first=true;
@@ -559,8 +562,10 @@ DataArray<T>::to_json_stream(std::ostream &os) const
         }
         first=false;
     }
-
-    if(nele > 1)
+    // note: nele == 0 case: 
+    // https://github.com/LLNL/conduit/issues/992
+    // we want empty arrays to display as [] not empty string
+    if(nele == 0 || nele > 1)
         os << "]";
 }
 
