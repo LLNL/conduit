@@ -1398,9 +1398,20 @@ void write_mesh(const Node &mesh,
         std::string output_tree_pattern;
         std::string output_file_pattern;
 
+        // NOTE: 
+        // The file pattern needs to be relative to
+        // the root file. 
+        // reverse split the path
+
+
         if(opts_file_style == "root_only")
         {
-            output_file_pattern = root_filename;
+            // make sure this is relative to output dir
+            std::string tmp;
+            utils::rsplit_path(root_filename,
+                               output_file_pattern,
+                               tmp);
+
             if(global_num_domains == 1)
             {
                 output_tree_pattern = "/";
@@ -1412,17 +1423,25 @@ void write_mesh(const Node &mesh,
         }
         else if(global_num_domains == num_files)
         {
-            output_tree_pattern = "/";
+            std::string tmp;
+            utils::rsplit_path(output_dir_base,
+                               output_file_pattern,
+                               tmp);
             output_file_pattern = conduit::utils::join_file_path(
-                                                output_dir_base,
+                                                output_file_pattern,
                                                 "domain_%06d." + file_protocol);
+            output_tree_pattern = "/";
         }
         else
         {
-            output_tree_pattern = "/domain_%06d";
+            std::string tmp;
+            utils::rsplit_path(output_dir_base,
+                               output_file_pattern,
+                               tmp);
             output_file_pattern = conduit::utils::join_file_path(
-                                                output_dir_base,
+                                                output_file_pattern,
                                                 "file_%06d." + file_protocol);
+            output_tree_pattern = "/domain_%06d";
         }
 
         Node root;
@@ -1446,9 +1465,8 @@ void write_mesh(const Node &mesh,
         root["number_of_files"]  = num_files;
         root["number_of_trees"]  = global_num_domains;
 
-        // TODO: make sure this is relative
-        root["file_pattern"]     = output_file_pattern;
-        root["tree_pattern"]     = output_tree_pattern;
+        root["file_pattern"] = output_file_pattern;
+        root["tree_pattern"] = output_tree_pattern;
 
         relay::io::IOHandle hnd;
 
