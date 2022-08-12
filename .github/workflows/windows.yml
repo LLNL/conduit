@@ -23,7 +23,7 @@ jobs:
               -DENABLE_PYTHON=ON         `
               -DENABLE_MPI=ON
         cmake --build build --config Release --parallel 2
-        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
 
   build_windows_msvc_py_ver:
     name: MSVC Release Py Verison
@@ -52,7 +52,7 @@ jobs:
               -DENABLE_PYTHON=ON         `
               -DENABLE_MPI=ON
         cmake --build build --config Release --parallel 2
-        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
 
   build_windows_clang:
     name: Clang Base Debug
@@ -74,4 +74,4 @@ jobs:
                 -DCMAKE_CXX_COMPILER=clang-cl ^
                 -DCMAKE_BUILD_TYPE=Debug
         cmake --build build --config Debug --parallel 2
-        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target test
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target test --parallel 1
