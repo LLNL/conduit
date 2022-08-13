@@ -7,6 +7,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## Unreleased
 
 ### Added
+#### General
+- Added subpath support for `relay::io::{save,load,save_merged,load_merged}` for basic protocols (json, yaml, etc).
 
 #### Blueprint
 - Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details. 
