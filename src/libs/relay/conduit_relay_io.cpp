@@ -336,7 +336,27 @@ save(const Node &node,
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )
     {
-        node.save(path,protocol);
+        // check for ":" split
+        std::string file_path;
+        std::string sub_path;
+
+        conduit::utils::split_file_path(path,
+                                        std::string(":"),
+                                        file_path,
+                                        sub_path);
+        // We write the entire node if no sub path is given.
+        // (most common case)
+        if(sub_path.size() == 0)
+        {
+            node.save(path,protocol);
+        }
+        else
+        {
+            Node n_load;
+            n_load.load(file_path,protocol);
+            n_load[sub_path] = node;
+            n_load.save(file_path,protocol);
+        }
     }
     else if(protocol == "csv")
     {
@@ -445,14 +465,38 @@ save_merged(const Node &node,
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )
     {
-        Node n;
-        // support case where the path is initially empty
-        if(utils::is_file(path))
+        // check for ":" split
+        std::string file_path;
+        std::string sub_path;
+
+        conduit::utils::split_file_path(path,
+                                        std::string(":"),
+                                        file_path,
+                                        sub_path);
+        // We load the entire node if no sub path is given.
+        // (most common case)
+        if(sub_path.size() == 0)
         {
-            n.load(path,protocol);
+            Node n;
+            // support case where the path is initially empty
+            if(utils::is_file(path))
+            {
+                n.load(path,protocol);
+            }
+            n.update(node);
+            n.save(path,protocol);
         }
-        n.update(node);
-        n.save(path,protocol);
+        else
+        {
+            Node n;
+            // support case where the path is initially empty
+            if(utils::is_file(file_path))
+            {
+                n.load(file_path,protocol);
+            }
+            n[sub_path].update(node);
+            n.save(file_path,protocol);
+        }
     }
     else if( protocol == "hdf5")
     {
@@ -554,7 +598,26 @@ load(const std::string &path,
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )
     {
-        node.load(path,protocol);
+        // check for ":" split
+        std::string file_path;
+        std::string sub_path;
+
+        conduit::utils::split_file_path(path,
+                                        std::string(":"),
+                                        file_path,
+                                        sub_path);
+        // We read the root if no sub path is given.
+        // (most common case)
+        if(sub_path.size() == 0)
+        {
+            node.load(path,protocol);
+        }
+        else
+        {
+            Node n_load;
+            n_load.load(file_path,protocol);
+            node.set(n_load[sub_path]);
+        }
     }
     else if(protocol == "csv")
     {
@@ -699,11 +762,31 @@ load_merged(const std::string &path,
        protocol == "conduit_base64_json" ||
        protocol == "yaml" )
     {
-        Node n;
-        n.load(path,protocol);
-        // update into dest
-        node.update(n);
+        // check for ":" split
+        std::string file_path;
+        std::string sub_path;
 
+        conduit::utils::split_file_path(path,
+                                        std::string(":"),
+                                        file_path,
+                                        sub_path);
+        // We load the entire node if no sub path is given.
+        // (most common case)
+
+        if(sub_path.size() == 0)
+        {
+            Node n;
+            n.load(path,protocol);
+            // update into dest
+            node.update(n);
+        }
+        else
+        {
+            Node n;
+            n.load(file_path,protocol);
+            // update into dest
+            node.update(n[sub_path]);
+        }
     }
     else if( protocol == "hdf5")
     {
