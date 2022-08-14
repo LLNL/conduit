@@ -16,6 +16,12 @@ endif()
 # we want the import root, which is right above the "lib" prefix
 get_filename_component(_IMPORT_ROOT "${_IMPORT_PREFIX}" PATH)
 
+if(POLICY CMP0074)
+    #policy for <PackageName>_ROOT variables
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
 ###############################################################################
 # Setup Threads
 ###############################################################################
@@ -53,12 +59,6 @@ if(CONDUIT_HDF5_DIR)
         message(STATUS "Looking for HDF5 at: " ${HDF5_DIR_REAL})
     endif()
 
-    if(POLICY CMP0074)
-        #policy for <PackageName>_ROOT variables
-        cmake_policy(PUSH)
-        cmake_policy(SET CMP0074 NEW)
-    endif()
-
     # CMake's FindHDF5 module uses the HDF5_ROOT env var
     set(HDF5_ROOT ${HDF5_DIR_REAL})
 
@@ -80,11 +80,6 @@ if(CONDUIT_HDF5_DIR)
                            ${HDF5_DIR}/lib/cmake/hdf5
                            ${HDF5_DIR}/share/cmake/hdf5
                            ${HDF5_DIR}/cmake)
-    endif()
-
-    if(POLICY CMP0074)
-        # clear CMP0074
-        cmake_policy(POP)
     endif()
 
     # FindHDF5/find_package sets HDF5_DIR to it's installed CMake info if it exists
@@ -199,5 +194,10 @@ else()
     if(NOT Conduit_FIND_QUIETLY)
         message(STATUS "Conduit was NOT built with HDF5 Support")
     endif()
+endif()
+
+if(POLICY CMP0074)
+    # clear CMP0074
+    cmake_policy(POP)
 endif()
 
