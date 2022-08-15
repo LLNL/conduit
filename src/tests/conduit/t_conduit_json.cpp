@@ -859,6 +859,18 @@ TEST(conduit_json, nan_and_inf_strings_parse)
     EXPECT_TRUE(n.dtype().is_float64());
     json_rtrip = n.to_json();
     EXPECT_EQ(json_src,json_rtrip);
+    
+    // also try conduit json to make sure that round trip works
+    json_src = "[0.0, 1.0, \"inf\"]";
+    n.parse(json_src,"json");
+    json_src = n.to_json("conduit_json");
+    std::cout << json_src << std::endl;
+    n.parse(json_src,"conduit_json");
+    EXPECT_TRUE(n.dtype().is_number());
+    EXPECT_TRUE(n.dtype().is_float64());
+    json_rtrip = n.to_json("conduit_json");
+    EXPECT_EQ(json_src,json_rtrip);
+    
 
 }
 
