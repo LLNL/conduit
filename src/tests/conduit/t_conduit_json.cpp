@@ -874,4 +874,25 @@ TEST(conduit_json, nan_and_inf_strings_parse)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_opts)
+{
+    Node n;
+    n["a"] = 1;
+
+    Node opts;
+    opts["depth"] = 1;
+    opts["pad"] = " PAD ";
+    opts["eoe"] = " EOE\n ";
+
+    std::string res = n.to_json(opts);
+    std::cout << res << std::endl;
+    std::string texpect = R"ST( EOE
+  PAD  PAD { EOE
+  PAD  PAD  PAD  PAD "a": 1 EOE
+  PAD  PAD })ST";
+
+    EXPECT_EQ(res,texpect);
+}
+
 
