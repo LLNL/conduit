@@ -405,7 +405,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
                 }
 
                 uint64_accessor group_verts = group["values"].as_uint64_accessor();
-                if (min_domain == global_domid)
+                if (static_cast<int64>(min_domain) == global_domid)
                 {
                     // This domain provides the actual vids
                     std::vector<uint64> actual_vids(group_verts.number_of_elements());
@@ -423,13 +423,13 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
                     // our global vids to those ranks.
                     for (uint64 nbr_dom : sorted_nbrs)
                     {
-                        if (nbr_dom == global_domid)
+                        if (static_cast<int64>(nbr_dom) == global_domid)
                         {
                             // skip source domain
                             continue;
                         }
                         const uint64 dst_rank = dom_locs[nbr_dom];
-                        if (par_rank != dst_rank)
+                        if (static_cast<uint64>(par_rank) != dst_rank)
                         {
                             pending_sends[dst_rank].push_back(sorted_nbrs);
                         }
@@ -441,7 +441,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
                     // on this rank. Prepare irecv if necessary.
                     const uint64 src_rank = dom_locs[min_domain];
 
-                    if (par_rank != src_rank)
+                    if (static_cast<uint64>(par_rank) != src_rank)
                     {
                         pending_recvs[src_rank].push_back(sorted_nbrs);
                         groups_2_vids[sorted_nbrs].resize(group_verts.number_of_elements());
@@ -519,16 +519,16 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
                 }
 
                 uint64_accessor group_verts = group["values"].as_uint64_accessor();
-                if (min_domain != global_domid)
+                if ( static_cast<int64>(min_domain) != global_domid)
                 {
                     // Remap higher-numbered domains with primary domain's
                     // assigned global vtx ids
                     const std::vector<uint64>& actual_vids = groups_2_vids[sorted_nbrs];
-                    if (actual_vids.size() != group_verts.number_of_elements())
+                    if (static_cast<index_t>(actual_vids.size()) != group_verts.number_of_elements())
                     {
                         CONDUIT_ERROR("mismatch in shared verts");
                     }
-                    for (index_t ivert = 0; ivert < actual_vids.size(); ivert++)
+                    for (index_t ivert = 0; ivert < static_cast<index_t>(actual_vids.size()); ivert++)
                     {
                         vert_ids_vals[group_verts[ivert]] = actual_vids[ivert];
                     }
@@ -788,6 +788,12 @@ void generate_partition_field(conduit::Node &mesh,
                                                 &edgecut,
                                                 part_vals,
                                                 &comm);
+
+    if( parmetis_res == METIS_ERROR )
+    {
+        // TODO: Should this be a full Error?
+        CONDUIT_INFO("ParMETIS_V3_PartMeshKway call failed!");
+    }
 
     index_t part_vals_idx=0;
     // create output field with part result
