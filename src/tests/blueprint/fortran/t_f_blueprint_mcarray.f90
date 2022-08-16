@@ -58,7 +58,7 @@ contains
 
         call conduit_blueprint_mcarray_examples_xyz("contiguous",10_8,n)
         call assert_true( logical(conduit_blueprint_mcarray_verify(n,info) .eqv. .true. ))
-        call assert_true( logical(conduit_node_is_contiguous(n) .eqv. .true. )
+        call assert_true( logical(conduit_node_is_contiguous(n) .eqv. .true. ))
         call assert_true( logical(conduit_blueprint_mcarray_is_interleaved(n) .eqv. .false. ))
 
 
