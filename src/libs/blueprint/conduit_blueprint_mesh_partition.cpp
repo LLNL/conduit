@@ -3864,7 +3864,8 @@ Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
     // index
     if (domain_map.size() > 0)
     {
-        if (adjset_chunk_maps.size() < domain_map.rbegin()->first + 1)
+        if ( static_cast<index_t>(adjset_chunk_maps.size()) <
+             static_cast<index_t>(domain_map.rbegin()->first + 1))
         {
             adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
         }
@@ -4625,6 +4626,21 @@ Partitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &chunks,
         chunks_to_assemble_gids.push_back(i);
     }
 }
+
+//-------------------------------------------------------------------------
+void
+Partitioner::communicate_mapback(std::unordered_map<index_t, Node>& /*packed_fields*/)
+{
+    // implemented only in parallel case
+}
+
+//-------------------------------------------------------------------------
+void Partitioner::synchronize_gvids(const std::vector<std::vector<index_t>>& /*remap_to_local_doms*/,
+                                    std::map<index_t, std::vector<index_t>>& /*orig_dom_gvids*/)
+{
+    // implemented only in parallel case
+}
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::coordset --
@@ -9944,7 +9960,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         // communicate domain gvids to ranks that need them
         synchronize_gvids(map_tgt_domains, orig_dom_gvids);
 
-        for (index_t repart_idx = 0; repart_idx < repart_doms.size(); repart_idx++)
+        for (index_t repart_idx = 0; repart_idx < static_cast<index_t>(repart_doms.size()); repart_idx++)
         {
             const conduit::Node& dom = *repart_doms[repart_idx];
 
