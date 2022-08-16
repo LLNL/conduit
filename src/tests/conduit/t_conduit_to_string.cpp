@@ -44,6 +44,28 @@ TEST(conduit_to_string, simple_1)
     delete [] data;
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_to_string, opts)
+{
+    Node n;
+    n["a/b/c/d/e"] = 1;
+
+    Node opts;
+    opts["protocol"] = "yaml";
+    opts["depth"] = 4;
+    opts["pad"] = " PAD ";
+    opts["eoe"] = " EOE\n ";
+
+    std::string res = n.to_string(opts);
+    std::cout << res << std::endl;
+    EXPECT_EQ(n.to_yaml(opts),res);
+
+    opts["protocol"] = "json";
+
+    res = n.to_string(opts);
+    std::cout << res << std::endl;
+    EXPECT_EQ(n.to_json(opts),res);
+}
 
 
 //-----------------------------------------------------------------------------
