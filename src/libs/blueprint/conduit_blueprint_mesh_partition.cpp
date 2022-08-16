@@ -10054,7 +10054,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // domain homes
     communicate_mapback(packed_fields);
 
-    bool first_warn = true;
+    // bool first_warn = true; // unused
     for (const auto& orig_dom : packed_fields)
     {
         // Precompute final element count
@@ -10119,7 +10119,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 fields::map_element_field(src_fields, elem_map_arr, output["values"]);
             }
         }
-        first_warn = false;
+        // first_warn = false; // unused
     }
 }
 

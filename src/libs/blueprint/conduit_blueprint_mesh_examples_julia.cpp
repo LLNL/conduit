@@ -718,7 +718,6 @@ void julia_nestsets_complex(index_t nx,
   int32 min_size = 4;       // min num zones for refine
   float64 efficiency = .80; // target boxs count(flags)/size > effeciency
 
-  int32 curr_domain = 0;
   int32 domain_count = 1;
   int32 children = 1;
 
@@ -741,7 +740,7 @@ void julia_nestsets_complex(index_t nx,
       domain_count += count;
       level_count += count;
     }
-    curr_domain += level_count;
+
     children = level_count;
     // for each level refinement threshold and min size
     threshold += 20;
