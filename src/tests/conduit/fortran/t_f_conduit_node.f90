@@ -41,7 +41,7 @@ contains
         ! Node n;
         ! n.print_detailed();
         cnode = conduit_node_create()
-        call assert_true(conduit_node_is_root(cnode) .eqv. .true. )
+        call assert_true(logical(conduit_node_is_root(cnode) .eqv. .true. ))
         call conduit_node_print_detailed(cnode)
         ! Node n_info;
         ! n.info(n_info);
@@ -82,7 +82,7 @@ contains
         ! Node &n2 = n.append();
         n2 = conduit_node_append(cnode)
 
-        call assert_true( conduit_node_is_root(n2) .eqv. .false.)
+        call assert_true( logical(conduit_node_is_root(n2) .eqv. .false.))
         
         ! index_t nchld = n.number_of_children();
         nchld = conduit_node_number_of_children(cnode)
@@ -204,7 +204,7 @@ contains
         cnode2 = conduit_node_create()
         call conduit_node_set_path_float64(cnode1,"a",3.1415d+0)
         call conduit_node_set_path_node(cnode2,"path/to",cnode1)
-        call assert_true( conduit_node_has_path(cnode2,"path/to/a") .eqv. .true.)
+        call assert_true( logical(conduit_node_has_path(cnode2,"path/to/a") .eqv. .true.))
 
 
         call conduit_node_set_path_external_node(cnode2,"another/path/to",cnode1)
@@ -252,21 +252,21 @@ contains
         call conduit_node_set_path_float64(cnode1,"a",3.1415d+0)
         ! n1.diff(n2,info,1e-12)
         !! there is a diff
-        call assert_true( conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .true.)
+        call assert_true( logical(conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .true.))
         ! n2["a"].set_float64(3.1415);
         call conduit_node_set_path_float64(cnode2,"a",3.1415d+0)
         ! n1.diff(n2,info,1e-12)
         !! no diff
-        call assert_true( conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .false.)
+        call assert_true( logical(conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .false.))
         ! n2["b"].set_float64(3.1415);
         call conduit_node_set_path_float64(cnode2,"b",3.1415d+0)
         ! n1.diff(n2,info,1e-12)
         !! there is a diff
-        call assert_true( conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .true.)
+        call assert_true( logical(conduit_node_diff(cnode1,cnode2,cinfo,1d-12) .eqv. .true.))
         
         ! n1.diff(n2,info,1e-12)
         !! but no diff compat
-        call assert_true( conduit_node_diff_compatible(cnode1,cnode2,cinfo,1d-12) .eqv. .false.)
+        call assert_true( logical(conduit_node_diff_compatible(cnode1,cnode2,cinfo,1d-12) .eqv. .false.))
         
         call conduit_node_destroy(cnode1)
         call conduit_node_destroy(cnode2)
@@ -297,7 +297,7 @@ contains
         ! n2.update(n1)
         call conduit_node_update(cnode2, cnode1)
 
-        call assert_true( conduit_node_has_path(cnode2,"a") .eqv. .true.)
+        call assert_true( logical(conduit_node_has_path(cnode2,"a") .eqv. .true.))
 
         call conduit_node_set_path_float64(cnode1,"a",42.0d+0)
         call conduit_node_set_path_float64(cnode1,"b",52.0d+0)
@@ -309,8 +309,8 @@ contains
 
         call assert_equals(42.0d+0, val)
 
-        call assert_true( conduit_node_has_path(cnode2,"a") .eqv. .true.)
-        call assert_true( conduit_node_has_path(cnode2,"b") .eqv. .false.)
+        call assert_true( logical(conduit_node_has_path(cnode2,"a") .eqv. .true.))
+        call assert_true( logical(conduit_node_has_path(cnode2,"b") .eqv. .false.))
 
 
         ! n2.update_external(n1)
@@ -322,8 +322,8 @@ contains
 
         call assert_equals(62.0d+0, val)
 
-        call assert_true( conduit_node_has_path(cnode2,"a") .eqv. .true.)
-        call assert_true( conduit_node_has_path(cnode2,"b") .eqv. .true.)
+        call assert_true( logical(conduit_node_has_path(cnode2,"a") .eqv. .true.))
+        call assert_true( logical(conduit_node_has_path(cnode2,"b") .eqv. .true.))
 
         val = conduit_node_fetch_path_as_float64(cnode2,"b");
 
@@ -356,11 +356,11 @@ contains
         bytes_res = conduit_node_total_bytes_allocated(cnode1);
         call assert_equals( bytes_res, 16)
 
-        call assert_true( conduit_node_is_contiguous(cnode1) .eqv. .false.)
+        call assert_true( logical(conduit_node_is_contiguous(cnode1) .eqv. .false.))
         
         call conduit_node_compact_to(cnode1,cnode2);
 
-        call assert_true( conduit_node_is_contiguous(cnode2) .eqv. .true.)
+        call assert_true( logical(conduit_node_is_contiguous(cnode2) .eqv. .true.))
 
         bytes_res = conduit_node_total_bytes_compact(cnode2);
         call assert_equals( bytes_res, 16)
@@ -387,21 +387,21 @@ contains
         cnode = conduit_node_create()
 
         call conduit_node_set_path_float64(cnode,"a",62d+0)
-        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .true.)
+        call assert_true( logical(conduit_node_has_path(cnode,"a") .eqv. .true.))
         call conduit_node_remove_path(cnode,"a")
-        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .false.)
+        call assert_true( logical(conduit_node_has_path(cnode,"a") .eqv. .false.))
 
         call conduit_node_set_path_float64(cnode,"a",62d+0)
-        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .true.)
+        call assert_true( logical(conduit_node_has_path(cnode,"a") .eqv. .true.))
         ! remove child using idx (still using zero-based idx)
         call conduit_node_remove_child(cnode, 0_8)
-        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .false.)
+        call assert_true( logical(conduit_node_has_path(cnode,"a") .eqv. .false.))
 
 
         call conduit_node_set_path_float64(cnode,"a",62d+0)
         call conduit_node_rename_child(cnode,"a","b")
-        call assert_true( conduit_node_has_path(cnode,"a") .eqv. .false.)
-        call assert_true( conduit_node_has_path(cnode,"b") .eqv. .true.)
+        call assert_true( logical(conduit_node_has_path(cnode,"a") .eqv. .false.))
+        call assert_true( logical(conduit_node_has_path(cnode,"b") .eqv. .true.))
 
         val = conduit_node_fetch_path_as_float64(cnode,"b");
 
@@ -515,11 +515,11 @@ contains
          val = conduit_node_as_float64(cn_2);
          call assert_equals(42.0d+0, val)
 
-         call assert_true( conduit_node_has_path(cn,"normal/path") .eqv. .true. )
-         call assert_true( conduit_node_has_child(cn,"normal/path") .eqv. .false. )
+         call assert_true( logical(conduit_node_has_path(cn,"normal/path") .eqv. .true. ))
+         call assert_true( logical(conduit_node_has_child(cn,"normal/path") .eqv. .false. ))
 
-         call assert_true( conduit_node_has_path(cn,"child_with_/_inside") .eqv. .false. )
-         call assert_true( conduit_node_has_child(cn,"child_with_/_inside") .eqv. .true. )
+         call assert_true( logical(conduit_node_has_path(cn,"child_with_/_inside") .eqv. .false. ))
+         call assert_true( logical(conduit_node_has_child(cn,"child_with_/_inside") .eqv. .true. ))
 
          nchld = conduit_node_number_of_children(cn)
          call assert_equals( nchld , 2 )
@@ -533,7 +533,7 @@ contains
 
          nchld = conduit_node_number_of_children(cn)
          call assert_equals(nchld , 1 )
-         call assert_true( conduit_node_has_path(cn,"normal/path") .eqv. .true.)
+         call assert_true( logical(conduit_node_has_path(cn,"normal/path") .eqv. .true.))
 
          call conduit_node_destroy(cn)
 
