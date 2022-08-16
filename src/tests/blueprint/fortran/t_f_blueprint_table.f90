@@ -43,14 +43,14 @@ module t_f_blueprint_table
         nz = 3
 
         ! Ensure verify() on empty node is false
-        call assert_true( conduit_blueprint_table_verify(n, info) .eqv. .false. )
+        call assert_true( logical(conduit_blueprint_table_verify(n, info) .eqv. .false. ))
 
         ! Ensure verify() on example node is true
         call conduit_blueprint_table_examples_basic(nx, ny, nz, n)
-        call assert_true( conduit_blueprint_table_verify(n, info) .eqv. .true. )
+        call assert_true( logical(conduit_blueprint_table_verify(n, info) .eqv. .true. ))
 
         ! There are no sub protocols
-        call assert_true( conduit_blueprint_table_verify_sub_protocol("subproto", n, info) .eqv. .false. )
+        call assert_true( logical(conduit_blueprint_table_verify_sub_protocol("subproto", n, info) .eqv. .false. ))
 
         call conduit_node_destroy(n);
         call conduit_node_destroy(info);

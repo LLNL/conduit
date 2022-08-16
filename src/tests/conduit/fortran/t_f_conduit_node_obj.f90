@@ -41,7 +41,7 @@ contains
         ! n.print_detailed();
         obj = conduit_node_obj_create()
         call obj%print_detailed()
-        call assert_true(obj%is_root() .eqv. .true. )
+        call assert_true(logical(obj%is_root() .eqv. .true. ))
         ! Node n_info;
         ! n.info(n_info);
         ! n_info.print();
@@ -245,7 +245,7 @@ contains
         obj = conduit_node_obj_create()
         ! n.set_external_int32_ptr(data,5);
         call obj%set_external_int32_ptr(data,5_8)
-        call assert_true( obj%is_data_external() .eqv. .true. )
+        call assert_true( logical(obj%is_data_external() .eqv. .true. ))
         ! change the first element in the array
         ! so we can check the external semantics
         data(1) = 42
@@ -432,7 +432,7 @@ contains
         ! Node &n2 = n.append();
         n2 = obj%append()
         
-        call assert_true( n2%is_root() .eqv. .false. )
+        call assert_true( logical(n2%is_root() .eqv. .false. ))
         ! index_t nchld = n.number_of_children();
         nchld = obj%number_of_children()
         
@@ -556,7 +556,7 @@ contains
         
         call n1%set_path("a",3.1415d+0)
         call n2%set_path("path/to",n1)
-        call assert_true( n2%has_path("path/to/a") .eqv. .true.)
+        call assert_true( logical(n2%has_path("path/to/a") .eqv. .true.))
 
 
         call n2%set_path_external("another/path/to",n1)
@@ -595,19 +595,19 @@ contains
         call other%set_path("a",42)
 
         ! no diff
-        call assert_true( obj%diff(other,info,1d-12) .eqv. .false.)
+        call assert_true( logical(obj%diff(other,info,1d-12) .eqv. .false.))
         call other%set_path("b",3.1415d+0)
 
         ! there is a  diff
-        call assert_true( obj%diff(other,info,1d-12) .eqv. .true.)
+        call assert_true( logical(obj%diff(other,info,1d-12) .eqv. .true.))
 
         ! no compat diff
-        call assert_true( obj%diff_compatible(other,info,1d-12) .eqv. .false.)
+        call assert_true( logical(obj%diff_compatible(other,info,1d-12) .eqv. .false.))
 
         call obj%set_path("b",3.1415d+0)
 
         ! no diff
-        call assert_true( obj%diff(other,info,1d-12) .eqv. .false.)  
+        call assert_true( logical(obj%diff(other,info,1d-12) .eqv. .false.))
 
         call conduit_node_obj_destroy(obj)
         call conduit_node_obj_destroy(other)
@@ -637,7 +637,7 @@ contains
         ! n2.update(n1)
         call n2%update(n1)
 
-        call assert_true( n2%has_path("a") .eqv. .true.)
+        call assert_true( logical(n2%has_path("a") .eqv. .true.))
 
         call n1%set_path("a",42.0d+0)
         call n1%set_path("b",52.0d+0)
@@ -649,8 +649,8 @@ contains
 
         call assert_equals(42.0d+0, val)
 
-        call assert_true( n2%has_path("a") .eqv. .true.)
-        call assert_true( n2%has_path("b") .eqv. .false.)
+        call assert_true( logical(n2%has_path("a") .eqv. .true.))
+        call assert_true( logical(n2%has_path("b") .eqv. .false.))
 
 
         ! n2.update_external(n1)
@@ -662,8 +662,8 @@ contains
 
         call assert_equals(62.0d+0, val)
 
-        call assert_true( n2%has_path("a") .eqv. .true.)
-        call assert_true( n2%has_path("a") .eqv. .true.)
+        call assert_true( logical(n2%has_path("a") .eqv. .true.))
+        call assert_true( logical(n2%has_path("a") .eqv. .true.))
 
         val = n2%fetch_path_as_float64("b");
 
@@ -696,11 +696,11 @@ contains
         
         call assert_equals( bytes_res, 16)
 
-        call assert_true( n1%is_contiguous() .eqv. .false.)
+        call assert_true( logical(n1%is_contiguous() .eqv. .false.))
         
         call n1%compact_to(n2);
 
-        call assert_true( n2%is_contiguous() .eqv. .true.)
+        call assert_true( logical(n2%is_contiguous() .eqv. .true.))
 
         bytes_res = n2%total_bytes_compact();
         call assert_equals( bytes_res, 16)
@@ -729,21 +729,21 @@ contains
         n = conduit_node_obj_create()
 
         call n%set_path("a",62d+0)
-        call assert_true( n%has_path("a") .eqv. .true.)
+        call assert_true( logical(n%has_path("a") .eqv. .true.))
         call n%remove_path("a")
-        call assert_true( n%has_path("a") .eqv. .false.)
+        call assert_true( logical(n%has_path("a") .eqv. .false.))
 
         call n%set_path("a",62d+0)
-        call assert_true( n%has_path("a") .eqv. .true.)
+        call assert_true( logical(n%has_path("a") .eqv. .true.))
         ! remove child using idx (still using zero-based idx)
         call n%remove_child(0_8)
-        call assert_true( n%has_path("a") .eqv. .false.)
+        call assert_true( logical(n%has_path("a") .eqv. .false.))
 
 
         call n%set_path("a",62d+0)
         call n%rename_child("a","b")
-        call assert_true( n%has_path("a") .eqv. .false.)
-        call assert_true( n%has_path("b") .eqv. .true.)
+        call assert_true( logical(n%has_path("a") .eqv. .false.))
+        call assert_true( logical(n%has_path("b") .eqv. .true.))
 
         val = n%fetch_path_as_float64("b");
 
@@ -831,11 +831,11 @@ contains
         val = n_2%as_float64();
         call assert_equals(42.0d+0, val)
 
-        call assert_true( n%has_path("normal/path") .eqv. .true.)
-        call assert_true( n%has_child("normal/path") .eqv. .false.)
+        call assert_true( logical(n%has_path("normal/path") .eqv. .true.))
+        call assert_true( logical(n%has_child("normal/path") .eqv. .false.))
 
-        call assert_true( n%has_path("child_with_/_inside") .eqv. .false.)
-        call assert_true( n%has_child("child_with_/_inside") .eqv. .true.)
+        call assert_true( logical(n%has_path("child_with_/_inside") .eqv. .false.))
+        call assert_true( logical(n%has_child("child_with_/_inside") .eqv. .true.))
 
         nchld = n%number_of_children()
         call assert_equals( nchld, 2 )
@@ -848,7 +848,7 @@ contains
 
         nchld = n%number_of_children()
         call assert_equals( nchld, 1 )
-        call assert_true( n%has_path("normal/path") .eqv. .true.)
+        call assert_true( logical(n%has_path("normal/path") .eqv. .true.))
 
         call conduit_node_obj_destroy(n)
 
