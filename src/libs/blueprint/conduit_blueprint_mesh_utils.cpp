@@ -2071,13 +2071,13 @@ topology::unstructured::points(const Node &n,
     std::set<index_t> pidxs;
     if(!topo_shape.is_poly())
     {
-        const Node &poffs_node = ntemp["elements/offsets"];
-        const index_t eoff = poffs_node[ei].value();
+        index_t_accessor poff_vals = ntemp["elements/offsets"].value();
+        const index_t eoff = poff_vals[ei];
 
-        const Node &pidxs_node = ntemp["elements/connectivity"];
+        index_t_accessor pidxs_vals = ntemp["elements/connectivity"].value();
         for(index_t pi = 0; pi < topo_shape.indices; pi++)
         {
-            pidxs.insert(pidxs_node[eoff + pi].value());
+            pidxs.insert(pidxs_vals[eoff + pi]);
         }
     }
     else // if(topo_shape.is_poly())
@@ -2093,28 +2093,28 @@ topology::unstructured::points(const Node &n,
         {
             enode.set_external(ntemp["subelements"]);
 
-            const Node &eidxs_node = ntemp["elements/connectivity"];
+            index_t_accessor eidxs_vals = ntemp["elements/connectivity"].value();
             o2mrelation::O2MIterator eiter(ntemp["elements"]);
             eiter.to(ei, O2MIndex::ONE);
             eiter.to_front(O2MIndex::MANY);
             while(eiter.has_next(O2MIndex::MANY))
             {
                 eiter.next(O2MIndex::MANY);
-                const index_t tmp = eidxs_node[eiter.index(O2MIndex::DATA)].value();
+                const index_t tmp = eidxs_vals[eiter.index(O2MIndex::DATA)];
                 eidxs.insert(tmp);
             }
         }
 
         for(const index_t eidx : eidxs)
         {
-            const Node &pidxs_node = enode["connectivity"];
+            index_t_accessor pidxs_vals = enode["connectivity"].value();
             o2mrelation::O2MIterator piter(enode);
             piter.to(eidx, O2MIndex::ONE);
             piter.to_front(O2MIndex::MANY);
             while(piter.has_next(O2MIndex::MANY))
             {
                 piter.next(O2MIndex::MANY);
-                const index_t tmp = pidxs_node[piter.index(O2MIndex::DATA)].value();
+                const index_t tmp = pidxs_vals[piter.index(O2MIndex::DATA)];
                 pidxs.insert(tmp);
             }
         }
