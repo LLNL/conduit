@@ -8,13 +8,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 #### General
-- Added subpath support for `relay::io::{save,load,save_merged,load_merged}` for basic protocols (json, yaml, etc).
+- Added variants of `Node::to_json`, `Node::to_yaml`, and `Node::to_string` that take formatting options via a Conduit Node.
+- Added C API methods `conduit_node_to_json`, `conduit_node_to_yaml`, `conduit_node_to_string`, and `conduit_node_to_summary_string`.
 
 #### Blueprint
 - Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details. 
 
 #### Relay
 - Added any source, any tag variants of mpi receive functions: `recv`, `recv_using_schema`, and `irecv`.
+- Added subpath support for `relay::io::{save,load,save_merged,load_merged}` for basic protocols (json, yaml, etc).
 
 ### Changed
 
@@ -27,7 +29,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Fixed bug with `to_json()` where leaf arrays of size 0 lead to malformed json.
 - Fixed parsing issue with `conduit_json` protocol for leaf arrays of size 0.
-- Fixed roundtrip parsing of numeric arrays with nan, infs, etc for JSON cases (`Node::to_json()` followed by Node::parse(...,"json")`)
+- Fixed roundtrip parsing of numeric arrays with nan, infs, etc for JSON cases (`Node::to_json()` followed by `Node::parse(...,"json")`)
 
 #### Blueprint
 - Fixed a bug with `blueprint::mesh::index::generate`, where a uniform grid with no origin would lead to invalid coordinate system name `logical` in the resulting index. This case now defaults to `cartesian`.

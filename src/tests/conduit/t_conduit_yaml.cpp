@@ -654,3 +654,24 @@ TEST(conduit_yaml, nan_and_inf_strings_parse)
     yaml_rtrip = n.to_json();
     EXPECT_EQ(yaml_src,yaml_rtrip);
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, to_yaml_opts)
+{
+    Node n;
+    n["a"] = 1;
+
+    Node opts;
+    opts["depth"] = 1;
+    opts["pad"] = " PAD ";
+    opts["eoe"] = " EOE\n ";
+
+    std::string res = n.to_yaml(opts);
+    std::cout << res << std::endl;
+    std::string texpect = R"ST( EOE
+  PAD  PAD a: 1 EOE
+ )ST";
+
+    EXPECT_EQ(res,texpect);
+}

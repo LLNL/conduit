@@ -12473,6 +12473,82 @@ Node::to_string_stream(const std::string &stream_path,
     ofs.close();
 }
 
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_string(const conduit::Node &opts)const
+{
+    std::ostringstream oss;
+    to_string_stream(oss,opts);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_string_stream(std::ostream &os,
+                       const conduit::Node &opts) const
+{
+    // unpack options and enforce defaults
+    std::string protocol="yaml";
+    index_t indent = 2;
+    index_t depth = 0;
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    if(opts.has_child("protocol") &&
+       opts["protocol"].dtype().is_string())
+    {
+       protocol = opts["protocol"].as_string();
+    }
+
+    if(opts.has_child("indent") &&
+       opts["indent"].dtype().is_number())
+    {
+       indent = (index_t)opts["indent"].to_index_t();
+    }
+
+    if(opts.has_child("depth") &&
+       opts["depth"].dtype().is_number())
+    {
+       depth = (index_t)opts["depth"].to_index_t();
+    }
+
+    if(opts.has_child("pad") &&
+       opts["pad"].dtype().is_string())
+    {
+       pad = opts["pad"].as_string();
+    }
+
+    if(opts.has_child("eoe") &&
+       opts["eoe"].dtype().is_string())
+    {
+       eoe = opts["eoe"].as_string();
+    }
+
+    to_string_stream(os,
+                     protocol,
+                     indent,
+                     depth,
+                     pad,
+                     eoe);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_string_stream(const std::string &stream_path,
+                       const conduit::Node &opts) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_string_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_string_stream(ofs,opts);
+    ofs.close();
+}
+
 //-----------------------------------------------------------------------------
 std::string
 Node::to_string_default() const
@@ -12569,9 +12645,6 @@ Node::to_summary_string_stream(std::ostream &os,
                              eoe);
 }
 
-
-//-----------------------------------------------------------------------------
-//-- (private interface)
 //-----------------------------------------------------------------------------
 void
 Node::to_summary_string_stream(const std::string &stream_path,
@@ -12835,28 +12908,9 @@ Node::to_json(const std::string &protocol,
               const std::string &pad,
               const std::string &eoe) const
 {
-    if(protocol == "json")
-    {
-        return to_pure_json(indent,depth,pad,eoe);
-    }
-    else if(protocol == "conduit_json")
-    {
-        return to_detailed_json(indent,depth,pad,eoe);
-    }
-    else if(protocol == "conduit_base64_json")
-    {
-        return to_base64_json(indent,depth,pad,eoe);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
-                      << "\nSupported protocols:\n"
-                      << " json\n"
-                      << " conduit_json\n"
-                      << " conduit_base64_json\n");
-    }
-
-    return "{}";
+    std::ostringstream oss;
+    to_json_stream(oss,protocol,indent,depth,pad,eoe);
+    return oss.str();
 }
 
 //-----------------------------------------------------------------------------
@@ -12868,26 +12922,21 @@ Node::to_json_stream(const std::string &stream_path,
                      const std::string &pad,
                      const std::string &eoe) const
 {
-    if(protocol == "json")
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
     {
-        return to_pure_json(stream_path,indent,depth,pad,eoe);
+        CONDUIT_ERROR("<Node::to_json_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
     }
-    else if(protocol == "conduit_json")
-    {
-        return to_detailed_json(stream_path,indent,depth,pad,eoe);
-    }
-    else if(protocol == "conduit_base64_json")
-    {
-        return to_base64_json(stream_path,indent,depth,pad,eoe);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
-                      << "\nSupported protocols:\n"
-                      << " json\n"
-                      << " conduit_json\n"
-                      << " conduit_base64_json\n");
-    }
+
+    to_json_stream(ofs,
+                   protocol,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -12913,12 +12962,87 @@ Node::to_json_stream(std::ostream &os,
     }
     else
     {
-        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
+        CONDUIT_ERROR("Unknown Node::to_json protocol: " << protocol
                       << "\nSupported protocols:\n"
                       << " json\n"
                       << " conduit_json\n"
                       << " conduit_base64_json\n");
     }
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_json(const conduit::Node &opts)const
+{
+    std::ostringstream oss;
+    to_json_stream(oss,opts);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_json_stream(std::ostream &os,
+                     const conduit::Node &opts) const
+{
+    // unpack options and enforce defaults
+    std::string protocol="json";
+    index_t indent = 2;
+    index_t depth = 0;
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    if(opts.has_child("protocol") &&
+       opts["protocol"].dtype().is_string())
+    {
+       protocol = opts["protocol"].as_string();
+    }
+
+    if(opts.has_child("indent") &&
+       opts["indent"].dtype().is_number())
+    {
+       indent = opts["indent"].to_index_t();
+    }
+
+    if(opts.has_child("depth") &&
+       opts["depth"].dtype().is_number())
+    {
+       depth = opts["depth"].to_index_t();
+    }
+
+    if(opts.has_child("pad") &&
+       opts["pad"].dtype().is_string())
+    {
+       pad = opts["pad"].as_string();
+    }
+
+    if(opts.has_child("eoe") &&
+       opts["eoe"].dtype().is_string())
+    {
+       eoe = opts["eoe"].as_string();
+    }
+
+    to_json_stream(os,
+                   protocol,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_json_stream(const std::string &stream_path,
+                     const conduit::Node &opts) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_json_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_json_stream(ofs,opts);
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -12940,18 +13064,9 @@ Node::to_yaml(const std::string &protocol,
               const std::string &pad,
               const std::string &eoe) const
 {
-    if(protocol == "yaml")
-    {
-        return to_pure_yaml(indent,depth,pad,eoe);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
-                      << "\nSupported protocols:\n"
-                      << " yaml\n");
-    }
-
-    return "{}";
+    std::ostringstream oss;
+    to_yaml_stream(oss,protocol,indent,depth,pad,eoe);
+    return oss.str();
 }
 
 //-----------------------------------------------------------------------------
@@ -12963,16 +13078,21 @@ Node::to_yaml_stream(const std::string &stream_path,
                      const std::string &pad,
                      const std::string &eoe) const
 {
-    if(protocol == "yaml")
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
     {
-        return to_pure_yaml(stream_path,indent,depth,pad,eoe);
+        CONDUIT_ERROR("<Node::to_yaml_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
     }
-    else
-    {
-        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
-                      << "\nSupported protocols:\n"
-                      << " yaml\n");
-    }
+
+    to_yaml_stream(ofs,
+                   protocol,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -12990,10 +13110,85 @@ Node::to_yaml_stream(std::ostream &os,
     }
     else
     {
-        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
+        CONDUIT_ERROR("Unknown Node::to_yaml protocol: " << protocol
                       << "\nSupported protocols:\n"
                       << " yaml\n");
     }
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_yaml(const conduit::Node &opts)const
+{
+    std::ostringstream oss;
+    to_yaml_stream(oss,opts);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_yaml_stream(std::ostream &os,
+                     const conduit::Node &opts) const
+{
+    // unpack options and enforce defaults
+    std::string protocol="yaml";
+    index_t indent = 2;
+    index_t depth = 0;
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    if(opts.has_child("protocol") &&
+       opts["protocol"].dtype().is_string())
+    {
+       protocol = opts["protocol"].as_string();
+    }
+
+    if(opts.has_child("indent") &&
+       opts["indent"].dtype().is_number())
+    {
+       indent = (index_t)opts["indent"].to_index_t();
+    }
+
+    if(opts.has_child("depth") &&
+       opts["depth"].dtype().is_number())
+    {
+       depth = (index_t)opts["depth"].to_index_t();
+    }
+
+    if(opts.has_child("pad") &&
+       opts["pad"].dtype().is_string())
+    {
+       pad = opts["pad"].as_string();
+    }
+
+    if(opts.has_child("eoe") &&
+       opts["eoe"].dtype().is_string())
+    {
+       eoe = opts["eoe"].as_string();
+    }
+
+    to_yaml_stream(os,
+                   protocol,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_yaml_stream(const std::string &stream_path,
+                     const conduit::Node &opts) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_yaml_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_yaml_stream(ofs,opts);
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
