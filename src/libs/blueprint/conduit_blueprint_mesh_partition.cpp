@@ -5692,9 +5692,9 @@ point_merge::append_data(const std::vector<Node> &coordsets,
         const auto append = [&](float64 *p, index_t)
         {
             old_to_new_ids[i].push_back(newid);
-            for(auto i = 0; i < dimension; i++)
+            for(auto j = 0; j < dimension; j++)
             {
-                new_coords.push_back(p[i]);
+                new_coords.push_back(p[j]);
             }
             newid++;
         };
@@ -6499,17 +6499,17 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
                 const index_t offset = out_conn.size();
                 out_offsets.push_back(offset);
                 out_sizes.push_back(sz);
-                for(index_t i = 0; i < sz; i++)
+                for(index_t ii = 0; ii < sz; ii++)
                 {
                     const index_t subidx = out_subsizes.size();
-                    const index_t subsz = e.subelement_ids[i].size();
+                    const index_t subsz = e.subelement_ids[ii].size();
                     const index_t suboffset = out_subconn.size();
                     out_conn.push_back(subidx);
                     out_suboffsets.push_back(suboffset);
                     out_subsizes.push_back(subsz);
                     for(index_t j = 0; j < subsz; j++)
                     {
-                        out_subconn.push_back(pmap_da[e.subelement_ids[i][j]]);
+                        out_subconn.push_back(pmap_da[e.subelement_ids[ii][j]]);
                     }
                 }
             }
@@ -6707,11 +6707,11 @@ public:
                     n_new_topo["coordset"] = n_cset.name();
 
                     const index_t dim = utils::topology::dims(n_topo);
-                    std::array<index_t, MAXDIM> logical_dims;
-                    utils::topology::logical_dims(n_topo, logical_dims.data(), dim);
+                    std::array<index_t, MAXDIM> logical_dims_vals;
+                    utils::topology::logical_dims(n_topo, logical_dims_vals.data(), dim);
                     for(index_t ldi = 0; ldi < dim; ldi++)
                     {
-                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims[ldi];
+                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims_vals[ldi];
                     }
 
                     if(n_topo.has_path("elements/origin"))
@@ -9640,19 +9640,19 @@ Partitioner::combine(int domain,
             auto itr = fields.children();
             while(itr.has_next())
             {
-                const Node &n = itr.next();
-                auto itr = std::find_if(field_groups.begin(), field_groups.end(), [&](const field_group_t &g) {
-                    return g.first == n.name();
+                const Node &n_child = itr.next();
+                auto field_groups_itr_pos = std::find_if(field_groups.begin(), field_groups.end(), [&](const field_group_t &g) {
+                    return g.first == n_child.name();
                 });
-                if(itr != field_groups.end())
+                if(field_groups_itr_pos != field_groups.end())
                 {
-                    itr->second.push_back(&n);
+                    field_groups_itr_pos->second.push_back(&n_child);
                 }
                 else
                 {
                     field_groups.emplace_back();
-                    field_groups.back().first = n.name();
-                    field_groups.back().second.push_back(&n);
+                    field_groups.back().first = n_child.name();
+                    field_groups.back().second.push_back(&n_child);
                 }
             }
         }
