@@ -216,7 +216,7 @@ public:
         }
         else
         {
-            int32_array v_d2f = m_d2f_map["global_domain_to_file"].value();
+            index_t_accessor v_d2f = m_d2f_map["global_domain_to_file"].value();
             file_id = v_d2f[tree_id];
         }
 
@@ -1107,35 +1107,35 @@ void write_mesh(const Node &mesh,
 
         // books we keep:
         Node books;
-        books["local_domain_to_file"].set(DataType::int32(local_num_domains));
-        books["local_domain_status"].set(DataType::int32(local_num_domains));
+        books["local_domain_to_file"].set(DataType::index_t(local_num_domains));
+        books["local_domain_status"].set(DataType::index_t(local_num_domains));
 
         // batons
-        books["local_file_batons"].set(DataType::int32(num_files));
-        books["global_file_batons"].set(DataType::int32(num_files));
+        books["local_file_batons"].set(DataType::index_t(num_files));
+        books["global_file_batons"].set(DataType::index_t(num_files));
 
         // used to track first touch
-        books["local_file_created"].set(DataType::int32(num_files));
-        books["global_file_created"].set(DataType::int32(num_files));
+        books["local_file_created"].set(DataType::index_t(num_files));
+        books["global_file_created"].set(DataType::index_t(num_files));
 
         // size local # of domains
-        int32_array local_domain_to_file = books["local_domain_to_file"].value();
-        int32_array local_domain_status  = books["local_domain_status"].value();
+        index_t_array local_domain_to_file = books["local_domain_to_file"].value();
+        index_t_array local_domain_status  = books["local_domain_status"].value();
 
         // size num total files
         /// batons
-        int32_array local_file_batons    = books["local_file_batons"].value();
-        int32_array global_file_batons   = books["global_file_batons"].value();
+        index_t_array local_file_batons    = books["local_file_batons"].value();
+        index_t_array global_file_batons   = books["global_file_batons"].value();
         /// file created flags
-        int32_array local_file_created    = books["local_file_created"].value();
-        int32_array global_file_created   = books["global_file_created"].value();
+        index_t_array local_file_created    = books["local_file_created"].value();
+        index_t_array global_file_created   = books["global_file_created"].value();
 
 
         Node d2f_map;
         detail::gen_domain_to_file_map(global_num_domains,
                                        num_files,
                                        books);
-        int32_array global_d2f = books["global_domain_to_file"].value();
+        index_t_accessor global_d2f = books["global_domain_to_file"].value();
 
         // init our local map and status array
         for(int d = 0; d < local_num_domains; ++d)
