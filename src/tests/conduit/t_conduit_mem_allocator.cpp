@@ -77,7 +77,7 @@ TEST(conduit_memory_allocator, test_custom_allocator)
     conduit::utils::set_memcpy_handler(TestAllocator::banana_copy);
     conduit::utils::set_memset_handler(TestAllocator::banana_memset);
 
-    int allocator_id
+    index_t allocator_id
      = conduit::utils::register_allocator(TestAllocator::banana_alloc,
                                           TestAllocator::free_bananas);
 
@@ -184,7 +184,7 @@ TEST(conduit_memory_allocator, test_strange)
     conduit::utils::set_memcpy_handler(StrangeAllocator::strange_copy);
     conduit::utils::set_memset_handler(StrangeAllocator::strange_memset);
 
-    int allocator_id
+    index_t allocator_id
      = conduit::utils::register_allocator(StrangeAllocator::strange_alloc,
                                           StrangeAllocator::strange_free);
 

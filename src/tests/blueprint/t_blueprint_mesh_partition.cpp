@@ -1382,7 +1382,7 @@ TEST(conduit_blueprint_mesh_combine, uniform)
 
         // Mesh 0
         conduit::Node mesh0;
-        for(conduit::index_t i = 0; i < domains.size(); i++)
+        for(conduit::index_t i = 0; i < static_cast<conduit::index_t>(domains.size()); i++)
         {
             domains[i]["state/domain_id"] = i;
             mesh0[(i < 10) 
@@ -1412,7 +1412,7 @@ TEST(conduit_blueprint_mesh_combine, uniform)
 
         // Mesh1 missing a section
         conduit::Node mesh1;
-        for(conduit::index_t i = 0; i < domains.size(); i++)
+        for(conduit::index_t i = 0; i < static_cast<index_t>(domains.size()); i++)
         {
             if(i == 6)
             {

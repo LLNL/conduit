@@ -142,7 +142,7 @@ identify_file_type(const std::string &path,
         if(ifs.is_open())
         {
             ifs.read((char *)buff,256);
-            int nbytes_read = ifs.gcount();
+            int nbytes_read = static_cast<int>(ifs.gcount());
             ifs.close();
 
             std::string test_str(buff,nbytes_read);

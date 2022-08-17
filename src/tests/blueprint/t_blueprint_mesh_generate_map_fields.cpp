@@ -618,7 +618,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_sma
 
     for (int i = 0; i < num_orig_points; i ++)
     {
-        values[i] = num_orig_points - 1 - i;
+        values[i] = static_cast<float32>(num_orig_points - 1 - i);
     }
 
     Node s2dmap, d2smap;
@@ -653,7 +653,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_sma
     {
         if (i < 8)
         {
-            EXPECT_NEAR(level_values[i], num_orig_points - 1 - i, 0.0001f);
+            EXPECT_NEAR(level_values[i], static_cast<double>(num_orig_points - 1 - i), 0.0001f);
         }
         else
         {
@@ -702,7 +702,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_med
 
     for (int i = 0; i < num_orig_points; i ++)
     {
-        values[i] = num_orig_points - 1 - i;
+        values[i] = static_cast<float32>(num_orig_points - 1 - i);
     }
 
     Node s2dmap, d2smap;
@@ -735,7 +735,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_vertex_assoc_med
 
     for (int i = 0; i < num_orig_points; i ++)
     {
-        EXPECT_NEAR(level_values[i], num_orig_points - 1 - i, 0.0001f);
+        EXPECT_NEAR(level_values[i], static_cast<double>(num_orig_points - 1 - i), 0.0001f);
     }
 
     EXPECT_NEAR(level_values[num_orig_points], 27.5, 0.0001f);
@@ -776,7 +776,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D_vertex_assoc)
 
     for (int i = 0; i < num_orig_points; i ++)
     {
-        values[i] = num_orig_points - 1 - i;
+        values[i] = static_cast<float32>(num_orig_points - 1 - i);
     }
 
     Node s2dmap, d2smap;
@@ -809,7 +809,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_3D_vertex_assoc)
 
     for (int i = 0; i < num_orig_points; i ++)
     {
-        EXPECT_NEAR(chain_values[i], num_orig_points - 1 - i, 0.0001);
+        EXPECT_NEAR(chain_values[i], static_cast<double>(num_orig_points - 1 - i), 0.0001);
     }
 
     EXPECT_NEAR(chain_values[num_orig_points], 17.5, 0.0001);

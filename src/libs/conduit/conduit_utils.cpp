@@ -783,7 +783,7 @@ list_directory_contents(const std::string &path,
     {
         // Add the drives to the list.
         char buf[200];
-        DWORD bufLen = 200;
+        // DWORD bufLen = 200; unused
         DWORD slen = GetLogicalDriveStrings(200, buf);
 
         if(slen > 0)

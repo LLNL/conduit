@@ -87,23 +87,23 @@ namespace detail
 {
 
 //-----------------------------------------------------------------------------
-void gen_domain_to_file_map(int num_domains,
-                            int num_files,
+void gen_domain_to_file_map(index_t num_domains,
+                            index_t num_files,
                             Node &out)
 {
-    int num_domains_per_file = num_domains / num_files;
-    int left_overs = num_domains % num_files;
+    index_t num_domains_per_file = num_domains / num_files;
+    index_t left_overs = num_domains % num_files;
 
-    out["global_domains_per_file"].set(DataType::int32(num_files));
-    out["global_domain_offsets"].set(DataType::int32(num_files));
-    out["global_domain_to_file"].set(DataType::int32(num_domains));
+    out["global_domains_per_file"].set(DataType::index_t(num_files));
+    out["global_domain_offsets"].set(DataType::index_t(num_files));
+    out["global_domain_to_file"].set(DataType::index_t(num_domains));
 
-    int32_array v_domains_per_file = out["global_domains_per_file"].value();
-    int32_array v_domains_offsets  = out["global_domain_offsets"].value();
-    int32_array v_domain_to_file   = out["global_domain_to_file"].value();
+    index_t_array v_domains_per_file = out["global_domains_per_file"].value();
+    index_t_array v_domains_offsets  = out["global_domain_offsets"].value();
+    index_t_array v_domain_to_file   = out["global_domain_to_file"].value();
 
     // setup domains per file
-    for(int f=0; f < num_files; f++)
+    for(index_t f=0; f < num_files; f++)
     {
         v_domains_per_file[f] = num_domains_per_file;
         if( f < left_overs)
@@ -111,7 +111,7 @@ void gen_domain_to_file_map(int num_domains,
     }
 
     // prefix sum to calc offsets
-    for(int f=0; f < num_files; f++)
+    for(index_t f=0; f < num_files; f++)
     {
         v_domains_offsets[f] = v_domains_per_file[f];
         if(f > 0)
@@ -119,8 +119,8 @@ void gen_domain_to_file_map(int num_domains,
     }
 
     // do assignment, create simple map
-    int f_idx = 0;
-    for(int d=0; d < num_domains; d++)
+    index_t f_idx = 0;
+    for(index_t d=0; d < num_domains; d++)
     {
         if(d >= v_domains_offsets[f_idx])
             f_idx++;
@@ -1019,7 +1019,6 @@ void write_mesh(const Node &mesh,
                 {
                     // if truncate, first rank to touch the file needs
                     // to open at
-                    Node open_opts;
                     if( !hnd.is_open()
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
