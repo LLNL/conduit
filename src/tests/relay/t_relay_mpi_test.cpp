@@ -430,8 +430,38 @@ TEST(conduit_mpi_test, send_recv_using_schema)
 
     EXPECT_EQ(val_a, 1);
     EXPECT_EQ(val_b, 2);
+
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, send_recv_using_schema_any_source_any_tag)
+{
+    Node n;
+    int rank = mpi::rank(MPI_COMM_WORLD);
+
+    if( rank == 0 )
+    {
+        n.set(DataType::c_double(3));
+        double_array vals = n.value();
+        vals[0] = rank + 1;
+        vals[1] = 3.4124 * rank;
+        vals[2] = 10.7 - rank;
+
+        mpi::send_using_schema(n,1,0,MPI_COMM_WORLD);
+    }
+    else if( rank == 1 )
+    {
+        // any source any tag
+        mpi::recv_using_schema(n,MPI_COMM_WORLD);
+    }
+
+    double_array vals = n.value();
+
+    EXPECT_EQ(vals[0], 1);
+    EXPECT_EQ(vals[1], 0);
+    EXPECT_EQ(vals[2], 10.7);
+
+}
 
 
 //-----------------------------------------------------------------------------
@@ -461,8 +491,38 @@ TEST(conduit_mpi_test, send_recv_without_using_schema)
     EXPECT_EQ(vals[0], 1);
     EXPECT_EQ(vals[1], 0);
     EXPECT_EQ(vals[2], 10.7);
+
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, send_recv_without_using_schema_any_source_any_tag)
+{
+    Node n;
+    int rank = mpi::rank(MPI_COMM_WORLD);
+
+    n.set(DataType::c_double(3));
+
+    if( rank == 0 )
+    {
+        double_array vals = n.value();
+        vals[0] = rank + 1;
+        vals[1] = 3.4124 * rank;
+        vals[2] = 10.7 - rank;
+
+        mpi::send(n,1,0,MPI_COMM_WORLD);
+    }
+    else if( rank == 1 )
+    {
+        // any source any tag
+        mpi::recv(n,MPI_COMM_WORLD);
+    }
+
+    double_array vals = n.value();
+
+    EXPECT_EQ(vals[0], 1);
+    EXPECT_EQ(vals[1], 0);
+    EXPECT_EQ(vals[2], 10.7);
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, isend_irecv_wait_old_api)
@@ -537,6 +597,45 @@ TEST(conduit_mpi_test, isend_irecv_wait)
     EXPECT_EQ(n1.as_float64_ptr()[2], 9.7);
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, isend_irecv_wait_any_source_any_tag)
+{
+    Node n1;
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    std::vector<double> doubles;
+
+
+    doubles.push_back(rank+1);
+    doubles.push_back(3.4124*rank);
+    doubles.push_back(10.7 - rank);
+
+    n1.set_external(doubles);
+
+
+    mpi::Request request;
+
+    MPI_Status status;
+    if (rank == 0)
+    {
+        // any source any tag
+        mpi::irecv(n1, MPI_COMM_WORLD, &request);
+    }
+    else if (rank == 1)
+    {
+        mpi::isend(n1, 0, 0, MPI_COMM_WORLD, &request);
+    }
+
+    mpi::wait(&request, &status);
+
+    EXPECT_EQ(n1.as_float64_ptr()[0], 2);
+    EXPECT_EQ(n1.as_float64_ptr()[1], 3.4124);
+    EXPECT_EQ(n1.as_float64_ptr()[2], 9.7);
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_mpi_test, waitall_old_api)

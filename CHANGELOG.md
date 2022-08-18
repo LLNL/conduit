@@ -16,9 +16,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details. 
 
-####  Relay
+#### Relay
+- Added any source, any tag variants of mpi receive functions: `recv`, `recv_using_schema`, and `irecv`.
 - Added subpath support for `relay::io::{save,load,save_merged,load_merged}` for basic protocols (json, yaml, etc).
-
 
 ### Changed
 
