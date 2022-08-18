@@ -55,6 +55,17 @@ public:
         DataAccessor(const void *data, const DataType &dtype);
         ~DataAccessor();
 
+    ///
+    /// Summary Stats Helpers
+    ///
+    T               min()  const;
+    T               max()  const;
+    T               sum()  const;
+    float64         mean() const;
+    
+    /// counts number of occurrences of given value
+    index_t         count(T value) const;
+
 //-----------------------------------------------------------------------------
 // Data and Info Access
 //-----------------------------------------------------------------------------

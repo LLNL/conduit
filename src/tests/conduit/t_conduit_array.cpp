@@ -737,13 +737,13 @@ TEST(conduit_array, compact_to_bytes)
 //-----------------------------------------------------------------------------
 TEST(conduit_array, summary_stats)
 {
-    std::vector<int64> v_int64(3,-64);
-    std::vector<uint64> v_uint64(3,64);
+    std::vector<int64>    v_int64(3,-64);
+    std::vector<uint64>   v_uint64(3,64);
     std::vector<float64>  v_float64(3,64.0);
 
     int64_array   va_int64(&v_int64[0],DataType::int64(3));
     uint64_array  va_uint64(&v_uint64[0],DataType::uint64(3));
-    float64_array  va_float64(&v_float64[0],DataType::float64(3));
+    float64_array va_float64(&v_float64[0],DataType::float64(3));
 
     va_int64.set({-1,0,1});
     va_uint64.set({1,2,3});
@@ -753,16 +753,19 @@ TEST(conduit_array, summary_stats)
     EXPECT_EQ(va_int64.max(),1);
     EXPECT_EQ(va_int64.mean(),0);
     EXPECT_EQ(va_int64.sum(),0);
+    EXPECT_EQ(va_int64.count(-1),1);
 
     EXPECT_EQ(va_uint64.min(),1);
     EXPECT_EQ(va_uint64.max(),3);
     EXPECT_EQ(va_uint64.mean(),2);
     EXPECT_EQ(va_uint64.sum(),6);
+    EXPECT_EQ(va_uint64.count(2),1);
 
     EXPECT_EQ(va_float64.min(),-1.0);
     EXPECT_EQ(va_float64.max(),1.0);
     EXPECT_EQ(va_float64.mean(),0.0);
     EXPECT_EQ(va_float64.sum(),0.0);
+    EXPECT_EQ(va_float64.count(0.0),1);
 
 }
 
