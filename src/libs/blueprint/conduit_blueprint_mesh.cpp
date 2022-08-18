@@ -2190,26 +2190,40 @@ generate_derived_entities(conduit::Node &mesh,
         }
 
         // Collect Viable Entities for All Interfaces //
+        conduit::Node &domain_d2smap = *std::get<2>(doms_and_maps[di]);
+        index_t_accessor d2s_sizes = domain_d2smap["sizes"].value();
 
         // {(entity id in topology): <(neighbor domain ids that contain this entity)>}
         std::map<index_t, std::set<index_t>> entity_neighbor_map;
         for(index_t ei = 0; ei < dst_topo_len; ei++)
         {
+            // if we are dealing with anything but points
+            // we don't want to include duplicated entities 
+            // (that means they are internal to the domain)
             std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dst_topo, ei);
-            for(const auto &neighbor_pair : neighbor_pidxs_map)
+            if(d2s_sizes[ei] < 2 || entity_pidxs.size() == 1)
             {
-                const index_t &ni = neighbor_pair.first;
-                const std::set<index_t> &neighbor_pidxs = neighbor_pair.second;
-
-                bool entity_in_neighbor = true;
-                for(index_t pi = 0; pi < (index_t)entity_pidxs.size() && entity_in_neighbor; pi++)
+                for(const auto &neighbor_pair : neighbor_pidxs_map)
                 {
-                    entity_in_neighbor &= neighbor_pidxs.find(entity_pidxs[pi]) != neighbor_pidxs.end();
-                }
+                    const index_t &ni = neighbor_pair.first;
+                    const std::set<index_t> &neighbor_pidxs = neighbor_pair.second;
 
-                if(entity_in_neighbor)
-                {
-                    entity_neighbor_map[ei].insert(ni);
+                    // check if the new element has all of its points
+                    // contained inside of the adjset
+
+                    bool entity_in_neighbor = true;
+                    for(index_t pi = 0; pi < (index_t)entity_pidxs.size() && entity_in_neighbor; pi++)
+                    {
+                        entity_in_neighbor &= neighbor_pidxs.find(entity_pidxs[pi]) != neighbor_pidxs.end();
+                    }
+
+                    // if the element is fully in the adjset, and it is not an internal element
+                    // (count of d2s > 1), include it in the map
+
+                    if(entity_in_neighbor)
+                    {
+                        entity_neighbor_map[ei].insert(ni);
+                    }
                 }
             }
         }
@@ -2300,12 +2314,7 @@ generate_derived_entities(conduit::Node &mesh,
             }
         }
     }
-
-    // TODO(JRC): Waitall?
 }
-
-
-
 
 
 //-----------------------------------------------------------------------------
@@ -2399,19 +2408,23 @@ generate_decomposed_entities(conduit::Node &mesh,
         for(const std::string &group_name : src_adjset_groups.child_names())
         {
             const Node &src_group = src_adjset_groups[group_name];
-            const Node &src_neighbors = src_group["neighbors"];
-            const Node &src_values = src_group["values"];
+
+            index_t_accessor src_neighbors=src_group["neighbors"].value();
+            index_t_accessor src_values=src_group["values"].value();
 
             for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
             {
-                src_data.set_external(DataType(src_neighbors.dtype().id(), 1),
-                    (void*)src_neighbors.element_ptr(ni));
-                std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_data.to_index_t()];
+                // src_data.set_external(DataType(src_neighbors.dtype().id(), 1),
+                //     (void*)src_neighbors.element_ptr(ni));
+                // std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_data.to_index_t()];
+
+                std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_neighbors[ni]];
                 for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
                 {
-                    src_data.set_external(DataType(src_values.dtype().id(), 1),
-                        (void*)src_values.element_ptr(pi));
-                    neighbor_pidxs.insert(src_data.to_index_t());
+                    // src_data.set_external(DataType(src_values.dtype().id(), 1),
+                    //     (void*)src_values.element_ptr(pi));
+                    // neighbor_pidxs.insert(src_data.to_index_t());
+                    neighbor_pidxs.insert(src_values[pi]);
                 }
             }
         }
@@ -2531,8 +2544,6 @@ generate_decomposed_entities(conduit::Node &mesh,
             }
         }
     }
-
-    // TODO(JRC): Waitall?
 }
 
 
