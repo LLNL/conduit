@@ -115,7 +115,7 @@ protected:
     virtual void get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
                                        const DomainToChunkMap& chunks,
                                        const std::map<index_t, const Node*>& domain_map,
-                                       std::vector<Node>& adjset_chunk_maps);
+                                       std::vector<Node>& adjset_chunk_maps) override;
 
     virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields) override;
 

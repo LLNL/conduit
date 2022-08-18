@@ -1773,9 +1773,9 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
     else
     {
         // if above threshold only show threshold # of values
-        int half = threshold / 2;
-        int bottom = half;
-        int top = half;
+        index_t half = threshold / 2;
+        index_t bottom = half;
+        index_t top = half;
 
         //
         // if odd, show 1/2 +1 first
@@ -1790,7 +1790,7 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
             os << "[";
 
         bool done  = (nele == 0);
-        int idx = 0;
+        index_t idx = 0;
 
         while(!done)
         {

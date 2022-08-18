@@ -1382,7 +1382,7 @@ TEST(conduit_blueprint_mesh_combine, uniform)
 
         // Mesh 0
         conduit::Node mesh0;
-        for(conduit::index_t i = 0; i < domains.size(); i++)
+        for(conduit::index_t i = 0; i < static_cast<conduit::index_t>(domains.size()); i++)
         {
             domains[i]["state/domain_id"] = i;
             mesh0[(i < 10) 
@@ -1412,7 +1412,7 @@ TEST(conduit_blueprint_mesh_combine, uniform)
 
         // Mesh1 missing a section
         conduit::Node mesh1;
-        for(conduit::index_t i = 0; i < domains.size(); i++)
+        for(conduit::index_t i = 0; i < static_cast<conduit::index_t>(domains.size()); i++)
         {
             if(i == 6)
             {
@@ -2210,9 +2210,9 @@ TEST(conduit_blueprint_mesh_partition, matset_uni_by_material)
     conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, venn);
 
     // Add an element ids field
-    const int N = conduit::blueprint::mesh::topology::length(venn["topologies"][0]);
-    std::vector<int> ids;
-    for(int i = 0; i < N; i++)
+    const conduit::index_t N = conduit::blueprint::mesh::topology::length(venn["topologies"][0]);
+    std::vector<conduit::index_t> ids;
+    for(conduit::index_t i = 0; i < N; i++)
     {
         ids.push_back(i);
     }
@@ -2281,9 +2281,9 @@ TEST(conduit_blueprint_mesh_partition, matset_mixed_topology)
     conduit::blueprint::mesh::examples::venn("sparse_by_element", nx, ny, 0.33f, meshes[3]);
     // Make meshes[3] material dominant by adding element_ids
     {
-        const int N = conduit::blueprint::mesh::topology::length(meshes[3]["topologies"][0]);
-        std::vector<int> ids;
-        for(int i = 0; i < N; i++)
+        const conduit::index_t N = conduit::blueprint::mesh::topology::length(meshes[3]["topologies"][0]);
+        std::vector<conduit::index_t> ids;
+        for(conduit::index_t i = 0; i < N; i++)
         {
             ids.push_back(i);
         }

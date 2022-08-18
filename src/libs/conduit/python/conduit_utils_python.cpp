@@ -114,15 +114,15 @@ PyConduit_Utils_format(PyObject *, //self
         // args case
         if(py_args != NULL)
         {
-            Node &args = *PyConduit_Node_Get_Node_Ptr(py_args);
+            Node &args_node = *PyConduit_Node_Get_Node_Ptr(py_args);
             res = conduit::utils::format(std::string(pattern),
-                                         args);
+                                         args_node);
         }
         else // maps case
         {
-            Node &maps = *PyConduit_Node_Get_Node_Ptr(py_maps);
+            Node &maps_node = *PyConduit_Node_Get_Node_Ptr(py_maps);
             res = conduit::utils::format(std::string(pattern),
-                                         maps,
+                                         maps_node,
                                          (index_t)map_index);
         }
     }

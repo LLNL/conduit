@@ -12688,8 +12688,8 @@ Node::to_summary_string_stream(std::ostream &os,
     if(dtype().id() == DataType::OBJECT_ID)
     {
         os << eoe;
-        int nchildren = m_children.size();
-        int threshold = num_children_threshold;
+        index_t nchildren = static_cast<index_t>(m_children.size());
+        index_t threshold = num_children_threshold;
 
         // if we are neg or zero, show all children
         if(threshold <=0)
@@ -12698,10 +12698,10 @@ Node::to_summary_string_stream(std::ostream &os,
         }
 
         // if above threshold only show threshold # of values
-        int half = threshold / 2;
-        int bottom = half;
-        int top = half;
-        int num_skipped = m_children.size() - threshold;
+        index_t half = threshold / 2;
+        index_t bottom = half;
+        index_t top = half;
+        index_t num_skipped = static_cast<index_t>(m_children.size() - threshold);
 
         //
         // if odd, show 1/2 +1 first
@@ -12713,7 +12713,7 @@ Node::to_summary_string_stream(std::ostream &os,
         }
 
         bool done  = (nchildren == 0);
-        int idx = 0;
+        index_t idx = 0;
 
         while(!done)
         {
@@ -12759,8 +12759,8 @@ Node::to_summary_string_stream(std::ostream &os,
     else if(dtype().id() == DataType::LIST_ID)
     {
         os << eoe;
-        int nchildren = m_children.size();
-        int threshold = num_children_threshold;
+        index_t nchildren = static_cast<index_t>(m_children.size());
+        index_t threshold = num_children_threshold;
 
         // if we are neg or zero, show all children
         if(threshold <=0)
@@ -12769,10 +12769,10 @@ Node::to_summary_string_stream(std::ostream &os,
         }
 
         // if above threshold only show threshold # of values
-        int half = threshold / 2;
-        int bottom = half;
-        int top = half;
-        int num_skipped = m_children.size() - threshold;
+        index_t half = threshold / 2;
+        index_t bottom = half;
+        index_t top = half;
+        index_t num_skipped = static_cast<index_t>(m_children.size() - threshold);
 
         //
         // if odd, show 1/2 +1 first
@@ -12784,7 +12784,7 @@ Node::to_summary_string_stream(std::ostream &os,
         }
 
         bool done  = (nchildren == 0);
-        int idx = 0;
+        index_t idx = 0;
 
         while(!done)
         {

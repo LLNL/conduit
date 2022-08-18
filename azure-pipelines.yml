@@ -531,7 +531,7 @@ stages:
           make VERBOSE=1
           mpiexec -n 1 ./conduit_mpi_example
         displayName: 'Test vs Install (using-with-cmake-mpi)'
-        condition:  and(succeeded(),eq(variables['ENABLE_MPI'], 'ON'))
+        condition: and(succeeded(),eq(variables['ENABLE_MPI'], 'ON'))
 
       - script: |
           ################################

@@ -1819,7 +1819,7 @@ topology::reindex_coords(const Node& topo,
     index_t_accessor old_vids = out_topo[node_path].as_index_t_accessor();
     index_t_accessor old_to_gvids = old_gvids["values"].as_index_t_accessor();
     std::vector<index_t> new_vids(old_vids.number_of_elements());
-    for (index_t idx = 0; idx < new_vids.size(); idx++)
+    for (index_t idx = 0; idx < static_cast<index_t>(new_vids.size()); idx++)
     {
         index_t old_vid = old_vids[idx];
         index_t gvid = old_to_gvids[old_vid];

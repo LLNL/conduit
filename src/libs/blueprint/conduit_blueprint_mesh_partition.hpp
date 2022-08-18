@@ -720,7 +720,7 @@ protected:
      @note Reimplemented in parallel
      @note This method is not dependent on Partitioner::initialize()
      */
-    virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields) {}
+    virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields);
 
     /**
      @brief During the field back-map, communicates global vertex id information
@@ -736,7 +736,7 @@ protected:
      */
     virtual void synchronize_gvids(
         const std::vector<std::vector<index_t>>& remap_to_local_doms,
-        std::map<index_t, std::vector<index_t>>& orig_dom_gvids) {}
+        std::map<index_t, std::vector<index_t>>& orig_dom_gvids);
 
     int rank, size;
     unsigned int target;

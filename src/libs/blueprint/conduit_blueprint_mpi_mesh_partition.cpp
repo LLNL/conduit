@@ -111,7 +111,7 @@ ParallelPartitioner::get_global_domids(const conduit::Node& n_mesh)
         MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                       ndoms_all.data(), 1, MPI_INT64_T, comm);
         index_t offset = 0;
-        for (size_t irnk = 0; irnk < rank; irnk++)
+        for (index_t irnk = 0; irnk < rank; irnk++)
         {
             offset += ndoms_all[irnk];
         }

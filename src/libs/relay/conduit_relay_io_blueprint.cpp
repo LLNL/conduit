@@ -87,23 +87,23 @@ namespace detail
 {
 
 //-----------------------------------------------------------------------------
-void gen_domain_to_file_map(int num_domains,
-                            int num_files,
+void gen_domain_to_file_map(index_t num_domains,
+                            index_t num_files,
                             Node &out)
 {
-    int num_domains_per_file = num_domains / num_files;
-    int left_overs = num_domains % num_files;
+    index_t num_domains_per_file = num_domains / num_files;
+    index_t left_overs = num_domains % num_files;
 
-    out["global_domains_per_file"].set(DataType::int32(num_files));
-    out["global_domain_offsets"].set(DataType::int32(num_files));
-    out["global_domain_to_file"].set(DataType::int32(num_domains));
+    out["global_domains_per_file"].set(DataType::index_t(num_files));
+    out["global_domain_offsets"].set(DataType::index_t(num_files));
+    out["global_domain_to_file"].set(DataType::index_t(num_domains));
 
-    int32_array v_domains_per_file = out["global_domains_per_file"].value();
-    int32_array v_domains_offsets  = out["global_domain_offsets"].value();
-    int32_array v_domain_to_file   = out["global_domain_to_file"].value();
+    index_t_array v_domains_per_file = out["global_domains_per_file"].value();
+    index_t_array v_domains_offsets  = out["global_domain_offsets"].value();
+    index_t_array v_domain_to_file   = out["global_domain_to_file"].value();
 
     // setup domains per file
-    for(int f=0; f < num_files; f++)
+    for(index_t f=0; f < num_files; f++)
     {
         v_domains_per_file[f] = num_domains_per_file;
         if( f < left_overs)
@@ -111,7 +111,7 @@ void gen_domain_to_file_map(int num_domains,
     }
 
     // prefix sum to calc offsets
-    for(int f=0; f < num_files; f++)
+    for(index_t f=0; f < num_files; f++)
     {
         v_domains_offsets[f] = v_domains_per_file[f];
         if(f > 0)
@@ -119,8 +119,8 @@ void gen_domain_to_file_map(int num_domains,
     }
 
     // do assignment, create simple map
-    int f_idx = 0;
-    for(int d=0; d < num_domains; d++)
+    index_t f_idx = 0;
+    for(index_t d=0; d < num_domains; d++)
     {
         if(d >= v_domains_offsets[f_idx])
             f_idx++;
@@ -216,7 +216,7 @@ public:
         }
         else
         {
-            int32_array v_d2f = m_d2f_map["global_domain_to_file"].value();
+            index_t_accessor v_d2f = m_d2f_map["global_domain_to_file"].value();
             file_id = v_d2f[tree_id];
         }
 
@@ -1019,7 +1019,6 @@ void write_mesh(const Node &mesh,
                 {
                     // if truncate, first rank to touch the file needs
                     // to open at
-                    Node open_opts;
                     if( !hnd.is_open()
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
@@ -1108,35 +1107,35 @@ void write_mesh(const Node &mesh,
 
         // books we keep:
         Node books;
-        books["local_domain_to_file"].set(DataType::int32(local_num_domains));
-        books["local_domain_status"].set(DataType::int32(local_num_domains));
+        books["local_domain_to_file"].set(DataType::index_t(local_num_domains));
+        books["local_domain_status"].set(DataType::index_t(local_num_domains));
 
         // batons
-        books["local_file_batons"].set(DataType::int32(num_files));
-        books["global_file_batons"].set(DataType::int32(num_files));
+        books["local_file_batons"].set(DataType::index_t(num_files));
+        books["global_file_batons"].set(DataType::index_t(num_files));
 
         // used to track first touch
-        books["local_file_created"].set(DataType::int32(num_files));
-        books["global_file_created"].set(DataType::int32(num_files));
+        books["local_file_created"].set(DataType::index_t(num_files));
+        books["global_file_created"].set(DataType::index_t(num_files));
 
         // size local # of domains
-        int32_array local_domain_to_file = books["local_domain_to_file"].value();
-        int32_array local_domain_status  = books["local_domain_status"].value();
+        index_t_array local_domain_to_file = books["local_domain_to_file"].value();
+        index_t_array local_domain_status  = books["local_domain_status"].value();
 
         // size num total files
         /// batons
-        int32_array local_file_batons    = books["local_file_batons"].value();
-        int32_array global_file_batons   = books["global_file_batons"].value();
+        index_t_array local_file_batons    = books["local_file_batons"].value();
+        index_t_array global_file_batons   = books["global_file_batons"].value();
         /// file created flags
-        int32_array local_file_created    = books["local_file_created"].value();
-        int32_array global_file_created   = books["global_file_created"].value();
+        index_t_array local_file_created    = books["local_file_created"].value();
+        index_t_array global_file_created   = books["global_file_created"].value();
 
 
         Node d2f_map;
         detail::gen_domain_to_file_map(global_num_domains,
                                        num_files,
                                        books);
-        int32_array global_d2f = books["global_domain_to_file"].value();
+        index_t_accessor global_d2f = books["global_domain_to_file"].value();
 
         // init our local map and status array
         for(int d = 0; d < local_num_domains; ++d)

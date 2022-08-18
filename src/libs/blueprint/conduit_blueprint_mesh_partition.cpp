@@ -3864,7 +3864,8 @@ Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
     // index
     if (domain_map.size() > 0)
     {
-        if (adjset_chunk_maps.size() < domain_map.rbegin()->first + 1)
+        if ( static_cast<index_t>(adjset_chunk_maps.size()) <
+             static_cast<index_t>(domain_map.rbegin()->first + 1))
         {
             adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
         }
@@ -4625,6 +4626,21 @@ Partitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &chunks,
         chunks_to_assemble_gids.push_back(i);
     }
 }
+
+//-------------------------------------------------------------------------
+void
+Partitioner::communicate_mapback(std::unordered_map<index_t, Node>& /*packed_fields*/)
+{
+    // implemented only in parallel case
+}
+
+//-------------------------------------------------------------------------
+void Partitioner::synchronize_gvids(const std::vector<std::vector<index_t>>& /*remap_to_local_doms*/,
+                                    std::map<index_t, std::vector<index_t>>& /*orig_dom_gvids*/)
+{
+    // implemented only in parallel case
+}
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::coordset --
@@ -5676,9 +5692,9 @@ point_merge::append_data(const std::vector<Node> &coordsets,
         const auto append = [&](float64 *p, index_t)
         {
             old_to_new_ids[i].push_back(newid);
-            for(auto i = 0; i < dimension; i++)
+            for(auto j = 0; j < dimension; j++)
             {
-                new_coords.push_back(p[i]);
+                new_coords.push_back(p[j]);
             }
             newid++;
         };
@@ -6483,17 +6499,17 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
                 const index_t offset = out_conn.size();
                 out_offsets.push_back(offset);
                 out_sizes.push_back(sz);
-                for(index_t i = 0; i < sz; i++)
+                for(index_t ii = 0; ii < sz; ii++)
                 {
                     const index_t subidx = out_subsizes.size();
-                    const index_t subsz = e.subelement_ids[i].size();
+                    const index_t subsz = e.subelement_ids[ii].size();
                     const index_t suboffset = out_subconn.size();
                     out_conn.push_back(subidx);
                     out_suboffsets.push_back(suboffset);
                     out_subsizes.push_back(subsz);
                     for(index_t j = 0; j < subsz; j++)
                     {
-                        out_subconn.push_back(pmap_da[e.subelement_ids[i][j]]);
+                        out_subconn.push_back(pmap_da[e.subelement_ids[ii][j]]);
                     }
                 }
             }
@@ -6691,11 +6707,11 @@ public:
                     n_new_topo["coordset"] = n_cset.name();
 
                     const index_t dim = utils::topology::dims(n_topo);
-                    std::array<index_t, MAXDIM> logical_dims;
-                    utils::topology::logical_dims(n_topo, logical_dims.data(), dim);
+                    std::array<index_t, MAXDIM> logical_dims_vals;
+                    utils::topology::logical_dims(n_topo, logical_dims_vals.data(), dim);
                     for(index_t ldi = 0; ldi < dim; ldi++)
                     {
-                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims[ldi];
+                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims_vals[ldi];
                     }
 
                     if(n_topo.has_path("elements/origin"))
@@ -9624,19 +9640,19 @@ Partitioner::combine(int domain,
             auto itr = fields.children();
             while(itr.has_next())
             {
-                const Node &n = itr.next();
-                auto itr = std::find_if(field_groups.begin(), field_groups.end(), [&](const field_group_t &g) {
-                    return g.first == n.name();
+                const Node &n_child = itr.next();
+                auto field_groups_itr_pos = std::find_if(field_groups.begin(), field_groups.end(), [&](const field_group_t &g) {
+                    return g.first == n_child.name();
                 });
-                if(itr != field_groups.end())
+                if(field_groups_itr_pos != field_groups.end())
                 {
-                    itr->second.push_back(&n);
+                    field_groups_itr_pos->second.push_back(&n_child);
                 }
                 else
                 {
                     field_groups.emplace_back();
-                    field_groups.back().first = n.name();
-                    field_groups.back().second.push_back(&n);
+                    field_groups.back().first = n_child.name();
+                    field_groups.back().second.push_back(&n_child);
                 }
             }
         }
@@ -9944,7 +9960,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         // communicate domain gvids to ranks that need them
         synchronize_gvids(map_tgt_domains, orig_dom_gvids);
 
-        for (index_t repart_idx = 0; repart_idx < repart_doms.size(); repart_idx++)
+        for (index_t repart_idx = 0; repart_idx < static_cast<index_t>(repart_doms.size()); repart_idx++)
         {
             const conduit::Node& dom = *repart_doms[repart_idx];
 
@@ -10038,7 +10054,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // domain homes
     communicate_mapback(packed_fields);
 
-    bool first_warn = true;
+    // bool first_warn = true; // unused
     for (const auto& orig_dom : packed_fields)
     {
         // Precompute final element count
@@ -10103,7 +10119,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 fields::map_element_field(src_fields, elem_map_arr, output["values"]);
             }
         }
-        first_warn = false;
+        // first_warn = false; // unused
     }
 }
 
