@@ -10,6 +10,12 @@
 #include "conduit_data_accessor.hpp"
 
 //-----------------------------------------------------------------------------
+// -- standard includes -- 
+//-----------------------------------------------------------------------------
+#include <algorithm>
+#include <limits>
+
+//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -47,6 +53,97 @@ DataAccessor<T>::DataAccessor(const void *data, const DataType &dtype)
 template <typename T> 
 DataAccessor<T>::~DataAccessor()
 {} // all data is external
+
+
+//---------------------------------------------------------------------------// 
+///
+/// Summary Stats Helpers
+///
+//---------------------------------------------------------------------------// 
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataAccessor<T>::min()  const
+{
+    T res = std::numeric_limits<T>::max();
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        if(val < res)
+        {
+            res = val;
+        }
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataAccessor<T>::max() const
+{
+    T res = std::numeric_limits<T>::lowest();
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        if(val > res)
+        {
+            res = val;
+        }
+    }
+
+    return res;
+}
+
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+T
+DataAccessor<T>::sum() const
+{
+    T res =0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        res += val;
+    }
+
+    return res;
+}
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+float64
+DataAccessor<T>::mean() const
+{
+    float64 res =0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        const T &val = element(i);
+        res += val;
+    }
+
+    res = res / float64(number_of_elements());
+    return res;
+}
+
+//---------------------------------------------------------------------------// 
+template <typename T>
+index_t
+DataAccessor<T>::count(T val) const
+{
+    index_t res= 0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        if(element(i) == val)
+        {
+            res++;
+        }
+    }
+    return res;
+}
 
 //---------------------------------------------------------------------------//
 template <typename T> 

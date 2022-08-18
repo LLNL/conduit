@@ -389,7 +389,7 @@ DataArray<T>::min()  const
 //---------------------------------------------------------------------------// 
 template <typename T>
 T
-DataArray<T>::max()  const
+DataArray<T>::max() const
 {
     T res = std::numeric_limits<T>::lowest();
     for(index_t i = 0; i < number_of_elements(); i++)
@@ -408,7 +408,7 @@ DataArray<T>::max()  const
 //---------------------------------------------------------------------------// 
 template <typename T>
 T
-DataArray<T>::sum()  const
+DataArray<T>::sum() const
 {
     T res =0;
     for(index_t i = 0; i < number_of_elements(); i++)
@@ -423,7 +423,7 @@ DataArray<T>::sum()  const
 //---------------------------------------------------------------------------// 
 template <typename T>
 float64
-DataArray<T>::mean()  const
+DataArray<T>::mean() const
 {
     float64 res =0;
     for(index_t i = 0; i < number_of_elements(); i++)
@@ -436,6 +436,21 @@ DataArray<T>::mean()  const
     return res;
 }
 
+//---------------------------------------------------------------------------// 
+template <typename T>
+index_t
+DataArray<T>::count(T val) const
+{
+    index_t res= 0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        if(element(i) == val)
+        {
+            res++;
+        }
+    }
+    return res;
+}
 
 //---------------------------------------------------------------------------// 
 template <typename T>

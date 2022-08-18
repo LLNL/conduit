@@ -560,7 +560,7 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_transform, to_poly_alias_call)
 {
-    
+
     Node topo_mesh, info;
     blueprint::mesh::examples::braid("hexs",
                                      5,
@@ -688,6 +688,7 @@ TEST(conduit_blueprint_mesh_transform, adjset_transform_dtypes)
 }
 
 
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_transform, paint_adjset)
 {
@@ -696,7 +697,7 @@ TEST(conduit_blueprint_mesh_transform, paint_adjset)
     {
         protocol = "yaml";
     }
-    
+
     conduit::Node mesh;
     blueprint::mesh::examples::grid("quads",10,10,0,3,3,1,mesh);
     blueprint::mesh::paint_adjset("mesh_adj",
@@ -710,8 +711,160 @@ TEST(conduit_blueprint_mesh_transform, paint_adjset)
     blueprint::mesh::paint_adjset("mesh_adj",
                                   "adjset_vals",
                                   mesh);
-    
+
     conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple_3d",protocol);
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, generate_sad_face)
+{
+    // this tests demos an issue with face (line) generation + adjsets
+    // the line between the x's is falsely identified as a shared face
+    // b/c it is defined by two shared vertices
+    //
+
+    /*
+      ----------------
+      |    |    |    |
+      | d1 | d1 | d1 |
+      |    |    |    |
+      ----------------
+      |    |    |    |
+      | d1 | d0 | d1 |
+      |    |    |    |
+      -----x----x-----
+      |    |    |    |
+      | d0 | d0 | d0 |
+      |    |    |    |
+      ----------------
+    */
+    
+    /*
+      Domain 0 Vertex Ids:
+           ------
+           8    9
+           ------
+           |    |
+           | d0 |
+           |    |
+      -----x----x-----
+      4    5    6    7
+      -----x----x-----
+      |    |    |    |
+      | d0 | d0 | d0 |
+      |    |    |    |
+      ----------------
+      0    1    2    3
+      ----------------
+    */
+
+    /*
+      Domain 1 Vertex Ids:
+
+      ----------------
+      8    9    10   11
+      ----------------
+      |    |    |    |
+      | d1 | d1 | d1 |
+      |    |    |    |
+      ----------------
+      4    5    6    7
+      ----------------
+      |    |    |    |
+      | d1 |    | d1 |
+      |    |    |    |
+      ----------------
+      0    1    2    3
+      ----------------
+    */
+
+
+    Node res;
+    Node &d0 = res["domain0"];
+    Node &d1 = res["domain1"];
+
+    d0["state/domain_id"] = 0;
+    d0["coordsets/coords/type"] = "explicit";
+                                      /* 0    1    2    3         4    5    6    7         8   9 */ 
+    d0["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0, /**/ 0.0, 1.0, 2.0, 3.0, /**/ 1.0, 2.0 };
+ 
+    d0["coordsets/coords/values/y"] = { 0.0, 0.0, 0.0, 0.0, /**/ 1.0, 1.0, 1.0, 1.0, /**/ 2.0, 2.0 };
+
+    d0["topologies/main/type"] = "unstructured";
+    d0["topologies/main/coordset"] = "coords";
+    d0["topologies/main/elements/shape"] = "quad";
+    d0["topologies/main/elements/connectivity"] = {0, 1, 5, 4,
+                                                   1, 2, 6, 5,
+                                                   2, 3, 7, 6,
+                                                   5, 6, 9, 8};
+    d1["state/domain_id"] = 1;
+    d1["coordsets/coords/type"] = "explicit";
+                                      /* 0    1    2    3         4    5    6    7          8   9    10   11 */ 
+    d1["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0, /**/ 0.0, 1.0, 2.0, 3.0, /**/ 0.0, 1.0, 2.0, 3.0 };
+ 
+    d1["coordsets/coords/values/y"] = { 1.0, 1.0, 1.0, 1.0, /**/ 2.0, 2.0, 2.0, 2.0, /**/ 3.0, 3.0, 3.0, 3.0 };
+
+    d1["topologies/main/type"] = "unstructured";
+    d1["topologies/main/coordset"] = "coords";
+    d1["topologies/main/elements/shape"] = "quad";
+    d1["topologies/main/elements/connectivity"] = {0, 1, 5, 4,
+                                                   2, 3, 7, 6,
+                                                   4, 5, 9, 8,
+                                                   5, 6, 10, 9,
+                                                   6, 7, 11, 10 };
+
+    // add adjsets
+    d0["adjsets/main_adjset/association"] = "vertex";
+    d0["adjsets/main_adjset/topology"] = "main";
+    d0["adjsets/main_adjset/groups/group_0_1/neighbors"] = 1;
+    d0["adjsets/main_adjset/groups/group_0_1/values"] = {4,5,8,9,6,7};
+
+    // add adjsets
+    d1["adjsets/main_adjset/association"] = "vertex";
+    d1["adjsets/main_adjset/topology"] = "main";
+    d1["adjsets/main_adjset/groups/group_0_1/neighbors"] = 0;
+    d1["adjsets/main_adjset/groups/group_0_1/values"] = {0, 1, 5, 6, 2, 3};
+
+    Node maps;
+    conduit::blueprint::mesh::generate_lines(res,
+                                             "main_adjset",
+                                             "main_face_adjset",
+                                             "main_faces",
+                                             maps["s2d"],
+                                             maps["d2s"]);
+
+    blueprint::mesh::paint_adjset("main_adjset",
+                                  "main_adjset_vals",
+                                  res);
+
+    blueprint::mesh::paint_adjset("main_face_adjset",
+                                  "main_face_adjset_vals",
+                                  res);
+    res.print();
+    
+    // this issue is fixed when:
+    // domain0, main_face element 6 main_face_adjset_vals == 0 && 
+    // element 6 is not in the faces adjset as a group entry for domain 0
+
+    index_t_accessor fadj_vals= res.fetch_existing("domain0/adjsets/main_face_adjset/groups")[0]["values"].value();
+    EXPECT_EQ(fadj_vals.count(6),0);
+    index_t_accessor fadj_count= res.fetch_existing("domain0/fields/main_face_adjset_vals_group_count/values").value();
+    EXPECT_EQ(fadj_count[6],0);
+
+
+    Node info;
+    if(!conduit::blueprint::mesh::verify(res,info))
+    {
+        info.print();
+    }
+
+    std::string protocol = "hdf5";
+    if(!check_if_hdf5_enabled())
+    {
+        protocol = "yaml";
+    }
+
+    conduit::relay::io::blueprint::save_mesh(res,"sad_face",protocol);
+}
