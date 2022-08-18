@@ -10,6 +10,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Added variants of `Node::to_json`, `Node::to_yaml`, and `Node::to_string` that take formatting options via a Conduit Node.
 - Added C API methods `conduit_node_to_json`, `conduit_node_to_yaml`, `conduit_node_to_string`, and `conduit_node_to_summary_string`.
+- Added `DataArray::count` method
+- Added `DataAccessor::{min,max,sum,mean,count}` methods
 
 #### Blueprint
 - Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details. 

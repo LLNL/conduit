@@ -2727,6 +2727,7 @@ generate_derived_entities(conduit::Node &mesh,
                           MPI_Comm /*comm*/,
                           GenDerivedFun generate_derived)
 {
+    // loop over all domains and call generate_derived on each domain
     const std::vector<DomMapsTuple> doms_and_maps = group_domains_and_maps(mesh, s2dmap, d2smap);
     for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
     {
@@ -2765,25 +2766,31 @@ generate_derived_entities(conduit::Node &mesh,
         conduit::Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
 
         // Organize Adjset Points into Interfaces (Pair-Wise Groups) //
-
+        //
+        // for all neighbors:
+        // construct a per-neighbor list of all unique points across all groups
+        // result is a map that contains:
+        //
         // {(neighbor domain id): <(participating points for domain interface)>}
         std::map<index_t, std::set<index_t>> neighbor_pidxs_map;
         for(const std::string &group_name : src_adjset_groups.child_names())
         {
             const conduit::Node &src_group = src_adjset_groups[group_name];
-            const conduit::Node &src_neighbors = src_group["neighbors"];
-            const conduit::Node &src_values = src_group["values"];
+            index_t_accessor src_neighbors = src_group["neighbors"].value();
+            index_t_accessor src_values    = src_group["values"].value();
 
             for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
             {
-                src_data.set_external(DataType(src_neighbors.dtype().id(), 1),
-                    (void*)src_neighbors.element_ptr(ni));
-                std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_data.to_index_t()];
+                // src_data.set_external(DataType(src_neighbors.dtype().id(), 1),
+                //     (void*)src_neighbors.element_ptr(ni));
+                // std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_data.to_index_t()];
+                std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_neighbors[ni]];
                 for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
                 {
-                    src_data.set_external(DataType(src_values.dtype().id(), 1),
-                        (void*)src_values.element_ptr(pi));
-                    neighbor_pidxs.insert(src_data.to_index_t());
+                    // src_data.set_external(DataType(src_values.dtype().id(), 1),
+                    //     (void*)src_values.element_ptr(pi));
+                    // neighbor_pidxs.insert(src_data.to_index_t());
+                    neighbor_pidxs.insert(src_values[pi]);
                 }
             }
         }

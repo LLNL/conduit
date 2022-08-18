@@ -184,6 +184,64 @@ void CONDUIT_BLUEPRINT_API flatten(const conduit::Node &mesh,
                                    const conduit::Node &options,
                                    conduit::Node &output);
 
+
+//-----------------------------------------------------------------------------
+/// blueprint mesh transform methods (these work on multi domain meshes)
+///
+/// These methods can be called on specific verified blueprint mesh.
+//-----------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_points(conduit::Node &mesh,
+                                           const std::string& src_adjset_name,
+                                           const std::string& dst_adjset_name,
+                                           const std::string& dst_topo_name,
+                                           conduit::Node& s2dmap,
+                                           conduit::Node& d2smap);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_lines(conduit::Node &mesh,
+                                          const std::string& src_adjset_name,
+                                          const std::string& dst_adjset_name,
+                                          const std::string& dst_topo_name,
+                                          conduit::Node& s2dmap,
+                                          conduit::Node& d2smap);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_faces(conduit::Node &mesh,
+                                          const std::string& src_adjset_name,
+                                          const std::string& dst_adjset_name,
+                                          const std::string& dst_topo_name,
+                                          conduit::Node& s2dmap,
+                                          conduit::Node& d2smap);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_centroids(conduit::Node& mesh,
+                                              const std::string& src_adjset_name,
+                                              const std::string& dst_adjset_name,
+                                              const std::string& dst_topo_name,
+                                              const std::string& dst_cset_name,
+                                              conduit::Node& s2dmap,
+                                              conduit::Node& d2smap);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_sides(conduit::Node& mesh,
+                                          const std::string& src_adjset_name,
+                                          const std::string& dst_adjset_name,
+                                          const std::string& dst_topo_name,
+                                          const std::string& dst_cset_name,
+                                          conduit::Node& s2dmap,
+                                          conduit::Node& d2smap);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_corners(conduit::Node& mesh,
+                                            const std::string& src_adjset_name,
+                                            const std::string& dst_adjset_name,
+                                            const std::string& dst_topo_name,
+                                            const std::string& dst_cset_name,
+                                            conduit::Node& s2dmap,
+                                            conduit::Node& d2smap);
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------
