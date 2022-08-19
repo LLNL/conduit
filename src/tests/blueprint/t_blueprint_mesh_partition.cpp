@@ -1159,7 +1159,7 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
                     conduit::float32_array vals = n_dim.value();
                     for(conduit::index_t vi = 0; vi < 8; vi++)
                     {
-                        vals[vi] = new_coords[d][vi];
+                        vals[vi] = static_cast<conduit::float32>(new_coords[d][vi]);
                     }
                 }
                 else if(n_dim.dtype().is_float64())
@@ -1196,7 +1196,7 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
                     conduit::float32_array vals = n_dim.value();
                     for(conduit::index_t vi = 0; vi < 4; vi++)
                     {
-                        vals[vi] = new_coords[d][vi];
+                        vals[vi] = static_cast<conduit::float32 > (new_coords[d][vi]);
                     }
                 }
                 else if(n_dim.dtype().is_float64())
