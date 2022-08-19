@@ -9117,6 +9117,8 @@ handle_multi_buffer(const Node &n_matset,
         }
         const DataAccessor<double> volume_fractions = vfract_data.value();
 
+        // TODO: Need to fix!
+        // warning: conditional expression is constant
         if(!is_elem_based && element_ids
             && volume_fractions.number_of_elements() != element_ids->number_of_elements())
         {
@@ -9135,6 +9137,8 @@ handle_multi_buffer(const Node &n_matset,
             const index_t idx = itr.index();
             out_pair.first.push_back(volume_fractions[idx]);
             // Material based will use element_ids array
+            // TODO: Need to fix!
+            // warning: conditional expression is constant (check if element_ids is null?)
             if(!is_elem_based && element_ids)
             {
                 out_pair.second.push_back(elem_map[element_ids->element(i)]);
