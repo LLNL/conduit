@@ -9739,10 +9739,10 @@ Partitioner::combine(int domain,
         out_field["association"].set("element");
         Schema s;
         const DataType &dt = n_elem_map.dtype();
-        const index_t sz = dt.number_of_elements() / 2;
-        s["domains"].set(DataType(dt.id(), sz, 0, 
+        const index_t half_sz = dt.number_of_elements() / 2;
+        s["domains"].set(DataType(dt.id(), half_sz, 0,
             2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
-        s["ids"].set(DataType(dt.id(), sz, 1*dt.element_bytes(),
+        s["ids"].set(DataType(dt.id(), half_sz, 1*dt.element_bytes(),
             2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
         out_field["values"].set(s);
 
@@ -9807,8 +9807,8 @@ Partitioner::combine(int domain,
 
         if(!n_pointmaps.dtype().is_object())
         {
-            const index_t sz = mesh::coordset::length(output_coordsets[coordset_name]);
-            const DataType dt(pointmaps[0].dtype().id(), sz);
+            const index_t coordset_sz = mesh::coordset::length(output_coordsets[coordset_name]);
+            const DataType dt(pointmaps[0].dtype().id(), coordset_sz);
             out_field["values"]["domains"].set(dt);
             out_field["values"]["ids"].set(dt);
             DataArray<index_t> out_domains = out_field["values/domains"].value();
@@ -9911,12 +9911,12 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         if (dom["fields"].has_child("original_element_ids"))
         {
             const Node& orig_v_node = dom["fields/original_element_ids/values"];
-            const index_t_accessor orig_elems = orig_v_node["ids"].value();
-            const index_t_accessor orig_doms = orig_v_node["domains"].value();
-            for (index_t ielem = 0; ielem < orig_elems.number_of_elements(); ielem++)
+            const index_t_accessor orig_elems_vals = orig_v_node["ids"].value();
+            const index_t_accessor orig_doms_vals = orig_v_node["domains"].value();
+            for (index_t ielem = 0; ielem < orig_elems_vals.number_of_elements(); ielem++)
             {
-                map_tgt_elems[idom][orig_doms[ielem]].push_back(orig_elems[ielem]);
-                map_sel_elems[idom][orig_doms[ielem]].push_back(ielem);
+                map_tgt_elems[idom][orig_doms_vals[ielem]].push_back(orig_elems_vals[ielem]);
+                map_sel_elems[idom][orig_doms_vals[ielem]].push_back(ielem);
             }
             for (const auto& slice_map : map_tgt_elems[idom])
             {

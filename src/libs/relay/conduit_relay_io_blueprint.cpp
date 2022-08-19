@@ -163,7 +163,7 @@ public:
 
     //-------------------------------------------------------------------//
     std::string Expand(const std::string pattern,
-                       int idx) const
+                       index_t idx) const
     {
         //
         // This currently handles format strings:
@@ -202,9 +202,9 @@ public:
     }
 
     //-------------------------------------------------------------------//
-    std::string GenerateFilePath(int tree_id) const
+    std::string GenerateFilePath(index_t tree_id) const
     {
-        int file_id = -1;
+        index_t file_id = -1;
 
         if(m_num_trees == m_num_files)
         {
@@ -224,7 +224,7 @@ public:
     }
 
     //-------------------------------------------------------------------//
-    std::string GenerateTreePath(int tree_id) const
+    std::string GenerateTreePath(index_t tree_id) const
     {
         // the tree path should always end in a /
         std::string res = Expand(m_tree_pattern,tree_id);

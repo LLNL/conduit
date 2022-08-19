@@ -145,8 +145,8 @@ void related_boundary(index_t base_grid_ele_i,
 
     for(index_t i = 0; i < num_eles; i++)
     {
-        ele_local_vals[i] = i;
-        ele_global_vals[i] = main_id_global;
+        ele_local_vals[i] = static_cast<float64>(i);
+        ele_global_vals[i] = static_cast<float64>(main_id_global);
         dom_id_vals[i] = 0.0;
         main_id_global+=1;
     }
@@ -353,8 +353,8 @@ void related_boundary(index_t base_grid_ele_i,
 
     for(index_t i = 0; i < num_eles; i++)
     {
-        ele_local_vals[i] = i;
-        ele_global_vals[i] = main_id_global;
+        ele_local_vals[i] = static_cast<float64>(i);
+        ele_global_vals[i] = static_cast<float64>(main_id_global);
         dom_id_vals[i] = 1.0;
         main_id_global++;
     }
@@ -559,8 +559,8 @@ void related_boundary(index_t base_grid_ele_i,
 
     for(index_t i = 0; i < num_eles; i++)
     {
-        ele_local_vals[i] = i;
-        ele_global_vals[i] = main_id_global;
+        ele_local_vals[i] = static_cast<float64>(i);
+        ele_global_vals[i] = static_cast<float64>(main_id_global);
         dom_id_vals[i] = 2.0;
         main_id_global+=1;
     }
