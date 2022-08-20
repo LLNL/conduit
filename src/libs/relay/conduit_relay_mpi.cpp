@@ -331,8 +331,8 @@ recv_using_schema(Node &node, int src, int tag, MPI_Comm comm)
     mpi_error = MPI_Recv(n_buffer.data_ptr(),
                          buffer_size,
                          MPI_BYTE,
-                         src,
-                         tag,
+                         status.MPI_SOURCE,
+                         status.MPI_TAG,
                          comm,
                          &status);
 
