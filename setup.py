@@ -42,7 +42,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
-CONDUIT_VERSION = '0.8.3'
+CONDUIT_VERSION = '0.8.4'
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
