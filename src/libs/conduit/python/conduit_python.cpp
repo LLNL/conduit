@@ -6055,14 +6055,36 @@ static PyObject *
 PyConduit_Node_set(PyConduit_Node* self,
                    PyObject* args)
 {
-    PyObject* value = NULL;
+    PyObject* py_value = NULL;
+    PyObject* py_buff  = NULL;
     
-    if (!PyArg_ParseTuple(args, "O", &value))
+    if (!PyArg_ParseTuple(args, "O|O", &py_value,&py_buff))
     {
          return (NULL);
     }
 
-    if (PyConduit_Node_Set_From_Python(*self->node, value))
+    // check for schema and buffer case
+    if(PyConduit_Schema_Check(py_value) && py_buff != NULL )
+    {   
+        if( !PyObject_CheckBuffer(py_buff) )
+        {
+            PyErr_SetString(PyExc_TypeError,
+            "Node set with schema requires buffer argument");
+            return NULL;
+        }
+
+        Schema &schema = *((PyConduit_Schema*)py_value)->schema;
+
+        Py_buffer buff_view;
+        PyObject_GetBuffer(py_buff, &buff_view, PyBUF_WRITE);
+        unsigned char *ptr = reinterpret_cast<unsigned char*>(buff_view.buf);
+
+        self->node->set(schema,ptr);
+        Py_RETURN_NONE;
+    }
+    
+
+    if (PyConduit_Node_Set_From_Python(*self->node, py_value))
     {
          return (NULL);
     }
@@ -6077,27 +6099,52 @@ static PyObject *
 PyConduit_Node_set_external(PyConduit_Node* self,
                             PyObject* args)
 {
-    PyObject* value = NULL;
+    PyObject* py_value = NULL;
+    PyObject* py_buff  = NULL;
 
-    if( !PyArg_ParseTuple(args, "O", &value) ||
-        ( !PyConduit_Node_Check(value) && !PyArray_Check(value) ) )
+    if( !PyArg_ParseTuple(args, "O|O", &py_value, &py_buff) ||
+        ( !PyConduit_Node_Check(py_value) && // not a node
+          !PyConduit_Schema_Check(py_value) && // not a schema
+          !PyArray_Check(py_value) ) ) // not a numpy array
     {
         PyErr_SetString(PyExc_TypeError,
-                        "set_external requires a numpy array or conduit Node");
+        "set_external requires a numpy array, conduit Node, or conduit Schema and Buffer");
         return NULL;
     }
 
-    // node case
-    if(PyConduit_Node_Check(value))
-    {
-        Node &n_other = *PyConduit_Node_Get_Node_Ptr(value);
-        self->node->update_external(n_other);
+    // schema + buffer cases
+    if(PyConduit_Schema_Check(py_value))
+    {    
+        if( py_buff == NULL || !PyObject_CheckBuffer(py_buff))
+        {
+            PyErr_SetString(PyExc_TypeError,
+            "set_external requires a numpy array, conduit Node, or conduit Schema and Buffer");
+            return NULL;
+        }
+
+        Schema &schema = *((PyConduit_Schema*)py_value)->schema;
+
+        Py_buffer buff_view;
+        PyObject_GetBuffer(py_buff, &buff_view, PyBUF_WRITE);
+        unsigned char *ptr = reinterpret_cast<unsigned char*>(buff_view.buf);
+
+        self->node->set_external(schema,ptr);
         Py_RETURN_NONE;
     }
 
+    // node case
+    if(PyConduit_Node_Check(py_value))
+    {
+        Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_value);
+        self->node->update_external(n_other);
+        Py_RETURN_NONE;
+    }
+    
+    // buffer cases (scheam)
+
     // numpy array case
-    PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
-    PyArrayObject *py_arr = (PyArrayObject*)value;
+    PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)py_value);
+    PyArrayObject *py_arr = (PyArrayObject*)py_value;
     npy_intp num_ele = PyArray_SIZE(py_arr);
     index_t offset = 0;
     index_t stride = (index_t) PyArray_STRIDE(py_arr, 0);

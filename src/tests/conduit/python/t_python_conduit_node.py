@@ -9,8 +9,12 @@
 
 import sys
 import unittest
+import multiprocessing
+import ctypes
 
 from conduit import Node
+from conduit import Schema
+from conduit import DataType
 
 import numpy as np
 
@@ -536,6 +540,7 @@ class Test_Conduit_Node(unittest.TestCase):
         n['vs_expected'] = np.array(v[:,0,0],np.float64)
 
 
+
     def test_describe(self):
         n = Node()
         n["a"] = [1,2,3,4,5];
@@ -601,7 +606,7 @@ f: [1.0, 2.0, 3.0, ..., 6.0, 7.0]
 g: [2.0, 4.0]
 """
         self.assertEqual(r,texp)
-    
+
         opts = Node()
         opts["num_children_threshold"] = 2
         opts["num_elements_threshold"] = 3
@@ -626,6 +631,115 @@ g: [2.0, 4.0]
         print(r)
 
         self.assertEqual(r,n.to_yaml())
+
+    def test_set_with_buffer(self):
+        s = Schema()
+        s["a"] = DataType.float64(5)
+        s["b"] = DataType.float64(5)
+
+        # we want to apply a compact schema to a pointer
+        # (one where all offsets are contig)
+        s_compact = Schema()
+        s.compact_to(s_compact)
+
+        ra = multiprocessing.RawArray(ctypes.c_ubyte,s_compact.total_strided_bytes())
+        # also test with direct numpy ndarray views of the ra
+        np_a_arr = np.frombuffer(ra, dtype=np.dtype("float64"))
+        np_a_arr[:5] = 42.0
+        print(np_a_arr[:5])
+
+        np_b_arr = np.frombuffer(ra, dtype=np.dtype("float64"))
+        print(np_b_arr[5:10])
+        np_b_arr[5:] = -42.0
+
+        n = Node()
+        n.set(s_compact,ra)
+        print(n)
+        a_vals = n["a"]
+        b_vals = n["b"]
+
+        self.assertEqual(sum(a_vals[:]), 42.0 * 5)
+        self.assertEqual(sum(b_vals[:]), -42.0 * 5)
+
+    def test_set_external_with_buffer(self):
+        s = Schema()
+        s["a"] = DataType.float64(5)
+        s["b"] = DataType.int64(5)
+        s["c"] = DataType.uint32(10)
+
+        # we want to apply a compact schema to a pointer
+        # (one where all offsets are contig)
+        s_compact = Schema()
+        s.compact_to(s_compact)
+
+        ra = multiprocessing.RawArray(ctypes.c_ubyte,s_compact.total_strided_bytes())
+        n = Node()
+        n.set_external(s_compact,ra)
+        print(n)
+        # set with conduit
+        a_vals = n["a"]
+        b_vals = n["b"]
+        c_vals = n["c"]
+
+        a_vals[:] = 42.0
+        b_vals[:] = -42
+        c_vals[:] = 100
+        # show values
+        print(n)
+        
+        # also test with direct numpy ndarray views of the ra
+        np_a_arr = np.frombuffer(ra, dtype=np.dtype("float64"))
+        print(np_a_arr[:5])
+        self.assertEqual(sum(np_a_arr[:5]), 42.0 * 5)
+
+        np_b_arr = np.frombuffer(ra, dtype=np.dtype("int64"))
+        print(np_b_arr[5:10])
+        self.assertEqual(sum(np_b_arr[5:10]), -42.0 * 5)
+
+        np_c_arr = np.frombuffer(ra, dtype=np.dtype("uint32"))
+        print(np_c_arr[20:])
+        self.assertEqual(sum(np_c_arr[20:]), 100 * 10)
+
+    def test_set_external_with_buffer_and_update(self):
+        n = Node()
+        n["a"] = np.ndarray(5,np.float64)
+        n["b"] = np.ndarray(5,np.int64)
+        n["c"] = np.ndarray(10,np.uint32)
+
+        a_vals = n["a"]
+        b_vals = n["b"]
+        c_vals = n["c"]
+
+        a_vals[:] = 42.0
+        b_vals[:] = -42
+        c_vals[:] = 100
+
+        # we want to apply a compact schema to a pointer
+        # (one where all offsets are contig)
+        s_compact = Schema()
+        n.schema().compact_to(s_compact)
+
+        ra = multiprocessing.RawArray(ctypes.c_ubyte,s_compact.total_strided_bytes())
+        n_shared = Node()
+        n_shared.set_external(s_compact,ra)
+        print(n)
+        # copy values from the original node into the node back 
+        # by shared memory
+        n_shared.update(n)
+        print(n)
+        
+        # also test with direct numpy ndarray views of the ra
+        np_a_arr = np.frombuffer(ra, dtype=np.dtype("float64"))
+        print(np_a_arr[:5])
+        self.assertEqual(sum(np_a_arr[:5]), 42.0 * 5)
+
+        np_b_arr = np.frombuffer(ra, dtype=np.dtype("int64"))
+        print(np_a_arr[5:10])
+        self.assertEqual(sum(np_b_arr[5:10]), -42.0 * 5)
+        
+        np_c_arr = np.frombuffer(ra, dtype=np.dtype("uint32"))
+        print(np_c_arr[20:])
+        self.assertEqual(sum(np_c_arr[20:]), 100 * 10)
 
 
 if __name__ == '__main__':
