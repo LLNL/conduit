@@ -431,13 +431,7 @@ conduit_node_load(conduit_node *cnode,
 char*
 conduit_node_to_json(const conduit_node *cnode)
 {
-    std::string str = cpp_node(cnode)->to_json();
-    std::size_t len = str.length() + 1;
-
-    char* output = (char*)malloc(len);
-    strcpy(output, str.c_str());
-
-    return output;
+    return _conduit_strdup(cpp_node(cnode)->to_json().c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -445,13 +439,7 @@ char*
 conduit_node_to_json_with_options(const conduit_node *cnode,
                                   const conduit_node *copts)
 {
-    std::string str = cpp_node(cnode)->to_json(cpp_node_ref(copts));
-    std::size_t len = str.length() + 1;
-
-    char* output = (char*)malloc(len);
-    strcpy(output, str.c_str());
-
-    return output;
+    return _conduit_strdup(cpp_node(cnode)->to_json(cpp_node_ref(copts)).c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -462,13 +450,7 @@ conduit_node_to_json_with_options(const conduit_node *cnode,
 char*
 conduit_node_to_yaml(const conduit_node *cnode)
 {
-    std::string str = cpp_node(cnode)->to_yaml();
-    std::size_t len = str.length() + 1;
-
-    char* output = (char*)malloc(len);
-    strcpy(output, str.c_str());
-
-    return output;
+    return _conduit_strdup(cpp_node(cnode)->to_yaml().c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -476,13 +458,7 @@ char*
 conduit_node_to_yaml_with_options(const conduit_node *cnode,
                                   const conduit_node *copts)
 {
-    std::string str = cpp_node(cnode)->to_yaml(cpp_node_ref(copts));
-    std::size_t len = str.length() + 1;
-
-    char* output = (char*)malloc(len);
-    strcpy(output, str.c_str());
-
-    return output;
+    return _conduit_strdup(cpp_node(cnode)->to_yaml(cpp_node_ref(copts)).c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -493,13 +469,7 @@ conduit_node_to_yaml_with_options(const conduit_node *cnode,
 char*
 conduit_node_to_string(const conduit_node *cnode)
 {
-    std::string str = cpp_node(cnode)->to_string();
-    std::size_t len = str.length() + 1;
-
-    char* output = (char*)malloc(len);
-    strcpy(output, str.c_str());
-
-    return output;
+    return _conduit_strdup(cpp_node(cnode)->to_string().c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -507,13 +477,7 @@ char*
 conduit_node_to_string_with_options(const conduit_node *cnode,
                                     const conduit_node *copts)
 {
-    std::string str = cpp_node(cnode)->to_string(cpp_node_ref(copts));
-    std::size_t len = str.length() + 1;
-
-    char* output = (char*)malloc(len);
-    strcpy(output, str.c_str());
-
-    return output;
+    return _conduit_strdup(cpp_node(cnode)->to_string(cpp_node_ref(copts)).c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -523,26 +487,14 @@ conduit_node_to_string_with_options(const conduit_node *cnode,
 //-----------------------------------------------------------------------------
 char* conduit_node_to_summary_string(const conduit_node *cnode)
 {
-    std::string str = cpp_node(cnode)->to_summary_string();
-    std::size_t len = str.length() + 1;
-
-    char* output = (char*)malloc(len);
-    strcpy(output, str.c_str());
-
-    return output;
+    return _conduit_strdup(cpp_node(cnode)->to_summary_string().c_str());
 }
 
 //-----------------------------------------------------------------------------
 char* conduit_node_to_summary_string_with_options(const conduit_node *cnode,
                                                   const conduit_node *copts)
 {
-    std::string str = cpp_node(cnode)->to_summary_string(cpp_node_ref(copts));
-    std::size_t len = str.length() + 1;
-
-    char* output = (char*)malloc(len);
-    strcpy(output, str.c_str());
-
-    return output;
+    return _conduit_strdup(cpp_node(cnode)->to_summary_string(cpp_node_ref(copts)).c_str());
 }
 
 //-----------------------------------------------------------------------------

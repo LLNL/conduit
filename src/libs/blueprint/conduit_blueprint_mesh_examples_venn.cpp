@@ -501,7 +501,7 @@ void venn_sparse_by_element_matset(Node &res)
             vf[vfidx + size] = frac;
             matset_area[vfidx + size] = element_area;
             matset_impt[vfidx + size] = imp;
-            matset_check_vals[vfidx + size] = mcheck;
+            matset_check_vals[vfidx + size] = static_cast<float64>(mcheck);
             id[vfidx + size] = mat_id;
 
             field_area[idx] += matset_area[vfidx + size] * vf[vfidx + size];

@@ -2435,10 +2435,10 @@ generate_decomposed_entities(conduit::Node &mesh,
         std::map<index_t, std::set<index_t>> entity_neighbor_map;
         // NOTE(JRC): Diff, entirely different iteration strategy for finding entities
         // to consider on individual adjset interfaces.
-        for(const index_t &di : decomposed_centroid_dims)
+        for(const index_t &dentry : decomposed_centroid_dims)
         {
-            const Node &dim_topo = src_topo_data.dim_topos[di];
-            for(index_t ei = 0; ei < src_topo_data.get_length(di); ei++)
+            const Node &dim_topo = src_topo_data.dim_topos[dentry];
+            for(index_t ei = 0; ei < src_topo_data.get_length(dentry); ei++)
             {
                 std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dim_topo, ei);
                 for(const auto &neighbor_pair : neighbor_pidxs_map)
@@ -2454,7 +2454,7 @@ generate_decomposed_entities(conduit::Node &mesh,
 
                     if(entity_in_neighbor)
                     {
-                        const index_t entity_cidx = identify_decomposed(src_topo_data, ei, di);
+                        const index_t entity_cidx = identify_decomposed(src_topo_data, ei, dentry);
                         entity_neighbor_map[entity_cidx].insert(ni);
                     }
                 }
@@ -4386,19 +4386,19 @@ namespace detail
         original_vertices["topology"] = topo_name;
         original_vertices["association"] = "vertex";
         original_vertices["volume_dependent"] = "false";
-        int orig_num_points = coordset_src["values/x"].dtype().number_of_elements();
-        int new_num_points = coordset_dest["values/x"].dtype().number_of_elements();
+        index_t orig_num_points = coordset_src["values/x"].dtype().number_of_elements();
+        index_t new_num_points = coordset_dest["values/x"].dtype().number_of_elements();
         original_vertices["values"].set(conduit::DataType::int32(new_num_points));
         int32 *orig_vert_ids = original_vertices["values"].value();
-        for (int i = 0; i < new_num_points; i ++)
+        for (index_t i = 0; i < new_num_points; i ++)
         {
             if (i < orig_num_points)
             {
-                orig_vert_ids[i] = i;
+                orig_vert_ids[i] = static_cast<int32>(i);
             }
             else
             {
-                orig_vert_ids[i] = -1;
+                orig_vert_ids[i] = static_cast<int32>(-1);
             }
         }
 
@@ -4416,7 +4416,7 @@ namespace detail
             }
             else
             {
-                for (uint64 i = 0; i < field_names.size(); i ++)
+                for (size_t i = 0; i < field_names.size(); i ++)
                 {
                     if (field_names[i] == field_name)
                     {
