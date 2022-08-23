@@ -34,6 +34,7 @@ Added
  * Added C API methods ``conduit_node_to_json``, ``conduit_node_to_yaml``, ``conduit_node_to_string``, and ``conduit_node_to_summary_string``.
  * Added ``DataArray::count`` method.
  * Added ``DataAccessor::{min,max,sum,mean,count}`` methods.
+ * Added Schema and Python Buffer variants to Python ``Node.set()`` and ``Node.set_external()``.
 
 * **Blueprint**
 
