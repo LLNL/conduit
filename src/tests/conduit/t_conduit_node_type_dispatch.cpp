@@ -11,8 +11,6 @@
 #include "conduit.hpp"
 
 #include <iostream>
-#include <chrono>
-
 #include "gtest/gtest.h"
 #include "rapidjson/document.h"
 using namespace conduit;
