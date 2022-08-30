@@ -584,6 +584,24 @@ namespace utils
 //-----------------------------------------------------------------------------
      void CONDUIT_API sleep(index_t milliseconds);
 
+
+//-----------------------------------------------------------------------------
+/// Simple timer class
+//-----------------------------------------------------------------------------
+    class CONDUIT_API Timer 
+    {
+        typedef std::chrono::high_resolution_clock high_resolution_clock;
+        typedef std::chrono::duration<float> fsec;
+
+        public:
+            explicit Timer();
+            void     reset();
+            float    elapsed() const;
+
+        private:
+            std::chrono::high_resolution_clock::time_point m_start;
+    };
+
 //-----------------------------------------------------------------------------
 // String hash functions
 //-----------------------------------------------------------------------------
