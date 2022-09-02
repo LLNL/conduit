@@ -242,6 +242,14 @@ void CONDUIT_BLUEPRINT_API generate_corners(conduit::Node& mesh,
                                             conduit::Node& s2dmap,
                                             conduit::Node& d2smap);
 
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API oneD_to_strip(conduit::Node &mesh,
+                                         conduit::Node &info);
+
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API strip_to_oneD(conduit::Node& mesh,
+                                         conduit::Node &info);
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------

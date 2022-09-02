@@ -2762,6 +2762,28 @@ mesh::generate_corners(conduit::Node& mesh,
 }
 
 
+//-------------------------------------------------------------------------
+void
+mesh::oneD_to_strip(conduit::Node &mesh,
+                    conduit::Node &info)
+{
+    // verify?  or live dangerously?
+    // Convert coordset
+    // Convert nodal fields
+}
+
+
+//-------------------------------------------------------------------------
+void
+mesh::strip_to_oneD(conduit::Node &mesh,
+                    conduit::Node &info)
+{
+    // verify?  or live dangerously?
+    // Convert coordset
+    // Convert nodal fields
+}
+
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------
