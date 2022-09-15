@@ -12,6 +12,77 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+
+v0.8.4
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.4/conduit-v0.8.4-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Added
+~~~~~
+
+
+* **General**
+
+ * Added variants of ``Node::to_json``, ``Node::to_yaml``, and ``Node::to_string`` that take formatting options via a Conduit Node.
+ * Added C API methods ``conduit_node_to_json``, ``conduit_node_to_yaml``, ``conduit_node_to_string``, and ``conduit_node_to_summary_string``.
+ * Added ``DataArray::count`` method.
+ * Added ``DataAccessor::{min,max,sum,mean,count}`` methods.
+ * Added Schema and Python Buffer variants to Python ``Node.set()`` and ``Node.set_external()``.
+
+* **Blueprint**
+
+ * Added ``blueprint::mesh::paint_adjset``, which paints fields that encode adjacency set counts and ordering details.
+ * Added ``blueprint::mesh::examples::strided_structured`` which creates a structured mesh with arbitrarily strided vertex and element fields.
+ * Added support for mixed element topologies to the mesh blueprint.
+ * Added ``blueprint::mesh::examples::braid`` examples with mixed element topologies (``mesh_type={"mixed", "mixed_2d"}``)
+ * Added 1D mesh example support to ``blueprint::mesh::examples::basic()``.
+ * Added adjacency set aware generate functions (``genearte_points()``, etc) to the non-mpi blueprint library.
+
+* **Relay**
+
+ * Added any source, any tag variants of mpi receive functions: ``recv``, ``recv_using_schema``, and ``irecv``.
+ * Added subpath support for ``relay::io::{save,load,save_merged,load_merged}`` for basic protocols (json, yaml, etc).
+
+Changed
+~~~~~~~
+
+
+* **Relay**
+
+ * Changed HDF5 CMake sanity checks to issue ``WARNING`` instead of ``FATAL_ERROR``, since Cray system HDF5 installs do not always present the info we use for sanity checks.
+ * Changed HDF5 version guards to also check requested HDF5 API.
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * Fixed bug with ``to_json()`` where leaf arrays of size 0 lead to malformed json.
+ * Fixed parsing issue with ``conduit_json`` protocol for leaf arrays of size 0.
+ * Fixed roundtrip parsing of numeric arrays with nan, infs, etc for JSON cases (``Node::to_json()`` followed by ``Node::parse(...,"json")``).
+
+* **Blueprint**
+
+ * Fixed a bug with ``blueprint::mesh::index::generate``, where a uniform grid with no origin would lead to invalid coordinate system name ``logical`` in the resulting index. This case now defaults to ``cartesian``.
+ * Improved ``relay::io::blueprint::{save_mesh|write_mesh}`` blueprint index generation for cases where fields do not exist on all domains.
+ * Fixed a bug that labeled internal faces as shared in generated adjsets.
+
+* **Relay**
+
+ * Fixed a bug with blueprint root file creation, where the ``file_pattern`` was not relative to the root file location
+ * Fixed missing header include for relay io csv support.
+ * Fixed a bug with relay mpi all reduce.
+
+
+
 v0.8.3
 ---------------------------------
 

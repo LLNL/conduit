@@ -894,3 +894,13 @@ TEST(conduit_utils, value_fits)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, timer)
+{
+    conduit::utils::Timer t;
+    // sleep 1/4 a second
+    conduit::utils::sleep(250);
+    // check that at least 1/4 a second has elapsed
+    EXPECT_TRUE(t.elapsed() > .249);
+}
+
