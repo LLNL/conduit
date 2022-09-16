@@ -2762,28 +2762,6 @@ mesh::generate_corners(conduit::Node& mesh,
 }
 
 
-//-------------------------------------------------------------------------
-void
-mesh::oneD_to_strip(conduit::Node &mesh,
-                    conduit::Node &info)
-{
-    // verify?  or live dangerously?
-    // Convert coordset
-    // Convert nodal fields
-}
-
-
-//-------------------------------------------------------------------------
-void
-mesh::strip_to_oneD(conduit::Node &mesh,
-                    conduit::Node &info)
-{
-    // verify?  or live dangerously?
-    // Convert coordset
-    // Convert nodal fields
-}
-
-
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface
 //-----------------------------------------------------------------------------
@@ -3149,6 +3127,40 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
     log::validation(info,res);
 
     return res;
+}
+
+
+//-------------------------------------------------------------------------
+// blueprint::mesh::coordset::oneD protocol interface
+//-------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::coordset::index::verify(const Node &coordset,
+                              Node &info)
+{
+    return false;
+}
+
+//-------------------------------------------------------------------------
+void
+mesh::coordset::oneD::oneD_to_strip(conduit::Node &coordset,
+                                    conduit::Node &info)
+{
+    // verify?  or live dangerously?
+    // Convert coordset
+    // Convert nodal fields
+}
+
+
+//-------------------------------------------------------------------------
+void
+mesh::coordset::oneD::strip_to_oneD(conduit::Node &coordset,
+                                    conduit::Node &info)
+{
+    // verify?  or live dangerously?
+    // Convert coordset
+    // Convert nodal fields
 }
 
 
@@ -5849,6 +5861,40 @@ mesh::field::index::verify(const Node &field_idx,
 
     return res;
 }
+
+//-------------------------------------------------------------------------
+// blueprint::mesh::field::oneD protocol interface
+//-------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::field::index::verify(const Node &field,
+                           Node &info)
+{
+    return false;
+}
+
+//-------------------------------------------------------------------------
+void
+mesh::field::oneD::oneD_to_strip(conduit::Node &field,
+                                 conduit::Node &info)
+{
+    // verify?  or live dangerously?
+    // Convert field
+    // Convert nodal fields
+}
+
+
+//-------------------------------------------------------------------------
+void
+mesh::field::oneD::strip_to_oneD(conduit::Node &field,
+                                 conduit::Node &info)
+{
+    // verify?  or live dangerously?
+    // Convert field
+    // Convert nodal fields
+}
+
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::specset protocol interface
