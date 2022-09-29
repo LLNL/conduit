@@ -1245,6 +1245,40 @@ TEST(conduit_blueprint_mesh_examples, polystar)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, oneDtostrip)
+{
+    Node res;
+    blueprint::mesh::examples::basic("structured", 5, 0, 0, res);
+
+    test_save_mesh_helper(res, "oneD_original");
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::oneD::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    Node transform_info;
+    blueprint::mesh::oneD::oneD_to_strip(res, transform_info);
+    CONDUIT_INFO(transform_info.to_yaml());
+
+    test_save_mesh_helper(res, "oneD_strip");
+
+    // TODO write blueprint::mesh::oneD::verify_strip()
+    // info.reset();
+    // EXPECT_TRUE(blueprint::mesh::oneD::verify(res, info));
+    // CONDUIT_INFO(info.to_yaml());
+
+    Node backtransform_info;
+    blueprint::mesh::oneD::strip_to_oneD(res, backtransform_info);
+    CONDUIT_INFO(transform_info.to_yaml());
+
+    test_save_mesh_helper(res, "oneD_roundtrip");
+
+    info.reset();
+    EXPECT_TRUE(blueprint::mesh::oneD::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

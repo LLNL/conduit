@@ -2814,6 +2814,123 @@ mesh::association::verify(const Node &assoc,
 }
 
 
+//-------------------------------------------------------------------------
+// blueprint::mesh::oneD protocol interface
+//-------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::oneD::verify(const Node &mesh,
+                   Node &info)
+{
+    const std::string protocol = "mesh::oneD";
+    bool res = true;
+    info.reset();
+
+    // Each coordset c in mesh["coordsets"] must have one child of c["values"]
+    NodeConstIterator csitr = mesh["coordsets"].children();
+    while(csitr.has_next())
+    {
+        const Node &cset = csitr.next();
+        if (cset["values"].number_of_children() > 1)
+        {
+            log::error(info,
+                       protocol,
+                       "coordsets[" + log::quote(csitr.name()) + "/values] has more than one child");
+            res = false;
+        }
+    }
+
+    // Only element-associated fields allowed (no vertex-fields)
+    // TODO Relax this requirement?
+    NodeConstIterator fitr = mesh["fields"].children();
+    while(fitr.has_next())
+    {
+        const Node &f = fitr.next();
+        // This method requires fields to have "association" == "element".
+        if (!f.has_child("association") || f["association"].as_string() != "element")
+        {
+            log::error(info,
+                       protocol,
+                       "fields[" + log::quote(fitr.name()) + "/association] != element");
+            res = false;
+        }
+    }
+
+    return res;
+}
+
+//-------------------------------------------------------------------------
+void
+mesh::oneD::oneD_to_strip(conduit::Node &mesh,
+                          conduit::Node &info)
+{
+    // Convert each coordset
+    NodeIterator csitr = mesh["coordsets"].children();
+    while(csitr.has_next())
+    {
+        Node &cset = csitr.next();
+        mesh::coordset::oneD::oneD_to_strip(cset, info);
+    }
+
+    // Convert each topology: name the only dimension j and add i: 1
+    NodeIterator tpitr = mesh["topologies"].children();
+    while(tpitr.has_next())
+    {
+        Node &topo = tpitr.next();
+        Node & dims = topo["elements/dims"];
+        dims.rename_child("i", "j");
+        dims["i"] = 1;
+    }
+
+    // Flag this as a 1D strip mesh
+    mesh["private_nonblueprint/carterflags/oneD_strip"] = 1;
+}
+
+
+//-------------------------------------------------------------------------
+void
+mesh::oneD::strip_to_oneD(conduit::Node &mesh,
+                          conduit::Node &info)
+{
+    // Un-flag this as a 1D strip mesh
+    if (mesh.has_child("private_nonblueprint"))
+    {
+        Node & pnb = mesh["private_nonblueprint"];
+        if (pnb.has_child("carterflags") && pnb["carterflags"].has_child("oneD_strip"))
+        {
+            pnb["carterflags"].remove_child("oneD_strip");
+            if (pnb["carterflags"].number_of_children() < 1)
+            {
+                pnb.remove_child("carterflags");
+            }
+        }
+        if (pnb.number_of_children() < 1)
+        {
+            mesh.remove_child("private_nonblueprint");
+        }
+    }
+
+    // Convert each coordset
+    NodeIterator csitr = mesh["coordsets"].children();
+    while(csitr.has_next())
+    {
+        Node &cset = csitr.next();
+        mesh::coordset::oneD::strip_to_oneD(cset, info);
+    }
+
+    // Convert each topology: remove i: 1, and rename j to i
+    NodeIterator tpitr = mesh["topologies"].children();
+    while(tpitr.has_next())
+    {
+        Node &topo = tpitr.next();
+        Node & dims = topo["elements/dims"];
+        dims.remove_child("i");
+        dims.rename_child("j", "i");
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset protocol interface
 //-----------------------------------------------------------------------------
@@ -3136,7 +3253,7 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::coordset::index::verify(const Node &coordset,
+mesh::coordset::oneD::verify(const Node &coordset,
                               Node &info)
 {
     return false;
@@ -3147,9 +3264,15 @@ void
 mesh::coordset::oneD::oneD_to_strip(conduit::Node &coordset,
                                     conduit::Node &info)
 {
-    // verify?  or live dangerously?
-    // Convert coordset
-    // Convert nodal fields
+    // Convert coordset.
+    // Conduit requires the independent variable be "y".
+    Node & vals = coordset["values"];
+    const std::string from_name = vals.child(0).name();
+    vals.rename_child(from_name, "y");
+    vals["x"].set(DataType::float64(2));
+    double *x_vals = vals["x"].value();
+    x_vals[0] = 0.;
+    x_vals[1] = 1.;
 }
 
 
@@ -3158,9 +3281,12 @@ void
 mesh::coordset::oneD::strip_to_oneD(conduit::Node &coordset,
                                     conduit::Node &info)
 {
-    // verify?  or live dangerously?
-    // Convert coordset
-    // Convert nodal fields
+    // Convert coordset.
+    // Conduit requires the independent variable be "y": remove the "x" (0, 1)
+    // and rename "y" to "x".
+    Node & vals = coordset["values"];
+    vals.remove_child("x");
+    vals.rename_child("y", "x");
 }
 
 
@@ -5868,7 +5994,7 @@ mesh::field::index::verify(const Node &field_idx,
 
 //-----------------------------------------------------------------------------
 bool
-mesh::field::index::verify(const Node &field,
+mesh::field::oneD::verify(const Node &field,
                            Node &info)
 {
     return false;
