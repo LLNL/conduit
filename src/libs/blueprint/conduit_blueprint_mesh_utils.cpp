@@ -1994,15 +1994,14 @@ topology::unstructured::generate_offsets(const Node &n,
         dest.reset();
 
         const Node &topo_size = n["elements/sizes"];
+        int64_accessor topo_sizes = topo_size.as_int64_accessor();
         std::vector<int64> shape_array;
         index_t i = 0;
         index_t s = 0;
         while(i < topo_size.dtype().number_of_elements())
         {
-            const Node index_node(int_dtype,
-                const_cast<void*>(topo_size.element_ptr(i)), true);
             shape_array.push_back(s);
-            s += index_node.to_int64();
+            s += topo_sizes[i];
             i++;
         }
 
