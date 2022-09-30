@@ -76,12 +76,23 @@ static const std::vector<std::string> COORD_TYPES = {"uniform", "rectilinear", "
 static const std::vector<std::string> COORD_SYSTEMS = {"cartesian", "cylindrical", "spherical"};
 
 static const std::vector<std::string> TOPO_TYPES = {"points", "uniform", "rectilinear", "structured", "unstructured"};
-static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral", "mixed"};
-static const std::vector<std::string> TOPO_SHAPE_IDS = {"p", "l", "f", "f", "c", "c", "f", "c"};
-static const std::vector<index_t> TOPO_SHAPE_DIMS = {0, 1, 2, 2, 3, 3, 2, 3};
-static const std::vector<index_t> TOPO_SHAPE_INDEX_COUNTS = {1, 2, 3, 4, 4, 8, -1, -1};
-static const std::vector<index_t> TOPO_SHAPE_EMBED_TYPES = {-1, 0, 1, 1, 2, 3, 1, 6};
-static const std::vector<index_t> TOPO_SHAPE_EMBED_COUNTS = {0, 2, 3, 4, 4, 6, -1, -1};
+static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "wedge", "pyramid", "polygonal", "polyhedral", "mixed"};
+static const std::vector<std::string> TOPO_SHAPE_IDS = {"p", "l", "f", "f", "c", "c", "c", "c", "f", "c"};
+// The dimensions for each element in TOPO_SHAPES
+static const std::vector<index_t> TOPO_SHAPE_DIMS = {0, 1, 2, 2, 3, 3, 3, 3, 2, 3, -1};
+// How many points are in each element in TOPO_SHAPES
+static const std::vector<index_t> TOPO_SHAPE_INDEX_COUNTS = {1, 2, 3, 4, 4, 8, 6, 5, -1, -1, -1};
+// For each element in TOPO_SHAPES, the index into TOPO_SHAPES of the underlying shape. 
+// Points have no underlying shape so they get -1.
+// Lines have points under the hood so they get 0.
+// Triangles are made of lines so they get 1.
+// Hexahedrons are made of quads so they get 3.
+static const std::vector<index_t> TOPO_SHAPE_EMBED_TYPES = {-1, 0, 1, 1, 2, 3, 2, 2, 1, 6, -1};
+// How many of those underlying shapes are there?
+// Lines are made of two points so they get 2.
+// Triangles are made of three lines so they get 3.
+// Hexahedrons are made of 6 quads so they get 6.
+static const std::vector<index_t> TOPO_SHAPE_EMBED_COUNTS = {0, 2, 3, 4, 4, 6, 8, 6, -1, -1, -1};
 
 // TODO(JRC): These orientations currently assume the default Conduit-Blueprit
 // windings are used for the input geometry, which happens to be the case
