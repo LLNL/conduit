@@ -920,6 +920,7 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
 
     Node n, info;
 
+    // TODO add entries here for new shape types
     const std::string topology_shapes[] = {
         "point", "line",
         "tri", "quad", "polygonal",
