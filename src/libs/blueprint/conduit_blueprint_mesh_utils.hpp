@@ -76,6 +76,18 @@ static const std::vector<std::string> COORD_TYPES = {"uniform", "rectilinear", "
 static const std::vector<std::string> COORD_SYSTEMS = {"cartesian", "cylindrical", "spherical"};
 
 static const std::vector<std::string> TOPO_TYPES = {"points", "uniform", "rectilinear", "structured", "unstructured"};
+
+// Note: To add a new topo shape type, you must do the following:
+//  1) Add an entry to TOPO_SHAPES, TOPO_SHAPE_IDS, TOPO_SHAPE_DIMS, TOPO_SHAPE_INDEX_COUNTS, 
+//     TOPO_SHAPE_EMBED_TYPES, TOPO_SHAPE_EMBED_COUNTS, and TOPO_SHAPE_EMBEDDINGS. These arrays
+//     are indexed by the same values, so be very careful to add elements in the same place
+//     in each array.
+//  2) If you are adding elements in the middle of these arrays, then make sure that for 
+//     TOPO_SHAPE_EMBED_TYPES, you update the indices of any shapes that come after the ones
+//     you are adding.
+//  3) Head over to conduit_blueprint_mesh_utils_iterate_elements.hpp and find the enum class ShapeId.
+//     Add an element for your shape there, and update the others if adding in the middle.
+
 static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", 
     "tet", "hex", "wedge", "pyramid", "polygonal", "polyhedral", "mixed"};
 // TODO make a note here
