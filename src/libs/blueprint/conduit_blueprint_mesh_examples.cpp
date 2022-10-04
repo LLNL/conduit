@@ -2755,6 +2755,37 @@ braid_to_poly(Node &res)
 
 //---------------------------------------------------------------------------//
 void
+braid_to_wedges(const Node &braid_regular, Node &res)
+{
+    // copied the rest of the function from above
+    // instead we want to mirror what polytess did - construct a new topo from existing
+
+    const index_t topo_count = res["topologies"].number_of_children();
+    std::vector<Node> poly_topos(topo_count);
+    std::vector<std::string> topo_names(topo_count);
+
+    conduit::NodeConstIterator topos_it = res["topologies"].children();
+    while(topos_it.has_next())
+    {
+        const conduit::Node &topo_node = topos_it.next();
+        const std::string topo_name = topos_it.name();
+        const index_t topo_index = topos_it.index();
+
+        conduit::Node &poly_node = poly_topos[topo_index];
+        blueprint::mesh::topology::unstructured::to_polygonal(topo_node, poly_node);
+        topo_names[topo_index] = topo_name;
+    }
+
+    res["topologies"].reset();
+    for(index_t ti = 0; ti < topo_count; ti++)
+    {
+        res["topologies"][topo_names[ti]].set(poly_topos[ti]);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void
 basic(const std::string &mesh_type,
       index_t npts_x, // number of points in x
       index_t npts_y, // number of points in y
@@ -3322,6 +3353,12 @@ braid(const std::string &mesh_type,
     {
         braid_mixed_2d(npts_x, npts_y, res);
     }
+    // else if (mesh_type == "wedges")
+    // {
+    //     Node braid_regular;
+    //     braid_hexs(npts_x,npts_y,npts_z,braid_regular);
+    //     braid_to_wedges(braid_regular, res);
+    // }
     else
     {
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);

@@ -315,6 +315,19 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["mixed"]);
 
+    // blueprint::mesh::examples::braid("wedges",
+    //                                  npts_x,
+    //                                  npts_y,
+    //                                  npts_z,
+    //                                  dsets["wedges"]);
+
+    // TODO add later!
+    // blueprint::mesh::examples::braid("pyramids",
+    //                                  npts_x,
+    //                                  npts_y,
+    //                                  npts_z,
+    //                                  dsets["pyramids"]);
+
     Node info;
     NodeConstIterator itr = dsets.children();
     while(itr.has_next())

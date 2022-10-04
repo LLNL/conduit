@@ -75,8 +75,10 @@ enum class ShapeId : index_t
     Quad       = 3,
     Tet        = 4,
     Hex        = 5,
-    Polygonal  = 6,
-    Polyhedral = 7
+    Wedge      = 6,
+    Pyramid    = 7,
+    Polygonal  = 8,
+    Polyhedral = 9
 };
 
 //-----------------------------------------------------------------------------
