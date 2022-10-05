@@ -66,7 +66,8 @@ struct entity
 };
 
 // Q: Should this exist in conduit_blueprint_mesh_utils.hpp ?
-// static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
+// static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri",
+//        "quad", "tet", "hex", "wedge", "pyramid", "polygonal", "polyhedral"};
 enum class ShapeId : index_t
 {
     Point     = 0,

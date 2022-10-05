@@ -2757,30 +2757,76 @@ braid_to_poly(Node &res)
 void
 braid_to_wedges(const Node &braid_regular, Node &res)
 {
-    // copied the rest of the function from above
-    // instead we want to mirror what polytess did - construct a new topo from existing
+    // preserve state
+    res["state"].set(braid_regular["state"]);
+    
+    // preserve coordsets
+    res["coordsets"].set(braid_regular["coordsets"]);
+    
+    const int old_conn_size = braid_regular["topologies/mesh/elements/connectivity"].dtype().number_of_elements();
+    const int points_per_hex = 8;
+    const int points_per_wedge = 6;
+    const int num_hexes = old_conn_size / points_per_hex;
+    const int num_wedges = num_hexes * 2;
+    const int new_conn_size = num_wedges * points_per_wedge;
 
-    const index_t topo_count = res["topologies"].number_of_children();
-    std::vector<Node> poly_topos(topo_count);
-    std::vector<std::string> topo_names(topo_count);
+    // Set up topology
+    Node &res_topo = res["topologies/mesh"];
+    res_topo["type"] = braid_regular["topologies/mesh/type"];
+    res_topo["coordset"] = braid_regular["topologies/mesh/coordset"];
+    res_topo["elements/shape"] = "wedge";
+    res_topo["elements/connectivity"].set(conduit::DataType::int32(new_conn_size));
 
-    conduit::NodeConstIterator topos_it = res["topologies"].children();
-    while(topos_it.has_next())
+    const int32 *old_conn_ptr = braid_regular["topologies/mesh/elements/connectivity"].value();
+    int32 *new_conn_ptr = res_topo["elements/connectivity"].value();
+    int j = 0; // iterator to go thru wedges
+    // for each hex
+    for (int i = 0; i < old_conn_size; i += points_per_hex)
     {
-        const conduit::Node &topo_node = topos_it.next();
-        const std::string topo_name = topos_it.name();
-        const index_t topo_index = topos_it.index();
-
-        conduit::Node &poly_node = poly_topos[topo_index];
-        blueprint::mesh::topology::unstructured::to_polygonal(topo_node, poly_node);
-        topo_names[topo_index] = topo_name;
+        // from hex: {0,1,2,3,4,5,6,7}
+        // we want two wedges:
+        // 1: {0,1,2,4,5,6}
+        // 2: {0,3,2,4,7,6}
+        new_conn_ptr[j] = old_conn_ptr[i];
+        new_conn_ptr[j + 1] = old_conn_ptr[i + 1];
+        new_conn_ptr[j + 2] = old_conn_ptr[i + 2];
+        new_conn_ptr[j + 3] = old_conn_ptr[i + 4];
+        new_conn_ptr[j + 4] = old_conn_ptr[i + 5];
+        new_conn_ptr[j + 5] = old_conn_ptr[i + 6];
+        j += points_per_wedge;
+        new_conn_ptr[j] = old_conn_ptr[i];
+        new_conn_ptr[j + 1] = old_conn_ptr[i + 3];
+        new_conn_ptr[j + 2] = old_conn_ptr[i + 2];
+        new_conn_ptr[j + 3] = old_conn_ptr[i + 4];
+        new_conn_ptr[j + 4] = old_conn_ptr[i + 7];
+        new_conn_ptr[j + 5] = old_conn_ptr[i + 6];
+        j += points_per_wedge;
     }
 
-    res["topologies"].reset();
-    for(index_t ti = 0; ti < topo_count; ti++)
+    // Set up fields
+    Node &res_fields = res["fields"];
+
+    // preserve vertex-associated field
+    res_fields["braid"].set(braid_regular["fields/braid"]);
+
+    // double up elements in element associated fields
+    res_fields["radial/association"] = braid_regular["fields/radial/association"];
+    res_fields["radial/type"] = braid_regular["fields/radial/type"];
+    res_fields["radial/topology"] = braid_regular["fields/radial/topology"];
+    
+    res_fields["radial/values"].set(conduit::DataType::float64(num_wedges));
+    const float64 *old_vals_ptr = braid_regular["fields/radial/values"].value();
+    float64 *new_vals_ptr = res_fields["radial/values"].value();
+    // for each hex
+    for (int i = 0; i < num_hexes; i ++)
     {
-        res["topologies"][topo_names[ti]].set(poly_topos[ti]);
+        // there are two new values for every old value
+        new_vals_ptr[i * 2] = old_vals_ptr[i];
+        new_vals_ptr[i * 2 + 1] = old_vals_ptr[i];
     }
+
+    // preserve vertex-associated field
+    res_fields["vel"].set(braid_regular["fields/vel"]);
 }
 
 
@@ -3353,11 +3399,17 @@ braid(const std::string &mesh_type,
     {
         braid_mixed_2d(npts_x, npts_y, res);
     }
-    // else if (mesh_type == "wedges")
+    else if (mesh_type == "wedges")
+    {
+        Node braid_regular;
+        braid_hexs(npts_x,npts_y,npts_z,braid_regular);
+        braid_to_wedges(braid_regular, res);
+    }
+    // else if (mesh_type == "pyramids")
     // {
     //     Node braid_regular;
     //     braid_hexs(npts_x,npts_y,npts_z,braid_regular);
-    //     braid_to_wedges(braid_regular, res);
+    //     braid_to_pyramids(braid_regular, res);
     // }
     else
     {
