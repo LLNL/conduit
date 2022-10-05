@@ -882,6 +882,34 @@ contains
 
      end subroutine t_node_obj_fetch_existing
 
+     !--------------------------------------------------------------------------
+     subroutine t_node_obj_reset
+         type(node) n
+         type(node) n_1
+         integer     nchld
+         integer     res
+
+         !----------------------------------------------------------------------
+         call set_case_name("t_node_obj_reset")
+         !----------------------------------------------------------------------
+
+         !--------------
+         ! c++ ~equiv:
+         !--------------
+         ! Node n;    
+         n = conduit_node_obj_create()
+         ! Node &n_1 = n["normal/path"];
+         n_1 = n%fetch("normal/path")
+         nchld = n%number_of_children()
+         call assert_equals(nchld, 2)
+         ! n.reset()
+         call n%reset()
+         nchld = n%number_of_children()
+         call assert_equals(nchld, 0)
+         call conduit_node_obj_destroy(n)
+
+     end subroutine t_node_obj_reset
+
 
 !------------------------------------------------------------------------------
 end module f_conduit_node_obj

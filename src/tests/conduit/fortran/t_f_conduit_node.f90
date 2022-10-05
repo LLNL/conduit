@@ -563,6 +563,33 @@ contains
 
       end subroutine t_node_fetch_existing
 
+      !--------------------------------------------------------------------------
+      subroutine t_node_reset
+          type(C_PTR) cnode
+          type(C_PTR) cn_1
+          integer     nchld
+          integer     res
+
+          !----------------------------------------------------------------------
+          call set_case_name("t_node_reset")
+          !----------------------------------------------------------------------
+
+          !--------------
+          ! c++ ~equiv:
+          !--------------
+          ! Node n;    
+          cnode = conduit_node_create()
+          ! Node &n_1 = n["normal/path"];
+          cn_1 = conduit_node_fetch(cnode,"normal/path");
+          nchld = conduit_node_number_of_children(cnode)
+          call assert_equals(nchld, 2)
+          ! n.reset()
+          call conduit_node_reset(cnode)
+          nchld = conduit_node_number_of_children(cnode)
+          call assert_equals(nchld, 0)
+          call conduit_node_destroy(cnode)
+
+      end subroutine t_node_reset
 
 
 

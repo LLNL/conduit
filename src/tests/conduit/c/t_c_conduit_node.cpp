@@ -572,5 +572,30 @@ TEST(c_conduit_node, c_fetch_existing)
     conduit_node_destroy(n);
 }
 
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_reset)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node *n_1 = conduit_node_fetch(n,"normal/path");
+    conduit_node_set_int(n_1,10);
+
+    // check number of children
+    EXPECT_EQ(conduit_node_number_of_children(n),1);
+    const conduit_datatype *dtype = conduit_node_dtype(n);
+    EXPECT_EQ(conduit_datatype_is_object(dtype),1);
+
+    conduit_node_reset(n);
+
+    EXPECT_EQ(conduit_node_number_of_children(n),0);
+
+    // check that dtype is empty
+    dtype = conduit_node_dtype(n);
+    EXPECT_EQ(conduit_datatype_is_empty(dtype),1);
+
+    conduit_node_destroy(n);
+}
+
+
 
 
