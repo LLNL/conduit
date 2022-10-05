@@ -4,6 +4,11 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+#### General
+ - Added Node::reset methods to C and Fortran interfaces
+
 ## [0.8.4] - Released 2022-08-22
 
 ### Added

@@ -391,6 +391,14 @@ module conduit
             type(C_PTR), value, intent(IN) :: cdest
          end subroutine conduit_node_info
 
+        !--------------------------------------------------------------------------
+        subroutine conduit_node_reset(cnode) &
+                 bind(C, name="conduit_node_reset")
+            use iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(IN) :: cnode
+        end subroutine conduit_node_reset
+
      !--------------------------------------------------------------------------
      ! node update methods
      !--------------------------------------------------------------------------
