@@ -2974,7 +2974,7 @@ braid_to_pyramids(index_t npts_x,
     Node &res_topo = res["topologies/mesh"];
     res_topo["type"] = braid_regular["topologies/mesh/type"];
     res_topo["coordset"] = braid_regular["topologies/mesh/coordset"];
-    res_topo["elements/shape"] = "wedge";
+    res_topo["elements/shape"] = "pyramid";
     res_topo["elements/connectivity"].set(conduit::DataType::int32(new_conn_size));
 
     int32 *new_conn_ptr = res_topo["elements/connectivity"].value();
