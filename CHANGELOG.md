@@ -9,6 +9,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
  - Added Node::reset methods to C and Fortran interfaces
 
+### Changed
+#### General
+- Updated to BLT v0.5.2 
+
 ## [0.8.4] - Released 2022-08-22
 
 ### Added
