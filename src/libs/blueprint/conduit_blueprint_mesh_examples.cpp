@@ -190,6 +190,49 @@ void braid_init_example_state(Node &res)
 
 
 //---------------------------------------------------------------------------//
+inline float64 braid_init_example_point_scalar_field_calc_dx(index_t npts_x)
+{
+    return (float) (4.0 * PI_VALUE) / float64(npts_x - 1);
+}
+
+
+//---------------------------------------------------------------------------//
+inline float64 braid_init_example_point_scalar_field_calc_dy(index_t npts_y)
+{
+    return (float) (2.0 * PI_VALUE) / float64(npts_y-1);
+}
+
+
+//---------------------------------------------------------------------------//
+inline float64 braid_init_example_point_scalar_field_calc_dz(index_t npts_z)
+{
+    return (float) (3.0 * PI_VALUE) / float64(npts_z-1);
+}
+
+
+//---------------------------------------------------------------------------//
+inline float64 braid_init_example_point_scalar_field_calc_single_val(
+    float64 dx, float64 dy, float64 dz, 
+    float64 i, float64 j, float64 k,
+    index_t npts_z)
+{
+    float64 cz =  (k * dz) - (1.5 * PI_VALUE);
+    float64 cy =  (j * dy) - ( PI_VALUE);
+    float64 cx =  (i * dx) + (2.0 * PI_VALUE);
+    float64 cv =  sin( cx ) +
+                  sin( cy ) +
+                  2 * cos(sqrt( (cx*cx)/2.0 +cy*cy) / .75) +
+                  4 * cos( cx*cy / 4.0);
+    if(npts_z > 1)
+    {
+        cv += sin( cz ) +
+              1.5 * cos(sqrt(cx*cx + cy*cy + cz*cz) / .75);
+    }
+    return cv;
+}
+
+
+//---------------------------------------------------------------------------//
 void braid_init_example_point_scalar_field(index_t npts_x,
                                            index_t npts_y,
                                            index_t npts_z,
@@ -215,9 +258,9 @@ void braid_init_example_point_scalar_field(index_t npts_x,
 
     float64 *vals = res["values"].value();
 
-    float64 dx = (float) (4.0 * PI_VALUE) / float64(npts_x - 1);
-    float64 dy = (float) (2.0 * PI_VALUE) / float64(npts_y-1);
-    float64 dz = (float) (3.0 * PI_VALUE) / float64(npts_z-1);
+    float64 dx = braid_init_example_point_scalar_field_calc_dx(npts_x);
+    float64 dy = braid_init_example_point_scalar_field_calc_dy(npts_y);
+    float64 dz = braid_init_example_point_scalar_field_calc_dz(npts_z);
 
     index_t idx = 0;
 
@@ -250,6 +293,27 @@ void braid_init_example_point_scalar_field(index_t npts_x,
         }
     }
 }
+
+
+//---------------------------------------------------------------------------//
+inline float64 braid_init_example_point_vector_field_calc_dxyz(index_t npts_xyz)
+{
+    return 20.0  / float64(npts_xyz - 1);
+}
+
+
+//---------------------------------------------------------------------------//
+inline void braid_init_example_point_vector_field_calc_single_val(
+    float64 dx, float64 dy, float64 dz, 
+    float64 i, float64 j, float64 k,
+    float64 *u_vals, float64 *v_vals, float64 *w_vals,
+    index_t idx)
+{
+    u_vals[idx] = -10.0 + i * dx;
+    v_vals[idx] = -10.0 + j * dy;
+    w_vals[idx] = -10.0 + k * dz;
+}
+
 
 //---------------------------------------------------------------------------//
 void braid_init_example_point_vector_field(index_t npts_x,
@@ -299,14 +363,14 @@ void braid_init_example_point_vector_field(index_t npts_x,
 
     if(npts_x > 1)
     {
-        dx = 20.0  / float64(npts_x - 1);
+        dx = braid_init_example_point_vector_field_calc_dxyz(npts_x);
     }
 
     // AGC is this right?  Note change to variable being tested
     // and used in divisor.
     if(npts_y > 1)
     {
-        dy = 20.0  / float64(npts_y - 1);
+        dy = braid_init_example_point_vector_field_calc_dxyz(npts_y);
     }
 
 
@@ -314,7 +378,7 @@ void braid_init_example_point_vector_field(index_t npts_x,
 
     if(npts_z > 1)
     {
-        dz = 20.0 / float64(npts_z-1);
+        dz = braid_init_example_point_vector_field_calc_dxyz(npts_z);
     }
 
     // make sure outerloop exex
@@ -2770,7 +2834,9 @@ braid_to_wedges(const Node &braid_regular, Node &res)
     const int num_wedges = num_hexes * 2;
     const int new_conn_size = num_wedges * points_per_wedge;
 
+    // 
     // Set up topology
+    // 
     Node &res_topo = res["topologies/mesh"];
     res_topo["type"] = braid_regular["topologies/mesh/type"];
     res_topo["coordset"] = braid_regular["topologies/mesh/coordset"];
@@ -2803,7 +2869,9 @@ braid_to_wedges(const Node &braid_regular, Node &res)
         j += points_per_wedge;
     }
 
+    // 
     // Set up fields
+    // 
     Node &res_fields = res["fields"];
 
     // preserve vertex-associated field
@@ -2827,6 +2895,246 @@ braid_to_wedges(const Node &braid_regular, Node &res)
 
     // preserve vertex-associated field
     res_fields["vel"].set(braid_regular["fields/vel"]);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+braid_to_pyramids(index_t npts_x, 
+                  index_t npts_y, 
+                  index_t npts_z,
+                  const Node &braid_regular, 
+                  Node &res)
+{
+    // preserve state
+    res["state"].set(braid_regular["state"]);
+    
+    // 
+    // Set up coordset
+    // 
+    Node &res_coords = res["coordsets/coords"];
+    res_coords["type"] = braid_regular["coordsets/coords/type"];
+    const int old_num_pts = braid_regular["coordsets/coords/values/x"].dtype().number_of_elements();
+    const int old_conn_size = braid_regular["topologies/mesh/elements/connectivity"].dtype().number_of_elements();
+    const int points_per_hex = 8;
+    const int points_per_pyramid = 5;
+    const int num_hexes = old_conn_size / points_per_hex;
+    const int num_pyramids = num_hexes * 6;
+    const int new_conn_size = num_pyramids * points_per_pyramid;
+    // we are adding one new point in the center of each hex
+    const int new_num_pts = old_num_pts + num_hexes;
+
+    const int32 *old_conn_ptr = braid_regular["topologies/mesh/elements/connectivity"].value();
+
+    res_coords["values/x"].set(conduit::DataType::float64(new_num_pts));
+    const float64 *old_xvals = braid_regular["coordsets/coords/values/x"].value();
+    float64 *new_xvals = res_coords["values/x"].value();
+
+    res_coords["values/y"].set(conduit::DataType::float64(new_num_pts));
+    const float64 *old_yvals = braid_regular["coordsets/coords/values/y"].value();
+    float64 *new_yvals = res_coords["values/y"].value();
+
+    res_coords["values/z"].set(conduit::DataType::float64(new_num_pts));
+    const float64 *old_zvals = braid_regular["coordsets/coords/values/z"].value();
+    float64 *new_zvals = res_coords["values/z"].value();
+
+    // add the old points
+    for (int i = 0; i < old_num_pts; i ++)
+    {
+        new_xvals[i] = old_xvals[i];
+        new_yvals[i] = old_yvals[i];
+        new_zvals[i] = old_zvals[i];
+    }
+
+    // add the new points at the end
+    for (int i = 0; i < num_hexes; i ++)
+    {
+        float64 x, y, z;
+        x = y = z = 0;
+
+        // take the average of the 8 pts of the hex
+        for (int j = 0; j < points_per_hex; j ++)
+        {
+            x += old_xvals[old_conn_ptr[i * points_per_hex + j]];
+            y += old_yvals[old_conn_ptr[i * points_per_hex + j]];
+            z += old_zvals[old_conn_ptr[i * points_per_hex + j]];
+        }
+        x /= points_per_hex;
+        y /= points_per_hex;
+        z /= points_per_hex;
+
+        new_xvals[old_num_pts + i] = x;
+        new_yvals[old_num_pts + i] = y;
+        new_zvals[old_num_pts + i] = z;
+    }
+
+    // 
+    // Set up topology
+    // 
+    Node &res_topo = res["topologies/mesh"];
+    res_topo["type"] = braid_regular["topologies/mesh/type"];
+    res_topo["coordset"] = braid_regular["topologies/mesh/coordset"];
+    res_topo["elements/shape"] = "wedge";
+    res_topo["elements/connectivity"].set(conduit::DataType::int32(new_conn_size));
+
+    int32 *new_conn_ptr = res_topo["elements/connectivity"].value();
+    int j = 0; // iterator to go thru pyramids
+    int k = old_num_pts; // index representing the entries in the new pts arrays
+    // for each hex
+    for (int i = 0; i < old_conn_size; i += points_per_hex)
+    {
+        // from hex: {0,1,2,3,4,5,6,7} + bonus midpoint 8
+        // we want 6 pyramids:
+        // 1: {0,3,2,1,8}
+        new_conn_ptr[j] = old_conn_ptr[i];
+        new_conn_ptr[j + 1] = old_conn_ptr[i + 3];
+        new_conn_ptr[j + 2] = old_conn_ptr[i + 2];
+        new_conn_ptr[j + 3] = old_conn_ptr[i + 1];
+        new_conn_ptr[j + 4] = k;
+        j += points_per_pyramid;
+        // 2: {0,1,5,4,8}
+        new_conn_ptr[j] = old_conn_ptr[i];
+        new_conn_ptr[j + 1] = old_conn_ptr[i + 1];
+        new_conn_ptr[j + 2] = old_conn_ptr[i + 5];
+        new_conn_ptr[j + 3] = old_conn_ptr[i + 4];
+        new_conn_ptr[j + 4] = k;
+        j += points_per_pyramid;
+        // 3: {1,2,6,5,8}
+        new_conn_ptr[j] = old_conn_ptr[i + 1];
+        new_conn_ptr[j + 1] = old_conn_ptr[i + 2];
+        new_conn_ptr[j + 2] = old_conn_ptr[i + 6];
+        new_conn_ptr[j + 3] = old_conn_ptr[i + 5];
+        new_conn_ptr[j + 4] = k;
+        j += points_per_pyramid;
+        // 4: {2,3,7,6,8}
+        new_conn_ptr[j] = old_conn_ptr[i + 2];
+        new_conn_ptr[j + 1] = old_conn_ptr[i + 3];
+        new_conn_ptr[j + 2] = old_conn_ptr[i + 7];
+        new_conn_ptr[j + 3] = old_conn_ptr[i + 6];
+        new_conn_ptr[j + 4] = k;
+        j += points_per_pyramid;
+        // 5: {3,0,4,7,8}
+        new_conn_ptr[j] = old_conn_ptr[i + 3];
+        new_conn_ptr[j + 1] = old_conn_ptr[i];
+        new_conn_ptr[j + 2] = old_conn_ptr[i + 4];
+        new_conn_ptr[j + 3] = old_conn_ptr[i + 7];
+        new_conn_ptr[j + 4] = k;
+        j += points_per_pyramid;
+        // 6: {4,5,6,7,8}
+        new_conn_ptr[j] = old_conn_ptr[i + 4];
+        new_conn_ptr[j + 1] = old_conn_ptr[i + 5];
+        new_conn_ptr[j + 2] = old_conn_ptr[i + 6];
+        new_conn_ptr[j + 3] = old_conn_ptr[i + 7];
+        new_conn_ptr[j + 4] = k;
+        j += points_per_pyramid;
+        // We stored all the new points at the end of the points arrays.
+        // k indexes into them. There are num_hexes new points, and 
+        // k is incremented old_conn_size / points_per_hex = num_hexes
+        // times.
+        k ++;
+    }
+
+    // 
+    // Set up fields
+    // 
+    Node &res_fields = res["fields"];
+
+    // handle vertex-associated field
+    res_fields["braid/association"] = braid_regular["fields/braid/association"];
+    res_fields["braid/type"] = braid_regular["fields/braid/type"];
+    res_fields["braid/topology"] = braid_regular["fields/braid/topology"];
+    res_fields["braid/values"].set(conduit::DataType::float64(new_num_pts));
+    const float64 *old_braid_ptr = braid_regular["fields/braid/values"].value();
+    float64 *new_braid_ptr = res_fields["braid/values"].value();
+    // copy over the old field values
+    for (int i = 0; i < old_num_pts; i ++)
+    {
+        new_braid_ptr[i] = old_braid_ptr[i];
+    }
+    // calculate the new field values for the new points
+    float64 dx = braid_init_example_point_scalar_field_calc_dx(npts_x);
+    float64 dy = braid_init_example_point_scalar_field_calc_dy(npts_y);
+    float64 dz = braid_init_example_point_scalar_field_calc_dz(npts_z);
+    if (num_hexes != (npts_x - 1) * (npts_y - 1) * (npts_z - 1))
+    {
+        // TODO better message
+        CONDUIT_ERROR("num hexes mismatch.");
+    }
+    // the following loop iterates 
+    // (npts_x - 1) * (npts_y - 1) * (npts_z - 1) == num_hexes
+    // == new_num_pts - old_num_pts times.
+    int index = old_num_pts;
+    for (index_t k = 0; k < npts_z - 1; k ++)
+    {
+        for (index_t j = 0; j < npts_y - 1; j ++)
+        {
+            for (index_t i = 0; i < npts_x - 1; i ++)
+            {
+                new_braid_ptr[index] = braid_init_example_point_scalar_field_calc_single_val(
+                    dx, dy, dz, i + 0.5, j + 0.5, k + 0.5, npts_z);
+                index ++;
+            }
+        }
+    }
+
+    // 6x elements in element associated fields
+    res_fields["radial/association"] = braid_regular["fields/radial/association"];
+    res_fields["radial/type"] = braid_regular["fields/radial/type"];
+    res_fields["radial/topology"] = braid_regular["fields/radial/topology"];
+    
+    res_fields["radial/values"].set(conduit::DataType::float64(num_pyramids));
+    const float64 *old_vals_ptr = braid_regular["fields/radial/values"].value();
+    float64 *new_vals_ptr = res_fields["radial/values"].value();
+    // for each hex
+    for (int i = 0; i < num_hexes; i ++)
+    {
+        // there are six new values for every old value - one for each face
+        new_vals_ptr[i * 6] = old_vals_ptr[i];
+        new_vals_ptr[i * 6 + 1] = old_vals_ptr[i];
+        new_vals_ptr[i * 6 + 2] = old_vals_ptr[i];
+        new_vals_ptr[i * 6 + 3] = old_vals_ptr[i];
+        new_vals_ptr[i * 6 + 4] = old_vals_ptr[i];
+        new_vals_ptr[i * 6 + 5] = old_vals_ptr[i];
+    }
+
+    // handle vertex-associated field
+    res_fields["vel/association"] = braid_regular["fields/vel/association"];
+    res_fields["vel/type"] = braid_regular["fields/vel/type"];
+    res_fields["vel/topology"] = braid_regular["fields/vel/topology"];
+    res_fields["vel/values/u"].set(conduit::DataType::float64(new_num_pts));
+    res_fields["vel/values/v"].set(conduit::DataType::float64(new_num_pts));
+    res_fields["vel/values/w"].set(conduit::DataType::float64(new_num_pts));
+    const float64 *old_vel_u_ptr = braid_regular["fields/vel/values/u"].value();
+    float64 *new_vel_u_ptr = res_fields["vel/values/u"].value();
+    const float64 *old_vel_v_ptr = braid_regular["fields/vel/values/v"].value();
+    float64 *new_vel_v_ptr = res_fields["vel/values/v"].value();
+    const float64 *old_vel_w_ptr = braid_regular["fields/vel/values/w"].value();
+    float64 *new_vel_w_ptr = res_fields["vel/values/w"].value();
+    // copy over the old field values
+    for (int i = 0; i < old_num_pts; i ++)
+    {
+        new_vel_u_ptr[i] = old_vel_u_ptr[i];
+        new_vel_v_ptr[i] = old_vel_v_ptr[i];
+        new_vel_w_ptr[i] = old_vel_w_ptr[i];
+    }
+    // calculate the new field values for the new points
+    dx = braid_init_example_point_vector_field_calc_dxyz(npts_x);
+    dy = braid_init_example_point_vector_field_calc_dxyz(npts_y);
+    dz = braid_init_example_point_vector_field_calc_dxyz(npts_z);
+    index = old_num_pts;
+    for (index_t k = 0; k < npts_z - 1; k ++)
+    {
+        for (index_t j = 0; j < npts_y - 1; j ++)
+        {
+            for (index_t i = 0; i < npts_x - 1; i ++)
+            {
+                braid_init_example_point_vector_field_calc_single_val(
+                    dx, dy, dz, i + 0.5, j + 0.5, k + 0.5, 
+                    new_vel_u_ptr, new_vel_v_ptr, new_vel_w_ptr, index);
+                index ++;
+            }
+        }
+    }
 }
 
 
@@ -3405,12 +3713,12 @@ braid(const std::string &mesh_type,
         braid_hexs(npts_x,npts_y,npts_z,braid_regular);
         braid_to_wedges(braid_regular, res);
     }
-    // else if (mesh_type == "pyramids")
-    // {
-    //     Node braid_regular;
-    //     braid_hexs(npts_x,npts_y,npts_z,braid_regular);
-    //     braid_to_pyramids(braid_regular, res);
-    // }
+    else if (mesh_type == "pyramids")
+    {
+        Node braid_regular;
+        braid_hexs(npts_x,npts_y,npts_z,braid_regular);
+        braid_to_pyramids(npts_x,npts_y,npts_z,braid_regular, res);
+    }
     else
     {
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);

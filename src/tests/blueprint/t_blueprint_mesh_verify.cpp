@@ -920,19 +920,16 @@ TEST(conduit_blueprint_mesh_verify, topology_shape)
 
     Node n, info;
 
-    // TODO add entries here for new shape types
     const std::string topology_shapes[] = {
         "point", "line",
         "tri", "quad", "polygonal",
         "tet", "hex", "polyhedral",
-        "wedge" //, "pyramid"};
-    };
+        "wedge" , "pyramid"};
     const std::string topology_fids[] = {
         "points", "lines",
         "tris", "quads", "quads_poly",
         "tets", "hexs", "hexs_poly",
-        "wedges" //, "pyramids"};
-    };
+        "wedges" , "pyramids"};
     const index_t topo_shape_count = sizeof(topology_shapes) / sizeof(std::string);
 
     for(index_t ti = 0; ti < topo_shape_count; ti++)
