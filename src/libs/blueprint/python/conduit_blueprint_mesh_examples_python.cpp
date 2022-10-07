@@ -65,6 +65,8 @@ const char *PyBlueprint_mesh_examples_basic_doc_str =
 "    \"polygons\"\n"
 "    \"tets\"\n"
 "    \"hexs\"\n"
+"    \"wedges\"\n"
+"    \"pyramids\"\n"
 "    \"polyhedra\"\n"
 " dest: Mesh output (conduit.Node instance)\n";
 
@@ -145,6 +147,8 @@ const char *PyBlueprint_mesh_examples_braid_doc_str =
 "    \"quads\"\n"
 "    \"tets\"\n"
 "    \"hexs\"\n"
+"    \"wedges\"\n"
+"    \"pyramids\"\n"
 " dest: Mesh output (conduit.Node instance)\n";
 
 // python func

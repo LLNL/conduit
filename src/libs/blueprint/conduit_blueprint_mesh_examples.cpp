@@ -170,6 +170,8 @@ braid_3d_only_shape_type(const std::string& mesh_type)
         mesh_type == "hexs" ||
         mesh_type == "hexs_poly" ||
         mesh_type == "hexs_and_tets" ||
+        mesh_type == "wedges" ||
+        mesh_type == "pyramids" ||
         mesh_type == "mixed")
     {
         return true;
@@ -3150,19 +3152,23 @@ basic(const std::string &mesh_type,
     const std::string mesh_types[] = {
         "uniform", "rectilinear", "structured",
         "tris", "quads", "polygons",
-        "tets", "hexs", "polyhedra"};
+        "tets", "hexs", "polyhedra",
+        "wedges", "pyramids"};
     const std::string braid_types[] = {
         "uniform", "rectilinear", "structured",
         "tris", "quads", "quads_poly",
-        "tets", "hexs", "hexs_poly"};
+        "tets", "hexs", "hexs_poly",
+        "wedges", "pyramids"};
     const index_t mesh_types_dims[] = {
         2, 2, 2,
         2, 2, 2,
-        3, 3, 3};
+        3, 3, 3,
+        3, 3};
     const index_t mesh_types_subelems_per_elem[] = {
         1, 1, 1,
         2, 1, 1,
-        6, 1, 1};
+        6, 1, 1,
+        2, 6};
 
     const index_t num_mesh_types = sizeof(mesh_types) / sizeof(std::string);
 
@@ -3220,7 +3226,7 @@ basic(const std::string &mesh_type,
                       " npts_x > 1 and npts_y > 1 and npts_z == 0"
                       << std::endl <<
                       "For 3D only topologies"
-                      " ( mesh_type={\"tets\", \"hexs\", or \"polyhedra\"} )"
+                      " ( mesh_type={\"tets\", \"hexs\", \"wedges\", \"pyramids\", or \"polyhedra\"} )"
                       "npts_x > 1 and npts_y > 1 and "
                       " npts_z > 1"
                       << std::endl <<
@@ -3622,7 +3628,7 @@ braid(const std::string &mesh_type,
             CONDUIT_ERROR("braid with non-points topology requires "
                           "npts_x > 1 for 1D, "
                           "npts_x > 1 and npts_y > 1 for 2D"
-                          " and for mesh_type={\"tets\", \"hexs\", "
+                          " and for mesh_type={\"tets\", \"hexs\", \"wedges\", \"pyramids\","
                           " \"hexs_poly\", \"hexs_and_tets\" or \"mixed\""
                           " npts_z must be > 1" << std::endl <<
                           "values provided:" << std::endl <<

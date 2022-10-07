@@ -661,6 +661,24 @@ silo_write_ucd_zonelist(DBfile *dbfile,
             total_num_elems  += num_elems;
 
         }
+        else if( topo_shape == "wedge")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 6;
+            shapetype[i] = DB_ZONETYPE_PRISM;
+            shapesize[i] = 6;
+            shapecnt[i]  = num_elems;
+            total_num_elems  += num_elems;
+        }
+        else if( topo_shape == "pyramid")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 5;
+            shapetype[i] = DB_ZONETYPE_PYRAMID;
+            shapesize[i] = 5;
+            shapecnt[i]  = num_elems;
+            total_num_elems  += num_elems;
+        }
         else  if( topo_shape == "tet")
         {
             // TODO: check for explicit # of elems

@@ -1061,11 +1061,13 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
     }
 
     static const conduit::index_t dims3[] = {3,3,2};
-    static const std::array<std::string, 4> cases3 = {
+    static const std::array<std::string, 6> cases3 = {
         "tets",
         "hexs",
         "hexs_poly",
-        "hexs_and_tets"
+        "hexs_and_tets",
+        "wedges",
+        "pyramids"
     };
     for(const auto &c : cases3)
     {
@@ -1266,10 +1268,12 @@ TEST(conduit_blueprint_mesh_combine, to_poly)
     }
 
     static const conduit::index_t dims3[] = {3,3,2};
-    static const std::array<std::string, 3> cases3 = {
+    static const std::array<std::string, 5> cases3 = {
         "tets",
         "hexs",
         "hexs_and_tets",
+        "wedges",
+        "pyramids"
     };
     for(const auto &c : cases3)
     {

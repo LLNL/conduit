@@ -90,9 +90,14 @@ static const std::vector<std::string> TOPO_TYPES = {"points", "uniform", "rectil
 
 static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", 
     "tet", "hex", "wedge", "pyramid", "polygonal", "polyhedral", "mixed"};
-// TODO make a note here
+
+// "p" is for point
+// "l" is for line
+// "f" is for face
+// "c" is for cell
 static const std::vector<std::string> TOPO_SHAPE_IDS = {/*point*/ "p", /*line*/ "l", /*tri*/ "f", /*quad*/ "f", 
     /*tet*/ "c", /*hex*/ "c", /*wedge*/ "c", /*pyramid*/ "c", /*polygonal*/ "f", /*polyhedral*/ "c"};
+
 // The dimensions for each element in TOPO_SHAPES
 static const std::vector<index_t> TOPO_SHAPE_DIMS = {/*point*/ 0, /*line*/ 1, /*tri*/ 2, /*quad*/ 2, 
     /*tet*/ 3, /*hex*/ 3, /*wedge*/ 3, /*pyramid*/ 3, /*polygonal*/ 2, /*polyhedral*/ 3, /*mixed*/ -1};
