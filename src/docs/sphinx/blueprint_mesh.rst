@@ -932,6 +932,10 @@ supported values for this parameter and their corresponding effects are outlined
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 | `hexs <Hexs_>`_                | 3d                 | explicit          | explicit          | hex              |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `wedges <Wedges_>`             | 3d                 | explicit          | explicit          | wedge            |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `pyramids <Pyramids_>`_        | 3d                 | explicit          | explicit          | pyramid          |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
 | `polyhedra <Polyhedra_>`_      | 3d                 | explicit          | explicit          | polyhedron       |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 
@@ -1147,6 +1151,58 @@ Hexs
 
     Pseudocolor plot of ``basic`` (mesh type 'hexs')
 
+Wedges
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :language: yaml
+
+* **Visual**
+
+.. figure:: basic_hex_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (mesh type 'wedges')
+
+Pyramids
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :language: yaml
+
+* **Visual**
+
+.. figure:: basic_hex_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (mesh type 'pyramids')
+
 Polyhedra
 ====================================
 
@@ -1226,6 +1282,12 @@ Here is a list of valid strings for the ``mesh_type`` argument:
 |               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
 | hexs          | 3d unstructured mesh of hexahedral elements   |
+|               | (explicit coords, explicit topology)          |
++---------------+-----------------------------------------------+
+| wedges        | 3d unstructured mesh of wedge elements        |
+|               | (explicit coords, explicit topology)          |
++---------------+-----------------------------------------------+
+| pyramids      | 3d unstructured mesh of pyramid elements      |
 |               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
 | mixed_2d      | 2d unstructured mesh of mixed elements        |
