@@ -3057,8 +3057,7 @@ braid_to_pyramids(index_t npts_x,
     float64 dz = braid_init_example_point_scalar_field_calc_dz(npts_z);
     if (num_hexes != (npts_x - 1) * (npts_y - 1) * (npts_z - 1))
     {
-        // TODO better message
-        CONDUIT_ERROR("num hexes mismatch.");
+        CONDUIT_ERROR("Cannot create pyramid; mismatch with provided dimensions and number of hexahedrons.");
     }
     // the following loop iterates 
     // (npts_x - 1) * (npts_y - 1) * (npts_z - 1) == num_hexes
