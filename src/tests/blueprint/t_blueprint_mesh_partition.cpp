@@ -974,13 +974,11 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
     {
         std::cout << "-------- Start case " << case_name << " --------" << std::endl;
         conduit::Node braid;
-        std::cout << "I'm making braid" << std::endl;
         conduit::blueprint::mesh::examples::braid(case_name, vdims[0], vdims[1], vdims[2], braid);
     #ifdef DEBUG_RECOMBINE_BRAID
         const std::string base_name = "recombine_" + case_name;
         save_visit(base_name + "_original", braid);
     #endif
-        std::cout << "split it" << std::endl;
 
         // First split the braid mesh
         conduit::Node split;
@@ -1002,44 +1000,33 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
             }
             EXPECT_TRUE(is_valid);
         }
-        std::cout << "combo" << std::endl;
 
         // Now put it back together
         conduit::Node combine;
         {
-            std::cout << "in combine block" << std::endl;
             static const std::string combine_yaml = R"(target: 1)";
             conduit::Node combine_opts; combine_opts.parse(combine_yaml, "yaml");
-            std::cout << "made some stuff" << std::endl;
 
             std::vector<const conduit::Node*> chunks;
             std::vector<conduit_index_t> chunk_ids;
-            std::cout << "made some vectors" << std::endl;
             for(conduit_index_t i = 0; i < split.number_of_children(); i++)
             {
                 chunks.push_back(&split[i]);
                 chunk_ids.push_back(i);
             }
-            std::cout << "filled vectors" << std::endl;
 
             conduit::blueprint::mesh::Partitioner p;
-            std::cout << "I am the partitioner" << std::endl;
             p.combine(0, chunks, chunk_ids, combine);
-            std::cout << "I am da captain now" << std::endl;
 
         #ifdef DEBUG_RECOMBINE_BRAID
             save_visit(base_name + "_combined", combine);
         #endif
-            std::cout << "verify" << std::endl;
-
             conduit::Node verify_info;
             bool is_valid = conduit::blueprint::mesh::verify(combine, verify_info);
             if(!is_valid)
             {
                 verify_info.print();
             }
-            std::cout << "expect true" << std::endl;
-
             EXPECT_TRUE(is_valid);
         }
         std::cout << "compare" << std::endl;
