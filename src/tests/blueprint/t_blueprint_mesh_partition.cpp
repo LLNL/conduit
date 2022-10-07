@@ -1017,7 +1017,6 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
 
             conduit::blueprint::mesh::Partitioner p;
             p.combine(0, chunks, chunk_ids, combine);
-
         #ifdef DEBUG_RECOMBINE_BRAID
             save_visit(base_name + "_combined", combine);
         #endif
@@ -1029,7 +1028,6 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
             }
             EXPECT_TRUE(is_valid);
         }
-        std::cout << "compare" << std::endl;
 
         // Compare combined mesh to baselines
         const std::string filename = baseline_file("recombine_braid_" + case_name);
