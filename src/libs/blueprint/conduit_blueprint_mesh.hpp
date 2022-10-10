@@ -104,6 +104,54 @@ void CONDUIT_BLUEPRINT_API generate_index_for_single_domain(const conduit::Node 
                                                             const std::string &ref_path,
                                                             Node &index_out);
 
+//---------------------------------------------------------------------
+/// Return the max of any coordset's dimensionality
+index_t CONDUIT_BLUEPRINT_API max_dimension(const conduit::Node &mesh);
+
+/// Return true if all coordsets have equal dimensionality
+bool CONDUIT_BLUEPRINT_API is_dimension_consistent(const conduit::Node &mesh);
+
+/// Test if a mesh is suitable to convert to a 1D "strip" mesh of a form
+/// expected by Carter.  Additional info (for example, the faulty path)
+/// is returned in info.
+bool CONDUIT_BLUEPRINT_API is_convertible_to_strip(const conduit::Node &mesh,
+                                                   Node &info);
+
+/// Test if a mesh is a Carter 1D "strip" mesh suitable to convert to 1D.
+/// Additional info (for example, the faulty path) is returned in info.
+bool CONDUIT_BLUEPRINT_API is_convertible_to_one_dimension(const conduit::Node &mesh,
+                                                           Node &info);
+
+/**
+ * @brief Convert the given 1D blueprint mesh into a strip of quads
+ *     as expected by Carter.
+ * @param mesh  A Conduit node containing a 1D blueprint mesh.
+ * @param[out] output A Conduit node that will contain a 2D blueprint mesh
+ *     containing a quad element corresponding to each (line segment)
+ *     element in \a mesh.
+ *
+ * The input \a mesh must have one dimension in each coordset.  The \a mesh
+ * must contain only zonal fields.  The requirement against nodal fields
+ * may be relaxed if we determine the right way to do it.
+ */
+void CONDUIT_BLUEPRINT_API convert_to_strip(const conduit::Node &mesh,
+                                            conduit::Node &output);
+
+/**
+ * @brief Convert the given 2D blueprint mesh (a row of quad elements)
+ *     into a 1D blueprint mesh.
+ * @param mesh  A Conduit node containing a 2D blueprint mesh with a
+ *     single row of quad elements.
+ * @param[out] output A Conduit node that will contain a 1D blueprint mesh
+ *     containing a line segment element corresponding to each (quad)
+ *     element in \a mesh.
+ *
+ * The input \a mesh must be two-dimensional in each coordset, with all
+ * meshes describing a single row of quads.
+ */
+void CONDUIT_BLUEPRINT_API convert_strip_to_oneD(const conduit::Node &mesh,
+                                                 conduit::Node &output);
+
 //-------------------------------------------------------------------------
 // Creates fields to help view and debug adjset relationships.
 //
@@ -260,24 +308,6 @@ namespace association
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &assoc,
                                       conduit::Node &info);
-}
-
-//-------------------------------------------------------------------------
-// blueprint::mesh::oneD protocol interface
-//-------------------------------------------------------------------------
-namespace oneD
-{
-    //---------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coordset,
-                                      conduit::Node &info);
-
-    //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API oneD_to_strip(conduit::Node &mesh,
-                                             conduit::Node &info);
-
-    //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API strip_to_oneD(conduit::Node &mesh,
-                                             conduit::Node &info);
 }
 
 //-----------------------------------------------------------------------------

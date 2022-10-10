@@ -1043,6 +1043,163 @@ convert_coordset_to_explicit(const std::string &base_type,
     }
 }
 
+//-------------------------------------------------------------------------
+void
+copy_node_rename_first_child(const conduit::Node & from,
+                             conduit::Node & to,
+                             const std::string & key,
+                             const std::string & new_name,
+                             const std::string & new_sibling)
+{
+    to[key].set(from[key]);
+    conduit::Node & n = to[key];
+    const std::string from_name = n.child(0).name();
+    n.rename_child(from_name, new_name);
+    n[new_sibling].set(n[new_name]);
+}
+
+//-------------------------------------------------------------------------
+void
+copy_node_substitute_sibling(const conduit::Node & from,
+                             conduit::Node & to,
+                             const std::string & key,
+                             const std::string & name,
+                             const std::string & data_sibling)
+{
+    to[key].set(from[key]);
+    conduit::Node & n = to[key];
+    n.remove_child(name);
+    n.rename_child(data_sibling, name);
+}
+
+//-------------------------------------------------------------------------
+void
+convert_oneD_coordset_to_strip(const conduit::Node &coordset,
+                               conduit::Node &dest)
+{
+    dest.reset();
+    std::string coord_type = coordset["type"].as_string();
+    dest["type"].set(coord_type);
+
+    if (coord_type == "uniform")
+    {
+        copy_node_rename_first_child(coordset, dest, "dims", "j", "i");
+        dest["dims/i"].set(1);
+
+        if (coordset.has_child("origin"))
+        {
+            copy_node_rename_first_child(coordset, dest, "origin", "y", "x");
+            dest["origin/x"].set(0.);
+        }
+
+        if (coordset.has_child("spacing"))
+        {
+            copy_node_rename_first_child(coordset, dest, "spacing", "dy", "dx");
+            dest["spacing/dx"] = 1.;
+        }
+    }
+    else
+    {
+        copy_node_rename_first_child(coordset, dest, "values", "y", "x");
+        dest["values/x"].set(DataType::float64(2));
+        double *x_vals = vals["x"].value();
+        x_vals[0] = 0.;
+        x_vals[1] = 1.;
+    }
+}
+
+
+//-------------------------------------------------------------------------
+void
+convert_strip_coordset_to_oneD(const conduit::Node &coordset,
+                               conduit::Node &dest)
+{
+    dest.reset();
+    std::string coord_type = coordset["type"].as_string();
+    dest["type"].set(coord_type);
+
+    if (coord_type == "uniform")
+    {
+        copy_node_substitute_sibling(coordset, dest, "dims", "i", "j");
+
+        if (coordset.has_child("origin"))
+        {
+            copy_node_substitute_sibling(coordset, dest, "origin", "x", "y");
+        }
+
+        if (coordset.has_child("spacing"))
+        {
+            copy_node_substitute_sibling(coordset, dest, "spacing", "dx", "dy");
+        }
+
+    }
+    else
+    {
+        copy_node_substitute_sibling(coordset, dest, "values", "x", "y");
+    }
+}
+
+
+//-------------------------------------------------------------------------
+void
+convert_oneD_topo_to_strip(const conduit::Node &topo,
+                           conduit::Node &dest)
+{
+    dest.reset();
+    dest["coordset"] = topo["coordset"];
+    dest["type"] = topo["type"];
+
+    if (topo.has_child("elements"))
+    {
+        Node topoelts = topo["elements"];
+        Node destelts = dest["elements"];
+
+        if (topoelts.has_child("origin"))
+        {
+            copy_node_rename_first_child(topoelts, destelts, "origin", "j", "i");
+            destelts["origin/i"] = 0.;
+        }
+
+        if (topoelts.has_child("dims"))
+        {
+            copy_node_rename_first_child(coordset, dest, "dims", "j", "i");
+            dest["dims/i"] = 1;
+        }
+    }
+}
+
+
+//-------------------------------------------------------------------------
+void
+convert_strip_topo_to_oneD(const conduit::Node &topo,
+                           conduit::Node &dest)
+{
+    dest.reset();
+    std::string coord_type = coordset["type"].as_string();
+    dest["type"].set(coord_type);
+
+    if (coord_type == "uniform")
+    {
+        copy_node_substitute_sibling(coordset, dest, "dims", "i", "j");
+
+        if (coordset.has_child("origin"))
+        {
+            copy_node_substitute_sibling(coordset, dest, "origin", "x", "y");
+        }
+
+        if (coordset.has_child("spacing"))
+        {
+            copy_node_substitute_sibling(coordset, dest, "spacing", "dx", "dy");
+        }
+
+    }
+    else
+    {
+        copy_node_substitute_sibling(coordset, dest, "values", "x", "y");
+    }
+}
+
+
 // TODO(JRC): For all of the following topology conversion functions, it's
 // possible if the user validates the topology in isolation that it can be
 // good and yet the conversion will fail due to an invalid reference coordset.
@@ -1418,7 +1575,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 }
 
 //-----------------------------------------------------------------------------
-// - end internal data function helpers -
+// - end internal topology helpers -
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -2051,6 +2208,212 @@ mesh::generate_index_for_single_domain(const Node &mesh,
     }
 }
 
+
+
+//-------------------------------------------------------------------------
+// blueprint tests and converters for one-dimensional meshes
+//-------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+index_t
+mesh::max_dimension(const conduit::Node &mesh)
+{
+    index_t res = 0;
+
+    NodeConstIterator csitr = mesh["coordsets"].children();
+    while(csitr.has_next())
+    {
+        const Node &cset = csitr.next();
+        index_t cset_dim = cset["values"].number_of_children();
+        if (cset_dim > res)
+        {
+            res = cset_dim;
+        }
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+mesh::is_dimension_consistent(const conduit::Node &mesh)
+{
+    bool started = false;
+    index_t dim = 0;
+
+    NodeConstIterator csitr = mesh["coordsets"].children();
+    while(csitr.has_next())
+    {
+        const Node &cset = csitr.next();
+        index_t cset_dim = cset["values"].number_of_children();
+        if (started && dim != cset_dim)
+        {
+            return false;
+        }
+        dim = cset_dim;
+        started = true;
+    }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+bool
+mesh::is_convertible_to_strip(const Node &mesh,
+                              Node &info)
+{
+    const std::string protocol = "convertible_to_strip";
+    bool res = true;
+    info.reset();
+
+    // Each coordset c in mesh["coordsets"] must have one child of c["values"]
+    bool consistent_dim = is_dimension_consistent(mesh);
+    if (!consistent_dim)
+    {
+        log::error(info, protocol, "inconsistent dimensionality in the mesh coordsets");
+        res = false;
+    }
+
+    index_t mesh_dim = max_dimension(mesh);
+    if (mesh_dim > 1)
+    {
+        log::error(info, protocol, "a mesh coordset has more than one child");
+        res = false;
+    }
+
+    // Only element-associated fields allowed (no vertex-fields)
+    // TODO Relax this requirement?
+    NodeConstIterator fitr = mesh["fields"].children();
+    while(fitr.has_next())
+    {
+        const Node &f = fitr.next();
+        // This method requires fields to have "association" == "element".
+        if (!f.has_child("association") || f["association"].as_string() != "element")
+        {
+            log::error(info,
+                       protocol,
+                       "fields[" + log::quote(fitr.name()) + "/association] != element");
+            res = false;
+        }
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+mesh::is_convertible_to_one_dimension(const Node &mesh,
+                                      Node &info)
+{
+    const std::string protocol = "convertible_to_one_dimension";
+    bool res = true;
+    info.reset();
+
+    // Each coordset c in mesh["coordsets"] must have two children of c["values"]
+    bool consistent_dim = is_dimension_consistent(mesh);
+    if (!consistent_dim)
+    {
+        log::error(info, protocol, "inconsistent dimensionality in the mesh coordsets");
+        res = false;
+    }
+
+    index_t mesh_dim = max_dimension(mesh);
+    if (mesh_dim != 2)
+    {
+        log::error(info, protocol, "a mesh coordset has other than two children");
+        res = false;
+    }
+
+    // Only element-associated fields allowed (no vertex-fields)
+    // TODO Relax this requirement?
+    NodeConstIterator fitr = mesh["fields"].children();
+    while(fitr.has_next())
+    {
+        const Node &f = fitr.next();
+        // This method requires fields to have "association" == "element".
+        if (!f.has_child("association") || f["association"].as_string() != "element")
+        {
+            log::error(info,
+                       protocol,
+                       "fields[" + log::quote(fitr.name()) + "/association] != element");
+            res = false;
+        }
+    }
+
+    return res;
+}
+
+//-------------------------------------------------------------------------
+void
+mesh::convert_to_strip(const conduit::Node &mesh,
+                       conduit::Node &output)
+{
+    // Convert each coordset
+    NodeIterator csitr = mesh["coordsets"].children();
+    while(csitr.has_next())
+    {
+        Node &cset = csitr.next();
+        Node newcset;
+        convert_oneD_coordset_to_strip(cset, newcset);
+        output["coordsets"][csitr.name()].set(newcset);
+    }
+
+    // Convert each topology: name the only dimension j and add i: 1
+    NodeIterator tpitr = mesh["topologies"].children();
+    while(tpitr.has_next())
+    {
+        Node &topo = tpitr.next();
+        Node & dims = topo["elements/dims"];
+        dims.rename_child("i", "j");
+        dims["i"] = 1;
+    }
+
+    // Flag this as a 1D strip mesh
+    mesh["private_nonblueprint/carterflags/oneD_strip"] = 1;
+}
+
+
+//-------------------------------------------------------------------------
+void
+mesh::convert_strip_to_oneD(const conduit::Node &mesh,
+                            conduit::Node &output)
+{
+    // Un-flag this as a 1D strip mesh
+    if (mesh.has_child("private_nonblueprint"))
+    {
+        Node & pnb = mesh["private_nonblueprint"];
+        if (pnb.has_child("carterflags") && pnb["carterflags"].has_child("oneD_strip"))
+        {
+            pnb["carterflags"].remove_child("oneD_strip");
+            if (pnb["carterflags"].number_of_children() < 1)
+            {
+                pnb.remove_child("carterflags");
+            }
+        }
+        if (pnb.number_of_children() < 1)
+        {
+            mesh.remove_child("private_nonblueprint");
+        }
+    }
+
+    // Convert each coordset
+    NodeIterator csitr = mesh["coordsets"].children();
+    while(csitr.has_next())
+    {
+        Node &cset = csitr.next();
+        mesh::coordset::oneD::strip_to_oneD(cset, info);
+    }
+
+    // Convert each topology: remove i: 1, and rename j to i
+    NodeIterator tpitr = mesh["topologies"].children();
+    while(tpitr.has_next())
+    {
+        Node &topo = tpitr.next();
+        Node & dims = topo["elements/dims"];
+        dims.remove_child("i");
+        dims.rename_child("j", "i");
+    }
+}
 
 
 //
@@ -2814,123 +3177,6 @@ mesh::association::verify(const Node &assoc,
 }
 
 
-//-------------------------------------------------------------------------
-// blueprint::mesh::oneD protocol interface
-//-------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::oneD::verify(const Node &mesh,
-                   Node &info)
-{
-    const std::string protocol = "mesh::oneD";
-    bool res = true;
-    info.reset();
-
-    // Each coordset c in mesh["coordsets"] must have one child of c["values"]
-    NodeConstIterator csitr = mesh["coordsets"].children();
-    while(csitr.has_next())
-    {
-        const Node &cset = csitr.next();
-        if (cset["values"].number_of_children() > 1)
-        {
-            log::error(info,
-                       protocol,
-                       "coordsets[" + log::quote(csitr.name()) + "/values] has more than one child");
-            res = false;
-        }
-    }
-
-    // Only element-associated fields allowed (no vertex-fields)
-    // TODO Relax this requirement?
-    NodeConstIterator fitr = mesh["fields"].children();
-    while(fitr.has_next())
-    {
-        const Node &f = fitr.next();
-        // This method requires fields to have "association" == "element".
-        if (!f.has_child("association") || f["association"].as_string() != "element")
-        {
-            log::error(info,
-                       protocol,
-                       "fields[" + log::quote(fitr.name()) + "/association] != element");
-            res = false;
-        }
-    }
-
-    return res;
-}
-
-//-------------------------------------------------------------------------
-void
-mesh::oneD::oneD_to_strip(conduit::Node &mesh,
-                          conduit::Node &info)
-{
-    // Convert each coordset
-    NodeIterator csitr = mesh["coordsets"].children();
-    while(csitr.has_next())
-    {
-        Node &cset = csitr.next();
-        mesh::coordset::oneD::oneD_to_strip(cset, info);
-    }
-
-    // Convert each topology: name the only dimension j and add i: 1
-    NodeIterator tpitr = mesh["topologies"].children();
-    while(tpitr.has_next())
-    {
-        Node &topo = tpitr.next();
-        Node & dims = topo["elements/dims"];
-        dims.rename_child("i", "j");
-        dims["i"] = 1;
-    }
-
-    // Flag this as a 1D strip mesh
-    mesh["private_nonblueprint/carterflags/oneD_strip"] = 1;
-}
-
-
-//-------------------------------------------------------------------------
-void
-mesh::oneD::strip_to_oneD(conduit::Node &mesh,
-                          conduit::Node &info)
-{
-    // Un-flag this as a 1D strip mesh
-    if (mesh.has_child("private_nonblueprint"))
-    {
-        Node & pnb = mesh["private_nonblueprint"];
-        if (pnb.has_child("carterflags") && pnb["carterflags"].has_child("oneD_strip"))
-        {
-            pnb["carterflags"].remove_child("oneD_strip");
-            if (pnb["carterflags"].number_of_children() < 1)
-            {
-                pnb.remove_child("carterflags");
-            }
-        }
-        if (pnb.number_of_children() < 1)
-        {
-            mesh.remove_child("private_nonblueprint");
-        }
-    }
-
-    // Convert each coordset
-    NodeIterator csitr = mesh["coordsets"].children();
-    while(csitr.has_next())
-    {
-        Node &cset = csitr.next();
-        mesh::coordset::oneD::strip_to_oneD(cset, info);
-    }
-
-    // Convert each topology: remove i: 1, and rename j to i
-    NodeIterator tpitr = mesh["topologies"].children();
-    while(tpitr.has_next())
-    {
-        Node &topo = tpitr.next();
-        Node & dims = topo["elements/dims"];
-        dims.remove_child("i");
-        dims.rename_child("j", "i");
-    }
-}
-
-
 //-----------------------------------------------------------------------------
 // blueprint::mesh::coordset protocol interface
 //-----------------------------------------------------------------------------
@@ -3244,49 +3490,6 @@ mesh::coordset::coord_system::verify(const Node &coord_sys,
     log::validation(info,res);
 
     return res;
-}
-
-
-//-------------------------------------------------------------------------
-// blueprint::mesh::coordset::oneD protocol interface
-//-------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::coordset::oneD::verify(const Node &coordset,
-                              Node &info)
-{
-    return false;
-}
-
-//-------------------------------------------------------------------------
-void
-mesh::coordset::oneD::oneD_to_strip(conduit::Node &coordset,
-                                    conduit::Node &info)
-{
-    // Convert coordset.
-    // Conduit requires the independent variable be "y".
-    Node & vals = coordset["values"];
-    const std::string from_name = vals.child(0).name();
-    vals.rename_child(from_name, "y");
-    vals["x"].set(DataType::float64(2));
-    double *x_vals = vals["x"].value();
-    x_vals[0] = 0.;
-    x_vals[1] = 1.;
-}
-
-
-//-------------------------------------------------------------------------
-void
-mesh::coordset::oneD::strip_to_oneD(conduit::Node &coordset,
-                                    conduit::Node &info)
-{
-    // Convert coordset.
-    // Conduit requires the independent variable be "y": remove the "x" (0, 1)
-    // and rename "y" to "x".
-    Node & vals = coordset["values"];
-    vals.remove_child("x");
-    vals.rename_child("y", "x");
 }
 
 
