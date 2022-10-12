@@ -2324,6 +2324,37 @@ mesh::is_convertible_to_one_dimension(const Node &mesh,
         res = false;
     }
 
+    // The X-dimension of each coordset must be two
+    NodeConstIterator csitr = mesh["coordsets"].children();
+    while(csitr.has_next())
+    {
+        const Node &cs = csitr.next();
+        int xdim = cs["dims/x"].as_int();
+        if (xdim != 2)
+        {
+            log::error(info,
+                       protocol,
+                       "coordsets[" + log::quote(csitr.name()) + "/dims/x] != 2");
+            res = false;
+        }
+    }
+
+    // Each topography must be either "uniform" or "structured"
+    NodeConstIterator topitr = mesh["topologies"].children();
+    while(topitr.has_next())
+    {
+        const Node &t = topitr.next();
+        const std::string topotype = t["type"].as_string();
+        if (!(topotype == "uniform" || topotype == "structured"))
+        {
+            log::error(info,
+                       protocol,
+                       "topologies[" + log::quote(topitr.name()) + "/type] neither uniform nor structured");
+            res = false;
+        }
+    }
+
+
     // Only element-associated fields allowed (no vertex-fields)
     // TODO Relax this requirement?
     NodeConstIterator fitr = mesh["fields"].children();
@@ -2348,6 +2379,8 @@ void
 mesh::convert_to_strip(const conduit::Node &mesh,
                        conduit::Node &output)
 {
+    output.reset();
+
     // Convert each coordset
     NodeIterator csitr = mesh["coordsets"].children();
     while(csitr.has_next())
@@ -2363,10 +2396,37 @@ mesh::convert_to_strip(const conduit::Node &mesh,
     while(tpitr.has_next())
     {
         Node &topo = tpitr.next();
-        Node & dims = topo["elements/dims"];
+        Node newtopo = topo;
+        Node & dims = newtopo["elements/dims"];
         dims.rename_child("i", "j");
         dims["i"] = 1;
+        output["topologies"][tpitr.name()].set(newtopo);
     }
+
+    // Copy matsets, if present
+    if (mesh.has_child("matsets"))
+    {
+        output["matsets"] = mesh["matsets"];
+    }
+
+    // Copy fields, if present
+    if (mesh.has_child("fields"))
+    {
+        output["fields"] = mesh["fields"];
+    }
+
+    // Copy adjsets, if present
+    if (mesh.has_child("adjsets"))
+    {
+        output["adjsets"] = mesh["adjsets"];
+    }
+
+    // Copy state, if present
+    if (mesh.has_child("state"))
+    {
+        output["state"] = mesh["state"];
+    }
+
 
     // Flag this as a 1D strip mesh
     mesh["private_nonblueprint/carterflags/oneD_strip"] = 1;
@@ -2378,23 +2438,7 @@ void
 mesh::convert_strip_to_oneD(const conduit::Node &mesh,
                             conduit::Node &output)
 {
-    // Un-flag this as a 1D strip mesh
-    if (mesh.has_child("private_nonblueprint"))
-    {
-        Node & pnb = mesh["private_nonblueprint"];
-        if (pnb.has_child("carterflags") && pnb["carterflags"].has_child("oneD_strip"))
-        {
-            pnb["carterflags"].remove_child("oneD_strip");
-            if (pnb["carterflags"].number_of_children() < 1)
-            {
-                pnb.remove_child("carterflags");
-            }
-        }
-        if (pnb.number_of_children() < 1)
-        {
-            mesh.remove_child("private_nonblueprint");
-        }
-    }
+    output.reset();
 
     // Convert each coordset
     NodeIterator csitr = mesh["coordsets"].children();
@@ -2412,6 +2456,30 @@ mesh::convert_strip_to_oneD(const conduit::Node &mesh,
         Node & dims = topo["elements/dims"];
         dims.remove_child("i");
         dims.rename_child("j", "i");
+    }
+
+    // Copy matsets, if present
+    if (mesh.has_child("matsets"))
+    {
+        output["matsets"] = mesh["matsets"];
+    }
+
+    // Copy fields, if present
+    if (mesh.has_child("fields"))
+    {
+        output["fields"] = mesh["fields"];
+    }
+
+    // Copy adjsets, if present
+    if (mesh.has_child("adjsets"))
+    {
+        output["adjsets"] = mesh["adjsets"];
+    }
+
+    // Copy state, if present
+    if (mesh.has_child("state"))
+    {
+        output["state"] = mesh["state"];
     }
 }
 

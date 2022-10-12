@@ -112,13 +112,22 @@ index_t CONDUIT_BLUEPRINT_API max_dimension(const conduit::Node &mesh);
 bool CONDUIT_BLUEPRINT_API is_dimension_consistent(const conduit::Node &mesh);
 
 /// Test if a mesh is suitable to convert to a 1D "strip" mesh of a form
-/// expected by Carter.  Additional info (for example, the faulty path)
-/// is returned in info.
+/// expected by Carter.  The mesh must have all coordsets of dimension one
+/// and may only contain element-associated fields.  Error details are
+/// returned in info.
 bool CONDUIT_BLUEPRINT_API is_convertible_to_strip(const conduit::Node &mesh,
                                                    Node &info);
 
 /// Test if a mesh is a Carter 1D "strip" mesh suitable to convert to 1D.
-/// Additional info (for example, the faulty path) is returned in info.
+///
+/// Preconditions:
+/// - all coordsets must have equal dimensionality
+/// - each coordset must have two dimensions
+/// - x-dimension must have size 2 (for a one-element-wide strip)
+/// - each topography must be of type "uniform" or "structured"
+/// - only element-associated feilds allowed
+///
+/// Additional info (for example, specific error messages) returned in info.
 bool CONDUIT_BLUEPRINT_API is_convertible_to_one_dimension(const conduit::Node &mesh,
                                                            Node &info);
 
