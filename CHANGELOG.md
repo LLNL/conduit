@@ -4,7 +4,7 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
 ### Added
 #### General
  - Added Node::reset methods to C and Fortran interfaces
@@ -673,7 +673,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/llnl/conduit/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/llnl/conduit/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/llnl/conduit/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/llnl/conduit/compare/v0.8.0...v0.8.1
