@@ -1102,7 +1102,7 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
     {
         copy_node_rename_first_child(coordset, dest, "values", "y", "x");
         dest["values/x"].set(DataType::float64(2));
-        double *x_vals = vals["x"].value();
+        double *x_vals = dest["values/x"].value();
         x_vals[0] = 0.;
         x_vals[1] = 1.;
     }
@@ -1146,13 +1146,13 @@ convert_oneD_topo_to_strip(const conduit::Node &topo,
                            conduit::Node &dest)
 {
     dest.reset();
-    dest["coordset"] = topo["coordset"];
-    dest["type"] = topo["type"];
+    dest["coordset"] = topo["coordset"].as_string();
+    dest["type"] = topo["type"].as_string();
 
     if (topo.has_child("elements"))
     {
-        Node topoelts = topo["elements"];
-        Node destelts = dest["elements"];
+        const Node & topoelts = topo["elements"];
+        Node & destelts = dest["elements"];
 
         if (topoelts.has_child("origin"))
         {
@@ -1162,8 +1162,8 @@ convert_oneD_topo_to_strip(const conduit::Node &topo,
 
         if (topoelts.has_child("dims"))
         {
-            copy_node_rename_first_child(coordset, dest, "dims", "j", "i");
-            dest["dims/i"] = 1;
+            copy_node_rename_first_child(topoelts, destelts, "dims", "j", "i");
+            destelts["dims/i"] = 1;
         }
     }
 }
@@ -1175,27 +1175,23 @@ convert_strip_topo_to_oneD(const conduit::Node &topo,
                            conduit::Node &dest)
 {
     dest.reset();
-    std::string coord_type = coordset["type"].as_string();
-    dest["type"].set(coord_type);
+    dest["coordset"] = topo["coordset"].as_string();
+    dest["type"] = topo["type"].as_string();
 
-    if (coord_type == "uniform")
+    if (topo.has_child("elements"))
     {
-        copy_node_substitute_sibling(coordset, dest, "dims", "i", "j");
+        const Node& topoelts = topo["elements"];
+        Node& destelts = dest["elements"];
 
-        if (coordset.has_child("origin"))
+        if (topoelts.has_child("origin"))
         {
-            copy_node_substitute_sibling(coordset, dest, "origin", "x", "y");
+            copy_node_substitute_sibling(topoelts, destelts, "origin", "i", "j");
         }
 
-        if (coordset.has_child("spacing"))
+        if (topoelts.has_child("dims"))
         {
-            copy_node_substitute_sibling(coordset, dest, "spacing", "dx", "dy");
+            copy_node_substitute_sibling(topoelts, destelts, "dims", "j", "i");
         }
-
-    }
-    else
-    {
-        copy_node_substitute_sibling(coordset, dest, "values", "x", "y");
     }
 }
 
@@ -2382,24 +2378,22 @@ mesh::convert_to_strip(const conduit::Node &mesh,
     output.reset();
 
     // Convert each coordset
-    NodeIterator csitr = mesh["coordsets"].children();
+    NodeConstIterator csitr = mesh["coordsets"].children();
     while(csitr.has_next())
     {
-        Node &cset = csitr.next();
+        const Node &cset = csitr.next();
         Node newcset;
         convert_oneD_coordset_to_strip(cset, newcset);
         output["coordsets"][csitr.name()].set(newcset);
     }
 
     // Convert each topology: name the only dimension j and add i: 1
-    NodeIterator tpitr = mesh["topologies"].children();
+    NodeConstIterator tpitr = mesh["topologies"].children();
     while(tpitr.has_next())
     {
-        Node &topo = tpitr.next();
-        Node newtopo = topo;
-        Node & dims = newtopo["elements/dims"];
-        dims.rename_child("i", "j");
-        dims["i"] = 1;
+        const Node &topo = tpitr.next();
+        Node newtopo;
+        convert_oneD_topo_to_strip(topo, newtopo);
         output["topologies"][tpitr.name()].set(newtopo);
     }
 
@@ -2429,7 +2423,7 @@ mesh::convert_to_strip(const conduit::Node &mesh,
 
 
     // Flag this as a 1D strip mesh
-    mesh["private_nonblueprint/carterflags/oneD_strip"] = 1;
+    output["private_nonblueprint/carterflags/oneD_strip"] = 1;
 }
 
 
@@ -2441,21 +2435,23 @@ mesh::convert_strip_to_oneD(const conduit::Node &mesh,
     output.reset();
 
     // Convert each coordset
-    NodeIterator csitr = mesh["coordsets"].children();
+    NodeConstIterator csitr = mesh["coordsets"].children();
     while(csitr.has_next())
     {
-        Node &cset = csitr.next();
-        mesh::coordset::oneD::strip_to_oneD(cset, info);
+        const Node &cset = csitr.next();
+        Node newcset;
+        convert_strip_coordset_to_oneD(cset, newcset);
+        output["coordsets"][csitr.name()].set(newcset);
     }
 
     // Convert each topology: remove i: 1, and rename j to i
-    NodeIterator tpitr = mesh["topologies"].children();
+    NodeConstIterator tpitr = mesh["topologies"].children();
     while(tpitr.has_next())
     {
-        Node &topo = tpitr.next();
-        Node & dims = topo["elements/dims"];
-        dims.remove_child("i");
-        dims.rename_child("j", "i");
+        const Node &topo = tpitr.next();
+        Node newtopo;
+        convert_strip_topo_to_oneD(topo, newtopo);
+        output["topologies"][tpitr.name()].set(newtopo);
     }
 
     // Copy matsets, if present

@@ -1247,35 +1247,87 @@ TEST(conduit_blueprint_mesh_examples, polystar)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, oneDtostrip)
 {
-    Node res;
-    blueprint::mesh::examples::basic("structured", 5, 0, 0, res);
+    {
+        std::cout << "starting structured" << std::endl;
+        Node orig;
+        blueprint::mesh::examples::basic("structured", 5, 0, 0, orig);
 
-    test_save_mesh_helper(res, "oneD_original");
+        test_save_mesh_helper(orig, "oneD_struct_orig");
 
-    Node info;
-    EXPECT_TRUE(blueprint::mesh::oneD::verify(res, info));
-    CONDUIT_INFO(info.to_yaml());
+        std::cout << " structured: about to test 1D" << std::endl;
 
-    Node transform_info;
-    blueprint::mesh::oneD::oneD_to_strip(res, transform_info);
-    CONDUIT_INFO(transform_info.to_yaml());
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::is_convertible_to_strip(orig, info));
+        CONDUIT_INFO(info.to_yaml());
 
-    test_save_mesh_helper(res, "oneD_strip");
+        std::cout << " structured: about to convert" << std::endl;
 
-    // TODO write blueprint::mesh::oneD::verify_strip()
-    // info.reset();
-    // EXPECT_TRUE(blueprint::mesh::oneD::verify(res, info));
-    // CONDUIT_INFO(info.to_yaml());
+        Node strip;
+        blueprint::mesh::convert_to_strip(orig, strip);
 
-    Node backtransform_info;
-    blueprint::mesh::oneD::strip_to_oneD(res, backtransform_info);
-    CONDUIT_INFO(transform_info.to_yaml());
+        test_save_mesh_helper(strip, "oneD_struct_strip");
 
-    test_save_mesh_helper(res, "oneD_roundtrip");
+        std::cout << " structured: about to test strip" << std::endl;
 
-    info.reset();
-    EXPECT_TRUE(blueprint::mesh::oneD::verify(res, info));
-    CONDUIT_INFO(info.to_yaml());
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::is_convertible_to_one_dimension(strip, info));
+        CONDUIT_INFO(info.to_yaml());
+
+        std::cout << " structured: about to convert back" << std::endl;
+
+        Node rtrip;
+        blueprint::mesh::convert_strip_to_oneD(strip, rtrip);
+
+        test_save_mesh_helper(rtrip, "oneD_struct_rtrip");
+
+        std::cout << " structured: about to verify roundtrip" << std::endl;
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(rtrip, info));
+        CONDUIT_INFO(info.to_yaml());
+        std::cout << " structured: finished." << std::endl;
+
+    }
+
+    {
+        std::cout << "starting uniform" << std::endl;
+        Node orig;
+        blueprint::mesh::examples::basic("uniform", 5, 0, 0, orig);
+
+        test_save_mesh_helper(orig, "oneD_uniform_orig");
+
+        std::cout << " uniform: about to test 1D" << std::endl;
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::is_convertible_to_strip(orig, info));
+        CONDUIT_INFO(info.to_yaml());
+
+        std::cout << " uniform: about to convert" << std::endl;
+
+        Node strip;
+        blueprint::mesh::convert_to_strip(orig, strip);
+
+        test_save_mesh_helper(strip, "oneD_uniform_strip");
+
+        std::cout << " uniform: about to test strip" << std::endl;
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::is_convertible_to_one_dimension(strip, info));
+
+        std::cout << " uniform: about to convert back" << std::endl;
+
+        Node rtrip;
+        blueprint::mesh::convert_strip_to_oneD(strip, rtrip);
+
+        test_save_mesh_helper(rtrip, "oneD_uniform_rtrip");
+
+        std::cout << " uniform: about to verify roundtrip" << std::endl;
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(rtrip, info));
+        CONDUIT_INFO(info.to_yaml());
+        std::cout << " uniform: finished." << std::endl;
+    }
 }
 
 //-----------------------------------------------------------------------------
