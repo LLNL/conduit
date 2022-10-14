@@ -1157,21 +1157,21 @@ Wedges
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
-   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_wedges")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_wedges")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
 .. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
-   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
-   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_wedges")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_wedges")
    :language: yaml
 
 * **Visual**
 
-.. figure:: basic_hex_3d_render.png
+.. figure:: basic_wedge_3d_render.png
     :width: 400px
     :align: center
 
@@ -1183,21 +1183,21 @@ Pyramids
 * **Usage Example**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
-   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
-   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_pyramids")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_pyramids")
    :language: cpp
    :dedent: 4
 
 * **Result**
 
 .. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
-   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
-   :end-before:  END_EXAMPLE("blueprint_demo_basic_hexs")
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_pyramids")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_pyramids")
    :language: yaml
 
 * **Visual**
 
-.. figure:: basic_hex_3d_render.png
+.. figure:: basic_pyramid_3d_render.png
     :width: 400px
     :align: center
 

@@ -484,6 +484,120 @@ TEST(conduit_docs, blueprint_demo_basic_hexs)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_demo_basic_wedges)
+{
+    BEGIN_EXAMPLE("blueprint_demo_basic_wedges");
+    // create container node
+    Node mesh;
+    // generate simple explicit wedge-based 3d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("wedges", 3, 3, 3, mesh);
+    // print out results
+    mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_wedges");
+
+    // TODO generate tree
+    const std::string mesh_json = R"(
+    {
+      "coordsets": 
+      {
+        "coords": 
+        {
+          "type": "explicit",
+          "values": 
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0],
+            "y": [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0],
+            "z": [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+          }
+        }
+      },
+      "topologies": 
+      {
+        "mesh": 
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements": 
+          {
+            "shape": "hex",
+            "connectivity": [0, 1, 4, 3, 9, 10, 13, 12, 1, 2, 5, 4, 10, 11, 14, 13, 3, 4, 7, 6, 12, 13, 16, 15, 4, 5, 8, 7, 13, 14, 17, 16, 9, 10, 13, 12, 18, 19, 22, 21, 10, 11, 14, 13, 19, 20, 23, 22, 12, 13, 16, 15, 21, 22, 25, 24, 13, 14, 17, 16, 22, 23, 26, 25]
+          }
+        }
+      },
+      "fields": 
+      {
+        "field": 
+        {
+          "association": "element",
+          "topology": "mesh",
+          "volume_dependent": "false",
+          "values": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        }
+      }
+    }
+    )";
+
+    validate_basic_example("wedges",mesh,mesh_json);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_demo_basic_pyramids)
+{
+    BEGIN_EXAMPLE("blueprint_demo_basic_pyramids");
+    // create container node
+    Node mesh;
+    // generate simple explicit pyramid-based 3d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("pyramids", 3, 3, 3, mesh);
+    // print out results
+    mesh.print();
+    END_EXAMPLE("blueprint_demo_basic_pyramids");
+
+    // TODO generate tree
+    const std::string mesh_json = R"(
+    {
+      "coordsets": 
+      {
+        "coords": 
+        {
+          "type": "explicit",
+          "values": 
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0],
+            "y": [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0],
+            "z": [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+          }
+        }
+      },
+      "topologies": 
+      {
+        "mesh": 
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements": 
+          {
+            "shape": "hex",
+            "connectivity": [0, 1, 4, 3, 9, 10, 13, 12, 1, 2, 5, 4, 10, 11, 14, 13, 3, 4, 7, 6, 12, 13, 16, 15, 4, 5, 8, 7, 13, 14, 17, 16, 9, 10, 13, 12, 18, 19, 22, 21, 10, 11, 14, 13, 19, 20, 23, 22, 12, 13, 16, 15, 21, 22, 25, 24, 13, 14, 17, 16, 22, 23, 26, 25]
+          }
+        }
+      },
+      "fields": 
+      {
+        "field": 
+        {
+          "association": "element",
+          "topology": "mesh",
+          "volume_dependent": "false",
+          "values": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+        }
+      }
+    }
+    )";
+
+    validate_basic_example("pyramids",mesh,mesh_json);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_polygons)
 {
     BEGIN_EXAMPLE("blueprint_demo_basic_polygons");
