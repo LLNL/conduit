@@ -76,6 +76,9 @@ CONDUIT_API conduit_index_t conduit_node_number_of_children(conduit_node *cnode)
 CONDUIT_API conduit_index_t conduit_node_number_of_elements(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
+CONDUIT_API void conduit_node_reset(conduit_node *cnode);
+
+//-----------------------------------------------------------------------------
 /// remove path
 CONDUIT_API void conduit_node_remove_path(conduit_node *cnode,
                                           const char *path);

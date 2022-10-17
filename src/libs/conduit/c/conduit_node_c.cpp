@@ -108,6 +108,14 @@ conduit_node_number_of_children(conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
+void
+conduit_node_reset(conduit_node *cnode)
+{
+    cpp_node(cnode)->reset();
+}
+
+
+//-----------------------------------------------------------------------------
 conduit_index_t
 conduit_node_number_of_elements(conduit_node *cnode)
 {
