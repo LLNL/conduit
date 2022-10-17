@@ -118,6 +118,8 @@ static const std::vector<index_t> TOPO_SHAPE_EMBED_TYPES = {/*point*/ -1, /*line
 // Lines are made of two points so they get 2.
 // Triangles are made of three lines so they get 3.
 // Hexahedrons are made of 6 quads so they get 6.
+// Wedges are made of two end caps (tris) plus three quad sides each split into two tris, so they get 8.
+// Pyramids are made of four triangular sides plus a quad base split into two tris, so they get 6.
 static const std::vector<index_t> TOPO_SHAPE_EMBED_COUNTS = {/*point*/ 0, /*line*/ 2, /*tri*/ 3, /*quad*/ 4, 
     /*tet*/ 4, /*hex*/ 6, /*wedge*/ 8, /*pyramid*/ 6, /*polygonal*/ -1, /*polyhedral*/ -1, /*mixed*/ -1};
 
