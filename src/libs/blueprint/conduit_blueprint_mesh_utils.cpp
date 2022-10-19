@@ -2014,8 +2014,8 @@ topology::unstructured::generate_offsets(const Node &n,
         Node &dest_elem_off = const_cast<Node &>(n)["elements/offsets"];
         Node &dest_subelem_off = const_cast<Node &>(n)["subelements/offsets"];
 
-        const Node& topo_elem_size = n["elements/sizes"];
-        const Node& topo_subelem_size = n["subelements/sizes"];
+        index_t_accessor topo_elem_size = n["elements/sizes"].as_index_t_accessor();
+        index_t_accessor topo_subelem_size = n["subelements/sizes"].as_index_t_accessor();
 
         Node elem_node;
         Node subelem_node;
@@ -2023,12 +2023,10 @@ topology::unstructured::generate_offsets(const Node &n,
         std::vector<index_t> shape_array;
         index_t ei = 0;
         index_t es = 0;
-        while(ei < topo_elem_size.dtype().number_of_elements())
+        while(ei < topo_elem_size.number_of_elements())
         {
-            const Node index_node(int_dtype,
-                const_cast<void*>(topo_elem_size.element_ptr(ei)), true);
             shape_array.push_back(es);
-            es += index_node.to_index_t();
+            es += topo_elem_size[ei];
             ei++;
         }
 
@@ -2039,12 +2037,10 @@ topology::unstructured::generate_offsets(const Node &n,
         shape_array.clear();
         ei = 0;
         es = 0;
-        while(ei < topo_subelem_size.dtype().number_of_elements())
+        while(ei < topo_subelem_size.number_of_elements())
         {
-            const Node index_node(int_dtype,
-                const_cast<void*>(topo_subelem_size.element_ptr(ei)), true);
             shape_array.push_back(es);
-            es += index_node.to_index_t();
+            es += topo_subelem_size[ei];
             ei++;
         }
 
