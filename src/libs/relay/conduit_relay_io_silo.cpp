@@ -566,7 +566,7 @@ silo_write_pointmesh(DBfile *dbfile,
 //---------------------------------------------------------------------------//
 template<typename T>
 void
-wedge_helper(Node &n_mesh_conn)
+conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
 {
     const int conn_size = n_mesh_conn.dtype().number_of_elements();
     T *conn_ptr = n_mesh_conn.value();
@@ -644,32 +644,38 @@ silo_write_ucd_zonelist(DBfile *dbfile,
         std::string topo_shape = shape_block->fetch("shape").as_string();
 
         Node n_mesh_conn;
-        n_mesh_conn.set(shape_block->fetch("connectivity"));
-
+        
+        // We are using the vtk ordering for our wedges; silo wedges (prisms)
+        // expect a different ordering. Thus before we output to silo, we must
+        // change the ordering of each of our wedges.
         if (topo_shape == "wedge")
         {
-
+            n_mesh_conn.set(shape_block->fetch("connectivity"));
             // swizzle the connectivity
             if (n_mesh_conn.dtype().is_uint64())
             {
-                wedge_helper<uint64>(n_mesh_conn);
+                conduit_wedge_connectivity_to_silo<uint64>(n_mesh_conn);
             }
             else if (n_mesh_conn.dtype().is_uint32())
             {
-                wedge_helper<uint32>(n_mesh_conn);
+                conduit_wedge_connectivity_to_silo<uint32>(n_mesh_conn);
             }
             else if (n_mesh_conn.dtype().is_int64())
             {
-                wedge_helper<int64>(n_mesh_conn);
+                conduit_wedge_connectivity_to_silo<int64>(n_mesh_conn);
             }
             else if (n_mesh_conn.dtype().is_int32())
             {
-                wedge_helper<int32>(n_mesh_conn);
+                conduit_wedge_connectivity_to_silo<int32>(n_mesh_conn);
             }
             else
             {
                 CONDUIT_ERROR("Unsupported connectivity type in " << n_mesh_conn.dtype().to_yaml());
             }
+        }
+        else
+        {
+            n_mesh_conn.set_external(shape_block->fetch("connectivity"));
         }
 
         // convert to compact ints ... 
