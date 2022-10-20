@@ -230,7 +230,8 @@ TEST(blueprint_mesh_flatten, basic)
     const std::string mesh_types[] = {
         "uniform", "rectilinear", "structured",
         "tris", "quads", "polygons",
-        "tets", "hexs", "polyhedra"
+        "tets", "hexs", "wedges", 
+        "pyramids", "polyhedra"
     };
     for(const auto &mesh_type : mesh_types)
     {
@@ -276,7 +277,8 @@ TEST(blueprint_mesh_flatten, braid)
         "points_implicit", "uniform", "rectilinear", "structured",
         "points", "lines", "tris", "quads", "quads_poly",
         "quads_and_tris", "quads_and_tris_offsets",
-        "tets", "hexs", "hexs_poly", "hexs_and_tets"
+        "tets", "hexs", "hexs_poly", "hexs_and_tets",
+        "wedges", "pyramids"
     };
     const index_t x = 4;
     const index_t y = 3;

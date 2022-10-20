@@ -315,6 +315,18 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["mixed"]);
 
+    blueprint::mesh::examples::braid("wedges",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["wedges"]);
+
+    blueprint::mesh::examples::braid("pyramids",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["pyramids"]);
+
     Node info;
     NodeConstIterator itr = dsets.children();
     while(itr.has_next())
@@ -382,6 +394,8 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
 
     braid_type_strings.push_back("tets");
     braid_type_strings.push_back("hexs");
+    braid_type_strings.push_back("wedges");
+    braid_type_strings.push_back("pyramids");
 
     Node mesh;
 
@@ -967,6 +981,18 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
                                                   0,
                                                   res),conduit::Error);
 
+    EXPECT_THROW(blueprint::mesh::examples::basic("wedges",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("pyramids",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
     EXPECT_THROW(blueprint::mesh::examples::basic("polyhedra",
                                                   2,
                                                   2,
@@ -1110,6 +1136,18 @@ TEST(conduit_blueprint_mesh_examples, braid_bad_inputs)
                                                   0,
                                                   res),conduit::Error);
 
+    EXPECT_THROW(blueprint::mesh::examples::braid("wedges",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("pyramids",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
     EXPECT_THROW(blueprint::mesh::examples::braid("hexs_poly",
                                                   2,
                                                   2,
@@ -1186,6 +1224,12 @@ TEST(conduit_blueprint_mesh_examples, braid_diff_dims)
 
     conduit::blueprint::mesh::examples::braid("hexs", 2, 3, 4, mesh);
     test_save_mesh_helper(mesh,"braid_hexs_2_3_4");
+
+    conduit::blueprint::mesh::examples::braid("wedges", 2, 3, 4, mesh);
+    test_save_mesh_helper(mesh,"braid_wedges_2_3_4");
+
+    conduit::blueprint::mesh::examples::braid("pyramids", 2, 3, 4, mesh);
+    test_save_mesh_helper(mesh,"braid_pyramids_2_3_4");
 
 }
 

@@ -76,12 +76,52 @@ static const std::vector<std::string> COORD_TYPES = {"uniform", "rectilinear", "
 static const std::vector<std::string> COORD_SYSTEMS = {"cartesian", "cylindrical", "spherical"};
 
 static const std::vector<std::string> TOPO_TYPES = {"points", "uniform", "rectilinear", "structured", "unstructured"};
-static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral", "mixed"};
-static const std::vector<std::string> TOPO_SHAPE_IDS = {"p", "l", "f", "f", "c", "c", "f", "c"};
-static const std::vector<index_t> TOPO_SHAPE_DIMS = {0, 1, 2, 2, 3, 3, 2, 3};
-static const std::vector<index_t> TOPO_SHAPE_INDEX_COUNTS = {1, 2, 3, 4, 4, 8, -1, -1};
-static const std::vector<index_t> TOPO_SHAPE_EMBED_TYPES = {-1, 0, 1, 1, 2, 3, 1, 6};
-static const std::vector<index_t> TOPO_SHAPE_EMBED_COUNTS = {0, 2, 3, 4, 4, 6, -1, -1};
+
+// Note: To add a new topo shape type, you must do the following:
+//  1) Add an entry to TOPO_SHAPES, TOPO_SHAPE_IDS, TOPO_SHAPE_DIMS, TOPO_SHAPE_INDEX_COUNTS, 
+//     TOPO_SHAPE_EMBED_TYPES, TOPO_SHAPE_EMBED_COUNTS, and TOPO_SHAPE_EMBEDDINGS. These arrays
+//     are indexed by the same values, so be very careful to add elements in the same place
+//     in each array.
+//  2) If you are adding elements in the middle of these arrays, then make sure that for 
+//     TOPO_SHAPE_EMBED_TYPES, you update the indices of any shapes that come after the ones
+//     you are adding.
+//  3) Head over to conduit_blueprint_mesh_utils_iterate_elements.hpp and find the enum class ShapeId.
+//     Add an element for your shape there, and update the others if adding in the middle.
+
+static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", 
+    "tet", "hex", "wedge", "pyramid", "polygonal", "polyhedral", "mixed"};
+
+// "p" is for point
+// "l" is for line
+// "f" is for face
+// "c" is for cell
+static const std::vector<std::string> TOPO_SHAPE_IDS = {/*point*/ "p", /*line*/ "l", /*tri*/ "f", /*quad*/ "f", 
+    /*tet*/ "c", /*hex*/ "c", /*wedge*/ "c", /*pyramid*/ "c", /*polygonal*/ "f", /*polyhedral*/ "c"};
+
+// The dimensions for each element in TOPO_SHAPES
+static const std::vector<index_t> TOPO_SHAPE_DIMS = {/*point*/ 0, /*line*/ 1, /*tri*/ 2, /*quad*/ 2, 
+    /*tet*/ 3, /*hex*/ 3, /*wedge*/ 3, /*pyramid*/ 3, /*polygonal*/ 2, /*polyhedral*/ 3, /*mixed*/ -1};
+
+// How many points are in each element in TOPO_SHAPES
+static const std::vector<index_t> TOPO_SHAPE_INDEX_COUNTS = {/*point*/ 1, /*line*/ 2, /*tri*/ 3, /*quad*/ 4, 
+    /*tet*/ 4, /*hex*/ 8, /*wedge*/ 6, /*pyramid*/ 5, /*polygonal*/ -1, /*polyhedral*/ -1, /*mixed*/ -1};
+
+// For each element in TOPO_SHAPES, the index into TOPO_SHAPES of the underlying shape. 
+// Points have no underlying shape so they get -1.
+// Lines have points under the hood so they get 0.
+// Triangles are made of lines so they get 1.
+// Hexahedrons are made of quads so they get 3.
+static const std::vector<index_t> TOPO_SHAPE_EMBED_TYPES = {/*point*/ -1, /*line*/ 0, /*tri*/ 1, /*quad*/ 1, 
+    /*tet*/ 2, /*hex*/ 3, /*wedge*/ 2, /*pyramid*/ 2, /*polygonal*/ 1, /*polyhedral*/ 8, /*mixed*/ -1};
+
+// How many of those underlying shapes are there?
+// Lines are made of two points so they get 2.
+// Triangles are made of three lines so they get 3.
+// Hexahedrons are made of 6 quads so they get 6.
+// Wedges are made of two end caps (tris) plus three quad sides each split into two tris, so they get 8.
+// Pyramids are made of four triangular sides plus a quad base split into two tris, so they get 6.
+static const std::vector<index_t> TOPO_SHAPE_EMBED_COUNTS = {/*point*/ 0, /*line*/ 2, /*tri*/ 3, /*quad*/ 4, 
+    /*tet*/ 4, /*hex*/ 6, /*wedge*/ 8, /*pyramid*/ 6, /*polygonal*/ -1, /*polyhedral*/ -1, /*mixed*/ -1};
 
 // TODO(JRC): These orientations currently assume the default Conduit-Blueprit
 // windings are used for the input geometry, which happens to be the case
@@ -102,10 +142,17 @@ static const index_t TOPO_TET_EMBEDDING[4][3] = {
 static const index_t TOPO_HEX_EMBEDDING[6][4] = {
     {0, 3, 2, 1}, {0, 1, 5, 4}, {1, 2, 6, 5},
     {2, 3, 7, 6}, {3, 0, 4, 7}, {4, 5, 6, 7}};
+static const index_t TOPO_WEDGE_EMBEDDING[8][3] = {
+    {0, 1, 2}, {0, 1, 3}, {1, 3, 4}, {1, 2, 4},
+    {2, 4, 5}, {2, 0, 5}, {0, 5, 3}, {3, 4, 5}};
+static const index_t TOPO_PYRAMID_EMBEDDING[6][3] = {
+    {0, 1, 2}, {1, 2, 3}, {0, 1, 4}, 
+    {1, 2, 4}, {2, 3, 4}, {3, 0, 4}};
 static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
     &TOPO_POINT_EMBEDDING[0][0], &TOPO_LINE_EMBEDDING[0][0],
     &TOPO_TRI_EMBEDDING[0][0], &TOPO_QUAD_EMBEDDING[0][0],
     &TOPO_TET_EMBEDDING[0][0], &TOPO_HEX_EMBEDDING[0][0],
+    &TOPO_WEDGE_EMBEDDING[0][0], &TOPO_PYRAMID_EMBEDDING[0][0],
     NULL, NULL};
 
 //-----------------------------------------------------------------------------

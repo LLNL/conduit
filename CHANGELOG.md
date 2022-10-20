@@ -8,6 +8,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 #### General
  - Added Node::reset methods to C and Fortran interfaces
+ - Added support for Wedges and Pyramids to Blueprint.
 
 ### Changed
 #### General
