@@ -564,6 +564,30 @@ silo_write_pointmesh(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
+template<typename T>
+void
+wedge_helper(Node &n_mesh_conn)
+{
+    const int conn_size = n_mesh_conn.dtype().number_of_elements();
+    T *conn_ptr = n_mesh_conn.value();
+    for (int i = 0; i < conn_size; i += 6)
+    {
+        auto conn0 = conn_ptr[i + 0];
+        auto conn1 = conn_ptr[i + 1];
+        auto conn2 = conn_ptr[i + 2];
+        auto conn3 = conn_ptr[i + 3];
+        auto conn4 = conn_ptr[i + 4];
+        auto conn5 = conn_ptr[i + 5];
+        conn_ptr[i + 2] = conn0;
+        conn_ptr[i + 1] = conn1;
+        conn_ptr[i + 5] = conn2;
+        conn_ptr[i + 3] = conn3;
+        conn_ptr[i + 0] = conn4;
+        conn_ptr[i + 4] = conn5;
+    }
+}
+
+//---------------------------------------------------------------------------//
 void 
 silo_write_ucd_zonelist(DBfile *dbfile, 
                         const std::string &topo_name,
@@ -619,7 +643,34 @@ silo_write_ucd_zonelist(DBfile *dbfile,
        
         std::string topo_shape = shape_block->fetch("shape").as_string();
 
-        const Node &n_mesh_conn = shape_block->fetch("connectivity");
+        Node n_mesh_conn;
+        n_mesh_conn.set(shape_block->fetch("connectivity"));
+
+        if (topo_shape == "wedge")
+        {
+
+            // swizzle the connectivity
+            if (n_mesh_conn.dtype().is_uint64())
+            {
+                wedge_helper<uint64>(n_mesh_conn);
+            }
+            else if (n_mesh_conn.dtype().is_uint32())
+            {
+                wedge_helper<uint32>(n_mesh_conn);
+            }
+            else if (n_mesh_conn.dtype().is_int64())
+            {
+                wedge_helper<int64>(n_mesh_conn);
+            }
+            else if (n_mesh_conn.dtype().is_int32())
+            {
+                wedge_helper<int32>(n_mesh_conn);
+            }
+            else
+            {
+                CONDUIT_ERROR("Unsupported connectivity type in " << n_mesh_conn.dtype().to_yaml());
+            }
+        }
 
         // convert to compact ints ... 
         if(shape_list)
