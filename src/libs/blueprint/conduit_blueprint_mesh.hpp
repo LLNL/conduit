@@ -105,32 +105,13 @@ void CONDUIT_BLUEPRINT_API generate_index_for_single_domain(const conduit::Node 
                                                             Node &index_out);
 
 //---------------------------------------------------------------------
-/// Return the max of any coordset's dimensionality
-index_t CONDUIT_BLUEPRINT_API max_dimension(const conduit::Node &mesh);
-
-/// Return true if all coordsets have equal dimensionality
-bool CONDUIT_BLUEPRINT_API is_dimension_consistent(const conduit::Node &mesh);
-
 /// Test if a mesh is suitable to convert to a 1D "strip" mesh of a form
 /// expected by Carter.  The mesh must have all coordsets of dimension one
 /// and may only contain element-associated fields.  Error details are
 /// returned in info.
-bool CONDUIT_BLUEPRINT_API is_convertible_to_strip(const conduit::Node &mesh,
-                                                   Node &info);
-
-/// Test if a mesh is a Carter 1D "strip" mesh suitable to convert to 1D.
-///
-/// Preconditions:
-/// - all coordsets must have equal dimensionality
-/// - each coordset must have two dimensions
-/// - x-dimension must have size 2 (for a one-element-wide strip)
-/// - each topography must be of type "uniform" or "structured"
-/// - only element-associated feilds allowed
-///
-/// Additional info (for example, specific error messages) returned in info.
-bool CONDUIT_BLUEPRINT_API is_convertible_to_one_dimension(const conduit::Node &mesh,
-                                                           Node &info);
-
+bool CONDUIT_BLUEPRINT_API can_generate_strip(const conduit::Node &mesh,
+                                              const std::string& topo_name,
+                                              Node &info);
 /**
  * @brief Convert the given 1D blueprint mesh into a strip of quads
  *     as expected by Carter.
@@ -143,23 +124,10 @@ bool CONDUIT_BLUEPRINT_API is_convertible_to_one_dimension(const conduit::Node &
  * must contain only zonal fields.  The requirement against nodal fields
  * may be relaxed if we determine the right way to do it.
  */
-void CONDUIT_BLUEPRINT_API convert_to_strip(const conduit::Node &mesh,
-                                            conduit::Node &output);
+void CONDUIT_BLUEPRINT_API generate_strip(conduit::Node &mesh,
+                                          std::string src_topo_name,
+                                          std::string dst_topo_name);
 
-/**
- * @brief Convert the given 2D blueprint mesh (a row of quad elements)
- *     into a 1D blueprint mesh.
- * @param mesh  A Conduit node containing a 2D blueprint mesh with a
- *     single row of quad elements.
- * @param[out] output A Conduit node that will contain a 1D blueprint mesh
- *     containing a line segment element corresponding to each (quad)
- *     element in \a mesh.
- *
- * The input \a mesh must be two-dimensional in each coordset, with all
- * meshes describing a single row of quads.
- */
-void CONDUIT_BLUEPRINT_API convert_strip_to_oneD(const conduit::Node &mesh,
-                                                 conduit::Node &output);
 
 //-------------------------------------------------------------------------
 // Creates fields to help view and debug adjset relationships.
@@ -335,6 +303,10 @@ namespace coordset
     index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &coordset);
 
     //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& coordset,
+                                              conduit::Node& coordset_dest);
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
     //-------------------------------------------------------------------------
     namespace uniform
@@ -465,6 +437,10 @@ namespace topology
 
     //-------------------------------------------------------------------------
     index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &topo);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& topo,
+                                              conduit::Node & topo_dest);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::points protocol interface
