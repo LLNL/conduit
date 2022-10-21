@@ -1257,12 +1257,12 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip)
         std::cout << " structured: about to test 1D" << std::endl;
 
         Node info;
-        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "topo", info));
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
         CONDUIT_INFO(info.to_yaml());
 
         std::cout << " structured: about to convert" << std::endl;
 
-        blueprint::mesh::generate_strip(mesh, "topo", "strip_topo");
+        blueprint::mesh::generate_strip(mesh, "mesh", "mesh_strip");
 
         test_save_mesh_helper(mesh, "oneD_struct_strip");
 
@@ -1284,12 +1284,12 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip)
         std::cout << " uniform: about to test 1D" << std::endl;
 
         Node info;
-        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "topo", info));
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
         CONDUIT_INFO(info.to_yaml());
 
         std::cout << " uniform: about to convert" << std::endl;
 
-        blueprint::mesh::generate_strip(mesh, "topo", "strip_topo");
+        blueprint::mesh::generate_strip(mesh, "mesh", "mesh_strip");
 
         test_save_mesh_helper(mesh, "oneD_struct_strip");
 
