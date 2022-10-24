@@ -3111,8 +3111,18 @@ public:
     /// update_external() sets this node to describe the data from the children
     //   in n_src.
     void        update_external(Node &n_src);
+    
+//-----------------------------------------------------------------------------
+// -- move and swap ---
+//-----------------------------------------------------------------------------
+    /// move() assume ownership of data and tree structure of the passed
+    /// Node, passed node is empty afterward
+    void        move(Node &n);
 
-
+    /// swap() swap the ownership ownership of data and tree structure 
+    /// between two nodes.
+    void        swap(Node &n);
+    
 //-----------------------------------------------------------------------------
 // -- endian related --
 //-----------------------------------------------------------------------------

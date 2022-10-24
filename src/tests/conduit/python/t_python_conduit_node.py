@@ -741,6 +741,31 @@ g: [2.0, 4.0]
         print(np_c_arr[20:])
         self.assertEqual(sum(np_c_arr[20:]), 100 * 10)
 
+    def test_move_and_swap(self):
+        n_a = Node()
+        n_b = Node()
+
+        n_a["data"] = 10
+        n_b["data"] = 20
+
+        n_a.swap(n_b);
+
+        print("-Swapped-")
+        print(n_a)
+        print(n_b)
+
+        self.assertEqual(n_a["data"],20)
+        self.assertEqual(n_b["data"],10)
+        # now move b into a, b will be reset as a result
+        n_a.move(n_b);
+        self.assertTrue(n_b.dtype().is_empty())
+        self.assertEqual(n_a["data"],10)
+
+        print("-Moved-")
+        print(n_a)
+        print(n_b)
+
+
 
 if __name__ == '__main__':
     unittest.main()

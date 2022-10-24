@@ -582,7 +582,7 @@ contains
           ! Node &n_1 = n["normal/path"];
           cn_1 = conduit_node_fetch(cnode,"normal/path");
           nchld = conduit_node_number_of_children(cnode)
-          call assert_equals(nchld, 2)
+          call assert_equals(nchld, 1)
           ! n.reset()
           call conduit_node_reset(cnode)
           nchld = conduit_node_number_of_children(cnode)
@@ -591,6 +591,56 @@ contains
 
       end subroutine t_node_reset
 
+      !--------------------------------------------------------------------------
+      subroutine t_node_move_and_swap
+          type(C_PTR) cnode_a
+          type(C_PTR) cnode_b
+          integer     nchld
+          integer     res
+
+          !----------------------------------------------------------------------
+          call set_case_name("t_node_move_and_swap")
+          !----------------------------------------------------------------------
+
+          !--------------
+          ! c++ ~equiv:
+          !--------------
+          ! Node n_a;
+          ! n_a["data"] = 10;
+          cnode_a = conduit_node_create()
+          call conduit_node_set_path_int32(cnode_a,"data",10)
+          ! Node n_b;
+          ! n_b["data"] = 20;
+          cnode_b = conduit_node_create()
+          call conduit_node_set_path_int32(cnode_b,"data",20)
+
+          ! n_a.swap(n_b);
+          call conduit_node_swap(cnode_a,cnode_b)
+
+          ! check they are swapped
+          res = conduit_node_fetch_path_as_int32(cnode_b,"data")
+          call assert_equals(10, res)
+
+          res = conduit_node_fetch_path_as_int32(cnode_a,"data")
+          call assert_equals(20, res)
+
+          ! n_a.swap(n_b);
+
+          ! now move b into a, b will be reset as a result
+          call conduit_node_move(cnode_a,cnode_b)
+
+          ! b should be empty
+          nchld = conduit_node_number_of_children(cnode_b)
+          call assert_equals(0,nchld)
+
+          ! back to where we started with n_a
+          res = conduit_node_fetch_path_as_int32(cnode_a,"data")
+          call assert_equals(10, res)
+
+          call conduit_node_destroy(cnode_a)
+          call conduit_node_destroy(cnode_b)
+
+      end subroutine t_node_move_and_swap
 
 
 !------------------------------------------------------------------------------
@@ -624,7 +674,9 @@ program fortran_test
   call t_node_save_load
   call t_node_names_embedded_slashes
   call t_node_fetch_existing
-  
+  call t_node_reset
+  call t_node_move_and_swap
+
   call fruit_summary
   call fruit_finalize
   call is_all_successful(ok)
