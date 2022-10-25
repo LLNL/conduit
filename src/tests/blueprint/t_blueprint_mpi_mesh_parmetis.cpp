@@ -280,7 +280,6 @@ TEST(blueprint_mpi_parmetis, braid)
             Node& dom = *pdom;
             Node& shared_nodes = dom["fields/is_shared_node"];
             shared_nodes["association"] = "vertex";
-            shared_nodes["type"] = "scalar";
             shared_nodes["topology"] = "mesh";
             shared_nodes["values"].set(DataType::float64(dom["fields/braid/values"].dtype().number_of_elements()));
             float64_array shared_nodes_val = shared_nodes["values"].value();

@@ -173,7 +173,6 @@ add_field_selection_field(int cx, int cy, int cz,
             values[idx] = fill_dom;
         idx++;
     }
-    output["fields/selection_field/type"] = "scalar";
     output["fields/selection_field/association"] = "element";
     output["fields/selection_field/topology"] = "mesh";
     output["fields/selection_field/values"].set(values);

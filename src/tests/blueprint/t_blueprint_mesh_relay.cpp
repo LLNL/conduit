@@ -445,6 +445,8 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     opts["file_style"] = "multi_file";
 
     remove_path_if_exists(tout_base + ".root");
+    remove_path_if_exists(join_file_path(tout_base,
+                                         "domain_000000.hdf5"));
     remove_path_if_exists(tout_base);
     relay::io::blueprint::write_mesh(data, tout_base, "hdf5", opts);
     EXPECT_TRUE(is_file( tout_base + ".root"));
@@ -456,7 +458,6 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     relay::io::blueprint::load_mesh(tout_base + ".root",
                                     n_read);
     EXPECT_FALSE(data.diff(n_read.child(0),info));
-
 
     opts["file_style"] = "garbage";
 
