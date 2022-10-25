@@ -17,6 +17,7 @@ with C++ and Python examples.
 
    tutorial_python_basics
    tutorial_python_parse
+   tutorial_python_ownership
    tutorial_python_move_and_swap
    tutorial_python_utils
 

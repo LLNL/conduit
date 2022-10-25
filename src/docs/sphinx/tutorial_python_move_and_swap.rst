@@ -16,7 +16,7 @@ The *Node* class provides *move* and *swap* methods that allow you to efficientl
 
 .. # from t_conduit_docs_tutorial_python_move_and_swap: move
 
-**Move Example Source:**
+* **Python Move Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_move_and_swap.py
    :start-after: BEGIN_EXAMPLE("py_move")
@@ -24,7 +24,7 @@ The *Node* class provides *move* and *swap* methods that allow you to efficientl
    :language: python
    :dedent: 8
 
-**Move Example Output:**
+* **Output**
 
 .. literalinclude:: t_conduit_docs_tutorial_python_move_and_swap_out.txt
    :start-after: BEGIN_EXAMPLE("py_move")
@@ -33,7 +33,7 @@ The *Node* class provides *move* and *swap* methods that allow you to efficientl
 
 .. # from t_conduit_docs_tutorial_python_move_and_swap: swap
 
-**Swap Example Source:**
+* **Python Swap Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_python_move_and_swap.py
    :start-after: BEGIN_EXAMPLE("py_swap")
@@ -41,7 +41,7 @@ The *Node* class provides *move* and *swap* methods that allow you to efficientl
    :language: python
    :dedent: 8
 
-**Swap Example Output:**
+* **Output**
 
 .. literalinclude:: t_conduit_docs_tutorial_python_move_and_swap_out.txt
    :start-after: BEGIN_EXAMPLE("py_swap")

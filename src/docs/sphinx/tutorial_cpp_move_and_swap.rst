@@ -15,7 +15,7 @@ The *Node* class provides *move* and *swap* methods that allow you to efficientl
 
 .. # from t_conduit_docs_tutorial_move_and_swap: move
 
-**Move Example Source:**
+* **C++ Move Example:**
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_move_and_swap.cpp
    :start-after: BEGIN_EXAMPLE("move")
@@ -23,14 +23,14 @@ The *Node* class provides *move* and *swap* methods that allow you to efficientl
    :language: cpp
    :dedent: 4
 
-**Move Example Output:**
+* **Output:**
 
 .. literalinclude:: t_conduit_docs_tutorial_move_and_swap_out.txt
    :start-after: BEGIN_EXAMPLE("move")
    :end-before: END_EXAMPLE("move")
 
 
-**Swap Example Source:**
+* **C++ Swap Example:**
 
 .. # from t_conduit_docs_tutorial_move_and_swap: swap
 
@@ -41,7 +41,7 @@ The *Node* class provides *move* and *swap* methods that allow you to efficientl
    :dedent: 4
 
 
-**Swap Example Output:**
+* **Output:**
 
 .. literalinclude:: t_conduit_docs_tutorial_move_and_swap_out.txt
    :start-after: BEGIN_EXAMPLE("swap")
