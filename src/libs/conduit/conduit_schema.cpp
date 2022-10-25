@@ -1627,6 +1627,22 @@ Schema::children() const
 }
 
 //---------------------------------------------------------------------------//
+index_t
+Schema::child_index(Schema *schema_ptr) const
+{
+    // find the index of schema_ptr
+    index_t nchld = number_of_children();
+    for(index_t i=0; i < nchld; i++)
+    {
+        if(child_ptr(i) == schema_ptr )
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+//---------------------------------------------------------------------------//
 const std::map<std::string, index_t> &
 Schema::object_map() const
 {
@@ -1640,6 +1656,9 @@ Schema::object_order() const
 {
     return object_hierarchy()->object_order;
 }
+
+
+
 
 //---------------------------------------------------------------------------//
 void

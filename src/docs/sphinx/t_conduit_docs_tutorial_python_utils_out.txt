@@ -9,49 +9,49 @@ Updating test list for fixtures
 Added 0 tests to meet fixture requirements
 Checking test dependency graph...
 Checking test dependency graph end
-test 122
-    Start 122: t_conduit_docs_tutorial_python_utils
+test 153
+    Start 153: t_conduit_docs_tutorial_python_utils
 
-122: Test command: /Users/harrison37/Work/github/llnl/conduit/ul_new_spack/spack/opt/spack/darwin-mojave-skylake/clang-10.0.0-apple/python-3.8.6-v5ib7rosbw7f74zsnvg4dlnu7xlmqzxa/bin/python3.8 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_utils"
-122: Environment variables: 
-122:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
-122: Test timeout computed to be: 1500
-122: test_001_using_utils_fmt_args_obj (t_conduit_docs_tutorial_python_utils.Conduit_Tutorial_Python_Utils) ... ok
-122: test_002_using_utils_fmt_args_list (t_conduit_docs_tutorial_python_utils.Conduit_Tutorial_Python_Utils) ... ok
-122: test_003_using_utils_fmt_maps_obj (t_conduit_docs_tutorial_python_utils.Conduit_Tutorial_Python_Utils) ... ok
-122: test_004_using_utils_fmt_maps_list (t_conduit_docs_tutorial_python_utils.Conduit_Tutorial_Python_Utils) ... ok
-122: 
-122: ----------------------------------------------------------------------
-122: Ran 4 tests in 0.004s
-122: 
-122: OK
-122: BEGIN_EXAMPLE("py_using_utils_fmt_args_obj")
-122: The answer is 0042.
-122: The other answer is 3.1415.
-122: END_EXAMPLE("py_using_utils_fmt_args_obj")
-122: BEGIN_EXAMPLE("py_using_utils_fmt_args_list")
-122: The answer is 0042.
-122: The other answer is 3.1415.
-122: END_EXAMPLE("py_using_utils_fmt_args_list")
-122: BEGIN_EXAMPLE("py_using_utils_fmt_maps_obj")
-122: The answer is 0042.
-122: The answer is 3.1415.
-122: 
-122: The first answer is 42.0000.
-122: The second answer is 3.1415.
-122: END_EXAMPLE("py_using_utils_fmt_maps_obj")
-122: BEGIN_EXAMPLE("py_using_utils_fmt_maps_list")
-122: The answer is 42.
-122: The answer is 3.1415.
-122: 
-122: The first answer is 42.0000.
-122: The second answer is 3.1415.
-122: END_EXAMPLE("py_using_utils_fmt_maps_list")
-1/1 Test #122: t_conduit_docs_tutorial_python_utils ...   Passed    0.18 sec
+153: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-skylake/clang-10.0.0-apple/python-3.8.11-ov6mkajdxwik3reewjwupqv3qeyygnsd/bin/python3.8 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_utils"
+153: Environment variables: 
+153:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+153: Test timeout computed to be: 1500
+153: test_001_using_utils_fmt_args_obj (t_conduit_docs_tutorial_python_utils.Conduit_Tutorial_Python_Utils) ... ok
+153: test_002_using_utils_fmt_args_list (t_conduit_docs_tutorial_python_utils.Conduit_Tutorial_Python_Utils) ... ok
+153: test_003_using_utils_fmt_maps_obj (t_conduit_docs_tutorial_python_utils.Conduit_Tutorial_Python_Utils) ... ok
+153: test_004_using_utils_fmt_maps_list (t_conduit_docs_tutorial_python_utils.Conduit_Tutorial_Python_Utils) ... ok
+153: 
+153: ----------------------------------------------------------------------
+153: Ran 4 tests in 0.001s
+153: 
+153: OK
+153: BEGIN_EXAMPLE("py_using_utils_fmt_args_obj")
+153: The answer is 0042.
+153: The other answer is 3.1415.
+153: END_EXAMPLE("py_using_utils_fmt_args_obj")
+153: BEGIN_EXAMPLE("py_using_utils_fmt_args_list")
+153: The answer is 0042.
+153: The other answer is 3.1415.
+153: END_EXAMPLE("py_using_utils_fmt_args_list")
+153: BEGIN_EXAMPLE("py_using_utils_fmt_maps_obj")
+153: The answer is 0042.
+153: The answer is 3.1415.
+153: 
+153: The first answer is 42.0000.
+153: The second answer is 3.1415.
+153: END_EXAMPLE("py_using_utils_fmt_maps_obj")
+153: BEGIN_EXAMPLE("py_using_utils_fmt_maps_list")
+153: The answer is 42.
+153: The answer is 3.1415.
+153: 
+153: The first answer is 42.0000.
+153: The second answer is 3.1415.
+153: END_EXAMPLE("py_using_utils_fmt_maps_list")
+1/1 Test #153: t_conduit_docs_tutorial_python_utils ...   Passed    0.53 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_utils
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.21 sec
+Total Test time (real) =   0.55 sec

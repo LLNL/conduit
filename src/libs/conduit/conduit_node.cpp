@@ -8700,6 +8700,85 @@ Node::update_external(Node &n_src)
     }
 }
 
+//-----------------------------------------------------------------------------
+// -- move and swap --
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::move(Node &n)
+{
+    // this is a good way to implement this for correctness.
+    reset();
+    swap(n);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::swap(Node &n_b)
+{
+    Schema *schema_a = m_schema;
+    Schema *schema_b = n_b.m_schema;
+
+    // check if node a has a parent Node
+    if(this->parent() != NULL)
+    {
+        // find index in parent schema
+        Schema *a_parent_schema = schema_a->parent();
+        index_t idx = a_parent_schema->child_index(schema_a);
+        // as we swap, we need to make sure the parent schema is updated
+        if(idx < 0)
+        {
+            // error
+            CONDUIT_ERROR("Node::swap internal error,"
+                         "failed to find schema child index in this Node's parent.");
+        }
+
+        a_parent_schema->children()[idx] = schema_b;
+    }
+
+    // check if node b has a parent Node
+    if(n_b.parent() != NULL)
+    {
+        // find index in parent schema
+        Schema *b_parent_schema = schema_b->parent();
+        index_t idx = b_parent_schema->child_index(schema_b);
+
+        // as we swap, we need to make sure the parent schema is updated
+        if(idx < 0)
+        {
+            // error
+            CONDUIT_ERROR("Node::swap internal error,"
+                         "failed to find schema child index in passed Node's parent.");
+
+        }
+
+        b_parent_schema->children()[idx] = schema_a;
+    }
+
+    // swap-o-rama
+    
+    // things we need to swap
+    // schema pointer
+    // data pointer and data size
+    // if data is allocated or not
+    // if data is memory mapped or not
+    // memory map
+    // the allocator id
+    // any children
+    std::swap(m_data,n_b.m_data);
+    std::swap(m_data_size,n_b.m_data_size);
+    std::swap(m_schema,n_b.m_schema);
+    std::swap(m_alloced,n_b.m_alloced);
+    std::swap(m_mmaped,n_b.m_mmaped);
+    std::swap(m_mmap,n_b.m_mmap);
+    std::swap(m_allocator_id,n_b.m_allocator_id);
+    // this should be an efficient O(1)
+    std::swap(m_children,n_b.m_children);
+
+}
+
+
 
 //-----------------------------------------------------------------------------
 // -- endian related --

@@ -74,6 +74,10 @@ module conduit_obj
         procedure :: reset => conduit_node_obj_reset
 
         !----------------------------------------------------------------------
+        procedure :: move => conduit_node_obj_move
+        procedure :: swap => conduit_node_obj_swap
+
+        !----------------------------------------------------------------------
         !----------------------------------------------------------------------
         ! begin node cases
         !----------------------------------------------------------------------
@@ -358,6 +362,24 @@ contains
         class(node) :: obj
         call conduit_node_reset(obj%cnode)
     end subroutine conduit_node_obj_reset
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_move(obj_a,obj_b)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj_a
+        class(node) :: obj_b
+        call conduit_node_move(obj_a%cnode,obj_b%cnode)
+    end subroutine conduit_node_obj_move
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_swap(obj_a,obj_b)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj_a
+        class(node) :: obj_b
+        call conduit_node_swap(obj_a%cnode,obj_b%cnode)
+    end subroutine conduit_node_obj_swap
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_update(obj,other)

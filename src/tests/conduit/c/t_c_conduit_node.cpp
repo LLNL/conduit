@@ -596,6 +596,33 @@ TEST(c_conduit_node, c_reset)
     conduit_node_destroy(n);
 }
 
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_move_and_swap)
+{
+    conduit_node *n_a = conduit_node_create();
+    conduit_node *n_b = conduit_node_create();
+
+    conduit_node_set_path_int(n_a,"data",10);
+    conduit_node_set_path_int(n_b,"data",20);
+
+    conduit_node_swap(n_a,n_b);
+
+    EXPECT_EQ(conduit_node_fetch_path_as_int(n_a,"data"),20);
+    EXPECT_EQ(conduit_node_fetch_path_as_int(n_b,"data"),10);
+
+    // now move b into a, b will be reset as a result
+    conduit_node_move(n_a,n_b);
+
+    EXPECT_EQ(conduit_node_number_of_children(n_b),0);
+    // check that dtype is empty
+    const conduit_datatype *dtype = conduit_node_dtype(n_b);
+    EXPECT_EQ(conduit_datatype_is_empty(dtype),1);
+
+    EXPECT_EQ(conduit_node_fetch_path_as_int(n_a,"data"),10);
+    
+    conduit_node_destroy(n_a);
+    conduit_node_destroy(n_b);
+}
 
 
 

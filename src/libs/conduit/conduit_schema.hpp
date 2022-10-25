@@ -451,6 +451,10 @@ private:
     const Schema_Object_Hierarchy         *object_hierarchy() const;
     const Schema_List_Hierarchy           *list_hierarchy()   const;
 
+    /// helper to find the index of a given schema pointer
+    index_t child_index(Schema *schema_ptr) const;
+
+
 //-----------------------------------------------------------------------------
 //
 // -- conduit::Schema private data members --

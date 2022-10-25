@@ -7,6 +7,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## [Unreleased]
 ### Added
 #### General
+-  Added Node::move and Node::swap methods, which provide efficient ways to help build Node trees by consuming other Nodes.
  - Added Node::reset methods to C and Fortran interfaces
  - Added support for Wedges and Pyramids to Blueprint.
 

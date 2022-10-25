@@ -6052,6 +6052,75 @@ PyConduit_Node_reset(PyConduit_Node *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_move(PyConduit_Node *self,
+                    PyObject *args,
+                    PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    self->node->move(n_other);
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_swap(PyConduit_Node *self,
+                    PyObject *args,
+                    PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    self->node->swap(n_other);
+    Py_RETURN_NONE;
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_set(PyConduit_Node* self,
                    PyObject* args)
 {
@@ -6844,6 +6913,17 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_child,
      METH_VARARGS | METH_KEYWORDS,
      "Access existing direct child by index or name"},
+    //-----------------------------------------------------------------------//
+    {"move", 
+     (PyCFunction)PyConduit_Node_move,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Move the contents of passed node into this node."
+     " Passed node is empty after the move."},
+    //-----------------------------------------------------------------------//
+    {"swap", 
+     (PyCFunction)PyConduit_Node_swap,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Swap contents of this node with those of the passed node"},
     //-----------------------------------------------------------------------//
     {"remove", 
      (PyCFunction)PyConduit_Node_remove,

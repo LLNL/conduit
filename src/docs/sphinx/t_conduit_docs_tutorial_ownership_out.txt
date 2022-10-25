@@ -6,11 +6,12 @@ Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdpart
 BEGIN_EXAMPLE("mem_ownership_external")
 
 mem_spaces: 
-  0x7f9779501180: 
+  0x7fddedc0a890: 
     path: "v_owned"
     type: "allocated"
     bytes: 40
-  0x7f9779500dc0: 
+    allocator_id: 0
+  0x7fddedc0a460: 
     path: "v_external"
     type: "external"
 total_bytes_allocated: 40

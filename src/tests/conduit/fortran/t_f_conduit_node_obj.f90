@@ -901,7 +901,7 @@ contains
          ! Node &n_1 = n["normal/path"];
          n_1 = n%fetch("normal/path")
          nchld = n%number_of_children()
-         call assert_equals(nchld, 2)
+         call assert_equals(nchld, 1)
          ! n.reset()
          call n%reset()
          nchld = n%number_of_children()
@@ -909,6 +909,56 @@ contains
          call conduit_node_obj_destroy(n)
 
      end subroutine t_node_obj_reset
+
+     !--------------------------------------------------------------------------
+     subroutine t_node_obj_move_and_swap
+         type(node) n_a
+         type(node) n_b
+         integer     nchld
+         integer    res
+
+         !----------------------------------------------------------------------
+         call set_case_name("t_node_obj_move_and_swap")
+         !----------------------------------------------------------------------
+
+         !--------------
+         ! c++ ~equiv:
+         !--------------
+         ! Node n_a;
+         ! n_a["data"] = 10;
+         n_a = conduit_node_obj_create()
+         call n_a%set_path_int32("data",10)
+         ! Node n_b;
+         ! n_b["data"] = 20;
+         n_b = conduit_node_obj_create()
+         call n_b%set_path_int32("data",20)
+
+         ! n_a.swap(n_b);
+         call n_a%swap(n_b)
+
+         ! check they are swapped
+         res = n_b%fetch_path_as_int32("data")
+         call assert_equals(10, res)
+
+         res = n_a%fetch_path_as_int32("data")
+         call assert_equals(20, res)
+
+         ! n_b.swap(n_a);
+         ! now move b into a, b will be reset as a result
+         call n_a%move(n_b)
+
+         ! b should be empty
+         nchld = n_b%number_of_children()
+         call assert_equals(0, nchld)
+
+         ! back to where we started with n_a
+         res = n_a%fetch_path_as_int32("data")
+         call assert_equals(10, res)
+
+         call conduit_node_obj_destroy(n_a)
+         call conduit_node_obj_destroy(n_b)
+
+     end subroutine t_node_obj_move_and_swap
 
 
 !------------------------------------------------------------------------------
@@ -950,6 +1000,8 @@ program fortran_test
   call t_node_obj_save_load
   call t_node_obj_names_embedded_slashes
   call t_node_obj_fetch_existing
+  call t_node_obj_reset
+  call t_node_obj_move_and_swap
 
   call fruit_summary
   call fruit_finalize

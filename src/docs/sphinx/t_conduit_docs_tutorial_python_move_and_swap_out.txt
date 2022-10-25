@@ -1,0 +1,91 @@
+UpdateCTestConfiguration  from :/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Parse Config file:/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Parse Config file:/Users/harrison37/Work/github/llnl/conduit/build-debug/DartConfiguration.tcl
+Test project /Users/harrison37/Work/github/llnl/conduit/build-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 154
+    Start 154: t_conduit_docs_tutorial_python_move_and_swap
+
+154: Test command: /Users/harrison37/Work/github/llnl/conduit/uberenv_libs/spack/opt/spack/darwin-mojave-skylake/clang-10.0.0-apple/python-3.8.11-ov6mkajdxwik3reewjwupqv3qeyygnsd/bin/python3.8 "-B" "-m" "unittest" "-v" "t_conduit_docs_tutorial_python_move_and_swap"
+154: Environment variables: 
+154:  PYTHONPATH=/Users/harrison37/Work/github/llnl/conduit/build-debug/python-modules/:/Users/harrison37/Work/github/llnl/conduit/src/tests/docs
+154: Test timeout computed to be: 1500
+154: test_001_move (t_conduit_docs_tutorial_python_move_and_swap.Conduit_Tutorial_Python_Move_and_Swap) ... ok
+154: test_002_swap (t_conduit_docs_tutorial_python_move_and_swap.Conduit_Tutorial_Python_Move_and_Swap) ... ok
+154: 
+154: ----------------------------------------------------------------------
+154: Ran 2 tests in 0.002s
+154: 
+154: OK
+154: BEGIN_EXAMPLE("py_move")
+154: - Before Move -
+154: n_a contents:
+154: 
+154: n_a memory details:
+154: 
+154: n_b contents:
+154: 
+154: path: 
+154:   to: 
+154:     data: 42
+154: 
+154: n_b memory details:
+154: 
+154: - After Move -
+154: n_a contents:
+154: 
+154: path: 
+154:   to: 
+154:     data: 42
+154: 
+154: n_a memory details:
+154: 
+154: n_b contents:
+154: 
+154: n_b memory details:
+154: 
+154: END_EXAMPLE("py_move")
+154: BEGIN_EXAMPLE("py_swap")
+154: - Before Swap -
+154: n_a contents:
+154: 
+154: data: 10
+154: 
+154: n_a memory details:
+154: 
+154: n_b contents:
+154: 
+154: path: 
+154:   to: 
+154:     data: 20
+154: 
+154: n_b memory details:
+154: 
+154: - After Swap -
+154: n_a contents:
+154: 
+154: path: 
+154:   to: 
+154:     data: 20
+154: 
+154: n_a memory details:
+154: 
+154: n_b contents:
+154: 
+154: n_b memory details:
+154: 
+154: END_EXAMPLE("py_swap")
+1/1 Test #154: t_conduit_docs_tutorial_python_move_and_swap ...   Passed    0.50 sec
+
+The following tests passed:
+	t_conduit_docs_tutorial_python_move_and_swap
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.53 sec

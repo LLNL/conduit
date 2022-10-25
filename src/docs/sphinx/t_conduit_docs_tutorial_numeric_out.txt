@@ -11,7 +11,7 @@ END_EXAMPLE("numeric_as_dtype")
 BEGIN_EXAMPLE("numeric_via_value")
 100
 END_EXAMPLE("numeric_via_value")
-[       OK ] conduit_tutorial.numeric_via_value (1 ms)
+[       OK ] conduit_tutorial.numeric_via_value (0 ms)
 [ RUN      ] conduit_tutorial.numeric_ptr_as_dtype
 BEGIN_EXAMPLE("numeric_ptr_as_dtype")
 my_vals[0] = 100
@@ -65,8 +65,8 @@ BEGIN_EXAMPLE("numeric_cxx11_init")
 [1.0, 2.0, 3.0]
 END_EXAMPLE("numeric_cxx11_init")
 [       OK ] conduit_tutorial.numeric_cxx11_init (0 ms)
-[----------] 9 tests from conduit_tutorial (1 ms total)
+[----------] 9 tests from conduit_tutorial (0 ms total)
 
 [----------] Global test environment tear-down
-[==========] 9 tests from 1 test suite ran. (1 ms total)
+[==========] 9 tests from 1 test suite ran. (0 ms total)
 [  PASSED  ] 9 tests.
