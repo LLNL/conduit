@@ -20,7 +20,7 @@ test 154
 154: test_002_swap (t_conduit_docs_tutorial_python_move_and_swap.Conduit_Tutorial_Python_Move_and_Swap) ... ok
 154: 
 154: ----------------------------------------------------------------------
-154: Ran 2 tests in 0.001s
+154: Ran 2 tests in 0.002s
 154: 
 154: OK
 154: BEGIN_EXAMPLE("py_move")
@@ -88,4 +88,4 @@ The following tests passed:
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.52 sec
+Total Test time (real) =   0.53 sec

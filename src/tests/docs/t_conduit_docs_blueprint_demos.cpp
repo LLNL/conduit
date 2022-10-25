@@ -118,7 +118,7 @@ TEST(conduit_docs, blueprint_demo_basic_uniform)
     // generate simple uniform 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("uniform", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_uniform");
 
     const std::string mesh_json = R"(
@@ -178,7 +178,7 @@ TEST(conduit_docs, blueprint_demo_basic_rectilinear)
     // generate simple rectilinear 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("rectilinear", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_rectilinear");
 
     const std::string mesh_json = R"(
@@ -228,7 +228,7 @@ TEST(conduit_docs, blueprint_demo_basic_structured)
     // generate simple structured 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("structured", 3, 3, 1, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_structured");
 
     const std::string mesh_json = R"(
@@ -286,7 +286,7 @@ TEST(conduit_docs, blueprint_demo_basic_tris)
     // generate simple explicit tri-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("tris", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_tris");
 
     const std::string mesh_json = R"(
@@ -341,7 +341,7 @@ TEST(conduit_docs, blueprint_demo_basic_quads)
     // generate simple explicit quad-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("quads", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_quads");
 
     const std::string mesh_json = R"(
@@ -396,7 +396,7 @@ TEST(conduit_docs, blueprint_demo_basic_tets)
     // generate simple explicit tri-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("tets", 3, 3, 3, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_tets");
     
     const std::string mesh_json = R"(
@@ -452,7 +452,7 @@ TEST(conduit_docs, blueprint_demo_basic_hexs)
     // generate simple explicit quad-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("hexs", 3, 3, 3, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_hexs");
 
     const std::string mesh_json = R"(
@@ -508,7 +508,7 @@ TEST(conduit_docs, blueprint_demo_basic_wedges)
     // generate simple explicit wedge-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("wedges", 3, 3, 3, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_wedges");
 
     const std::string mesh_json = R"(
@@ -564,7 +564,7 @@ TEST(conduit_docs, blueprint_demo_basic_pyramids)
     // generate simple explicit pyramid-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("pyramids", 3, 3, 3, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_pyramids");
 
     const std::string mesh_json = R"(
@@ -620,7 +620,7 @@ TEST(conduit_docs, blueprint_demo_basic_polygons)
     // generate simple explicit poly-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("polygons", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_polygons");
 
     const std::string mesh_json = R"(
@@ -677,7 +677,7 @@ TEST(conduit_docs, blueprint_demo_basic_polyhedra)
     // generate simple explicit poly-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("polyhedra", 3, 3, 3, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_polyhedra");
 
     const std::string mesh_json = R"(
@@ -793,7 +793,7 @@ TEST(conduit_docs, blueprint_demo_basic_uniform_complete)
     }
 
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     
     // save our mesh to a file that can be read by VisIt
     //

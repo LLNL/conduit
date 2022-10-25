@@ -19,7 +19,7 @@ BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml")
   }
 }
 END_EXAMPLE("t_conduit_docs_tutorial_yaml")
-[       OK ] conduit_tutorial.t_conduit_docs_tutorial_yaml (1 ms)
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_yaml (0 ms)
 [ RUN      ] conduit_tutorial.t_conduit_docs_tutorial_json
 BEGIN_EXAMPLE("t_conduit_docs_tutorial_json")
 42
@@ -55,7 +55,7 @@ BEGIN_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
   }
 }
 END_EXAMPLE("t_conduit_docs_tutorial_yaml_inline_array")
-[       OK ] conduit_tutorial.t_conduit_docs_tutorial_yaml_inline_array (0 ms)
+[       OK ] conduit_tutorial.t_conduit_docs_tutorial_yaml_inline_array (1 ms)
 [ RUN      ] conduit_tutorial.json_generator_std
 BEGIN_EXAMPLE("t_json_generator_std")
 100
@@ -129,7 +129,7 @@ b: 200.0
 
 
 mem_spaces: 
-  0x7ffee6e2b140: 
+  0x7ffee7d56140: 
     path: "a"
     type: "external"
 total_bytes_allocated: 0
@@ -145,7 +145,7 @@ BEGIN_EXAMPLE("t_json_generator_compact")
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 mem_spaces: 
-  0x7ffee6e2b100: 
+  0x7ffee7d56100: 
     path: ""
     type: "external"
 total_bytes_allocated: 0
@@ -155,7 +155,7 @@ total_strided_bytes: 72
 
 
 mem_spaces: 
-  0x7ffee6e2b100: 
+  0x7ffee7d56100: 
     path: ""
     type: "external"
 total_bytes_allocated: 0
@@ -167,7 +167,7 @@ total_strided_bytes: 72
 {"dtype":"float64","number_of_elements": 5,"offset": 0,"stride": 8,"element_bytes": 8,"endianness": "little"}
 
 mem_spaces: 
-  0x7fb2350047b0: 
+  0x7fefae904610: 
     path: ""
     type: "allocated"
     bytes: 40
@@ -180,7 +180,7 @@ total_strided_bytes: 40
 [-100.0, -200.0, -300.0, -400.0, -500.0]
 
 mem_spaces: 
-  0x7fb235004430: 
+  0x7fefae904640: 
     path: ""
     type: "allocated"
     bytes: 40
@@ -191,7 +191,7 @@ total_bytes_compact: 40
 total_strided_bytes: 40
 
 END_EXAMPLE("t_json_generator_compact")
-[       OK ] conduit_tutorial.json_generator_compact (0 ms)
+[       OK ] conduit_tutorial.json_generator_compact (1 ms)
 [----------] 8 tests from conduit_tutorial (2 ms total)
 
 [----------] Global test environment tear-down

@@ -63,8 +63,8 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., 0.0, 10.0]
-      y: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
 topologies: 
   mesh: 
     type: "structured"
@@ -83,7 +83,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_structured")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'structured'
-[       OK ] conduit_docs.blueprint_demo_basic_structured (14 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_structured (25 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_tris
 BEGIN_EXAMPLE("blueprint_demo_basic_tris")
 
@@ -91,21 +91,21 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., 0.0, 10.0]
-      y: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
 topologies: 
   mesh: 
     type: "unstructured"
     coordset: "coords"
     elements: 
       shape: "tri"
-      connectivity: [0, 3, 4, ..., 5, 8]
+      connectivity: [0, 3, 4, 0, 1, 4, 1, 4, 5, 1, 2, 5, 3, 6, 7, 3, 4, 7, 4, 7, 8, 4, 5, 8]
 fields: 
   field: 
     association: "element"
     topology: "mesh"
     volume_dependent: "false"
-    values: [0.0, 1.0, 2.0, ..., 6.0, 7.0]
+    values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 
 END_EXAMPLE("blueprint_demo_basic_tris")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
@@ -118,15 +118,15 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., 0.0, 10.0]
-      y: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
 topologies: 
   mesh: 
     type: "unstructured"
     coordset: "coords"
     elements: 
       shape: "quad"
-      connectivity: [0, 3, 4, ..., 8, 5]
+      connectivity: [0, 3, 4, 1, 1, 4, 5, 2, 3, 6, 7, 4, 4, 7, 8, 5]
 fields: 
   field: 
     association: "element"
@@ -137,7 +137,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_quads")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'quads'
-[       OK ] conduit_docs.blueprint_demo_basic_quads (12 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_quads (13 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_tets
 BEGIN_EXAMPLE("blueprint_demo_basic_tets")
 
@@ -145,27 +145,27 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., 0.0, 10.0]
-      y: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
-      z: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
+      z: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
 topologies: 
   mesh: 
     type: "unstructured"
     coordset: "coords"
     elements: 
       shape: "tet"
-      connectivity: [0, 4, 1, ..., 23, 26]
+      connectivity: [0, 4, 1, 13, 0, 3, 4, 13, 0, 12, 3, 13, 0, 9, 12, 13, 0, 10, 9, 13, 0, 1, 10, 13, 1, 5, 2, 14, 1, 4, 5, 14, 1, 13, 4, 14, 1, 10, 13, 14, 1, 11, 10, 14, 1, 2, 11, 14, 3, 7, 4, 16, 3, 6, 7, 16, 3, 15, 6, 16, 3, 12, 15, 16, 3, 13, 12, 16, 3, 4, 13, 16, 4, 8, 5, 17, 4, 7, 8, 17, 4, 16, 7, 17, 4, 13, 16, 17, 4, 14, 13, 17, 4, 5, 14, 17, 9, 13, 10, 22, 9, 12, 13, 22, 9, 21, 12, 22, 9, 18, 21, 22, 9, 19, 18, 22, 9, 10, 19, 22, 10, 14, 11, 23, 10, 13, 14, 23, 10, 22, 13, 23, 10, 19, 22, 23, 10, 20, 19, 23, 10, 11, 20, 23, 12, 16, 13, 25, 12, 15, 16, 25, 12, 24, 15, 25, 12, 21, 24, 25, 12, 22, 21, 25, 12, 13, 22, 25, 13, 17, 14, 26, 13, 16, 17, 26, 13, 25, 16, 26, 13, 22, 25, 26, 13, 23, 22, 26, 13, 14, 23, 26]
 fields: 
   field: 
     association: "element"
     topology: "mesh"
     volume_dependent: "false"
-    values: [0.0, 1.0, 2.0, ..., 46.0, 47.0]
+    values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0]
 
 END_EXAMPLE("blueprint_demo_basic_tets")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'tets'
-[       OK ] conduit_docs.blueprint_demo_basic_tets (16 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_tets (15 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_hexs
 BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
 
@@ -173,27 +173,27 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., 0.0, 10.0]
-      y: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
-      z: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
+      z: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
 topologies: 
   mesh: 
     type: "unstructured"
     coordset: "coords"
     elements: 
       shape: "hex"
-      connectivity: [0, 1, 4, ..., 26, 25]
+      connectivity: [0, 1, 4, 3, 9, 10, 13, 12, 1, 2, 5, 4, 10, 11, 14, 13, 3, 4, 7, 6, 12, 13, 16, 15, 4, 5, 8, 7, 13, 14, 17, 16, 9, 10, 13, 12, 18, 19, 22, 21, 10, 11, 14, 13, 19, 20, 23, 22, 12, 13, 16, 15, 21, 22, 25, 24, 13, 14, 17, 16, 22, 23, 26, 25]
 fields: 
   field: 
     association: "element"
     topology: "mesh"
     volume_dependent: "false"
-    values: [0.0, 1.0, 2.0, ..., 6.0, 7.0]
+    values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 
 END_EXAMPLE("blueprint_demo_basic_hexs")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'hexs'
-[       OK ] conduit_docs.blueprint_demo_basic_hexs (14 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_hexs (16 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_wedges
 BEGIN_EXAMPLE("blueprint_demo_basic_wedges")
 
@@ -201,22 +201,22 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., 0.0, 10.0]
-      y: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
-      z: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
+      z: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
 topologies: 
   mesh: 
     type: "unstructured"
     coordset: "coords"
     elements: 
       shape: "wedge"
-      connectivity: [0, 1, 4, ..., 25, 26]
+      connectivity: [0, 1, 4, 9, 10, 13, 0, 3, 4, 9, 12, 13, 1, 2, 5, 10, 11, 14, 1, 4, 5, 10, 13, 14, 3, 4, 7, 12, 13, 16, 3, 6, 7, 12, 15, 16, 4, 5, 8, 13, 14, 17, 4, 7, 8, 13, 16, 17, 9, 10, 13, 18, 19, 22, 9, 12, 13, 18, 21, 22, 10, 11, 14, 19, 20, 23, 10, 13, 14, 19, 22, 23, 12, 13, 16, 21, 22, 25, 12, 15, 16, 21, 24, 25, 13, 14, 17, 22, 23, 26, 13, 16, 17, 22, 25, 26]
 fields: 
   field: 
     association: "element"
     topology: "mesh"
     volume_dependent: "false"
-    values: [0.0, 1.0, 2.0, ..., 14.0, 15.0]
+    values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0]
 
 END_EXAMPLE("blueprint_demo_basic_wedges")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
@@ -229,27 +229,27 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., -5.0, 5.0]
-      y: [-10.0, -10.0, -10.0, ..., 5.0, 5.0]
-      z: [-10.0, -10.0, -10.0, ..., 5.0, 5.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -5.0, 5.0, -5.0, 5.0, -5.0, 5.0, -5.0, 5.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -5.0, -5.0, 5.0, 5.0, -5.0, -5.0, 5.0, 5.0]
+      z: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, -5.0, -5.0, -5.0, -5.0, 5.0, 5.0, 5.0, 5.0]
 topologies: 
   mesh: 
     type: "unstructured"
     coordset: "coords"
     elements: 
       shape: "pyramid"
-      connectivity: [0, 3, 4, ..., 25, 34]
+      connectivity: [0, 3, 4, 1, 27, 0, 1, 10, 9, 27, 1, 4, 13, 10, 27, 4, 3, 12, 13, 27, 3, 0, 9, 12, 27, 9, 10, 13, 12, 27, 1, 4, 5, 2, 28, 1, 2, 11, 10, 28, 2, 5, 14, 11, 28, 5, 4, 13, 14, 28, 4, 1, 10, 13, 28, 10, 11, 14, 13, 28, 3, 6, 7, 4, 29, 3, 4, 13, 12, 29, 4, 7, 16, 13, 29, 7, 6, 15, 16, 29, 6, 3, 12, 15, 29, 12, 13, 16, 15, 29, 4, 7, 8, 5, 30, 4, 5, 14, 13, 30, 5, 8, 17, 14, 30, 8, 7, 16, 17, 30, 7, 4, 13, 16, 30, 13, 14, 17, 16, 30, 9, 12, 13, 10, 31, 9, 10, 19, 18, 31, 10, 13, 22, 19, 31, 13, 12, 21, 22, 31, 12, 9, 18, 21, 31, 18, 19, 22, 21, 31, 10, 13, 14, 11, 32, 10, 11, 20, 19, 32, 11, 14, 23, 20, 32, 14, 13, 22, 23, 32, 13, 10, 19, 22, 32, 19, 20, 23, 22, 32, 12, 15, 16, 13, 33, 12, 13, 22, 21, 33, 13, 16, 25, 22, 33, 16, 15, 24, 25, 33, 15, 12, 21, 24, 33, 21, 22, 25, 24, 33, 13, 16, 17, 14, 34, 13, 14, 23, 22, 34, 14, 17, 26, 23, 34, 17, 16, 25, 26, 34, 16, 13, 22, 25, 34, 22, 23, 26, 25, 34]
 fields: 
   field: 
     association: "element"
     topology: "mesh"
     volume_dependent: "false"
-    values: [0.0, 1.0, 2.0, ..., 46.0, 47.0]
+    values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0]
 
 END_EXAMPLE("blueprint_demo_basic_pyramids")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'pyramids'
-[       OK ] conduit_docs.blueprint_demo_basic_pyramids (20 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_pyramids (16 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_polygons
 BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
 
@@ -257,15 +257,15 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., 0.0, 10.0]
-      y: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
 topologies: 
   mesh: 
     type: "unstructured"
     coordset: "coords"
     elements: 
       shape: "polygonal"
-      connectivity: [0, 3, 4, ..., 8, 5]
+      connectivity: [0, 3, 4, 1, 1, 4, 5, 2, 3, 6, 7, 4, 4, 7, 8, 5]
       sizes: [4, 4, 4, 4]
       offsets: [0, 4, 8, 12]
 fields: 
@@ -278,7 +278,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_polygons")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'polygons'
-[       OK ] conduit_docs.blueprint_demo_basic_polygons (16 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_polygons (15 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_polyhedra
 BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
 
@@ -286,34 +286,34 @@ coordsets:
   coords: 
     type: "explicit"
     values: 
-      x: [-10.0, 0.0, 10.0, ..., 0.0, 10.0]
-      y: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
-      z: [-10.0, -10.0, -10.0, ..., 10.0, 10.0]
+      x: [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0]
+      y: [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
+      z: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
 topologies: 
   mesh: 
     type: "unstructured"
     coordset: "coords"
     elements: 
       shape: "polyhedral"
-      connectivity: [0, 1, 2, ..., 29, 35]
-      sizes: [6, 6, 6, ..., 6, 6]
-      offsets: [0, 6, 12, ..., 36, 42]
+      connectivity: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 10, 11, 3, 12, 13, 14, 15, 16, 9, 17, 18, 12, 19, 5, 20, 21, 22, 23, 24, 10, 25, 26, 27, 21, 28, 15, 22, 29, 30, 31, 32, 19, 27, 33, 34, 29, 35]
+      sizes: [6, 6, 6, 6, 6, 6, 6, 6]
+      offsets: [0, 6, 12, 18, 24, 30, 36, 42]
     subelements: 
-      connectivity: [0, 3, 4, ..., 26, 25]
-      sizes: [4, 4, 4, ..., 4, 4]
+      connectivity: [0, 3, 4, 1, 0, 1, 10, 9, 1, 4, 13, 10, 4, 3, 12, 13, 3, 0, 9, 12, 9, 10, 13, 12, 1, 4, 5, 2, 1, 2, 11, 10, 2, 5, 14, 11, 5, 4, 13, 14, 10, 11, 14, 13, 3, 6, 7, 4, 4, 7, 16, 13, 7, 6, 15, 16, 6, 3, 12, 15, 12, 13, 16, 15, 4, 7, 8, 5, 5, 8, 17, 14, 8, 7, 16, 17, 13, 14, 17, 16, 9, 10, 19, 18, 10, 13, 22, 19, 13, 12, 21, 22, 12, 9, 18, 21, 18, 19, 22, 21, 10, 11, 20, 19, 11, 14, 23, 20, 14, 13, 22, 23, 19, 20, 23, 22, 13, 16, 25, 22, 16, 15, 24, 25, 15, 12, 21, 24, 21, 22, 25, 24, 14, 17, 26, 23, 17, 16, 25, 26, 22, 23, 26, 25]
+      sizes: [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
       shape: "polygonal"
-      offsets: [0, 4, 8, ..., 136, 140]
+      offsets: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140]
 fields: 
   field: 
     association: "element"
     topology: "mesh"
     volume_dependent: "false"
-    values: [0.0, 1.0, 2.0, ..., 6.0, 7.0]
+    values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 
 END_EXAMPLE("blueprint_demo_basic_polyhedra")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'polyhedra'
-[       OK ] conduit_docs.blueprint_demo_basic_polyhedra (23 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_polyhedra (19 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_uniform_complete
 BEGIN_EXAMPLE("blueprint_demo_basic_uniform_complete")
 
@@ -341,12 +341,12 @@ fields:
   vert_example: 
     association: "vertex"
     topology: "topo"
-    values: [0.0, 1.0, 2.0, ..., 7.0, 8.0]
+    values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
 
 END_EXAMPLE("blueprint_demo_basic_uniform_complete")
-[       OK ] conduit_docs.blueprint_demo_basic_uniform_complete (6 ms)
-[----------] 12 tests from conduit_docs (177 ms total)
+[       OK ] conduit_docs.blueprint_demo_basic_uniform_complete (4 ms)
+[----------] 12 tests from conduit_docs (179 ms total)
 
 [----------] Global test environment tear-down
-[==========] 12 tests from 1 test suite ran. (178 ms total)
+[==========] 12 tests from 1 test suite ran. (179 ms total)
 [  PASSED  ] 12 tests.

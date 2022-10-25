@@ -20,7 +20,7 @@ a:
 
 total bytes: 15
 END_EXAMPLE("basics_hierarchial")
-[       OK ] conduit_tutorial.basics_hierarchial (1 ms)
+[       OK ] conduit_tutorial.basics_hierarchial (0 ms)
 [ RUN      ] conduit_tutorial.basics_object_and_list
 BEGIN_EXAMPLE("basics_object_and_list")
 
@@ -66,17 +66,17 @@ END_EXAMPLE("basics_object_and_list_itr")
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7fe3ad505840: 
+  0x7ff3dc9049b0: 
     path: "my"
     type: "allocated"
     bytes: 5
     allocator_id: 0
-  0x7fe3ad505c20: 
+  0x7ff3dc904d90: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
     allocator_id: 0
-  0x7fe3ad505c10: 
+  0x7ff3dc904d80: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8
@@ -87,7 +87,7 @@ total_bytes_compact: 15
 total_strided_bytes: 15
 
 END_EXAMPLE("basics_mem_spaces")
-[       OK ] conduit_tutorial.basics_mem_spaces (1 ms)
+[       OK ] conduit_tutorial.basics_mem_spaces (0 ms)
 [ RUN      ] conduit_tutorial.basics_bw_style
 BEGIN_EXAMPLE("basics_bw_style")
 
@@ -124,7 +124,7 @@ BEGIN_EXAMPLE("basics_bw_style_from_native")
   }
 }
 END_EXAMPLE("basics_bw_style_from_native")
-[       OK ] conduit_tutorial.basics_bw_style_from_native (0 ms)
+[       OK ] conduit_tutorial.basics_bw_style_from_native (1 ms)
 [ RUN      ] conduit_tutorial.basics_node_refs
 BEGIN_EXAMPLE("basics_node_refs")
 
