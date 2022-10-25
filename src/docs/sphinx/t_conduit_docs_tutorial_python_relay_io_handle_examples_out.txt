@@ -182,11 +182,11 @@ test 155
 155: 
 155: 
 155: END_EXAMPLE("py_relay_io_handle_sidre_root")
-1/1 Test #155: t_conduit_docs_tutorial_python_relay_io_handle_examples ...   Passed    0.52 sec
+1/1 Test #155: t_conduit_docs_tutorial_python_relay_io_handle_examples ...   Passed    0.53 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_relay_io_handle_examples
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.54 sec
+Total Test time (real) =   0.55 sec

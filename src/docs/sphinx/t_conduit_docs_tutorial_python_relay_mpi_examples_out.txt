@@ -35,19 +35,19 @@ test 156
 156: 
 156: 
 156: END_EXAMPLE("py_mpi_send_and_recv_using_schema")
-156: 
-156: BEGIN_EXAMPLE("py_mpi_send_and_recv")
 156: ok
 156: test_002_mpi_send_and_recv (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-156: test_002_mpi_send_and_recv (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... [rank: 0] sending: [0, 1, 4, 9]
-156: 
-156: END_EXAMPLE("py_mpi_send_and_recv")
+156: test_002_mpi_send_and_recv (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
+156: BEGIN_EXAMPLE("py_mpi_send_and_recv")
+156: [rank: 0] sending: [0, 1, 4, 9]
 156: [rank: 1] received: [0, 1, 4, 9]
 156: 
-156: BEGIN_EXAMPLE("py_mpi_bcast_using_schema")
+156: END_EXAMPLE("py_mpi_send_and_recv")
 156: ok
 156: test_003_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... ok
-156: test_003_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... [rank: 0] broadcasting: 
+156: test_003_mpi_bcast_using_schema (t_conduit_docs_tutorial_python_relay_mpi_examples.Conduit_Tutorial_Python_Relay_IO_Handle) ... 
+156: BEGIN_EXAMPLE("py_mpi_bcast_using_schema")
+156: [rank: 0] broadcasting: 
 156: a: 
 156:   data: 1.0
 156:   more_data: 2.0
@@ -91,16 +91,16 @@ test 156
 156: ok
 156: 
 156: ----------------------------------------------------------------------
-156: Ran 6 tests in 0.181s
+156: Ran 6 tests in 0.182s
 156: 
 156: OK
 156: ok
 156: 
 156: ----------------------------------------------------------------------
-156: Ran 6 tests in 0.180s
+156: Ran 6 tests in 0.182s
 156: 
 156: OK
-1/1 Test #156: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.67 sec
+1/1 Test #156: t_conduit_docs_tutorial_python_relay_mpi_examples ...   Passed    0.68 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_relay_mpi_examples

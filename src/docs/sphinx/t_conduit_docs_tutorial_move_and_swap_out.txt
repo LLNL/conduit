@@ -23,7 +23,7 @@ path:
 n_b memory details:
 
 mem_spaces: 
-  0x7fe5c1c06730: 
+  0x7ff7de504ae0: 
     path: "path/to/data"
     type: "allocated"
     bytes: 4
@@ -43,7 +43,7 @@ path:
 n_a memory details:
 
 mem_spaces: 
-  0x7fe5c1c06730: 
+  0x7ff7de504ae0: 
     path: "path/to/data"
     type: "allocated"
     bytes: 4
@@ -63,7 +63,7 @@ total_bytes_compact: 0
 total_strided_bytes: 0
 
 END_EXAMPLE("move")
-[       OK ] conduit_tutorial.move (0 ms)
+[       OK ] conduit_tutorial.move (1 ms)
 [ RUN      ] conduit_tutorial.swap
 BEGIN_EXAMPLE("swap")
 - Before Swap -
@@ -74,7 +74,7 @@ data: 10
 n_a memory details:
 
 mem_spaces: 
-  0x7fe5c1c063e0: 
+  0x7ff7de504790: 
     path: "data"
     type: "allocated"
     bytes: 4
@@ -93,7 +93,7 @@ path:
 n_b memory details:
 
 mem_spaces: 
-  0x7fe5c1c068f0: 
+  0x7ff7de504ca0: 
     path: "path/to/data"
     type: "allocated"
     bytes: 4
@@ -113,7 +113,7 @@ path:
 n_a memory details:
 
 mem_spaces: 
-  0x7fe5c1c068f0: 
+  0x7ff7de504ca0: 
     path: "path/to/data"
     type: "allocated"
     bytes: 4
@@ -130,7 +130,7 @@ data: 10
 n_b memory details:
 
 mem_spaces: 
-  0x7fe5c1c063e0: 
+  0x7ff7de504790: 
     path: "data"
     type: "allocated"
     bytes: 4
@@ -141,7 +141,7 @@ total_bytes_compact: 4
 total_strided_bytes: 4
 
 END_EXAMPLE("swap")
-[       OK ] conduit_tutorial.swap (1 ms)
+[       OK ] conduit_tutorial.swap (0 ms)
 [----------] 2 tests from conduit_tutorial (1 ms total)
 
 [----------] Global test environment tear-down

@@ -87,17 +87,17 @@ test 149
 149: BEGIN_EXAMPLE("py_basics_mem_spaces")
 149: 
 149: mem_spaces: 
-149:   0x7f84b1485f10: 
+149:   0x7f9a22447a20: 
 149:     path: "my"
 149:     type: "allocated"
 149:     bytes: 5
 149:     allocator_id: 0
-149:   0x7f84b14746c0: 
+149:   0x7f9a22416460: 
 149:     path: "a/b/c"
 149:     type: "allocated"
 149:     bytes: 2
 149:     allocator_id: 0
-149:   0x7f84b1480b30: 
+149:   0x7f9a22412270: 
 149:     path: "a/b/e"
 149:     type: "allocated"
 149:     bytes: 8
@@ -166,11 +166,11 @@ test 149
 149: Cannot fetch non-existent child "TYPO" from Node(my/path)
 149: 
 149: END_EXAMPLE("py_basics_fetch_exist")
-1/1 Test #149: t_conduit_docs_tutorial_python_basics ...   Passed    0.96 sec
+1/1 Test #149: t_conduit_docs_tutorial_python_basics ...   Passed    0.59 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_basics
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   1.00 sec
+Total Test time (real) =   0.62 sec
