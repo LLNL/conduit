@@ -263,6 +263,15 @@ bool generate_offsets(conduit::Node &n,
     }
     else
     {
+        // int64_accessor sizes = n["sizes"].as_int64_accessor();
+        // n["offsets"].reset();
+        // n["offsets"].set(DataType::int64(sizes.number_of_elements()));
+        // int64_array offsets_vals = n["offsets"].value();
+
+        // for (index_t o = 0; o < sizes.number_of_elements(); ++o)
+        // {
+        //    offsets_vals[o] = (o > 0) ? offsets_vals[0-1] + sizes[o-1] : 0;
+        // }
         conduit::Node &sizes = n["sizes"];
         conduit::Node &offsets = n["offsets"];
 
@@ -270,9 +279,14 @@ bool generate_offsets(conduit::Node &n,
         std::vector<int64> offset_array(sizes.dtype().number_of_elements());
         for(index_t o = 0; o < (index_t)offset_array.size(); o++)
         {
-            temp.set_external(conduit::DataType(sizes.dtype().id(), 1),
-                const_cast<void*>(sizes.element_ptr(o)));
-            offset_array[o] = (o > 0) ? offset_array[o-1] + temp.to_int64() : 0;
+            int64 tval = 0;
+            if (o > 0)
+            {
+                temp.set_external(conduit::DataType(sizes.dtype().id(), 1),
+                    const_cast<void*>(sizes.element_ptr(o-1)));
+                tval = offset_array[o-1] + temp.to_int64();
+            }
+            offset_array[o] = tval;
         }
 
         offsets.reset();
