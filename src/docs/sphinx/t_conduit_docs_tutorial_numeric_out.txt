@@ -11,7 +11,7 @@ END_EXAMPLE("numeric_as_dtype")
 BEGIN_EXAMPLE("numeric_via_value")
 100
 END_EXAMPLE("numeric_via_value")
-[       OK ] conduit_tutorial.numeric_via_value (1 ms)
+[       OK ] conduit_tutorial.numeric_via_value (0 ms)
 [ RUN      ] conduit_tutorial.numeric_ptr_as_dtype
 BEGIN_EXAMPLE("numeric_ptr_as_dtype")
 my_vals[0] = 100
@@ -34,7 +34,7 @@ my_vals[0] = 100
 my_vals[1] = 300
 [100, 300]
 END_EXAMPLE("numeric_strided_data_array")
-[       OK ] conduit_tutorial.numeric_strided_data_array (0 ms)
+[       OK ] conduit_tutorial.numeric_strided_data_array (1 ms)
 [ RUN      ] conduit_tutorial.numeric_double_conversion_start
 BEGIN_EXAMPLE("numeric_double_conversion")
 [       OK ] conduit_tutorial.numeric_double_conversion_start (0 ms)

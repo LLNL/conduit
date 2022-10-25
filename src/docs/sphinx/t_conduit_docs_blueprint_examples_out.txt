@@ -18,7 +18,7 @@ coords:
   valid: "true"
 
 END_EXAMPLE("blueprint_example_1")
-[       OK ] conduit_docs.blueprint_example_1 (2 ms)
+[       OK ] conduit_docs.blueprint_example_1 (1 ms)
 [ RUN      ] conduit_docs.blueprint_example_2
 BEGIN_EXAMPLE("blueprint_example_2")
 example 'separate' mcarray 
@@ -29,18 +29,21 @@ z: [3.0, 3.0, 3.0, 3.0, 3.0]
 
 
 mem_spaces: 
-  0x7f83a7404e10: 
+  0x7fb2e8d041a0: 
     path: "x"
     type: "allocated"
     bytes: 40
-  0x7f83a7404f10: 
+    allocator_id: 0
+  0x7fb2e8d04c50: 
     path: "y"
     type: "allocated"
     bytes: 40
-  0x7f83a7405070: 
+    allocator_id: 0
+  0x7fb2e8d04c20: 
     path: "z"
     type: "allocated"
     bytes: 40
+    allocator_id: 0
 total_bytes_allocated: 120
 total_bytes_mmaped: 0
 total_bytes_compact: 120
@@ -50,46 +53,50 @@ transformed to 'interleaved' mcarray
 
 {
   "x": 
-{
-"dtype":"float64",
-"number_of_elements": 5,
-"offset": 0,
-"stride": 24,
-"element_bytes": 8,
-"endianness": "little"
-, "value": [1.0, 1.0, 1.0, 1.0, 1.0]},
+  {
+    "dtype":"float64",
+    "number_of_elements": 5,
+    "offset": 0,
+    "stride": 24,
+    "element_bytes": 8,
+    "endianness": "little",
+    "value": [1.0, 1.0, 1.0, 1.0, 1.0]
+  },
   "y": 
-{
-"dtype":"float64",
-"number_of_elements": 5,
-"offset": 8,
-"stride": 24,
-"element_bytes": 8,
-"endianness": "little"
-, "value": [2.0, 2.0, 2.0, 2.0, 2.0]},
+  {
+    "dtype":"float64",
+    "number_of_elements": 5,
+    "offset": 8,
+    "stride": 24,
+    "element_bytes": 8,
+    "endianness": "little",
+    "value": [2.0, 2.0, 2.0, 2.0, 2.0]
+  },
   "z": 
-{
-"dtype":"float64",
-"number_of_elements": 5,
-"offset": 16,
-"stride": 24,
-"element_bytes": 8,
-"endianness": "little"
-, "value": [3.0, 3.0, 3.0, 3.0, 3.0]}
+  {
+    "dtype":"float64",
+    "number_of_elements": 5,
+    "offset": 16,
+    "stride": 24,
+    "element_bytes": 8,
+    "endianness": "little",
+    "value": [3.0, 3.0, 3.0, 3.0, 3.0]
+  }
 }
 
 mem_spaces: 
-  0x7f83a7406b60: 
+  0x7fb2e8d06da0: 
     path: ""
     type: "allocated"
     bytes: 120
+    allocator_id: 0
 total_bytes_allocated: 120
 total_bytes_mmaped: 0
 total_bytes_compact: 120
 total_strided_bytes: 312
 
 END_EXAMPLE("blueprint_example_2")
-[       OK ] conduit_docs.blueprint_example_2 (0 ms)
+[       OK ] conduit_docs.blueprint_example_2 (1 ms)
 [----------] 2 tests from conduit_docs (2 ms total)
 
 [----------] Global test environment tear-down

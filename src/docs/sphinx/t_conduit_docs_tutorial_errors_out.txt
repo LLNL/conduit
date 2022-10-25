@@ -16,9 +16,11 @@ BEGIN_EXAMPLE("error_handlers_rewire")
 END_EXAMPLE("error_handlers_rewire")
 BEGIN_EXAMPLE("error_handlers_reset")
 END_EXAMPLE("error_handlers_reset")
-[       OK ] conduit_tutorial.error_handlers (1 ms)
-[----------] 3 tests from conduit_tutorial (1 ms total)
+BEGIN_EXAMPLE("error_handlers_current_push_pop")
+END_EXAMPLE("error_handlers_current_push_pop")
+[       OK ] conduit_tutorial.error_handlers (0 ms)
+[----------] 3 tests from conduit_tutorial (0 ms total)
 
 [----------] Global test environment tear-down
-[==========] 3 tests from 1 test suite ran. (1 ms total)
+[==========] 3 tests from 1 test suite ran. (0 ms total)
 [  PASSED  ] 3 tests.

@@ -22,4 +22,12 @@ TEST(conduit_smoke, basic_use)
     
     std::cout << conduit::about() << std::endl;
     
+    conduit::Node n1;
+    n1["path"] = "mydata";
+    conduit::Node n2;
+    n2.set_external(n1);
+    n1["path"].set(n2["path"]);
+    // bad!
+    n1.print();
+
 }
