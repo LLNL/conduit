@@ -254,7 +254,6 @@ void braid_init_example_point_scalar_field(index_t npts_x,
     index_t npts = npts_x * npts_y * npts_z;
 
     res["association"] = "vertex";
-    res["type"] = "scalar";
     res["topology"] = "mesh";
     res["values"].set(DataType::float64(npts));
 
@@ -336,7 +335,6 @@ void braid_init_example_point_vector_field(index_t npts_x,
     }
 
     res["association"] = "vertex";
-    res["type"] = "vector";
     res["topology"] = "mesh";
 
     res["values/u"].set(DataType::float64(npts));
@@ -447,7 +445,6 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     }
 
     res["association"] = "element";
-    res["type"] = "scalar";
     res["topology"] = "mesh";
 
     index_t vals_size = nele * prims_per_ele;
@@ -554,16 +551,6 @@ void strided_structured_field(index_t nval_x,
     }
 
     res["association"] = association; // vertex or element
-    std::string resulttype;
-    if (prims_per_val > 1)
-    {
-        resulttype = "vector";
-    }
-    else
-    {
-        resulttype = "scalar";
-    }
-    res["type"] = resulttype;
     res["topology"] = toponame; // often something like "mesh"
 
     index_t dimensions = 2;
