@@ -128,16 +128,40 @@ In 2014 and 2015 LLNL sponsored a Harvey Mudd Computer Science Clinic project fo
 http://computation.llnl.gov/newsroom/hpc-partnership-harvey-mudd-college-and-livermore
 
 
-
 Conduit Documentation
 ----------------------
 
 .. toctree::
-   :maxdepth: 2
-   
+   :maxdepth: 1
+   :hidden:
+
    quick_start
-   user
-   developer
+
+.. toctree::
+   :caption: User Documentation
+   :maxdepth: 1
+   :hidden:
+
+   conduit
+   relay
+   blueprint
+   building
+   glossary
+
+.. toctree::
+   :caption: Developer Documentation
+   :maxdepth: 2
+   :hidden:
+
+   developer_source_layout
+   developer_build_system
+   developer_git_workflow
+
+.. toctree::
+   :caption: Resources
+   :maxdepth: 1
+   :hidden:
+
    releases
    presentations
    licenses
@@ -146,4 +170,5 @@ Indices and tables
 ==================
 
 * :ref:`genindex`
+* :ref:`modindex`
 * :ref:`search`
