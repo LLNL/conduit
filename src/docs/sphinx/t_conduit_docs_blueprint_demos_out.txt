@@ -55,7 +55,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_rectilinear")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'rectilinear'
-[       OK ] conduit_docs.blueprint_demo_basic_rectilinear (11 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_rectilinear (12 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_structured
 BEGIN_EXAMPLE("blueprint_demo_basic_structured")
 
@@ -83,7 +83,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_structured")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'structured'
-[       OK ] conduit_docs.blueprint_demo_basic_structured (13 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_structured (14 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_tris
 BEGIN_EXAMPLE("blueprint_demo_basic_tris")
 
@@ -110,7 +110,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_tris")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'tris'
-[       OK ] conduit_docs.blueprint_demo_basic_tris (12 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_tris (13 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_quads
 BEGIN_EXAMPLE("blueprint_demo_basic_quads")
 
@@ -165,7 +165,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_tets")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'tets'
-[       OK ] conduit_docs.blueprint_demo_basic_tets (14 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_tets (15 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_hexs
 BEGIN_EXAMPLE("blueprint_demo_basic_hexs")
 
@@ -193,7 +193,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_hexs")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'hexs'
-[       OK ] conduit_docs.blueprint_demo_basic_hexs (13 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_hexs (14 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_wedges
 BEGIN_EXAMPLE("blueprint_demo_basic_wedges")
 
@@ -221,7 +221,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_wedges")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'wedges'
-[       OK ] conduit_docs.blueprint_demo_basic_wedges (13 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_wedges (16 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_pyramids
 BEGIN_EXAMPLE("blueprint_demo_basic_pyramids")
 
@@ -249,7 +249,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_pyramids")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'pyramids'
-[       OK ] conduit_docs.blueprint_demo_basic_pyramids (13 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_pyramids (15 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_polygons
 BEGIN_EXAMPLE("blueprint_demo_basic_polygons")
 
@@ -278,7 +278,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_polygons")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'polygons'
-[       OK ] conduit_docs.blueprint_demo_basic_polygons (14 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_polygons (15 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_polyhedra
 BEGIN_EXAMPLE("blueprint_demo_basic_polyhedra")
 
@@ -313,7 +313,7 @@ fields:
 END_EXAMPLE("blueprint_demo_basic_polyhedra")
 [/Users/harrison37/Work/github/llnl/conduit/src/tests/docs/t_conduit_docs_blueprint_demos.cpp : 76]
  Testing Basic Example 'polyhedra'
-[       OK ] conduit_docs.blueprint_demo_basic_polyhedra (18 ms)
+[       OK ] conduit_docs.blueprint_demo_basic_polyhedra (23 ms)
 [ RUN      ] conduit_docs.blueprint_demo_basic_uniform_complete
 BEGIN_EXAMPLE("blueprint_demo_basic_uniform_complete")
 
@@ -345,8 +345,8 @@ fields:
 
 END_EXAMPLE("blueprint_demo_basic_uniform_complete")
 [       OK ] conduit_docs.blueprint_demo_basic_uniform_complete (4 ms)
-[----------] 12 tests from conduit_docs (154 ms total)
+[----------] 12 tests from conduit_docs (170 ms total)
 
 [----------] Global test environment tear-down
-[==========] 12 tests from 1 test suite ran. (154 ms total)
+[==========] 12 tests from 1 test suite ran. (170 ms total)
 [  PASSED  ] 12 tests.

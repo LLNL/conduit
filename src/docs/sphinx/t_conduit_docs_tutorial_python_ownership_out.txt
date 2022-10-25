@@ -25,12 +25,12 @@ test 152
 152: BEGIN_EXAMPLE("py_mem_ownership_external")
 152: 
 152: mem_spaces: 
-152:   0x7fa8aca17f40: 
+152:   0x7fa774623490: 
 152:     path: "v_owned"
 152:     type: "allocated"
 152:     bytes: 40
 152:     allocator_id: 0
-152:   0x7fa8aca46f40: 
+152:   0x7fa775b19760: 
 152:     path: "v_external"
 152:     type: "external"
 152: total_bytes_allocated: 40
@@ -48,11 +48,11 @@ test 152
 152: 
 152: [3.1415 0.     0.     0.     0.    ]
 152: END_EXAMPLE("py_mem_ownership_external")
-1/1 Test #152: t_conduit_docs_tutorial_python_ownership ...   Passed    0.47 sec
+1/1 Test #152: t_conduit_docs_tutorial_python_ownership ...   Passed    0.51 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_ownership
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.49 sec
+Total Test time (real) =   0.53 sec

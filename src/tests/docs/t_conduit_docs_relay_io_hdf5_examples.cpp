@@ -91,7 +91,7 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_2)
     Node io_about;
     conduit::relay::io::about(io_about);
     std::cout << "\nRelay I/O Info and Default Options:" << std::endl;
-    io_about.print();
+    std::cout << io_about.to_yaml() << std::endl;
 
     Node &hdf5_opts = io_about["options/hdf5"];
     // change the default chunking threshold to 

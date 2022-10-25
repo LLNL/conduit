@@ -8,7 +8,7 @@ BEGIN_EXAMPLE("basics_very_basic")
 my: "data"
 
 END_EXAMPLE("basics_very_basic")
-[       OK ] conduit_tutorial.basics_very_basic (0 ms)
+[       OK ] conduit_tutorial.basics_very_basic (1 ms)
 [ RUN      ] conduit_tutorial.basics_hierarchial
 BEGIN_EXAMPLE("basics_hierarchial")
 
@@ -61,22 +61,22 @@ val3: 3.1415
 3
 4
 END_EXAMPLE("basics_object_and_list_itr")
-[       OK ] conduit_tutorial.basics_object_and_list_itr (1 ms)
+[       OK ] conduit_tutorial.basics_object_and_list_itr (0 ms)
 [ RUN      ] conduit_tutorial.basics_mem_spaces
 BEGIN_EXAMPLE("basics_mem_spaces")
 
 mem_spaces: 
-  0x7fc50140aa40: 
+  0x7fb89140aa40: 
     path: "my"
     type: "allocated"
     bytes: 5
     allocator_id: 0
-  0x7fc50140b920: 
+  0x7fb89140b920: 
     path: "a/b/c"
     type: "allocated"
     bytes: 2
     allocator_id: 0
-  0x7fc50140bc20: 
+  0x7fb89140bc20: 
     path: "a/b/e"
     type: "allocated"
     bytes: 8
@@ -138,7 +138,7 @@ my:
     path: 42.0
 
 END_EXAMPLE("basics_node_refs")
-[       OK ] conduit_tutorial.basics_node_refs (0 ms)
+[       OK ] conduit_tutorial.basics_node_refs (1 ms)
 [ RUN      ] conduit_tutorial.basics_node_refs_bad
 BEGIN_EXAMPLE("basics_node_refs_bad")
 
@@ -206,7 +206,7 @@ my:
 
 END_EXAMPLE("basics_const_vs_non_const")
 [       OK ] conduit_tutorial.basics_const_vs_non_const (0 ms)
-[----------] 10 tests from conduit_tutorial (1 ms total)
+[----------] 10 tests from conduit_tutorial (2 ms total)
 
 [----------] Global test environment tear-down
 [==========] 10 tests from 1 test suite ran. (2 ms total)

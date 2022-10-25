@@ -18,7 +18,7 @@ coords:
   valid: "true"
 
 END_EXAMPLE("blueprint_example_1")
-[       OK ] conduit_docs.blueprint_example_1 (1 ms)
+[       OK ] conduit_docs.blueprint_example_1 (3 ms)
 [ RUN      ] conduit_docs.blueprint_example_2
 BEGIN_EXAMPLE("blueprint_example_2")
 example 'separate' mcarray 
@@ -29,17 +29,17 @@ z: [3.0, 3.0, 3.0, 3.0, 3.0]
 
 
 mem_spaces: 
-  0x7fb2e8d041a0: 
+  0x7f830ff04220: 
     path: "x"
     type: "allocated"
     bytes: 40
     allocator_id: 0
-  0x7fb2e8d04c50: 
+  0x7f830ff04330: 
     path: "y"
     type: "allocated"
     bytes: 40
     allocator_id: 0
-  0x7fb2e8d04c20: 
+  0x7f830ff044a0: 
     path: "z"
     type: "allocated"
     bytes: 40
@@ -85,7 +85,7 @@ transformed to 'interleaved' mcarray
 }
 
 mem_spaces: 
-  0x7fb2e8d06da0: 
+  0x7f830ff06530: 
     path: ""
     type: "allocated"
     bytes: 120
@@ -97,8 +97,8 @@ total_strided_bytes: 312
 
 END_EXAMPLE("blueprint_example_2")
 [       OK ] conduit_docs.blueprint_example_2 (1 ms)
-[----------] 2 tests from conduit_docs (2 ms total)
+[----------] 2 tests from conduit_docs (4 ms total)
 
 [----------] Global test environment tear-down
-[==========] 2 tests from 1 test suite ran. (2 ms total)
+[==========] 2 tests from 1 test suite ran. (4 ms total)
 [  PASSED  ] 2 tests.

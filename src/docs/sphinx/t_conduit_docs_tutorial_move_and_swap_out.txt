@@ -23,7 +23,7 @@ path:
 n_b memory details:
 
 mem_spaces: 
-  0x7ffcfae06a60: 
+  0x7fe5c1c06730: 
     path: "path/to/data"
     type: "allocated"
     bytes: 4
@@ -43,7 +43,7 @@ path:
 n_a memory details:
 
 mem_spaces: 
-  0x7ffcfae06a60: 
+  0x7fe5c1c06730: 
     path: "path/to/data"
     type: "allocated"
     bytes: 4
@@ -74,7 +74,7 @@ data: 10
 n_a memory details:
 
 mem_spaces: 
-  0x7ffcfae05d00: 
+  0x7fe5c1c063e0: 
     path: "data"
     type: "allocated"
     bytes: 4
@@ -93,7 +93,7 @@ path:
 n_b memory details:
 
 mem_spaces: 
-  0x7ffcfae06c20: 
+  0x7fe5c1c068f0: 
     path: "path/to/data"
     type: "allocated"
     bytes: 4
@@ -113,7 +113,7 @@ path:
 n_a memory details:
 
 mem_spaces: 
-  0x7ffcfae06c20: 
+  0x7fe5c1c068f0: 
     path: "path/to/data"
     type: "allocated"
     bytes: 4
@@ -130,7 +130,7 @@ data: 10
 n_b memory details:
 
 mem_spaces: 
-  0x7ffcfae05d00: 
+  0x7fe5c1c063e0: 
     path: "data"
     type: "allocated"
     bytes: 4

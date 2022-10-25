@@ -47,11 +47,11 @@ test 153
 153: The first answer is 42.0000.
 153: The second answer is 3.1415.
 153: END_EXAMPLE("py_using_utils_fmt_maps_list")
-1/1 Test #153: t_conduit_docs_tutorial_python_utils ...   Passed    0.47 sec
+1/1 Test #153: t_conduit_docs_tutorial_python_utils ...   Passed    0.50 sec
 
 The following tests passed:
 	t_conduit_docs_tutorial_python_utils
 
 100% tests passed, 0 tests failed out of 1
 
-Total Test time (real) =   0.49 sec
+Total Test time (real) =   0.52 sec
