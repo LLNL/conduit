@@ -254,7 +254,6 @@ void braid_init_example_point_scalar_field(index_t npts_x,
     index_t npts = npts_x * npts_y * npts_z;
 
     res["association"] = "vertex";
-    res["type"] = "scalar";
     res["topology"] = "mesh";
     res["values"].set(DataType::float64(npts));
 
@@ -336,7 +335,6 @@ void braid_init_example_point_vector_field(index_t npts_x,
     }
 
     res["association"] = "vertex";
-    res["type"] = "vector";
     res["topology"] = "mesh";
 
     res["values/u"].set(DataType::float64(npts));
@@ -447,7 +445,6 @@ void braid_init_example_element_scalar_field(index_t nele_x,
     }
 
     res["association"] = "element";
-    res["type"] = "scalar";
     res["topology"] = "mesh";
 
     index_t vals_size = nele * prims_per_ele;
@@ -554,16 +551,6 @@ void strided_structured_field(index_t nval_x,
     }
 
     res["association"] = association; // vertex or element
-    std::string resulttype;
-    if (prims_per_val > 1)
-    {
-        resulttype = "vector";
-    }
-    else
-    {
-        resulttype = "scalar";
-    }
-    res["type"] = resulttype;
     res["topology"] = toponame; // often something like "mesh"
 
     index_t dimensions = 2;
@@ -2881,7 +2868,6 @@ braid_to_wedges(const Node &braid_regular, Node &res)
 
     // double up elements in element associated fields
     res_fields["radial/association"] = braid_regular["fields/radial/association"];
-    res_fields["radial/type"] = braid_regular["fields/radial/type"];
     res_fields["radial/topology"] = braid_regular["fields/radial/topology"];
     
     res_fields["radial/values"].set(conduit::DataType::float64(num_wedges));
@@ -3043,9 +3029,9 @@ braid_to_pyramids(index_t npts_x,
 
     // handle vertex-associated field
     res_fields["braid/association"] = braid_regular["fields/braid/association"];
-    res_fields["braid/type"] = braid_regular["fields/braid/type"];
     res_fields["braid/topology"] = braid_regular["fields/braid/topology"];
     res_fields["braid/values"].set(conduit::DataType::float64(new_num_pts));
+    
     const float64 *old_braid_ptr = braid_regular["fields/braid/values"].value();
     float64 *new_braid_ptr = res_fields["braid/values"].value();
     // copy over the old field values
@@ -3080,10 +3066,9 @@ braid_to_pyramids(index_t npts_x,
 
     // 6x elements in element associated fields
     res_fields["radial/association"] = braid_regular["fields/radial/association"];
-    res_fields["radial/type"] = braid_regular["fields/radial/type"];
     res_fields["radial/topology"] = braid_regular["fields/radial/topology"];
-    
     res_fields["radial/values"].set(conduit::DataType::float64(num_pyramids));
+
     const float64 *old_vals_ptr = braid_regular["fields/radial/values"].value();
     float64 *new_vals_ptr = res_fields["radial/values"].value();
     // for each hex
@@ -3100,7 +3085,6 @@ braid_to_pyramids(index_t npts_x,
 
     // handle vertex-associated field
     res_fields["vel/association"] = braid_regular["fields/vel/association"];
-    res_fields["vel/type"] = braid_regular["fields/vel/type"];
     res_fields["vel/topology"] = braid_regular["fields/vel/topology"];
     res_fields["vel/values/u"].set(conduit::DataType::float64(new_num_pts));
     res_fields["vel/values/v"].set(conduit::DataType::float64(new_num_pts));

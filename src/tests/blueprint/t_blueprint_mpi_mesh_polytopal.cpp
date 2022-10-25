@@ -84,7 +84,6 @@ void test_polytopal_create_coarse_domain_2d(Node& domain)
 
     Node& field = domain["fields/field"];
     field["association"] = "element";
-    field["type"] = "scalar";
     field["topology"] = "topo";
 
     std::vector<double> vals(16, 0.5);
@@ -183,7 +182,6 @@ void test_polytopal_create_coarse_domain_3d(Node& domain)
 
     Node& field = domain["fields/field"];
     field["association"] = "element";
-    field["type"] = "scalar";
     field["topology"] = "topo";
 
     std::vector<double> vals(64, 0.5);
@@ -272,7 +270,6 @@ void test_polytopal_create_fine_domain_2d(Node& domain)
 
     Node& field = domain["fields/field"];
     field["association"] = "element";
-    field["type"] = "scalar";
     field["topology"] = "topo";
 
     std::vector<double> vals(64, 1.5);
@@ -374,7 +371,6 @@ void test_polytopal_create_fine_domain_3d(Node& domain)
 
     Node& field = domain["fields/field"];
     field["association"] = "element";
-    field["type"] = "scalar";
     field["topology"] = "topo";
 
     std::vector<double> vals(512, 1.5);

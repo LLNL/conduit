@@ -113,7 +113,6 @@ namespace examples
     /// fields:
     ///   vert_vals:
     ///     association: "vertex"
-    ///     type: "scalar"
     ///     topology: "mesh"
     ///     offsets: [2, 2]
     ///     strides: [1, 7]
@@ -125,7 +124,6 @@ namespace examples
     ///              0.0, 0.0, 0.0,  0.0,  0.0,  0.0, 0.0]
     ///   ele_vals:
     ///     association: "element"
-    ///     type: "scalar"
     ///     topology: "mesh"
     ///     offsets: [2, 2]
     ///     strides: [1, 7]
