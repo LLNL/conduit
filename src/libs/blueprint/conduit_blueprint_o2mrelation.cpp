@@ -263,10 +263,10 @@ bool generate_offsets(conduit::Node &n,
     }
     else
     {
-        int64_accessor sizes = n["sizes"].as_int64_accessor();
+        index_t_accessor sizes = n["sizes"].as_index_t_accessor();
         n["offsets"].reset();
-        n["offsets"].set(DataType::int64(sizes.number_of_elements()));
-        int64_array offsets_vals = n["offsets"].value();
+        n["offsets"].set(DataType::index_t(sizes.number_of_elements()));
+        index_t_array offsets_vals = n["offsets"].value();
 
         for (index_t o_idx = 0; o_idx < sizes.number_of_elements(); ++o_idx)
         {
