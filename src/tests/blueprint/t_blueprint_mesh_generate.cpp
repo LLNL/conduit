@@ -1404,6 +1404,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
             EXPECT_TRUE(o2mrelation::verify(map_node, info));
             for(const std::string &o2m_path : O2M_PATHS)
             {
+                // Do we need the type checks?  If sizes are always generated
+                // as index_t, there will sometimes be type mismatches.
                 EXPECT_TRUE(map_node.has_child(o2m_path));
                 EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
