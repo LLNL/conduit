@@ -2020,12 +2020,13 @@ topology::unstructured::generate_offsets(const Node &n,
         Node elem_node;
         Node subelem_node;
 
-        std::vector<index_t> shape_array;
+        index_t elem_count = topo_elem_size.number_of_elements();
+        std::vector<index_t> shape_array(elem_count, 0);
         index_t ei = 0;
         index_t es = 0;
-        while(ei < topo_elem_size.number_of_elements())
+        while(ei < elem_count)
         {
-            shape_array.push_back(es);
+            shape_array[ei] = es;
             es += topo_elem_size[ei];
             ei++;
         }
@@ -2034,12 +2035,13 @@ topology::unstructured::generate_offsets(const Node &n,
         elem_node.to_data_type(int_dtype.id(), dest_elem_off);
         elem_node.to_data_type(int_dtype.id(), dest);
 
-        shape_array.clear();
+        elem_count = topo_subelem_size.number_of_elements();
+        shape_array.resize(elem_count, 0);
         ei = 0;
         es = 0;
-        while(ei < topo_subelem_size.number_of_elements())
+        while(ei < elem_count)
         {
-            shape_array.push_back(es);
+            shape_array[ei] = es;
             es += topo_subelem_size[ei];
             ei++;
         }
