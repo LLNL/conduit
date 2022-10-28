@@ -980,7 +980,7 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
                                      0,
                                      res);
 
-    blueprint::mesh::examples::basic("structured",
+    blueprint::mesh::examples::basic("rectilinear",
                                      5,
                                      0,
                                      0,
