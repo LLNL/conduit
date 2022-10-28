@@ -1374,6 +1374,11 @@ braid_structured(index_t npts_x,
                                  npts_z,
                                  res["coordsets/coords"]);
 
+    if (npts_y < 1 && npts_z < 1)
+    {
+        res["coordsets/coords/type"] = "rectilinear";
+    }
+
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/dims/i"] = (int32)nele_x;

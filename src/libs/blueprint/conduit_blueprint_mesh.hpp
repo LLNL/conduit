@@ -440,6 +440,7 @@ namespace topology
 
     //-------------------------------------------------------------------------
     void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& topo,
+                                              const std::string & csname,
                                               conduit::Node & topo_dest);
 
     //-------------------------------------------------------------------------

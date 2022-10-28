@@ -1055,7 +1055,7 @@ copy_node_rename_first_child(const conduit::Node & from,
     conduit::Node & n = to[key];
     const std::string from_name = n.child(0).name();
     n.rename_child(from_name, new_name);
-    n[new_sibling].set(n[new_name]);
+    n[new_sibling].set(DataType(n[new_name].dtype().id(), 1));
 }
 
 //-------------------------------------------------------------------------
@@ -1084,12 +1084,12 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
     if (coord_type == "uniform")
     {
         copy_node_rename_first_child(coordset, dest, "dims", "j", "i");
-        dest["dims/i"].set(1);
+        dest["dims/i"] = 1;
 
         if (coordset.has_child("origin"))
         {
             copy_node_rename_first_child(coordset, dest, "origin", "y", "x");
-            dest["origin/x"].set(0.);
+            dest["origin/x"] = 0.;
         }
 
         if (coordset.has_child("spacing"))
@@ -1101,6 +1101,7 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
     else
     {
         copy_node_rename_first_child(coordset, dest, "values", "y", "x");
+        dest["values/x"].reset();
         dest["values/x"].set(DataType::float64(2));
         double *x_vals = dest["values/x"].value();
         x_vals[0] = 0.;
@@ -1112,10 +1113,11 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
 //-------------------------------------------------------------------------
 void
 convert_oneD_topo_to_strip(const conduit::Node &topo,
+                           const std::string &csname,
                            conduit::Node &dest)
 {
     dest.reset();
-    dest["coordset"] = topo["coordset"].as_string();
+    dest["coordset"] = csname;
     dest["type"] = topo["type"].as_string();
 
     if (topo.has_child("elements"))
@@ -2203,8 +2205,8 @@ mesh::generate_strip(conduit::Node &mesh,
     const Node& src_coordset = mesh["coordsets"][src_topo["coordset"].as_string()];
     Node dst_topo, dst_coordset;
 
-    mesh::topology::generate_strip(src_topo, dst_topo);
     mesh::coordset::generate_strip(src_coordset, dst_coordset);
+    mesh::topology::generate_strip(src_topo, dst_topo_name, dst_topo);
 
     mesh["topologies"][dst_topo_name] = dst_topo;
     mesh["coordsets"][dst_topo_name] = dst_coordset;
@@ -3401,9 +3403,10 @@ mesh::topology::length(const Node &topology)
 //-----------------------------------------------------------------------------
 void
 mesh::topology::generate_strip(const Node& topo,
+                               const std::string & csname,
                                conduit::Node& topo_dest)
 {
-    convert_oneD_topo_to_strip(topo, topo_dest);
+    convert_oneD_topo_to_strip(topo, csname, topo_dest);
 }
 
 //-----------------------------------------------------------------------------

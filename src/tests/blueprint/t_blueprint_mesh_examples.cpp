@@ -1279,7 +1279,7 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip)
         Node mesh;
         blueprint::mesh::examples::basic("uniform", 5, 0, 0, mesh);
 
-        test_save_mesh_helper(mesh, "oneD_struct_orig");
+        test_save_mesh_helper(mesh, "oneD_unif_orig");
 
         std::cout << " uniform: about to test 1D" << std::endl;
 
@@ -1291,7 +1291,7 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip)
 
         blueprint::mesh::generate_strip(mesh, "mesh", "mesh_strip");
 
-        test_save_mesh_helper(mesh, "oneD_struct_strip");
+        test_save_mesh_helper(mesh, "oneD_unif_strip");
 
         std::cout << " uniform: about to verify generated strip" << std::endl;
 
