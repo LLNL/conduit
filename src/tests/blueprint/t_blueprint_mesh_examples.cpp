@@ -1248,30 +1248,30 @@ TEST(conduit_blueprint_mesh_examples, polystar)
 TEST(conduit_blueprint_mesh_examples, oneDtostrip)
 {
     {
-        std::cout << "starting structured" << std::endl;
+        std::cout << "starting rectilinear" << std::endl;
         Node mesh;
-        blueprint::mesh::examples::basic("structured", 5, 0, 0, mesh);
+        blueprint::mesh::examples::basic("rectilinear", 5, 0, 0, mesh);
 
         test_save_mesh_helper(mesh, "oneD_struct_orig");
 
-        std::cout << " structured: about to test 1D" << std::endl;
+        std::cout << " rectilinear: about to test 1D" << std::endl;
 
         Node info;
         EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
         CONDUIT_INFO(info.to_yaml());
 
-        std::cout << " structured: about to convert" << std::endl;
+        std::cout << " rectilinear: about to convert" << std::endl;
 
         blueprint::mesh::generate_strip(mesh, "mesh", "mesh_strip");
 
         test_save_mesh_helper(mesh, "oneD_struct_strip");
 
-        std::cout << " structured: about to verify generated strip" << std::endl;
+        std::cout << " rectilinear: about to verify generated strip" << std::endl;
 
         info.reset();
         EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
         CONDUIT_INFO(info.to_yaml());
-        std::cout << " structured: finished." << std::endl;
+        std::cout << " rectilinear: finished." << std::endl;
     }
 
     {
