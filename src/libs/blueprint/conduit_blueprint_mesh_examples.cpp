@@ -132,8 +132,8 @@ void basic_init_example_element_scalar_field(index_t nele_x,
 bool
 braid_1d_allowed_shape_type(const std::string& mesh_type)
 {
-    if ( mesh_type == "structured"  ||
-         mesh_type == "uniform")
+    if ( mesh_type == "uniform"  ||
+         mesh_type == "rectilinear")
     {
         return true;
     }
@@ -729,7 +729,11 @@ void braid_init_rectilinear_coordset(index_t npts_x,
     coords["type"] = "rectilinear";
     Node &coord_vals = coords["values"];
     coord_vals["x"].set(DataType::float64(npts_x));
-    coord_vals["y"].set(DataType::float64(npts_y));
+
+    if(npts_y > 1)
+    {
+        coord_vals["y"].set(DataType::float64(npts_y));
+    }
 
     if(npts_z > 1)
     {
@@ -737,9 +741,13 @@ void braid_init_rectilinear_coordset(index_t npts_x,
     }
 
     float64 *x_vals = coord_vals["x"].value();
-    float64 *y_vals = coord_vals["y"].value();
-    float64 *z_vals = NULL;
+    float64 *y_vals = NULL;
+    if(npts_y > 1)
+    {
+        y_vals = coord_vals["y"].value();
+    }
 
+    float64 *z_vals = NULL;
     if(npts_z > 1)
     {
         z_vals = coord_vals["z"].value();
@@ -747,9 +755,13 @@ void braid_init_rectilinear_coordset(index_t npts_x,
 
 
     float64 dx = 20.0 / (float64)(npts_x-1);
-    float64 dy = 20.0 / (float64)(npts_y-1);
-    float64 dz = 0.0;
+    float64 dy = 0.0;
+    if(npts_y > 1)
+    {
+        dy = 20.0 / (float64)(npts_y-1);
+    }
 
+    float64 dz = 0.0;
     if(npts_z > 1)
     {
         dz = 20.0 / (float64)(npts_z-1);
@@ -760,9 +772,12 @@ void braid_init_rectilinear_coordset(index_t npts_x,
         x_vals[i] = -10.0 + i * dx;
     }
 
-    for(int j=0; j < npts_y; j++)
+    if(npts_y > 1)
     {
-        y_vals[j] = -10.0 + j * dy;
+        for(int j=0; j < npts_y; j++)
+        {
+            y_vals[j] = -10.0 + j * dy;
+        }
     }
 
     if(npts_z > 1)
@@ -1373,11 +1388,6 @@ braid_structured(index_t npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
-
-    if (npts_y < 1 && npts_z < 1)
-    {
-        res["coordsets/coords/type"] = "rectilinear";
-    }
 
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";

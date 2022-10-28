@@ -1045,35 +1045,6 @@ convert_coordset_to_explicit(const std::string &base_type,
 
 //-------------------------------------------------------------------------
 void
-copy_node_rename_first_child(const conduit::Node & from,
-                             conduit::Node & to,
-                             const std::string & key,
-                             const std::string & new_name,
-                             const std::string & new_sibling)
-{
-    to[key].set(from[key]);
-    conduit::Node & n = to[key];
-    const std::string from_name = n.child(0).name();
-    n.rename_child(from_name, new_name);
-    n[new_sibling].set(DataType(n[new_name].dtype().id(), 1));
-}
-
-//-------------------------------------------------------------------------
-void
-copy_node_substitute_sibling(const conduit::Node & from,
-                             conduit::Node & to,
-                             const std::string & key,
-                             const std::string & name,
-                             const std::string & data_sibling)
-{
-    to[key].set(from[key]);
-    conduit::Node & n = to[key];
-    n.remove_child(name);
-    n.rename_child(data_sibling, name);
-}
-
-//-------------------------------------------------------------------------
-void
 convert_oneD_coordset_to_strip(const conduit::Node &coordset,
                                conduit::Node &dest)
 {
@@ -1083,25 +1054,25 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
 
     if (coord_type == "uniform")
     {
-        copy_node_rename_first_child(coordset, dest, "dims", "j", "i");
+        dest["dims/j"] = coordset["dims/i"];
         dest["dims/i"] = 1;
 
         if (coordset.has_child("origin"))
         {
-            copy_node_rename_first_child(coordset, dest, "origin", "y", "x");
+            dest["origin/y"] = coordset["origin/x"];
             dest["origin/x"] = 0.;
         }
 
         if (coordset.has_child("spacing"))
         {
-            copy_node_rename_first_child(coordset, dest, "spacing", "dy", "dx");
+            dest["spacing/dy"] = coordset["spacing/dx"];
             dest["spacing/dx"] = 1.;
         }
     }
     else
     {
-        copy_node_rename_first_child(coordset, dest, "values", "y", "x");
-        dest["values/x"].reset();
+        dest["values/y"] = coordset["values/x"];
+        // dest["values/x"].reset();
         dest["values/x"].set(DataType::float64(2));
         double *x_vals = dest["values/x"].value();
         x_vals[0] = 0.;
@@ -1127,13 +1098,13 @@ convert_oneD_topo_to_strip(const conduit::Node &topo,
 
         if (topoelts.has_child("origin"))
         {
-            copy_node_rename_first_child(topoelts, destelts, "origin", "j", "i");
+            destelts["origin/j"] = topoelts["origin/i"];
             destelts["origin/i"] = 0.;
         }
 
         if (topoelts.has_child("dims"))
         {
-            copy_node_rename_first_child(topoelts, destelts, "dims", "j", "i");
+            destelts["dims/j"] = topoelts["dims/i"];
             destelts["dims/i"] = 1;
         }
     }
