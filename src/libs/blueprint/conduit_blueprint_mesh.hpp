@@ -398,7 +398,6 @@ namespace coordset
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coord_sys,
                                           conduit::Node &info);
     }
-
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::coordset --
@@ -719,7 +718,6 @@ namespace field
         bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &basis,
                                           conduit::Node &info);
     }
-
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::field --
