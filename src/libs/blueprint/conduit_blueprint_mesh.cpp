@@ -5981,39 +5981,6 @@ mesh::field::index::verify(const Node &field_idx,
     return res;
 }
 
-//-------------------------------------------------------------------------
-// blueprint::mesh::field::oneD protocol interface
-//-------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-bool
-mesh::field::oneD::verify(const Node &field,
-                           Node &info)
-{
-    return false;
-}
-
-//-------------------------------------------------------------------------
-void
-mesh::field::oneD::oneD_to_strip(conduit::Node &field,
-                                 conduit::Node &info)
-{
-    // verify?  or live dangerously?
-    // Convert field
-    // Convert nodal fields
-}
-
-
-//-------------------------------------------------------------------------
-void
-mesh::field::oneD::strip_to_oneD(conduit::Node &field,
-                                 conduit::Node &info)
-{
-    // verify?  or live dangerously?
-    // Convert field
-    // Convert nodal fields
-}
-
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::specset protocol interface

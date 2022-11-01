@@ -399,24 +399,6 @@ namespace coordset
                                           conduit::Node &info);
     }
 
-    //-------------------------------------------------------------------------
-    // blueprint::mesh::coordset::oneD protocol interface
-    //-------------------------------------------------------------------------
-    namespace oneD
-    {
-        //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &coordset,
-                                          conduit::Node &info);
-
-        //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API oneD_to_strip(conduit::Node &mesh,
-                                                 conduit::Node &info);
-
-        //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API strip_to_oneD(conduit::Node &mesh,
-                                                 conduit::Node &info);
-    }
-
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::coordset --
@@ -738,23 +720,6 @@ namespace field
                                           conduit::Node &info);
     }
 
-    //-------------------------------------------------------------------------
-    // blueprint::mesh::field::oneD protocol interface
-    //-------------------------------------------------------------------------
-    namespace oneD
-    {
-        //---------------------------------------------------------------------
-        bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &field,
-                                          conduit::Node &info);
-
-        //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API oneD_to_strip(conduit::Node &field,
-                                                 conduit::Node &info);
-
-        //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API strip_to_oneD(conduit::Node &field,
-                                                 conduit::Node &info);
-    }
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::field --
