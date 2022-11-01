@@ -2181,10 +2181,6 @@ mesh::generate_strip(conduit::Node &mesh,
 
     mesh["topologies"][dst_topo_name] = dst_topo;
     mesh["coordsets"][dst_topo_name] = dst_coordset;
-
-
-    // Flag this as a 1D strip mesh
-    mesh["private_nonblueprint/carterflags/oneD_strip"] = 1;
 }
 
 
