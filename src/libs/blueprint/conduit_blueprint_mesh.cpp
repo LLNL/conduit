@@ -1071,7 +1071,7 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
     }
     else
     {
-        dest["values/y"] = coordset["values/x"];
+        coordset["values/x"].to_float64_array(dest["values/y"]);
         dest["values/x"].set(DataType::float64(2));
         double *x_vals = dest["values/x"].value();
         x_vals[0] = 0.;
