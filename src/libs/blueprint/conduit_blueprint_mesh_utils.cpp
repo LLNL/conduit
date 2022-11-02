@@ -2014,26 +2014,36 @@ topology::unstructured::generate_offsets(const Node &n,
         Node &dest_elem_off = const_cast<Node &>(n)["elements/offsets"];
         Node &dest_subelem_off = const_cast<Node &>(n)["subelements/offsets"];
 
-        index_t_accessor topo_elem_size = n["elements/sizes"].as_index_t_accessor();
-        index_t_accessor topo_subelem_size = n["subelements/sizes"].as_index_t_accessor();
+        index_t_accessor topo_elem_size = n["elements/sizes"].value();
+        index_t_accessor topo_subelem_size = n["subelements/sizes"].value();
 
-        index_t_array shape_array  = dest_elem_off.value();
-        index_t_array dest_array  = dest.value();
+        Node elem_node;
+        Node subelem_node;
+
+        index_t es_count = topo_elem_size.number_of_elements();
+        std::vector<index_t> shape_array(es_count, 0);
         index_t es = 0;
-        for (index_t ei = 0; ei < topo_elem_size.number_of_elements(); ++ei)
+        for (index_t ei = 0; ei < es_count; ++ei)
         {
             shape_array[ei] = es;
-            dest_array[ei] = es;
             es += topo_elem_size[ei];
         }
 
-        index_t_array subshape_array = dest_subelem_off.value();
+        elem_node.set_external(shape_array);
+        elem_node.to_data_type(int_dtype.id(), dest_elem_off);
+        elem_node.to_data_type(int_dtype.id(), dest);
+
+        int ses_count = topo_subelem_size.number_of_elements();
+        std::vector<index_t> subshape_array(ses_count, 0);
         index_t ses = 0;
-        for (index_t ei = 0; ei < topo_subelem_size.number_of_elements(); ++ei)
+        for (index_t ei = 0; ei < ses_count; ++ei)
         {
             subshape_array[ei] = ses;
             ses += topo_subelem_size[ei];
         }
+
+        subelem_node.set_external(subshape_array);
+        subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
     }
 }
 
