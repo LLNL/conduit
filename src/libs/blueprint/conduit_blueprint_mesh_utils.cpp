@@ -2022,6 +2022,8 @@ topology::unstructured::generate_offsets(const Node &n,
 
         index_t elem_count = topo_elem_size.number_of_elements();
         std::vector<index_t> shape_array(elem_count, 0);
+        dest_elem_off.set(DataType::index_t(elem_count);
+        index_t_array shape_array  = dest_elem_off.value();
         index_t ei = 0;
         index_t es = 0;
         while(ei < elem_count)
