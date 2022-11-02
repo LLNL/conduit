@@ -1054,25 +1054,24 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
 
     if (coord_type == "uniform")
     {
-        dest["dims/j"] = coordset["dims/i"];
         dest["dims/i"] = 1;
+        dest["dims/j"] = coordset["dims/i"];
 
         if (coordset.has_child("origin"))
         {
-            dest["origin/y"] = coordset["origin/x"];
             dest["origin/x"] = 0.;
+            dest["origin/y"] = coordset["origin/x"];
         }
 
         if (coordset.has_child("spacing"))
         {
-            dest["spacing/dy"] = coordset["spacing/dx"];
             dest["spacing/dx"] = 1.;
+            dest["spacing/dy"] = coordset["spacing/dx"];
         }
     }
     else
     {
         dest["values/y"] = coordset["values/x"];
-        // dest["values/x"].reset();
         dest["values/x"].set(DataType::float64(2));
         double *x_vals = dest["values/x"].value();
         x_vals[0] = 0.;
@@ -1098,14 +1097,14 @@ convert_oneD_topo_to_strip(const conduit::Node &topo,
 
         if (topoelts.has_child("origin"))
         {
-            destelts["origin/j"] = topoelts["origin/i"];
             destelts["origin/i"] = 0.;
+            destelts["origin/j"] = topoelts["origin/i"];
         }
 
         if (topoelts.has_child("dims"))
         {
-            destelts["dims/j"] = topoelts["dims/i"];
             destelts["dims/i"] = 1;
+            destelts["dims/j"] = topoelts["dims/i"];
         }
     }
 }
@@ -2142,7 +2141,7 @@ mesh::can_generate_strip(const Node &mesh,
     std::string topo_type = topo["type"].as_string();
     if (!(cs_dim == 1 && topo_type != "points"))
     {
-        log::error(info, protocol, "topology type is points or coordset dimension other than 1");
+        log::error(info, protocol, "coordset dimension != 1, or topology type is points");
         res = false;
     }
 
