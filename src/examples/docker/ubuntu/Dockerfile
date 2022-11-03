@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     gfortran \
     zlib1g-dev \
     python \
+    python3 \
     tar \
     unzip \
     perl \
