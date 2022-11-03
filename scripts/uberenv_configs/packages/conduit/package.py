@@ -62,6 +62,11 @@ class Conduit(CMakePackage):
     version("0.2.0", sha256="31eff8dbc654a4b235cfcbc326a319e1752728684296721535c7ca1c9b463061")
 
     maintainers = ["cyrush"]
+    
+    ###################################
+    # build phases used by this package
+    ###################################
+    phases = ['hostconfig', 'cmake', 'build', 'install']
 
     ###########################################################################
     # package variants
@@ -233,7 +238,8 @@ class Conduit(CMakePackage):
     def check_install(self):
         """
         Checks the spack install of conduit using conduit's
-        using-with-cmake example
+        using-with-cmake and using-with-make examples
+        (supports: spack install --test=root)
         """
         print("Checking Conduit installation...")
         spec = self.spec
@@ -256,6 +262,86 @@ class Conduit(CMakePackage):
             example = Executable("./conduit_example")
             example()
 
+    # TODO: Replace this method and its 'get' use for cmake path with
+    #   join_path(self.spec['cmake'].prefix.bin, 'cmake') once stand-alone
+    #   tests can access build dependencies through self.spec['cmake'].
+    def cmake_bin(self, set=True):
+        """(Hack) Set/get cmake dependency path."""
+        filepath = join_path(self.install_test_root, "cmake_bin_path.txt")
+        if set:
+            with open(filepath, "w") as out_file:
+                cmake_bin = join_path(self.spec["cmake"].prefix.bin, "cmake")
+                out_file.write("{0}\n".format(cmake_bin))
+        else:
+            with open(filepath, "r") as in_file:
+                return in_file.read().strip()
+
+    @run_after("build")
+    def setup_smoke_test(self):
+        """Setup info needed for spack smoke tests"""
+        # TODO: Remove once self.spec['cmake'] is available in `spack test run`
+        self.cmake_bin(set=True)
+
+    def test(self):
+        """
+        Checks the spack install of conduit using conduit's
+        using-with-cmake and using-with-make examples
+        (supports: spack test run)
+        """
+        # Note: This looks similar to the `self.check_install` logic
+        # but there are subtle differences:
+        # (paths differ , and we use `self.run_test`)
+        print("Checking Conduit installation...")
+        install_prefix = self.spec.prefix
+        test_stage_dir = self.test_suite.test_dir_for_spec(self.spec)
+        #####
+        # using-with-cmake
+        #####
+        example_src_dir = join_path(install_prefix,
+                                    "examples",
+                                    "conduit",
+                                    "using-with-cmake")
+        print("Checking using-with-cmake example...")
+        with working_dir(join_path(test_stage_dir,
+                                   "check-post-conduit-using-with-cmake-example"),
+                         create=True):
+            opts = ["-DCONDUIT_DIR={0}".format(install_prefix), example_src_dir]
+            opts += self.std_cmake_args
+            #######
+            # TODO
+            #######
+            #  How do we properly locate 'cmake' and 'make' in the
+            # `spack test run` environment ?
+            #
+            # For now we are using a shared hack to locate cmake
+            # ( see cmake_bin def ) and assuming make is available.
+            self.run_test(self.cmake_bin(False), opts)
+            self.run_test("make", purpose="build example")
+            self.run_test("conduit_example", purpose="run example")
+        #####
+        # using-with-make
+        #####
+        print("Checking using-with-make example...")
+        example_src_dir = join_path(install_prefix,
+                                    "examples",
+                                    "conduit",
+                                    "using-with-make")
+        example_files = glob.glob(join_path(example_src_dir, "*"))
+        with working_dir(join_path(test_stage_dir,
+                                   "check-post-conduit-using-with-cmake-example"),
+                         create=True):
+            for example_file in example_files:
+                shutil.copy(example_file, ".")
+            opts = ["CONDUIT_DIR={0}".format(install_prefix)]
+            #######
+            # TODO
+            #######
+            # how do we properly locate 'make' in the
+            # `spack test run` environment ?
+            # For now we are assuming make is available.
+            self.run_test('make', opts, purpose="build example")
+            self.run_test('./conduit_example', purpose="build example")
+
     def _get_host_config_path(self, spec):
         sys_type = spec.architecture
         # if on llnl systems, we can use the SYS_TYPE
@@ -268,8 +354,7 @@ class Conduit(CMakePackage):
         host_config_path = os.path.abspath(join_path(dest_dir, host_config_path))
         return host_config_path
 
-    @run_before("cmake")
-    def hostconfig(self):
+    def hostconfig(self, spec, prefix):
         """
         This method creates a 'host-config' file that specifies
         all of the options used to configure and build conduit.
