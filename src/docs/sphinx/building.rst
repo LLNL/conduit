@@ -181,7 +181,7 @@ On OSX and Linux, you can use ``scripts/uberenv/uberenv.py`` to help setup your 
 .. code:: bash
     
     #build third party libs using spack
-    python scripts/uberenv/uberenv.py
+    python3 scripts/uberenv/uberenv.py
     
     # run the configure helper script and give it the 
     # path to a host-config file 
@@ -221,31 +221,31 @@ Default invocation on Linux:
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
-                                      --spec %gcc 
+    python3 scripts/uberenv/uberenv.py --prefix uberenv_libs \
+                                       --spec %gcc 
 
 Default invocation on OSX:
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
-                                      --spec %clang \
-                                      --spack-config-dir scripts/uberenv_configs/spack_configs/configs/darwin/
+    python3 scripts/uberenv/uberenv.py --prefix uberenv_libs \
+                                       --spec %clang \
+                                       --spack-config-dir scripts/uberenv_configs/spack_configs/configs/darwin/
 
 
 The uberenv `--install` installs conduit\@develop (not just the development dependencies):
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --install
+    python3 scripts/uberenv/uberenv.py --install
 
 
 To run tests during the build process to validate the build and install, you can use the ``--run_tests`` option:
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --install \
-                                      --run_tests
+    python3 scripts/uberenv/uberenv.py --install \
+                                       --run_tests
 
 For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
 
