@@ -328,7 +328,8 @@ stages:
            ##################
            # output env
            cat etc/*rel*
-           apt-get update && apt-get install python3
+           # install pkgs we need
+           sudo apt-get -y install python3
            env
         displayName: 'Prepare build env'
 
