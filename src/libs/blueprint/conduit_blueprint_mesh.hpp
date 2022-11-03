@@ -104,6 +104,31 @@ void CONDUIT_BLUEPRINT_API generate_index_for_single_domain(const conduit::Node 
                                                             const std::string &ref_path,
                                                             Node &index_out);
 
+//---------------------------------------------------------------------
+/// Test if a mesh is suitable to convert to a 1D "strip" mesh of a form
+/// expected by Carter.  The mesh must have all coordsets of dimension one
+/// and may only contain element-associated fields.  Error details are
+/// returned in info.
+bool CONDUIT_BLUEPRINT_API can_generate_strip(const conduit::Node &mesh,
+                                              const std::string& topo_name,
+                                              Node &info);
+/**
+ * @brief Convert the given 1D blueprint mesh into a strip of quads
+ *     as expected by Carter.
+ * @param mesh  A Conduit node containing a 1D blueprint mesh.
+ * @param[out] output A Conduit node that will contain a 2D blueprint mesh
+ *     containing a quad element corresponding to each (line segment)
+ *     element in \a mesh.
+ *
+ * The input \a mesh must have one dimension in each coordset.  The \a mesh
+ * must contain only zonal fields.  The requirement against nodal fields
+ * may be relaxed if we determine the right way to do it.
+ */
+void CONDUIT_BLUEPRINT_API generate_strip(conduit::Node &mesh,
+                                          std::string src_topo_name,
+                                          std::string dst_topo_name);
+
+
 //-------------------------------------------------------------------------
 // Creates fields to help view and debug adjset relationships.
 //
@@ -278,6 +303,10 @@ namespace coordset
     index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &coordset);
 
     //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& coordset,
+                                              conduit::Node& coordset_dest);
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
     //-------------------------------------------------------------------------
     namespace uniform
@@ -389,6 +418,11 @@ namespace topology
 
     //-------------------------------------------------------------------------
     index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &topo);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& topo,
+                                              const std::string & csname,
+                                              conduit::Node & topo_dest);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::topology::points protocol interface

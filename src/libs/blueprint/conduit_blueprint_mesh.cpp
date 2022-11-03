@@ -1043,6 +1043,73 @@ convert_coordset_to_explicit(const std::string &base_type,
     }
 }
 
+//-------------------------------------------------------------------------
+void
+convert_oneD_coordset_to_strip(const conduit::Node &coordset,
+                               conduit::Node &dest)
+{
+    dest.reset();
+    std::string coord_type = coordset["type"].as_string();
+    dest["type"].set(coord_type);
+
+    if (coord_type == "uniform")
+    {
+        dest["dims/i"] = 1;
+        dest["dims/j"] = coordset["dims/i"];
+
+        if (coordset.has_child("origin"))
+        {
+            dest["origin/x"] = 0.;
+            dest["origin/y"] = coordset["origin/x"];
+        }
+
+        if (coordset.has_child("spacing"))
+        {
+            dest["spacing/dx"] = 1.;
+            dest["spacing/dy"] = coordset["spacing/dx"];
+        }
+    }
+    else
+    {
+        coordset["values/x"].to_float64_array(dest["values/y"]);
+        dest["values/x"].set(DataType::float64(2));
+        double *x_vals = dest["values/x"].value();
+        x_vals[0] = 0.;
+        x_vals[1] = 1.;
+    }
+}
+
+
+//-------------------------------------------------------------------------
+void
+convert_oneD_topo_to_strip(const conduit::Node &topo,
+                           const std::string &csname,
+                           conduit::Node &dest)
+{
+    dest.reset();
+    dest["coordset"] = csname;
+    dest["type"] = topo["type"].as_string();
+
+    if (topo.has_child("elements"))
+    {
+        const Node & topoelts = topo["elements"];
+        Node & destelts = dest["elements"];
+
+        if (topoelts.has_child("origin"))
+        {
+            destelts["origin/i"] = 0.;
+            destelts["origin/j"] = topoelts["origin/i"];
+        }
+
+        if (topoelts.has_child("dims"))
+        {
+            destelts["dims/i"] = 1;
+            destelts["dims/j"] = topoelts["dims/i"];
+        }
+    }
+}
+
+
 // TODO(JRC): For all of the following topology conversion functions, it's
 // possible if the user validates the topology in isolation that it can be
 // good and yet the conversion will fail due to an invalid reference coordset.
@@ -1418,7 +1485,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 }
 
 //-----------------------------------------------------------------------------
-// - end internal data function helpers -
+// - end internal topology helpers -
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -2051,6 +2118,69 @@ mesh::generate_index_for_single_domain(const Node &mesh,
     }
 }
 
+
+
+//-------------------------------------------------------------------------
+// blueprint tests and converters for one-dimensional meshes
+//-------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+bool
+mesh::can_generate_strip(const Node &mesh,
+                         const std::string & topo_name,
+                         Node &info)
+{
+    const std::string protocol = "can_generate_strip";
+    bool res = true;
+    info.reset();
+
+    // The topology must be 1D and cannot be points
+    const Node& topo = mesh["topologies"][topo_name];
+    const Node& coordset = mesh["coordsets"][topo["coordset"].as_string()];
+    index_t cs_dim = mesh::utils::coordset::dims(coordset);
+    std::string topo_type = topo["type"].as_string();
+    if (!(cs_dim == 1 && topo_type != "points"))
+    {
+        log::error(info, protocol, "coordset dimension != 1, or topology type is points");
+        res = false;
+    }
+
+    // Only element-associated fields allowed (no vertex-fields)
+    // TODO Relax this requirement?
+    NodeConstIterator fitr = mesh["fields"].children();
+    while(fitr.has_next())
+    {
+        const Node &f = fitr.next();
+        // This method requires fields to have "association" == "element".
+        if (!f.has_child("association") || f["association"].as_string() != "element")
+        {
+            log::error(info,
+                       protocol,
+                       "fields[" + log::quote(fitr.name()) + "/association] != element");
+            res = false;
+        }
+    }
+
+    return res;
+}
+
+//-------------------------------------------------------------------------
+void
+mesh::generate_strip(conduit::Node &mesh,
+                     std::string src_topo_name,
+                     std::string dst_topo_name)
+{
+
+    const Node& src_topo = mesh["topologies"][src_topo_name];
+    const Node& src_coordset = mesh["coordsets"][src_topo["coordset"].as_string()];
+    Node dst_topo, dst_coordset;
+
+    mesh::coordset::generate_strip(src_coordset, dst_coordset);
+    mesh::topology::generate_strip(src_topo, dst_topo_name, dst_topo);
+
+    mesh["topologies"][dst_topo_name] = dst_topo;
+    mesh["coordsets"][dst_topo_name] = dst_coordset;
+}
 
 
 //
@@ -3016,6 +3146,15 @@ mesh::coordset::length(const Node &coordset)
 }
 
 
+//-----------------------------------------------------------------------------
+void
+mesh::coordset::generate_strip(const Node& coordset,
+                               conduit::Node& coordset_dest)
+{
+    convert_oneD_coordset_to_strip(coordset, coordset_dest);
+}
+
+
 //-------------------------------------------------------------------------
 void
 mesh::coordset::uniform::to_rectilinear(const conduit::Node &coordset,
@@ -3225,6 +3364,15 @@ index_t
 mesh::topology::length(const Node &topology)
 {
     return bputils::topology::length(topology);
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::topology::generate_strip(const Node& topo,
+                               const std::string & csname,
+                               conduit::Node& topo_dest)
+{
+    convert_oneD_topo_to_strip(topo, csname, topo_dest);
 }
 
 //-----------------------------------------------------------------------------
