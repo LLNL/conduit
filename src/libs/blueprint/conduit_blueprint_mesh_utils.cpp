@@ -480,8 +480,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
             }
         }
 
-        Node dim_topo_offsets;
-        topology::unstructured::generate_offsets(dim_topos[di], dim_topo_offsets);
+        topology::unstructured::generate_offsets_inline(dim_topos[di]);
     }
 }
 
@@ -1835,31 +1834,17 @@ topology::reindex_coords(const Node& topo,
 
 //-----------------------------------------------------------------------------
 void
-topology::unstructured::generate_offsets(Node &n,
-                                         Node &dest)
+topology::unstructured::generate_offsets_inline(Node &topo)
 {
-    dest.reset();
-
     // FIXME(JRC): There are weird cases wherein a polyhedral topology can have only
     // the 'elements/offsets' defined and not 'subelements/offsets', which isn't currently
     // properly handled by this function.
 
-    if(n["elements"].has_child("offsets") && !n["elements/offsets"].dtype().is_empty())
+    if( !topo["elements"].has_child("offsets") || 
+        topo["elements/offsets"].dtype().is_empty())
     {
-        if(&dest != &n["elements/offsets"])
-        {
-            dest.set_external(n["elements/offsets"]);
-        }
-    }
-    else
-    {
-        const Node &n_const = n;
-        Node &offsets = n["elements/offsets"];
-        blueprint::mesh::utils::topology::unstructured::generate_offsets(n_const, offsets);
-        if(&dest != &offsets)
-        {
-            dest.set_external(offsets);
-        }
+        blueprint::mesh::utils::topology::unstructured::generate_offsets(topo,
+                                                                         topo["elements/offsets"]);
     }
 }
 

@@ -455,10 +455,11 @@ namespace topology
     {
         // TODO(JRC): Expose this 'cache' version of the function publicly?
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_offsets(Node &topo,
-                                                    Node &dest);
+        // Adds offsets to given topo
+        void CONDUIT_BLUEPRINT_API generate_offsets_inline(Node &topo);
 
         //-------------------------------------------------------------------------
+        // Generates element offsets for given topo
         void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
                                                     Node &dest);
 

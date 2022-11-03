@@ -1269,6 +1269,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
 
         Node info;
         EXPECT_TRUE(mesh::topology::unstructured::verify(face_topo, info));
+        
+        face_topo.print();
+        info.print();
+        
 
         // General Data/Schema Checks //
 

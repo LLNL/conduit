@@ -3702,7 +3702,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
             temp.set_external(poly_size_data);
             temp.to_data_type(int_dtype.id(), dest["elements/sizes"]);
 
-            generate_offsets(dest, dest["elements/offsets"]);
+            utils::topology::unstructured::generate_offsets_inline(dest);
         }
         else // if(is_topo_3d) // polyhedral
         {
@@ -3773,9 +3773,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 
             dest["subelements/shape"].set("polygonal");
 
-            // BHAN - For polyhedral, writes offsets for
-            // "elements/offsets" and "subelements/offsets"
-            generate_offsets(dest, dest["elements/offsets"]);
+            utils::topology::unstructured::generate_offsets_inline(dest);
         }
     }
 }
