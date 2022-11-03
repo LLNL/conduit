@@ -2014,41 +2014,35 @@ topology::unstructured::generate_offsets(const Node &n,
         Node &dest_elem_off = const_cast<Node &>(n)["elements/offsets"];
         Node &dest_subelem_off = const_cast<Node &>(n)["subelements/offsets"];
 
-        const Node& topo_elem_size = n["elements/sizes"];
-        const Node& topo_subelem_size = n["subelements/sizes"];
+        index_t_accessor topo_elem_size = n["elements/sizes"].value();
+        index_t_accessor topo_subelem_size = n["subelements/sizes"].value();
 
         Node elem_node;
         Node subelem_node;
 
-        std::vector<index_t> shape_array;
-        index_t ei = 0;
+        index_t es_count = topo_elem_size.number_of_elements();
+        std::vector<index_t> shape_array(es_count, 0);
         index_t es = 0;
-        while(ei < topo_elem_size.dtype().number_of_elements())
+        for (index_t ei = 0; ei < es_count; ++ei)
         {
-            const Node index_node(int_dtype,
-                const_cast<void*>(topo_elem_size.element_ptr(ei)), true);
-            shape_array.push_back(es);
-            es += index_node.to_index_t();
-            ei++;
+            shape_array[ei] = es;
+            es += topo_elem_size[ei];
         }
 
         elem_node.set_external(shape_array);
         elem_node.to_data_type(int_dtype.id(), dest_elem_off);
         elem_node.to_data_type(int_dtype.id(), dest);
 
-        shape_array.clear();
-        ei = 0;
-        es = 0;
-        while(ei < topo_subelem_size.dtype().number_of_elements())
+        int ses_count = topo_subelem_size.number_of_elements();
+        std::vector<index_t> subshape_array(ses_count, 0);
+        index_t ses = 0;
+        for (index_t ei = 0; ei < ses_count; ++ei)
         {
-            const Node index_node(int_dtype,
-                const_cast<void*>(topo_subelem_size.element_ptr(ei)), true);
-            shape_array.push_back(es);
-            es += index_node.to_index_t();
-            ei++;
+            subshape_array[ei] = ses;
+            ses += topo_subelem_size[ei];
         }
 
-        subelem_node.set_external(shape_array);
+        subelem_node.set_external(subshape_array);
         subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
     }
 }

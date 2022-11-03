@@ -263,21 +263,15 @@ bool generate_offsets(conduit::Node &n,
     }
     else
     {
-        conduit::Node &sizes = n["sizes"];
-        conduit::Node &offsets = n["offsets"];
+        index_t_accessor sizes = n["sizes"].as_index_t_accessor();
+        n["offsets"].reset();
+        n["offsets"].set(DataType::index_t(sizes.number_of_elements()));
+        index_t_array offsets_vals = n["offsets"].value();
 
-        conduit::Node temp;
-        std::vector<int64> offset_array(sizes.dtype().number_of_elements());
-        for(index_t o = 0; o < (index_t)offset_array.size(); o++)
+        for (index_t o_idx = 0; o_idx < sizes.number_of_elements(); ++o_idx)
         {
-            temp.set_external(conduit::DataType(sizes.dtype().id(), 1),
-                const_cast<void*>(sizes.element_ptr(o)));
-            offset_array[o] = (o > 0) ? offset_array[o-1] + temp.to_int64() : 0;
+            offsets_vals[o_idx] = (o_idx > 0) ? offsets_vals[o_idx-1] + sizes[o_idx-1] : 0;
         }
-
-        offsets.reset();
-        temp.set_external(offset_array);
-        temp.to_data_type(sizes.dtype().id(), offsets);
     }
 
     return res;
