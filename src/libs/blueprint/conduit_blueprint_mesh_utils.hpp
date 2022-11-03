@@ -462,7 +462,11 @@ namespace topology
         // Generates element offsets for given topo
         void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
                                                     Node &dest);
-
+        //-------------------------------------------------------------------------
+        // Generates element and subelement offsets for given topo
+        void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
+                                                    Node &dest_ele_offsets,
+                                                    Node &dest_subele_offsets);
         //-------------------------------------------------------------------------
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
                                                           const index_t i);
