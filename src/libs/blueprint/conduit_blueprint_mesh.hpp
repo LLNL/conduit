@@ -687,6 +687,11 @@ namespace field
                                       conduit::Node &info);
 
     //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API generate_strip(conduit::Node& fields,
+                                              const std::string & toponame,
+                                              const std::string& topo_dest);
+
+    //-------------------------------------------------------------------------
     // Given a blueprint field and matset, converts the matset and the field
     // values + matset_values to the silo style sparse mixed slot
     // representation.

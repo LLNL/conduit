@@ -1071,11 +1071,11 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
     }
     else
     {
-        coordset["values/x"].to_float64_array(dest["values/y"]);
         dest["values/x"].set(DataType::float64(2));
         double *x_vals = dest["values/x"].value();
         x_vals[0] = 0.;
         x_vals[1] = 1.;
+        coordset["values/x"].to_float64_array(dest["values/y"]);
     }
 }
 
@@ -1087,8 +1087,8 @@ convert_oneD_topo_to_strip(const conduit::Node &topo,
                            conduit::Node &dest)
 {
     dest.reset();
-    dest["coordset"] = csname;
     dest["type"] = topo["type"].as_string();
+    dest["coordset"] = csname;
 
     if (topo.has_child("elements"))
     {
@@ -2177,6 +2177,7 @@ mesh::generate_strip(conduit::Node &mesh,
 
     mesh::coordset::generate_strip(src_coordset, dst_coordset);
     mesh::topology::generate_strip(src_topo, dst_topo_name, dst_topo);
+    mesh::field::generate_strip(mesh["fields"], src_topo_name, dst_topo_name);
 
     mesh["topologies"][dst_topo_name] = dst_topo;
     mesh["coordsets"][dst_topo_name] = dst_coordset;
@@ -5901,6 +5902,60 @@ mesh::field::verify(const Node &field,
     log::validation(info, res);
 
     return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::field::generate_strip(Node& fields,
+                            const std::string& toponame,
+                            const std::string& dest_toponame)
+{
+    Node newfields;
+
+    NodeConstIterator fields_it = fields.children();
+    while (fields_it.has_next())
+    {
+        const Node& field = fields_it.next();
+
+        if (field["topology"].as_string() == toponame)
+        {
+            // TODO Something useful with grid functions, when needed by users.
+            if (field.has_child("association"))
+            {
+                if (field["association"].as_string() == "element")
+                {
+                    const std::string newfieldname = dest_toponame + "_" + fields_it.name();
+                    Node& newfield = newfields[newfieldname];
+
+                    newfield["association"] = "element";
+                    newfield["topology"] = dest_toponame;
+                    if (field.has_child("volume_dependent"))
+                        newfield["volume_dependent"] = field["volume_dependent"].as_string();
+                    if (field.has_child("matset"))
+                    {
+                        newfield["matset"] = field["matset"].as_string();
+                        newfield["matset_values"].set_external(field["matset_values"]);
+                    }
+                    if (field.has_child("values"))
+                    {
+                        newfield["values"].set_external(field["values"]);
+                    }
+                }
+                else
+                {
+                    // For now, do nothing.
+                    // TODO Something useful with vertex fields.  Confer with users.
+                }
+            }
+        }
+    }
+
+    NodeConstIterator newfields_it = newfields.children();
+    while (newfields_it.has_next())
+    {
+        const Node& newfield = newfields_it.next();
+        fields[newfields_it.name()] = newfield;
+    }
 }
 
 //-----------------------------------------------------------------------------
