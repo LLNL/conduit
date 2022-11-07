@@ -1836,15 +1836,21 @@ topology::reindex_coords(const Node& topo,
 void
 topology::unstructured::generate_offsets_inline(Node &topo)
 {
-    // FIXME(JRC): There are weird cases wherein a polyhedral topology can have only
-    // the 'elements/offsets' defined and not 'subelements/offsets', which isn't currently
-    // properly handled by this function.
-
     if( !topo["elements"].has_child("offsets") || 
         topo["elements/offsets"].dtype().is_empty())
     {
-        blueprint::mesh::utils::topology::unstructured::generate_offsets(topo,
-                                                                         topo["elements/offsets"]);
+        // check for polyhedral case
+        if(topo.has_child("subelements"))
+        {
+            blueprint::mesh::utils::topology::unstructured::generate_offsets(topo,
+                                                                             topo["elements/offsets"],
+                                                                             topo["subelements/offsets"]);
+        }
+        else
+        {
+            blueprint::mesh::utils::topology::unstructured::generate_offsets(topo,
+                                                                             topo["elements/offsets"]);
+        }
     }
 }
 
@@ -1862,13 +1868,15 @@ topology::unstructured::generate_offsets(const Node &topo,
 void
 topology::unstructured::generate_offsets(const Node &topo,
                                          Node &dest_ele_offsets,
-                                         Node & /*dest_subele_offsets*/)
+                                         Node &dest_subele_offsets)
 {
-    //dest_ele_offsets.reset();
-    
+    dest_ele_offsets.reset();
+    dest_subele_offsets.reset();
+
     const ShapeType topo_shape(topo);
     const DataType int_dtype = find_widest_dtype(topo, DEFAULT_INT_DTYPES);
     std::string key("elements/connectivity"), stream_key("elements/stream");
+
     if(!topo.has_path(key))
         key = stream_key;
     const Node &topo_conn = topo[key];
@@ -1881,6 +1889,16 @@ topology::unstructured::generate_offsets(const Node &topo,
         if(&dest_ele_offsets != &topo["elements/offsets"])
         {
             dest_ele_offsets.set_external(topo["elements/offsets"]);
+        }
+        
+        if( topo.has_child("subelements") &&
+            topo["subelements"].has_child("offsets") &&
+            !topo["subelements/offsets"].dtype().is_empty())
+        {
+            if(&dest_subele_offsets != &topo["subelements/offsets"])
+            {
+                dest_subele_offsets.set_external(topo["subelements/offsets"]);
+            }
         }
     }
     else if(topo.has_path(stream_key))
@@ -2024,6 +2042,8 @@ topology::unstructured::generate_offsets(const Node &topo,
         Node subelem_node;
 
         index_t es_count = topo_elem_size.number_of_elements();
+        // dest_ele_offsets.set(DataType::index_t(es_count));
+        // index_t_array shape_array = dest_ele_offsets.value();
         std::vector<index_t> shape_array(es_count, 0);
         index_t es = 0;
         for (index_t ei = 0; ei < es_count; ++ei)
@@ -2037,6 +2057,10 @@ topology::unstructured::generate_offsets(const Node &topo,
         elem_node.to_data_type(int_dtype.id(), dest_ele_offsets);
 
         int ses_count = topo_subelem_size.number_of_elements();
+
+        // dest_subele_offsets.set(DataType::index_t(ses_count));
+        // index_t_array subshape_array = dest_subele_offsets.value();
+
         std::vector<index_t> subshape_array(ses_count, 0);
         index_t ses = 0;
         for (index_t ei = 0; ei < ses_count; ++ei)
@@ -2047,6 +2071,7 @@ topology::unstructured::generate_offsets(const Node &topo,
 
         subelem_node.set_external(subshape_array);
         subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
+        dest_subele_offsets = dest_subelem_off;
     }
 }
 
