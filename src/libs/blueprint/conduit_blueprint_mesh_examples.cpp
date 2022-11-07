@@ -4075,8 +4075,7 @@ void polytess(index_t nlevels,
             }
         }
 
-        blueprint::mesh::topology::unstructured::generate_offsets(
-            topology, topology["elements/offsets"]);
+        blueprint::mesh::topology::unstructured::generate_offsets_inline(topology);
 
         // Populate Field //
 
@@ -4510,8 +4509,7 @@ polychain(const index_t length, // how long the chain ought to be
         sub_sizes[i] = ((imodfaces < 9) || ((imodfaces > 10) && (imodfaces < 14))) ? num_points_per_quad_face : num_points_per_tri_face;
     }
 
-    blueprint::mesh::topology::unstructured::generate_offsets(chain_topo,
-                                                              chain_topo["elements/offsets"]);
+    blueprint::mesh::topology::unstructured::generate_offsets_inline(chain_topo);
 
     chain_fields["chain/topology"] = "topo";
     chain_fields["chain/association"] = "element";

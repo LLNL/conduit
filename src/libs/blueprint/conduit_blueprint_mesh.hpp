@@ -587,6 +587,10 @@ namespace topology
         void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &topo,
                                                     conduit::Node &dest);
 
+        //-------------------------------------------------------------------------
+        void CONDUIT_BLUEPRINT_API generate_offsets_inline(conduit::Node &topo);
+
+
     }
 
     //-------------------------------------------------------------------------

@@ -5434,7 +5434,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
         // TODO(JRC): Implement these counts in-line instead of being lazy and
         // taking care of it at the end of the function w/ a helper.
-        generate_offsets(topo_dest, topo_dest["elements/offsets"]);
+        generate_offsets_inline(topo_dest);
+        
         blueprint::o2mrelation::generate_offsets(s2dmap, info);
         blueprint::o2mrelation::generate_offsets(d2smap, info);
     }
@@ -5446,6 +5447,13 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
                                                Node &dest)
 {
     return bputils::topology::unstructured::generate_offsets(topo, dest);
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::generate_offsets_inline(Node &topo)
+{
+    return bputils::topology::unstructured::generate_offsets_inline(topo);
 }
 
 //-----------------------------------------------------------------------------
