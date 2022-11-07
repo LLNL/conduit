@@ -224,8 +224,20 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 {
     // NOTE(JRC): This type current only works at forming associations within
     // an unstructured topology's hierarchy.
-    Node topo_offsets;
-    topology::unstructured::generate_offsets(*topo, topo_offsets);
+    Node topo_offsets, topo_suboffsets;
+    bool is_polyhedral = topo->has_child("subelements");
+
+    if(is_polyhedral)
+    {
+        topology::unstructured::generate_offsets(*topo,
+                                                 topo_offsets,
+                                                 topo_suboffsets);
+    }
+    else
+    {
+        topology::unstructured::generate_offsets(*topo, topo_offsets);
+    }
+
     const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
     const index_t topo_num_coords = coordset::length(coordset);
 
@@ -250,6 +262,10 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
     // processing below.
     dim_topos[topo_shape.dim].set_external(topology);
     dim_topos[topo_shape.dim]["elements/offsets"].set(topo_offsets);
+    if(is_polyhedral)
+    {
+        dim_topos[topo_shape.dim]["subelements/offsets"].set(topo_suboffsets);
+    }
     std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
 
     // Prepare Initial Values for Processing //
@@ -323,7 +339,11 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
             const index_t elem_outer_count = entity_indices.size();
             for(index_t oi = 0; oi < elem_outer_count; oi++)
             {
-                temp.set_external((*topo)["subelements/offsets"]);
+                // temp.set_external((*topo)["subelements/offsets"]);
+                // data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
+                // const index_t elem_inner_offset = data.to_index_t();
+
+                temp.set_external(topo_suboffsets);
                 data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
                 const index_t elem_inner_offset = data.to_index_t();
 
@@ -401,7 +421,8 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
                 if (dim_shape.is_polyhedral())
                 {
-                    const Node &subelem_off_const = (*topo)["subelements/offsets"];
+                    const Node &subelem_off_const = topo_suboffsets;
+                    // const Node &subelem_off_const = (*topo)["subelements/offsets"];
                     const Node &subelem_size_const = (*topo)["subelements/sizes"];
 
                     Node subelem_off; subelem_off.set_external(subelem_off_const);
@@ -2029,22 +2050,17 @@ topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polyhedral")
     {
-        ///
-        /// EVIL SIDE EFFECTS
-        ///
-        Node &dest_elem_off = const_cast<Node &>(topo)["elements/offsets"];
-        Node &dest_subelem_off = const_cast<Node &>(topo)["subelements/offsets"];
-
         index_t_accessor topo_elem_size = topo["elements/sizes"].value();
         index_t_accessor topo_subelem_size = topo["subelements/sizes"].value();
 
-        Node elem_node;
-        Node subelem_node;
-
         index_t es_count = topo_elem_size.number_of_elements();
+        // IDEAL
         // dest_ele_offsets.set(DataType::index_t(es_count));
         // index_t_array shape_array = dest_ele_offsets.value();
+
+        // EVIL HACK
         std::vector<index_t> shape_array(es_count, 0);
+
         index_t es = 0;
         for (index_t ei = 0; ei < es_count; ++ei)
         {
@@ -2052,16 +2068,24 @@ topology::unstructured::generate_offsets(const Node &topo,
             es += topo_elem_size[ei];
         }
 
+        // EVIL HACK
+        Node &dest_elem_off = const_cast<Node &>(topo)["elements/offsets"];
+        Node &dest_subelem_off = const_cast<Node &>(topo)["subelements/offsets"];
+        Node elem_node;
+        Node subelem_node;
         elem_node.set_external(shape_array);
         elem_node.to_data_type(int_dtype.id(), dest_elem_off);
         elem_node.to_data_type(int_dtype.id(), dest_ele_offsets);
 
         int ses_count = topo_subelem_size.number_of_elements();
 
+        // IDEAL
         // dest_subele_offsets.set(DataType::index_t(ses_count));
         // index_t_array subshape_array = dest_subele_offsets.value();
 
+        // EVIL HACK
         std::vector<index_t> subshape_array(ses_count, 0);
+
         index_t ses = 0;
         for (index_t ei = 0; ei < ses_count; ++ei)
         {
@@ -2069,6 +2093,7 @@ topology::unstructured::generate_offsets(const Node &topo,
             ses += topo_subelem_size[ei];
         }
 
+        // EVIL HACK
         subelem_node.set_external(subshape_array);
         subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
         dest_subele_offsets = dest_subelem_off;
