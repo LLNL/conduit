@@ -1336,12 +1336,24 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     // is currently no good way in Blueprint to create mappings with sparse data.
     const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
 
-    Node topo_offsets;
-    bputils::topology::unstructured::generate_offsets(topo, topo_offsets);
-    const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
-
     const ShapeCascade topo_cascade(topo);
     const ShapeType &topo_shape = topo_cascade.get_shape();
+
+    Node topo_offsets, topo_suboffsets;
+
+    if (topo_shape.is_polyhedral())
+    {
+        bputils::topology::unstructured::generate_offsets(topo,
+                                                          topo_offsets,
+                                                          topo_suboffsets);
+    }
+    else
+    {
+        bputils::topology::unstructured::generate_offsets(topo, topo_offsets);
+    }
+
+    const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+
 
     Node topo_sizes;
     if (topo_shape.is_poly())
@@ -1351,13 +1363,10 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 
     Node topo_subconn;
     Node topo_subsizes;
-    Node topo_suboffsets;
     if (topo_shape.is_polyhedral())
     {
-        const Node &topo_subconn_const = topo["subelements/connectivity"];
-        topo_subconn.set_external(topo_subconn_const);
-        topo_subsizes = topo["subelements/sizes"];
-        topo_suboffsets = topo["subelements/offsets"];
+        topo_subconn.set_external(topo["subelements/connectivity"]);
+        topo_subsizes.set_external(topo["subelements/sizes"]);
     }
 
     // Discover Data Types //
