@@ -1781,11 +1781,45 @@ topology::logical_dims(const Node &n, index_t *d, index_t maxdims)
     }
     else // if(type == "unstructured")
     {
-        // TODO(JRC): This is rather inefficient because the offsets array
-        // is discarded after this calculation is complete.
-        Node topo_offsets;
-        topology::unstructured::generate_offsets(n, topo_offsets);
-        d[0] = topo_offsets.dtype().number_of_elements();
+        // calc total number of elements
+
+        // polygonal and polyhedral, or otherwise explicit "sizes"
+        if(n["elements"].has_child("sizes"))
+        {
+            d[0] = n["elements/sizes"].dtype().number_of_elements();
+        }
+        else if( n["elements"].has_child("element_index") )  // stream style (deprecated)
+        {
+            const Node &elems_idx =  n["elements/element_index"];
+            if(elems_idx.has_child("element_counts"))
+            {
+                index_t_accessor elem_counts_vals  = elems_idx["element_counts"].value();
+                index_t total_elems = 0;
+                for(index_t i=0;i< elem_counts_vals.number_of_elements();i++)
+                {
+                    total_elems += elem_counts_vals[i];
+                }
+                d[0] = total_elems;
+            } // else, use size of stream_ids
+            else if(elems_idx.has_child("stream_ids"))
+            {
+                d[0] = elems_idx["stream_ids"].dtype().number_of_elements();
+            }
+            else
+            {
+                CONDUIT_ERROR("invalid stream id topology: "
+                              "missing elements/element_index/stream_ids");
+            }
+
+        }
+        else // zoo
+        {
+            index_t conn_size = n["elements/connectivity"].dtype().number_of_elements();
+            std::string shape_type_name = n["elements/shape"].as_string();
+            // total number of elements == conn array size / shape size
+            ShapeType shape_info(shape_type_name);
+            d[0] = conn_size / shape_info.indices;
+        }
     }
 }
 
@@ -2070,9 +2104,8 @@ topology::unstructured::generate_offsets(const Node &topo,
 
         // EVIL HACK
         Node &dest_elem_off = const_cast<Node &>(topo)["elements/offsets"];
-        Node &dest_subelem_off = const_cast<Node &>(topo)["subelements/offsets"];
+
         Node elem_node;
-        Node subelem_node;
         elem_node.set_external(shape_array);
         elem_node.to_data_type(int_dtype.id(), dest_elem_off);
         elem_node.to_data_type(int_dtype.id(), dest_ele_offsets);
@@ -2084,6 +2117,7 @@ topology::unstructured::generate_offsets(const Node &topo,
         // index_t_array subshape_array = dest_subele_offsets.value();
 
         // EVIL HACK
+        Node &dest_subelem_off = const_cast<Node &>(topo)["subelements/offsets"];
         std::vector<index_t> subshape_array(ses_count, 0);
 
         index_t ses = 0;
@@ -2094,6 +2128,7 @@ topology::unstructured::generate_offsets(const Node &topo,
         }
 
         // EVIL HACK
+        Node subelem_node;
         subelem_node.set_external(subshape_array);
         subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
         dest_subele_offsets = dest_subelem_off;
