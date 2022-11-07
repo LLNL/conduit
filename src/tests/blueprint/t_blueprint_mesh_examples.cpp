@@ -1331,6 +1331,60 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, oneDtostrip_fullfeatured)
+{
+    {
+        Node mesh;
+        blueprint::mesh::examples::basic("rectilinear", 5, 0, 0, mesh);
+
+        test_save_mesh_helper(mesh, "oneD_struct_orig_feature");
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
+        CONDUIT_INFO(info.to_yaml());
+
+        conduit::Node options;
+        options["field_prefix"] = "strip_";
+        blueprint::mesh::generate_strip(mesh["topologies/mesh"],
+            mesh["topologies/strip_mesh"],
+            mesh["coordsets/strip_coords"],
+            mesh["fields"],
+            options);
+
+        test_save_mesh_helper(mesh, "oneD_struct_strip_feature");
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        CONDUIT_INFO(info.to_yaml());
+    }
+
+    {
+        Node mesh;
+        blueprint::mesh::examples::basic("uniform", 5, 0, 0, mesh);
+
+        test_save_mesh_helper(mesh, "oneD_unif_orig_feature");
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
+        CONDUIT_INFO(info.to_yaml());
+
+        conduit::Node options;
+        options["field_prefix"] = "strip_";
+        blueprint::mesh::generate_strip(mesh["topologies/mesh"],
+            mesh["topologies/strip_mesh"],
+            mesh["coordsets/strip_coords"],
+            mesh["fields"],
+            options);
+
+        test_save_mesh_helper(mesh, "oneD_unif_strip_feature");
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        CONDUIT_INFO(info.to_yaml());
+    }
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

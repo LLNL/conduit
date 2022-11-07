@@ -1080,36 +1080,6 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
 }
 
 
-//-------------------------------------------------------------------------
-void
-convert_oneD_topo_to_strip(const conduit::Node &topo,
-                           const std::string &csname,
-                           conduit::Node &dest)
-{
-    dest.reset();
-    dest["type"] = topo["type"].as_string();
-    dest["coordset"] = csname;
-
-    if (topo.has_child("elements"))
-    {
-        const Node & topoelts = topo["elements"];
-        Node & destelts = dest["elements"];
-
-        if (topoelts.has_child("origin"))
-        {
-            destelts["origin/i"] = 0.;
-            destelts["origin/j"] = topoelts["origin/i"];
-        }
-
-        if (topoelts.has_child("dims"))
-        {
-            destelts["dims/i"] = 1;
-            destelts["dims/j"] = topoelts["dims/i"];
-        }
-    }
-}
-
-
 // TODO(JRC): For all of the following topology conversion functions, it's
 // possible if the user validates the topology in isolation that it can be
 // good and yet the conversion will fail due to an invalid reference coordset.
@@ -2191,6 +2161,8 @@ mesh::generate_strip(const conduit::Node& topo,
                      conduit::Node& fields_dest,
                      const conduit::Node& options)
 {
+    const std::string topo_name = topo.name();
+    const std::string topo_dest_name = topo_dest.name();
     std::string field_prefix = "";
     std::vector<std::string> field_names;
     const Node& fields_src = (*(topo.parent()->parent()))["fields"];
@@ -2237,6 +2209,19 @@ mesh::generate_strip(const conduit::Node& topo,
             CONDUIT_ERROR("field_names must be a string or a list of strings.");
         }
     }
+    else
+    {
+        // fill field_names with all current fields' names
+        NodeConstIterator itr = fields_src.children();
+        while (itr.has_next())
+        {
+            const Node& cld = itr.next();
+            if (cld["topology"].as_string() == topo_name)
+            {
+                field_names.push_back(itr.name());
+            }
+        }
+    }
 
     // check that the discovered field names exist in the target fields
     for (uint64 i = 0; i < field_names.size(); i++)
@@ -2249,9 +2234,18 @@ mesh::generate_strip(const conduit::Node& topo,
 
     // generate new topology
     mesh::coordset::generate_strip(coordset_src, coords_dest);
-    mesh::topology::generate_strip(topo, topo_dest.name(), topo_dest);
-    // Need to rework generate_strip so it takes one field at a time, I think.
-    // mesh::field::generate_strip(fields_dest, src_topo_name, dst_topo_name);
+    mesh::topology::generate_strip(topo, coords_dest.name(), topo_dest);
+
+    for (const std::string& field_name : field_names)
+    {
+        if (fields_src[field_name]["association"].as_string() == "element")
+        {
+            std::string field_dest_name = field_prefix + field_name;
+            fields_dest[field_dest_name] = fields_src[field_name];
+
+            fields_dest[field_dest_name]["topology"] = topo_dest_name;
+        }
+    }
 }
 
 
@@ -3223,7 +3217,35 @@ void
 mesh::coordset::generate_strip(const Node& coordset,
                                conduit::Node& coordset_dest)
 {
-    convert_oneD_coordset_to_strip(coordset, coordset_dest);
+    coordset_dest.reset();
+    std::string coord_type = coordset["type"].as_string();
+    coordset_dest["type"].set(coord_type);
+
+    if (coord_type == "uniform")
+    {
+        coordset_dest["dims/i"] = 1;
+        coordset_dest["dims/j"] = coordset["dims/i"];
+
+        if (coordset.has_child("origin"))
+        {
+            coordset_dest["origin/x"] = 0.;
+            coordset_dest["origin/y"] = coordset["origin/x"];
+        }
+
+        if (coordset.has_child("spacing"))
+        {
+            coordset_dest["spacing/dx"] = 1.;
+            coordset_dest["spacing/dy"] = coordset["spacing/dx"];
+        }
+    }
+    else
+    {
+        coordset_dest["values/x"].set(DataType::float64(2));
+        double* x_vals = coordset_dest["values/x"].value();
+        x_vals[0] = 0.;
+        x_vals[1] = 1.;
+        coordset["values/x"].to_float64_array(coordset_dest["values/y"]);
+    }
 }
 
 
@@ -3444,7 +3466,27 @@ mesh::topology::generate_strip(const Node& topo,
                                const std::string & csname,
                                conduit::Node& topo_dest)
 {
-    convert_oneD_topo_to_strip(topo, csname, topo_dest);
+    topo_dest.reset();
+    topo_dest["type"] = topo["type"].as_string();
+    topo_dest["coordset"] = csname;
+
+    if (topo.has_child("elements"))
+    {
+        const Node& topoelts = topo["elements"];
+        Node& destelts = topo_dest["elements"];
+
+        if (topoelts.has_child("origin"))
+        {
+            destelts["origin/i"] = 0.;
+            destelts["origin/j"] = topoelts["origin/i"];
+        }
+
+        if (topoelts.has_child("dims"))
+        {
+            destelts["dims/i"] = 1;
+            destelts["dims/j"] = topoelts["dims/i"];
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
