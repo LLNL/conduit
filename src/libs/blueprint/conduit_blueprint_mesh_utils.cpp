@@ -2145,7 +2145,7 @@ topology::unstructured::points(const Node &n,
     // if they don't exist and aren't regenerated for each subcall that needs them.
     Node ntemp;
     ntemp.set_external(n);
-    generate_offsets(ntemp, ntemp["elements/offsets"]);
+    generate_offsets_inline(ntemp);
 
     const ShapeType topo_shape(ntemp);
 
