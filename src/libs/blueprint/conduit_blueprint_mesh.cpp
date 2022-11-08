@@ -2148,6 +2148,7 @@ mesh::generate_strip(conduit::Node &mesh,
     mesh::coordset::generate_strip(src_coordset, dst_coordset);
     mesh::topology::generate_strip(src_topo, dst_topo_name, dst_topo);
     mesh::field::generate_strip(mesh["fields"], src_topo_name, dst_topo_name);
+    mesh::matset::generate_strip(mesh["matsets"], src_topo_name, dst_topo_name);
 
     mesh["topologies"][dst_topo_name] = dst_topo;
     mesh["coordsets"][dst_topo_name] = dst_coordset;
@@ -2251,6 +2252,97 @@ mesh::generate_strip(const conduit::Node& topo,
             // For now, do nothing.
             // TODO Something useful with vertex fields.  Confer with users.
         }
+    }
+}
+
+
+void
+mesh::generate_strip(const conduit::Node& topo,
+                     conduit::Node& topo_dest,
+                     conduit::Node& coords_dest,
+                     conduit::Node& fields_dest,
+                     conduit::Node& matsets_dest,
+                     const conduit::Node& options)
+{
+    const std::string topo_name = topo.name();
+    const std::string topo_dest_name = topo_dest.name();
+    std::string matset_prefix = "";
+    std::vector<std::string> matset_names;
+    const Node& matsets_src = (*(topo.parent()->parent()))["matsets"];
+
+    // check for existence of matset prefix
+    if (options.has_child("matset_prefix"))
+    {
+        if (options["matset_prefix"].dtype().is_string())
+        {
+            matset_prefix = options["matset_prefix"].as_string();
+        }
+        else
+        {
+            CONDUIT_ERROR("matset_prefix must be a string.");
+        }
+    }
+
+    // check for target matset names
+    if (options.has_child("matset_names"))
+    {
+        if (options["matset_names"].dtype().is_string())
+        {
+            matset_names.push_back(options["matset_names"].as_string());
+        }
+        else if (options["matset_names"].dtype().is_list())
+        {
+            NodeConstIterator itr = options["matset_names"].children();
+            while (itr.has_next())
+            {
+                const Node& cld = itr.next();
+                if (cld.dtype().is_string())
+                {
+                    matset_names.push_back(cld.as_string());
+                }
+                else
+                {
+                    CONDUIT_ERROR("matset_names must be a string or a list of strings.");
+                }
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR("matset_names must be a string or a list of strings.");
+        }
+    }
+    else
+    {
+        // fill matset_names with all current matsets' names
+        NodeConstIterator itr = matsets_src.children();
+        while (itr.has_next())
+        {
+            const Node& cld = itr.next();
+            if (cld["topology"].as_string() == topo_name)
+            {
+                matset_names.push_back(itr.name());
+            }
+        }
+    }
+
+    // check that the discovered matset names exist in the target fields
+    for (uint64 i = 0; i < matset_names.size(); i++)
+    {
+        if (!matsets_src.has_child(matset_names[i]))
+        {
+            CONDUIT_ERROR("matset " + matset_names[i] + " not found in target.");
+        }
+    }
+
+    // generate new coordset, topology, and fields
+    mesh::generate_strip(topo, topo_dest, coords_dest, fields_dest, options);
+
+    for (const std::string& matset_name : matset_names)
+    {
+        std::string matset_dest_name = matset_prefix + matset_name;
+        matsets_dest[matset_dest_name] = matsets_src[matset_name];
+
+        matsets_dest[matset_dest_name]["topology"] = topo_dest_name;
     }
 }
 
@@ -5683,6 +5775,35 @@ mesh::topology::shape_map::verify(const Node& shape_map,
 //-----------------------------------------------------------------------------
 // blueprint::mesh::matset protocol interface
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void
+mesh::matset::generate_strip(Node& matsets,
+                             const std::string& toponame,
+                             const std::string& dest_toponame)
+{
+    Node newmatsets;
+
+    NodeConstIterator matsets_it = matsets.children();
+    while (matsets_it.has_next())
+    {
+        const Node& matset = matsets_it.next();
+
+        if (matset["topology"].as_string() == toponame)
+        {
+            const std::string newmatsetname = dest_toponame + "_" + matsets_it.name();
+            newmatsets[newmatsetname] = matset;
+            newmatsets[newmatsetname]["topology"] = dest_toponame;
+        }
+    }
+
+    NodeConstIterator newmatsets_it = newmatsets.children();
+    while (newmatsets_it.has_next())
+    {
+        const Node& newmatset = newmatsets_it.next();
+        matsets[newmatsets_it.name()] = newmatset;
+    }
+}
 
 //-----------------------------------------------------------------------------
 // helper to verify a matset material_map

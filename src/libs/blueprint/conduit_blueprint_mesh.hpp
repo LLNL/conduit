@@ -136,6 +136,14 @@ void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& topo,
                                           const conduit::Node& options);
 
 //-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& topo,
+                                          conduit::Node& topo_dest,
+                                          conduit::Node& coords_dest,
+                                          conduit::Node& fields_dest,
+                                          conduit::Node& matsets_dest,
+                                          const conduit::Node& options);
+
+//-------------------------------------------------------------------------
 // Creates fields to help view and debug adjset relationships.
 //
 // Domains without adjset are simply skipped.
@@ -642,6 +650,11 @@ namespace topology
 //-----------------------------------------------------------------------------
 namespace matset
 {
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API generate_strip(conduit::Node& fields,
+                                              const std::string& toponame,
+                                              const std::string& topo_dest);
+
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &matset,
                                       conduit::Node &info);
