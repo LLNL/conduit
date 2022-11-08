@@ -2103,12 +2103,9 @@ topology::unstructured::generate_offsets(const Node &topo,
         index_t_accessor topo_subelem_size = topo["subelements/sizes"].value();
 
         index_t es_count = topo_elem_size.number_of_elements();
-        // IDEAL SOLUTION 
+
         dest_ele_offsets.set(DataType::index_t(es_count));
         index_t_array shape_array = dest_ele_offsets.value();
-
-        // EVIL HACK
-        // std::vector<index_t> shape_array(es_count, 0);
 
         index_t es = 0;
         for (index_t ei = 0; ei < es_count; ++ei)
@@ -2117,22 +2114,10 @@ topology::unstructured::generate_offsets(const Node &topo,
             es += topo_elem_size[ei];
         }
 
-        // EVIL HACK
-        // Node &dest_elem_off = const_cast<Node &>(topo)["elements/offsets"];
-        // Node elem_node;
-        // elem_node.set_external(shape_array);
-        // elem_node.to_data_type(int_dtype.id(), dest_elem_off);
-        // elem_node.to_data_type(int_dtype.id(), dest_ele_offsets);
-
         int ses_count = topo_subelem_size.number_of_elements();
 
-        // IDEAL SOLUTION
         dest_subele_offsets.set(DataType::index_t(ses_count));
         index_t_array subshape_array = dest_subele_offsets.value();
-
-        // EVIL HACK
-        // Node &dest_subelem_off = const_cast<Node &>(topo)["subelements/offsets"];
-        // std::vector<index_t> subshape_array(ses_count, 0);
 
         index_t ses = 0;
         for (index_t ei = 0; ei < ses_count; ++ei)
@@ -2140,12 +2125,6 @@ topology::unstructured::generate_offsets(const Node &topo,
             subshape_array[ei] = ses;
             ses += topo_subelem_size[ei];
         }
-
-        // EVIL HACK
-        // Node subelem_node;
-        // subelem_node.set_external(subshape_array);
-        // subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
-        // dest_subele_offsets = dest_subelem_off;
     }
 }
 

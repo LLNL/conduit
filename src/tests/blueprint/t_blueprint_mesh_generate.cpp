@@ -1107,7 +1107,7 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
 
         Node &point_topo = point_mesh["topologies"][POINT_TOPOLOGY_NAME];
         mesh::topology::unstructured::generate_points(grid_topo, point_topo, t2p_map, p2t_map);
-        
+
         Node data, info;
         EXPECT_TRUE(mesh::topology::unstructured::verify(point_topo, info));
 

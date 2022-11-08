@@ -37,6 +37,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Added any source, any tag variants of mpi receive functions: `recv`, `recv_using_schema`, and `irecv`.
 - Added subpath support for `relay::io::{save,load,save_merged,load_merged}` for basic protocols (json, yaml, etc).
+- Added `generate_offsets_inline(Node &)` for cases where we want topology offsets created in existing tree.
 
 ### Changed
 
@@ -46,6 +47,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 - Removed field `type` entries from braid examples, since that info is not required by the Mesh Blueprint.
+- Fixed a const-ignoring crime related to polyhedral element and subelement offset generation.
+- Refactored unstructured case in `blueprint::mesh::topology::logical_dims` calculation to directly calculate number of elements instead of generating offsets.
 
 ### Fixed
 
