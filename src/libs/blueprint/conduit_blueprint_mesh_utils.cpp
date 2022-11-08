@@ -337,25 +337,18 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         else // if(dim_shape.is_polyhedral())
         {
             const index_t elem_outer_count = entity_indices.size();
+            index_t_accessor elem_inner_sizes   = topo->fetch_existing("subelements/sizes").value();
+            index_t_accessor elem_inner_offsets = topo_suboffsets.value();
+            index_t_accessor elem_inner_conn    = topo->fetch_existing("subelements/connectivity").value();
+            
             for(index_t oi = 0; oi < elem_outer_count; oi++)
             {
-                // temp.set_external((*topo)["subelements/offsets"]);
-                // data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
-                // const index_t elem_inner_offset = data.to_index_t();
+                const index_t elem_inner_size   = elem_inner_sizes[entity_indices[oi]];
+                const index_t elem_inner_offset = elem_inner_offsets[entity_indices[oi]];
 
-                temp.set_external(topo_suboffsets);
-                data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
-                const index_t elem_inner_offset = data.to_index_t();
-
-                temp.set_external((*topo)["subelements/sizes"]);
-                data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
-                const index_t elem_inner_count = data.to_index_t();
-
-                for(index_t ii = 0; ii < elem_inner_count; ii++)
+                for(index_t ii = 0; ii < elem_inner_size; ii++)
                 {
-                    temp.set_external((*topo)["subelements/connectivity"]);
-                    data.set_external(int_dtype, temp.element_ptr(elem_inner_offset + ii));
-                    const index_t vi = data.to_int64();
+                    const index_t vi = elem_inner_conn[elem_inner_offset + ii];
                     vert_ids.insert(vi);
                 }
             }
@@ -415,25 +408,22 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
             // to be refactored so that it's legible. There's a lot of overlap in
             // used variables where it feels unnecessary (e.g. 'poly' being
             // shoehorned into using 'implicit' variables), for example.
+            
+            
+            //
+            // NOTE(CYRUSH): Refactored to use accessors, however we still have
+            // inner loop accessor fetches, which is less than ideal
+            //
             for(index_t oi = 0, ooff = 0; oi < elem_outer_count; oi++)
             {
                 index_t elem_inner_count = embed_shape.indices;
 
                 if (dim_shape.is_polyhedral())
                 {
-                    const Node &subelem_off_const = topo_suboffsets;
-                    // const Node &subelem_off_const = (*topo)["subelements/offsets"];
-                    const Node &subelem_size_const = (*topo)["subelements/sizes"];
-
-                    Node subelem_off; subelem_off.set_external(subelem_off_const);
-                    Node subelem_size; subelem_size.set_external(subelem_size_const);
-
-                    temp.set_external(int_dtype,
-                        subelem_off.element_ptr(entity_indices[oi]));
-                    ooff = temp.to_int64();
-                    temp.set_external(int_dtype,
-                        subelem_size.element_ptr(entity_indices[oi]));
-                    elem_inner_count = temp.to_int64();
+                    index_t_accessor subelem_sizes   = topo->fetch_existing("subelements/sizes").value();
+                    index_t_accessor subelem_offsets = topo_suboffsets.value();
+                    ooff = subelem_offsets[entity_indices[oi]];
+                    elem_inner_count = subelem_sizes[entity_indices[oi]];
                 }
 
                 std::vector<int64> embed_indices;
@@ -444,17 +434,12 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
                     if (dim_shape.is_polyhedral())
                     {
-                        const Node &subelem_conn_const = (*topo)["subelements/connectivity"];
-                        Node subelem_conn; subelem_conn.set_external(subelem_conn_const);
-
-                        temp.set_external(int_dtype,
-                            subelem_conn.element_ptr(ioff));
-                        embed_indices.push_back(temp.to_int64());
+                        index_t_accessor subele_conn = topo->fetch_existing("subelements/connectivity").value();
+                        embed_indices.push_back(subele_conn[ioff]);
                     }
                     else
                     {
-                        embed_indices.push_back(
-                            entity_indices[ioff % entity_indices.size()]);
+                        embed_indices.push_back(entity_indices[ioff % entity_indices.size()]);
                     }
                 }
 
@@ -2088,7 +2073,7 @@ topology::unstructured::generate_offsets(const Node &topo,
         index_t_accessor topo_subelem_size = topo["subelements/sizes"].value();
 
         index_t es_count = topo_elem_size.number_of_elements();
-        // IDEAL
+        // IDEAL SOLUTION 
         // dest_ele_offsets.set(DataType::index_t(es_count));
         // index_t_array shape_array = dest_ele_offsets.value();
 
@@ -2104,7 +2089,6 @@ topology::unstructured::generate_offsets(const Node &topo,
 
         // EVIL HACK
         Node &dest_elem_off = const_cast<Node &>(topo)["elements/offsets"];
-
         Node elem_node;
         elem_node.set_external(shape_array);
         elem_node.to_data_type(int_dtype.id(), dest_elem_off);
@@ -2112,7 +2096,7 @@ topology::unstructured::generate_offsets(const Node &topo,
 
         int ses_count = topo_subelem_size.number_of_elements();
 
-        // IDEAL
+        // IDEAL SOLUTION
         // dest_subele_offsets.set(DataType::index_t(ses_count));
         // index_t_array subshape_array = dest_subele_offsets.value();
 
