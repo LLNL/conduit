@@ -37,7 +37,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Added any source, any tag variants of mpi receive functions: `recv`, `recv_using_schema`, and `irecv`.
 - Added subpath support for `relay::io::{save,load,save_merged,load_merged}` for basic protocols (json, yaml, etc).
-- Added `generate_offsets_inline(Node &)` for cases where we want topology offsets created in existing tree.
+- Added `generate_offsets_inline(Node &)` for cases where we want topology offsets created in an existing tree.
 
 ### Changed
 
