@@ -2238,12 +2238,18 @@ mesh::generate_strip(const conduit::Node& topo,
 
     for (const std::string& field_name : field_names)
     {
+        // TODO Something useful with grid functions, when needed by users.
         if (fields_src[field_name]["association"].as_string() == "element")
         {
             std::string field_dest_name = field_prefix + field_name;
             fields_dest[field_dest_name] = fields_src[field_name];
 
             fields_dest[field_dest_name]["topology"] = topo_dest_name;
+        }
+        else
+        {
+            // For now, do nothing.
+            // TODO Something useful with vertex fields.  Confer with users.
         }
     }
 }
@@ -6038,21 +6044,8 @@ mesh::field::generate_strip(Node& fields,
                 if (field["association"].as_string() == "element")
                 {
                     const std::string newfieldname = dest_toponame + "_" + fields_it.name();
-                    Node& newfield = newfields[newfieldname];
-
-                    newfield["association"] = "element";
-                    newfield["topology"] = dest_toponame;
-                    if (field.has_child("volume_dependent"))
-                        newfield["volume_dependent"] = field["volume_dependent"].as_string();
-                    if (field.has_child("matset"))
-                    {
-                        newfield["matset"] = field["matset"].as_string();
-                        newfield["matset_values"].set_external(field["matset_values"]);
-                    }
-                    if (field.has_child("values"))
-                    {
-                        newfield["values"].set_external(field["values"]);
-                    }
+                    newfields[newfieldname] = field;
+                    newfields[newfieldname]["topology"] = dest_toponame;
                 }
                 else
                 {
