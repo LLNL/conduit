@@ -5460,6 +5460,18 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
 
 //-----------------------------------------------------------------------------
 void
+mesh::topology::unstructured::generate_offsets(const Node &topo,
+                                               Node &dest_eleoffsets,
+                                               Node &dest_subeleoffsets)
+{
+    return bputils::topology::unstructured::generate_offsets(topo,
+                                                             dest_eleoffsets,
+                                                             dest_subeleoffsets);
+}
+
+
+//-----------------------------------------------------------------------------
+void
 mesh::topology::unstructured::generate_offsets_inline(Node &topo)
 {
     return bputils::topology::unstructured::generate_offsets_inline(topo);

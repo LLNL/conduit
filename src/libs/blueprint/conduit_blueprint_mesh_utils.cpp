@@ -422,8 +422,8 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
                 {
                     index_t_accessor subelem_sizes   = topo->fetch_existing("subelements/sizes").value();
                     index_t_accessor subelem_offsets = topo_suboffsets.value();
-                    ooff = subelem_offsets[entity_indices[oi]];
                     elem_inner_count = subelem_sizes[entity_indices[oi]];
+                    ooff = subelem_offsets[entity_indices[oi]];
                 }
 
                 std::vector<int64> embed_indices;
@@ -1876,17 +1876,27 @@ topology::reindex_coords(const Node& topo,
 void
 topology::unstructured::generate_offsets_inline(Node &topo)
 {
-    if( !topo["elements"].has_child("offsets") || 
-        topo["elements/offsets"].dtype().is_empty())
+    // check for polyhedral case
+    if(topo.has_child("subelements"))
     {
-        // check for polyhedral case
-        if(topo.has_child("subelements"))
+        // if ele or subelee offsets are missing or empty we want to generate
+        if( (!topo["elements"].has_child("offsets") || 
+             topo["elements/offsets"].dtype().is_empty()) ||
+           (!topo["subelements"].has_child("offsets") || 
+             topo["subelements/offsets"].dtype().is_empty())
+           )
         {
             blueprint::mesh::utils::topology::unstructured::generate_offsets(topo,
                                                                              topo["elements/offsets"],
                                                                              topo["subelements/offsets"]);
         }
-        else
+
+    }
+    else
+    {
+        // if ele offsets is missing or empty we want to generate
+        if( !topo["elements"].has_child("offsets") || 
+            topo["elements/offsets"].dtype().is_empty())
         {
             blueprint::mesh::utils::topology::unstructured::generate_offsets(topo,
                                                                              topo["elements/offsets"]);
@@ -1924,29 +1934,52 @@ topology::unstructured::generate_offsets(const Node &topo,
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
-    if(topo["elements"].has_child("offsets") && !topo["elements/offsets"].dtype().is_empty())
+    // if these have already been generate, use set external to copy out results
+    if(topo_shape.type == "polyhedral")
     {
-        if(&dest_ele_offsets != &topo["elements/offsets"])
+    
+        if( (topo["elements"].has_child("offsets") &&
+             !topo["elements/offsets"].dtype().is_empty())  &&
+             (topo["subelements"].has_child("offsets") &&
+             !topo["subelements/offsets"].dtype().is_empty())
+          )
         {
-            dest_ele_offsets.set_external(topo["elements/offsets"]);
-        }
-        
-        if( topo.has_child("subelements") &&
-            topo["subelements"].has_child("offsets") &&
-            !topo["subelements/offsets"].dtype().is_empty())
-        {
+            // they are already here, set external and return
+            if(&dest_ele_offsets != &topo["elements/offsets"])
+            {
+                dest_ele_offsets.set_external(topo["elements/offsets"]);
+            }
             if(&dest_subele_offsets != &topo["subelements/offsets"])
             {
                 dest_subele_offsets.set_external(topo["subelements/offsets"]);
             }
+            // we are done
+            return;
         }
     }
-    else if(topo.has_path(stream_key))
+    else // non polyhedral
+    {
+        if( topo["elements"].has_child("offsets") &&
+            !topo["elements/offsets"].dtype().is_empty()
+          )
+        {
+            // they are already here, set external and return
+            if(&dest_ele_offsets != &topo["elements/offsets"])
+            {
+                dest_ele_offsets.set_external(topo["elements/offsets"]);
+            }
+            return;
+        }
+    }
+
+    ///
+    /// Generate Cases
+    ///
+    if(topo.has_path(stream_key))
     {
         ///
         /// TODO STREAM TOPOS ARE DEPRECATED
         ///
-        dest_ele_offsets.reset();
         // Mixed element types
         std::map<int,int> stream_id_npts;
         const conduit::Node &n_element_types = topo["elements/element_types"];
@@ -2034,7 +2067,6 @@ topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(!topo_shape.is_poly())
     {
-        dest_ele_offsets.reset();
         // Single element type
         const index_t num_topo_shapes =
             topo_conn.dtype().number_of_elements() / topo_shape.indices;
@@ -2049,8 +2081,6 @@ topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polygonal")
     {
-        dest_ele_offsets.reset();
-
         const Node &topo_size = topo["elements/sizes"];
         int64_accessor topo_sizes = topo_size.as_int64_accessor();
         std::vector<int64> shape_array;

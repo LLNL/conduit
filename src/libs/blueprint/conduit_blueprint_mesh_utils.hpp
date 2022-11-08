@@ -453,20 +453,21 @@ namespace topology
     //-------------------------------------------------------------------------
     namespace unstructured
     {
-        // TODO(JRC): Expose this 'cache' version of the function publicly?
-        //-------------------------------------------------------------------------
-        // Adds offsets to given topo
-        void CONDUIT_BLUEPRINT_API generate_offsets_inline(Node &topo);
-
         //-------------------------------------------------------------------------
         // Generates element offsets for given topo
         void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
                                                     Node &dest);
+
         //-------------------------------------------------------------------------
         // Generates element and subelement offsets for given topo
         void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
                                                     Node &dest_ele_offsets,
                                                     Node &dest_subele_offsets);
+
+        //-------------------------------------------------------------------------
+        // Adds offsets to given topo
+        void CONDUIT_BLUEPRINT_API generate_offsets_inline(Node &topo);
+
         //-------------------------------------------------------------------------
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
                                                           const index_t i);
