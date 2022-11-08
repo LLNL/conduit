@@ -584,7 +584,7 @@ namespace topology
                                                     conduit::Node &d2smap);
 
         //-------------------------------------------------------------------------
-       // Generates element offsets for given topo
+        // Generates element offsets for given topo
         void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &topo,
                                                     conduit::Node &dest);
 
