@@ -1071,41 +1071,11 @@ convert_oneD_coordset_to_strip(const conduit::Node &coordset,
     }
     else
     {
-        coordset["values/x"].to_float64_array(dest["values/y"]);
         dest["values/x"].set(DataType::float64(2));
         double *x_vals = dest["values/x"].value();
         x_vals[0] = 0.;
         x_vals[1] = 1.;
-    }
-}
-
-
-//-------------------------------------------------------------------------
-void
-convert_oneD_topo_to_strip(const conduit::Node &topo,
-                           const std::string &csname,
-                           conduit::Node &dest)
-{
-    dest.reset();
-    dest["coordset"] = csname;
-    dest["type"] = topo["type"].as_string();
-
-    if (topo.has_child("elements"))
-    {
-        const Node & topoelts = topo["elements"];
-        Node & destelts = dest["elements"];
-
-        if (topoelts.has_child("origin"))
-        {
-            destelts["origin/i"] = 0.;
-            destelts["origin/j"] = topoelts["origin/i"];
-        }
-
-        if (topoelts.has_child("dims"))
-        {
-            destelts["dims/i"] = 1;
-            destelts["dims/j"] = topoelts["dims/i"];
-        }
+        coordset["values/x"].to_float64_array(dest["values/y"]);
     }
 }
 
@@ -2177,9 +2147,111 @@ mesh::generate_strip(conduit::Node &mesh,
 
     mesh::coordset::generate_strip(src_coordset, dst_coordset);
     mesh::topology::generate_strip(src_topo, dst_topo_name, dst_topo);
+    mesh::field::generate_strip(mesh["fields"], src_topo_name, dst_topo_name);
 
     mesh["topologies"][dst_topo_name] = dst_topo;
     mesh["coordsets"][dst_topo_name] = dst_coordset;
+}
+
+
+void 
+mesh::generate_strip(const conduit::Node& topo,
+                     conduit::Node& topo_dest,
+                     conduit::Node& coords_dest,
+                     conduit::Node& fields_dest,
+                     const conduit::Node& options)
+{
+    const std::string topo_name = topo.name();
+    const std::string topo_dest_name = topo_dest.name();
+    std::string field_prefix = "";
+    std::vector<std::string> field_names;
+    const Node& fields_src = (*(topo.parent()->parent()))["fields"];
+    const Node& coordset_src = (*(topo.parent()->parent()))["coordsets/" + topo["coordset"].as_string()];
+
+    // check for existence of field prefix
+    if (options.has_child("field_prefix"))
+    {
+        if (options["field_prefix"].dtype().is_string())
+        {
+            field_prefix = options["field_prefix"].as_string();
+        }
+        else
+        {
+            CONDUIT_ERROR("field_prefix must be a string.");
+        }
+    }
+
+    // check for target field names
+    if (options.has_child("field_names"))
+    {
+        if (options["field_names"].dtype().is_string())
+        {
+            field_names.push_back(options["field_names"].as_string());
+        }
+        else if (options["field_names"].dtype().is_list())
+        {
+            NodeConstIterator itr = options["field_names"].children();
+            while (itr.has_next())
+            {
+                const Node& cld = itr.next();
+                if (cld.dtype().is_string())
+                {
+                    field_names.push_back(cld.as_string());
+                }
+                else
+                {
+                    CONDUIT_ERROR("field_names must be a string or a list of strings.");
+                }
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR("field_names must be a string or a list of strings.");
+        }
+    }
+    else
+    {
+        // fill field_names with all current fields' names
+        NodeConstIterator itr = fields_src.children();
+        while (itr.has_next())
+        {
+            const Node& cld = itr.next();
+            if (cld["topology"].as_string() == topo_name)
+            {
+                field_names.push_back(itr.name());
+            }
+        }
+    }
+
+    // check that the discovered field names exist in the target fields
+    for (uint64 i = 0; i < field_names.size(); i++)
+    {
+        if (!fields_src.has_child(field_names[i]))
+        {
+            CONDUIT_ERROR("field " + field_names[i] + " not found in target.");
+        }
+    }
+
+    // generate new topology
+    mesh::coordset::generate_strip(coordset_src, coords_dest);
+    mesh::topology::generate_strip(topo, coords_dest.name(), topo_dest);
+
+    for (const std::string& field_name : field_names)
+    {
+        // TODO Something useful with grid functions, when needed by users.
+        if (fields_src[field_name]["association"].as_string() == "element")
+        {
+            std::string field_dest_name = field_prefix + field_name;
+            fields_dest[field_dest_name] = fields_src[field_name];
+
+            fields_dest[field_dest_name]["topology"] = topo_dest_name;
+        }
+        else
+        {
+            // For now, do nothing.
+            // TODO Something useful with vertex fields.  Confer with users.
+        }
+    }
 }
 
 
@@ -3151,7 +3223,35 @@ void
 mesh::coordset::generate_strip(const Node& coordset,
                                conduit::Node& coordset_dest)
 {
-    convert_oneD_coordset_to_strip(coordset, coordset_dest);
+    coordset_dest.reset();
+    std::string coord_type = coordset["type"].as_string();
+    coordset_dest["type"].set(coord_type);
+
+    if (coord_type == "uniform")
+    {
+        coordset_dest["dims/i"] = 1;
+        coordset_dest["dims/j"] = coordset["dims/i"];
+
+        if (coordset.has_child("origin"))
+        {
+            coordset_dest["origin/x"] = 0.;
+            coordset_dest["origin/y"] = coordset["origin/x"];
+        }
+
+        if (coordset.has_child("spacing"))
+        {
+            coordset_dest["spacing/dx"] = 1.;
+            coordset_dest["spacing/dy"] = coordset["spacing/dx"];
+        }
+    }
+    else
+    {
+        coordset_dest["values/x"].set(DataType::float64(2));
+        double* x_vals = coordset_dest["values/x"].value();
+        x_vals[0] = 0.;
+        x_vals[1] = 1.;
+        coordset["values/x"].to_float64_array(coordset_dest["values/y"]);
+    }
 }
 
 
@@ -3372,7 +3472,27 @@ mesh::topology::generate_strip(const Node& topo,
                                const std::string & csname,
                                conduit::Node& topo_dest)
 {
-    convert_oneD_topo_to_strip(topo, csname, topo_dest);
+    topo_dest.reset();
+    topo_dest["type"] = topo["type"].as_string();
+    topo_dest["coordset"] = csname;
+
+    if (topo.has_child("elements"))
+    {
+        const Node& topoelts = topo["elements"];
+        Node& destelts = topo_dest["elements"];
+
+        if (topoelts.has_child("origin"))
+        {
+            destelts["origin/i"] = 0.;
+            destelts["origin/j"] = topoelts["origin/i"];
+        }
+
+        if (topoelts.has_child("dims"))
+        {
+            destelts["dims/i"] = 1;
+            destelts["dims/j"] = topoelts["dims/i"];
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -5901,6 +6021,47 @@ mesh::field::verify(const Node &field,
     log::validation(info, res);
 
     return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::field::generate_strip(Node& fields,
+                            const std::string& toponame,
+                            const std::string& dest_toponame)
+{
+    Node newfields;
+
+    NodeConstIterator fields_it = fields.children();
+    while (fields_it.has_next())
+    {
+        const Node& field = fields_it.next();
+
+        if (field["topology"].as_string() == toponame)
+        {
+            // TODO Something useful with grid functions, when needed by users.
+            if (field.has_child("association"))
+            {
+                if (field["association"].as_string() == "element")
+                {
+                    const std::string newfieldname = dest_toponame + "_" + fields_it.name();
+                    newfields[newfieldname] = field;
+                    newfields[newfieldname]["topology"] = dest_toponame;
+                }
+                else
+                {
+                    // For now, do nothing.
+                    // TODO Something useful with vertex fields.  Confer with users.
+                }
+            }
+        }
+    }
+
+    NodeConstIterator newfields_it = newfields.children();
+    while (newfields_it.has_next())
+    {
+        const Node& newfield = newfields_it.next();
+        fields[newfields_it.name()] = newfield;
+    }
 }
 
 //-----------------------------------------------------------------------------

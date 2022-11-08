@@ -128,6 +128,12 @@ void CONDUIT_BLUEPRINT_API generate_strip(conduit::Node &mesh,
                                           std::string src_topo_name,
                                           std::string dst_topo_name);
 
+//-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& topo,
+                                          conduit::Node& topo_dest,
+                                          conduit::Node& coords_dest,
+                                          conduit::Node& fields_dest,
+                                          const conduit::Node& options);
 
 //-------------------------------------------------------------------------
 // Creates fields to help view and debug adjset relationships.
@@ -685,6 +691,11 @@ namespace field
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &field,
                                       conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API generate_strip(conduit::Node& fields,
+                                              const std::string & toponame,
+                                              const std::string& topo_dest);
 
     //-------------------------------------------------------------------------
     // Given a blueprint field and matset, converts the matset and the field

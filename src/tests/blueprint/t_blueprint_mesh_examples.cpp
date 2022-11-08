@@ -1292,57 +1292,95 @@ TEST(conduit_blueprint_mesh_examples, polystar)
 TEST(conduit_blueprint_mesh_examples, oneDtostrip)
 {
     {
-        std::cout << "starting rectilinear" << std::endl;
         Node mesh;
         blueprint::mesh::examples::basic("rectilinear", 5, 0, 0, mesh);
 
         test_save_mesh_helper(mesh, "oneD_struct_orig");
 
-        std::cout << " rectilinear: about to test 1D" << std::endl;
-
         Node info;
         EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
         CONDUIT_INFO(info.to_yaml());
-
-        std::cout << " rectilinear: about to convert" << std::endl;
 
         blueprint::mesh::generate_strip(mesh, "mesh", "mesh_strip");
 
         test_save_mesh_helper(mesh, "oneD_struct_strip");
 
-        std::cout << " rectilinear: about to verify generated strip" << std::endl;
-
         info.reset();
         EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
         CONDUIT_INFO(info.to_yaml());
-        std::cout << " rectilinear: finished." << std::endl;
     }
 
     {
-        std::cout << "starting uniform" << std::endl;
         Node mesh;
         blueprint::mesh::examples::basic("uniform", 5, 0, 0, mesh);
 
         test_save_mesh_helper(mesh, "oneD_unif_orig");
 
-        std::cout << " uniform: about to test 1D" << std::endl;
-
         Node info;
         EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
         CONDUIT_INFO(info.to_yaml());
-
-        std::cout << " uniform: about to convert" << std::endl;
 
         blueprint::mesh::generate_strip(mesh, "mesh", "mesh_strip");
 
         test_save_mesh_helper(mesh, "oneD_unif_strip");
 
-        std::cout << " uniform: about to verify generated strip" << std::endl;
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        CONDUIT_INFO(info.to_yaml());
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, oneDtostrip_fullfeatured)
+{
+    {
+        Node mesh;
+        blueprint::mesh::examples::basic("rectilinear", 5, 0, 0, mesh);
+
+        test_save_mesh_helper(mesh, "oneD_struct_orig_feature");
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
+        CONDUIT_INFO(info.to_yaml());
+
+        conduit::Node options;
+        options["field_prefix"] = "strip_";
+        blueprint::mesh::generate_strip(mesh["topologies/mesh"],
+            mesh["topologies/strip_mesh"],
+            mesh["coordsets/strip_coords"],
+            mesh["fields"],
+            options);
+
+        test_save_mesh_helper(mesh, "oneD_struct_strip_feature");
 
         info.reset();
         EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
         CONDUIT_INFO(info.to_yaml());
-        std::cout << " uniform: finished." << std::endl;
+    }
+
+    {
+        Node mesh;
+        blueprint::mesh::examples::basic("uniform", 5, 0, 0, mesh);
+
+        test_save_mesh_helper(mesh, "oneD_unif_orig_feature");
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
+        CONDUIT_INFO(info.to_yaml());
+
+        conduit::Node options;
+        options["field_prefix"] = "strip_";
+        blueprint::mesh::generate_strip(mesh["topologies/mesh"],
+            mesh["topologies/strip_mesh"],
+            mesh["coordsets/strip_coords"],
+            mesh["fields"],
+            options);
+
+        test_save_mesh_helper(mesh, "oneD_unif_strip_feature");
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        CONDUIT_INFO(info.to_yaml());
     }
 }
 
